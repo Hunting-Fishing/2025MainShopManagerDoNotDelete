@@ -1,12 +1,13 @@
 
 import { useState } from "react";
 import { InvoiceItem } from "@/types/invoice";
+import { InventoryItem } from "@/types/inventory";
 
 export function useInvoiceItems(initialItems: InvoiceItem[] = []) {
   const [items, setItems] = useState<InvoiceItem[]>(initialItems);
 
   // Handle adding an inventory item
-  const handleAddInventoryItem = (item: {id: string; name: string; description?: string; price: number}) => {
+  const handleAddInventoryItem = (item: InventoryItem) => {
     // Check if item already exists
     const existingItem = items.find(i => i.id === item.id);
     

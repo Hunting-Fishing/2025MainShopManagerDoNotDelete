@@ -1,6 +1,7 @@
 
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
+import { createInvoiceUpdater } from "@/types/invoice";
 
 // Import components
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
@@ -122,24 +123,24 @@ export default function InvoiceCreate() {
             status={invoice.status}
             date={invoice.date}
             dueDate={invoice.dueDate}
-            onInvoiceIdChange={(value) => setInvoice(prev => ({ ...prev, id: value }))}
-            onStatusChange={(value) => setInvoice(prev => ({ ...prev, status: value }))}
-            onDateChange={(value) => setInvoice(prev => ({ ...prev, date: value }))}
-            onDueDateChange={(value) => setInvoice(prev => ({ ...prev, dueDate: value }))}
+            onInvoiceIdChange={(value) => setInvoice(createInvoiceUpdater({ id: value }))}
+            onStatusChange={(value) => setInvoice(createInvoiceUpdater({ status: value }))}
+            onDateChange={(value) => setInvoice(createInvoiceUpdater({ date: value }))}
+            onDueDateChange={(value) => setInvoice(createInvoiceUpdater({ dueDate: value }))}
             
             // Customer info props
             customer={invoice.customer}
             customerAddress={invoice.customerAddress}
             customerEmail={invoice.customerEmail}
-            onCustomerChange={(value) => setInvoice(prev => ({ ...prev, customer: value }))}
-            onCustomerAddressChange={(value) => setInvoice(prev => ({ ...prev, customerAddress: value }))}
-            onCustomerEmailChange={(value) => setInvoice(prev => ({ ...prev, customerEmail: value }))}
+            onCustomerChange={(value) => setInvoice(createInvoiceUpdater({ customer: value }))}
+            onCustomerAddressChange={(value) => setInvoice(createInvoiceUpdater({ customerAddress: value }))}
+            onCustomerEmailChange={(value) => setInvoice(createInvoiceUpdater({ customerEmail: value }))}
             
             // Description and notes props
             description={invoice.description}
             notes={invoice.notes}
-            onDescriptionChange={(value) => setInvoice(prev => ({ ...prev, description: value }))}
-            onNotesChange={(value) => setInvoice(prev => ({ ...prev, notes: value }))}
+            onDescriptionChange={(value) => setInvoice(createInvoiceUpdater({ description: value }))}
+            onNotesChange={(value) => setInvoice(createInvoiceUpdater({ notes: value }))}
           />
           
           {/* Work Order Reference */}
@@ -148,7 +149,7 @@ export default function InvoiceCreate() {
             description={invoice.description}
             workOrders={workOrders}
             onSelectWorkOrder={handleSelectWorkOrder}
-            onClearWorkOrder={() => setInvoice(prev => ({ ...prev, workOrderId: "" }))}
+            onClearWorkOrder={() => setInvoice(createInvoiceUpdater({ workOrderId: "" }))}
             showWorkOrderDialog={showWorkOrderDialog}
             setShowWorkOrderDialog={setShowWorkOrderDialog}
           />
@@ -187,7 +188,7 @@ export default function InvoiceCreate() {
             staffMembers={staffMembers}
             showStaffDialog={showStaffDialog}
             setShowStaffDialog={setShowStaffDialog}
-            onCreatedByChange={(value) => setInvoice(prev => ({ ...prev, createdBy: value }))}
+            onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ createdBy: value }))}
             onAddStaffMember={handleAddStaffMember}
             onRemoveStaffMember={handleRemoveStaffMember}
           />

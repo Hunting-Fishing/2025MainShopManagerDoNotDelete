@@ -1,4 +1,6 @@
 
+import { InventoryItem } from "./inventory";
+
 export interface WorkOrder {
   id: string;
   customer: string;
@@ -46,3 +48,11 @@ export interface Invoice {
   total?: number;
   paymentMethod?: string;
 }
+
+// Functions to update the invoice state
+export type InvoiceUpdater = (prev: Invoice) => Invoice;
+
+// Helper function to create an invoice updater
+export const createInvoiceUpdater = (updates: Partial<Invoice>): InvoiceUpdater => {
+  return (prev: Invoice) => ({ ...prev, ...updates });
+};
