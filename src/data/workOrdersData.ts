@@ -1,4 +1,3 @@
-
 // Work order status definitions
 export const statusMap = {
   "pending": "Pending",
@@ -18,16 +17,26 @@ export const priorityMap = {
 export type WorkOrderStatus = keyof typeof statusMap;
 export type WorkOrderPriority = keyof typeof priorityMap;
 
+// Work order interface
 export interface WorkOrder {
   id: string;
   customer: string;
   description: string;
-  status: WorkOrderStatus;
+  status: "pending" | "in-progress" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high";
   date: string;
   dueDate: string;
-  priority: WorkOrderPriority;
   technician: string;
   location: string;
+  notes?: string;
+  inventoryItems?: {
+    id: string;
+    name: string;
+    sku: string;
+    category: string;
+    quantity: number;
+    unitPrice: number;
+  }[];
 }
 
 // Mock data for work orders

@@ -9,6 +9,7 @@ import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSectio
 import { WorkOrderStatusSection } from "@/components/work-orders/WorkOrderStatusSection";
 import { AssignmentSection } from "@/components/work-orders/AssignmentSection";
 import { NotesSection } from "@/components/work-orders/NotesSection";
+import { InventoryItemsSection } from "@/components/work-orders/InventoryItemsSection";
 import { FormActions } from "@/components/work-orders/FormActions";
 
 interface WorkOrderFormProps {
@@ -35,6 +36,9 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ technicians }) => 
             
             {/* Notes */}
             <NotesSection form={form} />
+
+            {/* Inventory Items */}
+            <InventoryItemsSection form={form} />
           </div>
 
           {/* Form Actions */}

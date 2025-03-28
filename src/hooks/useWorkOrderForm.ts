@@ -8,6 +8,16 @@ import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrderUtils";
 import { format } from "date-fns";
 
+// Define inventory item schema
+const inventoryItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  sku: z.string(),
+  category: z.string(),
+  quantity: z.number().min(1),
+  unitPrice: z.number()
+});
+
 // Form schema validation
 const formSchema = z.object({
   customer: z.string().min(2, {
@@ -32,6 +42,7 @@ const formSchema = z.object({
     required_error: "Due date is required.",
   }),
   notes: z.string().optional(),
+  inventoryItems: z.array(inventoryItemSchema).optional(),
 });
 
 export type WorkOrderFormValues = z.infer<typeof formSchema>;
@@ -48,6 +59,7 @@ export const useWorkOrderForm = () => {
       priority: "medium",
       technician: "Unassigned",
       notes: "",
+      inventoryItems: [],
     },
   });
 
@@ -69,6 +81,7 @@ export const useWorkOrderForm = () => {
         priority: values.priority,
         technician: values.technician,
         location: values.location,
+        inventoryItems: values.inventoryItems || [],
       });
       
       // Show success message
