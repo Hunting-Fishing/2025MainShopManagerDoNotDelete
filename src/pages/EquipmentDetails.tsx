@@ -1,14 +1,14 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { equipment, getWorkOrdersForEquipment, maintenanceFrequencyMap } from "@/data/equipmentData";
 import { Equipment } from "@/types/equipment";
 import { EquipmentStatusBadge } from "@/components/equipment/EquipmentStatusBadge";
 import { WarrantyStatusBadge } from "@/components/equipment/WarrantyStatusBadge";
+import { ServiceHistoryTable } from "@/components/service-history/ServiceHistoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { ChevronLeft, Wrench, FileText, Edit, AlertTriangle, Calendar } from "lucide-react";
+import { ChevronLeft, Wrench, FileText, Edit, AlertTriangle, Calendar, History } from "lucide-react";
 import { WorkOrder } from "@/data/workOrdersData";
 
 export default function EquipmentDetails() {
@@ -222,10 +222,13 @@ export default function EquipmentDetails() {
         </Card>
       )}
 
-      {/* Related Work Orders */}
+      {/* Service History */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Work Order History</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between bg-slate-50 border-b">
+          <div className="flex items-center">
+            <History className="h-5 w-5 mr-2 text-slate-500" />
+            <CardTitle className="text-lg">Service History</CardTitle>
+          </div>
           <Link to={`/work-orders/new?equipment=${equipmentItem.id}`}>
             <Button variant="outline" size="sm">
               <FileText className="mr-2 h-4 w-4" />
@@ -233,34 +236,8 @@ export default function EquipmentDetails() {
             </Button>
           </Link>
         </CardHeader>
-        <CardContent>
-          {relatedWorkOrders.length === 0 ? (
-            <p className="text-slate-500">No work orders found for this equipment.</p>
-          ) : (
-            <div className="divide-y">
-              {relatedWorkOrders.map(order => (
-                <div key={order.id} className="py-3 flex justify-between items-center">
-                  <div>
-                    <Link to={`/work-orders/${order.id}`} className="font-medium text-blue-600 hover:text-blue-800">
-                      {order.id}
-                    </Link>
-                    <p className="text-sm text-slate-500">{order.description}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-slate-500">{order.date}</span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      order.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                      order.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
-                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('-', ' ')}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <CardContent className="p-0">
+          <ServiceHistoryTable workOrders={relatedWorkOrders} />
         </CardContent>
       </Card>
     </div>

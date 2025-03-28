@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { Edit, FileText, Trash2, ArrowLeft, Package } from "lucide-react";
+import { Edit, FileText, Trash2, ArrowLeft, Package, History, User } from "lucide-react";
 import { WorkOrder } from "@/data/workOrdersData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,8 +122,17 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
       {/* Basic Information */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="bg-slate-50 border-b">
-            <CardTitle className="text-lg">Customer Information</CardTitle>
+          <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
+            <div className="flex items-center">
+              <User className="h-5 w-5 mr-2 text-slate-500" />
+              <CardTitle className="text-lg">Customer Information</CardTitle>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to={`/customer-service-history/${encodeURIComponent(workOrder.customer)}`} className="flex items-center">
+                <History className="h-4 w-4 mr-1" />
+                View Service History
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent className="divide-y">
             <div className="py-3 grid grid-cols-1 md:grid-cols-2">
