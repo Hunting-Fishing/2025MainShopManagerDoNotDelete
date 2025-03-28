@@ -16,6 +16,8 @@ import InvoiceDetails from "@/pages/InvoiceDetails";
 import InvoiceCreate from "@/pages/InvoiceCreate";
 import Reports from "@/pages/Reports";
 import Calendar from "@/pages/Calendar";
+import Equipment from "@/pages/Equipment";
+import EquipmentDetails from "@/pages/EquipmentDetails";
 import NotFound from "@/pages/NotFound";
 import "./styles/workOrders.css";
 
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/invoices/new" element={<Layout><InvoiceCreate /></Layout>} />
           <Route path="/invoices/from-work-order/:workOrderId" element={<Layout><InvoiceCreate /></Layout>} />
           <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
+          <Route path="/equipment" element={<Layout><Equipment /></Layout>} />
+          <Route path="/equipment/:id" element={<Layout><EquipmentDetails /></Layout>} />
           <Route path="/team" element={<Layout><Team /></Layout>} />
           <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
           <Route path="/reports" element={<Layout><Reports /></Layout>} />
