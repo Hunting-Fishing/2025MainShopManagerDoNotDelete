@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Plus, X, Check, Package, Users, Link as LinkIcon } from "lucide-react";
@@ -103,7 +102,8 @@ export default function InvoiceCreate() {
   const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Form state
   const [invoice, setInvoice] = useState({
     id: `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
@@ -244,21 +244,59 @@ export default function InvoiceCreate() {
   };
 
   // Handle saving invoice
-  const handleSaveInvoice = (status: string) => {
-    // Update status and save
-    const finalInvoice = {
-      ...invoice,
-      status,
-      subtotal,
-      tax,
-      total
-    };
-    
-    console.log("Saving invoice:", finalInvoice);
-    
-    // In a real app, this would be an API call
-    // For now, just navigate back to invoices list
-    navigate("/invoices");
+  const handleSaveInvoice = async (status: string) => {
+    if (!invoice.customer || !invoice.items.length) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields and add at least one item.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // If this invoice is created from a work order, use that function
+      if (invoice.workOrderId) {
+        await createInvoiceFromWorkOrder(invoice.workOrderId, {
+          ...invoice,
+          status,
+          subtotal,
+          tax,
+          total,
+        });
+      } else {
+        // In a real app, this would be an API call to create a new invoice
+        console.log("Creating new invoice:", {
+          ...invoice,
+          status,
+          subtotal,
+          tax,
+          total,
+        });
+      }
+      
+      // Show success message
+      toast({
+        title: "Invoice Created",
+        description: `Invoice ${invoice.id} has been created successfully.`,
+      });
+      
+      // Navigate to invoices list
+      navigate("/invoices");
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      
+      // Show error message
+      toast({
+        title: "Error",
+        description: "Failed to create invoice. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle adding labor item
@@ -602,7 +640,7 @@ export default function InvoiceCreate() {
                                   ...prev,
                                   items: prev.items.map(i => 
                                     i.id === item.id ? { ...i, price, total: i.quantity * price } : i
-                                  )
+                                  ))
                                 }));
                               }}
                               className="h-7 w-24 text-right"

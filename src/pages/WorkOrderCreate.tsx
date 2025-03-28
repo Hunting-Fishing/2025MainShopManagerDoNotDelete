@@ -34,6 +34,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { createWorkOrder } from "@/utils/workOrderUtils";
 
 // Form schema validation
 const formSchema = z.object({
@@ -49,7 +50,9 @@ const formSchema = z.object({
   priority: z.enum(["low", "medium", "high"], {
     required_error: "Please select a priority.",
   }),
-  technician: z.string().optional(),
+  technician: z.string().min(1, {
+    message: "Please select a technician.",
+  }),
   location: z.string().min(2, {
     message: "Location must be at least 2 characters.",
   }),
@@ -88,30 +91,27 @@ export default function WorkOrderCreate() {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Format the date to YYYY-MM-DD string
+      const formattedDueDate = format(values.dueDate, "yyyy-MM-dd");
       
-      // Generate a unique ID for the work order
-      const newWorkOrderId = `WO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-      
-      console.log("New Work Order:", {
-        id: newWorkOrderId,
+      // Create the work order
+      const newWorkOrder = await createWorkOrder({
         ...values,
-        date: new Date().toISOString().split('T')[0],
+        dueDate: formattedDueDate,
       });
       
-      // Show success toast
+      // Show success message
       toast({
         title: "Work Order Created",
-        description: `Work order ${newWorkOrderId} has been created successfully.`,
+        description: `Work order ${newWorkOrder.id} has been created successfully.`,
       });
       
-      // Redirect to work orders list
+      // Navigate to work orders list
       navigate("/work-orders");
     } catch (error) {
       console.error("Error creating work order:", error);
       
-      // Show error toast
+      // Show error message
       toast({
         title: "Error",
         description: "Failed to create work order. Please try again.",
