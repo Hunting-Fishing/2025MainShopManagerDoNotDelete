@@ -7,8 +7,9 @@ import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrderUtils";
 import { format } from "date-fns";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
-// Define inventory item schema
+// Define inventory item schema using the type
 const inventoryItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -81,6 +82,7 @@ export const useWorkOrderForm = () => {
         priority: values.priority,
         technician: values.technician,
         location: values.location,
+        // Ensure we have a proper array of inventory items
         inventoryItems: values.inventoryItems || [],
       });
       

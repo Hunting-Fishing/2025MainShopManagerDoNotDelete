@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -44,22 +43,13 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface WorkOrderEditFormProps {
   workOrder: WorkOrder;
 }
 
-// Inventory item interface
-interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-// Mock data for inventory items
+// Mock data for inventory items (should match the type we defined)
 const inventoryItems = [
   {
     id: "INV-1001",
@@ -103,7 +93,7 @@ const inventoryItems = [
   },
 ];
 
-// Inventory item schema
+// Inventory item schema (updated to match our type definition)
 const inventoryItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -113,7 +103,7 @@ const inventoryItemSchema = z.object({
   unitPrice: z.number()
 });
 
-// Form schema validation
+// Form schema validation (updated to use the proper types)
 const formSchema = z.object({
   customer: z.string().min(2, {
     message: "Customer name must be at least 2 characters.",
@@ -177,7 +167,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
   const selectedItems = form.watch("inventoryItems") || [];
 
   // Handle adding inventory item
-  const handleAddItem = (item: InventoryItem) => {
+  const handleAddItem = (item: typeof inventoryItems[0]) => {
     const currentItems = form.getValues("inventoryItems") || [];
     
     // Check if item already exists
@@ -192,7 +182,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
       };
       form.setValue("inventoryItems", updatedItems);
     } else {
-      // Add new item
+      // Add new item (with explicit property assignments to satisfy TypeScript)
       form.setValue("inventoryItems", [
         ...currentItems,
         {

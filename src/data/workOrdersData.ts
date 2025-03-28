@@ -1,3 +1,5 @@
+import { WorkOrderInventoryItem } from "@/types/workOrder";
+
 // Work order status definitions
 export const statusMap = {
   "pending": "Pending",
@@ -29,14 +31,7 @@ export interface WorkOrder {
   technician: string;
   location: string;
   notes?: string;
-  inventoryItems?: {
-    id: string;
-    name: string;
-    sku: string;
-    category: string;
-    quantity: number;
-    unitPrice: number;
-  }[];
+  inventoryItems?: WorkOrderInventoryItem[];
 }
 
 // Mock data for work orders

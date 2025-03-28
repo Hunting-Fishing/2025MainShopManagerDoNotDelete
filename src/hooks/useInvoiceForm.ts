@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { createInvoiceFromWorkOrder } from "@/utils/workOrderUtils";
-import { Invoice, WorkOrder } from "@/types/invoice";
+import { Invoice, WorkOrder, InvoiceUpdater } from "@/types/invoice";
 import { useInvoiceItems } from "@/hooks/invoice/useInvoiceItems";
 import { useInvoiceStaff } from "@/hooks/invoice/useInvoiceStaff";
 import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
@@ -47,24 +47,26 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   } = useInvoiceStaff(invoice.assignedStaff);
 
   // Sync items and staff with main invoice state
-  const updateInvoice = (updates: Partial<Invoice>) => {
-    setInvoice(prev => ({ ...prev, ...updates }));
+  const updateInvoice = (updater: InvoiceUpdater) => {
+    const updatedInvoice = updater(invoice);
+    setInvoice(updatedInvoice);
     
     // Update related states if those properties were updated
-    if (updates.items) setItems(updates.items);
-    if (updates.assignedStaff) setAssignedStaff(updates.assignedStaff);
+    if (updatedInvoice.items !== invoice.items) setItems(updatedInvoice.items);
+    if (updatedInvoice.assignedStaff !== invoice.assignedStaff) setAssignedStaff(updatedInvoice.assignedStaff);
   };
 
   // Handle selecting a work order
   const handleSelectWorkOrder = (workOrder: WorkOrder) => {
     const workOrderUpdates = useInvoiceWorkOrder().handleSelectWorkOrder(workOrder);
     
-    updateInvoice({
+    updateInvoice((prev) => ({
+      ...prev,
       workOrderId: workOrderUpdates.workOrderId,
       customer: workOrderUpdates.customer,
       description: workOrderUpdates.description,
       assignedStaff: workOrderUpdates.assignedStaff
-    });
+    }));
     
     setShowWorkOrderDialog(false);
   };
