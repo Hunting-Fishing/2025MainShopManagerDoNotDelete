@@ -1,12 +1,12 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form } from "@/components/ui/form";
 import { WorkOrderFormFields } from "../WorkOrderFormFields";
-import { WorkOrderInventorySection } from "../inventory/WorkOrderInventorySection";
 import { EditFormActions } from "./EditFormActions";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { UseFormReturn } from "react-hook-form";
+import { EditFormWrapper } from "./EditFormWrapper";
+import { InventorySectionWrapper } from "../inventory/InventorySectionWrapper";
 
 interface WorkOrderEditFormContentProps {
   workOrderId: string;
@@ -29,21 +29,19 @@ export const WorkOrderEditFormContent: React.FC<WorkOrderEditFormContentProps> =
         <CardTitle className="text-lg">Work Order Information</CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Form Fields */}
-            <WorkOrderFormFields form={form as any} technicians={technicians} />
-            
-            {/* Inventory Items Section */}
-            <WorkOrderInventorySection form={form as any} />
+        <EditFormWrapper form={form} onSubmit={onSubmit}>
+          {/* Form Fields */}
+          <WorkOrderFormFields form={form as any} technicians={technicians} />
+          
+          {/* Inventory Items Section */}
+          <InventorySectionWrapper form={form} />
 
-            {/* Form Actions */}
-            <EditFormActions 
-              workOrderId={workOrderId} 
-              isSubmitting={isSubmitting} 
-            />
-          </form>
-        </Form>
+          {/* Form Actions */}
+          <EditFormActions 
+            workOrderId={workOrderId} 
+            isSubmitting={isSubmitting} 
+          />
+        </EditFormWrapper>
       </CardContent>
     </Card>
   );
