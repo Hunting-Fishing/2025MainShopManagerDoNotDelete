@@ -24,6 +24,23 @@ export const updateWorkOrder = async (workOrder: WorkOrder): Promise<WorkOrder> 
   throw new Error("Work order not found");
 };
 
+// Delete a work order (simulated API call)
+export const deleteWorkOrder = async (id: string): Promise<void> => {
+  // Simulating an API call with a delay
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // Find the index of the work order to delete
+  const index = workOrders.findIndex(order => order.id === id);
+  
+  if (index !== -1) {
+    // Remove the work order from the array
+    workOrders.splice(index, 1);
+    return;
+  }
+  
+  throw new Error("Work order not found");
+};
+
 // Create a new work order (simulated API call)
 export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
   // Simulating an API call with a delay
