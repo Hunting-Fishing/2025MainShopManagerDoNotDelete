@@ -46,7 +46,7 @@ export function EquipmentFilters({
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               {Object.entries(equipmentStatusMap).map(([value, { label }]) => (
                 <SelectItem key={value} value={value}>
                   {label}

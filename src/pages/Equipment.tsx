@@ -10,7 +10,7 @@ import { Equipment as EquipmentType } from "@/types/equipment";
 
 export default function Equipment() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   
   // Get equipment requiring maintenance soon
   const maintenanceDueEquipment = getMaintenanceDueEquipment();
@@ -27,7 +27,7 @@ export default function Equipment() {
       item.customer.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = 
-      !statusFilter || item.status === statusFilter;
+      statusFilter === "all" || item.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -35,7 +35,7 @@ export default function Equipment() {
   // Reset filters
   const resetFilters = () => {
     setSearchQuery("");
-    setStatusFilter("");
+    setStatusFilter("all");
   };
 
   return (
