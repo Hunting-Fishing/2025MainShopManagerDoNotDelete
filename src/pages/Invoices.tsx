@@ -4,6 +4,7 @@ import { InvoiceListHeader } from "@/components/invoices/InvoiceListHeader";
 import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
 import { InvoiceList } from "@/components/invoices/InvoiceList";
 import { invoices } from "@/data/invoiceData";
+import { Invoice } from "@/types/invoice";
 
 export default function Invoices() {
   const {
@@ -16,7 +17,7 @@ export default function Invoices() {
     creators,
     filteredInvoices,
     resetFilters
-  } = useInvoiceFilters(invoices);
+  } = useInvoiceFilters(invoices as Invoice[]);
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,5 @@
 
-import { statusMap } from "./InvoiceList";
+import { statusMap } from "@/components/invoices/InvoiceList";
 
 interface InvoiceStatusBadgeProps {
   status: string;

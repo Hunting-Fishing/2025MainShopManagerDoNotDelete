@@ -1,15 +1,6 @@
 
 import { useState, useMemo } from "react";
-
-interface Invoice {
-  id: string;
-  workOrderId: string;
-  customer: string;
-  description: string;
-  status: string;
-  createdBy: string;
-  [key: string]: any;
-}
+import { Invoice } from "@/types/invoice";
 
 export function useInvoiceFilters(invoices: Invoice[]) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,7 +20,7 @@ export function useInvoiceFilters(invoices: Invoice[]) {
         invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         invoice.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         invoice.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.workOrderId.toLowerCase().includes(searchQuery.toLowerCase());
+        (invoice.workOrderId && invoice.workOrderId.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesStatus = 
         statusFilter.length === 0 || statusFilter.includes(invoice.status);
