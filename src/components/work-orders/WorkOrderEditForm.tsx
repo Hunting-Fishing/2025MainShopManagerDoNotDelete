@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -14,7 +15,7 @@ import { Form } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 import { WorkOrderFormFields, WorkOrderFormFieldValues } from "./WorkOrderFormFields";
-import { InventoryItemsSection } from "./inventory/InventoryItemsSection";
+import { WorkOrderInventorySection } from "./inventory/WorkOrderInventorySection";
 
 interface WorkOrderEditFormProps {
   workOrder: WorkOrder;
@@ -179,10 +180,10 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Form Fields */}
-              <WorkOrderFormFields form={form} technicians={technicians} />
+              <WorkOrderFormFields form={form as any} technicians={technicians} />
               
               {/* Inventory Items Section */}
-              <InventoryItemsSection form={form} />
+              <WorkOrderInventorySection form={form as any} />
 
               <div className="flex justify-end gap-4 pt-4">
                 <Button
