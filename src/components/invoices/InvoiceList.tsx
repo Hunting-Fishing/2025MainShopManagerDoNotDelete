@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText } from "lucide-react";
 import { InvoiceStatusBadge } from "./InvoiceStatusBadge";
+import { Invoice } from "@/types/invoice";
 
 // Map of status to text and styles
 export const statusMap = {
@@ -11,24 +12,6 @@ export const statusMap = {
   "overdue": { label: "Overdue", classes: "bg-red-100 text-red-800" },
   "draft": { label: "Draft", classes: "bg-slate-100 text-slate-800" },
 };
-
-interface Invoice {
-  id: string;
-  workOrderId: string;
-  customer: string;
-  description: string;
-  total: number;
-  status: string;
-  date: string;
-  dueDate: string;
-  createdBy: string;
-  items: Array<{
-    id: number;
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-}
 
 interface InvoiceListProps {
   invoices: Invoice[];
@@ -97,7 +80,7 @@ export function InvoiceList({ invoices }: InvoiceListProps) {
                   {invoice.description}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  ${invoice.total.toFixed(2)}
+                  ${invoice.total ? invoice.total.toFixed(2) : '0.00'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <InvoiceStatusBadge status={invoice.status} />
