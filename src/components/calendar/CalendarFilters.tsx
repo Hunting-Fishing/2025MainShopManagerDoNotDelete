@@ -45,7 +45,7 @@ export function CalendarFilters({
     <div className="flex flex-wrap items-center gap-3">
       <Select
         value={technicianFilter}
-        onValueChange={setTechnicianFilter}
+        onValueChange={(value) => setTechnicianFilter(value)}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="All Technicians" />
