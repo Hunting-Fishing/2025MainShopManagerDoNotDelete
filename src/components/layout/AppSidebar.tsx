@@ -68,7 +68,7 @@ export function AppSidebar() {
     <Sidebar
       className="border-r border-slate-200 bg-white"
       defaultCollapsed={false}
-      collapsible
+      collapsible="icon"
     >
       <SidebarHeader className="py-4 px-4 border-b border-slate-200">
         <div className="flex items-center justify-between">

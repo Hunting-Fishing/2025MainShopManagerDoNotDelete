@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -128,7 +127,7 @@ const priorityMap = {
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [selectedTechnician, setSelectedTechnician] = useState<string>("");
+  const [selectedTechnician, setSelectedTechnician] = useState<string>("all");
 
   // Filter work orders based on search query and filters
   const filteredWorkOrders = workOrders.filter((order) => {
@@ -142,7 +141,7 @@ export default function WorkOrders() {
       statusFilter.length === 0 || statusFilter.includes(order.status);
     
     const matchesTechnician = 
-      !selectedTechnician || order.technician === selectedTechnician;
+      selectedTechnician === "all" || order.technician === selectedTechnician;
     
     return matchesSearch && matchesStatus && matchesTechnician;
   });
@@ -220,7 +219,7 @@ export default function WorkOrders() {
               <SelectValue placeholder="All Technicians" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Technicians</SelectItem>
+              <SelectItem value="all">All Technicians</SelectItem>
               {technicians.map((tech) => (
                 <SelectItem key={tech} value={tech}>
                   {tech}
@@ -237,7 +236,7 @@ export default function WorkOrders() {
           <Button variant="outline" className="flex items-center gap-2" onClick={() => {
             setSearchQuery("");
             setStatusFilter([]);
-            setSelectedTechnician("");
+            setSelectedTechnician("all");
           }}>
             <RefreshCw className="h-4 w-4" />
             Reset
