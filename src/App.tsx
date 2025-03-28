@@ -9,6 +9,9 @@ import Dashboard from "@/pages/Dashboard";
 import WorkOrders from "@/pages/WorkOrders";
 import Inventory from "@/pages/Inventory";
 import Team from "@/pages/Team";
+import Invoices from "@/pages/Invoices";
+import InvoiceDetails from "@/pages/InvoiceDetails";
+import InvoiceCreate from "@/pages/InvoiceCreate";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/work-orders" element={<Layout><WorkOrders /></Layout>} />
+          <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
+          <Route path="/invoices/:id" element={<Layout><InvoiceDetails /></Layout>} />
+          <Route path="/invoices/new" element={<Layout><InvoiceCreate /></Layout>} />
+          <Route path="/invoices/from-work-order/:workOrderId" element={<Layout><InvoiceCreate /></Layout>} />
           <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
           <Route path="/team" element={<Layout><Team /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

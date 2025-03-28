@@ -24,6 +24,7 @@ import {
   BarChart,
   LogOut,
   Menu,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -37,6 +38,11 @@ const mainMenu = [
     title: 'Work Orders',
     path: '/work-orders',
     icon: Clipboard,
+  },
+  {
+    title: 'Invoices',
+    path: '/invoices',
+    icon: FileText,
   },
   {
     title: 'Inventory',

@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
-  Calendar, 
   ChevronDown, 
   Download, 
   Filter, 
@@ -30,141 +29,134 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Mock data for work orders
-const workOrders = [
+// Mock data for invoices
+const invoices = [
   {
-    id: "WO-2023-0012",
+    id: "INV-2023-001",
+    workOrderId: "WO-2023-0012",
     customer: "Acme Corporation",
     description: "HVAC System Repair",
-    status: "in-progress",
-    date: "2023-08-15",
-    dueDate: "2023-08-20",
-    priority: "high",
-    technician: "Michael Brown",
-    location: "123 Business Park, Suite 400",
+    total: 1250.00,
+    status: "paid",
+    date: "2023-08-16",
+    dueDate: "2023-09-15",
+    createdBy: "Michael Brown",
+    items: [
+      { id: 1, name: "HVAC Filter - Premium", quantity: 2, price: 24.99 },
+      { id: 2, name: "Service Labor (hours)", quantity: 6, price: 200.00 }
+    ]
   },
   {
-    id: "WO-2023-0011",
+    id: "INV-2023-002",
+    workOrderId: "WO-2023-0011",
     customer: "Johnson Residence",
     description: "Electrical Panel Upgrade",
+    total: 875.50,
     status: "pending",
-    date: "2023-08-14",
-    dueDate: "2023-08-22",
-    priority: "medium",
-    technician: "Unassigned",
-    location: "456 Maple Street",
+    date: "2023-08-15",
+    dueDate: "2023-09-14",
+    createdBy: "Sarah Johnson",
+    items: [
+      { id: 1, name: "Circuit Breaker - 30 Amp", quantity: 3, price: 42.50 },
+      { id: 2, name: "Service Labor (hours)", quantity: 5, price: 150.00 }
+    ]
   },
   {
-    id: "WO-2023-0010",
+    id: "INV-2023-003",
+    workOrderId: "WO-2023-0010",
     customer: "City Hospital",
     description: "Security System Installation",
-    status: "completed",
-    date: "2023-08-12",
-    dueDate: "2023-08-16",
-    priority: "high",
-    technician: "Sarah Johnson",
-    location: "789 Medical Center Drive",
+    total: 3200.00,
+    status: "overdue",
+    date: "2023-08-13",
+    dueDate: "2023-09-12",
+    createdBy: "David Lee",
+    items: [
+      { id: 1, name: "Security Cameras", quantity: 8, price: 250.00 },
+      { id: 2, name: "Door Lock Set - Commercial Grade", quantity: 4, price: 89.99 },
+      { id: 3, name: "Service Labor (hours)", quantity: 8, price: 175.00 }
+    ]
   },
   {
-    id: "WO-2023-0009",
-    customer: "Metro Hotel",
-    description: "Plumbing System Maintenance",
-    status: "cancelled",
-    date: "2023-08-10",
-    dueDate: "2023-08-14",
-    priority: "low",
-    technician: "David Lee",
-    location: "321 Downtown Avenue",
-  },
-  {
-    id: "WO-2023-0008",
+    id: "INV-2023-004",
+    workOrderId: "WO-2023-0008",
     customer: "Green Valley School",
     description: "Fire Alarm System Inspection",
-    status: "completed",
-    date: "2023-08-08",
-    dueDate: "2023-08-12",
-    priority: "medium",
-    technician: "Emily Chen",
-    location: "555 Education Road",
+    total: 650.00,
+    status: "paid",
+    date: "2023-08-10",
+    dueDate: "2023-09-09",
+    createdBy: "Emily Chen",
+    items: [
+      { id: 1, name: "Fire Alarm Components", quantity: 0, price: 0 },
+      { id: 2, name: "Inspection Service", quantity: 1, price: 650.00 }
+    ]
   },
   {
-    id: "WO-2023-0007",
+    id: "INV-2023-005",
+    workOrderId: "WO-2023-0007",
     customer: "Sunset Restaurant",
     description: "Kitchen Equipment Repair",
-    status: "in-progress",
-    date: "2023-08-05",
-    dueDate: "2023-08-09",
-    priority: "high",
-    technician: "Michael Brown",
-    location: "777 Culinary Place",
-  },
-  {
-    id: "WO-2023-0006",
-    customer: "Parkview Apartments",
-    description: "HVAC Maintenance - Multiple Units",
-    status: "pending",
-    date: "2023-08-03",
-    dueDate: "2023-08-18",
-    priority: "medium",
-    technician: "Unassigned",
-    location: "888 Residential Circle",
-  },
+    total: 1475.25,
+    status: "draft",
+    date: "2023-08-08",
+    dueDate: "2023-09-07",
+    createdBy: "Michael Brown",
+    items: [
+      { id: 1, name: "Kitchen Equipment Parts", quantity: 3, price: 325.00 },
+      { id: 2, name: "Service Labor (hours)", quantity: 3, price: 166.75 }
+    ]
+  }
 ];
 
-// Map of status to text
+// Map of status to text and styles
 const statusMap = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-  "cancelled": "Cancelled",
+  "paid": { label: "Paid", classes: "bg-green-100 text-green-800" },
+  "pending": { label: "Pending", classes: "bg-yellow-100 text-yellow-800" },
+  "overdue": { label: "Overdue", classes: "bg-red-100 text-red-800" },
+  "draft": { label: "Draft", classes: "bg-slate-100 text-slate-800" },
 };
 
-// Map of priority to styles
-const priorityMap = {
-  "high": { label: "High", classes: "bg-red-100 text-red-800" },
-  "medium": { label: "Medium", classes: "bg-yellow-100 text-yellow-800" },
-  "low": { label: "Low", classes: "bg-green-100 text-green-800" },
-};
-
-export default function WorkOrders() {
+export default function Invoices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [selectedTechnician, setSelectedTechnician] = useState<string>("all");
+  const [createdByFilter, setCreatedByFilter] = useState("all");
 
-  // Filter work orders based on search query and filters
-  const filteredWorkOrders = workOrders.filter((order) => {
+  // Get unique creators for filter
+  const creators = Array.from(new Set(invoices.map(invoice => invoice.createdBy))).sort();
+
+  // Filter invoices based on search query and filters
+  const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch = 
       !searchQuery ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.description.toLowerCase().includes(searchQuery.toLowerCase());
+      invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.workOrderId.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = 
-      statusFilter.length === 0 || statusFilter.includes(order.status);
+      statusFilter.length === 0 || statusFilter.includes(invoice.status);
     
-    const matchesTechnician = 
-      selectedTechnician === "all" || order.technician === selectedTechnician;
+    const matchesCreator = 
+      createdByFilter === "all" || invoice.createdBy === createdByFilter;
     
-    return matchesSearch && matchesStatus && matchesTechnician;
+    return matchesSearch && matchesStatus && matchesCreator;
   });
-
-  // Get unique technicians for filter
-  const technicians = Array.from(new Set(workOrders.map(order => order.technician))).sort();
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Work Orders</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Invoices</h1>
           <p className="text-muted-foreground">
-            Manage and track all work orders in your system.
+            Manage all customer invoices in your system.
           </p>
         </div>
         <div>
           <Button asChild className="flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700">
-            <Link to="/work-orders/new">
+            <Link to="/invoices/new">
               <Plus className="h-4 w-4" />
-              New Work Order
+              New Invoice
             </Link>
           </Button>
         </div>
@@ -176,7 +168,7 @@ export default function WorkOrders() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <Input
             type="search"
-            placeholder="Search work orders..."
+            placeholder="Search invoices..."
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -207,38 +199,33 @@ export default function WorkOrders() {
                     }
                   }}
                 >
-                  {value}
+                  {value.label}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
           <Select
-            value={selectedTechnician}
-            onValueChange={setSelectedTechnician}
+            value={createdByFilter}
+            onValueChange={setCreatedByFilter}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Technicians" />
+              <SelectValue placeholder="All Staff" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Technicians</SelectItem>
-              {technicians.map((tech) => (
-                <SelectItem key={tech} value={tech}>
-                  {tech}
+              <SelectItem value="all">All Staff</SelectItem>
+              {creators.map((creator) => (
+                <SelectItem key={creator} value={creator}>
+                  {creator}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Button variant="outline" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Date Range
-          </Button>
-
           <Button variant="outline" className="flex items-center gap-2" onClick={() => {
             setSearchQuery("");
             setStatusFilter([]);
-            setSelectedTechnician("all");
+            setCreatedByFilter("all");
           }}>
             <RefreshCw className="h-4 w-4" />
             Reset
@@ -256,13 +243,16 @@ export default function WorkOrders() {
         </div>
       </div>
 
-      {/* Work Orders table */}
+      {/* Invoices table */}
       <div className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                ID
+                Invoice #
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Work Order
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Customer
@@ -271,16 +261,16 @@ export default function WorkOrders() {
                 Description
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Total
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Status
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Priority
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Technician
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Due Date
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Created By
               </th>
               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Actions
@@ -288,43 +278,42 @@ export default function WorkOrders() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {filteredWorkOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-slate-50">
+            {filteredInvoices.map((invoice) => (
+              <tr key={invoice.id} className="hover:bg-slate-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {order.id}
+                  {invoice.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {order.customer}
+                  <Link to={`/work-orders/${invoice.workOrderId}`} className="text-esm-blue-600 hover:text-esm-blue-800">
+                    {invoice.workOrderId}
+                  </Link>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {order.description}
+                  {invoice.customer}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {invoice.description}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  ${invoice.total.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`status-badge status-${order.status}`}>
-                    {statusMap[order.status as keyof typeof statusMap]}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityMap[order.priority as keyof typeof priorityMap].classes}`}>
-                    {priorityMap[order.priority as keyof typeof priorityMap].label}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusMap[invoice.status as keyof typeof statusMap].classes}`}>
+                    {statusMap[invoice.status as keyof typeof statusMap].label}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {order.technician}
+                  {invoice.dueDate}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {order.dueDate}
+                  {invoice.createdBy}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link to={`/work-orders/${order.id}`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">
+                  <Link to={`/invoices/${invoice.id}`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">
                     View
                   </Link>
-                  <Link to={`/work-orders/${order.id}/edit`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">
+                  <Link to={`/invoices/${invoice.id}/edit`} className="text-esm-blue-600 hover:text-esm-blue-800">
                     Edit
-                  </Link>
-                  <Link to={`/invoices/from-work-order/${order.id}`} className="text-esm-blue-600 hover:text-esm-blue-800">
-                    <FileText className="h-4 w-4 inline-block mr-1" />
-                    Invoice
                   </Link>
                 </td>
               </tr>
