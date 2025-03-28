@@ -117,7 +117,7 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [supplierFilter, setSupplierFilter] = useState<string>("");
+  const [supplierFilter, setSupplierFilter] = useState<string>("all");
 
   // Get unique categories and suppliers for filters
   const categories = Array.from(new Set(inventoryItems.map(item => item.category))).sort();
@@ -139,7 +139,7 @@ export default function Inventory() {
       statusFilter.length === 0 || statusFilter.includes(item.status);
     
     const matchesSupplier = 
-      !supplierFilter || item.supplier === supplierFilter;
+      supplierFilter === "all" || item.supplier === supplierFilter;
     
     return matchesSearch && matchesCategory && matchesStatus && matchesSupplier;
   });
@@ -247,7 +247,7 @@ export default function Inventory() {
               <SelectValue placeholder="All Suppliers" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Suppliers</SelectItem>
+              <SelectItem value="all">All Suppliers</SelectItem>
               {suppliers.map((supplier) => (
                 <SelectItem key={supplier} value={supplier}>
                   {supplier}
@@ -260,7 +260,7 @@ export default function Inventory() {
             setSearchQuery("");
             setCategoryFilter([]);
             setStatusFilter([]);
-            setSupplierFilter("");
+            setSupplierFilter("all");
           }}>
             <RefreshCw className="h-4 w-4" />
             Reset
