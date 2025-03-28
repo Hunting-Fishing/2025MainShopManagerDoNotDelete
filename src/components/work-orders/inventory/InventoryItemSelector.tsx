@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface InventoryItem {
   id: string;

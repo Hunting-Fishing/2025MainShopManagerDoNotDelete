@@ -11,8 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
-interface WorkOrderFormValues {
+// Define the form schema type to match what's used in WorkOrderEditForm
+export type WorkOrderFormFieldValues = {
   customer: string;
   description: string;
   status: "pending" | "in-progress" | "completed" | "cancelled";
@@ -21,11 +23,11 @@ interface WorkOrderFormValues {
   location: string;
   dueDate: Date;
   notes?: string;
-  [key: string]: any;
-}
+  inventoryItems?: any[];
+};
 
 interface WorkOrderFormFieldsProps {
-  form: UseFormReturn<WorkOrderFormValues>;
+  form: UseFormReturn<WorkOrderFormFieldValues>;
   technicians: string[];
 }
 

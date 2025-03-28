@@ -7,6 +7,7 @@ import { WorkOrderInventoryItem } from "@/types/workOrder";
 import { UseFormReturn } from "react-hook-form";
 import { InventoryItemSelector } from "./InventoryItemSelector";
 import { WorkOrderInventoryTable } from "./WorkOrderInventoryTable";
+import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
 
 // Mock data for inventory items
 const inventoryItems = [
@@ -52,13 +53,19 @@ const inventoryItems = [
   },
 ];
 
-interface WorkOrderInventoryFormValues {
-  inventoryItems?: WorkOrderInventoryItem[];
-  [key: string]: any;
+interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  supplier: string;
+  quantity: number;
+  unitPrice: number;
+  status: string;
 }
 
 interface WorkOrderInventorySectionProps {
-  form: UseFormReturn<WorkOrderInventoryFormValues>;
+  form: UseFormReturn<WorkOrderFormFieldValues>;
 }
 
 export const WorkOrderInventorySection: React.FC<WorkOrderInventorySectionProps> = ({
@@ -70,7 +77,7 @@ export const WorkOrderInventorySection: React.FC<WorkOrderInventorySectionProps>
   const selectedItems = form.watch("inventoryItems") || [];
 
   // Handle adding inventory item
-  const handleAddItem = (item: typeof inventoryItems[0]) => {
+  const handleAddItem = (item: InventoryItem) => {
     const currentItems = form.getValues("inventoryItems") || [];
     
     // Check if item already exists

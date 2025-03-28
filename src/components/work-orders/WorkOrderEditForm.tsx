@@ -14,7 +14,7 @@ import { updateWorkOrder } from "@/utils/workOrderUtils";
 import { Form } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
-import { WorkOrderFormFields } from "./WorkOrderFormFields";
+import { WorkOrderFormFields, WorkOrderFormFieldValues } from "./WorkOrderFormFields";
 import { WorkOrderInventorySection } from "./inventory/WorkOrderInventorySection";
 
 interface WorkOrderEditFormProps {
@@ -58,6 +58,9 @@ const formSchema = z.object({
   inventoryItems: z.array(inventoryItemSchema).optional(),
 });
 
+// Define the form values type from the schema
+type FormValues = z.infer<typeof formSchema>;
+
 // Mock data for technicians
 const technicians = [
   "Michael Brown",
@@ -78,13 +81,13 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
   const inventoryItemsWithDefaults: WorkOrderInventoryItem[] = workOrder.inventoryItems || [];
 
   // Initialize the form with existing work order data
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       customer: workOrder.customer,
       description: workOrder.description,
-      status: workOrder.status,
-      priority: workOrder.priority,
+      status: workOrder.status as "pending" | "in-progress" | "completed" | "cancelled",
+      priority: workOrder.priority as "low" | "medium" | "high",
       technician: workOrder.technician,
       location: workOrder.location,
       dueDate: dueDateAsDate,
@@ -94,7 +97,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
   });
 
   // Handle form submission
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     
     try {
