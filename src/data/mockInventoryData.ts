@@ -1,6 +1,6 @@
 
-// Mock data for inventory items - this would come from your inventory system
-export const mockInventoryItems = [
+// Mock data for inventory items
+export const inventoryItems = [
   {
     id: "INV-1001",
     name: "HVAC Filter - Premium",
@@ -8,7 +8,9 @@ export const mockInventoryItems = [
     category: "HVAC",
     supplier: "TechSupplies Inc.",
     quantity: 45,
+    reorderPoint: 15,
     unitPrice: 24.99,
+    location: "Warehouse A - Section 3",
     status: "In Stock",
   },
   {
@@ -18,7 +20,9 @@ export const mockInventoryItems = [
     category: "Plumbing",
     supplier: "PlumbPro Distributors",
     quantity: 120,
+    reorderPoint: 30,
     unitPrice: 18.75,
+    location: "Warehouse B - Section 1",
     status: "In Stock",
   },
   {
@@ -28,7 +32,9 @@ export const mockInventoryItems = [
     category: "Electrical",
     supplier: "ElectroSupply Co.",
     quantity: 35,
+    reorderPoint: 20,
     unitPrice: 42.50,
+    location: "Warehouse A - Section 7",
     status: "In Stock",
   },
   {
@@ -38,19 +44,33 @@ export const mockInventoryItems = [
     category: "Security",
     supplier: "SecureTech Systems",
     quantity: 12,
+    reorderPoint: 15,
     unitPrice: 89.99,
+    location: "Warehouse A - Section 5",
     status: "Low Stock",
   },
+  {
+    id: "INV-1005",
+    name: "Water Heater Element - 4500W",
+    sku: "WHE-4500",
+    category: "Plumbing",
+    supplier: "PlumbPro Distributors",
+    quantity: 0,
+    reorderPoint: 10,
+    unitPrice: 32.99,
+    location: "Warehouse B - Section 3",
+    status: "Out of Stock",
+  },
+  {
+    id: "INV-1006",
+    name: "LED Light Panel - 2x4 ft",
+    sku: "LED-P-24",
+    category: "Electrical",
+    supplier: "ElectroSupply Co.",
+    quantity: 28,
+    reorderPoint: 10,
+    unitPrice: 79.95,
+    location: "Warehouse A - Section 9",
+    status: "In Stock",
+  },
 ];
-
-// Define the inventory item interface
-export interface InventoryItemExtended {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  supplier: string;
-  quantity: number;
-  unitPrice: number;
-  status: string;
-}

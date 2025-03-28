@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, User, Search } from 'lucide-react';
+import { Bell, User, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,34 +13,97 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SearchResults } from '@/components/search/SearchResults';
+import { performSearch, SearchResult } from '@/utils/searchUtils';
 
 export function Header() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
+  // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      toast({
-        title: "Search",
-        description: `Searching for "${searchQuery}"`,
-      });
+      setSearchResults(performSearch(searchQuery));
+      setShowResults(true);
     }
+  };
+
+  // Update search results as user types
+  useEffect(() => {
+    if (searchQuery.trim() && searchQuery.length >= 2) {
+      setSearchResults(performSearch(searchQuery));
+      setShowResults(true);
+    } else {
+      setSearchResults([]);
+      setShowResults(false);
+    }
+  }, [searchQuery]);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowResults(false);
+  };
+
+  // Handle search result click
+  const handleResultClick = () => {
+    clearSearch();
   };
 
   return (
     <header className="border-b border-slate-200 bg-white py-3 px-6">
       <div className="flex items-center justify-between">
-        <form onSubmit={handleSearch} className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-          <Input
-            type="search"
-            placeholder="Search for work orders, inventory, customers..."
-            className="pl-10 w-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </form>
+        <div className="relative max-w-md w-full" ref={searchRef}>
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Input
+              type="search"
+              placeholder="Search for work orders, inventory, customers..."
+              className="pl-10 w-full pr-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                if (searchResults.length > 0) {
+                  setShowResults(true);
+                }
+              }}
+            />
+            {searchQuery && (
+              <button 
+                type="button" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                onClick={clearSearch}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </form>
+          
+          {showResults && (
+            <div className="absolute mt-1 w-full z-50">
+              <SearchResults results={searchResults} onItemClick={handleResultClick} />
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="relative">
