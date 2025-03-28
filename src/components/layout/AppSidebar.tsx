@@ -67,7 +67,6 @@ export function AppSidebar() {
   return (
     <Sidebar
       className="border-r border-slate-200 bg-white"
-      defaultCollapsed={false}
       collapsible="icon"
     >
       <SidebarHeader className="py-4 px-4 border-b border-slate-200">
@@ -129,3 +128,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
