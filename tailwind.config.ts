@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,28 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our app
+				esm: {
+					"blue": {
+						"50": "#eef5ff",
+						"100": "#d9e7ff",
+						"200": "#bcd4ff",
+						"300": "#8eb9ff",
+						"400": "#5b93ff",
+						"500": "#3a6dfc", // Primary blue
+						"600": "#1F45FC", 
+						"700": "#1938e4",
+						"800": "#1930b9",
+						"900": "#1a2e93",
+						"950": "#141c59",
+					},
+					"status": {
+						"pending": "#FFC107",
+						"in-progress": "#3a6dfc",
+						"completed": "#4CAF50",
+						"cancelled": "#F44336"
+					}
 				}
 			},
 			borderRadius: {
