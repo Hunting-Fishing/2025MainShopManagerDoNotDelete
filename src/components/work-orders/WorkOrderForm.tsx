@@ -2,7 +2,7 @@
 import React from "react";
 import { Form } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
-import { useWorkOrderForm, WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
+import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -26,19 +26,19 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ technicians }) => 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Customer Information */}
-            <CustomerInfoSection form={form} />
+            <CustomerInfoSection form={form as any} />
             
             {/* Status & Priority */}
-            <WorkOrderStatusSection form={form} />
+            <WorkOrderStatusSection form={form as any} />
             
             {/* Assignment */}
-            <AssignmentSection form={form} technicians={technicians} />
+            <AssignmentSection form={form as any} technicians={technicians} />
             
             {/* Notes */}
-            <NotesSection form={form} />
+            <NotesSection form={form as any} />
 
             {/* Inventory Items */}
-            <WorkOrderInventorySection form={form} />
+            <WorkOrderInventorySection form={form as any} />
           </div>
 
           {/* Form Actions */}
