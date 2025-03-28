@@ -15,6 +15,7 @@ import InvoiceDetails from "@/pages/InvoiceDetails";
 import InvoiceCreate from "@/pages/InvoiceCreate";
 import Reports from "@/pages/Reports";
 import NotFound from "@/pages/NotFound";
+import "./styles/workOrders.css";
 
 const queryClient = new QueryClient();
 
