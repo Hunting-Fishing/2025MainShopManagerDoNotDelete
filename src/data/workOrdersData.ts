@@ -14,8 +14,24 @@ export const priorityMap = {
   "low": { label: "Low", classes: "bg-green-100 text-green-800" },
 };
 
+// Types for work orders
+export type WorkOrderStatus = keyof typeof statusMap;
+export type WorkOrderPriority = keyof typeof priorityMap;
+
+export interface WorkOrder {
+  id: string;
+  customer: string;
+  description: string;
+  status: WorkOrderStatus;
+  date: string;
+  dueDate: string;
+  priority: WorkOrderPriority;
+  technician: string;
+  location: string;
+}
+
 // Mock data for work orders
-export const workOrders = [
+export const workOrders: WorkOrder[] = [
   {
     id: "WO-2023-0012",
     customer: "Acme Corporation",
@@ -94,22 +110,6 @@ export const workOrders = [
     location: "888 Residential Circle",
   },
 ];
-
-// Types for work orders
-export type WorkOrderStatus = keyof typeof statusMap;
-export type WorkOrderPriority = keyof typeof priorityMap;
-
-export interface WorkOrder {
-  id: string;
-  customer: string;
-  description: string;
-  status: WorkOrderStatus;
-  date: string;
-  dueDate: string;
-  priority: WorkOrderPriority;
-  technician: string;
-  location: string;
-}
 
 // Get unique technicians from work orders
 export const getUniqueTechnicians = (orders: WorkOrder[]): string[] => {

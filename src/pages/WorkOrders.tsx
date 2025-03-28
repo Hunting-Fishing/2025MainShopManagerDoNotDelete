@@ -3,7 +3,7 @@ import { useState } from "react";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
 import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
-import { workOrders, getUniqueTechnicians } from "@/data/workOrdersData";
+import { workOrders, getUniqueTechnicians, WorkOrder } from "@/data/workOrdersData";
 
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,7 +14,7 @@ export default function WorkOrders() {
   const technicians = getUniqueTechnicians(workOrders);
 
   // Filter work orders based on search query and filters
-  const filteredWorkOrders = workOrders.filter((order) => {
+  const filteredWorkOrders: WorkOrder[] = workOrders.filter((order) => {
     const matchesSearch = 
       !searchQuery ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
