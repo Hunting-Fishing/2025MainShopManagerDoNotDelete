@@ -1,3 +1,4 @@
+
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 // Work order status definitions
@@ -116,6 +117,6 @@ export const workOrders: WorkOrder[] = [
 ];
 
 // Get unique technicians from work orders
-export const getUniqueTechnicians = (orders: WorkOrder[]): string[] => {
+export const getUniqueTechnicians = (orders: WorkOrder[] = workOrders): string[] => {
   return Array.from(new Set(orders.map(order => order.technician))).sort();
 };
