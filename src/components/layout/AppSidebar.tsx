@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -25,6 +24,7 @@ import {
   LogOut,
   Menu,
   FileText,
+  CalendarIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -43,6 +43,11 @@ const mainMenu = [
     title: 'Invoices',
     path: '/invoices',
     icon: FileText,
+  },
+  {
+    title: 'Calendar',
+    path: '/calendar',
+    icon: CalendarIcon,
   },
   {
     title: 'Inventory',
@@ -134,4 +139,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
