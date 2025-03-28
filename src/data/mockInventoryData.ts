@@ -1,6 +1,20 @@
 
+// Define the inventory item interface with extended properties
+export interface InventoryItemExtended {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  supplier: string;
+  quantity: number;
+  reorderPoint: number;
+  unitPrice: number;
+  location: string;
+  status: string;
+}
+
 // Mock data for inventory items
-export const inventoryItems = [
+export const inventoryItems: InventoryItemExtended[] = [
   {
     id: "INV-1001",
     name: "HVAC Filter - Premium",
@@ -74,3 +88,6 @@ export const inventoryItems = [
     status: "In Stock",
   },
 ];
+
+// Export the same data with a different name for backward compatibility
+export const mockInventoryItems = inventoryItems;

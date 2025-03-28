@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { InventoryItemCard } from "./InventoryItemCard";
-import { InventoryItemExtended, mockInventoryItems } from "@/data/mockInventoryData";
+import { InventoryItemExtended, inventoryItems } from "@/data/mockInventoryData";
 
 interface InventorySelectionDialogProps {
   open: boolean;
@@ -32,7 +32,7 @@ export const InventorySelectionDialog: React.FC<InventorySelectionDialogProps> =
         </DialogHeader>
         <div className="max-h-[400px] overflow-y-auto mt-4">
           <div className="space-y-3">
-            {mockInventoryItems.map((item) => (
+            {inventoryItems.map((item) => (
               <InventoryItemCard 
                 key={item.id} 
                 item={item} 
