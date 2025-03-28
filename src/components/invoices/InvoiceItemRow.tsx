@@ -3,15 +3,7 @@ import React from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-interface InvoiceItem {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
+import { InvoiceItem } from "@/types/invoice";
 
 interface InvoiceItemRowProps {
   item: InvoiceItem;

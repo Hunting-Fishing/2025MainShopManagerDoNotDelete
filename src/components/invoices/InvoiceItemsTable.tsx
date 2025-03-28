@@ -1,15 +1,7 @@
 
 import React from "react";
 import { InvoiceItemRow } from "./InvoiceItemRow";
-
-interface InvoiceItem {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
+import { InvoiceItem } from "@/types/invoice";
 
 interface InvoiceItemsTableProps {
   items: InvoiceItem[];
