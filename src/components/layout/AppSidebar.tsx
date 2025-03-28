@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,8 @@ import {
   Menu,
   FileText,
   CalendarIcon,
+  UserRound,
+  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -45,6 +48,11 @@ const mainMenu = [
     icon: FileText,
   },
   {
+    title: 'Customers',
+    path: '/customers',
+    icon: UserRound,
+  },
+  {
     title: 'Calendar',
     path: '/calendar',
     icon: CalendarIcon,
@@ -53,6 +61,11 @@ const mainMenu = [
     title: 'Inventory',
     path: '/inventory',
     icon: Package,
+  },
+  {
+    title: 'Equipment',
+    path: '/equipment',
+    icon: Wrench,
   },
   {
     title: 'Team',

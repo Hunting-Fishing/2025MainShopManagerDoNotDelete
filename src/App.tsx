@@ -18,6 +18,8 @@ import Reports from "@/pages/Reports";
 import Calendar from "@/pages/Calendar";
 import Equipment from "@/pages/Equipment";
 import EquipmentDetails from "@/pages/EquipmentDetails";
+import Customers from "@/pages/Customers";
+import CustomerDetails from "@/pages/CustomerDetails";
 import CustomerServiceHistory from "@/pages/CustomerServiceHistory";
 import NotFound from "@/pages/NotFound";
 import "./styles/workOrders.css";
@@ -43,6 +45,8 @@ const App = () => (
           <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
           <Route path="/equipment" element={<Layout><Equipment /></Layout>} />
           <Route path="/equipment/:id" element={<Layout><EquipmentDetails /></Layout>} />
+          <Route path="/customers" element={<Layout><Customers /></Layout>} />
+          <Route path="/customers/:id" element={<Layout><CustomerDetails /></Layout>} />
           <Route path="/customer-service-history/:customer" element={<Layout><CustomerServiceHistory /></Layout>} />
           <Route path="/team" element={<Layout><Team /></Layout>} />
           <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
