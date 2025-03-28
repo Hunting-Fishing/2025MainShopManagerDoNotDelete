@@ -14,19 +14,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
-interface InventoryItem {
+// Mock inventory item interface that includes additional properties
+interface InventoryItemExtended {
   id: string;
   name: string;
   sku: string;
   category: string;
+  supplier: string;
   quantity: number;
   unitPrice: number;
   status: string;
 }
 
 // Mock data for inventory items - this would come from your inventory system
-const inventoryItems = [
+const inventoryItems: InventoryItemExtended[] = [
   {
     id: "INV-1001",
     name: "HVAC Filter - Premium",
@@ -77,7 +80,7 @@ export const InventoryItemsSection = ({ form }: InventoryItemsSectionProps) => {
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const selectedItems = form.watch("inventoryItems") || [];
 
-  const handleAddItem = (item: InventoryItem) => {
+  const handleAddItem = (item: InventoryItemExtended) => {
     const currentItems = form.getValues("inventoryItems") || [];
     
     // Check if item already exists
@@ -92,18 +95,17 @@ export const InventoryItemsSection = ({ form }: InventoryItemsSectionProps) => {
       };
       form.setValue("inventoryItems", updatedItems);
     } else {
-      // Add new item
-      form.setValue("inventoryItems", [
-        ...currentItems,
-        {
-          id: item.id,
-          name: item.name,
-          sku: item.sku,
-          category: item.category,
-          quantity: 1,
-          unitPrice: item.unitPrice
-        }
-      ]);
+      // Add new item - create a proper WorkOrderInventoryItem
+      const newItem: WorkOrderInventoryItem = {
+        id: item.id,
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        quantity: 1,
+        unitPrice: item.unitPrice
+      };
+      
+      form.setValue("inventoryItems", [...currentItems, newItem]);
     }
     
     setShowInventoryDialog(false);

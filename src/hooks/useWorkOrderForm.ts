@@ -72,6 +72,16 @@ export const useWorkOrderForm = () => {
       // Format the date to YYYY-MM-DD string
       const formattedDueDate = format(values.dueDate, "yyyy-MM-dd");
       
+      // Ensure we have a properly typed array of inventory items
+      const inventoryItems: WorkOrderInventoryItem[] = values.inventoryItems?.map(item => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      })) || [];
+      
       // Create the work order
       const newWorkOrder = await createWorkOrder({
         ...values,
@@ -82,8 +92,7 @@ export const useWorkOrderForm = () => {
         priority: values.priority,
         technician: values.technician,
         location: values.location,
-        // Ensure we have a proper array of inventory items
-        inventoryItems: values.inventoryItems || [],
+        inventoryItems: inventoryItems,
       });
       
       // Show success message

@@ -182,18 +182,17 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
       };
       form.setValue("inventoryItems", updatedItems);
     } else {
-      // Add new item (with explicit property assignments to satisfy TypeScript)
-      form.setValue("inventoryItems", [
-        ...currentItems,
-        {
-          id: item.id,
-          name: item.name,
-          sku: item.sku,
-          category: item.category,
-          quantity: 1,
-          unitPrice: item.unitPrice
-        }
-      ]);
+      // Add new item with required properties to satisfy WorkOrderInventoryItem type
+      const newItem: WorkOrderInventoryItem = {
+        id: item.id,
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        quantity: 1,
+        unitPrice: item.unitPrice
+      };
+      
+      form.setValue("inventoryItems", [...currentItems, newItem]);
     }
     
     setShowInventoryDialog(false);
