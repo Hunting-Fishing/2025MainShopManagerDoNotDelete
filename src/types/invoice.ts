@@ -24,6 +24,7 @@ export interface InvoiceItem {
   quantity: number;
   price: number;
   total: number;
+  hours?: boolean;
 }
 
 export interface Invoice {
@@ -40,4 +41,8 @@ export interface Invoice {
   createdBy: string;
   assignedStaff: string[];
   items: InvoiceItem[];
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+  paymentMethod?: string;
 }
