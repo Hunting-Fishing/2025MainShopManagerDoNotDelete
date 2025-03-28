@@ -21,6 +21,7 @@ import EquipmentDetails from "@/pages/EquipmentDetails";
 import Customers from "@/pages/Customers";
 import CustomerDetails from "@/pages/CustomerDetails";
 import CustomerServiceHistory from "@/pages/CustomerServiceHistory";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import "./styles/workOrders.css";
 
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/team" element={<Layout><Team /></Layout>} />
           <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
           <Route path="/reports" element={<Layout><Reports /></Layout>} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
