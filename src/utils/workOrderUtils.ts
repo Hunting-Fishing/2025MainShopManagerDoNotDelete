@@ -34,3 +34,17 @@ export const formatDate = (dateString: string): string => {
   }).format(date);
 };
 
+// Pagination utilities
+export const paginateData = <T>(
+  data: T[],
+  currentPage: number,
+  itemsPerPage: number
+): T[] => {
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  return data.slice(indexOfFirstItem, indexOfLastItem);
+};
+
+export const calculateTotalPages = (totalItems: number, itemsPerPage: number): number => {
+  return Math.ceil(totalItems / itemsPerPage);
+};
