@@ -9,9 +9,10 @@ import { WorkOrderLinkSection } from "@/components/invoices/WorkOrderLinkSection
 import { InvoiceItemsManager } from "@/components/invoices/InvoiceItemsManager";
 import { InvoiceSummary } from "@/components/invoices/InvoiceSummary";
 import { StaffAssignment } from "@/components/invoices/StaffAssignment";
+import { WorkOrder } from "@/types/invoice";
 
 // Mock data for work orders (in a real app would be fetched from API)
-const workOrders = [
+const workOrders: WorkOrder[] = [
   {
     id: "WO-2023-0012",
     customer: "Acme Corporation",
