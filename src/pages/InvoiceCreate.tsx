@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -6,10 +5,8 @@ import { createInvoiceFromWorkOrder } from "@/utils/workOrderUtils";
 
 // Import components
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
-import { InvoiceBasicInfo } from "@/components/invoices/InvoiceBasicInfo";
+import { InvoiceInformationForm } from "@/components/invoices/InvoiceInformationForm";
 import { WorkOrderLinkSection } from "@/components/invoices/WorkOrderLinkSection";
-import { CustomerInfoSection } from "@/components/invoices/CustomerInfoSection";
-import { InvoiceDescription } from "@/components/invoices/InvoiceDescription";
 import { InvoiceItemsManager } from "@/components/invoices/InvoiceItemsManager";
 import { InvoiceSummary } from "@/components/invoices/InvoiceSummary";
 import { StaffAssignment } from "@/components/invoices/StaffAssignment";
@@ -336,50 +333,43 @@ export default function InvoiceCreate() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Invoice Details */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
-            <h2 className="text-lg font-medium mb-4">Invoice Information</h2>
+          {/* Invoice Information */}
+          <InvoiceInformationForm
+            // Basic info props
+            invoiceId={invoice.id}
+            status={invoice.status}
+            date={invoice.date}
+            dueDate={invoice.dueDate}
+            onInvoiceIdChange={(value) => setInvoice(prev => ({ ...prev, id: value }))}
+            onStatusChange={(value) => setInvoice(prev => ({ ...prev, status: value }))}
+            onDateChange={(value) => setInvoice(prev => ({ ...prev, date: value }))}
+            onDueDateChange={(value) => setInvoice(prev => ({ ...prev, dueDate: value }))}
             
-            {/* Basic details */}
-            <InvoiceBasicInfo
-              invoiceId={invoice.id}
-              status={invoice.status}
-              date={invoice.date}
-              dueDate={invoice.dueDate}
-              onInvoiceIdChange={(value) => setInvoice(prev => ({ ...prev, id: value }))}
-              onStatusChange={(value) => setInvoice(prev => ({ ...prev, status: value }))}
-              onDateChange={(value) => setInvoice(prev => ({ ...prev, date: value }))}
-              onDueDateChange={(value) => setInvoice(prev => ({ ...prev, dueDate: value }))}
-            />
+            // Customer info props
+            customer={invoice.customer}
+            customerAddress={invoice.customerAddress}
+            customerEmail={invoice.customerEmail}
+            onCustomerChange={(value) => setInvoice(prev => ({ ...prev, customer: value }))}
+            onCustomerAddressChange={(value) => setInvoice(prev => ({ ...prev, customerAddress: value }))}
+            onCustomerEmailChange={(value) => setInvoice(prev => ({ ...prev, customerEmail: value }))}
             
-            {/* Work Order Reference */}
-            <WorkOrderLinkSection
-              workOrderId={invoice.workOrderId}
-              description={invoice.description}
-              workOrders={workOrders}
-              onSelectWorkOrder={handleSelectWorkOrder}
-              onClearWorkOrder={() => setInvoice(prev => ({ ...prev, workOrderId: "" }))}
-              showWorkOrderDialog={showWorkOrderDialog}
-              setShowWorkOrderDialog={setShowWorkOrderDialog}
-            />
-            
-            {/* Customer details */}
-            <CustomerInfoSection
-              customer={invoice.customer}
-              customerAddress={invoice.customerAddress}
-              customerEmail={invoice.customerEmail}
-              onCustomerChange={(value) => setInvoice(prev => ({ ...prev, customer: value }))}
-              onCustomerAddressChange={(value) => setInvoice(prev => ({ ...prev, customerAddress: value }))}
-              onCustomerEmailChange={(value) => setInvoice(prev => ({ ...prev, customerEmail: value }))}
-            />
-            
-            {/* Description and Notes */}
-            <InvoiceDescription
-              description={invoice.description}
-              notes={invoice.notes}
-              onDescriptionChange={(value) => setInvoice(prev => ({ ...prev, description: value }))}
-              onNotesChange={(value) => setInvoice(prev => ({ ...prev, notes: value }))}
-            />
-          </div>
+            // Description and notes props
+            description={invoice.description}
+            notes={invoice.notes}
+            onDescriptionChange={(value) => setInvoice(prev => ({ ...prev, description: value }))}
+            onNotesChange={(value) => setInvoice(prev => ({ ...prev, notes: value }))}
+          />
+          
+          {/* Work Order Reference */}
+          <WorkOrderLinkSection
+            workOrderId={invoice.workOrderId}
+            description={invoice.description}
+            workOrders={workOrders}
+            onSelectWorkOrder={handleSelectWorkOrder}
+            onClearWorkOrder={() => setInvoice(prev => ({ ...prev, workOrderId: "" }))}
+            showWorkOrderDialog={showWorkOrderDialog}
+            setShowWorkOrderDialog={setShowWorkOrderDialog}
+          />
           
           {/* Items */}
           <div className="bg-white border border-slate-200 rounded-lg p-6">
