@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -147,6 +148,9 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
   // Parse the date strings into Date objects
   const dueDateAsDate = parse(workOrder.dueDate, "yyyy-MM-dd", new Date());
 
+  // Make sure workOrder.inventoryItems is properly typed or provide a default empty array
+  const inventoryItemsWithDefaults: WorkOrderInventoryItem[] = workOrder.inventoryItems || [];
+
   // Initialize the form with existing work order data
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -159,7 +163,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
       location: workOrder.location,
       dueDate: dueDateAsDate,
       notes: workOrder.notes || "",
-      inventoryItems: workOrder.inventoryItems || [],
+      inventoryItems: inventoryItemsWithDefaults,
     },
   });
 
@@ -224,6 +228,16 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
       // Format the date back to YYYY-MM-DD string format
       const formattedDueDate = format(values.dueDate, "yyyy-MM-dd");
       
+      // Ensure inventoryItems is properly typed
+      const inventoryItems: WorkOrderInventoryItem[] = values.inventoryItems?.map(item => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      })) || [];
+      
       // Create the updated work order object
       const updatedWorkOrder: WorkOrder = {
         ...workOrder,
@@ -235,7 +249,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
         location: values.location,
         dueDate: formattedDueDate,
         notes: values.notes,
-        inventoryItems: values.inventoryItems || [],
+        inventoryItems: inventoryItems,
       };
       
       // Update the work order
