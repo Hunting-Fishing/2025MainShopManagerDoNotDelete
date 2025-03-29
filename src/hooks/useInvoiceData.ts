@@ -18,7 +18,33 @@ export function useInvoiceData() {
   // Query for fetching all invoices
   const invoicesQuery = useQuery({
     queryKey: ['invoices'],
-    queryFn: fetchInvoices,
+    queryFn: async () => {
+      const data = await fetchInvoices();
+      
+      // Map the database fields to our Invoice type
+      return data.map((invoice: any): Invoice => ({
+        id: invoice.id,
+        customer: invoice.customer,
+        customerAddress: invoice.customer_address,
+        customerEmail: invoice.customer_email,
+        description: invoice.description || '',
+        notes: invoice.notes || '',
+        date: invoice.date,
+        dueDate: invoice.due_date,
+        status: invoice.status,
+        workOrderId: invoice.work_order_id || '',
+        createdBy: invoice.created_by || '',
+        subtotal: invoice.subtotal,
+        tax: invoice.tax,
+        total: invoice.total,
+        paymentMethod: invoice.payment_method || '',
+        createdAt: invoice.created_at,
+        lastUpdatedBy: invoice.last_updated_by || '',
+        lastUpdatedAt: invoice.last_updated_at,
+        assignedStaff: [], // Will be populated if needed
+        items: [], // Will be populated when fetching a single invoice
+      }));
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
@@ -76,7 +102,44 @@ export function useInvoiceData() {
   const useInvoiceById = (invoiceId: string | undefined) => {
     return useQuery({
       queryKey: ['invoice', invoiceId],
-      queryFn: () => invoiceId ? fetchInvoiceById(invoiceId) : null,
+      queryFn: async () => {
+        if (!invoiceId) return null;
+        const data = await fetchInvoiceById(invoiceId);
+        
+        if (!data) return null;
+        
+        // Map the database fields to our Invoice type
+        return {
+          id: data.id,
+          customer: data.customer,
+          customerAddress: data.customer_address,
+          customerEmail: data.customer_email,
+          description: data.description || '',
+          notes: data.notes || '',
+          date: data.date,
+          dueDate: data.due_date,
+          status: data.status,
+          workOrderId: data.work_order_id || '',
+          createdBy: data.created_by || '',
+          subtotal: data.subtotal,
+          tax: data.tax,
+          total: data.total,
+          paymentMethod: data.payment_method || '',
+          createdAt: data.created_at,
+          lastUpdatedBy: data.last_updated_by || '',
+          lastUpdatedAt: data.last_updated_at,
+          assignedStaff: data.staff?.map((s: any) => s.staff_name) || [],
+          items: data.items?.map((item: any): InvoiceItem => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            quantity: item.quantity,
+            price: item.price,
+            total: item.total,
+            hours: item.hours,
+          })) || [],
+        } as Invoice;
+      },
       enabled: !!invoiceId,
       staleTime: 1000 * 60 * 5, // 5 minutes
     });
