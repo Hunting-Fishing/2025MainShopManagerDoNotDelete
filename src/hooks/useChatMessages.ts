@@ -7,6 +7,7 @@ import {
   markMessagesAsRead,
   subscribeToMessages
 } from '@/services/chat';
+import { toast } from '@/hooks/use-toast';
 
 interface UseChatMessagesProps {
   userId: string;
@@ -36,6 +37,11 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     } catch (err) {
       console.error('Failed to load messages:', err);
       setError('Failed to load messages');
+      toast({
+        title: "Error",
+        description: "Couldn't load messages. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -49,7 +55,13 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     fetchMessages(currentRoomId);
 
     const unsubscribe = subscribeToMessages(currentRoomId, (newMessage) => {
-      setMessages(prevMessages => [...prevMessages, newMessage]);
+      setMessages(prevMessages => {
+        // Check if the message is already in the list to avoid duplicates
+        const isDuplicate = prevMessages.some(msg => msg.id === newMessage.id);
+        if (isDuplicate) return prevMessages;
+        
+        return [...prevMessages, newMessage];
+      });
       
       // If the message is from someone else, mark it as read
       if (newMessage.sender_id !== userId) {
@@ -67,19 +79,23 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     if (!currentRoomId || !newMessageText.trim() || !userId) return;
     
     try {
-      const sentMessage = await sendMessage({
+      await sendMessage({
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
         content: newMessageText
       });
       
-      // Update local messages (the subscription will also catch this)
-      setMessages(prevMessages => [...prevMessages, sentMessage]);
+      // Clear the input after sending (the subscription will catch the new message)
       setNewMessageText('');
     } catch (err) {
       console.error('Failed to send message:', err);
       setError('Failed to send message');
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
     }
   }, [currentRoomId, newMessageText, userId, userName]);
 
