@@ -1,10 +1,10 @@
 
 import { useInventoryAlerts } from "./useInventoryAlerts";
-import { useAutoReorder, AutoReorderSettings } from "./useAutoReorder";
+import { useAutoReorder, type AutoReorderSettings } from "./useAutoReorder";
 import { useManualReorder } from "./useManualReorder";
 import { useEffect } from "react";
 
-export { AutoReorderSettings } from "./useAutoReorder";
+export type { AutoReorderSettings } from "./useAutoReorder";
 
 export function useInventoryManager() {
   const { lowStockItems, outOfStockItems, checkInventoryAlerts } = useInventoryAlerts();

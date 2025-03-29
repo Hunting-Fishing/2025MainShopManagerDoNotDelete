@@ -2,7 +2,7 @@
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { InventoryItemExtended } from "@/types/inventory";
-import { AutoReorderSettings } from "@/hooks/useInventoryManager";
+import { type AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
 import { ReorderDialog } from "./ReorderDialog";
 import { AutoReorderDialog } from "./AutoReorderDialog";
 

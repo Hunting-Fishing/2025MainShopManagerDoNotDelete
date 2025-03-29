@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { BellPlus } from "lucide-react";
 import { useState } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { AutoReorderSettings } from "@/hooks/useInventoryManager";
+import { type AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
 
 interface AutoReorderDialogProps {
   item: InventoryItemExtended;
