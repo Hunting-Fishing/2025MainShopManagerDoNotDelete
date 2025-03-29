@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { InteractionStatus } from "@/types/interaction";
 
 interface InteractionStatusBadgeProps {
@@ -26,7 +27,7 @@ export const InteractionStatusBadge: React.FC<InteractionStatusBadgeProps> = ({ 
   const config = getStatusConfig(status);
 
   return (
-    <Badge className={config.classes}>
+    <Badge className={cn(config.classes)}>
       {config.label}
     </Badge>
   );

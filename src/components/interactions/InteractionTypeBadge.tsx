@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { InteractionType } from "@/types/interaction";
 import { MessageSquare, Wrench, Package, Calendar, ClipboardList } from "lucide-react";
 
@@ -30,7 +31,7 @@ export const InteractionTypeBadge: React.FC<InteractionTypeBadgeProps> = ({ type
   const Icon = config.icon;
 
   return (
-    <Badge className={`flex items-center gap-1 ${config.classes}`}>
+    <Badge className={cn("flex items-center gap-1", config.classes)}>
       <Icon className="h-3 w-3" />
       <span>{config.label}</span>
     </Badge>
