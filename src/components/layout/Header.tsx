@@ -1,13 +1,20 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, Bell, Search } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useNotifications } from "@/context/notifications";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 
 export function Header() {
   const { toggleCollapsed } = useSidebar();
-  const { unreadCount, showNotifications } = useNotifications();
+  const { unreadCount } = useNotifications();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-4">
@@ -25,19 +32,25 @@ export function Header() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="relative"
-          onClick={showNotifications}
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-              {unreadCount}
-            </span>
-          )}
-        </Button>
+        <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <NotificationsDropdown />
+          </DropdownMenuContent>
+        </DropdownMenu>
         <div className="h-8 w-8 rounded-full bg-slate-200" />
       </div>
     </header>
