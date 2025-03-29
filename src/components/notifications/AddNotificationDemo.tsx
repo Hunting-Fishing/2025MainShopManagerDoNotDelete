@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNotifications } from '@/context/NotificationsContext';
+import { useNotifications } from '@/context/notifications';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

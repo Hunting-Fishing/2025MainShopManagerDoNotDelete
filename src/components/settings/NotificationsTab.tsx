@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNotifications } from "@/context/NotificationsContext";
+import { useNotifications } from "@/context/notifications";
 import { toast } from "@/hooks/use-toast";
 import { NotificationPreferences } from "@/types/notification";
 import { ConnectionStatusCard } from "./notifications/ConnectionStatusCard";

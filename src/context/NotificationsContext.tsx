@@ -1,19 +1,18 @@
 
 // This file is deprecated - using the implementation from context/notifications instead
-import { useContext } from 'react';
-import { NotificationsContext } from './notifications/NotificationsProvider';
+import React from 'react';
+import { NotificationsProvider as NewNotificationsProvider } from './notifications';
 import { useNotifications as useNotificationsHook } from './notifications';
 
-export type NotificationContextType = {
-  unreadCount: number;
-  addNotification: (notification: any) => void;
-};
-
+// Re-export the hook for backward compatibility
 export const useNotifications = () => {
   return useNotificationsHook();
 };
 
-// Exporting a dummy provider for backward compatibility
+// Exporting a provider that uses the new implementation
 export const NotificationsProvider = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
+  return <NewNotificationsProvider>{children}</NewNotificationsProvider>;
 };
+
+// This context is no longer used directly - only kept for compatibility
+export const NotificationsContext = React.createContext(null);

@@ -4,11 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Menu, Bell, Search } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useNotifications } from "@/context/notifications";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 
 export function Header() {

@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Bell, AlertCircle } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNotifications } from '@/context/NotificationsContext';
+import { useNotifications } from '@/context/notifications';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { cn } from '@/lib/utils';
 
