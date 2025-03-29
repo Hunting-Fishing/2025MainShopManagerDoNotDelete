@@ -99,7 +99,7 @@ export function useInvoiceData() {
   }, [queryClient, isRealTimeEnabled]);
   
   return {
-    invoices: invoicesQuery.data || [],
+    invoices: invoicesQuery.data as Invoice[] || [],
     isLoading: invoicesQuery.isLoading,
     isError: invoicesQuery.isError,
     error: invoicesQuery.error,

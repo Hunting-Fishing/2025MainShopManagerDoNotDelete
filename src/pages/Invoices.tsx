@@ -20,7 +20,7 @@ export default function Invoices() {
     creators,
     filteredInvoices,
     resetFilters
-  } = useInvoiceFilters(invoices as Invoice[]);
+  } = useInvoiceFilters(invoices);
 
   // When invoices data changes, reapply the filters
   useEffect(() => {

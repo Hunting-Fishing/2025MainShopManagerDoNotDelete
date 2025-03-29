@@ -227,6 +227,142 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          hours: boolean | null
+          id: string
+          invoice_id: string
+          name: string
+          price: number
+          quantity: number
+          total: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          hours?: boolean | null
+          id?: string
+          invoice_id: string
+          name: string
+          price: number
+          quantity: number
+          total: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          hours?: boolean | null
+          id?: string
+          invoice_id?: string
+          name?: string
+          price?: number
+          quantity?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_staff: {
+        Row: {
+          created_at: string | null
+          id: string
+          invoice_id: string
+          staff_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invoice_id: string
+          staff_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invoice_id?: string
+          staff_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_staff_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          customer: string
+          customer_address: string | null
+          customer_email: string | null
+          date: string
+          description: string | null
+          due_date: string
+          id: string
+          last_updated_at: string | null
+          last_updated_by: string | null
+          notes: string | null
+          payment_method: string | null
+          status: string
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          customer: string
+          customer_address?: string | null
+          customer_email?: string | null
+          date: string
+          description?: string | null
+          due_date: string
+          id: string
+          last_updated_at?: string | null
+          last_updated_by?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          status: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          customer?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          date?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          last_updated_at?: string | null
+          last_updated_by?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          work_order_id?: string | null
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { format } from "date-fns";
+import { Invoice } from "@/types/invoice";
 
 export function InvoiceList() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
