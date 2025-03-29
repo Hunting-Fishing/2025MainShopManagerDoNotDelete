@@ -42,6 +42,7 @@ export function CalendarDayView({
   
   const now = currentTime;
   const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
 
   return (
     <div className="w-full">
@@ -56,7 +57,8 @@ export function CalendarDayView({
           const hourEvents = getEventsForHour(hour);
           
           // Check if this hour is in the past for today
-          const isPastHour = isSameDay(currentDate, now) && hour < currentHour;
+          const isPastHour = isSameDay(currentDate, now) && 
+            (hour < currentHour || (hour === currentHour && currentMinute > 0));
           
           return (
             <div key={hour} className="grid grid-cols-12 border-b">
@@ -72,12 +74,12 @@ export function CalendarDayView({
               <div 
                 className={cn(
                   "col-span-11 p-2 min-h-[100px] border-l relative",
-                  isPastHour && "bg-gray-50"
+                  isPastHour && "bg-red-50 bg-opacity-20"
                 )}
               >
                 {/* Past hour indicator */}
                 {isPastHour && (
-                  <div className="absolute inset-0 bg-gray-200 bg-opacity-20 pointer-events-none"></div>
+                  <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none"></div>
                 )}
                 
                 {hourEvents.map((event) => (

@@ -38,7 +38,7 @@ export function CalendarView({ events, currentDate, view }: CalendarViewProps) {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setNow(new Date());
-    }, 60000);
+    }, 60000); // Update every minute
     
     return () => clearInterval(intervalId);
   }, []);

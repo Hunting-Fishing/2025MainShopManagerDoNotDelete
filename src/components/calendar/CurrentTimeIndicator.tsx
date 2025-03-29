@@ -48,6 +48,9 @@ export function CurrentTimeIndicator({ currentTime, view }: CurrentTimeIndicator
           {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
+      
+      {/* Past time overlay */}
+      <div className="absolute inset-0 -mt-[45px] h-[45px] w-full bg-red-50 bg-opacity-20 pointer-events-none z-0" />
     </div>
   );
 }

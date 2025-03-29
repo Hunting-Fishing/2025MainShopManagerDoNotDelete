@@ -42,14 +42,14 @@ export function CalendarDay({
         "min-h-[120px] border p-1 relative",
         !isCurrentMonth && "bg-slate-50",
         isToday && "bg-blue-50",
-        isPastDate && "bg-gray-100"
+        isPastDate && "bg-red-50 bg-opacity-30"
       )}
     >
       {/* Past date overlay */}
       {isPastDate && (
-        <div className="absolute inset-0 bg-gray-200 bg-opacity-30 pointer-events-none z-10">
+        <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none z-10">
           <div className="absolute top-1 right-1">
-            <span className="text-xs text-gray-500 font-medium px-1 rounded bg-white bg-opacity-70">
+            <span className="text-xs text-red-500 font-medium px-1 rounded bg-white bg-opacity-70">
               Past
             </span>
           </div>

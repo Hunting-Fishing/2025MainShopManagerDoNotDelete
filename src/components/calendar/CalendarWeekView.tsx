@@ -55,6 +55,7 @@ export function CalendarWeekView({
 
   const now = currentTime;
   const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
   
   return (
     <div className="w-full">
@@ -67,7 +68,7 @@ export function CalendarWeekView({
             className={cn(
               "py-2 text-center font-medium",
               isToday(day) && "bg-blue-50",
-              isPast(day) && !isToday(day) && "bg-gray-100"
+              isPast(day) && !isToday(day) && "bg-red-50 bg-opacity-30"
             )}
           >
             <div>{format(day, "EEE")}</div>
@@ -84,14 +85,12 @@ export function CalendarWeekView({
       {/* Time grid */}
       <div className="relative">
         {timeSlots.map((hour) => {
-          const isPastHour = isToday(currentDate) && hour < currentHour;
-          
           return (
             <div key={hour} className="grid grid-cols-8 border-b">
               {/* Time label */}
               <div className={cn(
                 "p-2 text-right text-sm", 
-                isPastHour ? "text-gray-400" : "text-slate-500"
+                hour < currentHour ? "text-gray-400" : "text-slate-500"
               )}>
                 {hour}:00
               </div>
@@ -104,7 +103,10 @@ export function CalendarWeekView({
                 });
 
                 // Check if this slot is in the past
-                const isPastTimeSlot = isPast(set(day, { hours: hour + 1, minutes: 0 }));
+                const isPastDay = isPast(day) && !isToday(day);
+                const isPastTimeSlot = isToday(day) && 
+                  (hour < currentHour || (hour === currentHour && currentMinute > 0));
+                const isPastSlot = isPastDay || isPastTimeSlot;
 
                 return (
                   <div 
@@ -112,13 +114,13 @@ export function CalendarWeekView({
                     className={cn(
                       "border-l min-h-[80px] p-1 relative",
                       isToday(day) && "bg-blue-50",
-                      isPast(day) && !isToday(day) && "bg-gray-100",
-                      isPastTimeSlot && isToday(day) && "bg-gray-50"
+                      isPastDay && "bg-red-50 bg-opacity-30",
+                      isPastTimeSlot && "bg-red-50 bg-opacity-20"
                     )}
                   >
                     {/* Past time overlay */}
-                    {isPastTimeSlot && (
-                      <div className="absolute inset-0 bg-gray-200 bg-opacity-20 pointer-events-none"></div>
+                    {isPastSlot && (
+                      <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none"></div>
                     )}
                     
                     {dayEvents.map((event) => (
