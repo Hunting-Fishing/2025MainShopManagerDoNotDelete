@@ -1,39 +1,32 @@
 
-import { useState } from "react";
-import { 
-  ChevronDown, 
-  Download, 
-  Filter, 
-  RefreshCw, 
-  Search, 
-  SlidersHorizontal 
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
 } from "@/components/ui/select";
-import { statusMap } from "./InvoiceList";
+import { Button } from "@/components/ui/button";
+
+// Status options for invoices
+const statusOptions = [
+  { value: "all", label: "All Statuses" },
+  { value: "draft", label: "Draft" },
+  { value: "pending", label: "Pending" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 interface InvoiceFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  statusFilter: string[];
-  setStatusFilter: (statuses: string[]) => void;
+  statusFilter: string;
+  setStatusFilter: (status: string) => void;
   createdByFilter: string;
-  setCreatedByFilter: (creator: string) => void;
+  setCreatedByFilter: (createdBy: string) => void;
   creators: string[];
   onResetFilters: () => void;
 }
@@ -49,57 +42,48 @@ export function InvoiceFilters({
   onResetFilters
 }: InvoiceFiltersProps) {
   return (
-    <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
-      <div className="relative w-full md:max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-        <Input
-          type="search"
-          placeholder="Search invoices..."
-          className="pl-10"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+    <div className="flex flex-col md:flex-row gap-4 items-end">
+      <div className="w-full md:w-1/3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+          <Input
+            type="search"
+            placeholder="Search invoices..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
-
-      <div className="flex flex-wrap gap-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Status
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {Object.entries(statusMap).map(([key, value]) => (
-              <DropdownMenuCheckboxItem
-                key={key}
-                checked={statusFilter.includes(key)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setStatusFilter([...statusFilter, key]);
-                  } else {
-                    setStatusFilter(statusFilter.filter((s) => s !== key));
-                  }
-                }}
-              >
-                {value.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Select
-          value={createdByFilter}
-          onValueChange={setCreatedByFilter}
+      
+      <div className="w-full md:w-1/4">
+        <Select 
+          value={statusFilter} 
+          onValueChange={setStatusFilter}
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Staff" />
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Staff</SelectItem>
+            {statusOptions.map((status) => (
+              <SelectItem key={status.value} value={status.value}>
+                {status.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="w-full md:w-1/4">
+        <Select 
+          value={createdByFilter} 
+          onValueChange={setCreatedByFilter}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by creator" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Creators</SelectItem>
             {creators.map((creator) => (
               <SelectItem key={creator} value={creator}>
                 {creator}
@@ -107,22 +91,15 @@ export function InvoiceFilters({
             ))}
           </SelectContent>
         </Select>
-
-        <Button variant="outline" className="flex items-center gap-2" onClick={onResetFilters}>
-          <RefreshCw className="h-4 w-4" />
-          Reset
-        </Button>
-
-        <Button variant="outline" className="flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4" />
-          More Filters
-        </Button>
-
-        <Button variant="outline" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
       </div>
+      
+      <Button 
+        variant="outline" 
+        onClick={onResetFilters}
+        className="w-full md:w-auto"
+      >
+        Reset Filters
+      </Button>
     </div>
   );
 }
