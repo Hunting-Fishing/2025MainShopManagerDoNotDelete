@@ -1,8 +1,9 @@
 
-import { exportToCSV, exportToExcel, exportToPDF, exportMultiSheetExcel } from "@/utils/reportExport";
+import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/reportExport";
 import { toast } from "@/components/ui/use-toast";
 import { Invoice } from "@/types/invoice";
 import { ExportMenuBase } from "./ExportMenuBase";
+import { generateInvoicePdf, savePdf } from "@/utils/pdfGeneration";
 
 interface InvoiceExportMenuProps {
   invoice: Invoice & { 
@@ -40,20 +41,6 @@ export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
       total: (item.quantity * item.price).toFixed(2),
     }));
     
-    // Define columns for PDF export
-    const columns = [
-      { header: "ID", dataKey: "id" },
-      { header: "Customer", dataKey: "customer" },
-      { header: "Description", dataKey: "description" },
-      { header: "Status", dataKey: "status" },
-      { header: "Date", dataKey: "date" },
-      { header: "Due Date", dataKey: "dueDate" },
-      { header: "Subtotal", dataKey: "subtotal" },
-      { header: "Tax", dataKey: "tax" },
-      { header: "Total", dataKey: "total" },
-      { header: "Payment Method", dataKey: "paymentMethod" },
-    ];
-
     try {
       switch (format) {
         case "csv":
@@ -68,8 +55,9 @@ export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
           exportMultiSheetExcel(workbookData, `Invoice_${invoice.id}`);
           break;
         case "pdf":
-          // For PDF, we'll export the invoice details
-          exportToPDF([exportData], `Invoice_${invoice.id}`, columns);
+          // Use enhanced PDF generation
+          const doc = generateInvoicePdf(invoice);
+          savePdf(doc, `Invoice_${invoice.id}`);
           break;
       }
 

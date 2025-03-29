@@ -1,8 +1,8 @@
-
 import { jsPDF } from "jspdf";
 import { utils, write } from "xlsx";
 import { Parser } from "@json2csv/plainjs";
 import 'jspdf-autotable';
+import { generateReportPdf, savePdf } from './pdfGeneration';
 
 // Extend the jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -67,31 +67,15 @@ export const exportToExcel = (data: any[], title: string) => {
 };
 
 /**
- * Export data as PDF
+ * Export data as PDF with enhanced formatting
  */
 export const exportToPDF = (data: any[], title: string, columns: { header: string, dataKey: string }[]) => {
   try {
-    const doc = new jsPDF();
+    // Generate the PDF using our enhanced generator
+    const doc = generateReportPdf(title, data, columns);
     
-    // Add title
-    doc.setFontSize(16);
-    doc.text(title, 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    // Create table
-    doc.autoTable({
-      startY: 40,
-      head: [columns.map(col => col.header)],
-      body: data.map(row => columns.map(col => row[col.dataKey] !== undefined ? row[col.dataKey] : '')),
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [66, 66, 66], textColor: [255, 255, 255] },
-      margin: { top: 40, right: 14, bottom: 20, left: 14 },
-    });
-    
-    // Save PDF
-    doc.save(`${title}_${getFormattedDate()}.pdf`);
+    // Save the PDF
+    savePdf(doc, title);
   } catch (err) {
     console.error('Failed to export as PDF:', err);
     throw new Error('Failed to export as PDF');

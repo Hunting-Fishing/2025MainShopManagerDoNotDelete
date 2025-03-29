@@ -7,17 +7,27 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/reportExport";
+import { exportToCSV, exportToExcel } from "@/utils/reportExport";
 import { toast } from "@/components/ui/use-toast";
+import { generateReportPdf, savePdf } from "@/utils/pdfGeneration";
 
 interface ReportExportMenuProps {
   data: any[];
   title: string;
   columns: { header: string; dataKey: string }[];
+  summaryData?: Record<string, any>; // Summary stats for the report
+  chartImageUrl?: string; // Optional chart image URL (can be a base64 data URL)
   disabled?: boolean;
 }
 
-export function ReportExportMenu({ data, title, columns, disabled = false }: ReportExportMenuProps) {
+export function ReportExportMenu({ 
+  data, 
+  title, 
+  columns, 
+  summaryData,
+  chartImageUrl,
+  disabled = false 
+}: ReportExportMenuProps) {
   const handleExport = (format: "csv" | "excel" | "pdf") => {
     try {
       if (data.length === 0) {
@@ -37,7 +47,9 @@ export function ReportExportMenu({ data, title, columns, disabled = false }: Rep
           exportToExcel(data, title);
           break;
         case "pdf":
-          exportToPDF(data, title, columns);
+          // Use enhanced PDF generation
+          const doc = generateReportPdf(title, data, columns, summaryData, chartImageUrl);
+          savePdf(doc, title);
           break;
       }
 

@@ -7,10 +7,10 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { exportToCSV, exportToExcel, exportToPDF, exportMultiSheetExcel } from "@/utils/reportExport";
+import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/reportExport";
 import { toast } from "@/components/ui/use-toast";
 import { WorkOrder } from "@/data/workOrdersData";
-import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
+import { generateWorkOrderPdf, savePdf } from "@/utils/pdfGeneration";
 
 interface WorkOrderExportMenuProps {
   workOrder: WorkOrder;
@@ -32,7 +32,7 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
         location: workOrder.location,
         notes: workOrder.notes || "N/A",
         totalBillableTime: workOrder.totalBillableTime 
-          ? formatTimeInHoursAndMinutes(workOrder.totalBillableTime)
+          ? workOrder.totalBillableTime
           : "N/A"
       };
       
@@ -40,8 +40,8 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
       const timeEntriesData = workOrder.timeEntries ? workOrder.timeEntries.map(entry => ({
         employeeName: entry.employeeName,
         startTime: new Date(entry.startTime).toLocaleString(),
-        endTime: new Date(entry.endTime).toLocaleString(),
-        duration: formatTimeInHoursAndMinutes(entry.duration),
+        endTime: entry.endTime ? new Date(entry.endTime).toLocaleString() : 'Ongoing',
+        duration: entry.duration,
         notes: entry.notes || '',
         billable: entry.billable ? 'Yes' : 'No'
       })) : [];
@@ -56,20 +56,6 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
         total: (item.quantity * item.unitPrice).toFixed(2)
       })) : [];
       
-      // Define columns for PDF export
-      const columns = [
-        { header: "ID", dataKey: "id" },
-        { header: "Customer", dataKey: "customer" },
-        { header: "Description", dataKey: "description" },
-        { header: "Status", dataKey: "status" },
-        { header: "Priority", dataKey: "priority" },
-        { header: "Date", dataKey: "date" },
-        { header: "Due Date", dataKey: "dueDate" },
-        { header: "Technician", dataKey: "technician" },
-        { header: "Location", dataKey: "location" },
-        { header: "Total Billable Time", dataKey: "totalBillableTime" },
-      ];
-
       switch (format) {
         case "csv":
           exportToCSV([exportData], `WorkOrder_${workOrder.id}`);
@@ -93,7 +79,9 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
           exportMultiSheetExcel(workbookData, `WorkOrder_${workOrder.id}`);
           break;
         case "pdf":
-          exportToPDF([exportData], `WorkOrder_${workOrder.id}`, columns);
+          // Use our enhanced PDF generator
+          const doc = generateWorkOrderPdf(workOrder);
+          savePdf(doc, `WorkOrder_${workOrder.id}`);
           break;
       }
 
