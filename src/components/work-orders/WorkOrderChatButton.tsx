@@ -1,13 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getWorkOrderChatRoom, createChatRoom } from '@/services/chatService';
 import { toast } from '@/hooks/use-toast';
-
-// This would normally come from an auth context
-const MOCK_USER_ID = "TM001";
+import { supabase } from '@/integrations/supabase/client';
 
 interface WorkOrderChatButtonProps {
   workOrderId: string;
@@ -16,9 +14,24 @@ interface WorkOrderChatButtonProps {
 
 export const WorkOrderChatButton: React.FC<WorkOrderChatButtonProps> = ({ workOrderId, workOrderName }) => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleOpenChat = async () => {
     try {
+      setIsLoading(true);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to use the chat feature",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Check if a work order chat already exists
       let workOrderRoom = await getWorkOrderChatRoom(workOrderId);
       
@@ -27,9 +40,14 @@ export const WorkOrderChatButton: React.FC<WorkOrderChatButtonProps> = ({ workOr
         workOrderRoom = await createChatRoom(
           `Work Order: ${workOrderName}`,
           'work_order',
-          [MOCK_USER_ID], // Initially just add the current user
+          [user.id],
           workOrderId
         );
+        
+        toast({
+          title: "Chat created",
+          description: "New work order chat room created",
+        });
       }
       
       // Navigate to the chat room
@@ -41,6 +59,8 @@ export const WorkOrderChatButton: React.FC<WorkOrderChatButtonProps> = ({ workOr
         description: "Failed to open work order chat",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,10 +69,11 @@ export const WorkOrderChatButton: React.FC<WorkOrderChatButtonProps> = ({ workOr
       variant="outline" 
       size="sm"
       onClick={handleOpenChat}
+      disabled={isLoading}
       className="flex items-center gap-1"
     >
       <MessageCircle className="h-4 w-4" />
-      <span>Chat</span>
+      <span>{isLoading ? 'Opening...' : 'Chat'}</span>
     </Button>
   );
 };

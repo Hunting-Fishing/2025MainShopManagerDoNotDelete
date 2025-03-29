@@ -8,6 +8,7 @@ import {
   markMessagesAsRead,
   subscribeToMessages
 } from '@/services/chatService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseChatProps {
   userId: string;
@@ -22,15 +23,38 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
   const [error, setError] = useState<string | null>(null);
   const [newMessageText, setNewMessageText] = useState('');
 
+  // Subscribe to chat room updates
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('public:chat_rooms')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'chat_rooms'
+      }, () => {
+        // Refresh the rooms when changes occur
+        fetchChatRooms();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   // Fetch chat rooms
   const fetchChatRooms = useCallback(async () => {
+    if (!userId) return;
+    
     try {
       setLoading(true);
       const fetchedRooms = await getUserChatRooms(userId);
       setChatRooms(fetchedRooms);
     } catch (err) {
+      console.error('Failed to load chat rooms:', err);
       setError('Failed to load chat rooms');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -55,8 +79,8 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
       // Mark messages as read
       await markMessagesAsRead(room.id, userId);
     } catch (err) {
+      console.error('Failed to load messages:', err);
       setError('Failed to load messages');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -64,7 +88,7 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
 
   // Subscribe to new messages when a room is selected
   useEffect(() => {
-    if (!currentRoom) return;
+    if (!currentRoom || !userId) return;
 
     const unsubscribe = subscribeToMessages(currentRoom.id, (newMessage) => {
       setMessages(prevMessages => [...prevMessages, newMessage]);
@@ -82,20 +106,22 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
 
   // Send a new message
   const handleSendMessage = useCallback(async () => {
-    if (!currentRoom || !newMessageText.trim()) return;
+    if (!currentRoom || !newMessageText.trim() || !userId) return;
     
     try {
-      await sendMessage({
+      const sentMessage = await sendMessage({
         room_id: currentRoom.id,
         sender_id: userId,
         sender_name: userName,
         content: newMessageText
       });
       
+      // Update local messages (the subscription will also catch this)
+      setMessages(prevMessages => [...prevMessages, sentMessage]);
       setNewMessageText('');
     } catch (err) {
+      console.error('Failed to send message:', err);
       setError('Failed to send message');
-      console.error(err);
     }
   }, [currentRoom, newMessageText, userId, userName]);
 

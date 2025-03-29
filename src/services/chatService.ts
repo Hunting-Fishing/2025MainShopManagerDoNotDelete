@@ -1,34 +1,58 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ChatRoom, ChatMessage } from "@/types/chat";
-
-// Mock data for development and testing
-const MOCK_CHAT_ROOMS: ChatRoom[] = [
-  {
-    id: "room-1",
-    name: "Team Chat",
-    type: "group",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    last_message: {
-      id: "msg-1",
-      room_id: "room-1",
-      sender_id: "user-1",
-      sender_name: "Admin User",
-      content: "Hello team! How's everyone doing today?",
-      created_at: new Date().toISOString(),
-      is_read: true
-    },
-    unread_count: 0
-  }
-];
+import { ChatRoom, ChatMessage, ChatParticipant } from "@/types/chat";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 // Get all chat rooms for a user
 export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
   try {
-    // In a real app, this would get rooms where the user is a participant
-    // For now, return mock data
-    return MOCK_CHAT_ROOMS;
+    // Get rooms where the user is a participant
+    const { data: participantRooms, error: participantError } = await supabase
+      .from('chat_participants')
+      .select('room_id')
+      .eq('user_id', userId);
+    
+    if (participantError) throw participantError;
+    
+    if (!participantRooms || participantRooms.length === 0) {
+      return [];
+    }
+    
+    const roomIds = participantRooms.map(p => p.room_id);
+    
+    // Get the room details
+    const { data: rooms, error: roomsError } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .in('id', roomIds);
+    
+    if (roomsError) throw roomsError;
+    
+    // Enhance rooms with last message and unread count
+    const enhancedRooms: ChatRoom[] = await Promise.all(
+      (rooms || []).map(async (room) => {
+        // Get last message
+        const { data: lastMessages } = await supabase
+          .rpc('get_room_last_message', { p_room_id: room.id });
+        
+        const lastMessage = lastMessages && lastMessages.length > 0 ? lastMessages[0] : null;
+        
+        // Get unread count
+        const { data: unreadCount } = await supabase
+          .rpc('get_room_unread_count', { 
+            p_room_id: room.id,
+            p_user_id: userId
+          });
+        
+        return {
+          ...room,
+          last_message: lastMessage,
+          unread_count: unreadCount || 0
+        };
+      })
+    );
+    
+    return enhancedRooms;
   } catch (error) {
     console.error("Error fetching chat rooms:", error);
     throw error;
@@ -38,37 +62,14 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
 // Get messages for a specific chat room
 export const getChatMessages = async (roomId: string): Promise<ChatMessage[]> => {
   try {
-    // In a real app, this would query the database
-    // For now, return mock data
-    return [
-      {
-        id: "msg-1",
-        room_id: roomId,
-        sender_id: "user-1",
-        sender_name: "Admin User",
-        content: "Hello team! How's everyone doing today?",
-        created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        is_read: true
-      },
-      {
-        id: "msg-2",
-        room_id: roomId,
-        sender_id: "user-2",
-        sender_name: "Sarah Johnson",
-        content: "Doing great! Just finished the electrical job at Metro Hotel.",
-        created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        is_read: true
-      },
-      {
-        id: "msg-3",
-        room_id: roomId,
-        sender_id: "user-3",
-        sender_name: "Michael Brown",
-        content: "I need some help with the HVAC repair at Acme Corp. Anyone available?",
-        created_at: new Date().toISOString(),
-        is_read: false
-      }
-    ];
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error("Error fetching chat messages:", error);
     throw error;
@@ -78,16 +79,27 @@ export const getChatMessages = async (roomId: string): Promise<ChatMessage[]> =>
 // Send a message to a chat room
 export const sendMessage = async (message: Omit<ChatMessage, "id" | "is_read" | "created_at">): Promise<ChatMessage> => {
   try {
-    // In a real app, this would insert a new message in the database
-    // For now, mock a successful response
-    const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      ...message,
-      created_at: new Date().toISOString(),
-      is_read: false
-    };
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert([{
+        room_id: message.room_id,
+        sender_id: message.sender_id,
+        sender_name: message.sender_name,
+        content: message.content,
+        is_read: false
+      }])
+      .select()
+      .single();
     
-    return newMessage;
+    if (error) throw error;
+    
+    // Update the room's updated_at timestamp
+    await supabase
+      .from('chat_rooms')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', message.room_id);
+    
+    return data;
   } catch (error) {
     console.error("Error sending message:", error);
     throw error;
@@ -97,9 +109,13 @@ export const sendMessage = async (message: Omit<ChatMessage, "id" | "is_read" | 
 // Mark messages as read
 export const markMessagesAsRead = async (roomId: string, userId: string): Promise<void> => {
   try {
-    // In a real app, this would update the is_read status in the database
-    console.log(`Marking messages as read in room ${roomId} for user ${userId}`);
-    return;
+    const { error } = await supabase
+      .rpc('mark_messages_as_read', {
+        p_room_id: roomId,
+        p_user_id: userId
+      });
+    
+    if (error) throw error;
   } catch (error) {
     console.error("Error marking messages as read:", error);
     throw error;
@@ -109,13 +125,15 @@ export const markMessagesAsRead = async (roomId: string, userId: string): Promis
 // Get a chat room by work order ID
 export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoom | null> => {
   try {
-    // In a real app, this would query the database
-    // For now, return mock data or null to simulate no existing room
-    const found = MOCK_CHAT_ROOMS.find(room => 
-      room.type === "work_order" && room.work_order_id === workOrderId
-    );
+    const { data, error } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .eq('type', 'work_order')
+      .eq('work_order_id', workOrderId)
+      .maybeSingle();
     
-    return found || null;
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error fetching work order chat room:", error);
     throw error;
@@ -125,16 +143,46 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
 // Get direct chat with a specific user
 export const getDirectChatWithUser = async (currentUserId: string, otherUserId: string): Promise<ChatRoom | null> => {
   try {
-    // In a real app, this would query the database for a direct chat between these two users
-    // For now, check our mock data
-    const directChat = MOCK_CHAT_ROOMS.find(room => 
-      room.type === "direct" && 
-      // This is simplified logic - in a real app, you'd check the participants table
-      // to find a room where only these two users are participating
-      room.name.includes(otherUserId) || room.name.includes(currentUserId)
-    );
+    // Get all direct chat rooms where the current user is a participant
+    const { data: currentUserRooms, error: currentUserError } = await supabase
+      .from('chat_participants')
+      .select('room_id')
+      .eq('user_id', currentUserId);
     
-    return directChat || null;
+    if (currentUserError) throw currentUserError;
+    
+    if (!currentUserRooms || currentUserRooms.length === 0) {
+      return null;
+    }
+    
+    const roomIds = currentUserRooms.map(p => p.room_id);
+    
+    // Check if the other user is in any of those rooms
+    const { data: sharedRooms, error: sharedRoomsError } = await supabase
+      .from('chat_participants')
+      .select('room_id')
+      .eq('user_id', otherUserId)
+      .in('room_id', roomIds);
+    
+    if (sharedRoomsError) throw sharedRoomsError;
+    
+    if (!sharedRooms || sharedRooms.length === 0) {
+      return null;
+    }
+    
+    const sharedRoomIds = sharedRooms.map(p => p.room_id);
+    
+    // Get the direct chat rooms among the shared rooms
+    const { data: directRooms, error: directRoomsError } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .eq('type', 'direct')
+      .in('id', sharedRoomIds)
+      .maybeSingle();
+    
+    if (directRoomsError) throw directRoomsError;
+    
+    return directRooms;
   } catch (error) {
     console.error("Error fetching direct chat:", error);
     throw error;
@@ -149,23 +197,32 @@ export const createChatRoom = async (
   workOrderId?: string
 ): Promise<ChatRoom> => {
   try {
-    // In a real app, this would insert a new room in the database
-    // and also add participants
+    // Create the chat room
+    const { data: room, error: roomError } = await supabase
+      .from('chat_rooms')
+      .insert([{
+        name,
+        type,
+        work_order_id: workOrderId
+      }])
+      .select()
+      .single();
     
-    // Mock a successful response
-    const newRoom: ChatRoom = {
-      id: `room-${Date.now()}`,
-      name,
-      type,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      work_order_id: workOrderId
-    };
+    if (roomError) throw roomError;
     
-    // Add the new room to our mock data
-    MOCK_CHAT_ROOMS.push(newRoom);
+    // Add participants to the room
+    const participantsData = participants.map(userId => ({
+      room_id: room.id,
+      user_id: userId
+    }));
     
-    return newRoom;
+    const { error: participantsError } = await supabase
+      .from('chat_participants')
+      .insert(participantsData);
+    
+    if (participantsError) throw participantsError;
+    
+    return room;
   } catch (error) {
     console.error("Error creating chat room:", error);
     throw error;
@@ -173,59 +230,73 @@ export const createChatRoom = async (
 };
 
 // Subscribe to new messages in a chat room
-export const subscribeToMessages = (roomId: string, callback: (message: ChatMessage) => void) => {
-  // In a real app, this would use Supabase realtime subscriptions
-  // For now, we'll just return a fake unsubscribe function
-  
-  // Mock a new message coming in every 30 seconds for demo purposes
-  const interval = setInterval(() => {
-    const senders = [
-      { id: "user-2", name: "Sarah Johnson" },
-      { id: "user-3", name: "Michael Brown" },
-      { id: "user-4", name: "Emily Davis" }
-    ];
-    
-    const randomSender = senders[Math.floor(Math.random() * senders.length)];
-    const messages = [
-      "How's that work order coming along?",
-      "Do we need any additional parts for this job?",
-      "I'll be there in about 30 minutes to help.",
-      "Just finished another job, I can swing by if needed.",
-      "Let me know if you need any assistance with that."
-    ];
-    
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    
-    callback({
-      id: `msg-${Date.now()}`,
-      room_id: roomId,
-      sender_id: randomSender.id,
-      sender_name: randomSender.name,
-      content: randomMessage,
-      created_at: new Date().toISOString(),
-      is_read: false
-    });
-  }, 30000);
+export const subscribeToMessages = (roomId: string, callback: (message: ChatMessage) => void): (() => void) => {
+  const channel: RealtimeChannel = supabase
+    .channel(`room-${roomId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'chat_messages',
+      filter: `room_id=eq.${roomId}`
+    }, (payload) => {
+      callback(payload.new as ChatMessage);
+    })
+    .subscribe();
   
   // Return unsubscribe function
   return () => {
-    clearInterval(interval);
+    supabase.removeChannel(channel);
   };
 };
 
 // Get chat room details
 export const getChatRoomDetails = async (roomId: string): Promise<ChatRoom> => {
   try {
-    // In a real app, this would query the database for the room details
-    const room = MOCK_CHAT_ROOMS.find(r => r.id === roomId);
+    const { data, error } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .eq('id', roomId)
+      .single();
     
-    if (!room) {
-      throw new Error("Chat room not found");
-    }
+    if (error) throw error;
     
-    return room;
+    return data;
   } catch (error) {
     console.error("Error fetching chat room details:", error);
+    throw error;
+  }
+};
+
+// Get participants for a chat room
+export const getChatParticipants = async (roomId: string): Promise<ChatParticipant[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_participants')
+      .select('*')
+      .eq('room_id', roomId);
+    
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching chat participants:", error);
+    throw error;
+  }
+};
+
+// Add participant to a chat room
+export const addParticipantToRoom = async (roomId: string, userId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('chat_participants')
+      .insert([{
+        room_id: roomId,
+        user_id: userId
+      }]);
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error adding participant to room:", error);
     throw error;
   }
 };

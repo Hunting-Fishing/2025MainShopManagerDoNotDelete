@@ -7,21 +7,86 @@ import { NewChatDialog } from '@/components/chat/NewChatDialog';
 import { useChat } from '@/hooks/useChat';
 import { createChatRoom, getWorkOrderChatRoom, getDirectChatWithUser } from '@/services/chatService';
 import { toast } from '@/hooks/use-toast';
-
-// This would normally come from an auth context
-const MOCK_USER_ID = "TM001"; // Replace with actual logged-in user ID
-const MOCK_USER_NAME = "John Smith"; // Replace with actual logged-in user name
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Chat() {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Get current user
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          // Redirect to login if no user
+          toast({
+            title: "Authentication required",
+            description: "Please sign in to use the chat feature",
+            variant: "destructive",
+          });
+          
+          navigate('/');
+          return;
+        }
+        
+        setUserId(user.id);
+        
+        // Get user's name from metadata or use email as fallback
+        const userMeta = user.user_metadata;
+        const displayName = userMeta?.full_name || 
+                           (userMeta?.first_name && userMeta?.last_name 
+                             ? `${userMeta.first_name} ${userMeta.last_name}` 
+                             : user.email);
+        
+        setUserName(displayName || 'User');
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Failed to get user:', error);
+        toast({
+          title: "Error",
+          description: "Failed to authenticate",
+          variant: "destructive",
+        });
+        navigate('/');
+      }
+    };
+    
+    fetchUser();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          navigate('/');
+        } else if (session?.user) {
+          setUserId(session.user.id);
+          const userMeta = session.user.user_metadata;
+          const displayName = userMeta?.full_name || 
+                             (userMeta?.first_name && userMeta?.last_name 
+                               ? `${userMeta.first_name} ${userMeta.last_name}` 
+                               : session.user.email);
+          
+          setUserName(displayName || 'User');
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
   
   const {
     chatRooms,
     currentRoom,
     messages,
-    loading,
+    loading: chatLoading,
     error,
     newMessageText,
     setNewMessageText,
@@ -29,23 +94,25 @@ export default function Chat() {
     handleSendMessage,
     refreshRooms
   } = useChat({
-    userId: MOCK_USER_ID,
-    userName: MOCK_USER_NAME
+    userId: userId || '',
+    userName: userName
   });
 
   // Handle creating a new chat
   const handleCreateChat = async (name: string, type: 'direct' | 'group', participants: string[]) => {
+    if (!userId) return;
+    
     try {
       // Add current user to participants if not already included
-      if (!participants.includes(MOCK_USER_ID)) {
-        participants.push(MOCK_USER_ID);
+      if (!participants.includes(userId)) {
+        participants.push(userId);
       }
       
       // For direct chats, check if a chat already exists
       if (type === 'direct' && participants.length === 2) {
-        const otherUserId = participants.find(id => id !== MOCK_USER_ID);
+        const otherUserId = participants.find(id => id !== userId);
         if (otherUserId) {
-          const existingRoom = await getDirectChatWithUser(MOCK_USER_ID, otherUserId);
+          const existingRoom = await getDirectChatWithUser(userId, otherUserId);
           if (existingRoom) {
             toast({
               title: "Chat already exists",
@@ -86,6 +153,8 @@ export default function Chat() {
 
   // Handle opening work order chat
   const openWorkOrderChat = async (workOrderId: string, workOrderName: string) => {
+    if (!userId) return;
+    
     try {
       // Check if a work order chat already exists
       let workOrderRoom = await getWorkOrderChatRoom(workOrderId);
@@ -95,7 +164,7 @@ export default function Chat() {
         workOrderRoom = await createChatRoom(
           `Work Order: ${workOrderName}`,
           'work_order',
-          [MOCK_USER_ID], // Initially just add the current user
+          [userId], // Initially just add the current user
           workOrderId
         );
         
@@ -119,7 +188,7 @@ export default function Chat() {
 
   // Load specified room if roomId is provided in URL
   useEffect(() => {
-    if (roomId && chatRooms.length > 0) {
+    if (roomId && userId && chatRooms.length > 0) {
       const room = chatRooms.find(r => r.id === roomId);
       if (room) {
         selectRoom(room);
@@ -127,7 +196,7 @@ export default function Chat() {
         navigate('/chat');
       }
     }
-  }, [roomId, chatRooms, selectRoom, navigate]);
+  }, [roomId, chatRooms, selectRoom, navigate, userId]);
 
   // Handle view work order details
   const handleViewWorkOrderDetails = () => {
@@ -135,6 +204,14 @@ export default function Chat() {
       navigate(`/work-orders/${currentRoom.work_order_id}`);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -159,7 +236,7 @@ export default function Chat() {
           <ChatWindow
             room={currentRoom}
             messages={messages}
-            userId={MOCK_USER_ID}
+            userId={userId || ''}
             messageText={newMessageText}
             setMessageText={setNewMessageText}
             onSendMessage={handleSendMessage}
