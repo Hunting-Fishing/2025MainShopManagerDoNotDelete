@@ -22,7 +22,9 @@ export function BrandingTab() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [colors, setColors] = useState(defaultColors);
   const [companyName, setCompanyName] = useState("Easy Shop Manager");
-  const [theme, setTheme] = useState("light");
+  
+  // Remove the theme state since ThemeTab now uses ThemeContext directly
+  // const [theme, setTheme] = useState("light");
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -53,7 +55,8 @@ export function BrandingTab() {
     setColors(defaultColors);
     setLogoPreview(null);
     setLogoFile(null);
-    setTheme("light");
+    // We no longer manage theme state here
+    // setTheme("light");
     
     toast({
       title: "Branding reset",
@@ -67,7 +70,7 @@ export function BrandingTab() {
       colors,
       logoFile,
       companyName,
-      theme
+      // theme is no longer managed here
     });
     
     // Apply colors to CSS variables (this is a simplified approach)
@@ -115,7 +118,8 @@ export function BrandingTab() {
         </TabsContent>
 
         <TabsContent value="theme" className="space-y-4">
-          <ThemeTab theme={theme} setTheme={setTheme} />
+          {/* Remove theme and setTheme props */}
+          <ThemeTab />
         </TabsContent>
       </Tabs>
     </div>

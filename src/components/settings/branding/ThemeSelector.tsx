@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 
 interface ThemeSelectorProps {
   theme: string;
-  setTheme: (value: string) => void;
+  setTheme: (value: any) => void;
 }
 
 export function ThemeSelector({ theme, setTheme }: ThemeSelectorProps) {
