@@ -1,118 +1,56 @@
 
-import { useEffect, useState } from "react";
+import React from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Command, CommandInput, CommandList, CommandGroup, CommandItem } from "@/components/ui/command";
 import { useNavigate } from "react-router-dom";
-import { Search, File, Package, FileText, User, Wrench, ClipboardList, Calendar, Settings, BarChart3, Home } from "lucide-react";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
 
-interface GlobalCommandMenuProps {
+export interface GlobalCommandMenuProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSearch: (query: string) => void;
+  onSearch: (value: string) => void;
 }
 
 export function GlobalCommandMenu({ open, onOpenChange, onSearch }: GlobalCommandMenuProps) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  // Reset search query when dialog opens/closes
-  useEffect(() => {
-    if (!open) {
-      setSearchQuery("");
-    }
-  }, [open]);
-  
-  // Execute global search
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      onSearch(searchQuery);
-    }
-  };
-  
-  // Navigate to page and close menu
-  const navigateTo = (path: string) => {
-    navigate(path);
-    onOpenChange(false);
-  };
-  
+
+  const quickLinks = [
+    { title: "Work Orders", href: "/work-orders" },
+    { title: "Create Work Order", href: "/work-orders/new" },
+    { title: "Customers", href: "/customers" },
+    { title: "Invoices", href: "/invoices" },
+    { title: "Create Invoice", href: "/invoices/new" },
+    { title: "Calendar", href: "/calendar" },
+    { title: "Inventory", href: "/inventory" },
+    { title: "Equipment", href: "/equipment" },
+    { title: "Maintenance", href: "/maintenance" },
+    { title: "Reports", href: "/reports" },
+  ];
+
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput 
-        placeholder="Type a command or search..." 
-        value={searchQuery}
-        onValueChange={setSearchQuery}
-      />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        
-        {searchQuery && (
-          <CommandGroup heading="Search">
-            <CommandItem onSelect={handleSearch}>
-              <Search className="mr-2 h-4 w-4" />
-              <span>Search for "{searchQuery}"</span>
-            </CommandItem>
-          </CommandGroup>
-        )}
-        
-        <CommandGroup heading="Navigation">
-          <CommandItem onSelect={() => navigateTo("/")}>
-            <Home className="mr-2 h-4 w-4 text-slate-600" />
-            <span>Dashboard</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/work-orders")}>
-            <ClipboardList className="mr-2 h-4 w-4 text-blue-500" />
-            <span>Work Orders</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/invoices")}>
-            <FileText className="mr-2 h-4 w-4 text-green-500" />
-            <span>Invoices</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/inventory")}>
-            <Package className="mr-2 h-4 w-4 text-red-500" />
-            <span>Inventory</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/customers")}>
-            <User className="mr-2 h-4 w-4 text-purple-500" />
-            <span>Customers</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/equipment")}>
-            <Wrench className="mr-2 h-4 w-4 text-orange-500" />
-            <span>Equipment</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/calendar")}>
-            <Calendar className="mr-2 h-4 w-4 text-indigo-500" />
-            <span>Calendar</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/reports")}>
-            <BarChart3 className="mr-2 h-4 w-4 text-yellow-500" />
-            <span>Reports</span>
-          </CommandItem>
-        </CommandGroup>
-        
-        <CommandSeparator />
-        
-        <CommandGroup heading="Quick Actions">
-          <CommandItem onSelect={() => navigateTo("/work-orders/new")}>
-            <File className="mr-2 h-4 w-4" />
-            <span>Create Work Order</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/invoices/new")}>
-            <File className="mr-2 h-4 w-4" />
-            <span>Create Invoice</span>
-          </CommandItem>
-          <CommandItem onSelect={() => navigateTo("/settings")}>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </CommandItem>
-        </CommandGroup>
-      </CommandList>
-    </CommandDialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="p-0" style={{ maxWidth: "640px" }}>
+        <Command>
+          <CommandInput 
+            placeholder="Type a command or search..." 
+            onValueChange={onSearch}
+          />
+          <CommandList>
+            <CommandGroup heading="Quick Links">
+              {quickLinks.map((link) => (
+                <CommandItem
+                  key={link.href}
+                  onSelect={() => {
+                    navigate(link.href);
+                    onOpenChange(false);
+                  }}
+                >
+                  {link.title}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </DialogContent>
+    </Dialog>
   );
 }

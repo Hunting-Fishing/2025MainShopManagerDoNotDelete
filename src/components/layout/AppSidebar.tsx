@@ -1,105 +1,74 @@
 
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  LayoutDashboard,
-  ClipboardList,
-  Users,
-  Receipt,
-  CalendarDays,
-  Package2,
+import React from "react";
+import { Link } from "react-router-dom";
+import { 
+  Home, 
+  Clipboard, 
+  Users, 
+  FileText, 
+  Calendar, 
+  Package, 
   Settings,
-  Wrench,
+  Users2,
   BarChart3,
-  Layers3,
-  UserCircle,
-  ShieldCheck,
+  Wrench,
+  Settings2
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useSidebar } from "@/components/ui/sidebar";
 
 const AppSidebar = () => {
-  const location = useLocation();
-  const currentPath = location.pathname;
-
-  const isActive = (path: string) => {
-    return currentPath === path || (path !== "/" && currentPath.startsWith(path));
-  };
-
-  const navigation = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "Work Orders", href: "/work-orders", icon: ClipboardList },
-    { name: "Customers", href: "/customers", icon: Users },
-    { name: "Invoices", href: "/invoices", icon: Receipt },
-    { name: "Inventory", href: "/inventory", icon: Package2 },
-    { name: "Equipment", href: "/equipment", icon: Layers3 },
-    { name: "Maintenance", href: "/maintenance", icon: Wrench },
-    { name: "Calendar", href: "/calendar", icon: CalendarDays },
-    { name: "Reports", href: "/reports", icon: BarChart3 },
-    { name: "Team", href: "/team", icon: UserCircle },
-  ];
-
-  const secondaryNavigation = [
-    { name: "Settings", href: "/settings", icon: Settings },
-  ];
+  const { collapsed } = useSidebar();
 
   return (
-    <div className="hidden border-r bg-slate-50/40 lg:block dark:bg-slate-950/50">
-      <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-14 items-center border-b px-4">
-          <Link
-            to="/"
-            className="flex items-center gap-2 font-semibold"
-          >
-            <ShieldCheck className="h-6 w-6 text-esm-blue-600" />
-            <span>ESM Manager</span>
-          </Link>
-        </div>
-        <ScrollArea className="flex-1 overflow-auto">
-          <div className="flex flex-col gap-2 p-2">
-            {navigation.map((item) => (
-              <Button
-                key={item.name}
-                asChild
-                variant="ghost"
-                className={cn(
-                  "justify-start",
-                  isActive(item.href) && "bg-muted text-foreground font-medium hover:bg-muted"
-                )}
-              >
-                <Link to={item.href} className="flex items-center">
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
-                </Link>
-              </Button>
-            ))}
-          </div>
-          <div className="mt-4 p-2">
-            <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-              Management
-            </h2>
-            <div className="flex flex-col gap-2">
-              {secondaryNavigation.map((item) => (
-                <Button
-                  key={item.name}
-                  asChild
-                  variant="ghost"
-                  className={cn(
-                    "justify-start",
-                    isActive(item.href) && "bg-muted text-foreground font-medium hover:bg-muted"
-                  )}
-                >
-                  <Link to={item.href} className="flex items-center">
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.name}
-                  </Link>
-                </Button>
-              ))}
-            </div>
-          </div>
-        </ScrollArea>
+    <div 
+      className={`h-screen border-r bg-white transition-all duration-300 ${
+        collapsed ? "w-16" : "w-64"
+      }`}
+    >
+      <div className="flex h-16 items-center justify-center border-b px-4">
+        {collapsed ? (
+          <span className="text-xl font-bold">FM</span>
+        ) : (
+          <span className="text-xl font-bold">Field Management</span>
+        )}
+      </div>
+      <div className="flex flex-col gap-1 p-2">
+        <NavItem to="/" icon={<Home />} label="Dashboard" collapsed={collapsed} />
+        <NavItem to="/work-orders" icon={<Clipboard />} label="Work Orders" collapsed={collapsed} />
+        <NavItem to="/customers" icon={<Users />} label="Customers" collapsed={collapsed} />
+        <NavItem to="/invoices" icon={<FileText />} label="Invoices" collapsed={collapsed} />
+        <NavItem to="/calendar" icon={<Calendar />} label="Calendar" collapsed={collapsed} />
+        <NavItem to="/inventory" icon={<Package />} label="Inventory" collapsed={collapsed} />
+        <NavItem to="/equipment" icon={<Wrench />} label="Equipment" collapsed={collapsed} />
+        <NavItem to="/maintenance" icon={<Settings2 />} label="Maintenance" collapsed={collapsed} />
+        <NavItem to="/team" icon={<Users2 />} label="Team" collapsed={collapsed} />
+        <NavItem to="/reports" icon={<BarChart3 />} label="Reports" collapsed={collapsed} />
+        <NavItem to="/settings" icon={<Settings />} label="Settings" collapsed={collapsed} />
       </div>
     </div>
+  );
+};
+
+interface NavItemProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  collapsed: boolean;
+}
+
+const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
+  return (
+    <Button 
+      variant="ghost" 
+      className="w-full justify-start" 
+      asChild
+    >
+      <Link to={to} className="flex items-center gap-3 px-3 py-2">
+        {icon}
+        {!collapsed && <span>{label}</span>}
+      </Link>
+    </Button>
   );
 };
 
