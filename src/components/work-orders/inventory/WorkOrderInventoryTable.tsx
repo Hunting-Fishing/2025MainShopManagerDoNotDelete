@@ -1,9 +1,9 @@
 
 import React from "react";
 import { X } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { InventoryQuantityManager } from "./InventoryQuantityManager";
 
 interface WorkOrderInventoryTableProps {
   items: WorkOrderInventoryItem[];
@@ -43,31 +43,11 @@ export const WorkOrderInventoryTable: React.FC<WorkOrderInventoryTableProps> = (
               <td className="px-4 py-3 text-sm font-medium">{item.name}</td>
               <td className="px-4 py-3 text-sm text-slate-500">{item.sku}</td>
               <td className="px-4 py-3 text-sm text-center">
-                <div className="flex items-center justify-center">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-7 w-7"
-                    onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                  >
-                    -
-                  </Button>
-                  <Input 
-                    type="number" 
-                    value={item.quantity}
-                    onChange={(e) => onUpdateQuantity(item.id, parseInt(e.target.value) || 0)}
-                    className="h-7 w-16 mx-1 text-center"
-                    min={1}
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-7 w-7"
-                    onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                  >
-                    +
-                  </Button>
-                </div>
+                <InventoryQuantityManager
+                  itemId={item.id}
+                  quantity={item.quantity}
+                  onUpdateQuantity={onUpdateQuantity}
+                />
               </td>
               <td className="px-4 py-3 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
               <td className="px-4 py-3 text-sm font-medium text-right">
