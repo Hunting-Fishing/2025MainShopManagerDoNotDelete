@@ -38,7 +38,7 @@ export function BrandingTab() {
     }
   };
 
-  const handleColorChange = (colorKey: keyof typeof colors, value: string) => {
+  const handleColorChange = (colorKey: string, value: string) => {
     setColors(prev => ({
       ...prev,
       [colorKey]: value

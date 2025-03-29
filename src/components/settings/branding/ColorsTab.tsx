@@ -11,7 +11,7 @@ interface ColorsTabProps {
     text: string;
     background: string;
   };
-  onColorChange: (colorKey: keyof typeof colors, value: string) => void;
+  onColorChange: (colorKey: string, value: string) => void;
 }
 
 export function ColorsTab({ colors, onColorChange }: ColorsTabProps) {
