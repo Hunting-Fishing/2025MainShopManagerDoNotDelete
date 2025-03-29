@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +24,7 @@ import EquipmentDetails from "@/pages/EquipmentDetails";
 import Customers from "@/pages/Customers";
 import CustomerDetails from "@/pages/CustomerDetails";
 import CustomerServiceHistory from "@/pages/CustomerServiceHistory";
+import CustomerFollowUps from "@/pages/CustomerFollowUps";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import "./styles/workOrders.css";
@@ -52,6 +54,7 @@ const App = () => (
             <Route path="/customers" element={<Layout><Customers /></Layout>} />
             <Route path="/customers/:id" element={<Layout><CustomerDetails /></Layout>} />
             <Route path="/customer-service-history/:customer" element={<Layout><CustomerServiceHistory /></Layout>} />
+            <Route path="/customer-follow-ups" element={<Layout><CustomerFollowUps /></Layout>} />
             <Route path="/team" element={<Layout><Team /></Layout>} />
             <Route path="/team/new" element={<Layout><TeamMemberCreate /></Layout>} />
             <Route path="/team/:id" element={<Layout><TeamMemberProfile /></Layout>} />
