@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { WorkOrder } from "@/data/workOrdersData";
 import { TimeEntry } from "@/types/workOrder";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderDetailsHeader } from "./details/WorkOrderDetailsHeader";
+import WorkOrderDetailsHeader from "./details/WorkOrderDetailsHeader"; // Fixed import
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
 import { recordWorkOrderActivity } from "@/utils/activityTracker";
 
