@@ -1,12 +1,8 @@
 
 import React from "react";
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
-import { InvoiceInformationForm } from "@/components/invoices/InvoiceInformationForm";
-import { WorkOrderLinkSection } from "@/components/invoices/WorkOrderLinkSection";
-import { InvoiceItemsManager } from "@/components/invoices/InvoiceItemsManager";
-import { InvoiceSummary } from "@/components/invoices/InvoiceSummary";
-import { StaffAssignment } from "@/components/invoices/StaffAssignment";
-import { InvoiceTemplateActions } from "@/components/invoices/InvoiceTemplateActions";
+import { InvoiceLeftColumn } from "@/components/invoices/layout/InvoiceLeftColumn";
+import { InvoiceRightColumn } from "@/components/invoices/layout/InvoiceRightColumn";
 import { Invoice, InvoiceTemplate, WorkOrder, StaffMember } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 import { createInvoiceUpdater } from "@/types/invoice";
@@ -90,98 +86,42 @@ export function InvoiceCreateLayout({
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Invoice Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Template Actions Section */}
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">Invoice Templates</h2>
-              <InvoiceTemplateActions 
-                invoice={invoice}
-                taxRate={taxRate}
-                templates={templates}
-                onSelectTemplate={handleApplyTemplate}
-                onSaveTemplate={handleSaveTemplate}
-              />
-            </div>
-          </div>
-          
-          {/* Invoice Information */}
-          <InvoiceInformationForm
-            // Basic info props
-            invoiceId={invoice.id}
-            status={invoice.status}
-            date={invoice.date}
-            dueDate={invoice.dueDate}
-            onInvoiceIdChange={(value) => setInvoice(createInvoiceUpdater({ id: value }))}
-            onStatusChange={(value) => setInvoice(createInvoiceUpdater({ status: value }))}
-            onDateChange={(value) => setInvoice(createInvoiceUpdater({ date: value }))}
-            onDueDateChange={(value) => setInvoice(createInvoiceUpdater({ dueDate: value }))}
-            
-            // Customer info props
-            customer={invoice.customer}
-            customerAddress={invoice.customerAddress}
-            customerEmail={invoice.customerEmail}
-            onCustomerChange={(value) => setInvoice(createInvoiceUpdater({ customer: value }))}
-            onCustomerAddressChange={(value) => setInvoice(createInvoiceUpdater({ customerAddress: value }))}
-            onCustomerEmailChange={(value) => setInvoice(createInvoiceUpdater({ customerEmail: value }))}
-            
-            // Description and notes props
-            description={invoice.description}
-            notes={invoice.notes}
-            onDescriptionChange={(value) => setInvoice(createInvoiceUpdater({ description: value }))}
-            onNotesChange={(value) => setInvoice(createInvoiceUpdater({ notes: value }))}
-          />
-          
-          {/* Work Order Reference */}
-          <WorkOrderLinkSection
-            workOrderId={invoice.workOrderId}
-            description={invoice.description}
-            workOrders={workOrders}
-            onSelectWorkOrder={handleSelectWorkOrder}
-            onClearWorkOrder={() => setInvoice(createInvoiceUpdater({ workOrderId: "" }))}
-            showWorkOrderDialog={showWorkOrderDialog}
-            setShowWorkOrderDialog={setShowWorkOrderDialog}
-          />
-          
-          {/* Items */}
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
-            <InvoiceItemsManager
-              items={invoice.items}
-              inventoryItems={inventoryItems}
-              showInventoryDialog={showInventoryDialog}
-              setShowInventoryDialog={setShowInventoryDialog}
-              onAddInventoryItem={handleAddInventoryItem}
-              onAddLaborItem={handleAddLaborItem}
-              onRemoveItem={handleRemoveItem}
-              onUpdateItemQuantity={handleUpdateItemQuantity}
-              onUpdateItemDescription={handleUpdateItemDescription}
-              onUpdateItemPrice={handleUpdateItemPrice}
-            />
-          </div>
-        </div>
+        <InvoiceLeftColumn 
+          invoice={invoice}
+          workOrders={workOrders}
+          inventoryItems={inventoryItems}
+          templates={templates}
+          showWorkOrderDialog={showWorkOrderDialog}
+          showInventoryDialog={showInventoryDialog}
+          setInvoice={setInvoice}
+          setShowWorkOrderDialog={setShowWorkOrderDialog}
+          setShowInventoryDialog={setShowInventoryDialog}
+          handleSelectWorkOrder={handleSelectWorkOrder}
+          handleAddInventoryItem={handleAddInventoryItem}
+          handleRemoveItem={handleRemoveItem}
+          handleUpdateItemQuantity={handleUpdateItemQuantity}
+          handleUpdateItemDescription={handleUpdateItemDescription}
+          handleUpdateItemPrice={handleUpdateItemPrice}
+          handleAddLaborItem={handleAddLaborItem}
+          handleApplyTemplate={handleApplyTemplate}
+          handleSaveTemplate={handleSaveTemplate}
+        />
         
         {/* Right Column - Summary and Staff */}
-        <div className="space-y-6">
-          {/* Invoice Summary */}
-          <InvoiceSummary
-            subtotal={subtotal}
-            taxRate={taxRate}
-            tax={tax}
-            total={total}
-          />
-          
-          {/* Staff Assignment */}
-          <StaffAssignment
-            createdBy={invoice.createdBy}
-            assignedStaff={invoice.assignedStaff}
-            staffMembers={staffMembers}
-            showStaffDialog={showStaffDialog}
-            setShowStaffDialog={setShowStaffDialog}
-            onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ createdBy: value }))}
-            onAddStaffMember={handleAddStaffMember}
-            onRemoveStaffMember={handleRemoveStaffMember}
-          />
-        </div>
+        <InvoiceRightColumn 
+          createdBy={invoice.createdBy}
+          assignedStaff={invoice.assignedStaff}
+          staffMembers={staffMembers}
+          subtotal={subtotal}
+          taxRate={taxRate}
+          tax={tax}
+          total={total}
+          showStaffDialog={showStaffDialog}
+          setShowStaffDialog={setShowStaffDialog}
+          onCreatedByChange={(value) => setInvoice(createInvoiceUpdater({ createdBy: value }))}
+          onAddStaffMember={handleAddStaffMember}
+          onRemoveStaffMember={handleRemoveStaffMember}
+        />
       </div>
     </div>
   );
