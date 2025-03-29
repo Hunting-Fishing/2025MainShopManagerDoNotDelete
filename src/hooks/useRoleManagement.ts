@@ -6,11 +6,19 @@ import { useRoleActions } from "./roles/useRoleActions";
 import { useRoleImportExport } from "./roles/useRoleImportExport";
 
 export function useRoleManagement(initialRoles: Role[]) {
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  // Sort the initial roles by priority
+  const sortedInitialRoles = [...initialRoles].sort((a, b) => a.priority - b.priority);
+  const [roles, setRoles] = useState<Role[]>(sortedInitialRoles);
   
   // Import role management sub-hooks
   const { searchQuery, setSearchQuery, typeFilter, setTypeFilter, filterRoles } = useRoleFilter();
-  const { handleAddRole, handleEditRole, handleDeleteRole, handleDuplicateRole } = useRoleActions(roles, setRoles);
+  const { 
+    handleAddRole, 
+    handleEditRole, 
+    handleDeleteRole, 
+    handleDuplicateRole,
+    handleReorderRole 
+  } = useRoleActions(roles, setRoles);
   const { handleImportRoles } = useRoleImportExport(roles, setRoles);
 
   // Apply filters to roles
@@ -27,6 +35,7 @@ export function useRoleManagement(initialRoles: Role[]) {
     handleEditRole,
     handleDeleteRole,
     handleDuplicateRole,
+    handleReorderRole,
     handleImportRoles
   };
 }

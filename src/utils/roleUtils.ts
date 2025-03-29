@@ -43,6 +43,11 @@ export const validateImportedRoles = (roles: any[]): { valid: boolean; message?:
         message: "One or more roles are missing required properties (id, name, permissions)" 
       };
     }
+    
+    // Add priority if it doesn't exist
+    if (role.priority === undefined) {
+      role.priority = 999; // High value to put at end of list
+    }
   }
   
   return { valid: true };

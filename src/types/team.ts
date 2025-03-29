@@ -32,6 +32,7 @@ export interface Role {
   permissions: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  priority: number; // Added priority field for role ordering
 }
 
 // Unified interface for role management

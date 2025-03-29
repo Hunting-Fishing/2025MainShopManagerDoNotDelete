@@ -11,7 +11,9 @@ import {
   ChevronUp, 
   CheckCircle2, 
   XCircle,
-  Copy
+  Copy,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { Role } from "@/types/team";
 import { PermissionSet } from "@/types/permissions";
@@ -21,9 +23,20 @@ interface RoleCardProps {
   onEdit: (role: Role) => void;
   onDelete: (role: Role) => void;
   onDuplicate: (role: Role) => void;
+  onReorder: (roleId: string, direction: 'up' | 'down') => boolean;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
-export function RoleCard({ role, onEdit, onDelete, onDuplicate }: RoleCardProps) {
+export function RoleCard({ 
+  role, 
+  onEdit, 
+  onDelete, 
+  onDuplicate, 
+  onReorder,
+  isFirst,
+  isLast
+}: RoleCardProps) {
   const [showPermissions, setShowPermissions] = useState(false);
   const permissions = role.permissions as PermissionSet;
 
@@ -66,6 +79,29 @@ export function RoleCard({ role, onEdit, onDelete, onDuplicate }: RoleCardProps)
             <CardTitle>{role.name}</CardTitle>
           </div>
           <div className="flex items-center">
+            {/* Reordering buttons */}
+            <div className="mr-2 flex flex-col">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => onReorder(role.id, 'up')}
+                disabled={isFirst}
+                className="h-6 w-6"
+                title="Move Up"
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => onReorder(role.id, 'down')}
+                disabled={isLast}
+                className="h-6 w-6"
+                title="Move Down"
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+            </div>
             <Button 
               variant="ghost" 
               size="icon"
@@ -111,6 +147,10 @@ export function RoleCard({ role, onEdit, onDelete, onDuplicate }: RoleCardProps)
           
           <Badge variant="outline" className="bg-slate-50">
             {totalEnabled} Permissions
+          </Badge>
+          
+          <Badge variant="outline" className="bg-slate-50">
+            Priority: {role.priority}
           </Badge>
         </div>
         

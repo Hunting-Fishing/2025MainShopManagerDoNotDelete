@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Role } from "@/types/team";
 import { PermissionSet } from "@/types/permissions";
@@ -19,7 +20,8 @@ const initialRoles: Role[] = [
     isDefault: true,
     permissions: permissionPresets.Owner,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    priority: 1
   },
   {
     id: "role-2",
@@ -28,7 +30,8 @@ const initialRoles: Role[] = [
     isDefault: true,
     permissions: permissionPresets.Administrator,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    priority: 2
   },
   {
     id: "role-3",
@@ -37,7 +40,8 @@ const initialRoles: Role[] = [
     isDefault: true,
     permissions: permissionPresets.Technician,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    priority: 3
   },
   {
     id: "role-4",
@@ -46,7 +50,8 @@ const initialRoles: Role[] = [
     isDefault: true,
     permissions: permissionPresets["Customer Service"],
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    priority: 4
   }
 ];
 
@@ -61,7 +66,8 @@ export default function TeamRoles() {
     handleEditRole,
     handleDeleteRole,
     handleDuplicateRole,
-    handleImportRoles
+    handleImportRoles,
+    handleReorderRole
   } = useRoleManagement(initialRoles);
 
   // Dialog state
@@ -152,6 +158,7 @@ export default function TeamRoles() {
           setIsDeleteDialogOpen(true);
         }}
         onDuplicateRole={handleDuplicateRole}
+        onReorderRole={handleReorderRole}
       />
 
       <AddRoleDialog

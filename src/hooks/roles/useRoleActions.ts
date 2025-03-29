@@ -28,6 +28,11 @@ export function useRoleActions(roles: Role[], setRoles: React.Dispatch<React.Set
       return false;
     }
 
+    // Find the highest priority to add new role at the end
+    const highestPriority = roles.length > 0 
+      ? Math.max(...roles.map(role => role.priority)) 
+      : 0;
+
     const newRole: Role = {
       id: `role-${uuidv4()}`,
       name: newRoleName,
@@ -35,7 +40,8 @@ export function useRoleActions(roles: Role[], setRoles: React.Dispatch<React.Set
       isDefault: false,
       permissions: rolePermissions || {} as PermissionSet,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      priority: highestPriority + 1 // Set priority to be after all existing roles
     };
 
     setRoles([...roles, newRole]);
@@ -113,6 +119,9 @@ export function useRoleActions(roles: Role[], setRoles: React.Dispatch<React.Set
       return false;
     }
     
+    // Find the highest priority to add the duplicate after the original
+    const highestPriority = Math.max(...roles.map(role => role.priority));
+    
     const duplicateRole: Role = {
       id: `role-${uuidv4()}`,
       name: duplicateName,
@@ -120,7 +129,8 @@ export function useRoleActions(roles: Role[], setRoles: React.Dispatch<React.Set
       isDefault: false, // Duplicated roles are never default
       permissions: {...roleToDuplicate.permissions},
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      priority: highestPriority + 1 // Set priority to be after all existing roles
     };
     
     setRoles([...roles, duplicateRole]);
@@ -134,10 +144,55 @@ export function useRoleActions(roles: Role[], setRoles: React.Dispatch<React.Set
     return true;
   };
 
+  // New function to handle role reordering
+  const handleReorderRole = (roleId: string, direction: 'up' | 'down') => {
+    // Find the role to reorder
+    const roleIndex = roles.findIndex(role => role.id === roleId);
+    if (roleIndex === -1) return false;
+
+    // Get the current role
+    const currentRole = roles[roleIndex];
+    
+    // Determine target index based on direction
+    const targetIndex = direction === 'up' ? roleIndex - 1 : roleIndex + 1;
+    
+    // Check if target index is valid
+    if (targetIndex < 0 || targetIndex >= roles.length) {
+      toast({
+        title: `Cannot move role ${direction}`,
+        description: `The role is already at the ${direction === 'up' ? 'top' : 'bottom'}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    // Get the target role
+    const targetRole = roles[targetIndex];
+    
+    // Swap priorities
+    const updatedRoles = [...roles];
+    updatedRoles[roleIndex] = { ...currentRole, priority: targetRole.priority };
+    updatedRoles[targetIndex] = { ...targetRole, priority: currentRole.priority };
+    
+    // Sort by priority to ensure correct order
+    const sortedRoles = updatedRoles.sort((a, b) => a.priority - b.priority);
+    
+    setRoles(sortedRoles);
+    
+    toast({
+      title: "Role order updated",
+      description: `The role "${currentRole.name}" has been moved ${direction}`,
+      variant: "success",
+    });
+    
+    return true;
+  };
+
   return {
     handleAddRole,
     handleEditRole,
     handleDeleteRole,
-    handleDuplicateRole
+    handleDuplicateRole,
+    handleReorderRole
   };
 }

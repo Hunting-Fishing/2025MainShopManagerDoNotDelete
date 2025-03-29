@@ -8,9 +8,10 @@ interface RolesGridProps {
   onEditRole: (role: Role) => void;
   onDeleteRole: (role: Role) => void;
   onDuplicateRole: (role: Role) => void;
+  onReorderRole: (roleId: string, direction: 'up' | 'down') => boolean;
 }
 
-export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole }: RolesGridProps) {
+export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole, onReorderRole }: RolesGridProps) {
   if (roles.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 bg-slate-50 rounded-lg">
@@ -19,15 +20,21 @@ export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole }: 
     );
   }
 
+  // Sort roles by priority before rendering
+  const sortedRoles = [...roles].sort((a, b) => a.priority - b.priority);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {roles.map(role => (
+      {sortedRoles.map(role => (
         <RoleCard 
           key={role.id} 
           role={role} 
           onEdit={onEditRole} 
           onDelete={onDeleteRole}
           onDuplicate={onDuplicateRole}
+          onReorder={onReorderRole}
+          isFirst={role.priority === Math.min(...roles.map(r => r.priority))}
+          isLast={role.priority === Math.max(...roles.map(r => r.priority))}
         />
       ))}
     </div>

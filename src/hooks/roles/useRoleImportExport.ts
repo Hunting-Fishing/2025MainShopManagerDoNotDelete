@@ -24,24 +24,38 @@ export function useRoleImportExport(roles: Role[], setRoles: React.Dispatch<Reac
       existingRoleNames.has(role.name.toLowerCase())
     );
     
+    // Get the highest current priority
+    const highestPriority = roles.length > 0 
+      ? Math.max(...roles.map(role => role.priority)) 
+      : 0;
+    
+    // Add priority to imported roles if they don't have it
+    let nextPriority = highestPriority + 1;
+    const processedRoles = customImportedRoles
+      .filter(role => !existingRoleNames.has(role.name.toLowerCase()))
+      .map(role => {
+        if (role.priority === undefined) {
+          const newRole = { ...role, priority: nextPriority };
+          nextPriority++;
+          return newRole;
+        }
+        return role;
+      });
+    
     if (duplicates.length > 0) {
-      const nonDuplicates = customImportedRoles.filter(
-        role => !existingRoleNames.has(role.name.toLowerCase())
-      );
-      
-      setRoles([...roles, ...nonDuplicates]);
+      setRoles([...roles, ...processedRoles]);
       
       toast({
         title: "Roles imported with warnings",
-        description: `Imported ${nonDuplicates.length} roles. ${duplicates.length} roles were skipped due to name conflicts.`,
+        description: `Imported ${processedRoles.length} roles. ${duplicates.length} roles were skipped due to name conflicts.`,
         variant: "warning",
       });
     } else {
-      setRoles([...roles, ...customImportedRoles]);
+      setRoles([...roles, ...processedRoles]);
       
       toast({
         title: "Roles imported successfully",
-        description: `Imported ${customImportedRoles.length} roles`,
+        description: `Imported ${processedRoles.length} roles`,
         variant: "success",
       });
     }
