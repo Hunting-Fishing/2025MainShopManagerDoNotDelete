@@ -1,5 +1,5 @@
 
-import { Download, FileText } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -23,6 +23,8 @@ interface InvoiceExportMenuProps {
 export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
   const handleExport = (format: "csv" | "excel" | "pdf") => {
     try {
+      console.log(`Exporting invoice ${invoice.id} as ${format}`);
+      
       // Prepare invoice data for export
       const exportData = {
         id: invoice.id,

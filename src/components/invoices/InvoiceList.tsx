@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Download } from "lucide-react";
 import { InvoiceStatusBadge } from "./InvoiceStatusBadge";
@@ -29,6 +28,8 @@ interface InvoiceListProps {
 export function InvoiceList({ invoices }: InvoiceListProps) {
   const handleExportAll = (format: "csv" | "excel" | "pdf") => {
     try {
+      console.log(`Exporting all invoices as ${format}`);
+      
       if (invoices.length === 0) {
         toast({
           title: "No data to export",

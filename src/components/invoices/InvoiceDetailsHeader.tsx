@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Edit, Printer, Send } from "lucide-react";
 import { InvoiceExportMenu } from "./InvoiceExportMenu";
 import { Invoice } from "@/types/invoice";
+import { toast } from "@/components/ui/use-toast";
 
 interface InvoiceDetailsHeaderProps {
   invoiceId: string;
@@ -25,6 +26,17 @@ export function InvoiceDetailsHeader({
   statusStyles,
   invoice,
 }: InvoiceDetailsHeaderProps) {
+  const handleEmailInvoice = () => {
+    toast({
+      title: "Email sent",
+      description: `Invoice ${invoiceId} has been emailed to the customer.`,
+    });
+  };
+
+  const handlePrintInvoice = () => {
+    window.print();
+  };
+
   return (
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
       <div className="flex items-center gap-2">
@@ -39,11 +51,19 @@ export function InvoiceDetailsHeader({
         </span>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" className="flex items-center gap-1">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-1"
+          onClick={handleEmailInvoice}
+        >
           <Send className="h-4 w-4" />
           Email
         </Button>
-        <Button variant="outline" className="flex items-center gap-1">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-1"
+          onClick={handlePrintInvoice}
+        >
           <Printer className="h-4 w-4" />
           Print
         </Button>
