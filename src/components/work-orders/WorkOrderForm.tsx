@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Form } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
 import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { TimeEntry } from "@/types/workOrder";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -13,6 +14,7 @@ import { AssignmentSection } from "@/components/work-orders/AssignmentSection";
 import { NotesSection } from "@/components/work-orders/NotesSection";
 import { WorkOrderInventorySection } from "@/components/work-orders/inventory/WorkOrderInventorySection";
 import { FormActions } from "@/components/work-orders/FormActions";
+import { TimeTrackingSection } from "@/components/work-orders/time-tracking/TimeTrackingSection";
 
 interface WorkOrderFormProps {
   technicians: string[];
@@ -20,7 +22,13 @@ interface WorkOrderFormProps {
 
 export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ technicians }) => {
   const navigate = useNavigate();
-  const { form, onSubmit, isSubmitting, error } = useWorkOrderForm();
+  const { form, onSubmit, isSubmitting, error, setTimeEntries } = useWorkOrderForm();
+  const [timeEntries, setLocalTimeEntries] = useState<TimeEntry[]>([]);
+
+  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
+    setLocalTimeEntries(entries);
+    setTimeEntries(entries);
+  };
 
   return (
     <div className="rounded-lg border border-slate-200 p-6 bg-white">
@@ -58,6 +66,19 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ technicians }) => 
           />
         </form>
       </Form>
+
+      {/* Time Tracking Section - Only available after work order creation */}
+      <div className="pt-8 mt-8 border-t border-gray-200">
+        <div className="text-sm text-gray-500 mb-2">Note: Additional time tracking can be added after the work order is created.</div>
+        
+        {timeEntries.length > 0 && (
+          <TimeTrackingSection 
+            workOrderId="new-work-order" 
+            timeEntries={timeEntries} 
+            onUpdateTimeEntries={handleUpdateTimeEntries} 
+          />
+        )}
+      </div>
     </div>
   );
 };

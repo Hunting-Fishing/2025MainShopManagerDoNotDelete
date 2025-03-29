@@ -4,6 +4,8 @@ import { WorkOrder } from "@/data/workOrdersData";
 import { EditFormHeader } from "./edit/EditFormHeader";
 import { WorkOrderEditFormContent } from "./edit/WorkOrderEditFormContent";
 import { useWorkOrderEditForm } from "@/hooks/useWorkOrderEditForm";
+import { TimeTrackingSection } from "./time-tracking/TimeTrackingSection";
+import { TimeEntry } from "@/types/workOrder";
 
 // Mock data for technicians
 const technicians = [
@@ -19,7 +21,12 @@ interface WorkOrderEditFormProps {
 }
 
 export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps) {
-  const { form, onSubmit, isSubmitting, error } = useWorkOrderEditForm(workOrder);
+  const { form, onSubmit, isSubmitting, error, timeEntries, setTimeEntries } = useWorkOrderEditForm(workOrder);
+
+  // Handle updating time entries
+  const handleUpdateTimeEntries = (updatedEntries: TimeEntry[]) => {
+    setTimeEntries(updatedEntries);
+  };
 
   return (
     <div className="space-y-6">
@@ -34,6 +41,13 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
         onSubmit={onSubmit}
         isSubmitting={isSubmitting}
         error={error}
+      />
+
+      {/* Time Tracking Section */}
+      <TimeTrackingSection 
+        workOrderId={workOrder.id}
+        timeEntries={timeEntries}
+        onUpdateTimeEntries={handleUpdateTimeEntries}
       />
     </div>
   );

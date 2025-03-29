@@ -7,7 +7,7 @@ import { format, parse } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { WorkOrder } from "@/data/workOrdersData";
 import { updateWorkOrder } from "@/utils/workOrderUtils";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { recordWorkOrderActivity } from "@/utils/activityTracker";
 import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
@@ -19,6 +19,7 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.timeEntries || []);
 
   // Parse the date strings into Date objects
   const dueDateAsDate = parse(workOrder.dueDate, "yyyy-MM-dd", new Date());
@@ -67,6 +68,11 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
         unitPrice: item.unitPrice
       })) || [];
       
+      // Calculate total billable time
+      const totalBillableTime = timeEntries.reduce((total, entry) => {
+        return entry.billable ? total + entry.duration : total;
+      }, 0);
+      
       // Create the updated work order object
       const updatedWorkOrder: WorkOrder = {
         ...workOrder,
@@ -79,6 +85,8 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
         dueDate: formattedDueDate,
         notes: values.notes,
         inventoryItems: inventoryItems,
+        timeEntries: timeEntries,
+        totalBillableTime: totalBillableTime,
         lastUpdatedBy: currentUser.name,
         lastUpdatedAt: new Date().toISOString(),
       };
@@ -124,6 +132,8 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
     form,
     onSubmit,
     isSubmitting,
-    error
+    error,
+    timeEntries,
+    setTimeEntries
   };
 };

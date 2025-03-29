@@ -7,7 +7,7 @@ import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrderUtils";
 import { format } from "date-fns";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { recordWorkOrderActivity } from "@/utils/activityTracker";
 import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 
@@ -57,6 +57,7 @@ export const useWorkOrderForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
 
   // Initialize the form
   const form = useForm<WorkOrderFormValues>({
@@ -95,6 +96,11 @@ export const useWorkOrderForm = () => {
         unitPrice: item.unitPrice
       })) || [];
       
+      // Calculate total billable time
+      const totalBillableTime = timeEntries.reduce((total, entry) => {
+        return entry.billable ? total + entry.duration : total;
+      }, 0);
+      
       // Create the work order with additional tracking fields
       const newWorkOrder = await createWorkOrder({
         ...values,
@@ -106,6 +112,8 @@ export const useWorkOrderForm = () => {
         technician: values.technician,
         location: values.location,
         inventoryItems: inventoryItems,
+        timeEntries: timeEntries,
+        totalBillableTime,
         createdBy: currentUser.name,
         createdAt: new Date().toISOString(),
         lastUpdatedBy: currentUser.name,
@@ -151,5 +159,6 @@ export const useWorkOrderForm = () => {
     onSubmit,
     isSubmitting,
     error,
+    setTimeEntries,
   };
 };
