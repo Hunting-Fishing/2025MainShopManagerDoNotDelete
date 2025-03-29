@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useInventoryManager } from "@/hooks/useInventoryManager";
+import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { LowStockAlerts } from "./LowStockAlerts";
 
 export function InventoryAlerts() {
