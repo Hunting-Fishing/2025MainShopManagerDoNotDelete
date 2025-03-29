@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
@@ -57,9 +56,8 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
 
   // Fetch customer and related interactions
   useEffect(() => {
-    const foundCustomer = findCustomerById(customers => 
-      customers.find(c => c.name === workOrder.customer)
-    );
+    // Fixed: Pass the customer name directly instead of a callback function
+    const foundCustomer = findCustomerById(workOrder.customer);
     
     if (foundCustomer) {
       setCustomer(foundCustomer);

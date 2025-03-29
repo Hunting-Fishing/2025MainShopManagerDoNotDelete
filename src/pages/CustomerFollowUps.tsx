@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,28 +13,26 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { teamMembers } from "@/data/teamData";
+import { DateRange } from "react-day-picker";
 
 export default function CustomerFollowUps() {
   const [followUps, setFollowUps] = useState<CustomerInteraction[]>([]);
   const [filteredFollowUps, setFilteredFollowUps] = useState<CustomerInteraction[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [staffFilter, setStaffFilter] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<Date[] | undefined>([]);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
-    // Load all pending follow-ups
     const allFollowUps = getPendingFollowUps();
     setFollowUps(allFollowUps);
     setFilteredFollowUps(allFollowUps);
   }, []);
 
-  // Handle marking a follow-up as complete
   const handleCompleteFollowUp = (followUpId: string) => {
     const updatedFollowUp = completeFollowUp(followUpId);
     
     if (updatedFollowUp) {
-      // Update local state to remove or update the follow-up
       if (!showCompleted) {
         setFollowUps(followUps.filter(fu => fu.id !== followUpId));
         setFilteredFollowUps(filteredFollowUps.filter(fu => fu.id !== followUpId));
@@ -51,25 +48,20 @@ export default function CustomerFollowUps() {
     }
   };
 
-  // Apply filters
   const applyFilters = () => {
     let filtered = [...followUps];
     
-    // Filter by staff member
     if (staffFilter !== "all") {
       filtered = filtered.filter(fu => fu.staffMemberId === staffFilter);
     }
     
-    // Filter by date range
-    if (dateRange && dateRange.length === 2) {
-      const [startDate, endDate] = dateRange;
+    if (dateRange && dateRange.from && dateRange.to) {
       filtered = filtered.filter(fu => {
         const followUpDate = new Date(fu.followUpDate);
-        return followUpDate >= startDate && followUpDate <= endDate;
+        return followUpDate >= dateRange.from && followUpDate <= dateRange.to;
       });
     }
     
-    // Filter by completed status
     if (!showCompleted) {
       filtered = filtered.filter(fu => !fu.followUpCompleted);
     }
@@ -78,7 +70,6 @@ export default function CustomerFollowUps() {
     setIsFiltersOpen(false);
   };
 
-  // Reset filters
   const resetFilters = () => {
     setStaffFilter("all");
     setDateRange(undefined);
@@ -133,7 +124,7 @@ export default function CustomerFollowUps() {
                     selected={dateRange}
                     onSelect={setDateRange}
                     numberOfMonths={2}
-                    className="border rounded-md p-3"
+                    className="border rounded-md p-3 pointer-events-auto"
                   />
                 </div>
                 

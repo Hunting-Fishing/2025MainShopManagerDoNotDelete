@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InteractionTypeBadge } from "./InteractionTypeBadge";
 import { InteractionStatusBadge } from "./InteractionStatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { 
   CalendarIcon, 
   ChevronRight, 
