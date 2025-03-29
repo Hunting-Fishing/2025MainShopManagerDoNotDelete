@@ -5,6 +5,7 @@ import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
 import { InvoiceList } from "@/components/invoices/InvoiceList";
 import { invoices } from "@/data/invoiceData";
 import { Invoice } from "@/types/invoice";
+import { useState } from "react";
 
 export default function Invoices() {
   const {
@@ -19,6 +20,16 @@ export default function Invoices() {
     resetFilters
   } = useInvoiceFilters(invoices as Invoice[]);
 
+  // Convert the status filter array to a string for the UI component
+  const statusFilterString = statusFilter.length === 1 ? statusFilter[0] : "all";
+  const handleStatusFilterChange = (status: string) => {
+    if (status === "all") {
+      setStatusFilter([]);
+    } else {
+      setStatusFilter([status]);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <InvoiceListHeader />
@@ -27,8 +38,8 @@ export default function Invoices() {
       <InvoiceFilters
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
+        statusFilter={statusFilterString}
+        setStatusFilter={handleStatusFilterChange}
         createdByFilter={createdByFilter}
         setCreatedByFilter={setCreatedByFilter}
         creators={creators}
