@@ -1,11 +1,12 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Check } from "lucide-react";
+import { FileText } from "lucide-react";
 import { WorkOrder } from "@/types/invoice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useWorkOrderTimeEntries } from "@/hooks/invoice/useWorkOrderTimeEntries";
+import { useNotifications } from "@/context/notifications";
 
 interface WorkOrderToInvoiceConverterProps {
   workOrder: WorkOrder;
@@ -16,6 +17,7 @@ export const WorkOrderToInvoiceConverter: React.FC<WorkOrderToInvoiceConverterPr
 }) => {
   const navigate = useNavigate();
   const { addTimeEntriesToInvoiceItems } = useWorkOrderTimeEntries();
+  const { addNotification } = useNotifications();
 
   const handleCreateInvoice = () => {
     // Check if this work order has billable time
@@ -30,6 +32,13 @@ export const WorkOrderToInvoiceConverter: React.FC<WorkOrderToInvoiceConverterPr
     toast({
       title: "Create Invoice",
       description: "Creating a new invoice from this work order",
+    });
+
+    // Also add a notification
+    addNotification({
+      title: "Invoice Creation Started",
+      message: `Creating a new invoice from work order ${workOrder.id}`,
+      type: "info",
     });
   };
 
