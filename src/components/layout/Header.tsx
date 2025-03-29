@@ -1,14 +1,13 @@
 
 import React, { useState } from "react";
+import { Bell, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Menu, Bell, Search, X } from "lucide-react";
-import { useSidebar } from "@/components/ui/sidebar";
 import { useNotifications } from "@/context/notifications";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { HeaderSidebarToggle } from "./HeaderSidebarToggle";
 
 export function Header() {
-  const { toggleCollapsed, collapsed } = useSidebar();
   const { unreadCount } = useNotifications();
   const [searchOpen, setSearchOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -16,9 +15,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white dark:bg-slate-800 dark:border-slate-700 px-4">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggleCollapsed}>
-          <Menu className="h-5 w-5" />
-        </Button>
+        <HeaderSidebarToggle />
         
         {/* Search shown differently on mobile vs desktop */}
         {isMobile ? (

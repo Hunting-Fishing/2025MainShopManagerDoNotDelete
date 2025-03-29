@@ -14,7 +14,7 @@ import {
   BadgeCheck,
   MessageSquare
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -26,10 +26,17 @@ interface SidebarItemProps {
 }
 
 function SidebarItem({ icon: Icon, href, text }: SidebarItemProps) {
+  const location = useLocation();
+  const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
+  
   return (
     <Link
       to={href}
-      className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+      className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium 
+        ${isActive 
+          ? 'bg-primary/10 text-primary' 
+          : 'hover:bg-accent hover:text-accent-foreground'
+        }`}
     >
       <Icon className="h-4 w-4" />
       {text}
@@ -43,11 +50,10 @@ export function AppSidebar() {
   const { collapsed } = useSidebar();
 
   return (
-    <div className={`sidebar bg-white/40 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 ${
-      collapsed ? 'w-16' : 'w-64'
-    } transition-all duration-300`}>
+    <div className={`sidebar bg-white/40 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 
+      ${collapsed ? 'w-16' : 'w-64'} transition-all duration-300 overflow-y-auto`}>
       <div className="flex flex-col justify-between h-full">
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex items-center justify-between px-4 py-3">
             <Link to="/" className={`font-bold dark:text-white ${collapsed ? 'hidden' : 'block'}`}>
               ESM Tool
@@ -55,8 +61,8 @@ export function AppSidebar() {
             <BadgeCheck className="h-5 w-5 text-green-500" />
           </div>
 
-          <div className="space-y-1 py-2">
-            <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
+          <div className="space-y-1 px-3 py-2">
+            <h4 className={`text-xs font-semibold text-muted-foreground pl-1 mb-1 ${collapsed ? 'sr-only' : ''}`}>
               {t('navigation.general', 'General')}
             </h4>
             <SidebarItem
@@ -81,8 +87,8 @@ export function AppSidebar() {
             />
           </div>
 
-          <div className="space-y-1 py-2">
-            <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
+          <div className="space-y-1 px-3 py-2">
+            <h4 className={`text-xs font-semibold text-muted-foreground pl-1 mb-1 ${collapsed ? 'sr-only' : ''}`}>
               {t('navigation.operations', 'Operations')}
             </h4>
             <SidebarItem
@@ -101,38 +107,35 @@ export function AppSidebar() {
               text={collapsed ? '' : t('navigation.team', 'Team')}
             />
           </div>
+        
+          <div className="space-y-1 px-3 py-2">
+            <h4 className={`text-xs font-semibold text-muted-foreground pl-1 mb-1 ${collapsed ? 'sr-only' : ''}`}>
+              {t('navigation.tools', 'Tools')}
+            </h4>
+            <SidebarItem
+              icon={Calendar}
+              href="/calendar"
+              text={collapsed ? '' : t('navigation.calendar', 'Calendar')}
+            />
+            <SidebarItem
+              icon={MessageSquare}
+              href="/chat"
+              text={collapsed ? '' : t('navigation.chat', 'Chat')}
+            />
+            <SidebarItem
+              icon={BarChart}
+              href="/analytics"
+              text={collapsed ? '' : t('navigation.analytics', 'Analytics')}
+            />
+            <SidebarItem
+              icon={LineChart}
+              href="/reports"
+              text={collapsed ? '' : t('navigation.reports', 'Reports')}
+            />
+          </div>
         </div>
         
-        <div className="space-y-1 py-2">
-          <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
-            MANAGEMENT
-          </h4>
-          <SidebarItem
-            icon={Calendar}
-            href="/calendar"
-            text={collapsed ? '' : "Calendar"}
-          />
-          <SidebarItem
-            icon={MessageSquare}
-            href="/chat"
-            text={collapsed ? '' : "Chat"}
-          />
-          <SidebarItem
-            icon={BarChart}
-            href="/analytics"
-            text={collapsed ? '' : "Analytics"}
-          />
-          <SidebarItem
-            icon={LineChart}
-            href="/reports"
-            text={collapsed ? '' : "Reports"}
-          />
-        </div>
-
-        <div className="space-y-1 py-2">
-          <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
-            {t('navigation.settings', 'Settings')}
-          </h4>
+        <div className="mt-auto pt-2 pb-4 px-3">
           <SidebarItem
             icon={Settings}
             href="/settings"
