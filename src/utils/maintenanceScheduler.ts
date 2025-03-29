@@ -66,7 +66,7 @@ export const scheduleMaintenanceWorkOrder = async (
       priority: "medium" as const,
       technician: schedule.technician || "Unassigned",
       location: equipment.location,
-      dueDate: parse(schedule.nextDate, "yyyy-MM-dd", new Date()),
+      dueDate: format(parse(schedule.nextDate, "yyyy-MM-dd", new Date()), "yyyy-MM-dd"), // Convert to string
       notes: `Scheduled maintenance for ${equipment.name} (${equipment.model}).\nEstimated duration: ${schedule.estimatedDuration} hours.`,
     };
 
@@ -81,7 +81,8 @@ export const scheduleMaintenanceWorkOrder = async (
 
       // If we have the notification service available and notifications are enabled for this schedule
       if (schedule.notificationsEnabled) {
-        notificationService.getInstance().triggerDemoNotification();
+        // Fixed: Using the imported notificationService instance
+        notificationService.triggerDemoNotification();
       }
 
       return newWorkOrder;

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrderUtils";
+import { format } from "date-fns";
 
 interface EquipmentActionButtonsProps {
   equipmentItem: Equipment;
@@ -21,6 +22,8 @@ export function EquipmentActionButtons({ equipmentItem, isMaintenanceOverdue }: 
     try {
       // In a real application, we would use the maintenance scheduler utility
       // For now, we'll create a work order directly
+      const dueDate = new Date(new Date().setDate(new Date().getDate() + 5)); // 5 days from now
+      
       const workOrderData = {
         customer: equipmentItem.customer,
         description: `Maintenance for ${equipmentItem.name}`,
@@ -28,7 +31,7 @@ export function EquipmentActionButtons({ equipmentItem, isMaintenanceOverdue }: 
         priority: isMaintenanceOverdue ? "high" as const : "medium" as const,
         technician: "Unassigned",
         location: equipmentItem.location,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 5)), // 5 days from now
+        dueDate: format(dueDate, "yyyy-MM-dd"), // Convert Date to string format
         notes: `Regular ${equipmentItem.maintenanceFrequency} maintenance for ${equipmentItem.name} (${equipmentItem.model}).`,
       };
 
