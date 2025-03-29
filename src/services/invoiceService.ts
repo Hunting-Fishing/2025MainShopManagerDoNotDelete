@@ -38,7 +38,8 @@ export async function fetchInvoiceById(invoiceId: string) {
       .from('invoices')
       .select(`
         *,
-        items:invoice_items(*)
+        items:invoice_items(*),
+        invoice_staff(*)
       `)
       .eq('id', invoiceId)
       .maybeSingle();

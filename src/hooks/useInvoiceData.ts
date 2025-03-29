@@ -5,7 +5,8 @@ import {
   fetchInvoiceById, 
   saveInvoice, 
   deleteInvoice,
-  updateInvoiceStatus 
+  updateInvoiceStatus,
+  subscribeToInvoices
 } from '@/services/invoiceService';
 import { useState, useEffect } from 'react';
 import { Invoice, InvoiceItem } from '@/types/invoice';
@@ -128,7 +129,8 @@ export function useInvoiceData() {
           createdAt: data.created_at,
           lastUpdatedBy: data.last_updated_by || '',
           lastUpdatedAt: data.last_updated_at,
-          assignedStaff: data.staff?.map((s: any) => s.staff_name) || [],
+          // Fix: Get assigned staff from invoice_staff table if it exists
+          assignedStaff: data.invoice_staff?.map((s: any) => s.staff_name) || [],
           items: data.items?.map((item: any): InvoiceItem => ({
             id: item.id,
             name: item.name,
@@ -148,8 +150,6 @@ export function useInvoiceData() {
   // Set up real-time subscription for invoices if enabled
   useEffect(() => {
     if (!isRealTimeEnabled) return;
-    
-    const { subscribeToInvoices } = require('@/services/invoiceService');
     
     const unsubscribe = subscribeToInvoices(() => {
       // When we receive a real-time update, invalidate the queries
