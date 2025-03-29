@@ -3,11 +3,13 @@ import { useInvoiceFilters } from "@/hooks/invoices/useInvoiceFilters";
 import { InvoiceListHeader } from "@/components/invoices/InvoiceListHeader";
 import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
 import { InvoiceList } from "@/components/invoices/InvoiceList";
-import { invoices } from "@/data/invoiceData";
+import { useInvoiceData } from "@/hooks/useInvoiceData";
+import { useState, useEffect } from "react";
 import { Invoice } from "@/types/invoice";
-import { useState } from "react";
 
 export default function Invoices() {
+  const { invoices, isLoading } = useInvoiceData();
+  
   const {
     searchQuery,
     setSearchQuery,
@@ -19,6 +21,11 @@ export default function Invoices() {
     filteredInvoices,
     resetFilters
   } = useInvoiceFilters(invoices as Invoice[]);
+
+  // When invoices data changes, reapply the filters
+  useEffect(() => {
+    // The useInvoiceFilters hook will automatically refilter when invoices change
+  }, [invoices]);
 
   // Convert the status filter array to a string for the UI component
   const statusFilterString = statusFilter.length === 1 ? statusFilter[0] : "all";
@@ -44,10 +51,11 @@ export default function Invoices() {
         setCreatedByFilter={setCreatedByFilter}
         creators={creators}
         onResetFilters={resetFilters}
+        isLoading={isLoading}
       />
 
       {/* Invoices table with export functionality */}
-      <InvoiceList invoices={filteredInvoices} />
+      <InvoiceList />
     </div>
   );
 }

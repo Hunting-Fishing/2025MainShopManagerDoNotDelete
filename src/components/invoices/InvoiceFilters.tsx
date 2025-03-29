@@ -1,4 +1,3 @@
-
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
@@ -26,12 +25,13 @@ interface InvoiceFiltersProps {
   statusFilter: string;
   setStatusFilter: (status: string) => void;
   createdByFilter: string;
-  setCreatedByFilter: (createdBy: string) => void;
+  setCreatedByFilter: (creator: string) => void;
   creators: string[];
   onResetFilters: () => void;
+  isLoading?: boolean;
 }
 
-export function InvoiceFilters({
+export function InvoiceFilters({ 
   searchQuery,
   setSearchQuery,
   statusFilter,
@@ -39,8 +39,11 @@ export function InvoiceFilters({
   createdByFilter,
   setCreatedByFilter,
   creators,
-  onResetFilters
+  onResetFilters,
+  isLoading
 }: InvoiceFiltersProps) {
+  const isDisabled = isLoading;
+  
   return (
     <div className="flex flex-col md:flex-row gap-4 items-end">
       <div className="w-full md:w-1/3">
@@ -52,6 +55,7 @@ export function InvoiceFilters({
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={isDisabled}
           />
         </div>
       </div>
@@ -60,6 +64,7 @@ export function InvoiceFilters({
         <Select 
           value={statusFilter} 
           onValueChange={setStatusFilter}
+          disabled={isDisabled}
         >
           <SelectTrigger>
             <SelectValue placeholder="Filter by status" />
@@ -78,6 +83,7 @@ export function InvoiceFilters({
         <Select 
           value={createdByFilter} 
           onValueChange={setCreatedByFilter}
+          disabled={isDisabled}
         >
           <SelectTrigger>
             <SelectValue placeholder="Filter by creator" />
@@ -97,6 +103,7 @@ export function InvoiceFilters({
         variant="outline" 
         onClick={onResetFilters}
         className="w-full md:w-auto"
+        disabled={isDisabled}
       >
         Reset Filters
       </Button>

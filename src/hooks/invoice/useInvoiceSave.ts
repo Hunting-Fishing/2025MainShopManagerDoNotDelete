@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { Invoice } from "@/types/invoice";
 import { createInvoiceFromWorkOrder } from "@/utils/workOrderUtils";
 import { recordInvoiceActivity } from "@/utils/activityTracker";
+import { useInvoiceData } from "@/hooks/useInvoiceData";
 
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
@@ -12,6 +13,7 @@ const currentUser = { id: "user-123", name: "Admin User" };
 export function useInvoiceSave() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { saveInvoice } = useInvoiceData();
 
   // Handle saving invoice
   const handleSaveInvoice = async (
@@ -61,8 +63,8 @@ export function useInvoiceSave() {
           currentUser.name
         );
       } else {
-        // In a real app, this would be an API call to create a new invoice
-        console.log("Creating new invoice:", updatedInvoice);
+        // Use our new service to save the invoice with proper error handling
+        await saveInvoice({ invoice: updatedInvoice, items });
         
         // Record the activity
         recordInvoiceActivity(
