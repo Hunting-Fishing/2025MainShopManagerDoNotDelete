@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SavedReport } from "@/types/reports";
-import { toast } from "@/components/ui/use-toast";
 import { ReportForm } from "./ReportForm";
 import { ReportsList } from "./ReportsList";
+import { useReportForm } from "@/hooks/useReportForm";
 
 interface SavedReportsDialogProps {
   savedReports: SavedReport[];
@@ -35,53 +35,17 @@ export function SavedReportsDialog({
   currentReport
 }: SavedReportsDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [reportName, setReportName] = useState("");
-  const [reportDescription, setReportDescription] = useState("");
-  const [scheduleReport, setScheduleReport] = useState(false);
-  const [scheduleFrequency, setScheduleFrequency] = useState("weekly");
-  const [scheduleEmail, setScheduleEmail] = useState("");
+  
+  const { formState, formActions } = useReportForm({
+    currentReport,
+    onSaveReport
+  });
 
   const handleSaveReport = () => {
-    if (!reportName) {
-      toast({
-        title: "Report name required",
-        description: "Please provide a name for your report",
-        variant: "destructive"
-      });
-      return;
+    const success = formActions.handleSaveReport();
+    if (success) {
+      setIsOpen(false);
     }
-
-    const newReport: SavedReport = {
-      id: `report-${Date.now()}`,
-      name: reportName,
-      description: reportDescription,
-      type: currentReport.type,
-      filters: currentReport.filters,
-      createdAt: new Date().toISOString(),
-      scheduled: scheduleReport ? {
-        frequency: scheduleFrequency,
-        email: scheduleEmail,
-      } : undefined
-    };
-
-    onSaveReport(newReport);
-    resetForm();
-    setIsOpen(false);
-    
-    toast({
-      title: "Report saved",
-      description: scheduleReport 
-        ? `Report "${reportName}" saved and scheduled for ${scheduleFrequency} delivery` 
-        : `Report "${reportName}" saved successfully`
-    });
-  };
-
-  const resetForm = () => {
-    setReportName("");
-    setReportDescription("");
-    setScheduleReport(false);
-    setScheduleFrequency("weekly");
-    setScheduleEmail("");
   };
 
   return (
@@ -98,16 +62,16 @@ export function SavedReportsDialog({
         </DialogHeader>
 
         <ReportForm
-          reportName={reportName}
-          reportDescription={reportDescription}
-          scheduleReport={scheduleReport}
-          scheduleFrequency={scheduleFrequency}
-          scheduleEmail={scheduleEmail}
-          setReportName={setReportName}
-          setReportDescription={setReportDescription}
-          setScheduleReport={setScheduleReport}
-          setScheduleFrequency={setScheduleFrequency}
-          setScheduleEmail={setScheduleEmail}
+          reportName={formState.reportName}
+          reportDescription={formState.reportDescription}
+          scheduleReport={formState.scheduleReport}
+          scheduleFrequency={formState.scheduleFrequency}
+          scheduleEmail={formState.scheduleEmail}
+          setReportName={formActions.setReportName}
+          setReportDescription={formActions.setReportDescription}
+          setScheduleReport={formActions.setScheduleReport}
+          setScheduleFrequency={formActions.setScheduleFrequency}
+          setScheduleEmail={formActions.setScheduleEmail}
         />
         
         <ReportsList
