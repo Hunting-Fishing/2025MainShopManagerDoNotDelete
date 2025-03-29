@@ -4,6 +4,13 @@ import { utils, write } from "xlsx";
 import { Parser } from "json2csv";
 import 'jspdf-autotable';
 
+// Extend the jsPDF type to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
+
 /**
  * Formats the current date as YYYY-MM-DD
  */
