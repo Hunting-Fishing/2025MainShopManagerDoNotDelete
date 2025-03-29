@@ -573,7 +573,6 @@ const Analytics = () => {
                     name="Retention Rate" 
                     stroke="#ff7300" 
                     strokeDasharray="5 5"
-                    formatter={(value) => `${(value * 100).toFixed(0)}%`}
                   />
                 </LineChart>
               </ResponsiveContainer>

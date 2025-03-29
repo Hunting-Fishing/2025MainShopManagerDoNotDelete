@@ -1,3 +1,4 @@
+
 import {
   BarChart,
   Calendar,
@@ -130,3 +131,6 @@ export function AppSidebar() {
     </div>
   );
 }
+
+// Add default export to fix the import error
+export default AppSidebar;

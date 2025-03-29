@@ -1,7 +1,7 @@
 
 import { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from './AppSidebar';
+import { AppSidebar } from './AppSidebar';
 import { Header } from './Header';
 import { NotificationsProvider } from '@/context/notifications';
 import { Outlet } from 'react-router-dom';
@@ -30,3 +30,6 @@ export function Layout({ children }: LayoutProps) {
     </NotificationsProvider>
   );
 }
+
+// Add default export to fix the import error
+export default Layout;
