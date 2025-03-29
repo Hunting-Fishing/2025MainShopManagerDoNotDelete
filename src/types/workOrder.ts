@@ -1,4 +1,3 @@
-
 // Define the inventory item interface for work orders
 export interface WorkOrderInventoryItem {
   id: string;
@@ -19,6 +18,23 @@ export interface TimeEntry {
   duration: number; // in minutes
   notes?: string;
   billable: boolean;
+}
+
+// Define work order template interface
+export interface WorkOrderTemplate {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  lastUsed?: string;
+  usageCount: number;
+  customer?: string;
+  location?: string;
+  status: "pending" | "in-progress" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high";
+  technician: string;
+  notes?: string;
+  inventoryItems?: WorkOrderInventoryItem[];
 }
 
 // Other types related to work orders can be added here

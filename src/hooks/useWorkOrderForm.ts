@@ -71,6 +71,13 @@ export const useWorkOrderForm = () => {
     },
   });
 
+  // Function to manually set form values
+  const setFormValues = (values: Partial<WorkOrderFormValues>) => {
+    Object.entries(values).forEach(([key, value]) => {
+      form.setValue(key as any, value);
+    });
+  };
+
   // Handle form submission
   const onSubmit = async (values: WorkOrderFormValues) => {
     setIsSubmitting(true);
@@ -160,5 +167,6 @@ export const useWorkOrderForm = () => {
     isSubmitting,
     error,
     setTimeEntries,
+    setFormValues,
   };
 };

@@ -1,11 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
 import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
+import { WorkOrderTemplate } from "@/types/workOrder";
+import { workOrderTemplates } from "@/data/workOrderTemplatesData";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -15,19 +17,55 @@ import { NotesSection } from "@/components/work-orders/NotesSection";
 import { WorkOrderInventorySection } from "@/components/work-orders/inventory/WorkOrderInventorySection";
 import { FormActions } from "@/components/work-orders/FormActions";
 import { TimeTrackingSection } from "@/components/work-orders/time-tracking/TimeTrackingSection";
+import { SaveAsTemplateDialog } from "./templates/SaveAsTemplateDialog";
+import { toast } from "@/hooks/use-toast";
 
 interface WorkOrderFormProps {
   technicians: string[];
+  initialTemplate?: WorkOrderTemplate | null;
 }
 
-export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ technicians }) => {
+export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ 
+  technicians,
+  initialTemplate
+}) => {
   const navigate = useNavigate();
-  const { form, onSubmit, isSubmitting, error, setTimeEntries } = useWorkOrderForm();
+  const { form, onSubmit, isSubmitting, error, setTimeEntries, setFormValues } = useWorkOrderForm();
   const [timeEntries, setLocalTimeEntries] = useState<TimeEntry[]>([]);
+
+  // Apply template values when initialTemplate changes
+  useEffect(() => {
+    if (initialTemplate) {
+      // Reset form with template values
+      form.reset({
+        customer: initialTemplate.customer || "",
+        description: initialTemplate.description || "",
+        status: initialTemplate.status,
+        priority: initialTemplate.priority,
+        technician: initialTemplate.technician,
+        location: initialTemplate.location || "",
+        dueDate: new Date(), // Always use current date
+        notes: initialTemplate.notes || "",
+        inventoryItems: initialTemplate.inventoryItems || [],
+      });
+
+      // Show notification
+      toast({
+        title: "Template Applied",
+        description: `${initialTemplate.name} template has been applied.`,
+        variant: "success",
+      });
+    }
+  }, [initialTemplate, form]);
 
   const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
     setLocalTimeEntries(entries);
     setTimeEntries(entries);
+  };
+
+  const handleSaveTemplate = (template: WorkOrderTemplate) => {
+    // Add the template to the templates array
+    workOrderTemplates.push(template);
   };
 
   return (
@@ -59,11 +97,17 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ technicians }) => 
             <WorkOrderInventorySection form={form as any} />
           </div>
 
-          {/* Form Actions */}
-          <FormActions 
-            isSubmitting={isSubmitting} 
-            onCancel={() => navigate("/work-orders")} 
-          />
+          {/* Form Actions with Save as Template */}
+          <div className="flex justify-between items-center">
+            <SaveAsTemplateDialog 
+              formValues={form.getValues()} 
+              onSave={handleSaveTemplate} 
+            />
+            <FormActions 
+              isSubmitting={isSubmitting} 
+              onCancel={() => navigate("/work-orders")} 
+            />
+          </div>
         </form>
       </Form>
 
