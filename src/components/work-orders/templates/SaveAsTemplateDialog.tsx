@@ -1,126 +1,128 @@
 
 import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
 import { createTemplate } from "@/data/workOrderTemplatesData";
-import { WorkOrderTemplate } from "@/types/workOrder";
+import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
+import { WorkOrderTemplate, WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface SaveAsTemplateDialogProps {
   formValues: WorkOrderFormValues;
   onSave: (template: WorkOrderTemplate) => void;
 }
 
-export function SaveAsTemplateDialog({ formValues, onSave }: SaveAsTemplateDialogProps) {
+export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({ 
+  formValues,
+  onSave 
+}) => {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-
-    try {
-      // Create a new template object
-      const newTemplate = createTemplate({
-        name,
-        description,
-        status: formValues.status,
-        priority: formValues.priority,
-        technician: formValues.technician,
-        notes: formValues.notes,
-        inventoryItems: formValues.inventoryItems,
-        customer: formValues.customer,
-        location: formValues.location,
-      });
-
-      // Pass the new template to the parent component
-      onSave(newTemplate);
-
-      // Show success toast
+  const handleSave = () => {
+    if (!templateName.trim()) {
       toast({
-        title: "Template Saved",
-        description: `${name} has been saved as a template.`,
-        variant: "success",
+        title: "Template name required",
+        description: "Please provide a name for your template",
+        variant: "destructive"
       });
-
-      // Close the dialog
-      setOpen(false);
-      
-      // Reset form
-      setName("");
-      setDescription("");
-    } catch (error) {
-      console.error("Error saving template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save template. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
+      return;
     }
+
+    // Make sure all inventory items have required fields
+    const inventoryItems: WorkOrderInventoryItem[] = (formValues.inventoryItems || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice
+    }));
+
+    // Create the template with values from the form
+    const newTemplate = createTemplate({
+      name: templateName,
+      description: templateDescription || `Template for ${formValues.customer}`,
+      customer: formValues.customer,
+      location: formValues.location,
+      status: formValues.status,
+      priority: formValues.priority,
+      technician: formValues.technician,
+      notes: formValues.notes,
+      inventoryItems: inventoryItems
+    });
+
+    onSave(newTemplate);
+    
+    toast({
+      title: "Template Saved",
+      description: `"${templateName}" has been saved as a template.`,
+      variant: "success",
+    });
+    
+    // Reset and close
+    setTemplateName("");
+    setTemplateDescription("");
+    setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Save as Template</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Save as Template</DialogTitle>
-          <DialogDescription>
-            Create a reusable template from the current work order.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Button 
+        variant="outline" 
+        onClick={() => setOpen(true)}
+      >
+        Save as Template
+      </Button>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="template-name">Template Name</Label>
-            <Input
-              id="template-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Standard HVAC Maintenance"
-              required
-            />
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="template-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="template-name"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter template name"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="template-description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="template-description"
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter template description"
+              />
+            </div>
           </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="template-description">Description</Label>
-            <Textarea
-              id="template-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Briefly describe this template..."
-              required
-            />
-          </div>
-
+          
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Template"}
+            <Button onClick={handleSave}>
+              Save Template
             </Button>
           </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
-}
+};
