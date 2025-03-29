@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -17,19 +16,18 @@ import {
   Legend, 
   ResponsiveContainer 
 } from 'recharts';
-import { ChevronDown, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DateRange } from 'react-day-picker';
+import { format, subMonths } from 'date-fns';
+import { ReportFilters } from '@/components/reports/ReportFilters';
+import { ReportExportMenu } from '@/components/reports/ReportExportMenu';
+import { SavedReportsDialog } from '@/components/reports/SavedReportsDialog';
+import { ComparisonReportCard } from '@/components/reports/ComparisonReportCard';
+import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
+import { SavedReport, ReportConfig } from '@/types/reports';
+import { toast } from "@/components/ui/use-toast";
 
-// Sample data for charts
 const salesData = [
   { month: 'Jan', revenue: 4000, expenses: 2400 },
   { month: 'Feb', revenue: 3000, expenses: 1398 },
@@ -68,107 +66,278 @@ const servicePerformance = [
   { month: 'Jun', completedOnTime: 70, delayed: 5 },
 ];
 
+const comparisonRevenueData = [
+  { 
+    name: 'Total Revenue', 
+    current: 35890, 
+    previous: 30450, 
+    change: 18 
+  },
+  { 
+    name: 'Service Revenue', 
+    current: 28500, 
+    previous: 24100, 
+    change: 18 
+  },
+  { 
+    name: 'Parts Revenue', 
+    current: 7390, 
+    previous: 6350, 
+    change: 16 
+  },
+  { 
+    name: 'Average Ticket', 
+    current: 450, 
+    previous: 410, 
+    change: 10 
+  }
+];
+
+const comparisonServiceData = [
+  { 
+    name: 'Work Orders', 
+    current: 87, 
+    previous: 80, 
+    change: 9 
+  },
+  { 
+    name: 'Completion Rate', 
+    current: 92, 
+    previous: 88, 
+    change: 5 
+  },
+  { 
+    name: 'On-Time Rate', 
+    current: 85, 
+    previous: 82, 
+    change: 4 
+  },
+  { 
+    name: 'Customer Satisfaction', 
+    current: 4.8, 
+    previous: 4.6, 
+    change: 4 
+  }
+];
+
 const Reports = () => {
-  const [timeframe, setTimeframe] = useState('yearly');
+  const [timeframe, setTimeframe] = useState('monthly');
+  const [activeTab, setActiveTab] = useState('summary');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subMonths(new Date(), 1),
+    to: new Date()
+  });
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [showComparison, setShowComparison] = useState(false);
+  const [customReportConfig, setCustomReportConfig] = useState<ReportConfig | null>(null);
+  
+  const handleFilterChange = (newFilters: Record<string, any>) => {
+    setFilters(newFilters);
+    console.log("Filters applied:", newFilters);
+  };
+  
+  const handleSaveReport = (report: SavedReport) => {
+    setSavedReports([...savedReports, report]);
+    toast({
+      title: "Report saved",
+      description: `"${report.name}" has been saved successfully`
+    });
+  };
+  
+  const handleLoadReport = (reportId: string) => {
+    const report = savedReports.find(r => r.id === reportId);
+    if (report) {
+      setTimeframe(report.type);
+      setFilters(report.filters);
+      toast({
+        title: "Report loaded",
+        description: `"${report.name}" has been loaded successfully`
+      });
+    }
+  };
+  
+  const handleDeleteReport = (reportId: string) => {
+    setSavedReports(savedReports.filter(r => r.id !== reportId));
+    toast({
+      title: "Report deleted",
+      description: "The report has been deleted successfully"
+    });
+  };
+  
+  const handleGenerateCustomReport = (config: ReportConfig) => {
+    setCustomReportConfig(config);
+    setActiveTab('custom');
+  };
+
+  const getDateRangeText = () => {
+    if (!dateRange?.from) return "";
+    if (!dateRange.to) return format(dateRange.from, "PP");
+    return `${format(dateRange.from, "PP")} - ${format(dateRange.to, "PP")}`;
+  };
+
+  const topSellingColumns = [
+    { header: "Item Name", dataKey: "name" },
+    { header: "Quantity Sold", dataKey: "quantity" },
+    { header: "Revenue", dataKey: "revenue" }
+  ];
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
-          <p className="text-muted-foreground">
-            View performance metrics and analyze business trends
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
+            <p className="text-muted-foreground">
+              View performance metrics and analyze business trends
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <SavedReportsDialog
+              savedReports={savedReports}
+              onSaveReport={handleSaveReport}
+              onLoadReport={handleLoadReport}
+              onDeleteReport={handleDeleteReport}
+              currentReport={{
+                title: "Performance Report",
+                type: timeframe,
+                filters: filters
+              }}
+            />
+            <CustomReportBuilder 
+              onGenerateReport={handleGenerateCustomReport}
+            />
+            <ReportExportMenu 
+              data={topSellingItems} 
+              title="Top Selling Items" 
+              columns={topSellingColumns}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <Select 
-            defaultValue={timeframe}
-            onValueChange={(value) => setTimeframe(value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="quarterly">Quarterly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-        </div>
+        
+        <ReportFilters 
+          timeframe={timeframe}
+          setTimeframe={setTimeframe}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          onFilterChange={handleFilterChange}
+        />
+        
+        {timeframe === 'custom' && dateRange?.from && (
+          <div className="text-sm text-muted-foreground">
+            Showing data for: {getDateRangeText()}
+          </div>
+        )}
+        
+        {activeTab === 'summary' && (
+          <div className="flex items-center">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowComparison(!showComparison)}
+            >
+              {showComparison ? "Hide Comparison" : "Show Comparison"}
+            </Button>
+            {showComparison && (
+              <span className="ml-3 text-sm text-muted-foreground">
+                Comparing current period with previous period
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      <Tabs defaultValue="summary">
-        <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-4 md:grid-cols-none h-auto">
+      <Tabs 
+        value={activeTab} 
+        onValueChange={setActiveTab} 
+        className="space-y-6"
+      >
+        <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-5 md:grid-cols-none h-auto">
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="financials">Financials</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="custom">Custom</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="summary" className="space-y-6 mt-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue vs Expenses</CardTitle>
-                <CardDescription>Monthly financial comparison</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={salesData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="revenue" fill="#8b5cf6" name="Revenue" />
-                    <Bar dataKey="expenses" fill="#f97316" name="Expenses" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Work Order Status</CardTitle>
-                <CardDescription>Current work order distribution</CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={workOrderStatusData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
+        <TabsContent value="summary" className="space-y-6">
+          {showComparison ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              <ComparisonReportCard
+                title="Revenue Comparison"
+                description="Revenue metrics compared to previous period"
+                data={comparisonRevenueData}
+                currentPeriod="Current Period"
+                previousPeriod="Previous Period"
+              />
+              
+              <ComparisonReportCard
+                title="Service Performance"
+                description="Service metrics compared to previous period"
+                data={comparisonServiceData}
+                currentPeriod="Current Period"
+                previousPeriod="Previous Period"
+              />
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenue vs Expenses</CardTitle>
+                  <CardDescription>Monthly financial comparison</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={salesData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
                     >
-                      {workOrderStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="revenue" fill="#8b5cf6" name="Revenue" />
+                      <Bar dataKey="expenses" fill="#f97316" name="Expenses" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Work Order Status</CardTitle>
+                  <CardDescription>Current work order distribution</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={workOrderStatusData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {workOrderStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
           
           <Card>
             <CardHeader>
@@ -198,7 +367,7 @@ const Reports = () => {
           </Card>
         </TabsContent>
         
-        <TabsContent value="financials" className="space-y-6 mt-6">
+        <TabsContent value="financials" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Annual Revenue Breakdown</CardTitle>
@@ -301,7 +470,7 @@ const Reports = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="performance" className="space-y-6 mt-6">
+        <TabsContent value="performance" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Service Performance</CardTitle>
@@ -326,7 +495,7 @@ const Reports = () => {
                   <Bar dataKey="completedOnTime" fill="#10b981" name="Completed On Time" />
                   <Bar dataKey="delayed" fill="#ef4444" name="Delayed" />
                 </BarChart>
-              </ResponsiveContainer>
+              </CardContent>
             </CardContent>
           </Card>
           
@@ -438,7 +607,7 @@ const Reports = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="inventory" className="space-y-6 mt-6">
+        <TabsContent value="inventory" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -569,6 +738,59 @@ const Reports = () => {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="custom" className="space-y-6">
+          {customReportConfig ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{customReportConfig.title}</CardTitle>
+                  <CardDescription>{customReportConfig.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center p-10">
+                    <p className="text-lg font-medium mb-4">Custom Report Generated</p>
+                    <p className="text-muted-foreground mb-6">
+                      Your custom report with {customReportConfig.fields.length} selected fields has been created.
+                    </p>
+                    <div className="border rounded-md p-4 bg-muted/20 text-left">
+                      <h3 className="font-medium mb-2">Selected Fields:</h3>
+                      <ul className="list-disc pl-5">
+                        {customReportConfig.fields.map((field) => (
+                          <li key={field} className="mb-1">{field}</li>
+                        ))}
+                      </ul>
+                      
+                      {customReportConfig.groupBy && (
+                        <div className="mt-4">
+                          <h3 className="font-medium mb-2">Grouped By:</h3>
+                          <p>{customReportConfig.groupBy}</p>
+                        </div>
+                      )}
+                      
+                      <div className="mt-4">
+                        <h3 className="font-medium mb-2">Sorting:</h3>
+                        <p>
+                          {customReportConfig.sorting.field} ({customReportConfig.sorting.direction === 'asc' ? 'Ascending' : 'Descending'})
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground mt-6">
+                      In a complete implementation, this would display the actual report data according to your specifications.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-10 border rounded-md bg-muted/10">
+              <h3 className="text-xl font-medium mb-2">No Custom Report Generated</h3>
+              <p className="text-muted-foreground mb-6">Use the Custom Report builder to create your own reports.</p>
+              <CustomReportBuilder onGenerateReport={handleGenerateCustomReport} />
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
