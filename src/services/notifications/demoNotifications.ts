@@ -1,43 +1,107 @@
 
-import { Notification } from "@/types/notification";
-
-/**
- * Sample demo notifications to simulate real-time events
- */
-export const demoNotifications: Partial<Notification>[] = [
+// Sample notifications for demo purposes
+export const demoNotifications = [
   {
-    title: "Work Order Updated",
-    message: "Work order #WO-2023-089 has been marked as completed",
-    type: "success",
-    category: "workOrder",
-    link: "/work-orders/89"
-  },
-  {
-    title: "New Team Member",
-    message: "Sarah Johnson has joined the maintenance team",
+    title: "New work order assigned",
+    message: "A new work order #WO-2023-0042 has been assigned to your team.",
     type: "info",
-    category: "team",
-    link: "/team"
+    category: "workOrder",
+    link: "/work-orders/WO-2023-0042",
   },
   {
-    title: "Low Inventory Alert",
-    message: "Air filters (SKU: AF-2040) are running low",
+    title: "Invoice paid",
+    message: "Invoice #INV-2023-156 for $750.00 has been paid by Acme Corporation.",
+    type: "success",
+    category: "invoice",
+    link: "/invoices/INV-2023-156",
+  },
+  {
+    title: "Low inventory alert",
+    message: "Air filters (SKU: AF-200) are running low. Current stock: 5 units.",
     type: "warning",
     category: "inventory",
-    link: "/inventory"
+    link: "/inventory",
   },
   {
-    title: "Invoice Overdue",
-    message: "Invoice #INV-2023-054 is 7 days overdue",
-    type: "error",
-    category: "invoice",
-    link: "/invoices/54"
+    title: "Work order status updated",
+    message: "Work order #WO-2023-0038 has been marked as completed.",
+    type: "info",
+    category: "workOrder",
+    link: "/work-orders/WO-2023-0038",
   },
   {
-    title: "Customer Request",
-    message: "New service request from Acme Industries",
+    title: "New customer inquiry",
+    message: "Green Valley School has submitted a service request for AC maintenance.",
     type: "info",
     category: "customer",
-    link: "/customers/16"
-  }
+    link: "/customers/15",
+  },
+  {
+    title: "Overdue payment reminder",
+    message: "Invoice #INV-2023-128 for Johnson Residence is 15 days overdue.",
+    type: "error",
+    category: "invoice",
+    link: "/invoices/INV-2023-128",
+  },
+  {
+    title: "Team meeting reminder",
+    message: "Weekly team meeting tomorrow at 10:00 AM in the conference room.",
+    type: "info",
+    category: "team",
+  },
+  {
+    title: "System maintenance",
+    message: "The system will be down for maintenance tonight from 2 AM to 4 AM.",
+    type: "warning",
+    category: "system",
+  },
+  {
+    title: "New feature available",
+    message: "Check out the new inventory management features in the latest update.",
+    type: "info",
+    category: "system",
+  },
+  {
+    title: "Customer feedback received",
+    message: "City Hospital has left a 5-star review for your recent service.",
+    type: "success",
+    category: "customer",
+    link: "/customers/8",
+  },
+  // Maintenance-specific notifications
+  {
+    title: "Maintenance due soon",
+    message: "HVAC System at Acme Corporation is due for maintenance in 7 days.",
+    type: "warning",
+    category: "workOrder",
+    link: "/equipment/EQ-2023-001",
+  },
+  {
+    title: "Overdue maintenance alert",
+    message: "Electrical Panel at Johnson Residence has overdue maintenance. Schedule service immediately.",
+    type: "error",
+    category: "workOrder",
+    link: "/equipment/EQ-2023-002",
+  },
+  {
+    title: "Maintenance work order created",
+    message: "Work order #WO-2023-0045 has been created for the quarterly maintenance of Security Camera System at City Hospital.",
+    type: "info",
+    category: "workOrder",
+    link: "/work-orders/WO-2023-0045",
+  },
+  {
+    title: "Maintenance completed",
+    message: "Scheduled maintenance for Fire Alarm System at Green Valley School has been completed.",
+    type: "success",
+    category: "workOrder",
+    link: "/equipment/EQ-2023-005",
+  },
+  {
+    title: "Warranty expiring soon",
+    message: "The warranty for Security Camera System at City Hospital will expire in 30 days.",
+    type: "warning",
+    category: "inventory",
+    link: "/equipment/EQ-2023-003",
+  },
 ];

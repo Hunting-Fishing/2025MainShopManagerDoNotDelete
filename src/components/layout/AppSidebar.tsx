@@ -1,154 +1,106 @@
 
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
-import {
-  Clipboard,
-  Home,
-  Package,
-  Settings,
+  LayoutDashboard,
+  ClipboardList,
   Users,
-  BarChart,
-  LogOut,
-  Menu,
-  FileText,
-  CalendarIcon,
-  UserRound,
+  Receipt,
+  CalendarDays,
+  Package2,
+  Settings,
   Wrench,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+  BarChart3,
+  Layers3,
+  UserCircle,
+  ShieldCheck,
+} from "lucide-react";
 
-const mainMenu = [
-  {
-    title: 'Dashboard',
-    path: '/',
-    icon: Home,
-  },
-  {
-    title: 'Work Orders',
-    path: '/work-orders',
-    icon: Clipboard,
-  },
-  {
-    title: 'Invoices',
-    path: '/invoices',
-    icon: FileText,
-  },
-  {
-    title: 'Customers',
-    path: '/customers',
-    icon: UserRound,
-  },
-  {
-    title: 'Calendar',
-    path: '/calendar',
-    icon: CalendarIcon,
-  },
-  {
-    title: 'Inventory',
-    path: '/inventory',
-    icon: Package,
-  },
-  {
-    title: 'Equipment',
-    path: '/equipment',
-    icon: Wrench,
-  },
-  {
-    title: 'Team',
-    path: '/team',
-    icon: Users,
-  },
-  {
-    title: 'Reports',
-    path: '/reports',
-    icon: BarChart,
-  },
-  {
-    title: 'Settings',
-    path: '/settings',
-    icon: Settings,
-  },
-];
-
-export function AppSidebar() {
+const AppSidebar = () => {
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const currentPath = location.pathname;
+
+  const isActive = (path: string) => {
+    return currentPath === path || (path !== "/" && currentPath.startsWith(path));
+  };
+
+  const navigation = [
+    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    { name: "Work Orders", href: "/work-orders", icon: ClipboardList },
+    { name: "Customers", href: "/customers", icon: Users },
+    { name: "Invoices", href: "/invoices", icon: Receipt },
+    { name: "Inventory", href: "/inventory", icon: Package2 },
+    { name: "Equipment", href: "/equipment", icon: Layers3 },
+    { name: "Maintenance", href: "/maintenance", icon: Wrench },
+    { name: "Calendar", href: "/calendar", icon: CalendarDays },
+    { name: "Reports", href: "/reports", icon: BarChart3 },
+    { name: "Team", href: "/team", icon: UserCircle },
+  ];
+
+  const secondaryNavigation = [
+    { name: "Settings", href: "/settings", icon: Settings },
+  ];
 
   return (
-    <Sidebar
-      className="border-r border-slate-200 bg-white"
-      collapsible="icon"
-    >
-      <SidebarHeader className="py-4 px-4 border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            {!isCollapsed && (
-              <div className="flex flex-col">
-                <span className="text-xl font-bold text-esm-blue-600">Easy Shop Manager</span>
-                <span className="text-xs text-slate-500">Work Order System</span>
-              </div>
-            )}
-            {isCollapsed && (
-              <div className="flex flex-col items-center">
-                <span className="text-xl font-bold text-esm-blue-600">ESM</span>
-              </div>
-            )}
-          </Link>
-          <SidebarTrigger
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-md hover:bg-slate-100"
+    <div className="hidden border-r bg-slate-50/40 lg:block dark:bg-slate-950/50">
+      <div className="flex h-full max-h-screen flex-col gap-2">
+        <div className="flex h-14 items-center border-b px-4">
+          <Link
+            to="/"
+            className="flex items-center gap-2 font-semibold"
           >
-            <Menu size={20} />
-          </SidebarTrigger>
+            <ShieldCheck className="h-6 w-6 text-esm-blue-600" />
+            <span>ESM Manager</span>
+          </Link>
         </div>
-      </SidebarHeader>
-      <SidebarContent className="py-4">
-        <SidebarGroup>
-          <SidebarGroupLabel className={cn("px-4 text-xs font-semibold text-slate-500 uppercase", 
-            isCollapsed ? "sr-only" : "")}>
-            Main Menu
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainMenu.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    asChild
-                    className={cn("flex items-center gap-3 px-4 py-2 text-base text-slate-700 hover:bg-slate-100 rounded-md",
-                      location.pathname === item.path && "bg-esm-blue-50 text-esm-blue-600 font-medium")}
-                  >
-                    <Link to={item.path}>
-                      <item.icon className={cn("h-5 w-5", 
-                        location.pathname === item.path ? "text-esm-blue-500" : "text-slate-500")} />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+        <ScrollArea className="flex-1 overflow-auto">
+          <div className="flex flex-col gap-2 p-2">
+            {navigation.map((item) => (
+              <Button
+                key={item.name}
+                asChild
+                variant="ghost"
+                className={cn(
+                  "justify-start",
+                  isActive(item.href) && "bg-muted text-foreground font-medium hover:bg-muted"
+                )}
+              >
+                <Link to={item.href} className="flex items-center">
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.name}
+                </Link>
+              </Button>
+            ))}
+          </div>
+          <div className="mt-4 p-2">
+            <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+              Management
+            </h2>
+            <div className="flex flex-col gap-2">
+              {secondaryNavigation.map((item) => (
+                <Button
+                  key={item.name}
+                  asChild
+                  variant="ghost"
+                  className={cn(
+                    "justify-start",
+                    isActive(item.href) && "bg-muted text-foreground font-medium hover:bg-muted"
+                  )}
+                >
+                  <Link to={item.href} className="flex items-center">
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.name}
+                  </Link>
+                </Button>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter className="border-t border-slate-200 p-4">
-        <Button variant="outline" className="w-full text-slate-700 flex items-center gap-2">
-          <LogOut className="h-5 w-5" />
-          {!isCollapsed && <span>Sign Out</span>}
-        </Button>
-      </SidebarFooter>
-    </Sidebar>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+    </div>
   );
-}
+};
+
+export default AppSidebar;
