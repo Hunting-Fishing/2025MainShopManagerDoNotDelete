@@ -64,14 +64,12 @@ function App() {
           <Route path="work-orders" element={<WorkOrders />} />
           <Route path="work-orders/new" element={<WorkOrderCreate />} />
           <Route path="work-orders/:id" element={<WorkOrderDetails />} />
-          <Route path="work-orders/:id/edit" element={<WorkOrderDetails edit={true} />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customers/:id" element={<CustomerDetails />} />
           <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
           <Route path="customers/follow-ups" element={<CustomerFollowUps />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="invoices/new" element={<InvoiceCreate />} />
-          <Route path="invoices/new/:workOrderId" element={<InvoiceCreate />} />
           <Route path="invoices/:id" element={<InvoiceDetails />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="equipment" element={<Equipment />} />

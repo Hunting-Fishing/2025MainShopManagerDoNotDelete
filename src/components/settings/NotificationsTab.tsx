@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from "react";
-import { useNotifications } from "@/context/notifications";
+import { useNotifications } from "@/context/NotificationsContext";
 import { toast } from "@/hooks/use-toast";
+import { NotificationPreferences } from "@/types/notification";
 import { ConnectionStatusCard } from "./notifications/ConnectionStatusCard";
 import { NotificationChannelsCard } from "./notifications/NotificationChannelsCard";
 import { NotificationCategoriesCard } from "./notifications/NotificationCategoriesCard";
 import { SaveButton } from "./notifications/SaveButton";
-import { NotificationPreferences } from "@/types/notification";
 
 export function NotificationsTab() {
   const { preferences, updatePreferences, triggerTestNotification, connectionStatus } = useNotifications();

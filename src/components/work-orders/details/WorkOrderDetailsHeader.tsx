@@ -1,12 +1,10 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { statusMap, priorityMap, WorkOrder } from "@/data/workOrdersData";
-import { formatDate } from "@/utils/workOrderUtils";
-import { FileEdit, Trash2, FileText } from "lucide-react";
-import { WorkOrderToInvoiceConverter } from "@/components/invoices/WorkOrderToInvoiceConverter";
+import { CalendarIcon, Edit, FilePlus } from "lucide-react";
+import { WorkOrder, priorityMap, statusMap } from "@/data/workOrdersData";
+import { WorkOrderExportMenu } from "../WorkOrderExportMenu";
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
@@ -15,73 +13,65 @@ interface WorkOrderDetailsHeaderProps {
 export function WorkOrderDetailsHeader({ workOrder }: WorkOrderDetailsHeaderProps) {
   const navigate = useNavigate();
   
-  const priorityStyle = priorityMap[workOrder.priority]?.classes || "";
-  
+  // Get status and priority info
+  const statusInfo = statusMap[workOrder.status as keyof typeof statusMap];
+  const priorityInfo = priorityMap[workOrder.priority as keyof typeof priorityMap];
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Handle creating invoice
+  const handleCreateInvoice = () => {
+    navigate(`/invoices/create/${workOrder.id}`);
+  };
+
+  // Handle edit work order
+  const handleEditWorkOrder = () => {
+    navigate(`/work-orders/${workOrder.id}/edit`);
+  };
+
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">{workOrder.id}</h1>
-            <p className="text-lg text-slate-700 mb-4">{workOrder.description}</p>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-slate-500">Customer</p>
-                <p className="font-medium">{workOrder.customer}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Status</p>
-                <p className="font-medium">{statusMap[workOrder.status]}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Priority</p>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityStyle}`}>
-                  {priorityMap[workOrder.priority]?.label || workOrder.priority}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Due Date</p>
-                <p className="font-medium">{formatDate(workOrder.dueDate)}</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-sm text-slate-500">Technician</p>
-                <p className="font-medium">{workOrder.technician}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Location</p>
-                <p className="font-medium">{workOrder.location}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Created</p>
-                <p className="font-medium">{formatDate(workOrder.date)}</p>
-              </div>
-              {workOrder.lastUpdatedAt && (
-                <div>
-                  <p className="text-sm text-slate-500">Last Updated</p>
-                  <p className="font-medium">{formatDate(workOrder.lastUpdatedAt.split('T')[0])}</p>
-                </div>
-              )}
-            </div>
-          </div>
+    <div className="flex justify-between items-start">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{workOrder.id}</h1>
+        <div className="flex items-center mt-2 space-x-4">
+          {/* Status badge */}
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            workOrder.status === "completed" ? "bg-green-100 text-green-800" : 
+            workOrder.status === "in-progress" ? "bg-blue-100 text-blue-800" :
+            workOrder.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+            "bg-red-100 text-red-800"
+          }`}>
+            {statusInfo}
+          </span>
           
-          <div className="flex flex-col space-y-2">
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => navigate(`/work-orders/${workOrder.id}/edit`)}
-            >
-              <FileEdit className="h-4 w-4" />
-              Edit
-            </Button>
-            
-            <WorkOrderToInvoiceConverter workOrder={workOrder} />
-          </div>
+          {/* Priority badge */}
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityInfo.classes}`}>
+            {priorityInfo.label} Priority
+          </span>
+          
+          {/* Date */}
+          <span className="inline-flex items-center text-sm text-slate-500">
+            <CalendarIcon className="mr-1 h-4 w-4" />
+            Created: {formatDate(workOrder.date)}
+          </span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      <div className="flex space-x-2">
+        <WorkOrderExportMenu workOrder={workOrder} />
+        <Button variant="outline" onClick={handleEditWorkOrder}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit Work Order
+        </Button>
+        <Button onClick={handleCreateInvoice}>
+          <FilePlus className="mr-2 h-4 w-4" />
+          Create Invoice
+        </Button>
+      </div>
+    </div>
   );
 }
