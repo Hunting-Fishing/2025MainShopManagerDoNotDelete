@@ -57,7 +57,7 @@ export default function WorkOrders() {
 
   return (
     <div className="space-y-6">
-      <WorkOrdersHeader />
+      <WorkOrdersHeader workOrders={filteredWorkOrders} />
       
       {/* Filters and search */}
       <WorkOrderFilters 

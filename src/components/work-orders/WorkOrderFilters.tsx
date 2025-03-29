@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { statusMap, WorkOrderStatus } from "@/data/workOrdersData";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { WorkOrdersExportMenu } from "./WorkOrdersExportMenu";
 
 interface WorkOrderFiltersProps {
   searchQuery: string;
@@ -134,11 +135,6 @@ export default function WorkOrderFilters({
               <Button variant="outline" className="flex items-center gap-2">
                 <SlidersHorizontal className="h-4 w-4" />
                 More Filters
-              </Button>
-
-              <Button variant="outline" className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Export
               </Button>
             </>
           )}
