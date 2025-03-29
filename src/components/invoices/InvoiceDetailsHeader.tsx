@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Edit, Printer, Send } from "lucide-react";
 import { InvoiceExportMenu } from "./InvoiceExportMenu";
+import { Invoice } from "@/types/invoice";
 
 interface InvoiceDetailsHeaderProps {
   invoiceId: string;
@@ -10,7 +11,12 @@ interface InvoiceDetailsHeaderProps {
   statusStyles: {
     [key: string]: { label: string; classes: string };
   };
-  invoice?: any; // We'll use this to pass the invoice data to the export menu
+  invoice: Invoice & { 
+    subtotal: number;
+    tax: number;
+    total: number;
+    paymentMethod?: string;
+  };
 }
 
 export function InvoiceDetailsHeader({
@@ -41,7 +47,7 @@ export function InvoiceDetailsHeader({
           <Printer className="h-4 w-4" />
           Print
         </Button>
-        {invoice && <InvoiceExportMenu invoice={invoice} />}
+        <InvoiceExportMenu invoice={invoice} />
         <Button asChild variant="default" className="flex items-center gap-1 bg-esm-blue-600 hover:bg-esm-blue-700">
           <Link to={`/invoices/${invoiceId}/edit`}>
             <Edit className="h-4 w-4" />

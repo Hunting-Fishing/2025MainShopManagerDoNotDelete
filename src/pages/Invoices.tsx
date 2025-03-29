@@ -35,7 +35,7 @@ export default function Invoices() {
         onResetFilters={resetFilters}
       />
 
-      {/* Invoices table */}
+      {/* Invoices table with export functionality */}
       <InvoiceList invoices={filteredInvoices} />
     </div>
   );

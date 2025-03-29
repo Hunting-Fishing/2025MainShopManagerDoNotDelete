@@ -26,7 +26,12 @@ export default function InvoiceDetails() {
         invoiceId={invoice.id}
         status={invoice.status}
         statusStyles={statusStyles}
-        invoice={invoice}
+        invoice={invoice as Invoice & { 
+          subtotal: number;
+          tax: number;
+          total: number;
+          paymentMethod: string;
+        }}
       />
       
       {/* Content */}

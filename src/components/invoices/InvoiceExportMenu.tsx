@@ -43,7 +43,7 @@ export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
         description: item.description,
         quantity: item.quantity,
         price: item.price.toFixed(2),
-        total: item.total.toFixed(2),
+        total: (item.quantity * item.price).toFixed(2),
       }));
       
       // Define columns for PDF export
@@ -82,12 +82,7 @@ export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
           exportMultiSheetExcel(workbookData, `Invoice_${invoice.id}`);
           break;
         case "pdf":
-          // Create a comprehensive PDF with both invoice details and items
-          const allData = {
-            ...exportData,
-            items: itemsData,
-          };
-          
+          // For PDF, we'll export the invoice details
           exportToPDF([exportData], `Invoice_${invoice.id}`, columns);
           break;
       }
