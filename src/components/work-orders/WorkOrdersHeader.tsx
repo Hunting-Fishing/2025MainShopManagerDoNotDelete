@@ -3,8 +3,14 @@ import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { WorkOrdersExportMenu } from "./WorkOrdersExportMenu";
+import { WorkOrder } from "@/data/workOrdersData";
 
-export default function WorkOrdersHeader() {
+interface WorkOrdersHeaderProps {
+  workOrders?: WorkOrder[];
+}
+
+export default function WorkOrdersHeader({ workOrders = [] }: WorkOrdersHeaderProps) {
   const isMobile = useIsMobile();
 
   return (
@@ -15,7 +21,10 @@ export default function WorkOrdersHeader() {
           Manage and track all work orders in your system.
         </p>
       </div>
-      <div>
+      <div className={`flex ${isMobile ? 'flex-col space-y-2 w-full' : 'flex-row space-x-2'}`}>
+        {workOrders.length > 0 && (
+          <WorkOrdersExportMenu workOrders={workOrders} />
+        )}
         <Button 
           asChild 
           className={`flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700 ${isMobile ? 'w-full justify-center' : ''}`}

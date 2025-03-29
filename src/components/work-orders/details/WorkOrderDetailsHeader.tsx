@@ -8,8 +8,7 @@ import {
   Edit, 
   MoreHorizontal, 
   FileText,
-  Trash2,
-  MessageCircle
+  Trash2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -21,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatDate } from '@/utils/workOrderUtils';
 import { WorkOrderChatButton } from '../WorkOrderChatButton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
@@ -29,6 +29,7 @@ interface WorkOrderDetailsHeaderProps {
 
 function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const handleEdit = () => {
     navigate(`/work-orders/${workOrder.id}/edit`);
@@ -57,22 +58,24 @@ function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderP
           <div className="text-slate-700">{workOrder.description}</div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={`flex ${isMobile ? 'flex-wrap' : ''} items-center gap-2`}>
           <WorkOrderChatButton 
             workOrderId={workOrder.id} 
             workOrderName={`${workOrder.id}: ${workOrder.description}`}
           />
-          <Button variant="outline" size="sm">
-            <Printer className="h-4 w-4 mr-2" />
-            Print
-          </Button>
+          {!isMobile && (
+            <Button variant="outline" size="sm">
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleEdit}>
             <Edit className="h-4 w-4 mr-2" />
-            Edit
+            {isMobile ? '' : 'Edit'}
           </Button>
           <Button onClick={handleCreateInvoice}>
             <FileText className="h-4 w-4 mr-2" />
-            Create Invoice
+            {isMobile ? '' : 'Create Invoice'}
           </Button>
           
           <DropdownMenu>
@@ -82,9 +85,14 @@ function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderP
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {isMobile && (
+                <DropdownMenuItem>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Work Order
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem>Duplicate Work Order</DropdownMenuItem>
               <DropdownMenuItem>Email Work Order</DropdownMenuItem>
-              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600" onClick={onDelete}>
                 <Trash2 className="h-4 w-4 mr-2" />
