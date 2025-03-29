@@ -1,5 +1,5 @@
 
-import { Equipment } from "@/types/equipment";
+import { Equipment, MaintenanceSchedule, MaintenanceRecord } from "@/types/equipment";
 import { workOrders } from "./workOrdersData";
 
 // Status definitions with styling
@@ -26,6 +26,153 @@ export const maintenanceFrequencyMap = {
   "as-needed": "As Needed",
 };
 
+// Sample maintenance records
+const maintenanceRecords: Record<string, MaintenanceRecord[]> = {
+  "EQ-2023-001": [
+    {
+      id: "MR-001",
+      date: "2023-03-15",
+      technician: "Michael Brown",
+      description: "Quarterly maintenance check",
+      cost: 350,
+      notes: "Replaced air filters and checked refrigerant levels",
+      workOrderId: "WO-2023-0012"
+    },
+    {
+      id: "MR-002",
+      date: "2023-06-15",
+      technician: "Michael Brown",
+      description: "Quarterly maintenance check",
+      cost: 275,
+      notes: "Cleaned coils and checked electrical connections",
+      workOrderId: "WO-2023-0015"
+    },
+    {
+      id: "MR-003",
+      date: "2023-09-15",
+      technician: "Sarah Johnson",
+      description: "Quarterly maintenance check",
+      cost: 300,
+      notes: "Full system inspection, no issues found",
+      workOrderId: "WO-2023-0027"
+    }
+  ],
+  "EQ-2023-003": [
+    {
+      id: "MR-004",
+      date: "2022-11-20",
+      technician: "David Lee",
+      description: "Annual inspection and maintenance",
+      cost: 450,
+      notes: "Updated firmware and checked all camera mountings",
+      workOrderId: "WO-2023-0010"
+    }
+  ],
+  "EQ-2023-005": [
+    {
+      id: "MR-005",
+      date: "2023-03-15",
+      technician: "Emily Chen",
+      description: "Bi-annual system check",
+      cost: 525,
+      notes: "All alarms tested and functioning correctly",
+      workOrderId: "WO-2023-0008"
+    },
+    {
+      id: "MR-006",
+      date: "2023-09-15",
+      technician: "Emily Chen",
+      description: "Bi-annual system check",
+      cost: 525,
+      notes: "Replaced backup battery and tested alarm triggers",
+      workOrderId: "WO-2023-0022"
+    }
+  ]
+};
+
+// Sample maintenance schedules
+const maintenanceSchedules: Record<string, MaintenanceSchedule[]> = {
+  "EQ-2023-001": [
+    {
+      frequencyType: "quarterly",
+      nextDate: "2023-12-15",
+      description: "Regular quarterly maintenance",
+      estimatedDuration: 3,
+      technician: "Michael Brown",
+      isRecurring: true,
+      notificationsEnabled: true,
+      reminderDays: 7
+    },
+    {
+      frequencyType: "annually",
+      nextDate: "2024-06-15",
+      description: "Comprehensive annual inspection",
+      estimatedDuration: 6,
+      technician: "Michael Brown",
+      isRecurring: true,
+      notificationsEnabled: true,
+      reminderDays: 14
+    }
+  ],
+  "EQ-2023-002": [
+    {
+      frequencyType: "annually",
+      nextDate: "2023-08-10",
+      description: "Annual electrical panel inspection",
+      estimatedDuration: 2,
+      technician: "David Lee",
+      isRecurring: true,
+      notificationsEnabled: true,
+      reminderDays: 10
+    }
+  ],
+  "EQ-2023-003": [
+    {
+      frequencyType: "annually",
+      nextDate: "2023-11-20",
+      description: "Complete security system review",
+      estimatedDuration: 4,
+      technician: "Sarah Johnson",
+      isRecurring: true,
+      notificationsEnabled: true,
+      reminderDays: 14
+    },
+    {
+      frequencyType: "quarterly",
+      nextDate: "2023-12-01",
+      description: "Camera alignment and cleaning",
+      estimatedDuration: 2,
+      isRecurring: true,
+      notificationsEnabled: false,
+      reminderDays: 5
+    }
+  ],
+  "EQ-2023-004": [
+    {
+      frequencyType: "quarterly",
+      nextDate: "2023-10-18",
+      description: "Refrigeration system maintenance",
+      estimatedDuration: 3,
+      technician: "Michael Brown",
+      isRecurring: true,
+      notificationsEnabled: true,
+      reminderDays: 7
+    }
+  ],
+  "EQ-2023-005": [
+    {
+      frequencyType: "bi-annually",
+      nextDate: "2024-03-15",
+      description: "Fire alarm testing and certification",
+      estimatedDuration: 5,
+      technician: "Emily Chen",
+      isRecurring: true,
+      notificationsEnabled: true,
+      reminderDays: 14
+    }
+  ]
+};
+
 // Mock data for equipment/assets
 export const equipment: Equipment[] = [
   {
@@ -46,7 +193,9 @@ export const equipment: Equipment[] = [
     warrantyExpiryDate: "2024-06-15",
     warrantyStatus: "active",
     notes: "3-year extended warranty purchased",
-    workOrderHistory: ["WO-2023-0012"]
+    workOrderHistory: ["WO-2023-0012"],
+    maintenanceHistory: maintenanceRecords["EQ-2023-001"],
+    maintenanceSchedules: maintenanceSchedules["EQ-2023-001"]
   },
   {
     id: "EQ-2023-002",
@@ -66,7 +215,8 @@ export const equipment: Equipment[] = [
     warrantyExpiryDate: "2025-02-10",
     warrantyStatus: "active",
     notes: "Maintenance overdue",
-    workOrderHistory: ["WO-2023-0011"]
+    workOrderHistory: ["WO-2023-0011"],
+    maintenanceSchedules: maintenanceSchedules["EQ-2023-002"]
   },
   {
     id: "EQ-2023-003",
@@ -86,7 +236,9 @@ export const equipment: Equipment[] = [
     warrantyExpiryDate: "2023-11-05",
     warrantyStatus: "active",
     notes: "Warranty expires soon",
-    workOrderHistory: ["WO-2023-0010"]
+    workOrderHistory: ["WO-2023-0010"],
+    maintenanceHistory: maintenanceRecords["EQ-2023-003"],
+    maintenanceSchedules: maintenanceSchedules["EQ-2023-003"]
   },
   {
     id: "EQ-2023-004",
@@ -106,7 +258,8 @@ export const equipment: Equipment[] = [
     warrantyExpiryDate: "2022-04-18",
     warrantyStatus: "expired",
     notes: "Currently out of service, needs major repair",
-    workOrderHistory: ["WO-2023-0007"]
+    workOrderHistory: ["WO-2023-0007"],
+    maintenanceSchedules: maintenanceSchedules["EQ-2023-004"]
   },
   {
     id: "EQ-2023-005",
@@ -126,7 +279,9 @@ export const equipment: Equipment[] = [
     warrantyExpiryDate: "2025-08-30",
     warrantyStatus: "active",
     notes: "5-year warranty with annual inspection requirement",
-    workOrderHistory: ["WO-2023-0008"]
+    workOrderHistory: ["WO-2023-0008"],
+    maintenanceHistory: maintenanceRecords["EQ-2023-005"],
+    maintenanceSchedules: maintenanceSchedules["EQ-2023-005"]
   }
 ];
 
@@ -167,4 +322,30 @@ export const getWorkOrdersForEquipment = (equipmentId: string) => {
   return workOrders.filter(order => 
     targetEquipment.workOrderHistory?.includes(order.id)
   );
+};
+
+// Function to get maintenance records for a specific equipment
+export const getMaintenanceHistoryForEquipment = (equipmentId: string): MaintenanceRecord[] => {
+  const targetEquipment = equipment.find(item => item.id === equipmentId);
+  if (!targetEquipment || !targetEquipment.maintenanceHistory) return [];
+  
+  return targetEquipment.maintenanceHistory;
+};
+
+// Function to get maintenance schedules for a specific equipment
+export const getMaintenanceSchedulesForEquipment = (equipmentId: string): MaintenanceSchedule[] => {
+  const targetEquipment = equipment.find(item => item.id === equipmentId);
+  if (!targetEquipment || !targetEquipment.maintenanceSchedules) return [];
+  
+  return targetEquipment.maintenanceSchedules;
+};
+
+// Function to get all overdue maintenance equipment
+export const getOverdueMaintenanceEquipment = (): Equipment[] => {
+  const today = new Date();
+  
+  return equipment.filter(item => {
+    const maintenanceDate = new Date(item.nextMaintenanceDate);
+    return maintenanceDate < today;
+  });
 };

@@ -1,7 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { equipment, getWorkOrdersForEquipment } from "@/data/equipmentData";
+import { 
+  equipment, 
+  getWorkOrdersForEquipment, 
+  getMaintenanceHistoryForEquipment,
+  getMaintenanceSchedulesForEquipment
+} from "@/data/equipmentData";
 import { Equipment } from "@/types/equipment";
 import { WorkOrder } from "@/data/workOrdersData";
 import { toast } from "@/hooks/use-toast";
@@ -10,6 +15,8 @@ import { EquipmentAlerts } from "@/components/equipment-details/EquipmentAlerts"
 import { EquipmentDetailCards } from "@/components/equipment-details/EquipmentDetailCards";
 import { EquipmentNotes } from "@/components/equipment-details/EquipmentNotes";
 import { EquipmentServiceHistory } from "@/components/equipment-details/EquipmentServiceHistory";
+import { EquipmentMaintenanceHistory } from "@/components/equipment-details/EquipmentMaintenanceHistory";
+import { EquipmentMaintenanceSchedules } from "@/components/equipment-details/EquipmentMaintenanceSchedules";
 import { EquipmentLoading } from "@/components/equipment-details/EquipmentLoading";
 
 export default function EquipmentDetails() {
@@ -68,6 +75,15 @@ export default function EquipmentDetails() {
   }
 
   const isMaintenanceOverdue = new Date(equipmentItem.nextMaintenanceDate) < new Date();
+  const maintenanceHistory = getMaintenanceHistoryForEquipment(equipmentItem.id);
+  const maintenanceSchedules = getMaintenanceSchedulesForEquipment(equipmentItem.id);
+
+  const handleAddMaintenanceSchedule = () => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "Adding maintenance schedules will be available in a future update.",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -81,6 +97,17 @@ export default function EquipmentDetails() {
       <EquipmentDetailCards equipmentItem={equipmentItem} />
       
       <EquipmentNotes notes={equipmentItem.notes} />
+      
+      <EquipmentMaintenanceSchedules
+        equipmentId={equipmentItem.id}
+        equipmentName={equipmentItem.name}
+        schedules={maintenanceSchedules}
+        onScheduleAdded={handleAddMaintenanceSchedule}
+      />
+      
+      <EquipmentMaintenanceHistory 
+        maintenanceHistory={maintenanceHistory} 
+      />
       
       <EquipmentServiceHistory 
         equipmentId={equipmentItem.id}
