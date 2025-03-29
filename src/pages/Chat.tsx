@@ -5,7 +5,7 @@ import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
 import { useChat } from '@/hooks/useChat';
-import { createChatRoom, getWorkOrderChatRoom, getDirectChatWithUser } from '@/services/chatService';
+import { createChatRoom, getWorkOrderChatRoom, getDirectChatWithUser } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 

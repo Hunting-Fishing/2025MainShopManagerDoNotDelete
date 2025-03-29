@@ -7,7 +7,7 @@ import {
   sendMessage,
   markMessagesAsRead,
   subscribeToMessages
-} from '@/services/chatService';
+} from '@/services/chat';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseChatProps {

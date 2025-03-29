@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getWorkOrderChatRoom, createChatRoom } from '@/services/chatService';
+import { getWorkOrderChatRoom, createChatRoom } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
