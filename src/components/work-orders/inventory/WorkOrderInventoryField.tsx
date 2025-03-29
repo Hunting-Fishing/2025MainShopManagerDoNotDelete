@@ -8,11 +8,11 @@ import { InventorySelectionDialog } from "./InventorySelectionDialog";
 import { InventorySectionHeader } from "./InventorySectionHeader";
 import { useWorkOrderInventory } from "@/hooks/inventory/useWorkOrderInventory";
 
-interface WorkOrderInventorySectionContainerProps {
+interface WorkOrderInventoryFieldProps {
   form: UseFormReturn<WorkOrderFormFieldValues>;
 }
 
-export const WorkOrderInventorySectionContainer: React.FC<WorkOrderInventorySectionContainerProps> = ({
+export const WorkOrderInventoryField: React.FC<WorkOrderInventoryFieldProps> = ({
   form
 }) => {
   const {
