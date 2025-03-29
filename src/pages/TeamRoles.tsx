@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Role } from "@/types/team";
 import { PermissionSet } from "@/types/permissions";
@@ -61,6 +60,7 @@ export default function TeamRoles() {
     handleAddRole,
     handleEditRole,
     handleDeleteRole,
+    handleDuplicateRole,
     handleImportRoles
   } = useRoleManagement(initialRoles);
 
@@ -151,6 +151,7 @@ export default function TeamRoles() {
           setCurrentRole(role);
           setIsDeleteDialogOpen(true);
         }}
+        onDuplicateRole={handleDuplicateRole}
       />
 
       <AddRoleDialog
