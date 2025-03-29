@@ -1,77 +1,101 @@
 
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { CalendarIcon, Edit, FilePlus } from "lucide-react";
-import { WorkOrder, priorityMap, statusMap } from "@/data/workOrdersData";
-import { WorkOrderExportMenu } from "../WorkOrderExportMenu";
+import React from 'react';
+import { WorkOrder } from '@/data/workOrdersData';
+import { Button } from '@/components/ui/button';
+import { 
+  ArrowLeft, 
+  Printer, 
+  Edit, 
+  MoreHorizontal, 
+  FileText,
+  Trash2,
+  MessageCircle
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { formatDate } from '@/utils/workOrderUtils';
+import { WorkOrderChatButton } from '../WorkOrderChatButton';
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
+  onDelete: () => void;
 }
 
-export function WorkOrderDetailsHeader({ workOrder }: WorkOrderDetailsHeaderProps) {
+function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderProps) {
   const navigate = useNavigate();
   
-  // Get status and priority info
-  const statusInfo = statusMap[workOrder.status as keyof typeof statusMap];
-  const priorityInfo = priorityMap[workOrder.priority as keyof typeof priorityMap];
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-
-  // Handle creating invoice
-  const handleCreateInvoice = () => {
-    navigate(`/invoices/create/${workOrder.id}`);
-  };
-
-  // Handle edit work order
-  const handleEditWorkOrder = () => {
+  const handleEdit = () => {
     navigate(`/work-orders/${workOrder.id}/edit`);
+  };
+  
+  const handleCreateInvoice = () => {
+    navigate(`/invoices/new?workOrder=${workOrder.id}`);
   };
 
   return (
-    <div className="flex justify-between items-start">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{workOrder.id}</h1>
-        <div className="flex items-center mt-2 space-x-4">
-          {/* Status badge */}
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            workOrder.status === "completed" ? "bg-green-100 text-green-800" : 
-            workOrder.status === "in-progress" ? "bg-blue-100 text-blue-800" :
-            workOrder.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-            "bg-red-100 text-red-800"
-          }`}>
-            {statusInfo}
-          </span>
-          
-          {/* Priority badge */}
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityInfo.classes}`}>
-            {priorityInfo.label} Priority
-          </span>
-          
-          {/* Date */}
-          <span className="inline-flex items-center text-sm text-slate-500">
-            <CalendarIcon className="mr-1 h-4 w-4" />
-            Created: {formatDate(workOrder.date)}
-          </span>
-        </div>
+    <div className="flex flex-col space-y-4 pb-4 md:pb-6">
+      <div className="flex items-center">
+        <Button variant="ghost" size="sm" asChild className="gap-1">
+          <Link to="/work-orders">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Work Orders</span>
+          </Link>
+        </Button>
       </div>
       
-      <div className="flex space-x-2">
-        <WorkOrderExportMenu workOrder={workOrder} />
-        <Button variant="outline" onClick={handleEditWorkOrder}>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit Work Order
-        </Button>
-        <Button onClick={handleCreateInvoice}>
-          <FilePlus className="mr-2 h-4 w-4" />
-          Create Invoice
-        </Button>
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">{workOrder.id}</h1>
+          <div className="text-slate-500 mb-2">Created on {formatDate(workOrder.date)}</div>
+          <div className="text-lg font-medium">{workOrder.customer}</div>
+          <div className="text-slate-700">{workOrder.description}</div>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-2">
+          <WorkOrderChatButton 
+            workOrderId={workOrder.id} 
+            workOrderName={`${workOrder.id}: ${workOrder.description}`}
+          />
+          <Button variant="outline" size="sm">
+            <Printer className="h-4 w-4 mr-2" />
+            Print
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleEdit}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+          <Button onClick={handleCreateInvoice}>
+            <FileText className="h-4 w-4 mr-2" />
+            Create Invoice
+          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Duplicate Work Order</DropdownMenuItem>
+              <DropdownMenuItem>Email Work Order</DropdownMenuItem>
+              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600" onClick={onDelete}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Work Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </div>
   );
 }
+
+export default WorkOrderDetailsHeader;

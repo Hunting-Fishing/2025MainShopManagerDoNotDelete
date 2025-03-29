@@ -25,6 +25,7 @@ import EquipmentDetails from "@/pages/EquipmentDetails";
 import CustomerFollowUps from "@/pages/CustomerFollowUps";
 import Reports from "@/pages/Reports";
 import MaintenanceDashboard from "@/pages/MaintenanceDashboard";
+import Chat from "@/pages/Chat";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalCommandMenu } from "@/components/search/GlobalCommandMenu";
 import { useState, useEffect } from "react";
@@ -81,6 +82,8 @@ function App() {
           <Route path="team/members/:id" element={<TeamMemberProfile />} />
           <Route path="team/members/new" element={<TeamMemberCreate />} />
           <Route path="team/roles" element={<TeamRoles />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="chat/:roomId" element={<Chat />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
