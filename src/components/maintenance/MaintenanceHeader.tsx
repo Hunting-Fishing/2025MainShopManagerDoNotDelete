@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Plus, Bell, Download } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useNotifications } from "@/context/NotificationsContext";
+import { useNotifications } from "@/context/notifications";
 
 interface MaintenanceHeaderProps {
   totalScheduled: number;
@@ -10,10 +10,15 @@ interface MaintenanceHeaderProps {
 }
 
 export function MaintenanceHeader({ totalScheduled, totalOverdue }: MaintenanceHeaderProps) {
-  const { triggerTestNotification } = useNotifications();
+  const { addNotification } = useNotifications();
   
   const handleNotificationTest = () => {
-    triggerTestNotification();
+    addNotification({
+      title: "Maintenance Alert",
+      message: "This is a test maintenance notification",
+      type: "info",
+      category: "system"
+    });
   };
   
   return (
