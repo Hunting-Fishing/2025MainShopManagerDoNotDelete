@@ -28,6 +28,8 @@ import SettingsPage from './pages/Settings';
 import NotFound from './pages/NotFound';
 import { Toaster } from "@/components/ui/toaster"
 import Analytics from './pages/Analytics';
+import RepairPlanDetails from './pages/RepairPlanDetails';
+import RepairPlans from './pages/RepairPlans';
 
 function App() {
   return (
@@ -59,6 +61,8 @@ function App() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/repair-plans" element={<RepairPlans />} />
+            <Route path="/repair-plans/:id" element={<RepairPlanDetails />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

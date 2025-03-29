@@ -1,15 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, Check, Clock, Edit, Tag, Wrench, Trash, X, Settings } from "lucide-react";
-import { RepairPlan, RepairTask } from "@/types/repairPlan";
-import { formatDate } from "@/utils/workOrderUtils";
+import { RepairPlan } from "@/types/repairPlan";
+import { RepairPlanHeader } from "@/components/repair-plan/RepairPlanHeader";
+import { RepairPlanDetailsCard } from "@/components/repair-plan/detail/RepairPlanDetailsCard";
+import { RepairPlanTasksCard } from "@/components/repair-plan/detail/RepairPlanTasksCard";
+import { RepairPlanActivityCard } from "@/components/repair-plan/detail/RepairPlanActivityCard";
+import { RepairPlanActionsCard } from "@/components/repair-plan/detail/RepairPlanActionsCard";
+import { getStatusColor, getPriorityColor } from "@/utils/repairPlanUtils";
 
 // Mock data for a repair plan (replace with real data in production)
 const mockRepairPlan: RepairPlan = {
@@ -61,7 +60,6 @@ const mockRepairPlan: RepairPlan = {
 
 export default function RepairPlanDetails() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [repairPlan, setRepairPlan] = useState<RepairPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -125,27 +123,6 @@ export default function RepairPlanDetails() {
     }
   };
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-slate-200 text-slate-800';
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'in-progress': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-slate-100 text-slate-800';
-    }
-  };
-  
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-slate-100 text-slate-800';
-    }
-  };
-  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-40">
@@ -158,250 +135,31 @@ export default function RepairPlanDetails() {
     return (
       <div className="flex flex-col items-center justify-center h-40">
         <div className="text-lg text-slate-500 mb-4">Repair plan not found</div>
-        <Button onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Go Back
-        </Button>
       </div>
     );
   }
   
-  const tasksCompleted = repairPlan.tasks.filter(task => task.completed).length;
-  const totalTasks = repairPlan.tasks.length;
-  const progress = totalTasks ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
-  
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate(-1)}
-            className="mr-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-          <h1 className="text-2xl font-bold">{repairPlan.title}</h1>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => navigate(`/repair-plans/${repairPlan.id}/edit`)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Plan
-          </Button>
-        </div>
-      </div>
+      <RepairPlanHeader repairPlan={repairPlan} />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Wrench className="mr-2 h-5 w-5" />
-                Plan Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-lg">Description</h3>
-                  <p className="mt-1 text-muted-foreground">{repairPlan.description}</p>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium">Equipment</h3>
-                  <p className="mt-1 text-muted-foreground">
-                    {/* In a real app, fetch equipment details */}
-                    HVAC System - Model XYZ-123
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium">Status</h3>
-                    <Badge className={`mt-1 ${getStatusColor(repairPlan.status)}`}>
-                      {repairPlan.status.charAt(0).toUpperCase() + repairPlan.status.slice(1)}
-                    </Badge>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium">Priority</h3>
-                    <Badge className={`mt-1 ${getPriorityColor(repairPlan.priority)}`}>
-                      {repairPlan.priority.charAt(0).toUpperCase() + repairPlan.priority.slice(1)}
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium">Scheduled Date</h3>
-                    <p className="mt-1 flex items-center text-muted-foreground">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {repairPlan.scheduledDate ? formatDate(repairPlan.scheduledDate) : 'Not scheduled'}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium">Estimated Duration</h3>
-                    <p className="mt-1 flex items-center text-muted-foreground">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {repairPlan.estimatedDuration} hours
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium">Assigned Technician</h3>
-                    <p className="mt-1 text-muted-foreground">
-                      {repairPlan.assignedTechnician || 'Unassigned'}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium">Cost Estimate</h3>
-                    <p className="mt-1 text-muted-foreground">
-                      ${repairPlan.costEstimate?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium">Customer Approval</h3>
-                  <p className="mt-1 flex items-center">
-                    {repairPlan.customerApproved ? (
-                      <Badge className="bg-green-100 text-green-800 flex items-center">
-                        <Check className="h-3 w-3 mr-1" />
-                        Approved
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-yellow-100 text-yellow-800 flex items-center">
-                        <X className="h-3 w-3 mr-1" />
-                        Not Approved
-                      </Badge>
-                    )}
-                  </p>
-                </div>
-                
-                {repairPlan.notes && (
-                  <div>
-                    <h3 className="font-medium">Notes</h3>
-                    <p className="mt-1 text-muted-foreground">{repairPlan.notes}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <RepairPlanDetailsCard 
+            repairPlan={repairPlan} 
+            getStatusColor={getStatusColor}
+            getPriorityColor={getPriorityColor}
+          />
           
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Settings className="mr-2 h-5 w-5" />
-                  Repair Tasks ({tasksCompleted}/{totalTasks})
-                </div>
-                <Badge className={progress === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                  {progress}% Complete
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {repairPlan.tasks.length === 0 ? (
-                  <div className="text-center p-6 border border-dashed rounded-md text-muted-foreground">
-                    No tasks added to this repair plan.
-                  </div>
-                ) : (
-                  repairPlan.tasks.map((task, index) => (
-                    <div key={task.id} className="border rounded-md p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start">
-                          <div className="mt-1 mr-2">
-                            <Checkbox 
-                              checked={task.completed} 
-                              onCheckedChange={(checked) => {
-                                handleTaskStatusChange(task.id, !!checked);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <h4 className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
-                              {task.description}
-                            </h4>
-                            <div className="flex flex-wrap items-center mt-1 gap-2">
-                              <Badge variant="outline" className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {task.estimatedHours} hours
-                              </Badge>
-                              {task.assignedTo && (
-                                <Badge variant="outline" className="flex items-center">
-                                  Assigned to: {task.assignedTo}
-                                </Badge>
-                              )}
-                            </div>
-                            {task.notes && (
-                              <p className="mt-2 text-sm text-muted-foreground">{task.notes}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <RepairPlanTasksCard
+            repairPlan={repairPlan}
+            onTaskStatusChange={handleTaskStatusChange}
+          />
         </div>
         
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border-l-2 border-muted pl-4">
-                  <h4 className="font-medium">Created</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDate(repairPlan.createdAt)}
-                  </p>
-                </div>
-                <div className="border-l-2 border-muted pl-4">
-                  <h4 className="font-medium">Last Updated</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDate(repairPlan.updatedAt)}
-                  </p>
-                </div>
-                {repairPlan.scheduledDate && (
-                  <div className="border-l-2 border-muted pl-4">
-                    <h4 className="font-medium">Scheduled</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(repairPlan.scheduledDate)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button className="w-full" variant="default">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Schedule Repair
-                </Button>
-                <Button className="w-full" variant="outline">
-                  <Tag className="mr-2 h-4 w-4" />
-                  Create Work Order
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <RepairPlanActivityCard repairPlan={repairPlan} />
+          <RepairPlanActionsCard />
         </div>
       </div>
     </div>
