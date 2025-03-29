@@ -1,9 +1,10 @@
+
 import { Equipment, MaintenanceSchedule } from "@/types/equipment";
 import { WorkOrder } from "@/data/workOrdersData";
 import { createWorkOrder } from "@/utils/workOrderUtils";
 import { toast } from "@/hooks/use-toast";
 import { addDays, format, parse, isBefore, isAfter } from "date-fns";
-import { notificationService } from "@/services/notifications";
+import { notificationService } from "@/services/notificationService";
 
 // Calculate the next maintenance date based on frequency
 export const calculateNextMaintenanceDate = (
