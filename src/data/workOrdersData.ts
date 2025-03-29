@@ -1,3 +1,4 @@
+
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 
 // Work order status definitions
@@ -34,6 +35,10 @@ export interface WorkOrder {
   inventoryItems?: WorkOrderInventoryItem[];
   timeEntries?: TimeEntry[];
   totalBillableTime?: number; // Total billable time in minutes
+  createdBy?: string; // Person who created the work order
+  createdAt?: string; // Creation timestamp
+  lastUpdatedBy?: string; // Person who last updated the work order
+  lastUpdatedAt?: string; // Last update timestamp
 }
 
 // Mock data for work orders

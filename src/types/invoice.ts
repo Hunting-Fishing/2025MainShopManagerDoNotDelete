@@ -1,4 +1,3 @@
-
 import { InventoryItem } from "./inventory";
 import { TimeEntry } from "./workOrder";
 
@@ -50,6 +49,9 @@ export interface Invoice {
   tax?: number;
   total?: number;
   paymentMethod?: string;
+  createdAt?: string; // Creation timestamp
+  lastUpdatedBy?: string; // Person who last updated the invoice
+  lastUpdatedAt?: string; // Last update timestamp
 }
 
 // New interface for invoice templates

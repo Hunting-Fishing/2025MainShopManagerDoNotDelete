@@ -8,6 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrderUtils";
 import { format } from "date-fns";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
+import { recordWorkOrderActivity } from "@/utils/activityTracker";
+
+// Mock current user - in a real app, this would come from auth context
+const currentUser = { id: "user-123", name: "Admin User" };
 
 // Define inventory item schema using the type
 const inventoryItemSchema = z.object({
@@ -82,7 +86,7 @@ export const useWorkOrderForm = () => {
         unitPrice: item.unitPrice
       })) || [];
       
-      // Create the work order
+      // Create the work order with additional tracking fields
       const newWorkOrder = await createWorkOrder({
         ...values,
         dueDate: formattedDueDate,
@@ -93,12 +97,25 @@ export const useWorkOrderForm = () => {
         technician: values.technician,
         location: values.location,
         inventoryItems: inventoryItems,
+        createdBy: currentUser.name,
+        createdAt: new Date().toISOString(),
+        lastUpdatedBy: currentUser.name,
+        lastUpdatedAt: new Date().toISOString(),
       });
+      
+      // Record the activity
+      recordWorkOrderActivity(
+        "Created", 
+        newWorkOrder.id, 
+        currentUser.id,
+        currentUser.name
+      );
       
       // Show success message
       toast({
         title: "Work Order Created",
         description: `Work order ${newWorkOrder.id} has been created successfully.`,
+        variant: "success",
       });
       
       // Navigate to work orders list

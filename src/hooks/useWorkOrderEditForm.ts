@@ -9,6 +9,10 @@ import { WorkOrder } from "@/data/workOrdersData";
 import { updateWorkOrder } from "@/utils/workOrderUtils";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
+import { recordWorkOrderActivity } from "@/utils/activityTracker";
+
+// Mock current user - in a real app, this would come from auth context
+const currentUser = { id: "user-123", name: "Admin User" };
 
 export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
   const navigate = useNavigate();
@@ -66,15 +70,26 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
         dueDate: formattedDueDate,
         notes: values.notes,
         inventoryItems: inventoryItems,
+        lastUpdatedBy: currentUser.name,
+        lastUpdatedAt: new Date().toISOString(),
       };
       
       // Update the work order
       await updateWorkOrder(updatedWorkOrder);
       
+      // Record the activity
+      recordWorkOrderActivity(
+        "Updated", 
+        workOrder.id, 
+        currentUser.id, 
+        currentUser.name
+      );
+      
       // Show success message
       toast({
         title: "Work Order Updated",
         description: `Work order ${workOrder.id} has been updated successfully.`,
+        variant: "success",
       });
       
       // Navigate back to the details view

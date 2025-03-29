@@ -1,10 +1,14 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { WorkOrder } from "@/data/workOrdersData";
 import { TimeEntry } from "@/types/workOrder";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { WorkOrderDetailsHeader } from "./details/WorkOrderDetailsHeader";
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
+import { recordWorkOrderActivity } from "@/utils/activityTracker";
+
+// Mock current user - in a real app, this would come from auth context
+const currentUser = { id: "user-123", name: "Admin User" };
 
 interface WorkOrderDetailsViewProps {
   workOrder: WorkOrder;
@@ -12,6 +16,17 @@ interface WorkOrderDetailsViewProps {
 
 export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
   const [currentWorkOrder, setCurrentWorkOrder] = useState<WorkOrder>(workOrder);
+
+  // Record view activity when component mounts
+  useEffect(() => {
+    recordWorkOrderActivity(
+      "Viewed", 
+      workOrder.id, 
+      currentUser.id,
+      currentUser.name,
+      false // Don't show toast for viewing
+    );
+  }, [workOrder.id]);
 
   // Handle updating time entries
   const handleUpdateTimeEntries = (timeEntries: TimeEntry[]) => {
@@ -24,10 +39,20 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
     const updatedWorkOrder = {
       ...currentWorkOrder,
       timeEntries,
-      totalBillableTime
+      totalBillableTime,
+      lastUpdatedBy: currentUser.name,
+      lastUpdatedAt: new Date().toISOString()
     };
 
     setCurrentWorkOrder(updatedWorkOrder);
+
+    // Record time entry update activity
+    recordWorkOrderActivity(
+      "Updated time entries for", 
+      workOrder.id, 
+      currentUser.id,
+      currentUser.name
+    );
 
     // In a real app, you would save this to the backend
     console.log("Updated work order with time entries:", updatedWorkOrder);
@@ -36,6 +61,7 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
     toast({
       title: "Time Entries Updated",
       description: "Time entries have been updated successfully.",
+      variant: "success",
     });
   };
 

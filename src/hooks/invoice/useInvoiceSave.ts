@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Invoice } from "@/types/invoice";
 import { createInvoiceFromWorkOrder } from "@/utils/workOrderUtils";
+import { recordInvoiceActivity } from "@/utils/activityTracker";
+
+// Mock current user - in a real app, this would come from auth context
+const currentUser = { id: "user-123", name: "Admin User" };
 
 export function useInvoiceSave() {
   const navigate = useNavigate();
@@ -31,6 +35,7 @@ export function useInvoiceSave() {
     setIsSubmitting(true);
 
     try {
+      // Add activity tracking fields
       const updatedInvoice = {
         ...invoice,
         items,
@@ -39,20 +44,40 @@ export function useInvoiceSave() {
         subtotal,
         tax,
         total,
+        createdBy: invoice.createdBy || currentUser.name,
+        lastUpdatedBy: currentUser.name,
+        lastUpdatedAt: new Date().toISOString(),
       };
 
       // If this invoice is created from a work order, use that function
       if (invoice.workOrderId) {
         await createInvoiceFromWorkOrder(invoice.workOrderId, updatedInvoice);
+        
+        // Record the activity for connecting work order to invoice
+        recordInvoiceActivity(
+          "Created from work order " + invoice.workOrderId, 
+          invoice.id, 
+          currentUser.id, 
+          currentUser.name
+        );
       } else {
         // In a real app, this would be an API call to create a new invoice
         console.log("Creating new invoice:", updatedInvoice);
+        
+        // Record the activity
+        recordInvoiceActivity(
+          "Created", 
+          invoice.id, 
+          currentUser.id, 
+          currentUser.name
+        );
       }
       
       // Show success message
       toast({
         title: "Invoice Created",
         description: `Invoice ${invoice.id} has been created successfully.`,
+        variant: "success",
       });
       
       // Navigate to invoices list
