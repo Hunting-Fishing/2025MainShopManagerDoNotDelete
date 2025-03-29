@@ -10,6 +10,7 @@ import { updateWorkOrder } from "@/utils/workOrderUtils";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 import { recordWorkOrderActivity } from "@/utils/activityTracker";
+import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
@@ -17,6 +18,7 @@ const currentUser = { id: "user-123", name: "Admin User" };
 export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Parse the date strings into Date objects
   const dueDateAsDate = parse(workOrder.dueDate, "yyyy-MM-dd", new Date());
@@ -43,8 +45,15 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
   // Handle form submission
   const onSubmit = async (values: WorkOrderFormSchemaValues) => {
     setIsSubmitting(true);
+    setError(null);
     
     try {
+      // Check for network connectivity
+      if (!navigator.onLine) {
+        setError("No internet connection. Please check your network and try again.");
+        throw new Error("Network offline");
+      }
+      
       // Format the date back to YYYY-MM-DD string format
       const formattedDueDate = format(values.dueDate, "yyyy-MM-dd");
       
@@ -97,12 +106,15 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
     } catch (error) {
       console.error("Error updating work order:", error);
       
-      // Show error message
-      toast({
-        title: "Error",
-        description: "Failed to update work order. Please try again.",
-        variant: "destructive",
-      });
+      // Handle specific network errors
+      if (isNetworkError(error)) {
+        handleNetworkError();
+        setError("Network connectivity issue. Please check your internet connection.");
+      } else {
+        // Handle other form errors
+        const errorResult = handleFormError(error, "Work Order Update");
+        setError(errorResult.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -111,6 +123,7 @@ export const useWorkOrderEditForm = (workOrder: WorkOrder) => {
   return {
     form,
     onSubmit,
-    isSubmitting
+    isSubmitting,
+    error
   };
 };

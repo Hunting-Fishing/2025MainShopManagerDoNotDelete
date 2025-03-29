@@ -6,6 +6,7 @@ import { Invoice } from "@/types/invoice";
 import { createInvoiceFromWorkOrder } from "@/utils/workOrderUtils";
 import { recordInvoiceActivity } from "@/utils/activityTracker";
 import { useInvoiceData } from "@/hooks/useInvoiceData";
+import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
@@ -13,6 +14,7 @@ const currentUser = { id: "user-123", name: "Admin User" };
 export function useInvoiceSave() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { saveInvoice } = useInvoiceData();
 
   // Handle saving invoice
@@ -25,18 +27,29 @@ export function useInvoiceSave() {
     total: number,
     status: string
   ) => {
+    // Reset error state
+    setError(null);
+    
+    // Basic validation
     if (!invoice.customer || !items.length) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields and add at least one item.",
         variant: "destructive",
       });
+      setError("Please fill in all required fields and add at least one item.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      // Check for network connectivity
+      if (!navigator.onLine) {
+        setError("No internet connection. Please check your network and try again.");
+        throw new Error("Network offline");
+      }
+      
       // Add activity tracking fields
       const updatedInvoice = {
         ...invoice,
@@ -87,12 +100,15 @@ export function useInvoiceSave() {
     } catch (error) {
       console.error("Error creating invoice:", error);
       
-      // Show error message
-      toast({
-        title: "Error",
-        description: "Failed to create invoice. Please try again.",
-        variant: "destructive",
-      });
+      // Handle specific network errors
+      if (isNetworkError(error)) {
+        handleNetworkError();
+        setError("Network connectivity issue. Please check your internet connection.");
+      } else {
+        // Handle other form errors
+        const errorResult = handleFormError(error, "Invoice");
+        setError(errorResult.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -100,6 +116,7 @@ export function useInvoiceSave() {
 
   return {
     isSubmitting,
-    handleSaveInvoice
+    handleSaveInvoice,
+    error
   };
 }

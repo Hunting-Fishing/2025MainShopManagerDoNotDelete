@@ -9,6 +9,7 @@ import { createWorkOrder } from "@/utils/workOrderUtils";
 import { format } from "date-fns";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 import { recordWorkOrderActivity } from "@/utils/activityTracker";
+import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
@@ -55,6 +56,7 @@ export type WorkOrderFormValues = z.infer<typeof formSchema>;
 export const useWorkOrderForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize the form
   const form = useForm<WorkOrderFormValues>({
@@ -71,8 +73,15 @@ export const useWorkOrderForm = () => {
   // Handle form submission
   const onSubmit = async (values: WorkOrderFormValues) => {
     setIsSubmitting(true);
+    setError(null);
     
     try {
+      // Check for network connectivity
+      if (!navigator.onLine) {
+        setError("No internet connection. Please check your network and try again.");
+        throw new Error("Network offline");
+      }
+      
       // Format the date to YYYY-MM-DD string
       const formattedDueDate = format(values.dueDate, "yyyy-MM-dd");
       
@@ -123,12 +132,15 @@ export const useWorkOrderForm = () => {
     } catch (error) {
       console.error("Error creating work order:", error);
       
-      // Show error message
-      toast({
-        title: "Error",
-        description: "Failed to create work order. Please try again.",
-        variant: "destructive",
-      });
+      // Handle specific network errors
+      if (isNetworkError(error)) {
+        handleNetworkError();
+        setError("Network connectivity issue. Please check your internet connection.");
+      } else {
+        // Handle other form errors
+        const errorResult = handleFormError(error, "Work Order");
+        setError(errorResult.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -138,5 +150,6 @@ export const useWorkOrderForm = () => {
     form,
     onSubmit,
     isSubmitting,
+    error,
   };
 };

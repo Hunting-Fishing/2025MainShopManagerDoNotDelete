@@ -19,7 +19,7 @@ interface WorkOrderEditFormProps {
 }
 
 export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps) {
-  const { form, onSubmit, isSubmitting } = useWorkOrderEditForm(workOrder);
+  const { form, onSubmit, isSubmitting, error } = useWorkOrderEditForm(workOrder);
 
   return (
     <div className="space-y-6">
@@ -33,6 +33,7 @@ export default function WorkOrderEditForm({ workOrder }: WorkOrderEditFormProps)
         form={form}
         onSubmit={onSubmit}
         isSubmitting={isSubmitting}
+        error={error}
       />
     </div>
   );
