@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, User, Search, X } from 'lucide-react';
+import { User, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,6 +15,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SearchResults } from '@/components/search/SearchResults';
 import { performSearch, SearchResult } from '@/utils/searchUtils';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { AddNotificationDemo } from '@/components/notifications/AddNotificationDemo';
 
 export function Header() {
   const { toast } = useToast();
@@ -106,10 +108,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5 text-slate-500" />
-            <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500"></span>
-          </Button>
+          <AddNotificationDemo />
+          <NotificationBell />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
