@@ -32,25 +32,20 @@ export function Header() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative"
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                  {unreadCount}
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <NotificationsDropdown />
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <NotificationsDropdown>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                {unreadCount}
+              </span>
+            )}
+          </Button>
+        </NotificationsDropdown>
         <div className="h-8 w-8 rounded-full bg-slate-200" />
       </div>
     </header>
