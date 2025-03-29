@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DateRange } from 'react-day-picker';
 import { format, subMonths } from 'date-fns';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import { ReportExportMenu } from '@/components/reports/ReportExportMenu';
-import { SavedReportsDialog } from '@/components/reports/SavedReportsDialog';
+import { SavedReportsDialog } from '@/components/reports/dialogs/SavedReportsDialog';
 import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
 import { SavedReport, ReportConfig } from '@/types/reports';
 import { toast } from "@/components/ui/use-toast";
