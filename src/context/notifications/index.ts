@@ -10,6 +10,7 @@ export type Notification = {
   type: 'info' | 'warning' | 'error' | 'success';
   timestamp: Date;
   read: boolean;
+  link?: string;
 };
 
 // Context type
