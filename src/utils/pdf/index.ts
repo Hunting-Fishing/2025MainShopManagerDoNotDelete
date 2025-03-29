@@ -6,6 +6,7 @@ export * from './invoicePdf';
 // Import jsPDF to use for document creation
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
+import { configurePdf, addFooter, getFormattedDate } from './pdfConfig';
 
 /**
  * Generate a report PDF with enhanced formatting
@@ -181,4 +182,12 @@ export const generateWorkOrderPdf = (workOrder: any) => {
   addFooter(doc);
   
   return doc;
+};
+
+/**
+ * Save or open a PDF document with proper name formatting
+ */
+export const savePdf = (doc: jsPDF, filename: string) => {
+  const formattedFilename = `${filename}_${getFormattedDate()}.pdf`;
+  doc.save(formattedFilename);
 };
