@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
-import { WorkOrderInventorySectionContainer } from "./WorkOrderInventorySectionContainer";
+import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { toast } from "@/hooks/use-toast";
 
@@ -29,5 +29,5 @@ export const WorkOrderInventorySection: React.FC<WorkOrderInventorySectionProps>
     }
   }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);
   
-  return <WorkOrderInventorySectionContainer form={form} />;
+  return <WorkOrderInventoryField form={form} />;
 };
