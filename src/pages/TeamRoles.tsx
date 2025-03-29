@@ -6,12 +6,12 @@ import { permissionPresets } from "@/data/permissionPresets";
 import { v4 as uuidv4 } from "uuid";
 import { RolesPageHeader } from "@/components/team/roles/RolesPageHeader";
 import { RolesGrid } from "@/components/team/roles/RolesGrid";
+import { RolesSearch } from "@/components/team/roles/RolesSearch";
 import { AddRoleDialog } from "@/components/team/roles/AddRoleDialog";
 import { EditRoleDialog } from "@/components/team/roles/EditRoleDialog";
 import { DeleteRoleDialog } from "@/components/team/roles/DeleteRoleDialog";
 import { exportRolesToJson, validateImportedRoles } from "@/utils/roleUtils";
 
-// Mock data - in a real app, would come from backend
 const initialRoles: Role[] = [
   {
     id: "role-1",
@@ -60,8 +60,20 @@ export default function TeamRoles() {
   const [newRoleDescription, setNewRoleDescription] = useState("");
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
   const [rolePermissions, setRolePermissions] = useState<PermissionSet | null>(null);
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
 
-  // Handle exporting roles
+  const filteredRoles = roles.filter(role => {
+    const matchesSearch = role.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (typeFilter === "all") return matchesSearch;
+    if (typeFilter === "default") return matchesSearch && role.isDefault;
+    if (typeFilter === "custom") return matchesSearch && !role.isDefault;
+    
+    return matchesSearch;
+  });
+
   const handleExportRoles = () => {
     exportRolesToJson(roles);
     toast({
@@ -71,9 +83,7 @@ export default function TeamRoles() {
     });
   };
 
-  // Handle importing roles
   const handleImportRoles = (importedRoles: Role[]) => {
-    // Validate imported roles
     const validation = validateImportedRoles(importedRoles);
     
     if (!validation.valid) {
@@ -85,18 +95,15 @@ export default function TeamRoles() {
       return;
     }
 
-    // Filter out default roles from imported roles to prevent overwriting them
     const defaultRoleIds = roles.filter(role => role.isDefault).map(role => role.id);
     const customImportedRoles = importedRoles.filter(role => !defaultRoleIds.includes(role.id));
     
-    // Check for duplicates by name
     const existingRoleNames = new Set(roles.map(role => role.name.toLowerCase()));
     const duplicates = customImportedRoles.filter(role => 
       existingRoleNames.has(role.name.toLowerCase())
     );
     
     if (duplicates.length > 0) {
-      // If duplicates exist, give a warning but allow the import
       const nonDuplicates = customImportedRoles.filter(
         role => !existingRoleNames.has(role.name.toLowerCase())
       );
@@ -109,7 +116,6 @@ export default function TeamRoles() {
         variant: "warning",
       });
     } else {
-      // No duplicates, perform normal import
       setRoles([...roles, ...customImportedRoles]);
       
       toast({
@@ -120,7 +126,6 @@ export default function TeamRoles() {
     }
   };
 
-  // Handle adding a new role
   const handleAddRole = () => {
     if (!newRoleName.trim()) {
       toast({
@@ -131,7 +136,6 @@ export default function TeamRoles() {
       return;
     }
 
-    // Check if role with this name already exists
     if (roles.some(role => role.name.toLowerCase() === newRoleName.toLowerCase())) {
       toast({
         title: "Role already exists",
@@ -146,7 +150,7 @@ export default function TeamRoles() {
       name: newRoleName,
       description: newRoleDescription,
       isDefault: false,
-      permissions: rolePermissions || permissionPresets.Technician, // Default to Technician permissions
+      permissions: rolePermissions || permissionPresets.Technician,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -164,7 +168,6 @@ export default function TeamRoles() {
     });
   };
 
-  // Handle editing a role
   const handleEditRole = () => {
     if (!currentRole) return;
 
@@ -191,11 +194,9 @@ export default function TeamRoles() {
     });
   };
 
-  // Handle deleting a role
   const handleDeleteRole = () => {
     if (!currentRole) return;
 
-    // Don't allow deletion of default roles
     if (currentRole.isDefault) {
       toast({
         title: "Cannot delete default role",
@@ -216,7 +217,6 @@ export default function TeamRoles() {
     });
   };
 
-  // Reset form when add dialog is closed
   useEffect(() => {
     if (!isAddDialogOpen) {
       setNewRoleName("");
@@ -225,7 +225,6 @@ export default function TeamRoles() {
     }
   }, [isAddDialogOpen]);
 
-  // Reset current role when edit dialog is closed
   useEffect(() => {
     if (!isEditDialogOpen) {
       setCurrentRole(null);
@@ -235,16 +234,21 @@ export default function TeamRoles() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <RolesPageHeader 
         onAddRoleClick={() => setIsAddDialogOpen(true)}
         onExportRoles={handleExportRoles}
         onImportRoles={handleImportRoles}
       />
 
-      {/* Roles grid */}
+      <RolesSearch 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        typeFilter={typeFilter}
+        onTypeFilterChange={setTypeFilter}
+      />
+
       <RolesGrid 
-        roles={roles} 
+        roles={filteredRoles} 
         onEditRole={(role) => {
           setCurrentRole(role);
           setRolePermissions(role.permissions as PermissionSet);
@@ -256,7 +260,6 @@ export default function TeamRoles() {
         }}
       />
 
-      {/* Add role dialog */}
       <AddRoleDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
@@ -268,7 +271,6 @@ export default function TeamRoles() {
         onAddRole={handleAddRole}
       />
 
-      {/* Edit role dialog */}
       <EditRoleDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
@@ -279,7 +281,6 @@ export default function TeamRoles() {
         onEditRole={handleEditRole}
       />
 
-      {/* Delete role confirmation dialog */}
       <DeleteRoleDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
