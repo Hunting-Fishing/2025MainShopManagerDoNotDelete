@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -103,8 +102,9 @@ export default function TeamRoles() {
     setRolePermissions(null);
 
     toast({
-      title: "Role created",
+      title: "Role created successfully",
       description: `The role "${newRoleName}" has been created`,
+      variant: "success",
     });
   };
 
@@ -129,8 +129,9 @@ export default function TeamRoles() {
     setRolePermissions(null);
 
     toast({
-      title: "Role updated",
+      title: "Role updated successfully",
       description: `The role "${currentRole.name}" has been updated`,
+      variant: "success",
     });
   };
 
@@ -153,8 +154,9 @@ export default function TeamRoles() {
     setCurrentRole(null);
 
     toast({
-      title: "Role deleted",
+      title: "Role deleted successfully",
       description: `The role "${currentRole.name}" has been deleted`,
+      variant: "success",
     });
   };
 

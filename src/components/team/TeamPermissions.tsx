@@ -54,6 +54,7 @@ export function TeamPermissions({
       toast({
         title: "Permissions updated",
         description: `Applied ${role} permission preset`,
+        variant: "success",
       });
     }
   };
@@ -65,8 +66,9 @@ export function TeamPermissions({
     // Simulate API call delay
     setTimeout(() => {
       toast({
-        title: "Permissions saved",
+        title: "Permissions saved successfully",
         description: "User permissions have been updated successfully",
+        variant: "success",
       });
     }, 500);
   };
