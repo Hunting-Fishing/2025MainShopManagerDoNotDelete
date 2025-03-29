@@ -1,20 +1,19 @@
 
-import { useState } from "react";
-import { TabsContent } from "@/components/ui/tabs";
-import { TeamPermissions } from "@/components/team/TeamPermissions";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { ActivityTab } from "./tabs/ActivityTab";
 import { EditProfileTab } from "./tabs/EditProfileTab";
+import { PermissionsTab } from "./tabs/PermissionsTab";
+import { TeamMember } from "@/types/team";
 import { TeamMemberFormValues } from "../form/formValidation";
 
 interface TeamMemberDetailsProps {
-  member: any;
+  member: TeamMember;
   activeTab: string;
 }
 
 export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps) {
-  // Prepare form initial data
-  const formInitialData: TeamMemberFormValues = {
+  // Convert member data to form values format
+  const memberFormData: TeamMemberFormValues = {
     name: member.name,
     email: member.email,
     phone: member.phone,
@@ -22,26 +21,18 @@ export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps)
     role: member.role,
     department: member.department,
     status: member.status === "Active",
-    notes: member.notes,
+    notes: member.notes || "",
   };
 
   return (
-    <>
-      <TabsContent value="overview" className="pt-6">
-        <OverviewTab member={member} />
-      </TabsContent>
+    <div className="mt-6">
+      {activeTab === "overview" && <OverviewTab member={member} />}
       
-      <TabsContent value="permissions" className="pt-6">
-        <TeamPermissions memberRole={member.role} />
-      </TabsContent>
+      {activeTab === "permissions" && <PermissionsTab member={member} />}
       
-      <TabsContent value="activity" className="pt-6">
-        <ActivityTab activities={member.recentActivity} />
-      </TabsContent>
+      {activeTab === "activity" && <ActivityTab member={member} />}
       
-      <TabsContent value="edit" className="pt-6">
-        <EditProfileTab initialData={formInitialData} />
-      </TabsContent>
-    </>
+      {activeTab === "edit" && <EditProfileTab initialData={memberFormData} />}
+    </div>
   );
 }

@@ -14,6 +14,7 @@ import Inventory from "@/pages/Inventory";
 import Team from "@/pages/Team";
 import TeamMemberCreate from "@/pages/TeamMemberCreate";
 import TeamMemberProfile from "@/pages/TeamMemberProfile";
+import TeamRoles from "@/pages/TeamRoles";
 import Invoices from "@/pages/Invoices";
 import InvoiceDetails from "@/pages/InvoiceDetails";
 import InvoiceCreate from "@/pages/InvoiceCreate";
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/team" element={<Layout><Team /></Layout>} />
             <Route path="/team/new" element={<Layout><TeamMemberCreate /></Layout>} />
             <Route path="/team/:id" element={<Layout><TeamMemberProfile /></Layout>} />
+            <Route path="/team/roles" element={<Layout><TeamRoles /></Layout>} />
             <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
             <Route path="/reports" element={<Layout><Reports /></Layout>} />
             <Route path="/settings" element={<Layout><Settings /></Layout>} />
