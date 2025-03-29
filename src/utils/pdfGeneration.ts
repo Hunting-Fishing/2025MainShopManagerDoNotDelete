@@ -30,7 +30,8 @@ const configurePdf = (doc: jsPDF, title: string) => {
 
 // Add footer with page numbers
 const addFooter = (doc: jsPDF) => {
-  const pageCount = doc.internal.getNumberOfPages();
+  // Access the page count directly from the internal pages array length
+  const pageCount = doc.internal.pages.length - 1;
   
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
