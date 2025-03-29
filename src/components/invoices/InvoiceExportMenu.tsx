@@ -3,7 +3,7 @@ import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/repor
 import { toast } from "@/components/ui/use-toast";
 import { Invoice } from "@/types/invoice";
 import { ExportMenuBase } from "./ExportMenuBase";
-import { generateInvoicePdf, savePdf } from "@/utils/pdfGeneration";
+import { generateInvoicePdf, savePdf } from "@/utils/pdf";
 
 interface InvoiceExportMenuProps {
   invoice: Invoice & { 

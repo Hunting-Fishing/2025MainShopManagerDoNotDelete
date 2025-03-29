@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import { utils, write } from "xlsx";
 import { Parser } from "@json2csv/plainjs";
 import 'jspdf-autotable';
-import { generateReportPdf, savePdf } from './pdfGeneration';
+import { generateReportPdf, savePdf } from './pdf';
 
 // Extend the jsPDF type to include autoTable
 declare module 'jspdf' {

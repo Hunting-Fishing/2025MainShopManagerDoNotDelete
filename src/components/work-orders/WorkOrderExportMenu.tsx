@@ -1,4 +1,3 @@
-
 import { Download, FileText } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/reportExport";
 import { toast } from "@/components/ui/use-toast";
 import { WorkOrder } from "@/data/workOrdersData";
-import { generateWorkOrderPdf, savePdf } from "@/utils/pdfGeneration";
+import { generateWorkOrderPdf, savePdf } from "@/utils/pdf";
 
 interface WorkOrderExportMenuProps {
   workOrder: WorkOrder;

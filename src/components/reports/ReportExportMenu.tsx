@@ -1,4 +1,3 @@
-
 import { Download, FileText } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -9,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { exportToCSV, exportToExcel } from "@/utils/reportExport";
 import { toast } from "@/components/ui/use-toast";
-import { generateReportPdf, savePdf } from "@/utils/pdfGeneration";
+import { generateReportPdf, savePdf } from "@/utils/pdf";
 
 interface ReportExportMenuProps {
   data: any[];
