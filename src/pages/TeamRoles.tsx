@@ -1,18 +1,15 @@
+
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash, Edit, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Role } from "@/types/team";
-import { permissionPresets } from "@/data/permissionPresets";
 import { PermissionSet } from "@/types/permissions";
-import { TeamPermissions } from "@/components/team/TeamPermissions";
+import { permissionPresets } from "@/data/permissionPresets";
 import { v4 as uuidv4 } from "uuid";
+import { RolesPageHeader } from "@/components/team/roles/RolesPageHeader";
+import { RolesGrid } from "@/components/team/roles/RolesGrid";
+import { AddRoleDialog } from "@/components/team/roles/AddRoleDialog";
+import { EditRoleDialog } from "@/components/team/roles/EditRoleDialog";
+import { DeleteRoleDialog } from "@/components/team/roles/DeleteRoleDialog";
 
 // Mock data - in a real app, would come from backend
 const initialRoles: Role[] = [
@@ -180,235 +177,52 @@ export default function TeamRoles() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/team">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <h1 className="text-2xl font-bold tracking-tight">Team Roles & Permissions</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Manage role definitions and permission sets for team members
-          </p>
-        </div>
-        <Button 
-          onClick={() => setIsAddDialogOpen(true)}
-          className="bg-esm-blue-600 hover:bg-esm-blue-700 flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add New Role
-        </Button>
-      </div>
+      <RolesPageHeader onAddRoleClick={() => setIsAddDialogOpen(true)} />
 
-      {/* Roles list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {roles.map(role => (
-          <Card key={role.id} className={role.isDefault ? "border-slate-200" : "border-esm-blue-200"}>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-esm-blue-500" />
-                  <CardTitle>{role.name}</CardTitle>
-                </div>
-                <div className="flex items-center">
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => {
-                      setCurrentRole(role);
-                      setRolePermissions(role.permissions as PermissionSet);
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  {!role.isDefault && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => {
-                        setCurrentRole(role);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500 mb-2">{role.description}</p>
-              {role.isDefault ? (
-                <div className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded inline-block">
-                  Default Role
-                </div>
-              ) : (
-                <div className="text-xs bg-esm-blue-50 text-esm-blue-700 px-2 py-1 rounded inline-block">
-                  Custom Role
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Roles grid */}
+      <RolesGrid 
+        roles={roles} 
+        onEditRole={(role) => {
+          setCurrentRole(role);
+          setRolePermissions(role.permissions as PermissionSet);
+          setIsEditDialogOpen(true);
+        }}
+        onDeleteRole={(role) => {
+          setCurrentRole(role);
+          setIsDeleteDialogOpen(true);
+        }}
+      />
 
       {/* Add role dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Create New Role</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="roleName">Role Name</Label>
-                  <Input 
-                    id="roleName" 
-                    value={newRoleName} 
-                    onChange={(e) => setNewRoleName(e.target.value)} 
-                    placeholder="e.g., Senior Technician"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="roleDescription">Description</Label>
-                  <Textarea 
-                    id="roleDescription" 
-                    value={newRoleDescription} 
-                    onChange={(e) => setNewRoleDescription(e.target.value)} 
-                    placeholder="Describe this role's purpose and responsibilities"
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Set Role Permissions</Label>
-                <p className="text-sm text-slate-500 mb-4">
-                  Customize what users with this role can access
-                </p>
-                <TeamPermissions 
-                  memberRole="" 
-                  onChange={(permissions) => setRolePermissions(permissions)}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              className="bg-esm-blue-600 hover:bg-esm-blue-700"
-              onClick={handleAddRole}
-            >
-              Create Role
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddRoleDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        roleName={newRoleName}
+        onRoleNameChange={setNewRoleName}
+        roleDescription={newRoleDescription}
+        onRoleDescriptionChange={setNewRoleDescription}
+        onPermissionsChange={(permissions) => setRolePermissions(permissions)}
+        onAddRole={handleAddRole}
+      />
 
       {/* Edit role dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Edit Role: {currentRole?.name}</DialogTitle>
-          </DialogHeader>
-          {currentRole && (
-            <div className="space-y-4 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="editRoleName">Role Name</Label>
-                    <Input 
-                      id="editRoleName" 
-                      value={currentRole.name} 
-                      onChange={(e) => setCurrentRole({...currentRole, name: e.target.value})} 
-                      disabled={currentRole.isDefault}
-                    />
-                    {currentRole.isDefault && (
-                      <p className="text-xs text-slate-500 mt-1">
-                        Default role names cannot be changed
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="editRoleDescription">Description</Label>
-                    <Textarea 
-                      id="editRoleDescription" 
-                      value={currentRole.description} 
-                      onChange={(e) => setCurrentRole({...currentRole, description: e.target.value})} 
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Set Role Permissions</Label>
-                  <p className="text-sm text-slate-500 mb-4">
-                    Customize what users with this role can access
-                  </p>
-                  <TeamPermissions 
-                    memberRole=""
-                    initialPermissions={rolePermissions as PermissionSet}
-                    onChange={(permissions) => setRolePermissions(permissions)}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              className="bg-esm-blue-600 hover:bg-esm-blue-700"
-              onClick={handleEditRole}
-            >
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditRoleDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        currentRole={currentRole}
+        onCurrentRoleChange={setCurrentRole}
+        rolePermissions={rolePermissions}
+        onPermissionsChange={(permissions) => setRolePermissions(permissions)}
+        onEditRole={handleEditRole}
+      />
 
       {/* Delete role confirmation dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Role</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>
-              Are you sure you want to delete the role "{currentRole?.name}"? This action cannot be undone.
-            </p>
-            <p className="text-sm text-red-500 mt-2">
-              Note: Any team members currently assigned this role will need to be reassigned.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={handleDeleteRole}
-            >
-              Delete Role
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteRoleDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        currentRole={currentRole}
+        onDeleteRole={handleDeleteRole}
+      />
     </div>
   );
 }
