@@ -1,0 +1,36 @@
+
+{
+  "common": {
+    "search": "Buscar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "back": "Atrás",
+    "add": "Añadir",
+    "remove": "Eliminar",
+    "confirm": "Confirmar",
+    "actions": "Acciones"
+  },
+  "navigation": {
+    "dashboard": "Panel de Control",
+    "workOrders": "Órdenes de Trabajo",
+    "customers": "Clientes",
+    "inventory": "Inventario",
+    "team": "Equipo",
+    "equipment": "Equipamiento",
+    "invoices": "Facturas",
+    "reports": "Informes",
+    "calendar": "Calendario",
+    "settings": "Configuración"
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Administra tu configuración de cuenta y preferencias",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar Idioma",
+    "english": "Inglés",
+    "spanish": "Español",
+    "french": "Francés"
+  }
+}
