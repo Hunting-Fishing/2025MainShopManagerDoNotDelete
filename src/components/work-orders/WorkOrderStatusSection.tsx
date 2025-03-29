@@ -2,6 +2,9 @@
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { statusMap, priorityMap } from "@/data/workOrdersData";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
 
@@ -28,10 +31,11 @@ export const WorkOrderStatusSection: React.FC<WorkOrderStatusSectionProps> = ({ 
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                {Object.entries(statusMap).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FormMessage />
@@ -43,23 +47,27 @@ export const WorkOrderStatusSection: React.FC<WorkOrderStatusSectionProps> = ({ 
         control={form.control}
         name="priority"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="space-y-3">
             <FormLabel>Priority</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <RadioGroup
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                className="flex space-x-1"
+              >
+                {Object.entries(priorityMap).map(([value, { label, classes }]) => (
+                  <div key={value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={value} id={`priority-${value}`} />
+                    <Label
+                      htmlFor={`priority-${value}`}
+                      className={`rounded-full px-2 py-1 text-xs ${classes}`}
+                    >
+                      {label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
