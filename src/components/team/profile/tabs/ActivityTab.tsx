@@ -1,18 +1,15 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Clock, FileText, User } from "lucide-react";
-
-interface Activity {
-  type: string;
-  date: string;
-  description: string;
-}
+import { TeamMember } from "@/types/team";
 
 interface ActivityTabProps {
-  activities?: Activity[];
+  member: TeamMember;
 }
 
-export function ActivityTab({ activities }: ActivityTabProps) {
+export function ActivityTab({ member }: ActivityTabProps) {
+  const activities = member.recentActivity || [];
+
   return (
     <Card className="shadow-sm">
       <CardHeader>

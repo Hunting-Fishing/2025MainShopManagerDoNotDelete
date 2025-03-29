@@ -1,18 +1,9 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { TeamMember } from "@/types/team";
 
 interface OverviewTabProps {
-  member: {
-    department: string;
-    role: string;
-    joinDate: string;
-    lastActive: string;
-    workOrders?: {
-      assigned: number;
-      completed: number;
-    };
-    notes?: string;
-  };
+  member: TeamMember;
 }
 
 export function OverviewTab({ member }: OverviewTabProps) {
@@ -32,14 +23,18 @@ export function OverviewTab({ member }: OverviewTabProps) {
               <dt className="text-sm font-medium text-slate-500">Role</dt>
               <dd className="mt-1">{member.role}</dd>
             </div>
-            <div>
-              <dt className="text-sm font-medium text-slate-500">Join Date</dt>
-              <dd className="mt-1">{new Date(member.joinDate).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-slate-500">Last Active</dt>
-              <dd className="mt-1">{new Date(member.lastActive).toLocaleString()}</dd>
-            </div>
+            {member.joinDate && (
+              <div>
+                <dt className="text-sm font-medium text-slate-500">Join Date</dt>
+                <dd className="mt-1">{new Date(member.joinDate).toLocaleDateString()}</dd>
+              </div>
+            )}
+            {member.lastActive && (
+              <div>
+                <dt className="text-sm font-medium text-slate-500">Last Active</dt>
+                <dd className="mt-1">{new Date(member.lastActive).toLocaleString()}</dd>
+              </div>
+            )}
           </dl>
         </CardContent>
       </Card>
