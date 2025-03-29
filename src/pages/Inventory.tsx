@@ -4,6 +4,8 @@ import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryAlerts } from "@/components/inventory/InventoryAlerts";
 import { useInventoryFilters } from "@/hooks/useInventoryFilters";
+import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
+import { AutoReorderStatus } from "@/components/inventory/alerts/AutoReorderStatus";
 
 export default function Inventory() {
   const {
@@ -17,13 +19,21 @@ export default function Inventory() {
     setSupplierFilter,
     filteredItems,
   } = useInventoryFilters();
+  
+  const { autoReorderSettings, lowStockItems, outOfStockItems } = useInventoryManager();
 
   return (
     <div className="space-y-6">
       <InventoryHeader />
       
-      {/* Add the Inventory Alerts component */}
-      <InventoryAlerts />
+      {/* Inventory Alerts Section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <InventoryAlerts />
+        <AutoReorderStatus 
+          items={[...lowStockItems, ...outOfStockItems]} 
+          autoReorderSettings={autoReorderSettings} 
+        />
+      </div>
 
       {/* Filters and search */}
       <InventoryFilters 
