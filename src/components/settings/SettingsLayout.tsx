@@ -1,60 +1,35 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, UserRound, Bell, Shield, Building, Palette } from "lucide-react";
 import { AccountTab } from "./AccountTab";
 import { NotificationsTab } from "./NotificationsTab";
 import { CompanyTab } from "./CompanyTab";
 import { BrandingTab } from "./BrandingTab";
-import { SecurityTab } from "./SecurityTab";
+import DataExportTab from "./DataExportTab";
 
-interface SettingsLayoutProps {
-  defaultTab?: string;
-}
-
-export function SettingsLayout({ defaultTab = "account" }: SettingsLayoutProps) {
+export function SettingsLayout() {
   return (
-    <Tabs defaultValue={defaultTab} className="space-y-4">
-      <TabsList className="bg-white dark:bg-gray-950 border">
-        <TabsTrigger value="account" className="flex items-center gap-2">
-          <UserRound className="h-4 w-4" />
-          <span className="hidden sm:inline">Account</span>
-        </TabsTrigger>
-        <TabsTrigger value="notifications" className="flex items-center gap-2">
-          <Bell className="h-4 w-4" />
-          <span className="hidden sm:inline">Notifications</span>
-        </TabsTrigger>
-        <TabsTrigger value="company" className="flex items-center gap-2">
-          <Building className="h-4 w-4" />
-          <span className="hidden sm:inline">Company</span>
-        </TabsTrigger>
-        <TabsTrigger value="branding" className="flex items-center gap-2">
-          <Palette className="h-4 w-4" />
-          <span className="hidden sm:inline">Branding</span>
-        </TabsTrigger>
-        <TabsTrigger value="security" className="flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          <span className="hidden sm:inline">Security</span>
-        </TabsTrigger>
+    <Tabs defaultValue="account" className="w-full">
+      <TabsList className="grid w-full grid-cols-5">
+        <TabsTrigger value="account">Account</TabsTrigger>
+        <TabsTrigger value="notifications">Notifications</TabsTrigger>
+        <TabsTrigger value="company">Company</TabsTrigger>
+        <TabsTrigger value="branding">Branding</TabsTrigger>
+        <TabsTrigger value="data-export">Data Export</TabsTrigger>
       </TabsList>
-
-      <TabsContent value="account" className="space-y-4">
+      <TabsContent value="account">
         <AccountTab />
       </TabsContent>
-
-      <TabsContent value="notifications" className="space-y-4">
+      <TabsContent value="notifications">
         <NotificationsTab />
       </TabsContent>
-
-      <TabsContent value="company" className="space-y-4">
+      <TabsContent value="company">
         <CompanyTab />
       </TabsContent>
-
-      <TabsContent value="branding" className="space-y-4">
+      <TabsContent value="branding">
         <BrandingTab />
       </TabsContent>
-
-      <TabsContent value="security" className="space-y-4">
-        <SecurityTab />
+      <TabsContent value="data-export">
+        <DataExportTab />
       </TabsContent>
     </Tabs>
   );
