@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, Check, Clock, Edit, Tag, Tool, Trash, Wrench, X } from "lucide-react";
+import { ArrowLeft, Calendar, Check, Clock, Edit, Tag, Wrench, Trash, X, Settings } from "lucide-react";
 import { RepairPlan, RepairTask } from "@/types/repairPlan";
 import { formatDate } from "@/utils/workOrderUtils";
 
@@ -298,7 +298,7 @@ export default function RepairPlanDetails() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <Tool className="mr-2 h-5 w-5" />
+                  <Settings className="mr-2 h-5 w-5" />
                   Repair Tasks ({tasksCompleted}/{totalTasks})
                 </div>
                 <Badge className={progress === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
