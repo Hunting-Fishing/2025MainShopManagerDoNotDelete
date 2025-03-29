@@ -2,6 +2,7 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useRoleManagement } from '../useRoleManagement';
 import { Role } from '@/types/team';
+import { defaultPermissions } from '@/data/permissionPresets';
 
 // Mock the sub-hooks
 jest.mock('../roles/useRoleFilter', () => ({
@@ -37,7 +38,9 @@ describe('useRoleManagement', () => {
       name: 'Admin',
       description: 'Administrator role',
       isDefault: true,
-      permissions: {},
+      permissions: {
+        ...defaultPermissions
+      },
       createdAt: '2023-01-01',
       updatedAt: '2023-01-01',
       priority: 2
@@ -47,7 +50,9 @@ describe('useRoleManagement', () => {
       name: 'User',
       description: 'Regular user role',
       isDefault: false,
-      permissions: {},
+      permissions: {
+        ...defaultPermissions
+      },
       createdAt: '2023-01-01',
       updatedAt: '2023-01-01',
       priority: 1

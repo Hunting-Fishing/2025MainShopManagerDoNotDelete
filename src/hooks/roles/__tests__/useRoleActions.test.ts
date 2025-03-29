@@ -2,7 +2,9 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useRoleActions } from '../useRoleActions';
 import { Role } from '@/types/team';
+import { PermissionSet } from '@/types/permissions';
 import { toast } from '@/hooks/use-toast';
+import { defaultPermissions } from '@/data/permissionPresets';
 
 // Mock UUID generation for predictable IDs in tests
 jest.mock('uuid', () => ({
@@ -20,7 +22,10 @@ describe('useRoleActions', () => {
         name: 'Admin',
         description: 'Administrator role',
         isDefault: true,
-        permissions: { workOrders: { view: true } },
+        permissions: { 
+          ...defaultPermissions,
+          workOrders: { ...defaultPermissions.workOrders, view: true }
+        },
         createdAt: '2023-01-01',
         updatedAt: '2023-01-01',
         priority: 1
@@ -30,7 +35,10 @@ describe('useRoleActions', () => {
         name: 'User',
         description: 'Regular user role',
         isDefault: false,
-        permissions: { workOrders: { view: true } },
+        permissions: { 
+          ...defaultPermissions,
+          workOrders: { ...defaultPermissions.workOrders, view: true }
+        },
         createdAt: '2023-01-01',
         updatedAt: '2023-01-01',
         priority: 2
@@ -42,8 +50,13 @@ describe('useRoleActions', () => {
   it('should add a new role', () => {
     const { result } = renderHook(() => useRoleActions(mockRoles, setRoles));
     
+    const testPermissions: PermissionSet = {
+      ...defaultPermissions,
+      workOrders: { ...defaultPermissions.workOrders, view: true }
+    };
+    
     const success = act(() => {
-      return result.current.handleAddRole('New Role', 'A new role description', { workOrders: { view: true } });
+      return result.current.handleAddRole('New Role', 'A new role description', testPermissions);
     });
     
     expect(success).toBeTruthy();
@@ -61,8 +74,13 @@ describe('useRoleActions', () => {
   it('should prevent adding a role with an existing name', () => {
     const { result } = renderHook(() => useRoleActions(mockRoles, setRoles));
     
+    const testPermissions: PermissionSet = {
+      ...defaultPermissions,
+      workOrders: { ...defaultPermissions.workOrders, view: true }
+    };
+    
     const success = act(() => {
-      return result.current.handleAddRole('Admin', 'Duplicate name', { workOrders: { view: true } });
+      return result.current.handleAddRole('Admin', 'Duplicate name', testPermissions);
     });
     
     expect(success).toBeFalsy();
@@ -75,7 +93,11 @@ describe('useRoleActions', () => {
   it('should edit an existing role', () => {
     const { result } = renderHook(() => useRoleActions(mockRoles, setRoles));
     const updatedRole = { ...mockRoles[1], name: 'Updated User Role' };
-    const newPermissions = { workOrders: { view: true, create: true } };
+    
+    const newPermissions: PermissionSet = {
+      ...defaultPermissions,
+      workOrders: { ...defaultPermissions.workOrders, view: true, create: true }
+    };
     
     const success = act(() => {
       return result.current.handleEditRole(updatedRole, newPermissions);
