@@ -1,5 +1,5 @@
 
-import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/reportExport";
+import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/export";
 import { toast } from "@/components/ui/use-toast";
 import { Invoice } from "@/types/invoice";
 import { ExportMenuBase } from "./ExportMenuBase";
