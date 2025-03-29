@@ -9,7 +9,7 @@ export interface Notification {
   link?: string;
   sender?: string;
   recipient?: string;
-  category?: 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team';
+  category?: 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat';
   priority?: 'low' | 'medium' | 'high';
   expiresAt?: string;
 }

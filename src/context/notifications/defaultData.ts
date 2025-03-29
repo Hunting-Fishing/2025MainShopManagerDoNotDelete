@@ -49,7 +49,8 @@ export const defaultPreferences: NotificationPreferences = {
     { category: 'invoice', enabled: true },
     { category: 'customer', enabled: true },
     { category: 'team', enabled: true },
-    { category: 'system', enabled: true }
+    { category: 'system', enabled: true },
+    { category: 'chat', enabled: true }
   ]
 };
 
