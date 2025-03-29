@@ -49,6 +49,20 @@ export interface Invoice {
   paymentMethod?: string;
 }
 
+// New interface for invoice templates
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  lastUsed?: string;
+  usageCount: number;
+  defaultTaxRate: number;
+  defaultDueDateDays: number;
+  defaultItems: InvoiceItem[];
+  defaultNotes?: string;
+}
+
 // Functions to update the invoice state
 export type InvoiceUpdater = (prev: Invoice) => Invoice;
 

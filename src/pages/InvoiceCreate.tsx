@@ -10,6 +10,7 @@ import { WorkOrderLinkSection } from "@/components/invoices/WorkOrderLinkSection
 import { InvoiceItemsManager } from "@/components/invoices/InvoiceItemsManager";
 import { InvoiceSummary } from "@/components/invoices/InvoiceSummary";
 import { StaffAssignment } from "@/components/invoices/StaffAssignment";
+import { InvoiceTemplateActions } from "@/components/invoices/InvoiceTemplateActions";
 import { WorkOrder } from "@/types/invoice";
 
 // Mock data for work orders (in a real app would be fetched from API)
@@ -88,6 +89,7 @@ export default function InvoiceCreate() {
     showWorkOrderDialog,
     showInventoryDialog,
     showStaffDialog,
+    templates,
     setInvoice,
     setShowWorkOrderDialog,
     setShowInventoryDialog,
@@ -102,6 +104,8 @@ export default function InvoiceCreate() {
     handleUpdateItemPrice,
     handleAddLaborItem,
     handleSaveInvoice,
+    handleApplyTemplate,
+    handleSaveTemplate,
   } = useInvoiceForm(workOrderId);
 
   return (
@@ -116,6 +120,20 @@ export default function InvoiceCreate() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Invoice Details */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Template Actions Section */}
+          <div className="bg-white border border-slate-200 rounded-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium">Invoice Templates</h2>
+              <InvoiceTemplateActions 
+                invoice={invoice}
+                taxRate={taxRate}
+                templates={templates}
+                onSelectTemplate={handleApplyTemplate}
+                onSaveTemplate={handleSaveTemplate}
+              />
+            </div>
+          </div>
+          
           {/* Invoice Information */}
           <InvoiceInformationForm
             // Basic info props

@@ -3,16 +3,18 @@ import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { createInvoiceFromWorkOrder } from "@/utils/workOrderUtils";
-import { Invoice, WorkOrder, InvoiceUpdater } from "@/types/invoice";
+import { Invoice, WorkOrder, InvoiceUpdater, InvoiceTemplate } from "@/types/invoice";
 import { useInvoiceItems } from "@/hooks/invoice/useInvoiceItems";
 import { useInvoiceStaff } from "@/hooks/invoice/useInvoiceStaff";
 import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
+import { v4 as uuidv4 } from "uuid";
 import { 
   createDefaultInvoice, 
   calculateSubtotal, 
   calculateTax, 
   calculateTotal 
 } from "@/utils/invoiceUtils";
+import { invoiceTemplates, createTemplate, updateTemplateUsage } from "@/data/invoiceTemplatesData";
 
 export function useInvoiceForm(initialWorkOrderId?: string) {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [templates, setTemplates] = useState<InvoiceTemplate[]>(invoiceTemplates);
 
   // Create default invoice
   const defaultInvoice = createDefaultInvoice(initialWorkOrderId);
@@ -69,6 +72,55 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     }));
     
     setShowWorkOrderDialog(false);
+  };
+
+  // Handle applying a template
+  const handleApplyTemplate = (template: InvoiceTemplate) => {
+    const currentDate = new Date();
+    const dueDate = new Date(currentDate);
+    dueDate.setDate(dueDate.getDate() + template.defaultDueDateDays);
+    
+    // Generate new IDs for each item to ensure uniqueness
+    const itemsWithNewIds = template.defaultItems.map(item => ({
+      ...item,
+      id: uuidv4()
+    }));
+    
+    updateInvoice((prev) => ({
+      ...prev,
+      notes: template.defaultNotes || prev.notes,
+      dueDate: dueDate.toISOString().split('T')[0],
+      items: itemsWithNewIds
+    }));
+    
+    // Update the template usage stats
+    updateTemplateUsage(template.id);
+    
+    // Update the local state of templates
+    const updatedTemplates = templates.map(t => 
+      t.id === template.id 
+        ? { ...t, lastUsed: new Date().toISOString(), usageCount: t.usageCount + 1 }
+        : t
+    );
+    setTemplates(updatedTemplates);
+    
+    toast({
+      title: "Template Applied",
+      description: `Applied "${template.name}" template to your invoice.`
+    });
+  };
+
+  // Handle saving a new template
+  const handleSaveTemplate = (newTemplate: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => {
+    const template = createTemplate(newTemplate);
+    
+    // Add to templates list
+    setTemplates([...templates, template]);
+    
+    toast({
+      title: "Template Saved",
+      description: `"${template.name}" template has been saved for future use.`
+    });
   };
 
   // Calculate totals
@@ -141,6 +193,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     showWorkOrderDialog,
     showInventoryDialog,
     showStaffDialog,
+    templates,
     setInvoice: updateInvoice,
     setShowWorkOrderDialog,
     setShowInventoryDialog,
@@ -155,5 +208,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleUpdateItemPrice,
     handleAddLaborItem,
     handleSaveInvoice,
+    handleApplyTemplate,
+    handleSaveTemplate,
   };
 }
