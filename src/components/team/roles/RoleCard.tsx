@@ -1,9 +1,19 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Edit, 
+  Trash, 
+  Shield, 
+  ChevronDown, 
+  ChevronUp, 
+  CheckCircle2, 
+  XCircle 
+} from "lucide-react";
 import { Role } from "@/types/team";
+import { PermissionSet } from "@/types/permissions";
 
 interface RoleCardProps {
   role: Role;
@@ -12,6 +22,39 @@ interface RoleCardProps {
 }
 
 export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
+  const [showPermissions, setShowPermissions] = useState(false);
+  const permissions = role.permissions as PermissionSet;
+
+  // Count total enabled permissions
+  const countEnabledPermissions = () => {
+    let count = 0;
+    
+    // Loop through each module
+    Object.values(permissions).forEach(moduleActions => {
+      // Count enabled actions within each module
+      Object.values(moduleActions).forEach(isEnabled => {
+        if (isEnabled === true) count++;
+      });
+    });
+    
+    return count;
+  };
+
+  // Get key permissions to highlight
+  const getKeyPermissions = () => {
+    return {
+      canManageTeam: permissions.team?.edit === true,
+      canManageCustomers: permissions.customers?.edit === true,
+      canManageWorkOrders: permissions.workOrders?.edit === true,
+      canManageInvoices: permissions.invoices?.edit === true,
+      canViewReports: permissions.reports?.view === true,
+      canAccessSettings: permissions.settings?.view === true,
+    };
+  };
+
+  const keyPermissions = getKeyPermissions();
+  const totalEnabled = countEnabledPermissions();
+
   return (
     <Card key={role.id} className={role.isDefault ? "border-slate-200" : "border-esm-blue-200"}>
       <CardHeader className="pb-2">
@@ -42,13 +85,78 @@ export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-slate-500 mb-2">{role.description}</p>
-        {role.isDefault ? (
-          <div className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded inline-block">
-            Default Role
-          </div>
-        ) : (
-          <div className="text-xs bg-esm-blue-50 text-esm-blue-700 px-2 py-1 rounded inline-block">
-            Custom Role
+        
+        <div className="flex flex-wrap gap-2 mb-3">
+          {role.isDefault ? (
+            <Badge variant="outline" className="bg-slate-100 text-slate-700">
+              Default Role
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-esm-blue-50 text-esm-blue-700">
+              Custom Role
+            </Badge>
+          )}
+          
+          <Badge variant="outline" className="bg-slate-50">
+            {totalEnabled} Permissions
+          </Badge>
+        </div>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="p-0 h-auto text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1 mb-2"
+          onClick={() => setShowPermissions(!showPermissions)}
+        >
+          {showPermissions ? "Hide permissions" : "Show permissions"}
+          {showPermissions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </Button>
+        
+        {showPermissions && (
+          <div className="mt-2 bg-slate-50 p-2 rounded-md space-y-1.5">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs">
+              <div className="flex items-center gap-1.5">
+                {keyPermissions.canManageTeam ? 
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : 
+                  <XCircle className="h-3.5 w-3.5 text-slate-300" />}
+                <span>Manage Team</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                {keyPermissions.canManageWorkOrders ? 
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : 
+                  <XCircle className="h-3.5 w-3.5 text-slate-300" />}
+                <span>Manage Work Orders</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                {keyPermissions.canManageCustomers ? 
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : 
+                  <XCircle className="h-3.5 w-3.5 text-slate-300" />}
+                <span>Manage Customers</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                {keyPermissions.canManageInvoices ? 
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : 
+                  <XCircle className="h-3.5 w-3.5 text-slate-300" />}
+                <span>Manage Invoices</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                {keyPermissions.canViewReports ? 
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : 
+                  <XCircle className="h-3.5 w-3.5 text-slate-300" />}
+                <span>View Reports</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                {keyPermissions.canAccessSettings ? 
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : 
+                  <XCircle className="h-3.5 w-3.5 text-slate-300" />}
+                <span>Access Settings</span>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
