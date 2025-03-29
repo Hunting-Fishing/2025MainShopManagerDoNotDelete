@@ -18,10 +18,45 @@ export const WorkOrderInventorySectionContainer: React.FC<WorkOrderInventorySect
   form
 }) => {
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
-  const { checkItemAvailability } = useInventoryManager();
+  const { 
+    checkItemAvailability, 
+    reserveInventory 
+  } = useInventoryManager();
   
   // Get current inventory items
   const selectedItems = form.watch("inventoryItems") || [];
+
+  // Reserve inventory items when submitting the form
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      // Only run when the form is about to be submitted (status changes to in-progress or completed)
+      if (name === "status" && (value.status === "in-progress" || value.status === "completed")) {
+        const items = value.inventoryItems || [];
+        
+        if (items.length > 0) {
+          // Prepare items for reservation
+          const itemsToReserve = items.map(item => ({
+            id: item.id,
+            quantity: item.quantity
+          }));
+          
+          // Attempt to reserve the inventory
+          const result = reserveInventory(itemsToReserve);
+          
+          if (!result.success) {
+            // Show warning about inventory availability issues
+            toast({
+              title: "Inventory Warning",
+              description: "Some items have insufficient inventory. Please review inventory levels.",
+              variant: "warning"
+            });
+          }
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, reserveInventory]);
 
   // Check inventory availability for the current items
   useEffect(() => {
