@@ -16,6 +16,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ComparisonReportCard } from '@/components/reports/ComparisonReportCard';
 import { ReportDataPoint, ComparisonReportData } from "@/types/reports";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SummaryTabContentProps {
   showComparison: boolean;
@@ -24,6 +25,7 @@ interface SummaryTabContentProps {
   salesData: any[];
   workOrderStatusData: ReportDataPoint[];
   topSellingItems: any[];
+  isLoading?: boolean;
 }
 
 export function SummaryTabContent({
@@ -32,8 +34,60 @@ export function SummaryTabContent({
   comparisonServiceData,
   salesData,
   workOrderStatusData,
-  topSellingItems
+  topSellingItems,
+  isLoading = false
 }: SummaryTabContentProps) {
+  // Loading states for skeleton UI
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Array(5).fill(0).map((_, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[100px]" />
+                  <Skeleton className="h-4 w-[100px]" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {showComparison ? (

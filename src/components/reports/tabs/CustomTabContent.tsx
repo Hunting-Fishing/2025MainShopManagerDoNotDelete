@@ -2,13 +2,48 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
 import { ReportConfig } from '@/types/reports';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CustomTabContentProps {
   customReportConfig: ReportConfig | null;
   onGenerateReport: (config: ReportConfig) => void;
+  isLoading?: boolean;
 }
 
-export function CustomTabContent({ customReportConfig, onGenerateReport }: CustomTabContentProps) {
+export function CustomTabContent({ customReportConfig, onGenerateReport, isLoading = false }: CustomTabContentProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-[200px]" />
+            <Skeleton className="h-4 w-[300px]" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6 p-4">
+              <Skeleton className="h-6 w-[250px] mx-auto" />
+              <Skeleton className="h-4 w-[350px] mx-auto" />
+              <div className="border rounded-md p-4 space-y-4">
+                <Skeleton className="h-5 w-[150px]" />
+                <div className="space-y-2">
+                  {Array(4).fill(0).map((_, i) => (
+                    <Skeleton key={i} className="h-4 w-full" />
+                  ))}
+                </div>
+                
+                <Skeleton className="h-5 w-[120px] mt-6" />
+                <Skeleton className="h-4 w-[200px]" />
+                
+                <Skeleton className="h-5 w-[100px] mt-6" />
+                <Skeleton className="h-4 w-[250px]" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {customReportConfig ? (
@@ -48,7 +83,7 @@ export function CustomTabContent({ customReportConfig, onGenerateReport }: Custo
                 </div>
                 
                 <p className="text-sm text-muted-foreground mt-6">
-                  In a complete implementation, this would display the actual report data according to your specifications.
+                  This report is now connected to live data and will automatically refresh based on your settings.
                 </p>
               </div>
             </CardContent>

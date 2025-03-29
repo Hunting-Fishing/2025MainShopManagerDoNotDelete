@@ -10,12 +10,66 @@ import {
   Legend, 
   ResponsiveContainer 
 } from 'recharts';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FinancialsTabContentProps {
   salesData: any[];
+  isLoading?: boolean;
 }
 
-export function FinancialsTabContent({ salesData }: FinancialsTabContentProps) {
+export function FinancialsTabContent({ salesData, isLoading = false }: FinancialsTabContentProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px] flex items-center justify-center">
+              <Skeleton className="h-full w-full" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[200px]" />
+              <Skeleton className="h-4 w-[120px]" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-[60px]" />
+                    </div>
+                    <Skeleton className="h-2.5 w-full" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[200px]" />
+              <Skeleton className="h-4 w-[120px]" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>

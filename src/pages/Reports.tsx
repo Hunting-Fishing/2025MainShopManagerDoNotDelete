@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DateRange } from 'react-day-picker';
@@ -13,7 +14,9 @@ import { FinancialsTabContent } from '@/components/reports/tabs/FinancialsTabCon
 import { PerformanceTabContent } from '@/components/reports/tabs/PerformanceTabContent';
 import { InventoryTabContent } from '@/components/reports/tabs/InventoryTabContent';
 import { CustomTabContent } from '@/components/reports/tabs/CustomTabContent';
-import { reportData } from '@/data/reportData';
+import { ReportStatusBadge } from '@/components/reports/ReportStatusBadge';
+import { RefreshButton } from '@/components/reports/RefreshButton';
+import { useReportData } from '@/hooks/useReportData';
 
 const Reports = () => {
   const [timeframe, setTimeframe] = useState('monthly');
@@ -26,6 +29,21 @@ const Reports = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [showComparison, setShowComparison] = useState(false);
   const [customReportConfig, setCustomReportConfig] = useState<ReportConfig | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  
+  // Use our custom hook to fetch and manage report data
+  const { 
+    data: reportData, 
+    isLoading, 
+    lastUpdated, 
+    error, 
+    refreshData 
+  } = useReportData({
+    timeframe,
+    dateRange,
+    filters,
+    refreshInterval: autoRefresh ? 30000 : null // Auto refresh every 30 seconds if enabled
+  });
   
   const handleFilterChange = (newFilters: Record<string, any>) => {
     setFilters(newFilters);
@@ -69,6 +87,16 @@ const Reports = () => {
     if (!dateRange?.from) return "";
     if (!dateRange.to) return format(dateRange.from, "PP");
     return `${format(dateRange.from, "PP")} - ${format(dateRange.to, "PP")}`;
+  };
+
+  const toggleAutoRefresh = () => {
+    setAutoRefresh(!autoRefresh);
+    toast({
+      title: autoRefresh ? "Auto refresh disabled" : "Auto refresh enabled",
+      description: autoRefresh 
+        ? "Reports will no longer refresh automatically" 
+        : "Reports will refresh automatically every 30 seconds"
+    });
   };
 
   const topSellingColumns = [
@@ -124,8 +152,8 @@ const Reports = () => {
           </div>
         )}
         
-        {activeTab === 'summary' && (
-          <div className="flex items-center">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
             <button 
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
               onClick={() => setShowComparison(!showComparison)}
@@ -133,12 +161,34 @@ const Reports = () => {
               {showComparison ? "Hide Comparison" : "Show Comparison"}
             </button>
             {showComparison && (
-              <span className="ml-3 text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 Comparing current period with previous period
               </span>
             )}
           </div>
-        )}
+          
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                checked={autoRefresh} 
+                onChange={toggleAutoRefresh}
+                className="h-4 w-4 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-sm">Auto refresh</span>
+            </label>
+            
+            <RefreshButton 
+              onClick={refreshData}
+              lastUpdated={lastUpdated}
+              isLoading={isLoading}
+            />
+            
+            <ReportStatusBadge 
+              status={isLoading ? "refreshing" : error ? "error" : "live"} 
+            />
+          </div>
+        </div>
       </div>
 
       <Tabs 
@@ -162,29 +212,36 @@ const Reports = () => {
             salesData={reportData.salesData}
             workOrderStatusData={reportData.workOrderStatusData}
             topSellingItems={reportData.topSellingItems}
+            isLoading={isLoading}
           />
         </TabsContent>
         
         <TabsContent value="financials">
           <FinancialsTabContent 
             salesData={reportData.salesData}
+            isLoading={isLoading}
           />
         </TabsContent>
         
         <TabsContent value="performance">
           <PerformanceTabContent 
             servicePerformance={reportData.servicePerformance}
+            isLoading={isLoading}
           />
         </TabsContent>
         
         <TabsContent value="inventory">
-          <InventoryTabContent />
+          <InventoryTabContent 
+            inventoryData={reportData.inventoryData}
+            isLoading={isLoading}
+          />
         </TabsContent>
         
         <TabsContent value="custom">
           <CustomTabContent 
             customReportConfig={customReportConfig}
             onGenerateReport={handleGenerateCustomReport}
+            isLoading={isLoading}
           />
         </TabsContent>
       </Tabs>

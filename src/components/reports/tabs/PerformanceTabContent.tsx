@@ -11,12 +11,76 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PerformanceTabContentProps {
   servicePerformance: any[];
+  isLoading?: boolean;
 }
 
-export function PerformanceTabContent({ servicePerformance }: PerformanceTabContentProps) {
+export function PerformanceTabContent({ servicePerformance, isLoading = false }: PerformanceTabContentProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] flex items-center justify-center">
+              <Skeleton className="h-full w-full" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[180px]" />
+              <Skeleton className="h-4 w-[220px]" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="flex justify-between items-center border-b pb-2">
+                    <Skeleton className="h-4 w-[120px]" />
+                    <Skeleton className="h-4 w-[50px]" />
+                    <Skeleton className="h-4 w-[80px]" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[180px]" />
+              <Skeleton className="h-4 w-[150px]" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-[120px] mx-auto" />
+                <Skeleton className="h-4 w-[180px] mx-auto" />
+                <div className="space-y-3 mt-6">
+                  {Array(5).fill(0).map((_, i) => (
+                    <div key={i} className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <Skeleton className="h-4 w-[50px]" />
+                        <Skeleton className="h-4 w-[40px]" />
+                      </div>
+                      <Skeleton className="h-2.5 w-full" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
