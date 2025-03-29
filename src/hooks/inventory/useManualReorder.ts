@@ -1,6 +1,6 @@
 
 import { inventoryItems } from "@/data/mockInventoryData";
-import { useNotifications } from "@/context/NotificationsContext";
+import { useNotifications } from "@/context/notifications";
 import { toast } from "@/hooks/use-toast";
 
 export function useManualReorder() {

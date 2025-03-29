@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, Bell, Search } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useNotifications } from "@/context/NotificationsContext";
+import { useNotifications } from "@/context/notifications";
 
 export function Header() {
   const { toggleCollapsed } = useSidebar();

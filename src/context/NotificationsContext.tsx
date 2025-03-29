@@ -1,13 +1,13 @@
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+// This file is deprecated - using the implementation from context/notifications instead
+import { useContext } from 'react';
+import { NotificationsContext } from './notifications/NotificationsProvider';
 
-type NotificationContextType = {
+export type NotificationContextType = {
   unreadCount: number;
   showNotifications: () => void;
   triggerTestNotification: () => void;
 };
-
-const NotificationsContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const useNotifications = () => {
   const context = useContext(NotificationsContext);
@@ -17,36 +17,7 @@ export const useNotifications = () => {
   return context;
 };
 
+// Exporting a dummy provider for backward compatibility
 export const NotificationsProvider = ({ children }: { children: React.ReactNode }) => {
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    // Simulate some notifications loading
-    setTimeout(() => {
-      setUnreadCount(2);
-    }, 2000);
-  }, []);
-
-  const showNotifications = () => {
-    console.log("Showing notifications panel");
-    // In a real app, this would open a notifications panel
-    setUnreadCount(0);
-  };
-
-  const triggerTestNotification = () => {
-    console.log("Triggering test notification");
-    setUnreadCount(prevCount => prevCount + 1);
-  };
-
-  return (
-    <NotificationsContext.Provider 
-      value={{ 
-        unreadCount, 
-        showNotifications,
-        triggerTestNotification
-      }}
-    >
-      {children}
-    </NotificationsContext.Provider>
-  );
+  return <>{children}</>;
 };
