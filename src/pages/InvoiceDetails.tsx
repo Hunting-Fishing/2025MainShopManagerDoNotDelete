@@ -48,6 +48,7 @@ export default function InvoiceDetails() {
         invoiceId={invoice.id}
         status={invoice.status}
         statusStyles={statusStyles}
+        invoice={invoice}
       />
       
       {/* Content */}

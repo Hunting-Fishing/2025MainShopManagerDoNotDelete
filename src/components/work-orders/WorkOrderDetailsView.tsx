@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon, ClipboardList, Edit, FilePlus, AlertTriangle, Clock } from "lucide-react";
 import { WorkOrder, priorityMap, statusMap } from "@/data/workOrdersData";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { TimeTrackingSection } from "./time-tracking/TimeTrackingSection";
 import { TimeEntry } from "@/types/workOrder";
+import { WorkOrderExportMenu } from "./WorkOrderExportMenu";
 
 interface WorkOrderDetailsViewProps {
   workOrder: WorkOrder;
@@ -95,6 +96,7 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
         </div>
         
         <div className="flex space-x-2">
+          <WorkOrderExportMenu workOrder={currentWorkOrder} />
           <Button variant="outline" onClick={handleEditWorkOrder}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Work Order

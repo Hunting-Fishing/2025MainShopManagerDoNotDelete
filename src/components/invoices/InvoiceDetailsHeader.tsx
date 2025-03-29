@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, Edit, Printer, Send } from "lucide-react";
+import { ArrowLeft, Edit, Printer, Send } from "lucide-react";
+import { InvoiceExportMenu } from "./InvoiceExportMenu";
 
 interface InvoiceDetailsHeaderProps {
   invoiceId: string;
@@ -9,12 +10,14 @@ interface InvoiceDetailsHeaderProps {
   statusStyles: {
     [key: string]: { label: string; classes: string };
   };
+  invoice?: any; // We'll use this to pass the invoice data to the export menu
 }
 
 export function InvoiceDetailsHeader({
   invoiceId,
   status,
   statusStyles,
+  invoice,
 }: InvoiceDetailsHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -38,10 +41,7 @@ export function InvoiceDetailsHeader({
           <Printer className="h-4 w-4" />
           Print
         </Button>
-        <Button variant="outline" className="flex items-center gap-1">
-          <Download className="h-4 w-4" />
-          Download
-        </Button>
+        {invoice && <InvoiceExportMenu invoice={invoice} />}
         <Button asChild variant="default" className="flex items-center gap-1 bg-esm-blue-600 hover:bg-esm-blue-700">
           <Link to={`/invoices/${invoiceId}/edit`}>
             <Edit className="h-4 w-4" />
