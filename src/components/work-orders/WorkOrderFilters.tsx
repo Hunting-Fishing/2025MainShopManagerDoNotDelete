@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { statusMap, WorkOrderStatus } from "@/data/workOrdersData";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WorkOrderFiltersProps {
   searchQuery: string;
@@ -41,86 +42,108 @@ export default function WorkOrderFilters({
   technicians,
   resetFilters,
 }: WorkOrderFiltersProps) {
+  const isMobile = useIsMobile();
+  const [filtersVisible, setFiltersVisible] = useState(!isMobile);
+
   return (
-    <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
-      <div className="relative w-full md:max-w-sm">
+    <div className="space-y-4">
+      <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         <Input
           type="search"
           placeholder="Search work orders..."
-          className="pl-10"
+          className="pl-10 w-full"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
+        {isMobile && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="absolute right-2 top-1/2 -translate-y-1/2"
+            onClick={() => setFiltersVisible(!filtersVisible)}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+          </Button>
+        )}
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+      {filtersVisible && (
+        <div className="flex flex-wrap gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Status
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {Object.entries(statusMap).map(([key, value]) => (
+                <DropdownMenuCheckboxItem
+                  key={key}
+                  checked={statusFilter.includes(key)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setStatusFilter([...statusFilter, key]);
+                    } else {
+                      setStatusFilter(statusFilter.filter((s) => s !== key));
+                    }
+                  }}
+                >
+                  {value}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Select
+            value={selectedTechnician}
+            onValueChange={setSelectedTechnician}
+          >
+            <SelectTrigger className={isMobile ? "w-full" : "w-[180px]"}>
+              <SelectValue placeholder="All Technicians" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Technicians</SelectItem>
+              {technicians.map((tech) => (
+                <SelectItem key={tech} value={tech}>
+                  {tech}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {!isMobile && (
             <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Status
-              <ChevronDown className="h-4 w-4" />
+              <Calendar className="h-4 w-4" />
+              Date Range
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {Object.entries(statusMap).map(([key, value]) => (
-              <DropdownMenuCheckboxItem
-                key={key}
-                checked={statusFilter.includes(key)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setStatusFilter([...statusFilter, key]);
-                  } else {
-                    setStatusFilter(statusFilter.filter((s) => s !== key));
-                  }
-                }}
-              >
-                {value}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
 
-        <Select
-          value={selectedTechnician}
-          onValueChange={setSelectedTechnician}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Technicians" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Technicians</SelectItem>
-            {technicians.map((tech) => (
-              <SelectItem key={tech} value={tech}>
-                {tech}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Button variant="outline" className="flex items-center gap-2" onClick={resetFilters}>
+            <RefreshCw className="h-4 w-4" />
+            Reset
+          </Button>
 
-        <Button variant="outline" className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Date Range
-        </Button>
+          {!isMobile && (
+            <>
+              <Button variant="outline" className="flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4" />
+                More Filters
+              </Button>
 
-        <Button variant="outline" className="flex items-center gap-2" onClick={resetFilters}>
-          <RefreshCw className="h-4 w-4" />
-          Reset
-        </Button>
-
-        <Button variant="outline" className="flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4" />
-          More Filters
-        </Button>
-
-        <Button variant="outline" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
-      </div>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

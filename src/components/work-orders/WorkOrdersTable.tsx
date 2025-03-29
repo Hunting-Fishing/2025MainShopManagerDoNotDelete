@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { FileText } from "lucide-react";
+import { FileText, ChevronRight } from "lucide-react";
 import { WorkOrder, statusMap, priorityMap } from "@/data/workOrdersData";
 import {
   Table,
@@ -10,12 +10,73 @@ import {
   TableRow,
   TableCell
 } from "@/components/ui/table";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
 }
 
 export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {workOrders.length > 0 ? (
+          workOrders.map((order) => (
+            <div key={order.id} className="bg-white rounded-lg border border-slate-200 p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium text-slate-900">#{order.id}</span>
+                <span className={`status-badge status-${order.status}`}>
+                  {statusMap[order.status]}
+                </span>
+              </div>
+              
+              <h3 className="font-medium mb-2">{order.customer}</h3>
+              <p className="text-sm text-slate-500 mb-3 line-clamp-2">{order.description}</p>
+              
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-3">
+                <div>
+                  <span className="block font-medium">Priority:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block mt-1 ${priorityMap[order.priority].classes}`}>
+                    {priorityMap[order.priority].label}
+                  </span>
+                </div>
+                <div>
+                  <span className="block font-medium">Technician:</span>
+                  <span>{order.technician}</span>
+                </div>
+                <div>
+                  <span className="block font-medium">Due Date:</span>
+                  <span>{order.dueDate}</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center border-t pt-3 mt-2">
+                <div className="flex space-x-2">
+                  <Link to={`/work-orders/${order.id}`} className="text-esm-blue-600 text-sm">
+                    View
+                  </Link>
+                  <Link to={`/work-orders/${order.id}/edit`} className="text-esm-blue-600 text-sm">
+                    Edit
+                  </Link>
+                </div>
+                <Link to={`/invoices/from-work-order/${order.id}`} className="flex items-center text-esm-blue-600 text-sm">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Invoice
+                </Link>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 bg-white rounded-lg border border-slate-200">
+            <p className="text-slate-500">No work orders found matching your filters.</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <Table>

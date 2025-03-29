@@ -8,6 +8,7 @@ import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
 import { WorkOrderInformation } from "./WorkOrderInformation";
 import { WorkOrderInventoryItems } from "./WorkOrderInventoryItems";
 import { WorkOrderActivityHistory } from "./WorkOrderActivityHistory";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -15,20 +16,22 @@ interface WorkOrderDetailsTabsProps {
 }
 
 export function WorkOrderDetailsTabs({ workOrder, onUpdateTimeEntries }: WorkOrderDetailsTabsProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <Tabs defaultValue="details">
-      <TabsList>
-        <TabsTrigger value="details">
-          <ClipboardList className="mr-2 h-4 w-4" />
-          Details
+      <TabsList className={isMobile ? "w-full grid grid-cols-3" : ""}>
+        <TabsTrigger value="details" className={isMobile ? "flex flex-col items-center py-2 px-1" : ""}>
+          <ClipboardList className={isMobile ? "h-4 w-4 mb-1" : "mr-2 h-4 w-4"} />
+          <span className={isMobile ? "text-xs" : ""}>Details</span>
         </TabsTrigger>
-        <TabsTrigger value="time-tracking">
-          <Clock className="mr-2 h-4 w-4" />
-          Time Tracking
+        <TabsTrigger value="time-tracking" className={isMobile ? "flex flex-col items-center py-2 px-1" : ""}>
+          <Clock className={isMobile ? "h-4 w-4 mb-1" : "mr-2 h-4 w-4"} />
+          <span className={isMobile ? "text-xs" : ""}>Time Tracking</span>
         </TabsTrigger>
-        <TabsTrigger value="activity">
-          <History className="mr-2 h-4 w-4" />
-          Activity History
+        <TabsTrigger value="activity" className={isMobile ? "flex flex-col items-center py-2 px-1" : ""}>
+          <History className={isMobile ? "h-4 w-4 mb-1" : "mr-2 h-4 w-4"} />
+          <span className={isMobile ? "text-xs" : ""}>Activity</span>
         </TabsTrigger>
       </TabsList>
       
