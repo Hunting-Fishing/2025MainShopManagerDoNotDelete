@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { reportData as staticReportData } from "@/data/reportData";
+import { DateRange } from "react-day-picker";
 
 interface UseReportDataOptions {
   timeframe?: string;
-  dateRange?: { from: Date | undefined; to: Date | undefined };
+  dateRange?: DateRange;
   filters?: Record<string, any>;
   refreshInterval?: number | null;
 }
