@@ -2,12 +2,17 @@
 import { WorkOrder } from "@/types/invoice";
 import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
 import { v4 as uuidv4 } from "uuid";
+import { toast } from "@/hooks/use-toast";
 
 export function useWorkOrderTimeEntries() {
   // Custom handler to add time entries from work order to invoice items
   const addTimeEntriesToInvoiceItems = (workOrder: WorkOrder, currentItems: any[] = []) => {
     // Return early if no time entries
     if (!workOrder.timeEntries || workOrder.timeEntries.length === 0) {
+      toast({
+        title: "No Billable Time",
+        description: "This work order has no billable time entries to add to the invoice.",
+      });
       return currentItems;
     }
     
@@ -15,6 +20,10 @@ export function useWorkOrderTimeEntries() {
     const billableEntries = workOrder.timeEntries.filter(entry => entry.billable);
     
     if (billableEntries.length === 0) {
+      toast({
+        title: "No Billable Time",
+        description: "This work order has time entries, but none are marked as billable.",
+      });
       return currentItems;
     }
     
@@ -46,6 +55,12 @@ export function useWorkOrderTimeEntries() {
         total: parseFloat((hours * laborRate).toFixed(2)),
         hours: true
       };
+    });
+    
+    toast({
+      title: "Time Entries Added",
+      description: `Added ${laborItems.length} labor items from work order time entries.`,
+      variant: "success",
     });
     
     // Return combined items array
