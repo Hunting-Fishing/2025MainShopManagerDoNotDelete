@@ -1,9 +1,9 @@
 
-import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/export/excelExport";
+import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/export";
 import { toast } from "@/components/ui/use-toast";
 import { Invoice } from "@/types/invoice";
 import { ExportMenuBase } from "./ExportMenuBase";
-import { generateInvoicePdf, savePdf } from "@/utils/pdf/invoicePdf";
+import { generateInvoicePdf, savePdf } from "@/utils/pdf";
 
 interface InvoiceExportMenuProps {
   invoice: Invoice & { 

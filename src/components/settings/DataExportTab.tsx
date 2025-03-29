@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
 import { Download, Save, Database, FileDown, RefreshCw, Calendar, Users, FileText, Settings, Clock } from "lucide-react";
-import { exportToCSV, exportToExcel, exportMultiSheetExcel } from "@/utils/export";
+import { exportToCSV, exportToExcel, exportMultiSheetExcel, exportToPDF } from "@/utils/export";
 import { generateReportPdf, savePdf } from "@/utils/pdf";
 import { invoices } from "@/data/invoiceData";
 import { workOrders } from "@/data/workOrdersData";
