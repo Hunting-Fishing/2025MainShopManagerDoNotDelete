@@ -65,9 +65,18 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
     });
   };
 
+  // Mock function for onDelete prop - in a real app, this would implement deletion logic
+  const handleDeleteWorkOrder = () => {
+    toast({
+      title: "Delete not implemented",
+      description: "This is a mock function. Deletion is not implemented.",
+      variant: "destructive",
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <WorkOrderDetailsHeader workOrder={currentWorkOrder} />
+      <WorkOrderDetailsHeader workOrder={currentWorkOrder} onDelete={handleDeleteWorkOrder} />
       <WorkOrderDetailsTabs 
         workOrder={currentWorkOrder} 
         onUpdateTimeEntries={handleUpdateTimeEntries} 

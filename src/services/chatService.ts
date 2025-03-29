@@ -122,6 +122,25 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
   }
 };
 
+// Get direct chat with a specific user
+export const getDirectChatWithUser = async (currentUserId: string, otherUserId: string): Promise<ChatRoom | null> => {
+  try {
+    // In a real app, this would query the database for a direct chat between these two users
+    // For now, check our mock data
+    const directChat = MOCK_CHAT_ROOMS.find(room => 
+      room.type === "direct" && 
+      // This is simplified logic - in a real app, you'd check the participants table
+      // to find a room where only these two users are participating
+      room.name.includes(otherUserId) || room.name.includes(currentUserId)
+    );
+    
+    return directChat || null;
+  } catch (error) {
+    console.error("Error fetching direct chat:", error);
+    throw error;
+  }
+};
+
 // Create a new chat room
 export const createChatRoom = async (
   name: string,
