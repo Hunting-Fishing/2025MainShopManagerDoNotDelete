@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Role } from "@/types/team";
@@ -10,6 +9,7 @@ import { RolesGrid } from "@/components/team/roles/RolesGrid";
 import { AddRoleDialog } from "@/components/team/roles/AddRoleDialog";
 import { EditRoleDialog } from "@/components/team/roles/EditRoleDialog";
 import { DeleteRoleDialog } from "@/components/team/roles/DeleteRoleDialog";
+import { exportRolesToJson, validateImportedRoles } from "@/utils/roleUtils";
 
 // Mock data - in a real app, would come from backend
 const initialRoles: Role[] = [
@@ -60,6 +60,65 @@ export default function TeamRoles() {
   const [newRoleDescription, setNewRoleDescription] = useState("");
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
   const [rolePermissions, setRolePermissions] = useState<PermissionSet | null>(null);
+
+  // Handle exporting roles
+  const handleExportRoles = () => {
+    exportRolesToJson(roles);
+    toast({
+      title: "Roles exported successfully",
+      description: "All roles have been exported to a JSON file",
+      variant: "success",
+    });
+  };
+
+  // Handle importing roles
+  const handleImportRoles = (importedRoles: Role[]) => {
+    // Validate imported roles
+    const validation = validateImportedRoles(importedRoles);
+    
+    if (!validation.valid) {
+      toast({
+        title: "Import failed",
+        description: validation.message || "Invalid role data",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Filter out default roles from imported roles to prevent overwriting them
+    const defaultRoleIds = roles.filter(role => role.isDefault).map(role => role.id);
+    const customImportedRoles = importedRoles.filter(role => !defaultRoleIds.includes(role.id));
+    
+    // Check for duplicates by name
+    const existingRoleNames = new Set(roles.map(role => role.name.toLowerCase()));
+    const duplicates = customImportedRoles.filter(role => 
+      existingRoleNames.has(role.name.toLowerCase())
+    );
+    
+    if (duplicates.length > 0) {
+      // If duplicates exist, give a warning but allow the import
+      const nonDuplicates = customImportedRoles.filter(
+        role => !existingRoleNames.has(role.name.toLowerCase())
+      );
+      
+      setRoles([...roles, ...nonDuplicates]);
+      
+      toast({
+        title: "Roles imported with warnings",
+        description: `Imported ${nonDuplicates.length} roles. ${duplicates.length} roles were skipped due to name conflicts.`,
+        variant: "warning",
+      });
+    } else {
+      // No duplicates, perform normal import
+      setRoles([...roles, ...customImportedRoles]);
+      
+      toast({
+        title: "Roles imported successfully",
+        description: `Imported ${customImportedRoles.length} roles`,
+        variant: "success",
+      });
+    }
+  };
 
   // Handle adding a new role
   const handleAddRole = () => {
@@ -177,7 +236,11 @@ export default function TeamRoles() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <RolesPageHeader onAddRoleClick={() => setIsAddDialogOpen(true)} />
+      <RolesPageHeader 
+        onAddRoleClick={() => setIsAddDialogOpen(true)}
+        onExportRoles={handleExportRoles}
+        onImportRoles={handleImportRoles}
+      />
 
       {/* Roles grid */}
       <RolesGrid 
