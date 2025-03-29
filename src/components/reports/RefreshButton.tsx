@@ -23,7 +23,7 @@ export function RefreshButton({ onClick, lastUpdated, isLoading }: RefreshButton
             className="relative"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {isLoading ? 'Refreshing...' : 'Refresh'}
             {!isLoading && (
               <span className="sr-only">
                 Last updated: {format(lastUpdated, "PPpp")}

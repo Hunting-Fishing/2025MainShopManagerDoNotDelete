@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { reportData as staticReportData } from "@/data/reportData";
 import { DateRange } from "react-day-picker";
@@ -18,12 +18,13 @@ export function useReportData({
   refreshInterval = null
 }: UseReportDataOptions = {}) {
   const [data, setData] = useState<any>(staticReportData);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
+  const [refreshAttempts, setRefreshAttempts] = useState<number>(0);
 
   // This would normally connect to a real API
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -31,13 +32,29 @@ export function useReportData({
       // Simulate API request delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      // Randomly trigger an error for demo purposes (10% chance)
+      if (Math.random() < 0.1 && refreshAttempts > 0) {
+        throw new Error("Simulated network error");
+      }
+      
       // Apply filters and transformations to static data
       const filteredData = applyFilters(staticReportData, { timeframe, dateRange, filters });
       setData(filteredData);
       setLastUpdated(new Date());
+      setRefreshAttempts(0);
+      
+      // Show success toast if this was a manual refresh
+      if (refreshAttempts > 0) {
+        toast({
+          title: "Reports refreshed",
+          description: `Reports updated successfully at ${format(new Date(), "h:mm:ss a")}`,
+        });
+      }
     } catch (err) {
       console.error('Error fetching report data:', err);
       setError('Failed to load report data. Please try again.');
+      setRefreshAttempts(prev => prev + 1);
+      
       toast({
         title: "Error loading reports",
         description: "There was a problem loading the report data",
@@ -46,7 +63,7 @@ export function useReportData({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [timeframe, dateRange, filters, refreshAttempts]);
 
   // Apply filters to the data (simulated)
   const applyFilters = (data: any, options: UseReportDataOptions) => {
@@ -78,10 +95,20 @@ export function useReportData({
     return result;
   };
 
+  // Helper function to format date
+  const format = (date: Date, formatStr: string): string => {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: true
+    }).format(date);
+  };
+
   // Initial data fetch
   useEffect(() => {
     fetchReportData();
-  }, [timeframe, JSON.stringify(filters)]); // Re-fetch when these dependencies change
+  }, [timeframe, JSON.stringify(filters), fetchReportData]); // Re-fetch when these dependencies change
 
   // Set up automatic refresh if interval is provided
   useEffect(() => {
@@ -92,13 +119,26 @@ export function useReportData({
     }, refreshInterval);
     
     return () => clearInterval(intervalId);
-  }, [refreshInterval, timeframe, JSON.stringify(filters)]);
+  }, [refreshInterval, fetchReportData]);
+
+  // Auto-retry on error (max 3 attempts)
+  useEffect(() => {
+    if (error && refreshAttempts > 0 && refreshAttempts <= 3) {
+      const retryTimeout = setTimeout(() => {
+        console.log(`Retry attempt ${refreshAttempts}...`);
+        fetchReportData();
+      }, 3000 * refreshAttempts); // Exponential backoff
+      
+      return () => clearTimeout(retryTimeout);
+    }
+  }, [error, refreshAttempts, fetchReportData]);
 
   return {
     data,
     isLoading,
     lastUpdated,
     error,
-    refreshData: fetchReportData
+    refreshData: fetchReportData,
+    isRetrying: error && refreshAttempts > 0 && refreshAttempts <= 3
   };
 }
