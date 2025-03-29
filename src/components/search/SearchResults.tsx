@@ -8,7 +8,7 @@ import {
   ClipboardList,
   ChevronRight 
 } from "lucide-react";
-import { SearchResult, SearchResultType } from "@/utils/searchUtils";
+import { SearchResult, SearchResultType } from "@/utils/search"; // Updated import
 import { useState, useEffect, useRef } from "react";
 
 interface SearchResultsProps {

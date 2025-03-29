@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SearchResults } from '@/components/search/SearchResults';
-import { performSearch, SearchResult } from '@/utils/searchUtils';
+import { performSearch, SearchResult } from '@/utils/search'; // Updated import
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { AddNotificationDemo } from '@/components/notifications/AddNotificationDemo';
 import { GlobalCommandMenu } from '@/components/search/GlobalCommandMenu';
