@@ -14,9 +14,10 @@ interface ReportExportMenuProps {
   data: any[];
   title: string;
   columns: { header: string; dataKey: string }[];
+  disabled?: boolean;
 }
 
-export function ReportExportMenu({ data, title, columns }: ReportExportMenuProps) {
+export function ReportExportMenu({ data, title, columns, disabled = false }: ReportExportMenuProps) {
   const handleExport = (format: "csv" | "excel" | "pdf") => {
     try {
       if (data.length === 0) {
@@ -57,21 +58,21 @@ export function ReportExportMenu({ data, title, columns }: ReportExportMenuProps
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2" disabled={disabled}>
           <Download className="h-4 w-4" />
           Export
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => handleExport("csv")}>
+        <DropdownMenuItem onClick={() => handleExport("csv")} disabled={disabled}>
           <FileText className="mr-2 h-4 w-4" />
           Export as CSV
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport("excel")}>
+        <DropdownMenuItem onClick={() => handleExport("excel")} disabled={disabled}>
           <FileText className="mr-2 h-4 w-4" />
           Export as Excel
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport("pdf")}>
+        <DropdownMenuItem onClick={() => handleExport("pdf")} disabled={disabled}>
           <FileText className="mr-2 h-4 w-4" />
           Export as PDF
         </DropdownMenuItem>

@@ -39,6 +39,7 @@ export const exportToCSV = (data: any[], title: string) => {
     document.body.removeChild(link);
   } catch (err) {
     console.error('Failed to export as CSV:', err);
+    throw new Error('Failed to export as CSV');
   }
 };
 
@@ -61,6 +62,7 @@ export const exportToExcel = (data: any[], title: string) => {
     link.click();
   } catch (err) {
     console.error('Failed to export as Excel:', err);
+    throw new Error('Failed to export as Excel');
   }
 };
 
@@ -81,12 +83,44 @@ export const exportToPDF = (data: any[], title: string, columns: { header: strin
     doc.autoTable({
       startY: 40,
       head: [columns.map(col => col.header)],
-      body: data.map(row => columns.map(col => row[col.dataKey])),
+      body: data.map(row => columns.map(col => row[col.dataKey] !== undefined ? row[col.dataKey] : '')),
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [66, 66, 66], textColor: [255, 255, 255] },
+      margin: { top: 40, right: 14, bottom: 20, left: 14 },
     });
     
     // Save PDF
     doc.save(`${title}_${getFormattedDate()}.pdf`);
   } catch (err) {
     console.error('Failed to export as PDF:', err);
+    throw new Error('Failed to export as PDF');
+  }
+};
+
+/**
+ * Export multiple Excel worksheets
+ */
+export const exportMultiSheetExcel = (data: Record<string, any[]>, title: string) => {
+  try {
+    const workbook = utils.book_new();
+    
+    // Add each data set as a separate worksheet
+    Object.entries(data).forEach(([sheetName, sheetData]) => {
+      const worksheet = utils.json_to_sheet(sheetData);
+      utils.book_append_sheet(workbook, worksheet, sheetName);
+    });
+    
+    // Generate file and trigger download
+    const excelBuffer = write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title}_${getFormattedDate()}.xlsx`;
+    link.click();
+  } catch (err) {
+    console.error('Failed to export multi-sheet Excel:', err);
+    throw new Error('Failed to export as Excel');
   }
 };

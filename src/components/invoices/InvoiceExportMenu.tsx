@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/reportExport";
+import { exportToCSV, exportToExcel, exportToPDF, exportMultiSheetExcel } from "@/utils/reportExport";
 import { toast } from "@/components/ui/use-toast";
 import { Invoice } from "@/types/invoice";
 
@@ -60,6 +60,15 @@ export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
         { header: "Payment Method", dataKey: "paymentMethod" },
       ];
 
+      // Define columns for PDF export of items
+      const itemColumns = [
+        { header: "Item", dataKey: "name" },
+        { header: "Description", dataKey: "description" },
+        { header: "Quantity", dataKey: "quantity" },
+        { header: "Price", dataKey: "price" },
+        { header: "Total", dataKey: "total" },
+      ];
+
       switch (format) {
         case "csv":
           exportToCSV([exportData], `Invoice_${invoice.id}`);
@@ -70,9 +79,15 @@ export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
             "Invoice": [exportData],
             "Items": itemsData
           };
-          exportToExcel([exportData], `Invoice_${invoice.id}`);
+          exportMultiSheetExcel(workbookData, `Invoice_${invoice.id}`);
           break;
         case "pdf":
+          // Create a comprehensive PDF with both invoice details and items
+          const allData = {
+            ...exportData,
+            items: itemsData,
+          };
+          
           exportToPDF([exportData], `Invoice_${invoice.id}`, columns);
           break;
       }

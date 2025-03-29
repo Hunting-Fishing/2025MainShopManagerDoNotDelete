@@ -7,9 +7,10 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/reportExport";
+import { exportToCSV, exportToExcel, exportToPDF, exportMultiSheetExcel } from "@/utils/reportExport";
 import { toast } from "@/components/ui/use-toast";
 import { WorkOrder } from "@/data/workOrdersData";
+import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
 
 interface WorkOrderExportMenuProps {
   workOrder: WorkOrder;
@@ -29,7 +30,31 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
         dueDate: workOrder.dueDate,
         technician: workOrder.technician,
         location: workOrder.location,
+        notes: workOrder.notes || "N/A",
+        totalBillableTime: workOrder.totalBillableTime 
+          ? formatTimeInHoursAndMinutes(workOrder.totalBillableTime)
+          : "N/A"
       };
+      
+      // Format time entries data if they exist
+      const timeEntriesData = workOrder.timeEntries ? workOrder.timeEntries.map(entry => ({
+        employeeName: entry.employeeName,
+        startTime: new Date(entry.startTime).toLocaleString(),
+        endTime: new Date(entry.endTime).toLocaleString(),
+        duration: formatTimeInHoursAndMinutes(entry.duration),
+        notes: entry.notes || '',
+        billable: entry.billable ? 'Yes' : 'No'
+      })) : [];
+      
+      // Format inventory items if they exist
+      const inventoryItemsData = workOrder.inventoryItems ? workOrder.inventoryItems.map(item => ({
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice.toFixed(2),
+        total: (item.quantity * item.unitPrice).toFixed(2)
+      })) : [];
       
       // Define columns for PDF export
       const columns = [
@@ -42,6 +67,7 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
         { header: "Due Date", dataKey: "dueDate" },
         { header: "Technician", dataKey: "technician" },
         { header: "Location", dataKey: "location" },
+        { header: "Total Billable Time", dataKey: "totalBillableTime" },
       ];
 
       switch (format) {
@@ -49,7 +75,22 @@ export function WorkOrderExportMenu({ workOrder }: WorkOrderExportMenuProps) {
           exportToCSV([exportData], `WorkOrder_${workOrder.id}`);
           break;
         case "excel":
-          exportToExcel([exportData], `WorkOrder_${workOrder.id}`);
+          // Create a workbook with multiple sheets
+          const workbookData: Record<string, any[]> = {
+            "Work Order": [exportData]
+          };
+          
+          // Add time entries sheet if there are any
+          if (timeEntriesData.length > 0) {
+            workbookData["Time Entries"] = timeEntriesData;
+          }
+          
+          // Add inventory items sheet if there are any
+          if (inventoryItemsData.length > 0) {
+            workbookData["Inventory Items"] = inventoryItemsData;
+          }
+          
+          exportMultiSheetExcel(workbookData, `WorkOrder_${workOrder.id}`);
           break;
         case "pdf":
           exportToPDF([exportData], `WorkOrder_${workOrder.id}`, columns);
