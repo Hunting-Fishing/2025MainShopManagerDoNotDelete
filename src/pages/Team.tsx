@@ -10,7 +10,8 @@ import {
   RefreshCw, 
   Mail, 
   Phone,
-  ChevronDown
+  ChevronDown,
+  Eye
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 // Mock data for team members
 const teamMembers = [
@@ -144,6 +146,7 @@ export default function Team() {
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
   const [departmentFilter, setDepartmentFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   // Get unique roles and departments for filters
   const roles = Array.from(new Set(teamMembers.map(member => member.role))).sort();
@@ -174,9 +177,9 @@ export default function Team() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Team</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Team Management</h1>
           <p className="text-muted-foreground">
-            Manage your team members and their permissions.
+            Manage your team members, roles and permissions.
           </p>
         </div>
         <div>
@@ -302,71 +305,170 @@ export default function Team() {
         </div>
       </div>
 
-      {/* Team members grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredMembers.map((member) => (
-          <div key={member.id} className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src="" alt={member.name} />
-                  <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">{getInitials(member.name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-medium text-slate-900">{member.name}</h3>
-                  <p className="text-sm text-slate-500">{member.jobTitle}</p>
-                </div>
-              </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyleMap[member.status as keyof typeof statusStyleMap]}`}>
-                {member.status}
-              </span>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-slate-700">
-                  <span className="font-medium">Role:</span> {member.role}
-                </p>
-                <p className="text-sm text-slate-700">
-                  <span className="font-medium">Department:</span> {member.department}
-                </p>
-                <div className="flex items-center gap-3 text-sm text-slate-700">
-                  <Mail className="h-4 w-4 text-slate-400" />
-                  <a href={`mailto:${member.email}`} className="text-esm-blue-600 hover:underline">
-                    {member.email}
-                  </a>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-700">
-                  <Phone className="h-4 w-4 text-slate-400" />
-                  <a href={`tel:${member.phone}`} className="text-esm-blue-600 hover:underline">
-                    {member.phone}
-                  </a>
-                </div>
-              </div>
-
-              {member.role === "Technician" && (
-                <div className="flex gap-4 pt-2 border-t border-slate-100">
-                  <div className="flex-1 text-center">
-                    <p className="text-xs text-slate-500">Assigned</p>
-                    <p className="text-xl font-semibold text-esm-blue-600">{member.workOrders.assigned}</p>
-                  </div>
-                  <div className="flex-1 text-center">
-                    <p className="text-xs text-slate-500">Completed</p>
-                    <p className="text-xl font-semibold text-esm-blue-600">{member.workOrders.completed}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-slate-100 bg-slate-50">
-              <Link 
-                to={`/team/${member.id}`} 
-                className="text-sm text-esm-blue-600 hover:text-esm-blue-800"
-              >
-                View Profile
-              </Link>
-            </div>
-          </div>
-        ))}
+      {/* View selection options */}
+      <div className="flex justify-end">
+        <div className="border rounded-md grid grid-cols-2 overflow-hidden">
+          <Button 
+            variant="ghost" 
+            className={`rounded-none ${view === 'grid' ? 'bg-slate-100' : ''}`} 
+            onClick={() => setView('grid')}
+          >
+            Grid View
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={`rounded-none ${view === 'list' ? 'bg-slate-100' : ''}`} 
+            onClick={() => setView('list')}
+          >
+            List View
+          </Button>
+        </div>
       </div>
+
+      {/* If grid view selected */}
+      {view === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMembers.map((member) => (
+            <div key={member.id} className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between p-4 border-b border-slate-100">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src="" alt={member.name} />
+                    <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">{getInitials(member.name)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-medium text-slate-900">{member.name}</h3>
+                    <p className="text-sm text-slate-500">{member.jobTitle}</p>
+                  </div>
+                </div>
+                <Badge variant={member.status === "Active" ? "success" : "destructive"} className="ml-auto">
+                  {member.status}
+                </Badge>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-slate-700">
+                    <span className="font-medium">Role:</span> {member.role}
+                  </p>
+                  <p className="text-sm text-slate-700">
+                    <span className="font-medium">Department:</span> {member.department}
+                  </p>
+                  <div className="flex items-center gap-3 text-sm text-slate-700">
+                    <Mail className="h-4 w-4 text-slate-400" />
+                    <a href={`mailto:${member.email}`} className="text-esm-blue-600 hover:underline">
+                      {member.email}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-slate-700">
+                    <Phone className="h-4 w-4 text-slate-400" />
+                    <a href={`tel:${member.phone}`} className="text-esm-blue-600 hover:underline">
+                      {member.phone}
+                    </a>
+                  </div>
+                </div>
+
+                {member.role === "Technician" && (
+                  <div className="flex gap-4 pt-2 border-t border-slate-100">
+                    <div className="flex-1 text-center">
+                      <p className="text-xs text-slate-500">Assigned</p>
+                      <p className="text-xl font-semibold text-esm-blue-600">{member.workOrders.assigned}</p>
+                    </div>
+                    <div className="flex-1 text-center">
+                      <p className="text-xs text-slate-500">Completed</p>
+                      <p className="text-xl font-semibold text-esm-blue-600">{member.workOrders.completed}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-between">
+                <Link 
+                  to={`/team/${member.id}`} 
+                  className="text-sm text-esm-blue-600 hover:text-esm-blue-800 flex items-center gap-1"
+                >
+                  <Eye className="h-4 w-4" />
+                  View Profile
+                </Link>
+
+                <Link
+                  to={`/team/${member.id}?tab=permissions`}
+                  className="text-sm text-esm-blue-600 hover:text-esm-blue-800"
+                >
+                  Permissions
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* If list view selected */}
+      {view === 'list' && (
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">Role</th>
+                  <th className="px-4 py-3 font-medium">Department</th>
+                  <th className="px-4 py-3 font-medium">Email</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredMembers.map((member) => (
+                  <tr key={member.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src="" alt={member.name} />
+                          <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700 text-xs">{getInitials(member.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-slate-900">{member.name}</p>
+                          <p className="text-xs text-slate-500">{member.jobTitle}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">{member.role}</td>
+                    <td className="px-4 py-3">{member.department}</td>
+                    <td className="px-4 py-3">
+                      <a href={`mailto:${member.email}`} className="text-esm-blue-600 hover:underline">
+                        {member.email}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={member.status === "Active" ? "success" : "destructive"}>
+                        {member.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link to={`/team/${member.id}`}>
+                            View
+                          </Link>
+                        </Button>
+                        <Button asChild size="sm" variant="outline">
+                          <Link to={`/team/${member.id}?tab=permissions`}>
+                            Permissions
+                          </Link>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {filteredMembers.length === 0 && (
+            <div className="p-8 text-center text-slate-500">
+              No team members found matching your filters.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
