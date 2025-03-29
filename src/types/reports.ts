@@ -15,6 +15,8 @@ export interface SavedReport {
 export interface ReportDataPoint {
   label: string;
   value: number;
+  color?: string;
+  name?: string;
   extraData?: Record<string, any>;
 }
 
