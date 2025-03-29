@@ -1,99 +1,132 @@
-
-import React from "react";
-import { Link } from "react-router-dom";
-import { 
-  Home, 
-  Clipboard, 
-  Users, 
-  FileText, 
-  Calendar, 
-  Package, 
+import {
+  BarChart,
+  Calendar,
+  LineChart,
   Settings,
-  Users2,
-  BarChart3,
-  Wrench,
-  Settings2,
-  X,
-  MessageSquare
+  ShoppingBag,
+  Users,
+  LayoutDashboard,
+  FileText,
+  Boxes,
+  Truck,
+  Coins,
+  BadgeCheck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useSidebar } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-const AppSidebar = () => {
-  const { collapsed, toggleCollapsed } = useSidebar();
-  const isMobile = useIsMobile();
-  
-  // On mobile, sidebar is either fully shown or fully hidden
-  const sidebarVisible = isMobile ? !collapsed : true;
-  const sidebarClasses = isMobile 
-    ? `fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out ${collapsed ? '-translate-x-full' : 'translate-x-0'}`
-    : `relative transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`;
+interface SidebarItemProps {
+  icon: React.ElementType;
+  href: string;
+  text: string;
+}
 
-  if (!sidebarVisible && isMobile) {
-    return null;
-  }
+function SidebarItem({ icon: Icon, href, text }: SidebarItemProps) {
+  return (
+    <Link
+      to={href}
+      className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+    >
+      <Icon className="h-4 w-4" />
+      {text}
+    </Link>
+  );
+}
+
+export function AppSidebar() {
+  const { t } = useTranslation();
 
   return (
-    <div 
-      className={`h-screen border-r bg-white ${sidebarClasses}`}
-    >
-      <div className="flex h-16 items-center justify-between border-b px-4">
-        {isMobile && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-2 top-2 md:hidden" 
-            onClick={toggleCollapsed}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        )}
+    <div className="sidebar bg-white/40 dark:bg-background border-r border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col justify-between h-full">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-4 py-3">
+            <Link to="/" className="font-bold">
+              ESM Tool
+            </Link>
+            <BadgeCheck className="h-5 w-5 text-green-500" />
+          </div>
+
+          <div className="space-y-1 py-2">
+            <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+              {t('navigation.general', 'General')}
+            </h4>
+            <SidebarItem
+              icon={LayoutDashboard}
+              href="/"
+              text={t('navigation.dashboard', 'Dashboard')}
+            />
+            <SidebarItem
+              icon={ShoppingBag}
+              href="/work-orders"
+              text={t('navigation.workOrders', 'Work Orders')}
+            />
+            <SidebarItem
+              icon={Users}
+              href="/customers"
+              text={t('navigation.customers', 'Customers')}
+            />
+            <SidebarItem
+              icon={Boxes}
+              href="/inventory"
+              text={t('navigation.inventory', 'Inventory')}
+            />
+          </div>
+
+          <div className="space-y-1 py-2">
+            <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+              {t('navigation.operations', 'Operations')}
+            </h4>
+            <SidebarItem
+              icon={Truck}
+              href="/equipment"
+              text={t('navigation.equipment', 'Equipment')}
+            />
+            <SidebarItem
+              icon={Coins}
+              href="/invoices"
+              text={t('navigation.invoices', 'Invoices')}
+            />
+            <SidebarItem
+              icon={Users}
+              href="/team"
+              text={t('navigation.team', 'Team')}
+            />
+          </div>
+        </div>
         
-        {collapsed && !isMobile ? (
-          <span className="text-xl font-bold mx-auto">FM</span>
-        ) : (
-          <span className="text-xl font-bold">Field Management</span>
-        )}
-      </div>
-      <div className="flex flex-col gap-1 p-2 overflow-y-auto h-[calc(100vh-4rem)]">
-        <NavItem to="/" icon={<Home />} label="Dashboard" collapsed={collapsed && !isMobile} />
-        <NavItem to="/work-orders" icon={<Clipboard />} label="Work Orders" collapsed={collapsed && !isMobile} />
-        <NavItem to="/customers" icon={<Users />} label="Customers" collapsed={collapsed && !isMobile} />
-        <NavItem to="/invoices" icon={<FileText />} label="Invoices" collapsed={collapsed && !isMobile} />
-        <NavItem to="/calendar" icon={<Calendar />} label="Calendar" collapsed={collapsed && !isMobile} />
-        <NavItem to="/inventory" icon={<Package />} label="Inventory" collapsed={collapsed && !isMobile} />
-        <NavItem to="/equipment" icon={<Wrench />} label="Equipment" collapsed={collapsed && !isMobile} />
-        <NavItem to="/maintenance" icon={<Settings2 />} label="Maintenance" collapsed={collapsed && !isMobile} />
-        <NavItem to="/chat" icon={<MessageSquare />} label="Chat" collapsed={collapsed && !isMobile} />
-        <NavItem to="/team" icon={<Users2 />} label="Team" collapsed={collapsed && !isMobile} />
-        <NavItem to="/reports" icon={<BarChart3 />} label="Reports" collapsed={collapsed && !isMobile} />
-        <NavItem to="/settings" icon={<Settings />} label="Settings" collapsed={collapsed && !isMobile} />
+        <div className="space-y-1 py-2">
+          <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+            MANAGEMENT
+          </h4>
+          <SidebarItem
+            icon={Calendar}
+            href="/calendar"
+            text="Calendar"
+          />
+          <SidebarItem
+            icon={BarChart}
+            href="/analytics"
+            text="Analytics"
+          />
+          <SidebarItem
+            icon={LineChart}
+            href="/reports"
+            text="Reports"
+          />
+        </div>
+
+        <div className="space-y-1 py-2">
+          <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+            {t('navigation.settings', 'Settings')}
+          </h4>
+          <SidebarItem
+            icon={Settings}
+            href="/settings"
+            text={t('navigation.settings', 'Settings')}
+          />
+        </div>
       </div>
     </div>
   );
-};
-
-interface NavItemProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  collapsed: boolean;
 }
-
-const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
-  return (
-    <Button 
-      variant="ghost" 
-      className="w-full justify-start" 
-      asChild
-    >
-      <Link to={to} className="flex items-center gap-3 px-3 py-2">
-        {icon}
-        {!collapsed && <span>{label}</span>}
-      </Link>
-    </Button>
-  );
-};
-
-export default AppSidebar;
