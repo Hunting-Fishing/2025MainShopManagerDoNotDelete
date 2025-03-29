@@ -5,8 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/context/ThemeContext";
+import { useToast } from "@/components/ui/use-toast";
 
 export function AccountTab() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { toast } = useToast();
+
+  const isDarkModeEnabled = resolvedTheme === 'dark';
+
+  const handleDarkModeToggle = () => {
+    const newTheme = isDarkModeEnabled ? 'light' : 'dark';
+    setTheme(newTheme);
+    
+    toast({
+      title: `${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} mode enabled`,
+      description: `The application theme has been switched to ${newTheme} mode.`,
+      duration: 3000,
+    });
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -52,7 +70,11 @@ export function AccountTab() {
                 Enable dark mode for the application
               </p>
             </div>
-            <Switch id="dark-mode" />
+            <Switch 
+              id="dark-mode" 
+              checked={isDarkModeEnabled}
+              onCheckedChange={handleDarkModeToggle}
+            />
           </div>
           <Separator />
           <div className="flex items-center justify-between">

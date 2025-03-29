@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useTheme } from "@/context/ThemeContext";
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -36,13 +37,14 @@ function SidebarItem({ icon: Icon, href, text }: SidebarItemProps) {
 
 export function AppSidebar() {
   const { t } = useTranslation();
+  const { resolvedTheme } = useTheme();
 
   return (
-    <div className="sidebar bg-white/40 dark:bg-background border-r border-slate-200 dark:border-slate-800">
+    <div className={`sidebar bg-white/40 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700`}>
       <div className="flex flex-col justify-between h-full">
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4 py-3">
-            <Link to="/" className="font-bold">
+            <Link to="/" className="font-bold dark:text-white">
               ESM Tool
             </Link>
             <BadgeCheck className="h-5 w-5 text-green-500" />

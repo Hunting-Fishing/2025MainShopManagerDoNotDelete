@@ -14,7 +14,7 @@ export function Header() {
   const isMobile = useIsMobile();
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-4">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white dark:bg-slate-800 dark:border-slate-700 px-4">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={toggleCollapsed}>
           <Menu className="h-5 w-5" />
@@ -23,11 +23,11 @@ export function Header() {
         {/* Search shown differently on mobile vs desktop */}
         {isMobile ? (
           searchOpen ? (
-            <div className="absolute inset-0 bg-white z-20 flex items-center px-4">
+            <div className="absolute inset-0 bg-white dark:bg-slate-800 z-20 flex items-center px-4">
               <input
                 type="text"
                 placeholder="Search..."
-                className="h-9 w-full rounded-md border border-input bg-background px-4 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-slate-100 px-4 text-sm"
                 autoFocus
               />
               <Button 
@@ -50,7 +50,7 @@ export function Header() {
             <input
               type="text"
               placeholder="Search..."
-              className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-4 text-sm"
+              className="h-9 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-slate-100 pl-8 pr-4 text-sm"
             />
           </div>
         )}
@@ -70,7 +70,7 @@ export function Header() {
             )}
           </Button>
         </NotificationsDropdown>
-        <div className="h-8 w-8 rounded-full bg-slate-200" />
+        <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600" />
       </div>
     </header>
   );

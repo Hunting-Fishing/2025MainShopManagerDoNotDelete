@@ -3,13 +3,11 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { ThemeSelector } from "./ThemeSelector";
 import { ThemePreview } from "./ThemePreview";
 import { Label } from "@/components/ui/label";
+import { useTheme } from "@/context/ThemeContext";
 
-interface ThemeTabProps {
-  theme: string;
-  setTheme: (value: string) => void;
-}
+export function ThemeTab() {
+  const { theme, setTheme } = useTheme();
 
-export function ThemeTab({ theme, setTheme }: ThemeTabProps) {
   return (
     <Card>
       <CardHeader>
