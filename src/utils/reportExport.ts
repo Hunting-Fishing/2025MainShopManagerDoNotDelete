@@ -1,7 +1,7 @@
 
 import { jsPDF } from "jspdf";
 import { utils, write } from "xlsx";
-import { Parser } from "json2csv";
+import { Parser } from "@json2csv/plainjs";
 import 'jspdf-autotable';
 
 // Extend the jsPDF type to include autoTable

@@ -16,7 +16,7 @@ export interface ReportDataPoint {
   name: string;
   value: number;
   color?: string;
-  label?: string;
+  label?: string;  // Making label optional since some data points don't have it
   extraData?: Record<string, any>;
 }
 
