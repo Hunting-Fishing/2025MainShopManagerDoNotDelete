@@ -67,6 +67,8 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
 
   // Handle selecting a work order (adapt to work with our form)
   const selectWorkOrder = (workOrder: any) => {
+    if (!workOrder) return;
+    
     const workOrderUpdates = handleSelectWorkOrder(workOrder);
     
     setInvoice((prev) => ({

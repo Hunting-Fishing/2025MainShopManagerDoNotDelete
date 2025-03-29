@@ -9,7 +9,8 @@ export function useInvoiceFilters(invoices: Invoice[]) {
 
   // Get unique creators for filter
   const creators = useMemo(() => {
-    return Array.from(new Set(invoices.map(invoice => invoice.createdBy))).sort();
+    const uniqueCreators = Array.from(new Set(invoices.map(invoice => invoice.createdBy)));
+    return uniqueCreators.filter(creator => creator).sort();
   }, [invoices]);
 
   // Filter invoices based on search query and filters

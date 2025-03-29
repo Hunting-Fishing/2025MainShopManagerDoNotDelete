@@ -1,5 +1,4 @@
 
-// This file is deprecated - using the implementation from context/notifications instead
 import React from 'react';
 import { NotificationsProvider as NewNotificationsProvider } from './notifications';
 import { useNotifications as useNotificationsHook } from './notifications';
@@ -15,4 +14,5 @@ export const NotificationsProvider = ({ children }: { children: React.ReactNode 
 };
 
 // This context is no longer used directly - only kept for compatibility
-export const NotificationsContext = React.createContext(null);
+export const NotificationsContext = React.createContext<any>(null);
+

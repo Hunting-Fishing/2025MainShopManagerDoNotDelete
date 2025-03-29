@@ -69,9 +69,11 @@ export function InvoiceList({ invoices }: InvoiceListProps) {
                   {invoice.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  <Link to={`/work-orders/${invoice.workOrderId}`} className="text-esm-blue-600 hover:text-esm-blue-800">
-                    {invoice.workOrderId}
-                  </Link>
+                  {invoice.workOrderId && (
+                    <Link to={`/work-orders/${invoice.workOrderId}`} className="text-esm-blue-600 hover:text-esm-blue-800">
+                      {invoice.workOrderId}
+                    </Link>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {invoice.customer}
