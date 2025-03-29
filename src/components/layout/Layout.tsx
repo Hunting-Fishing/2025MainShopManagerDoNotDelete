@@ -7,6 +7,8 @@ import { NotificationsProvider } from '@/context/notifications';
 import { Outlet } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/context/ThemeContext';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface LayoutProps {
   children?: ReactNode;

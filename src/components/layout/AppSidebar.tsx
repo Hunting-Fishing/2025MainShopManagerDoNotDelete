@@ -12,10 +12,12 @@ import {
   Truck,
   Coins,
   BadgeCheck,
+  MessageSquare
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -38,95 +40,103 @@ function SidebarItem({ icon: Icon, href, text }: SidebarItemProps) {
 export function AppSidebar() {
   const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
+  const { collapsed } = useSidebar();
 
   return (
-    <div className={`sidebar bg-white/40 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700`}>
+    <div className={`sidebar bg-white/40 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 ${
+      collapsed ? 'w-16' : 'w-64'
+    } transition-all duration-300`}>
       <div className="flex flex-col justify-between h-full">
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4 py-3">
-            <Link to="/" className="font-bold dark:text-white">
+            <Link to="/" className={`font-bold dark:text-white ${collapsed ? 'hidden' : 'block'}`}>
               ESM Tool
             </Link>
             <BadgeCheck className="h-5 w-5 text-green-500" />
           </div>
 
           <div className="space-y-1 py-2">
-            <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+            <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
               {t('navigation.general', 'General')}
             </h4>
             <SidebarItem
               icon={LayoutDashboard}
               href="/"
-              text={t('navigation.dashboard', 'Dashboard')}
+              text={collapsed ? '' : t('navigation.dashboard', 'Dashboard')}
             />
             <SidebarItem
               icon={ShoppingBag}
               href="/work-orders"
-              text={t('navigation.workOrders', 'Work Orders')}
+              text={collapsed ? '' : t('navigation.workOrders', 'Work Orders')}
             />
             <SidebarItem
               icon={Users}
               href="/customers"
-              text={t('navigation.customers', 'Customers')}
+              text={collapsed ? '' : t('navigation.customers', 'Customers')}
             />
             <SidebarItem
               icon={Boxes}
               href="/inventory"
-              text={t('navigation.inventory', 'Inventory')}
+              text={collapsed ? '' : t('navigation.inventory', 'Inventory')}
             />
           </div>
 
           <div className="space-y-1 py-2">
-            <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+            <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
               {t('navigation.operations', 'Operations')}
             </h4>
             <SidebarItem
               icon={Truck}
               href="/equipment"
-              text={t('navigation.equipment', 'Equipment')}
+              text={collapsed ? '' : t('navigation.equipment', 'Equipment')}
             />
             <SidebarItem
               icon={Coins}
               href="/invoices"
-              text={t('navigation.invoices', 'Invoices')}
+              text={collapsed ? '' : t('navigation.invoices', 'Invoices')}
             />
             <SidebarItem
               icon={Users}
               href="/team"
-              text={t('navigation.team', 'Team')}
+              text={collapsed ? '' : t('navigation.team', 'Team')}
             />
           </div>
         </div>
         
         <div className="space-y-1 py-2">
-          <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+          <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
             MANAGEMENT
           </h4>
           <SidebarItem
             icon={Calendar}
             href="/calendar"
-            text="Calendar"
+            text={collapsed ? '' : "Calendar"}
+          />
+          <SidebarItem
+            icon={MessageSquare}
+            href="/chat"
+            text={collapsed ? '' : "Chat"}
           />
           <SidebarItem
             icon={BarChart}
             href="/analytics"
-            text="Analytics"
+            text={collapsed ? '' : "Analytics"}
           />
           <SidebarItem
             icon={LineChart}
             href="/reports"
-            text="Reports"
+            text={collapsed ? '' : "Reports"}
           />
         </div>
 
         <div className="space-y-1 py-2">
-          <h4 className="text-xs font-semibold text-muted-foreground pl-4 mb-1">
+          <h4 className={`text-xs font-semibold text-muted-foreground pl-4 mb-1 ${collapsed ? 'sr-only' : ''}`}>
             {t('navigation.settings', 'Settings')}
           </h4>
           <SidebarItem
             icon={Settings}
             href="/settings"
-            text={t('navigation.settings', 'Settings')}
+            text={collapsed ? '' : t('navigation.settings', 'Settings')}
           />
         </div>
       </div>
