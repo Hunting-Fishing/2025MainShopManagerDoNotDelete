@@ -1,5 +1,5 @@
 
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, isPast, set } from "date-fns";
 import { CalendarEvent } from "@/types/calendar";
 import { cn } from "@/lib/utils";
 import { priorityMap } from "@/data/workOrdersData";
@@ -8,12 +8,14 @@ interface CalendarDayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  currentTime?: Date;
 }
 
 export function CalendarDayView({ 
   currentDate, 
   events, 
-  onEventClick 
+  onEventClick,
+  currentTime = new Date()
 }: CalendarDayViewProps) {
   // Filter events for the current day
   const dayEvents = events.filter(event => {
@@ -37,6 +39,9 @@ export function CalendarDayView({
 
   // Time slots for the day view (8am to 6pm)
   const timeSlots = Array.from({ length: 11 }, (_, i) => 8 + i);
+  
+  const now = currentTime;
+  const currentHour = now.getHours();
 
   return (
     <div className="w-full">
@@ -50,21 +55,37 @@ export function CalendarDayView({
         {timeSlots.map((hour) => {
           const hourEvents = getEventsForHour(hour);
           
+          // Check if this hour is in the past for today
+          const isPastHour = isSameDay(currentDate, now) && hour < currentHour;
+          
           return (
             <div key={hour} className="grid grid-cols-12 border-b">
               {/* Time */}
-              <div className="col-span-1 p-3 text-right text-slate-500">
+              <div className={cn(
+                "col-span-1 p-3 text-right",
+                isPastHour ? "text-gray-400" : "text-slate-500"
+              )}>
                 {hour}:00
               </div>
 
               {/* Events */}
-              <div className="col-span-11 p-2 min-h-[100px] border-l">
+              <div 
+                className={cn(
+                  "col-span-11 p-2 min-h-[100px] border-l relative",
+                  isPastHour && "bg-gray-50"
+                )}
+              >
+                {/* Past hour indicator */}
+                {isPastHour && (
+                  <div className="absolute inset-0 bg-gray-200 bg-opacity-20 pointer-events-none"></div>
+                )}
+                
                 {hourEvents.map((event) => (
                   <div
                     key={event.id}
                     onClick={() => onEventClick(event)}
                     className={cn(
-                      "px-3 py-2 text-sm rounded mb-2 cursor-pointer",
+                      "px-3 py-2 text-sm rounded mb-2 cursor-pointer relative z-10",
                       priorityMap[event.priority].classes.replace("text-xs font-medium", "")
                     )}
                   >

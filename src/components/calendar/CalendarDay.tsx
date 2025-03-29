@@ -1,5 +1,5 @@
 
-import { format } from "date-fns";
+import { format, isPast, isToday, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarEvent } from "@/types/calendar";
 import { priorityMap } from "@/data/workOrdersData";
@@ -10,6 +10,7 @@ interface CalendarDayProps {
   isCurrentMonth?: boolean;
   isToday?: boolean;
   onEventClick: (event: CalendarEvent) => void;
+  currentTime?: Date;
 }
 
 export function CalendarDay({ 
@@ -17,8 +18,12 @@ export function CalendarDay({
   events, 
   isCurrentMonth = true, 
   isToday = false,
-  onEventClick
+  onEventClick,
+  currentTime = new Date()
 }: CalendarDayProps) {
+  // Check if this date is in the past
+  const isPastDate = isPast(startOfDay(date)) && !isToday;
+  
   // Sort events by priority (high first)
   const sortedEvents = [...events].sort((a, b) => {
     const priorityOrder = { "high": 0, "medium": 1, "low": 2 };
@@ -34,11 +39,23 @@ export function CalendarDay({
   return (
     <div 
       className={cn(
-        "min-h-[120px] border p-1",
+        "min-h-[120px] border p-1 relative",
         !isCurrentMonth && "bg-slate-50",
-        isToday && "bg-blue-50"
+        isToday && "bg-blue-50",
+        isPastDate && "bg-gray-100"
       )}
     >
+      {/* Past date overlay */}
+      {isPastDate && (
+        <div className="absolute inset-0 bg-gray-200 bg-opacity-30 pointer-events-none z-10">
+          <div className="absolute top-1 right-1">
+            <span className="text-xs text-gray-500 font-medium px-1 rounded bg-white bg-opacity-70">
+              Past
+            </span>
+          </div>
+        </div>
+      )}
+      
       <div className="flex justify-between mb-1">
         <span 
           className={cn(
@@ -57,7 +74,7 @@ export function CalendarDay({
             key={event.id}
             onClick={() => onEventClick(event)}
             className={cn(
-              "px-2 py-1 text-xs rounded truncate cursor-pointer",
+              "px-2 py-1 text-xs rounded truncate cursor-pointer relative z-20",
               priorityMap[event.priority].classes.replace("text-xs font-medium", "")
             )}
           >
@@ -67,7 +84,7 @@ export function CalendarDay({
         ))}
 
         {hiddenEventsCount > 0 && (
-          <div className="text-xs text-slate-500 px-2">
+          <div className="text-xs text-slate-500 px-2 relative z-20">
             + {hiddenEventsCount} more
           </div>
         )}

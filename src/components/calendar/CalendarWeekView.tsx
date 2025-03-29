@@ -5,7 +5,9 @@ import {
   eachDayOfInterval, 
   format, 
   isToday,
-  isSameDay
+  isSameDay,
+  isPast,
+  set
 } from "date-fns";
 import { CalendarEvent } from "@/types/calendar";
 import { cn } from "@/lib/utils";
@@ -15,12 +17,14 @@ interface CalendarWeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  currentTime?: Date;
 }
 
 export function CalendarWeekView({ 
   currentDate, 
   events, 
-  onEventClick 
+  onEventClick,
+  currentTime = new Date()
 }: CalendarWeekViewProps) {
   // Get days in week
   const weekStart = startOfWeek(currentDate);
@@ -49,6 +53,9 @@ export function CalendarWeekView({
   // Time slots for the week view (8am to 6pm)
   const timeSlots = Array.from({ length: 11 }, (_, i) => 8 + i);
 
+  const now = currentTime;
+  const currentHour = now.getHours();
+  
   return (
     <div className="w-full">
       {/* Day headers */}
@@ -59,7 +66,8 @@ export function CalendarWeekView({
             key={i} 
             className={cn(
               "py-2 text-center font-medium",
-              isToday(day) && "bg-blue-50"
+              isToday(day) && "bg-blue-50",
+              isPast(day) && !isToday(day) && "bg-gray-100"
             )}
           >
             <div>{format(day, "EEE")}</div>
@@ -75,46 +83,63 @@ export function CalendarWeekView({
 
       {/* Time grid */}
       <div className="relative">
-        {timeSlots.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 border-b">
-            {/* Time label */}
-            <div className="p-2 text-right text-sm text-slate-500">
-              {hour}:00
+        {timeSlots.map((hour) => {
+          const isPastHour = isToday(currentDate) && hour < currentHour;
+          
+          return (
+            <div key={hour} className="grid grid-cols-8 border-b">
+              {/* Time label */}
+              <div className={cn(
+                "p-2 text-right text-sm", 
+                isPastHour ? "text-gray-400" : "text-slate-500"
+              )}>
+                {hour}:00
+              </div>
+
+              {/* Day columns */}
+              {daysInWeek.map((day, dayIndex) => {
+                const dayEvents = getEventsForDay(day).filter(event => {
+                  const eventHour = new Date(event.start).getHours();
+                  return eventHour === hour;
+                });
+
+                // Check if this slot is in the past
+                const isPastTimeSlot = isPast(set(day, { hours: hour + 1, minutes: 0 }));
+
+                return (
+                  <div 
+                    key={dayIndex} 
+                    className={cn(
+                      "border-l min-h-[80px] p-1 relative",
+                      isToday(day) && "bg-blue-50",
+                      isPast(day) && !isToday(day) && "bg-gray-100",
+                      isPastTimeSlot && isToday(day) && "bg-gray-50"
+                    )}
+                  >
+                    {/* Past time overlay */}
+                    {isPastTimeSlot && (
+                      <div className="absolute inset-0 bg-gray-200 bg-opacity-20 pointer-events-none"></div>
+                    )}
+                    
+                    {dayEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        onClick={() => onEventClick(event)}
+                        className={cn(
+                          "px-2 py-1 text-xs rounded mb-1 cursor-pointer relative z-10",
+                          priorityMap[event.priority].classes.replace("text-xs font-medium", "")
+                        )}
+                      >
+                        <div className="font-medium truncate">{event.title}</div>
+                        <div className="text-[10px] truncate">{event.technician}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
-
-            {/* Day columns */}
-            {daysInWeek.map((day, dayIndex) => {
-              const dayEvents = getEventsForDay(day).filter(event => {
-                const eventHour = new Date(event.start).getHours();
-                return eventHour === hour;
-              });
-
-              return (
-                <div 
-                  key={dayIndex} 
-                  className={cn(
-                    "border-l min-h-[80px] p-1",
-                    isToday(day) && "bg-blue-50"
-                  )}
-                >
-                  {dayEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      onClick={() => onEventClick(event)}
-                      className={cn(
-                        "px-2 py-1 text-xs rounded mb-1 cursor-pointer",
-                        priorityMap[event.priority].classes.replace("text-xs font-medium", "")
-                      )}
-                    >
-                      <div className="font-medium truncate">{event.title}</div>
-                      <div className="text-[10px] truncate">{event.technician}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

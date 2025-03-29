@@ -16,12 +16,14 @@ interface CalendarMonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  currentTime?: Date;
 }
 
 export function CalendarMonthView({ 
   currentDate, 
   events, 
-  onEventClick 
+  onEventClick,
+  currentTime = new Date()
 }: CalendarMonthViewProps) {
   // Get days in month view (including days from previous/next month to fill the grid)
   const monthStart = startOfMonth(currentDate);
@@ -67,6 +69,7 @@ export function CalendarMonthView({
               isCurrentMonth={isSameMonth(day, monthStart)}
               isToday={isToday(day)}
               onEventClick={onEventClick}
+              currentTime={currentTime}
             />
           );
         })}
