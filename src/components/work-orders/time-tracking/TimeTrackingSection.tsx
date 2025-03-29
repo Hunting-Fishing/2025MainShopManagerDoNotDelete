@@ -1,13 +1,16 @@
 
 import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, PlusCircle, Play, Pause, Edit, Trash2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { TimeEntry } from "@/types/workOrder";
-import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
 import { TimeEntryForm } from "./TimeEntryForm";
 import { TimeEntriesList } from "./TimeEntriesList";
 import { toast } from "@/hooks/use-toast";
+
+// Import our new components
+import { TimeTrackingHeader } from "./components/TimeTrackingHeader";
+import { ActiveTimerBanner } from "./components/ActiveTimerBanner";
+import { TimeTrackingSummary } from "./components/TimeTrackingSummary";
+import { EmptyTimeEntries } from "./components/EmptyTimeEntries";
 
 interface TimeTrackingSectionProps {
   workOrderId: string;
@@ -121,52 +124,22 @@ export function TimeTrackingSection({
     
     toast({
       title: "Timer Stopped",
-      description: `Recorded ${formatTimeInHoursAndMinutes(durationMinutes)} of time.`,
+      description: `Recorded ${durationMinutes} minutes of time.`,
     });
   };
 
   return (
     <Card className="mt-6">
-      <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
-        <div className="flex items-center">
-          <Clock className="h-5 w-5 mr-2 text-slate-500" />
-          <CardTitle className="text-lg">Time Tracking</CardTitle>
-        </div>
-        <div className="flex gap-2">
-          {activeTimer ? (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-red-500" 
-              onClick={handleStopTimer}
-            >
-              <Pause className="mr-1 h-4 w-4" />
-              Stop Timer
-            </Button>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-green-500" 
-              onClick={() => handleStartTimer("EMP-001", "Michael Brown")}
-            >
-              <Play className="mr-1 h-4 w-4" />
-              Start Timer
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => {
-              setEditingTimeEntry(null);
-              setShowTimeEntryForm(true);
-            }}
-          >
-            <PlusCircle className="mr-1 h-4 w-4" />
-            Add Time Entry
-          </Button>
-        </div>
-      </CardHeader>
+      <TimeTrackingHeader
+        activeTimer={activeTimer}
+        onStartTimer={handleStartTimer}
+        onStopTimer={handleStopTimer}
+        onAddTimeEntry={() => {
+          setEditingTimeEntry(null);
+          setShowTimeEntryForm(true);
+        }}
+      />
+      
       <CardContent className="p-6">
         {showTimeEntryForm ? (
           <TimeEntryForm 
@@ -181,40 +154,26 @@ export function TimeTrackingSection({
         ) : (
           <>
             {activeTimer && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded flex justify-between items-center">
-                <div>
-                  <p className="font-medium">Timer Running</p>
-                  <p className="text-sm text-slate-500">
-                    Started: {new Date(activeTimer.startTime).toLocaleTimeString()}
-                  </p>
-                </div>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={handleStopTimer}
-                >
-                  <Pause className="mr-1 h-4 w-4" />
-                  Stop
-                </Button>
-              </div>
+              <ActiveTimerBanner
+                activeTimer={activeTimer}
+                onStopTimer={handleStopTimer}
+              />
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-slate-50 rounded-lg border">
-                <p className="text-sm text-slate-500">Total Billable Time</p>
-                <p className="text-2xl font-bold">{formatTimeInHoursAndMinutes(totalBillableTime)}</p>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-lg border">
-                <p className="text-sm text-slate-500">Total Non-Billable Time</p>
-                <p className="text-2xl font-bold">{formatTimeInHoursAndMinutes(totalNonBillableTime)}</p>
-              </div>
-            </div>
-            
-            <TimeEntriesList 
-              timeEntries={timeEntries}
-              onEdit={handleEditTimeEntry}
-              onDelete={handleDeleteTimeEntry}
+            <TimeTrackingSummary
+              totalBillableTime={totalBillableTime}
+              totalNonBillableTime={totalNonBillableTime}
             />
+            
+            {timeEntries.length === 0 ? (
+              <EmptyTimeEntries />
+            ) : (
+              <TimeEntriesList 
+                timeEntries={timeEntries}
+                onEdit={handleEditTimeEntry}
+                onDelete={handleDeleteTimeEntry}
+              />
+            )}
           </>
         )}
       </CardContent>
