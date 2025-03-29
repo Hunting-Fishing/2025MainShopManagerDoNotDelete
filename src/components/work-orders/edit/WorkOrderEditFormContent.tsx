@@ -10,7 +10,7 @@ import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSectio
 import { WorkOrderStatusSection } from "@/components/work-orders/WorkOrderStatusSection";
 import { AssignmentSection } from "@/components/work-orders/AssignmentSection";
 import { NotesSection } from "@/components/work-orders/NotesSection";
-import { WorkOrderInventorySection } from "@/components/work-orders/inventory/WorkOrderInventorySection";
+import { WorkOrderInventoryField } from "@/components/work-orders/inventory/WorkOrderInventoryField";
 import { EditFormActions } from "@/components/work-orders/edit/EditFormActions";
 
 interface WorkOrderEditFormContentProps {
@@ -56,7 +56,7 @@ export const WorkOrderEditFormContent: React.FC<WorkOrderEditFormContentProps> =
             <NotesSection form={form as any} />
 
             {/* Inventory Items */}
-            <WorkOrderInventorySection form={form as any} />
+            <WorkOrderInventoryField form={form as any} />
           </div>
 
           {/* Form Actions */}

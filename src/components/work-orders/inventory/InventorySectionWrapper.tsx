@@ -1,9 +1,11 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { WorkOrderInventorySection } from "./WorkOrderInventorySection";
+import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
+import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
+import { toast } from "@/hooks/use-toast";
 
 interface InventorySectionWrapperProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
@@ -12,10 +14,23 @@ interface InventorySectionWrapperProps {
 export const InventorySectionWrapper: React.FC<InventorySectionWrapperProps> = ({
   form
 }) => {
-  return (
-    <div className="border-t pt-6 mt-6">
-      <h3 className="text-lg font-medium mb-4">Parts & Materials</h3>
-      <WorkOrderInventorySection form={form as any} />
-    </div>
-  );
+  // Use the inventory manager hook to access inventory management features
+  const { checkInventoryAlerts, lowStockItems, outOfStockItems } = useInventoryManager();
+  
+  // Check for inventory alerts when this component mounts
+  useEffect(() => {
+    // This ensures inventory is checked when items are being added to work orders
+    checkInventoryAlerts();
+    
+    // Display a notification if there are inventory alerts
+    if (lowStockItems.length > 0 || outOfStockItems.length > 0) {
+      toast({
+        title: "Inventory Alerts",
+        description: `${lowStockItems.length} items low on stock, ${outOfStockItems.length} items out of stock.`,
+        variant: "warning"
+      });
+    }
+  }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);
+  
+  return <WorkOrderInventoryField form={form as any} />;
 };
