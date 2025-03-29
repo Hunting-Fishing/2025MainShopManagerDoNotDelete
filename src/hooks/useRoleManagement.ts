@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Role } from "@/types/team";
 import { PermissionSet } from "@/types/permissions";
@@ -114,6 +113,43 @@ export function useRoleManagement(initialRoles: Role[]) {
     return true;
   };
 
+  const handleDuplicateRole = (roleToDuplicate: Role) => {
+    if (!roleToDuplicate) return false;
+    
+    // Create a copy with a new name and ID
+    const duplicateName = `${roleToDuplicate.name} (Copy)`;
+    
+    // Check if a role with this name already exists
+    if (roles.some(role => role.name.toLowerCase() === duplicateName.toLowerCase())) {
+      toast({
+        title: "Duplicate name exists",
+        description: `A role named "${duplicateName}" already exists`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    const duplicateRole: Role = {
+      id: `role-${uuidv4()}`,
+      name: duplicateName,
+      description: roleToDuplicate.description,
+      isDefault: false, // Duplicated roles are never default
+      permissions: {...roleToDuplicate.permissions},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    setRoles([...roles, duplicateRole]);
+    
+    toast({
+      title: "Role duplicated successfully",
+      description: `Created new role "${duplicateName}" based on "${roleToDuplicate.name}"`,
+      variant: "success",
+    });
+    
+    return true;
+  };
+
   const handleImportRoles = (importedRoles: Role[]) => {
     const validation = validateImportedRoles(importedRoles);
     
@@ -169,6 +205,7 @@ export function useRoleManagement(initialRoles: Role[]) {
     handleAddRole,
     handleEditRole,
     handleDeleteRole,
+    handleDuplicateRole,
     handleImportRoles
   };
 }

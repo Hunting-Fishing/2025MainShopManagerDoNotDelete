@@ -10,7 +10,8 @@ import {
   ChevronDown, 
   ChevronUp, 
   CheckCircle2, 
-  XCircle 
+  XCircle,
+  Copy
 } from "lucide-react";
 import { Role } from "@/types/team";
 import { PermissionSet } from "@/types/permissions";
@@ -19,9 +20,10 @@ interface RoleCardProps {
   role: Role;
   onEdit: (role: Role) => void;
   onDelete: (role: Role) => void;
+  onDuplicate: (role: Role) => void;
 }
 
-export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
+export function RoleCard({ role, onEdit, onDelete, onDuplicate }: RoleCardProps) {
   const [showPermissions, setShowPermissions] = useState(false);
   const permissions = role.permissions as PermissionSet;
 
@@ -67,7 +69,16 @@ export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
             <Button 
               variant="ghost" 
               size="icon"
+              onClick={() => onDuplicate(role)}
+              title="Duplicate Role"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
               onClick={() => onEdit(role)}
+              title="Edit Role"
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -76,6 +87,7 @@ export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
                 variant="ghost" 
                 size="icon"
                 onClick={() => onDelete(role)}
+                title="Delete Role"
               >
                 <Trash className="h-4 w-4" />
               </Button>

@@ -7,9 +7,10 @@ interface RolesGridProps {
   roles: Role[];
   onEditRole: (role: Role) => void;
   onDeleteRole: (role: Role) => void;
+  onDuplicateRole: (role: Role) => void;
 }
 
-export function RolesGrid({ roles, onEditRole, onDeleteRole }: RolesGridProps) {
+export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole }: RolesGridProps) {
   if (roles.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 bg-slate-50 rounded-lg">
@@ -26,6 +27,7 @@ export function RolesGrid({ roles, onEditRole, onDeleteRole }: RolesGridProps) {
           role={role} 
           onEdit={onEditRole} 
           onDelete={onDeleteRole}
+          onDuplicate={onDuplicateRole}
         />
       ))}
     </div>
