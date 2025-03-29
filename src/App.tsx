@@ -1,6 +1,6 @@
 
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Layout from "@/components/layout/Layout";
+import { Layout } from "@/components/layout/Layout";
 import Index from "@/pages/Index";
 import WorkOrders from "@/pages/WorkOrders";
 import WorkOrderCreate from "@/pages/WorkOrderCreate";
@@ -34,7 +34,11 @@ function App() {
   return (
     <NotificationsProvider>
       <BrowserRouter>
-        <GlobalCommandMenu />
+        <GlobalCommandMenu 
+          open={false} 
+          onOpenChange={() => {}} 
+          onSearch={() => {}}
+        />
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Index />} />

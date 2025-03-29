@@ -132,7 +132,7 @@ export class NotificationService implements INotificationService {
         message: template.message!,
         read: false,
         timestamp: new Date().toISOString(),
-        type: template.type!,
+        type: template.type as "info" | "warning" | "success" | "error",
         link: template.link,
         category: template.category as any,
         recipient: this.userId!,
