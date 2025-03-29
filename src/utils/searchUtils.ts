@@ -206,7 +206,7 @@ export const performSearch = (query: string): SearchResult[] => {
       findMatches(item.id, normalizedQuery),
       findMatches(item.name, normalizedQuery),
       findMatches(item.sku, normalizedQuery) * 0.9,
-      findMatches(item.description || '', normalizedQuery) * 0.8,
+      findMatches(item.description || '', normalizedQuery) * 0.8,  // Handle optional description
       findMatches(item.category, normalizedQuery) * 0.7
     );
     

@@ -19,6 +19,7 @@ export interface InventoryItemExtended {
   unitPrice: number;
   location: string;
   status: string;
+  description?: string; // Making description optional with ?
 }
 
 export interface ReorderSettings {

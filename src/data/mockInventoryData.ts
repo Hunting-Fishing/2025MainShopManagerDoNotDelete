@@ -11,6 +11,7 @@ export interface InventoryItemExtended {
   unitPrice: number;
   location: string;
   status: string;
+  description?: string; // Making description optional
 }
 
 // Mock data for inventory items
@@ -26,6 +27,7 @@ export const inventoryItems: InventoryItemExtended[] = [
     unitPrice: 24.99,
     location: "Warehouse A - Section 3",
     status: "In Stock",
+    description: "High-quality HVAC filter for commercial applications"
   },
   {
     id: "INV-1002",
@@ -38,6 +40,7 @@ export const inventoryItems: InventoryItemExtended[] = [
     unitPrice: 18.75,
     location: "Warehouse B - Section 1",
     status: "In Stock",
+    description: "Standard copper pipe for plumbing installations"
   },
   {
     id: "INV-1003",
@@ -50,6 +53,7 @@ export const inventoryItems: InventoryItemExtended[] = [
     unitPrice: 42.50,
     location: "Warehouse A - Section 7",
     status: "In Stock",
+    description: "30 Amp circuit breaker for electrical panels"
   },
   {
     id: "INV-1004",
@@ -62,6 +66,7 @@ export const inventoryItems: InventoryItemExtended[] = [
     unitPrice: 89.99,
     location: "Warehouse A - Section 5",
     status: "Low Stock",
+    description: "Commercial grade door lock set with master key capability"
   },
   {
     id: "INV-1005",
@@ -74,6 +79,7 @@ export const inventoryItems: InventoryItemExtended[] = [
     unitPrice: 32.99,
     location: "Warehouse B - Section 3",
     status: "Out of Stock",
+    description: "Replacement heating element for water heaters"
   },
   {
     id: "INV-1006",
@@ -86,6 +92,7 @@ export const inventoryItems: InventoryItemExtended[] = [
     unitPrice: 79.95,
     location: "Warehouse A - Section 9",
     status: "In Stock",
+    description: "Energy-efficient LED panel light for commercial spaces"
   },
 ];
 
