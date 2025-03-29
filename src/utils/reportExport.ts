@@ -2,6 +2,7 @@
 import { jsPDF } from "jspdf";
 import { utils, write } from "xlsx";
 import { Parser } from "json2csv";
+import 'jspdf-autotable';
 
 /**
  * Formats the current date as YYYY-MM-DD

@@ -13,10 +13,10 @@ export interface SavedReport {
 }
 
 export interface ReportDataPoint {
-  label: string;
+  name: string;
   value: number;
   color?: string;
-  name?: string;
+  label?: string;
   extraData?: Record<string, any>;
 }
 
