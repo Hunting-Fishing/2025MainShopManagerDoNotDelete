@@ -30,6 +30,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { GlobalCommandMenu } from "@/components/search/GlobalCommandMenu";
 import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
+import { useAuthUser } from "@/hooks/useAuthUser";
+import { NotificationsProvider } from "@/context/notifications/NotificationsProvider";
 import "./App.css";
 
 // Create a client
@@ -42,8 +45,12 @@ const queryClient = new QueryClient({
   },
 });
 
-function App() {
+function AppContent() {
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
+  const { userId } = useAuthUser();
+  
+  // Initialize chat notifications
+  useChatNotifications({ userId: userId || '' });
   
   const handleCommandSearch = (value: string) => {
     console.log("Searching for:", value);
@@ -63,44 +70,55 @@ function App() {
   }, []);
 
   return (
+    <>
+      <GlobalCommandMenu 
+        open={commandMenuOpen} 
+        onOpenChange={setCommandMenuOpen} 
+        onSearch={handleCommandSearch}
+      />
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Index />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="work-orders" element={<WorkOrders />} />
+          <Route path="work-orders/new" element={<WorkOrderCreate />} />
+          <Route path="work-orders/:id" element={<WorkOrderDetails />} />
+          <Route path="work-orders/:id/edit" element={<WorkOrderDetails edit />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="customers/:id" element={<CustomerDetails />} />
+          <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
+          <Route path="customers/follow-ups" element={<CustomerFollowUps />} />
+          <Route path="invoices" element={<Invoices />} />
+          <Route path="invoices/new" element={<InvoiceCreate />} />
+          <Route path="invoices/:id" element={<InvoiceDetails />} />
+          <Route path="inventory" element={<Inventory />} />
+          <Route path="equipment" element={<Equipment />} />
+          <Route path="equipment/:id" element={<EquipmentDetails />} />
+          <Route path="maintenance" element={<MaintenanceDashboard />} />
+          <Route path="calendar" element={<Calendar />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="team" element={<Team />} />
+          <Route path="team/members/:id" element={<TeamMemberProfile />} />
+          <Route path="team/members/new" element={<TeamMemberCreate />} />
+          <Route path="team/roles" element={<TeamRoles />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="chat/:roomId" element={<Chat />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+      <Toaster />
+    </>
+  );
+}
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <GlobalCommandMenu 
-          open={commandMenuOpen} 
-          onOpenChange={setCommandMenuOpen} 
-          onSearch={handleCommandSearch}
-        />
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Index />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="work-orders" element={<WorkOrders />} />
-            <Route path="work-orders/new" element={<WorkOrderCreate />} />
-            <Route path="work-orders/:id" element={<WorkOrderDetails />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="customers/:id" element={<CustomerDetails />} />
-            <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
-            <Route path="customers/follow-ups" element={<CustomerFollowUps />} />
-            <Route path="invoices" element={<Invoices />} />
-            <Route path="invoices/new" element={<InvoiceCreate />} />
-            <Route path="invoices/:id" element={<InvoiceDetails />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="equipment" element={<Equipment />} />
-            <Route path="equipment/:id" element={<EquipmentDetails />} />
-            <Route path="maintenance" element={<MaintenanceDashboard />} />
-            <Route path="calendar" element={<Calendar />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="team" element={<Team />} />
-            <Route path="team/members/:id" element={<TeamMemberProfile />} />
-            <Route path="team/members/new" element={<TeamMemberCreate />} />
-            <Route path="team/roles" element={<TeamRoles />} />
-            <Route path="chat" element={<Chat />} />
-            <Route path="chat/:roomId" element={<Chat />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-        <Toaster />
+        <NotificationsProvider>
+          <AppContent />
+        </NotificationsProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

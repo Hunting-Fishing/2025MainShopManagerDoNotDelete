@@ -1,11 +1,17 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getWorkOrderChatRoom, createChatRoom } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WorkOrderChatButtonProps {
   workOrderId: string;
@@ -65,15 +71,25 @@ export const WorkOrderChatButton: React.FC<WorkOrderChatButtonProps> = ({ workOr
   };
 
   return (
-    <Button 
-      variant="outline" 
-      size="sm"
-      onClick={handleOpenChat}
-      disabled={isLoading}
-      className="flex items-center gap-1"
-    >
-      <MessageCircle className="h-4 w-4" />
-      <span>{isLoading ? 'Opening...' : 'Chat'}</span>
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleOpenChat}
+            disabled={isLoading}
+            className="flex items-center gap-1 hover:bg-slate-100 transition-colors"
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>{isLoading ? 'Opening...' : 'Chat'}</span>
+            {!isLoading && <ArrowRight className="h-3 w-3 ml-1" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Open work order chat</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

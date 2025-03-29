@@ -13,7 +13,8 @@ import {
   BarChart3,
   Wrench,
   Settings2,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -64,6 +65,7 @@ const AppSidebar = () => {
         <NavItem to="/inventory" icon={<Package />} label="Inventory" collapsed={collapsed && !isMobile} />
         <NavItem to="/equipment" icon={<Wrench />} label="Equipment" collapsed={collapsed && !isMobile} />
         <NavItem to="/maintenance" icon={<Settings2 />} label="Maintenance" collapsed={collapsed && !isMobile} />
+        <NavItem to="/chat" icon={<MessageSquare />} label="Chat" collapsed={collapsed && !isMobile} />
         <NavItem to="/team" icon={<Users2 />} label="Team" collapsed={collapsed && !isMobile} />
         <NavItem to="/reports" icon={<BarChart3 />} label="Reports" collapsed={collapsed && !isMobile} />
         <NavItem to="/settings" icon={<Settings />} label="Settings" collapsed={collapsed && !isMobile} />
