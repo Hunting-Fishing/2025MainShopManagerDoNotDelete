@@ -1,5 +1,6 @@
 
 import { InventoryItem } from "./inventory";
+import { TimeEntry } from "./workOrder";
 
 export interface WorkOrder {
   id: string;
@@ -11,6 +12,8 @@ export interface WorkOrder {
   priority: string;
   technician: string;
   location: string;
+  timeEntries?: TimeEntry[];
+  totalBillableTime?: number;
 }
 
 export interface StaffMember {
