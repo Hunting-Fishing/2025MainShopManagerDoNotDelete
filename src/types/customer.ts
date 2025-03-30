@@ -22,8 +22,8 @@ export interface Customer {
   tags?: string[];
   vehicles?: CustomerVehicle[];
   
-  // New fields for Phase 3
-  segments?: string[];
+  // New fields for Phase 3 - updated to handle JSON data from Supabase
+  segments?: string[] | any; // This allows for both string[] and JSON from database
   
   // We'll add these fields for compatibility with existing components
   // They will be undefined on direct database objects, but we'll use getters
@@ -130,8 +130,22 @@ export const getCustomerFullName = (customer: Customer): string => {
 
 // Helper function to adapt database customer objects to the format expected by UI components
 export const adaptCustomerForUI = (customer: Customer): Customer => {
+  // Convert segments from JSON to string array if needed
+  let segments = customer.segments;
+  if (segments && typeof segments !== 'object') {
+    try {
+      segments = JSON.parse(segments);
+    } catch (e) {
+      segments = [];
+    }
+  } else if (!segments) {
+    segments = [];
+  }
+  
   return {
     ...customer,
+    // Ensure segments is a proper array
+    segments: Array.isArray(segments) ? segments : [],
     // Add UI-expected fields (these will be used by the components)
     status: 'active', // Default status since we don't have this in the database yet
     lastServiceDate: undefined, // This would need to come from work orders in a real implementation
