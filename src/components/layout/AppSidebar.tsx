@@ -1,151 +1,219 @@
-
-import {
-  BarChart,
-  Calendar,
-  LineChart,
-  Settings,
-  ShoppingBag,
-  Users,
-  LayoutDashboard,
-  FileText,
-  Boxes,
-  Truck,
-  Coins,
-  BadgeCheck,
-  MessageSquare
-} from "lucide-react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { useTheme } from "@/context/ThemeContext";
-import { useSidebar } from "@/components/ui/sidebar";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-interface SidebarItemProps {
-  icon: React.ElementType;
+// Import icons
+import { 
+  Menu, 
+  Home, 
+  Users, 
+  Calendar, 
+  ShoppingCart, 
+  Truck, 
+  Settings, 
+  FileText,
+  BarChart3 
+} from "lucide-react";
+
+interface NavItem {
+  title: string;
   href: string;
-  text: string;
-}
-
-function SidebarItem({ icon: Icon, href, text }: SidebarItemProps) {
-  const location = useLocation();
-  const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
-  
-  return (
-    <Link
-      to={href}
-      className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium 
-        ${isActive 
-          ? 'bg-primary/10 text-primary' 
-          : 'hover:bg-accent hover:text-accent-foreground'
-        }`}
-    >
-      <Icon className="h-4 w-4" />
-      {text}
-    </Link>
-  );
+  icon: React.ReactNode;
+  disabled?: boolean;
+  submenu?: NavItem[];
 }
 
 export function AppSidebar() {
-  const { t } = useTranslation();
-  const { resolvedTheme } = useTheme();
-  const { collapsed } = useSidebar();
+  const { isOpen, onOpen, onClose } = useSidebar();
+  const location = useLocation();
+
+  const navItems = [
+    {
+      title: "Dashboard",
+      href: "/",
+      icon: <Home className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Customers",
+      href: "/customers",
+      icon: <Users className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Work Orders",
+      href: "/work-orders",
+      icon: <FileText className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Calendar",
+      href: "/calendar",
+      icon: <Calendar className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Inventory",
+      href: "/inventory",
+      icon: <ShoppingCart className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Vehicles",
+      href: "/vehicles",
+      icon: <Truck className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Analytics",
+      href: "/customer-analytics",
+      icon: <BarChart3 className="mr-2 h-4 w-4" />,
+      submenu: [
+        {
+          title: "Customer Analytics",
+          href: "/customer-analytics",
+        },
+        // Can add more analytics pages later
+      ],
+    },
+    {
+      title: "Settings",
+      href: "/settings",
+      icon: <Settings className="mr-2 h-4 w-4" />,
+      disabled: true,
+    },
+  ];
 
   return (
-    <div className={`sidebar bg-white/40 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 
-      ${collapsed ? 'w-16' : 'w-64'} transition-all duration-300 overflow-y-auto`}>
-      <div className="flex flex-col justify-between h-full">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-4 py-3">
-            <Link to="/" className={`font-bold dark:text-white ${collapsed ? 'hidden' : 'block'}`}>
-              ESM Tool
+    <>
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpen}
+            className="md:hidden"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 pt-8">
+          <div className="px-7">
+            <Link to="/">
+              <div className="flex items-center gap-2 font-semibold">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                  <AvatarFallback>SC</AvatarFallback>
+                </Avatar>
+                <span>Acme Co.</span>
+              </div>
             </Link>
-            <BadgeCheck className="h-5 w-5 text-green-500" />
+            <Separator className="my-6" />
           </div>
-
-          <div className="space-y-1 px-3 py-2">
-            <h4 className={`text-xs font-semibold text-muted-foreground pl-1 mb-1 ${collapsed ? 'sr-only' : ''}`}>
-              {t('navigation.general', 'General')}
-            </h4>
-            <SidebarItem
-              icon={LayoutDashboard}
-              href="/"
-              text={collapsed ? '' : t('navigation.dashboard', 'Dashboard')}
-            />
-            <SidebarItem
-              icon={ShoppingBag}
-              href="/work-orders"
-              text={collapsed ? '' : t('navigation.workOrders', 'Work Orders')}
-            />
-            <SidebarItem
-              icon={Users}
-              href="/customers"
-              text={collapsed ? '' : t('navigation.customers', 'Customers')}
-            />
-            <SidebarItem
-              icon={Boxes}
-              href="/inventory"
-              text={collapsed ? '' : t('navigation.inventory', 'Inventory')}
-            />
-          </div>
-
-          <div className="space-y-1 px-3 py-2">
-            <h4 className={`text-xs font-semibold text-muted-foreground pl-1 mb-1 ${collapsed ? 'sr-only' : ''}`}>
-              {t('navigation.operations', 'Operations')}
-            </h4>
-            <SidebarItem
-              icon={Truck}
-              href="/equipment"
-              text={collapsed ? '' : t('navigation.equipment', 'Equipment')}
-            />
-            <SidebarItem
-              icon={Coins}
-              href="/invoices"
-              text={collapsed ? '' : t('navigation.invoices', 'Invoices')}
-            />
-            <SidebarItem
-              icon={Users}
-              href="/team"
-              text={collapsed ? '' : t('navigation.team', 'Team')}
-            />
-          </div>
-        
-          <div className="space-y-1 px-3 py-2">
-            <h4 className={`text-xs font-semibold text-muted-foreground pl-1 mb-1 ${collapsed ? 'sr-only' : ''}`}>
-              {t('navigation.tools', 'Tools')}
-            </h4>
-            <SidebarItem
-              icon={Calendar}
-              href="/calendar"
-              text={collapsed ? '' : t('navigation.calendar', 'Calendar')}
-            />
-            <SidebarItem
-              icon={MessageSquare}
-              href="/chat"
-              text={collapsed ? '' : t('navigation.chat', 'Chat')}
-            />
-            <SidebarItem
-              icon={BarChart}
-              href="/analytics"
-              text={collapsed ? '' : t('navigation.analytics', 'Analytics')}
-            />
-            <SidebarItem
-              icon={LineChart}
-              href="/reports"
-              text={collapsed ? '' : t('navigation.reports', 'Reports')}
-            />
-          </div>
+          <ScrollArea className="h-[calc(100vh-8rem)]">
+            <div className="flex flex-col space-y-2 px-7">
+              {navItems.map((item) => (
+                <div key={item.title}>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className={cn(
+                      "w-full justify-start gap-2 rounded-md px-2.5 py-2 font-medium transition-all hover:bg-secondary/50",
+                      location.pathname === item.href
+                        ? "bg-secondary/50 font-semibold"
+                        : "font-medium"
+                    )}
+                    disabled={item.disabled}
+                  >
+                    <Link to={item.href}>
+                      {item.icon}
+                      <span>{item.title}</span>
+                    </Link>
+                  </Button>
+                  {item.submenu && location.pathname.startsWith(item.href) && (
+                    <div className="ml-4 mt-1 flex flex-col space-y-1">
+                      {item.submenu.map((subItem) => (
+                        <Button
+                          key={subItem.title}
+                          asChild
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start gap-2 rounded-md px-2.5 py-2 text-sm transition-all hover:bg-secondary/50",
+                            location.pathname === subItem.href
+                              ? "bg-secondary/50 font-semibold"
+                              : "font-medium"
+                          )}
+                          disabled={subItem.disabled}
+                        >
+                          <Link to={subItem.href}>{subItem.title}</Link>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+      <div className="hidden h-full border-r md:block">
+        <div className="px-7 py-6">
+          <Link to="/">
+            <div className="flex items-center gap-2 font-semibold">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                <AvatarFallback>SC</AvatarFallback>
+              </Avatar>
+              <span>Acme Co.</span>
+            </div>
+          </Link>
+          <Separator className="my-6" />
         </div>
-        
-        <div className="mt-auto pt-2 pb-4 px-3">
-          <SidebarItem
-            icon={Settings}
-            href="/settings"
-            text={collapsed ? '' : t('navigation.settings', 'Settings')}
-          />
-        </div>
+        <ScrollArea className="h-[calc(100vh-8rem)]">
+          <div className="flex flex-col space-y-2 px-7">
+            {navItems.map((item) => (
+              <div key={item.title}>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start gap-2 rounded-md px-2.5 py-2 font-medium transition-all hover:bg-secondary/50",
+                    location.pathname === item.href
+                      ? "bg-secondary/50 font-semibold"
+                      : "font-medium"
+                  )}
+                  disabled={item.disabled}
+                >
+                  <Link to={item.href}>
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </Link>
+                </Button>
+                {item.submenu && location.pathname.startsWith(item.href) && (
+                  <div className="ml-4 mt-1 flex flex-col space-y-1">
+                    {item.submenu.map((subItem) => (
+                      <Button
+                        key={subItem.title}
+                        asChild
+                        variant="ghost"
+                        className={cn(
+                          "w-full justify-start gap-2 rounded-md px-2.5 py-2 text-sm transition-all hover:bg-secondary/50",
+                          location.pathname === subItem.href
+                            ? "bg-secondary/50 font-semibold"
+                            : "font-medium"
+                        )}
+                        disabled={subItem.disabled}
+                      >
+                        <Link to={subItem.href}>{subItem.title}</Link>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
-    </div>
+    </>
   );
 }
-
-// Add default export to fix the import error
-export default AppSidebar;

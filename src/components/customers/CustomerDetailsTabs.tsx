@@ -1,21 +1,18 @@
-
-import { useState } from "react";
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CustomerServiceTab } from "./CustomerServiceTab";
-import { CustomerInteractionsTab } from "./CustomerInteractionsTab";
-import { CustomerInfoCard } from "./CustomerInfoCard";
-import { CustomerSummaryCard } from "./CustomerSummaryCard";
-import { CustomerLoyaltyCard } from "./loyalty/CustomerLoyaltyCard";
-import { CustomerServiceReminders } from "./CustomerServiceReminders";
-import { Customer, CustomerCommunication } from "@/types/customer";
-import { CommunicationHistory } from "./communications/CommunicationHistory";
-import { CustomerNotesTimeline } from "./notes/CustomerNotesTimeline";
-import { CustomerDocumentsTab } from "./documents/CustomerDocumentsTab";
+import { Customer } from "@/types/customer";
+import { CustomerInteraction } from "@/types/interaction";
+import { CustomerCommunication } from "@/types/customer";
+import { AddCommunicationDialog } from "@/components/communications/AddCommunicationDialog";
+import { CustomerNotes } from "@/components/customers/details/CustomerNotes";
+import { CustomerWorkOrders } from "@/components/customers/details/CustomerWorkOrders";
+import { CustomerDocuments } from "@/components/customers/details/CustomerDocuments";
+import { CustomerAnalyticsSection } from './details/CustomerAnalyticsSection';
 
 interface CustomerDetailsTabsProps {
   customer: Customer;
   customerWorkOrders: any[];
-  customerInteractions: any[];
+  customerInteractions: CustomerInteraction[];
   customerCommunications: CustomerCommunication[];
   customerNotes: any[];
   setAddInteractionOpen: (open: boolean) => void;
@@ -25,71 +22,78 @@ interface CustomerDetailsTabsProps {
   setActiveTab: (tab: string) => void;
 }
 
-export const CustomerDetailsTabs = ({ 
-  customer, 
-  customerWorkOrders = [],
-  customerInteractions = [],
-  customerCommunications = [],
-  customerNotes = [],
+export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
+  customer,
+  customerWorkOrders,
+  customerInteractions,
+  customerCommunications,
+  customerNotes,
   setAddInteractionOpen,
   onCommunicationAdded,
   onNoteAdded,
   activeTab,
   setActiveTab
-}: CustomerDetailsTabsProps) => {
+}) => {
+  const [addCommunicationOpen, setAddCommunicationOpen] = React.useState(false);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="md:col-span-2">
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="service">Service History</TabsTrigger>
-            <TabsTrigger value="interactions">Interactions</TabsTrigger>
-            <TabsTrigger value="communications">Communications</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-          </TabsList>
-          <TabsContent value="service">
-            <CustomerServiceTab 
-              customer={customer} 
-              customerWorkOrders={customerWorkOrders} 
-            />
-          </TabsContent>
-          <TabsContent value="interactions">
-            <CustomerInteractionsTab 
-              customerInteractions={customerInteractions} 
-              setAddInteractionOpen={setAddInteractionOpen} 
-            />
-          </TabsContent>
-          <TabsContent value="communications">
-            <CommunicationHistory 
-              customer={customer}
-              communications={customerCommunications}
-              onCommunicationAdded={onCommunicationAdded}
-            />
-          </TabsContent>
-          <TabsContent value="documents">
-            <CustomerDocumentsTab customer={customer} />
-          </TabsContent>
-          <TabsContent value="notes">
-            <CustomerNotesTimeline 
-              customer={customer}
-              notes={customerNotes}
-              onNoteAdded={onNoteAdded}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-      <div className="space-y-6">
-        <CustomerInfoCard customer={customer} />
-        <CustomerSummaryCard 
-          customer={customer} 
-          customerWorkOrders={customerWorkOrders} 
-          customerInteractions={customerInteractions} 
-          setActiveTab={setActiveTab} 
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+      <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-5 md:grid-cols-none h-auto">
+        <TabsTrigger value="service">Service</TabsTrigger>
+        <TabsTrigger value="interactions">Interactions</TabsTrigger>
+        <TabsTrigger value="communications">Communications</TabsTrigger>
+        <TabsTrigger value="documents">Documents</TabsTrigger>
+        <TabsTrigger value="analytics">Analytics</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="service">
+        <CustomerWorkOrders customer={customer} workOrders={customerWorkOrders} />
+      </TabsContent>
+      
+      <TabsContent value="interactions">
+        <div>
+          {customerInteractions && customerInteractions.length > 0 ? (
+            <ul>
+              {customerInteractions.map((interaction) => (
+                <li key={interaction.id}>{interaction.notes}</li>
+              ))}
+            </ul>
+          ) : (
+            <div>No interactions found.</div>
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="communications">
+        <AddCommunicationDialog
+          open={addCommunicationOpen}
+          onOpenChange={setAddCommunicationOpen}
+          customerId={customer.id}
+          onCommunicationAdded={onCommunicationAdded}
         />
-        <CustomerLoyaltyCard customerId={customer.id} />
-        <CustomerServiceReminders customer={customer} />
-      </div>
-    </div>
+        <div className="flex justify-end pb-4">
+          <button onClick={() => setAddCommunicationOpen(true)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Add Communication</button>
+        </div>
+        <div>
+          {customerCommunications && customerCommunications.length > 0 ? (
+            <ul>
+              {customerCommunications.map((communication) => (
+                <li key={communication.id}>{communication.content}</li>
+              ))}
+            </ul>
+          ) : (
+            <div>No communications found.</div>
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="documents">
+        <CustomerDocuments customer={customer} />
+      </TabsContent>
+      
+      <TabsContent value="analytics">
+        <CustomerAnalyticsSection customer={customer} />
+      </TabsContent>
+    </Tabs>
   );
 };

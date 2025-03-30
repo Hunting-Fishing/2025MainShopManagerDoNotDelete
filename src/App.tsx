@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
@@ -33,10 +32,10 @@ import RepairPlans from './pages/RepairPlans';
 import Index from './pages/Index';
 import CustomerCreate from './pages/CustomerCreate';
 import CreateRepairPlan from './pages/CreateRepairPlan';
-// Add feedback pages imports
 import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from './pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from './pages/feedback/FeedbackAnalyticsPage';
+import CustomerAnalytics from "./pages/CustomerAnalytics";
 
 function App() {
   return (
@@ -73,11 +72,11 @@ function App() {
             <Route path="team/:id" element={<TeamMemberProfile />} />
             <Route path="reports" element={<Reports />} />
             <Route path="analytics" element={<Analytics />} />
-            {/* Feedback Routes */}
             <Route path="feedback/forms" element={<FeedbackFormsPage />} />
             <Route path="feedback/forms/new" element={<FeedbackFormEditorPage />} />
             <Route path="feedback/forms/:formId/edit" element={<FeedbackFormEditorPage />} />
             <Route path="feedback/forms/:formId/analytics" element={<FeedbackAnalyticsPage />} />
+            <Route path="customer-analytics" element={<CustomerAnalytics />} />
             <Route path="settings/*" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
