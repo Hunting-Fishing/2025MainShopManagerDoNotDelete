@@ -28,7 +28,7 @@ export default function CustomerCreate() {
     company: "",
     notes: "",
     shop_id: "DEFAULT-SHOP-ID",
-    tags: "",
+    tags: [],
     preferred_technician_id: "",
     referral_source: "",
     referral_person_id: "",
@@ -56,6 +56,7 @@ export default function CustomerCreate() {
         is_fleet: data.is_fleet,
         fleet_company: data.fleet_company,
         notes: data.notes,
+        tags: data.tags,
       };
       
       // Create customer

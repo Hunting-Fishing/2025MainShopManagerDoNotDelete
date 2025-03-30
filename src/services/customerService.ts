@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI, createCustomerForUI } from "@/types/customer";
 
@@ -92,6 +93,41 @@ export const searchCustomers = async (query: string): Promise<Customer[]> => {
 
   if (error) {
     console.error("Error searching customers:", error);
+    throw error;
+  }
+
+  return (data || []).map(customer => adaptCustomerForUI(customer));
+};
+
+// Check for potential duplicate customers
+export const checkDuplicateCustomers = async (
+  firstName: string, 
+  lastName: string, 
+  email?: string, 
+  phone?: string
+): Promise<Customer[]> => {
+  // First check by name (more liberal search)
+  let query = supabase
+    .from("customers")
+    .select("*")
+    .or(`first_name.ilike.${firstName},last_name.ilike.${lastName}`);
+
+  // If we have email or phone, make the search more specific
+  if (email && email.length > 0) {
+    query = query.or(`email.eq.${email}`);
+  }
+  
+  if (phone && phone.length > 0) {
+    const formattedPhone = phone.replace(/\D/g, ''); // Strip non-digits
+    if (formattedPhone.length >= 10) {
+      query = query.or(`phone.like.%${formattedPhone.slice(-10)}%`); // Match last 10 digits
+    }
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error checking for duplicate customers:", error);
     throw error;
   }
 

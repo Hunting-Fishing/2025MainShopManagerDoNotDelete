@@ -23,7 +23,7 @@ export const customerSchema = z.object({
   company: z.string().optional(),
   notes: z.string().optional(),
   shop_id: z.string().min(1, "Shop is required"),
-  tags: z.string().optional(),
+  tags: z.string().array().optional().default([]),
   
   // New fields
   preferred_technician_id: z.string().optional().transform(val => val === "_none" ? "" : val),
@@ -64,6 +64,20 @@ export const referralSources = [
   "Existing Customer",
   "Walk-in",
   "Other"
+];
+
+// Predefined tags for customers
+export const predefinedTags = [
+  { id: "vip", label: "VIP", color: "bg-amber-500" },
+  { id: "new", label: "New Customer", color: "bg-green-500" },
+  { id: "priority", label: "Priority", color: "bg-red-500" },
+  { id: "commercial", label: "Commercial", color: "bg-blue-500" },
+  { id: "residential", label: "Residential", color: "bg-indigo-500" },
+  { id: "warranty", label: "Warranty", color: "bg-purple-500" },
+  { id: "maintenance", label: "Maintenance Plan", color: "bg-cyan-500" },
+  { id: "contract", label: "Contract", color: "bg-teal-500" },
+  { id: "recurring", label: "Recurring", color: "bg-pink-500" },
+  { id: "leads", label: "Leads", color: "bg-orange-500" },
 ];
 
 // Helper to identify required fields for UI purposes

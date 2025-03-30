@@ -19,6 +19,7 @@ import { NotificationsProvider } from "@/context/notifications";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
+import { DuplicateCustomerAlert } from "./DuplicateCustomerAlert";
 
 interface CustomerFormProps {
   defaultValues: CustomerFormValues;
@@ -72,7 +73,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     field => !!form.formState.errors[field as keyof CustomerFormValues]
   );
   
-  const hasBusinessErrors = ["company", "shop_id", "notes"].some(
+  const hasBusinessErrors = ["company", "shop_id", "notes", "tags"].some(
     field => !!form.formState.errors[field as keyof CustomerFormValues]
   );
   
@@ -130,6 +131,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         <div className="p-4 sm:p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Check for duplicate customers */}
+              <DuplicateCustomerAlert form={form} />
+              
               {/* Show error summary if there are validation errors and form is dirty */}
               {form.formState.isDirty && hasErrors && getErrorSummary()}
 

@@ -19,6 +19,7 @@ export interface Customer {
   is_fleet?: boolean;
   fleet_company?: string;
   notes?: string;
+  tags?: string[];
   
   // We'll add these fields for compatibility with existing components
   // They will be undefined on direct database objects, but we'll use getters
