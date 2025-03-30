@@ -40,17 +40,20 @@ export default function WorkOrders() {
         const completeWorkOrders = await Promise.all(
           data.map(async (order) => {
             // Fetch time entries
-            const timeEntriesResult = await supabase.rpc('get_work_order_time_entries', { 
-              work_order_id: order.id 
-            });
+            const timeEntriesResponse = await supabase
+              .from('work_order_time_entries')
+              .select('*')
+              .eq('work_order_id', order.id)
+              .order('created_at', { ascending: false });
             
             // Fetch inventory items
-            const inventoryItemsResult = await supabase.rpc('get_work_order_inventory_items', { 
-              work_order_id: order.id 
-            });
+            const inventoryItemsResponse = await supabase
+              .from('work_order_inventory_items')
+              .select('*')
+              .eq('work_order_id', order.id);
             
             // Convert to our application format
-            const timeEntries = (timeEntriesResult.data || []).map((entry: any) => ({
+            const timeEntries = (timeEntriesResponse.data || []).map((entry: any) => ({
               id: entry.id,
               employeeId: entry.employee_id,
               employeeName: entry.employee_name,
@@ -61,7 +64,7 @@ export default function WorkOrders() {
               billable: entry.billable
             }));
             
-            const inventoryItems = (inventoryItemsResult.data || []).map((item: any) => ({
+            const inventoryItems = (inventoryItemsResponse.data || []).map((item: any) => ({
               id: item.id,
               name: item.name,
               sku: item.sku,

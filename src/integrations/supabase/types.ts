@@ -889,6 +889,129 @@ export type Database = {
           },
         ]
       }
+      work_order_activities: {
+        Row: {
+          action: string
+          id: string
+          timestamp: string | null
+          user_id: string
+          user_name: string
+          work_order_id: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          timestamp?: string | null
+          user_id: string
+          user_name: string
+          work_order_id: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          timestamp?: string | null
+          user_id?: string
+          user_name?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_activities_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_inventory_items: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          name: string
+          quantity: number
+          sku: string
+          unit_price: number
+          work_order_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          name: string
+          quantity: number
+          sku: string
+          unit_price: number
+          work_order_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          quantity?: number
+          sku?: string
+          unit_price?: number
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_inventory_items_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_time_entries: {
+        Row: {
+          billable: boolean | null
+          created_at: string | null
+          duration: number
+          employee_id: string
+          employee_name: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          start_time: string
+          work_order_id: string
+        }
+        Insert: {
+          billable?: boolean | null
+          created_at?: string | null
+          duration: number
+          employee_id: string
+          employee_name: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          start_time: string
+          work_order_id: string
+        }
+        Update: {
+          billable?: boolean | null
+          created_at?: string | null
+          duration?: number
+          employee_id?: string
+          employee_name?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_time_entries_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_orders: {
         Row: {
           advisor_id: string | null
@@ -969,6 +1092,54 @@ export type Database = {
         }
         Returns: string
       }
+      create_work_order_procedures: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      delete_work_order_inventory_items: {
+        Args: {
+          work_order_id: string
+        }
+        Returns: undefined
+      }
+      delete_work_order_time_entries: {
+        Args: {
+          work_order_id: string
+        }
+        Returns: undefined
+      }
+      get_work_order_inventory_items: {
+        Args: {
+          work_order_id: string
+        }
+        Returns: {
+          category: string
+          created_at: string | null
+          id: string
+          name: string
+          quantity: number
+          sku: string
+          unit_price: number
+          work_order_id: string
+        }[]
+      }
+      get_work_order_time_entries: {
+        Args: {
+          work_order_id: string
+        }
+        Returns: {
+          billable: boolean | null
+          created_at: string | null
+          duration: number
+          employee_id: string
+          employee_name: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          start_time: string
+          work_order_id: string
+        }[]
+      }
       has_permission: {
         Args: {
           user_id: string
@@ -983,6 +1154,39 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      insert_work_order_inventory_item: {
+        Args: {
+          p_work_order_id: string
+          p_name: string
+          p_sku: string
+          p_category: string
+          p_quantity: number
+          p_unit_price: number
+        }
+        Returns: string
+      }
+      insert_work_order_time_entry: {
+        Args: {
+          p_work_order_id: string
+          p_employee_id: string
+          p_employee_name: string
+          p_start_time: string
+          p_end_time: string
+          p_duration: number
+          p_notes: string
+          p_billable: boolean
+        }
+        Returns: string
+      }
+      record_work_order_activity: {
+        Args: {
+          p_action: string
+          p_work_order_id: string
+          p_user_id: string
+          p_user_name: string
+        }
+        Returns: string
       }
       remove_role_from_user: {
         Args: {

@@ -63,12 +63,16 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | undefin
     
     if (!workOrder) return undefined;
     
-    // Fetch time entries for this work order using raw query
-    const timeEntriesResult = await supabase.rpc('get_work_order_time_entries', { work_order_id: id });
-    const timeEntries = timeEntriesResult.data || [];
+    // Fetch time entries for this work order
+    const { data: timeEntries, error: timeError } = await supabase
+      .from('work_order_time_entries')
+      .select('*')
+      .eq('work_order_id', id);
+    
+    if (timeError) throw timeError;
     
     // Format the time entries to match our application format
-    const formattedTimeEntries: TimeEntry[] = timeEntries.map((entry: any) => ({
+    const formattedTimeEntries: TimeEntry[] = (timeEntries || []).map((entry: any) => ({
       id: entry.id,
       employeeId: entry.employee_id,
       employeeName: entry.employee_name,
@@ -79,12 +83,16 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | undefin
       billable: entry.billable
     }));
     
-    // Fetch inventory items for this work order using raw query
-    const inventoryItemsResult = await supabase.rpc('get_work_order_inventory_items', { work_order_id: id });
-    const inventoryItems = inventoryItemsResult.data || [];
+    // Fetch inventory items for this work order
+    const { data: inventoryItems, error: invError } = await supabase
+      .from('work_order_inventory_items')
+      .select('*')
+      .eq('work_order_id', id);
+    
+    if (invError) throw invError;
     
     // Format the inventory items to match our application format
-    const formattedInventoryItems: WorkOrderInventoryItem[] = inventoryItems.map((item: any) => ({
+    const formattedInventoryItems: WorkOrderInventoryItem[] = (inventoryItems || []).map((item: any) => ({
       id: item.id,
       name: item.name,
       sku: item.sku,
@@ -121,53 +129,59 @@ export const updateWorkOrder = async (workOrder: WorkOrder): Promise<WorkOrder> 
       
     if (error) throw error;
     
-    // Handle time entries using stored procedures to avoid type issues
+    // Handle time entries
     if (timeEntries.length > 0) {
       // First delete existing time entries
-      const deleteTimeEntries = await supabase.rpc('delete_work_order_time_entries', {
-        work_order_id: workOrder.id
-      });
+      const { error: deleteError } = await supabase
+        .from('work_order_time_entries')
+        .delete()
+        .eq('work_order_id', workOrder.id);
         
-      if (deleteTimeEntries.error) throw deleteTimeEntries.error;
+      if (deleteError) throw deleteError;
       
       // Then insert the updated ones
       for (const entry of timeEntries) {
-        const insertTimeEntry = await supabase.rpc('insert_work_order_time_entry', {
-          p_work_order_id: workOrder.id,
-          p_employee_id: entry.employeeId,
-          p_employee_name: entry.employeeName,
-          p_start_time: entry.startTime,
-          p_end_time: entry.endTime,
-          p_duration: entry.duration,
-          p_notes: entry.notes || null,
-          p_billable: entry.billable
-        });
+        const { error: insertError } = await supabase
+          .from('work_order_time_entries')
+          .insert({
+            work_order_id: workOrder.id,
+            employee_id: entry.employeeId,
+            employee_name: entry.employeeName,
+            start_time: entry.startTime,
+            end_time: entry.endTime,
+            duration: entry.duration,
+            notes: entry.notes || null,
+            billable: entry.billable
+          });
         
-        if (insertTimeEntry.error) throw insertTimeEntry.error;
+        if (insertError) throw insertError;
       }
     }
     
-    // Handle inventory items using stored procedures to avoid type issues
+    // Handle inventory items
     if (inventoryItems.length > 0) {
       // First delete existing inventory items
-      const deleteInventoryItems = await supabase.rpc('delete_work_order_inventory_items', {
-        work_order_id: workOrder.id
-      });
+      const { error: deleteError } = await supabase
+        .from('work_order_inventory_items')
+        .delete()
+        .eq('work_order_id', workOrder.id);
         
-      if (deleteInventoryItems.error) throw deleteInventoryItems.error;
+      if (deleteError) throw deleteError;
       
       // Then insert the updated ones
       for (const item of inventoryItems) {
-        const insertInventoryItem = await supabase.rpc('insert_work_order_inventory_item', {
-          p_work_order_id: workOrder.id,
-          p_name: item.name,
-          p_sku: item.sku,
-          p_category: item.category,
-          p_quantity: item.quantity,
-          p_unit_price: item.unitPrice
-        });
+        const { error: insertError } = await supabase
+          .from('work_order_inventory_items')
+          .insert({
+            work_order_id: workOrder.id,
+            name: item.name,
+            sku: item.sku,
+            category: item.category,
+            quantity: item.quantity,
+            unit_price: item.unitPrice
+          });
         
-        if (insertInventoryItem.error) throw insertInventoryItem.error;
+        if (insertError) throw insertError;
       }
     }
     
@@ -226,37 +240,41 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
     
     const workOrderId = data.id;
     
-    // Handle time entries using stored procedures
+    // Handle time entries
     if (timeEntries.length > 0) {
       for (const entry of timeEntries) {
-        const insertTimeEntry = await supabase.rpc('insert_work_order_time_entry', {
-          p_work_order_id: workOrderId,
-          p_employee_id: entry.employeeId,
-          p_employee_name: entry.employeeName,
-          p_start_time: entry.startTime,
-          p_end_time: entry.endTime,
-          p_duration: entry.duration,
-          p_notes: entry.notes || null,
-          p_billable: entry.billable
-        });
+        const { error: insertError } = await supabase
+          .from('work_order_time_entries')
+          .insert({
+            work_order_id: workOrderId,
+            employee_id: entry.employeeId,
+            employee_name: entry.employeeName,
+            start_time: entry.startTime,
+            end_time: entry.endTime,
+            duration: entry.duration,
+            notes: entry.notes || null,
+            billable: entry.billable
+          });
         
-        if (insertTimeEntry.error) throw insertTimeEntry.error;
+        if (insertError) throw insertError;
       }
     }
     
-    // Handle inventory items using stored procedures
+    // Handle inventory items
     if (inventoryItems.length > 0) {
       for (const item of inventoryItems) {
-        const insertInventoryItem = await supabase.rpc('insert_work_order_inventory_item', {
-          p_work_order_id: workOrderId,
-          p_name: item.name,
-          p_sku: item.sku,
-          p_category: item.category,
-          p_quantity: item.quantity,
-          p_unit_price: item.unitPrice
-        });
+        const { error: insertError } = await supabase
+          .from('work_order_inventory_items')
+          .insert({
+            work_order_id: workOrderId,
+            name: item.name,
+            sku: item.sku,
+            category: item.category,
+            quantity: item.quantity,
+            unit_price: item.unitPrice
+          });
         
-        if (insertInventoryItem.error) throw insertInventoryItem.error;
+        if (insertError) throw insertError;
       }
     }
     
@@ -330,13 +348,14 @@ export const recordWorkOrderActivity = async (
   showToast: boolean = true
 ): Promise<void> => {
   try {
-    // Using a stored procedure to avoid type issues
-    const { error } = await supabase.rpc('record_work_order_activity', {
-      p_action: action,
-      p_work_order_id: workOrderId,
-      p_user_id: userId,
-      p_user_name: userName
-    });
+    const { error } = await supabase
+      .from('work_order_activities')
+      .insert({
+        action,
+        work_order_id: workOrderId,
+        user_id: userId,
+        user_name: userName
+      });
       
     if (error) throw error;
     

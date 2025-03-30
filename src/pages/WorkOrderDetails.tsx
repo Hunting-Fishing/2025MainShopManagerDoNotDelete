@@ -102,7 +102,6 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
       ) : (
         <WorkOrderDetailsView 
           workOrder={workOrder} 
-          onUpdateTimeEntries={handleUpdateTimeEntries}
         />
       )}
     </div>

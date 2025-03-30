@@ -26,7 +26,6 @@ export function WorkOrderActivityHistory({ workOrderId }: WorkOrderActivityHisto
       try {
         setLoading(true);
         
-        // Using a raw query to get around type issues
         const { data, error } = await supabase
           .from('work_order_activities')
           .select('*')
@@ -35,7 +34,7 @@ export function WorkOrderActivityHistory({ workOrderId }: WorkOrderActivityHisto
           
         if (error) throw error;
         
-        setActivities(data as Activity[] || []);
+        setActivities(data || []);
       } catch (error) {
         console.error("Error fetching activities:", error);
       } finally {
