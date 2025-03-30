@@ -1,12 +1,24 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
-import { CustomerFormValues } from "./CustomerFormSchema";
-import { Settings, UserRound } from "lucide-react";
-import { technicians } from "./CustomerFormSchema";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CustomerFormValues, technicians } from "./CustomerFormSchema";
+import { HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PreferencesFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -14,43 +26,53 @@ interface PreferencesFieldsProps {
 
 export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) => {
   return (
-    <>
-      <div className="flex items-center gap-2">
-        <Settings className="h-5 w-5 text-muted-foreground" />
-        <h3 className="text-lg font-medium">Customer Preferences</h3>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <h3 className="text-lg font-medium mb-4">Customer Preferences</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField
           control={form.control}
           name="preferred_technician_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preferred Technician</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
+              <div className="flex items-center gap-2">
+                <FormLabel>Preferred Technician</FormLabel>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Technician the customer prefers to work with for service</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value || "_none"}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a technician (optional)" />
+                    <SelectValue placeholder="Select a preferred technician" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="_none">No preference</SelectItem>
-                  {technicians.map(tech => (
+                  {technicians.map((tech) => (
                     <SelectItem key={tech.id} value={tech.id}>
                       {tech.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>Assign a preferred technician for this customer</FormDescription>
+              <FormDescription>
+                Will be assigned to this customer when possible
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
       </div>
-    </>
+    </div>
   );
 };

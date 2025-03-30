@@ -5,7 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "../CustomerFormSchema";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface BaseFieldProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -14,15 +16,33 @@ interface BaseFieldProps {
 
 // VIN Input Field
 export const VinField: React.FC<BaseFieldProps & { 
-  processing?: boolean 
-}> = ({ form, index, processing = false }) => {
+  processing?: boolean;
+  decodedVehicleInfo?: {
+    year?: string;
+    make?: string;
+    model?: string;
+    valid: boolean;
+  };
+}> = ({ form, index, processing = false, decodedVehicleInfo }) => {
   return (
     <FormField
       control={form.control}
       name={`vehicles.${index}.vin`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>VIN</FormLabel>
+          <div className="flex items-center gap-2">
+            <FormLabel>VIN</FormLabel>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-sm">
+                  <p>Vehicle Identification Number - A 17-character unique identifier for the vehicle. Enter a complete VIN to auto-populate vehicle details.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="relative">
             <FormControl>
               <Input 
@@ -37,12 +57,32 @@ export const VinField: React.FC<BaseFieldProps & {
                 }}
               />
             </FormControl>
-            {processing && (
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
+              {processing && (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            )}
+              )}
+              {!processing && decodedVehicleInfo && (
+                decodedVehicleInfo.valid ? 
+                  <CheckCircle2 className="h-4 w-4 text-green-500" /> : 
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+              )}
+            </div>
           </div>
+          
+          {decodedVehicleInfo && decodedVehicleInfo.valid && decodedVehicleInfo.make && decodedVehicleInfo.model && (
+            <div className="mt-2 text-sm">
+              <Badge variant="outline" className="bg-muted/50 mr-2">
+                {decodedVehicleInfo.year || ''}
+              </Badge>
+              <Badge variant="outline" className="bg-muted/50 mr-2">
+                {decodedVehicleInfo.make || ''}
+              </Badge>
+              <Badge variant="outline" className="bg-muted/50">
+                {decodedVehicleInfo.model || ''}
+              </Badge>
+            </div>
+          )}
+          
           <FormDescription>
             Enter a complete 17-digit VIN to auto-populate vehicle details
           </FormDescription>
@@ -63,7 +103,19 @@ export const YearField: React.FC<BaseFieldProps & {
       name={`vehicles.${index}.year`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Year</FormLabel>
+          <div className="flex items-center gap-2">
+            <FormLabel>Year</FormLabel>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Manufacturing year of the vehicle</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Select 
             onValueChange={field.onChange} 
             value={field.value}
@@ -99,7 +151,19 @@ export const MakeField: React.FC<BaseFieldProps & {
       name={`vehicles.${index}.make`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Make</FormLabel>
+          <div className="flex items-center gap-2">
+            <FormLabel>Make</FormLabel>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Vehicle manufacturer (e.g., Ford, Toyota, Honda)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Select 
             onValueChange={onMakeChange} 
             value={field.value}
@@ -135,7 +199,19 @@ export const ModelField: React.FC<BaseFieldProps & {
       name={`vehicles.${index}.model`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Model</FormLabel>
+          <div className="flex items-center gap-2">
+            <FormLabel>Model</FormLabel>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Specific model of the vehicle (e.g., F-150, Corolla, Civic)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Select 
             onValueChange={field.onChange} 
             value={field.value}
@@ -175,7 +251,19 @@ export const LicensePlateField: React.FC<BaseFieldProps> = ({ form, index }) => 
       name={`vehicles.${index}.license_plate`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>License Plate</FormLabel>
+          <div className="flex items-center gap-2">
+            <FormLabel>License Plate</FormLabel>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Registration plate number assigned by state/province</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <FormControl>
             <Input {...field} placeholder="License Plate Number" />
           </FormControl>

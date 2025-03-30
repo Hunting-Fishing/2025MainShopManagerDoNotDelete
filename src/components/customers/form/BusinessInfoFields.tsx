@@ -7,6 +7,7 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { CustomerFormValues, shops, requiredFields } from "./CustomerFormSchema";
 import { RequiredIndicator } from "@/components/ui/required-indicator";
+import { HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BusinessInfoFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -34,10 +37,22 @@ export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({ form }) 
           name="shop_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                Shop
-                {requiredFields.shop_id && <RequiredIndicator />}
-              </FormLabel>
+              <div className="flex items-center gap-2">
+                <FormLabel>
+                  Shop
+                  {requiredFields.shop_id && <RequiredIndicator />}
+                </FormLabel>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Location where the customer will be serviced</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
@@ -65,10 +80,25 @@ export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({ form }) 
           name="company"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Company</FormLabel>
+              <div className="flex items-center gap-2">
+                <FormLabel>Company</FormLabel>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Customer's business or company name if applicable</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <FormControl>
                 <Input placeholder="Company name (if applicable)" {...field} />
               </FormControl>
+              <FormDescription>
+                For business customers
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -79,7 +109,19 @@ export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({ form }) 
           name="notes"
           render={({ field }) => (
             <FormItem className="sm:col-span-2">
-              <FormLabel>Notes</FormLabel>
+              <div className="flex items-center gap-2">
+                <FormLabel>Notes</FormLabel>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Additional information about this customer that may be useful for service</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <FormControl>
                 <Textarea
                   placeholder="Additional notes about this customer"

@@ -26,6 +26,8 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [lastProcessedVin, setLastProcessedVin] = useState<string>('');
   const [vinDecodeTimeout, setVinDecodeTimeout] = useState<NodeJS.Timeout | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
+  const [vinDecodeSuccess, setVinDecodeSuccess] = useState<boolean>(false);
+  const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
   
   const selectedMake = form.watch(`vehicles.${index}.make`);
   const vin = form.watch(`vehicles.${index}.vin`);
@@ -45,6 +47,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     if (!vehicleInfo) return;
     
     setVinProcessing(true);
+    setDecodedVehicleInfo(vehicleInfo);
     console.log("Populating form with decoded VIN info:", vehicleInfo);
     
     try {
@@ -72,11 +75,12 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
             ]);
             
             toast({
-              title: "VIN Decoded",
-              description: "Vehicle information has been populated.",
+              title: "VIN Decoded Successfully",
+              description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
               variant: "success",
             });
             
+            setVinDecodeSuccess(true);
             setVinProcessing(false);
           }, 300); // Small delay to ensure models are loaded
         } else {
@@ -88,6 +92,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     } catch (err) {
       console.error("Error populating vehicle form:", err);
       setVinProcessing(false);
+      setVinDecodeSuccess(false);
       
       toast({
         title: "Error",
@@ -113,6 +118,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     const timeoutId = setTimeout(async () => {
       setVinProcessing(true);
       setLastProcessedVin(vin);
+      setVinDecodeSuccess(false);
       
       try {
         const vehicleInfo = await decodeVin(vin);
@@ -120,6 +126,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           await populateVehicleFromVin(vehicleInfo);
         } else {
           setVinProcessing(false);
+          setVinDecodeSuccess(false);
           toast({
             title: "Invalid VIN",
             description: "Could not decode the provided VIN. Please check and try again.",
@@ -129,6 +136,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       } catch (error) {
         console.error("VIN decode error:", error);
         setVinProcessing(false);
+        setVinDecodeSuccess(false);
         toast({
           title: "VIN Decode Error",
           description: "An error occurred while decoding the VIN.",
@@ -162,6 +170,8 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     selectedMake,
     vinProcessing,
     modelsLoaded,
+    vinDecodeSuccess,
+    decodedVehicleInfo,
     handleMakeChange
   };
 };
