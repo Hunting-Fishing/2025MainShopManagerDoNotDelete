@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FeedbackAnalytics } from '@/components/feedback/FeedbackAnalytics';
+import { FeedbackAnalytics } from '@/components/feedback/analytics';
 
 export default function FeedbackAnalyticsPage() {
   return (
@@ -9,3 +9,4 @@ export default function FeedbackAnalyticsPage() {
     </div>
   );
 }
+
