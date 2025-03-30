@@ -11,6 +11,7 @@ import { ReferralFields } from "./ReferralFields";
 import { FleetFields } from "./FleetFields";
 import { CustomerFormActions } from "./CustomerFormActions";
 import { customerSchema, CustomerFormValues } from "./CustomerFormSchema";
+import { NotificationsProvider } from "@/context/notifications";
 
 interface CustomerFormProps {
   defaultValues: CustomerFormValues;
@@ -30,34 +31,36 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   });
 
   return (
-    <Card>
-      <div className="p-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              <PersonalInfoFields form={form} />
-            </div>
+    <NotificationsProvider>
+      <Card>
+        <div className="p-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
+                <PersonalInfoFields form={form} />
+              </div>
 
-            <div className="grid grid-cols-1 gap-6 pt-4">
-              <BusinessInfoFields form={form} />
-            </div>
-            
-            <div className="grid grid-cols-1 gap-6 pt-4">
-              <PreferencesFields form={form} />
-            </div>
-            
-            <div className="grid grid-cols-1 gap-6 pt-4">
-              <ReferralFields form={form} />
-            </div>
-            
-            <div className="grid grid-cols-1 gap-6 pt-4">
-              <FleetFields form={form} />
-            </div>
+              <div className="grid grid-cols-1 gap-6 pt-4">
+                <BusinessInfoFields form={form} />
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6 pt-4">
+                <PreferencesFields form={form} />
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6 pt-4">
+                <ReferralFields form={form} />
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6 pt-4">
+                <FleetFields form={form} />
+              </div>
 
-            <CustomerFormActions isSubmitting={isSubmitting} />
-          </form>
-        </Form>
-      </div>
-    </Card>
+              <CustomerFormActions isSubmitting={isSubmitting} />
+            </form>
+          </Form>
+        </div>
+      </Card>
+    </NotificationsProvider>
   );
 };

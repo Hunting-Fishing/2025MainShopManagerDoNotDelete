@@ -17,8 +17,8 @@ export const customerSchema = z.object({
   tags: z.string().optional(),
   
   // New fields
-  preferred_technician_id: z.string().optional(),
-  referral_source: z.string().optional(),
+  preferred_technician_id: z.string().optional().transform(val => val === "_none" ? "" : val),
+  referral_source: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_person_id: z.string().optional(),
   household_id: z.string().optional(),
   is_fleet: z.boolean().optional().default(false),

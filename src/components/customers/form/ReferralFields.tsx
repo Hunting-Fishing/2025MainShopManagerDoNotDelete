@@ -37,7 +37,7 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Unknown/Not specified</SelectItem>
+                  <SelectItem value="_none">Unknown/Not specified</SelectItem>
                   {referralSources.map(source => (
                     <SelectItem key={source} value={source}>
                       {source}

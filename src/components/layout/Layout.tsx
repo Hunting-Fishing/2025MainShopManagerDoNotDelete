@@ -36,5 +36,4 @@ export function Layout({ children }: LayoutProps) {
   );
 }
 
-// Add default export to fix the import error
 export default Layout;

@@ -37,7 +37,7 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No preference</SelectItem>
+                  <SelectItem value="_none">No preference</SelectItem>
                   {technicians.map(tech => (
                     <SelectItem key={tech.id} value={tech.id}>
                       {tech.name}
