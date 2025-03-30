@@ -24,6 +24,12 @@ export default function CustomerCreate() {
     notes: "",
     shop_id: "DEFAULT-SHOP-ID",
     tags: "",
+    preferred_technician_id: "",
+    referral_source: "",
+    referral_person_id: "",
+    is_fleet: false,
+    fleet_company: "",
+    vehicles: [],
   };
 
   // Form submission handler
@@ -38,7 +44,13 @@ export default function CustomerCreate() {
         phone: data.phone || "",
         address: data.address || "",
         shop_id: data.shop_id,
-        // Additional fields would need to be added to the Customer type and database
+        // Add the new fields
+        preferred_technician_id: data.preferred_technician_id,
+        referral_source: data.referral_source,
+        referral_person_id: data.referral_person_id,
+        is_fleet: data.is_fleet,
+        fleet_company: data.fleet_company,
+        notes: data.notes,
       };
       
       // Create customer

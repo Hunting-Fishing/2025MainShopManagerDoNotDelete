@@ -1,5 +1,4 @@
 
-
 // Define the customer interface based on Supabase table structure
 export interface Customer {
   id: string;
@@ -12,10 +11,18 @@ export interface Customer {
   created_at: string;
   updated_at: string;
   
+  // Added fields for enhanced customer management
+  preferred_technician_id?: string;
+  referral_source?: string;
+  referral_person_id?: string;
+  household_id?: string;
+  is_fleet?: boolean;
+  fleet_company?: string;
+  notes?: string;
+  
   // We'll add these fields for compatibility with existing components
   // They will be undefined on direct database objects, but we'll use getters
   company?: string;
-  notes?: string;
   status?: string;
   lastServiceDate?: string;
   name?: string;
