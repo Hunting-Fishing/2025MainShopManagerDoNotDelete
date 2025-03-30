@@ -14,10 +14,16 @@ export interface NavItem {
 
 interface SidebarNavItemProps {
   item: NavItem;
+  to?: never;
+  icon?: never;
+  label?: never;
+  disabled?: never;
+  submenu?: never;
 }
 
 // Additional interface for direct prop passing
 interface DirectNavItemProps {
+  item?: never;
   to: string;
   icon: React.ReactNode;
   label: string;
@@ -26,16 +32,16 @@ interface DirectNavItemProps {
 }
 
 // Component accepts either item object or direct props
-export function SidebarNavItem({ item, to, icon, label, disabled, submenu }: SidebarNavItemProps | DirectNavItemProps) {
+export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) {
   const location = useLocation();
   
   // Handle both formats (backward compatibility)
-  const navItem: NavItem = item || {
-    title: label || "",
-    href: to || "",
-    icon: icon,
-    disabled: disabled,
-    submenu: submenu
+  const navItem: NavItem = props.item || {
+    title: props.label || "",
+    href: props.to || "",
+    icon: props.icon,
+    disabled: props.disabled,
+    submenu: props.submenu
   };
   
   const isActive = location.pathname === navItem.href;

@@ -143,9 +143,10 @@ export const SmsTemplatesList = () => {
       </CardContent>
 
       <SmsTemplateDialog 
-        open={isDialogOpen} 
-        onOpenChange={handleCloseDialog}
-        template={selectedTemplate}
+        isOpen={isDialogOpen} 
+        onClose={handleCloseDialog}
+        onSave={() => queryClient.invalidateQueries({ queryKey: ['smsTemplates'] })}
+        template={selectedTemplate || undefined}
       />
     </Card>
   );
