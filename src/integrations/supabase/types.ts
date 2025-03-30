@@ -453,6 +453,149 @@ export type Database = {
           },
         ]
       }
+      feedback_forms: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          shop_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          shop_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          shop_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_forms_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_questions: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          form_id: string | null
+          id: string
+          is_required: boolean | null
+          options: Json | null
+          question: string
+          question_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order: number
+          form_id?: string | null
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          question: string
+          question_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          form_id?: string | null
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          question?: string
+          question_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_questions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_responses: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          form_id: string | null
+          id: string
+          nps_score: number | null
+          overall_rating: number | null
+          response_data: Json
+          submitted_at: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          form_id?: string | null
+          id?: string
+          nps_score?: number | null
+          overall_rating?: number | null
+          response_data: Json
+          submitted_at?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          form_id?: string | null
+          id?: string
+          nps_score?: number | null
+          overall_rating?: number | null
+          response_data?: Json
+          submitted_at?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_responses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_responses_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_responses_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           created_at: string
