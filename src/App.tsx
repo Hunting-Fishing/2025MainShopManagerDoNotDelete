@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
@@ -30,7 +31,7 @@ import Analytics from './pages/Analytics';
 import RepairPlanDetails from './pages/RepairPlanDetails';
 import RepairPlans from './pages/RepairPlans';
 import Index from './pages/Index';
-import CustomerCreatePage from './pages/CustomerCreatePage';
+import CustomerCreate from './pages/CustomerCreate';
 import CreateRepairPlan from './pages/CreateRepairPlan';
 
 function App() {
@@ -50,7 +51,7 @@ function App() {
             <Route path="invoices/new" element={<InvoiceCreate />} />
             <Route path="invoices/:id" element={<InvoiceDetails />} />
             <Route path="customers" element={<Customers />} />
-            <Route path="customers/new" element={<CustomerCreatePage />} />
+            <Route path="customers/new" element={<CustomerCreate />} />
             <Route path="customers/:id" element={<CustomerDetails />} />
             <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
             <Route path="customers/follow-ups" element={<CustomerFollowUps />} />

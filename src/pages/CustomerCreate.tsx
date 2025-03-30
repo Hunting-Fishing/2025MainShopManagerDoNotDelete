@@ -44,9 +44,13 @@ export default function CustomerCreatePage() {
   const onSubmit = async (data: z.infer<typeof customerSchema>) => {
     setIsSubmitting(true);
     try {
-      // Prepare customer data
+      // Prepare customer data - ensure all required fields are provided
       const customerData: CustomerCreate = {
-        ...data,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone || "",
+        address: data.address || "",
         shop_id: data.shop_id || "DEFAULT-SHOP-ID",
       };
       
