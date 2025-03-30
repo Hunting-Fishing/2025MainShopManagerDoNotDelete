@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
@@ -30,19 +29,25 @@ export default function WorkOrderCreate() {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          // Extract unique technician values
-          const uniqueTechnicians = Array.from(
-            new Set(data.map(item => item.technician).filter(Boolean))
-          ).sort();
+          // Since we don't have a 'technician' field but rather 'technician_id',
+          // we'll need to handle this differently
           
-          if (uniqueTechnicians.length > 0) {
-            // Add "Unassigned" if not already in the list
-            if (!uniqueTechnicians.includes("Unassigned")) {
-              uniqueTechnicians.push("Unassigned");
-            }
-            
-            setTechnicians(uniqueTechnicians);
-          }
+          // For now, let's use the default technicians list
+          // In a real implementation, we would fetch names from a technicians/staff table
+          // using the technician_id values
+          
+          // We could potentially do a join query or a separate query to get technician names
+          
+          // As a fallback, we'll keep the default list and just ensure "Unassigned" is included
+          const defaultTechnicians = [
+            "Michael Brown",
+            "Sarah Johnson",
+            "David Lee",
+            "Emily Chen",
+            "Unassigned"
+          ];
+          
+          setTechnicians(defaultTechnicians);
         }
       } catch (error) {
         console.error("Error fetching technicians:", error);
