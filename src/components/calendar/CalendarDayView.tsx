@@ -56,16 +56,18 @@ export function CalendarDayView({
         {timeSlots.map((hour) => {
           const hourEvents = getEventsForHour(hour);
           
-          // Check if this hour is in the past for today
-          const isPastHour = isSameDay(currentDate, now) && 
-            (hour < currentHour || (hour === currentHour && currentMinute > 0));
+          // Check if this hour is fully in the past for today
+          const isFullyPastHour = isSameDay(currentDate, now) && hour < currentHour;
+          
+          // Check if this is the current hour
+          const isCurrentHour = isSameDay(currentDate, now) && hour === currentHour;
           
           return (
             <div key={hour} className="grid grid-cols-12 border-b">
               {/* Time */}
               <div className={cn(
                 "col-span-1 p-3 text-right",
-                isPastHour ? "text-gray-400" : "text-slate-500"
+                isFullyPastHour ? "text-gray-400" : "text-slate-500"
               )}>
                 {hour}:00
               </div>
@@ -74,11 +76,22 @@ export function CalendarDayView({
               <div 
                 className={cn(
                   "col-span-11 p-2 min-h-[100px] border-l relative",
-                  isPastHour && "bg-red-50 bg-opacity-20"
+                  isFullyPastHour && "bg-red-50 bg-opacity-20"
                 )}
               >
-                {/* Past hour indicator */}
-                {isPastHour && (
+                {/* Current hour partial overlay */}
+                {isCurrentHour && (
+                  <div 
+                    className="absolute left-0 top-0 bg-red-50 bg-opacity-20 pointer-events-none"
+                    style={{
+                      width: '100%',
+                      height: `${(currentMinute / 60) * 100}%`
+                    }}
+                  ></div>
+                )}
+                
+                {/* Fully past hour overlay */}
+                {isFullyPastHour && (
                   <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none"></div>
                 )}
                 

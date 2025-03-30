@@ -102,11 +102,14 @@ export function CalendarWeekView({
                   return eventHour === hour;
                 });
 
-                // Check if this slot is in the past
+                // Check if this day is in the past
                 const isPastDay = isPast(day) && !isToday(day);
-                const isPastTimeSlot = isToday(day) && 
-                  (hour < currentHour || (hour === currentHour && currentMinute > 0));
-                const isPastSlot = isPastDay || isPastTimeSlot;
+                
+                // Check if this is the current day and hour
+                const isCurrentDayAndHour = isToday(day) && hour === currentHour;
+                
+                // Check if this hour is fully in the past for today
+                const isFullyPastHour = isToday(day) && hour < currentHour;
 
                 return (
                   <div 
@@ -114,12 +117,27 @@ export function CalendarWeekView({
                     className={cn(
                       "border-l min-h-[80px] p-1 relative",
                       isToday(day) && "bg-blue-50",
-                      isPastDay && "bg-red-50 bg-opacity-30",
-                      isPastTimeSlot && "bg-red-50 bg-opacity-20"
+                      isPastDay && "bg-red-50 bg-opacity-30"
                     )}
                   >
-                    {/* Past time overlay */}
-                    {isPastSlot && (
+                    {/* Current hour partial overlay */}
+                    {isCurrentDayAndHour && (
+                      <div 
+                        className="absolute left-0 top-0 bg-red-50 bg-opacity-20 pointer-events-none"
+                        style={{
+                          width: '100%',
+                          height: `${(currentMinute / 60) * 100}%`
+                        }}
+                      ></div>
+                    )}
+                    
+                    {/* Past day overlay */}
+                    {isPastDay && (
+                      <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none"></div>
+                    )}
+                    
+                    {/* Fully past hour overlay for current day */}
+                    {isFullyPastHour && (
                       <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none"></div>
                     )}
                     

@@ -49,8 +49,14 @@ export function CurrentTimeIndicator({ currentTime, view }: CurrentTimeIndicator
         </div>
       </div>
       
-      {/* Past time overlay */}
-      <div className="absolute inset-0 -mt-[45px] h-[45px] w-full bg-red-50 bg-opacity-20 pointer-events-none z-0" />
+      {/* Past time overlay - only applies to the area above the current time */}
+      <div 
+        className="absolute left-0 right-0 bg-red-50 bg-opacity-20 pointer-events-none z-0" 
+        style={{ 
+          top: -position - 45, // Position it from the top of the calendar
+          height: `${position + 45}px` // Only cover the area up to the current time
+        }} 
+      />
     </div>
   );
 }
