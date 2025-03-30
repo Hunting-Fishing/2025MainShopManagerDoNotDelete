@@ -1,86 +1,220 @@
 
-import { WorkOrder, statusMap, priorityMap, workOrders } from "@/data/workOrdersData";
+import { WorkOrder, statusMap, priorityMap } from "@/data/workOrdersData";
 import { toast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
+import { supabase } from "@/integrations/supabase/client";
+import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 
 // Find a work order by ID
-export const findWorkOrderById = (id: string): WorkOrder | undefined => {
+export const findWorkOrderById = async (id: string): Promise<WorkOrder | undefined> => {
   try {
-    return workOrders.find(order => order.id === id);
+    // Get the work order from Supabase
+    const { data: workOrder, error } = await supabase
+      .from('work_orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    if (!workOrder) return undefined;
+    
+    // Fetch time entries for this work order
+    const { data: timeEntries, error: timeEntriesError } = await supabase
+      .from('work_order_time_entries')
+      .select('*')
+      .eq('work_order_id', id);
+      
+    if (timeEntriesError) throw timeEntriesError;
+    
+    // Fetch inventory items for this work order
+    const { data: inventoryItems, error: inventoryItemsError } = await supabase
+      .from('work_order_inventory_items')
+      .select('*')
+      .eq('work_order_id', id);
+      
+    if (inventoryItemsError) throw inventoryItemsError;
+    
+    // Combine all data into the WorkOrder object
+    return {
+      ...workOrder,
+      timeEntries: timeEntries || [],
+      inventoryItems: inventoryItems || []
+    } as WorkOrder;
   } catch (error) {
     handleApiError(error, "Error finding work order");
     return undefined;
   }
 };
 
-// Update a work order (simulated API call)
+// Update a work order
 export const updateWorkOrder = async (workOrder: WorkOrder): Promise<WorkOrder> => {
   try {
-    // Simulating an API call with a delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Extract time entries and inventory items
+    const timeEntries = workOrder.timeEntries || [];
+    const inventoryItems = workOrder.inventoryItems || [];
     
-    // Find the index of the work order to update
-    const index = workOrders.findIndex(order => order.id === workOrder.id);
+    // Create a copy of the work order without these arrays
+    const { timeEntries: _, inventoryItems: __, ...workOrderData } = workOrder;
     
-    if (index !== -1) {
-      // Update the work order in the array
-      workOrders[index] = { ...workOrder };
-      return workOrders[index];
+    // Update the work order in Supabase
+    const { data, error } = await supabase
+      .from('work_orders')
+      .update(workOrderData)
+      .eq('id', workOrder.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    // Handle time entries updates
+    if (timeEntries.length > 0) {
+      // First delete existing time entries
+      const { error: deleteError } = await supabase
+        .from('work_order_time_entries')
+        .delete()
+        .eq('work_order_id', workOrder.id);
+        
+      if (deleteError) throw deleteError;
+      
+      // Then insert the updated ones
+      const { error: insertError } = await supabase
+        .from('work_order_time_entries')
+        .insert(
+          timeEntries.map(entry => ({
+            ...entry,
+            work_order_id: workOrder.id
+          }))
+        );
+        
+      if (insertError) throw insertError;
     }
     
-    throw new Error("Work order not found");
+    // Handle inventory items updates
+    if (inventoryItems.length > 0) {
+      // First delete existing inventory items
+      const { error: deleteError } = await supabase
+        .from('work_order_inventory_items')
+        .delete()
+        .eq('work_order_id', workOrder.id);
+        
+      if (deleteError) throw deleteError;
+      
+      // Then insert the updated ones
+      const { error: insertError } = await supabase
+        .from('work_order_inventory_items')
+        .insert(
+          inventoryItems.map(item => ({
+            ...item,
+            work_order_id: workOrder.id,
+            unit_price: item.unitPrice // Map to the database column name
+          }))
+        );
+        
+      if (insertError) throw insertError;
+    }
+    
+    // Record activity
+    await recordWorkOrderActivity("Updated", workOrder.id, "system", workOrder.lastUpdatedBy || "System");
+    
+    return {
+      ...data,
+      timeEntries,
+      inventoryItems
+    } as WorkOrder;
   } catch (error) {
-    // Enhanced error handling
     const formattedError = handleApiError(error, "Failed to update work order");
     throw new Error(formattedError.message);
   }
 };
 
-// Delete a work order (simulated API call)
+// Delete a work order
 export const deleteWorkOrder = async (id: string): Promise<void> => {
   try {
-    // Simulating an API call with a delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const { error } = await supabase
+      .from('work_orders')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw error;
     
-    // Find the index of the work order to delete
-    const index = workOrders.findIndex(order => order.id === id);
+    // Note: We don't need to delete time entries or inventory items manually
+    // because we've set up ON DELETE CASCADE in the database
     
-    if (index !== -1) {
-      // Remove the work order from the array
-      workOrders.splice(index, 1);
-      return;
-    }
-    
-    throw new Error("Work order not found");
+    // Record activity
+    await recordWorkOrderActivity("Deleted", id, "system", "System", false);
   } catch (error) {
-    // Enhanced error handling
     const formattedError = handleApiError(error, "Failed to delete work order");
     throw new Error(formattedError.message);
   }
 };
 
-// Create a new work order (simulated API call)
+// Create a new work order
 export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
   try {
-    // Simulating an API call with a delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Extract time entries and inventory items
+    const timeEntries = workOrderData.timeEntries || [];
+    const inventoryItems = workOrderData.inventoryItems || [];
     
-    // Generate a unique ID for the work order
-    const newId = `WO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Create a copy of the work order without these arrays
+    const { timeEntries: _, inventoryItems: __, ...workOrderInfo } = workOrderData;
     
-    // Create the new work order with current date
-    const newWorkOrder: WorkOrder = {
-      id: newId,
-      date: new Date().toISOString().split('T')[0], // Current date in YYYY-MM-DD format
-      ...workOrderData,
-    };
+    // Set the current date
+    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
     
-    // Add the new work order to the array
-    workOrders.unshift(newWorkOrder);
+    // Create the work order in Supabase
+    const { data, error } = await supabase
+      .from('work_orders')
+      .insert({
+        ...workOrderInfo,
+        date: currentDate
+      })
+      .select()
+      .single();
+      
+    if (error) throw error;
     
-    return newWorkOrder;
+    const workOrderId = data.id;
+    
+    // Handle time entries if present
+    if (timeEntries.length > 0) {
+      const { error: timeError } = await supabase
+        .from('work_order_time_entries')
+        .insert(
+          timeEntries.map(entry => ({
+            ...entry,
+            work_order_id: workOrderId
+          }))
+        );
+        
+      if (timeError) throw timeError;
+    }
+    
+    // Handle inventory items if present
+    if (inventoryItems.length > 0) {
+      const { error: inventoryError } = await supabase
+        .from('work_order_inventory_items')
+        .insert(
+          inventoryItems.map(item => ({
+            ...item,
+            work_order_id: workOrderId,
+            unit_price: item.unitPrice // Map to the database column name
+          }))
+        );
+        
+      if (inventoryError) throw inventoryError;
+    }
+    
+    // Record activity
+    await recordWorkOrderActivity("Created", workOrderId, "system", workOrderData.createdBy || "System");
+    
+    // Return the complete work order
+    return {
+      ...data,
+      timeEntries,
+      inventoryItems
+    } as WorkOrder;
   } catch (error) {
-    // Enhanced error handling
     const formattedError = handleApiError(error, "Failed to create work order");
     throw new Error(formattedError.message);
   }
@@ -101,42 +235,14 @@ export const formatDate = (dateString: string): string => {
   }
 };
 
-// Create a new invoice from a work order (simulated API call)
+// Create a new invoice from a work order (to be implemented)
 export const createInvoiceFromWorkOrder = async (
   workOrderId: string,
   invoiceData: any
 ): Promise<any> => {
-  try {
-    // Simulating an API call with a delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Find the referenced work order
-    const workOrder = findWorkOrderById(workOrderId);
-    
-    if (!workOrder) {
-      throw new Error("Referenced work order not found");
-    }
-    
-    // Generate a unique ID for the invoice
-    const newId = `INV-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
-    
-    // Create the new invoice
-    const newInvoice = {
-      id: newId,
-      date: new Date().toISOString().split('T')[0], // Current date in YYYY-MM-DD format
-      workOrderId: workOrderId,
-      ...invoiceData,
-    };
-    
-    // In a real app, this would be added to an invoices array or database
-    console.log("New invoice created:", newInvoice);
-    
-    return newInvoice;
-  } catch (error) {
-    // Enhanced error handling
-    const formattedError = handleApiError(error, "Failed to create invoice from work order");
-    throw new Error(formattedError.message);
-  }
+  // This function would be implemented later when integrating invoices with Supabase
+  console.log("Creating invoice from work order:", workOrderId, invoiceData);
+  return { id: `INV-${Date.now()}` };
 };
 
 // Pagination utilities
@@ -161,5 +267,37 @@ export const calculateTotalPages = (totalItems: number, itemsPerPage: number): n
   } catch (error) {
     console.error("Error calculating total pages:", error);
     return 1; // Return minimum 1 page as fallback
+  }
+};
+
+// Function to record work order activity in Supabase
+export const recordWorkOrderActivity = async (
+  action: string,
+  workOrderId: string,
+  userId: string,
+  userName: string,
+  showToast: boolean = true
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('work_order_activities')
+      .insert({
+        work_order_id: workOrderId,
+        action,
+        user_id: userId,
+        user_name: userName
+      });
+      
+    if (error) throw error;
+    
+    if (showToast) {
+      toast({
+        title: "Activity Recorded",
+        description: `${action} work order ${workOrderId}`,
+        variant: "success",
+      });
+    }
+  } catch (error) {
+    console.error("Error recording activity:", error);
   }
 };

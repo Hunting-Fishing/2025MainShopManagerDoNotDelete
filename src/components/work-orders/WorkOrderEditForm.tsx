@@ -7,7 +7,7 @@ import { useWorkOrderEditForm } from "@/hooks/useWorkOrderEditForm";
 import { TimeTrackingSection } from "./time-tracking/TimeTrackingSection";
 import { TimeEntry } from "@/types/workOrder";
 
-// Mock data for technicians
+// Mock data for technicians - this would eventually be fetched from Supabase
 const technicians = [
   "Michael Brown",
   "Sarah Johnson",

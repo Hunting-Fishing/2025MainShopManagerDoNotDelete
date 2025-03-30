@@ -1,20 +1,91 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
 import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
 import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination";
-import { workOrders, getUniqueTechnicians, WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/data/workOrdersData";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedTechnician, setSelectedTechnician] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [technicians, setTechnicians] = useState<string[]>([]);
+  
   const itemsPerPage = 5; // Number of work orders to show per page
 
-  // Get unique technicians for filter
-  const technicians = getUniqueTechnicians(workOrders);
+  // Fetch work orders from Supabase
+  useEffect(() => {
+    const fetchWorkOrders = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all work orders
+        const { data, error } = await supabase
+          .from('work_orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          throw error;
+        }
+        
+        // Fetch time entries and inventory items for each work order
+        const completeWorkOrders = await Promise.all(
+          data.map(async (order) => {
+            // Fetch time entries
+            const { data: timeEntries } = await supabase
+              .from('work_order_time_entries')
+              .select('*')
+              .eq('work_order_id', order.id);
+              
+            // Fetch inventory items
+            const { data: inventoryItems } = await supabase
+              .from('work_order_inventory_items')
+              .select('*')
+              .eq('work_order_id', order.id);
+              
+            // Convert unit_price to unitPrice for consistency with our interfaces
+            const formattedInventoryItems = inventoryItems?.map(item => ({
+              ...item,
+              unitPrice: item.unit_price
+            }));
+              
+            return {
+              ...order,
+              timeEntries: timeEntries || [],
+              inventoryItems: formattedInventoryItems || []
+            };
+          })
+        );
+        
+        setWorkOrders(completeWorkOrders);
+        
+        // Extract unique technicians for filter
+        const uniqueTechnicians = Array.from(
+          new Set(completeWorkOrders.map(order => order.technician))
+        ).sort();
+        
+        setTechnicians(uniqueTechnicians);
+      } catch (error) {
+        console.error("Error fetching work orders:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load work orders",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchWorkOrders();
+  }, []);
 
   // Filter work orders based on search query and filters
   const filteredWorkOrders: WorkOrder[] = workOrders.filter((order) => {
@@ -54,6 +125,19 @@ export default function WorkOrders() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
+
+  // Get unique technicians from work orders (for backward compatibility)
+  const getUniqueTechnicians = () => {
+    return technicians;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-gray-500">Loading work orders...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

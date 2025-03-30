@@ -1,15 +1,15 @@
 
-import React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Clock, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CalendarDays, RotateCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
 
-// Mock activity data - in a real app, this would be fetched based on work order ID
 interface Activity {
   id: string;
-  description: string;
-  date: string;
-  staffName: string;
+  action: string;
+  user_name: string;
+  timestamp: string;
 }
 
 interface WorkOrderActivityHistoryProps {
@@ -17,69 +17,62 @@ interface WorkOrderActivityHistoryProps {
 }
 
 export function WorkOrderActivityHistory({ workOrderId }: WorkOrderActivityHistoryProps) {
-  // This would be a real API call in a production app
-  // For now, we'll use mock data
-  const mockActivities: Activity[] = [
-    {
-      id: "act-1",
-      description: "Created work order",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
-      staffName: "Michael Brown",
-    },
-    {
-      id: "act-2",
-      description: "Updated status to In Progress",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      staffName: "Sarah Johnson",
-    },
-    {
-      id: "act-3",
-      description: "Added inventory items",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
-      staffName: "David Lee",
-    },
-    {
-      id: "act-4",
-      description: "Updated time entries",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      staffName: "Sarah Johnson",
-    },
-    {
-      id: "act-5",
-      description: "Viewed work order",
-      date: new Date().toISOString(), // Now
-      staffName: "Admin User",
-    }
-  ];
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('work_order_activities')
+          .select('*')
+          .eq('work_order_id', workOrderId)
+          .order('timestamp', { ascending: false });
+          
+        if (error) throw error;
+        
+        setActivities(data || []);
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchActivities();
+  }, [workOrderId]);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Activity History</CardTitle>
-        <CardDescription>
-          Timeline of all actions taken on this work order
-        </CardDescription>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-medium flex items-center">
+          <CalendarDays className="mr-2 h-5 w-5" />
+          Activity History
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative pl-6 border-l border-slate-200">
-          {mockActivities.map((activity, index) => (
-            <div key={activity.id} className="mb-6 last:mb-0">
-              <div className="absolute w-3 h-3 bg-blue-500 rounded-full -left-[6.5px]" />
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-medium">{activity.description}</p>
-                  <div className="flex items-center mt-1 text-sm text-slate-500">
-                    <User className="h-3 w-3 mr-1" />
-                    <span>{activity.staffName}</span>
-                  </div>
-                </div>
-                <div className="text-xs text-slate-500">
-                  {new Date(activity.date).toLocaleString()}
+        {loading ? (
+          <div className="flex justify-center items-center h-24">
+            <RotateCw className="animate-spin h-5 w-5 text-slate-400" />
+          </div>
+        ) : activities.length > 0 ? (
+          <div className="space-y-4">
+            {activities.map((activity) => (
+              <div key={activity.id} className="border-l-2 border-slate-200 pl-4 py-1">
+                <div className="text-sm font-medium">{activity.action}</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {activity.user_name} • {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-slate-500">
+            No activity recorded for this work order yet.
+          </div>
+        )}
       </CardContent>
     </Card>
   );

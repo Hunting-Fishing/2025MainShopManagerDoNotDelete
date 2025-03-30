@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import { WorkOrder } from "@/data/workOrdersData";
 import { TimeEntry } from "@/types/workOrder";
 import { toast } from "@/hooks/use-toast";
-import WorkOrderDetailsHeader from "./details/WorkOrderDetailsHeader"; // Fixed import
+import WorkOrderDetailsHeader from "./details/WorkOrderDetailsHeader";
 import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
-import { recordWorkOrderActivity } from "@/utils/activityTracker";
+import { updateWorkOrder, recordWorkOrderActivity } from "@/utils/workOrderUtils";
 
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
@@ -29,43 +29,44 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
   }, [workOrder.id]);
 
   // Handle updating time entries
-  const handleUpdateTimeEntries = (timeEntries: TimeEntry[]) => {
-    // Calculate total billable time
-    const totalBillableTime = timeEntries.reduce((total, entry) => {
-      return entry.billable ? total + entry.duration : total;
-    }, 0);
+  const handleUpdateTimeEntries = async (timeEntries: TimeEntry[]) => {
+    try {
+      // Calculate total billable time
+      const totalBillableTime = timeEntries.reduce((total, entry) => {
+        return entry.billable ? total + entry.duration : total;
+      }, 0);
 
-    // Update work order with new time entries
-    const updatedWorkOrder = {
-      ...currentWorkOrder,
-      timeEntries,
-      totalBillableTime,
-      lastUpdatedBy: currentUser.name,
-      lastUpdatedAt: new Date().toISOString()
-    };
+      // Update work order with new time entries
+      const updatedWorkOrder = {
+        ...currentWorkOrder,
+        timeEntries,
+        totalBillableTime,
+        lastUpdatedBy: currentUser.name,
+        lastUpdatedAt: new Date().toISOString()
+      };
 
-    setCurrentWorkOrder(updatedWorkOrder);
+      // Save to Supabase
+      const savedWorkOrder = await updateWorkOrder(updatedWorkOrder);
+      
+      setCurrentWorkOrder(savedWorkOrder);
 
-    // Record time entry update activity
-    recordWorkOrderActivity(
-      "Updated time entries for", 
-      workOrder.id, 
-      currentUser.id,
-      currentUser.name
-    );
-
-    // In a real app, you would save this to the backend
-    console.log("Updated work order with time entries:", updatedWorkOrder);
-
-    // Show success message
-    toast({
-      title: "Time Entries Updated",
-      description: "Time entries have been updated successfully.",
-      variant: "success",
-    });
+      // Show success message
+      toast({
+        title: "Time Entries Updated",
+        description: "Time entries have been updated successfully.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Error updating time entries:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update time entries.",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Mock function for onDelete prop - in a real app, this would implement deletion logic
+  // Delete work order function - will be implemented later
   const handleDeleteWorkOrder = () => {
     toast({
       title: "Delete not implemented",

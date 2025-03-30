@@ -26,8 +26,8 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
           return;
         }
 
-        // We're using a simulated API call with our mock data
-        const foundWorkOrder = findWorkOrderById(id);
+        // We're now using async findWorkOrderById that connects to Supabase
+        const foundWorkOrder = await findWorkOrderById(id);
         
         if (foundWorkOrder) {
           setWorkOrder(foundWorkOrder);
