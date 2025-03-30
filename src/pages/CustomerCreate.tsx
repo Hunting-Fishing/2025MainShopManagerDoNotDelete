@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createCustomer } from "@/services/customerService";
+import { createCustomer, clearDraftCustomer } from "@/services/customerService";
 import type { CustomerCreate as CustomerCreateType } from "@/services/customerService";
 import { useToast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
@@ -10,6 +10,7 @@ import { CustomerFormValues } from "@/components/customers/form/CustomerFormSche
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Check } from "lucide-react";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
+import { ImportCustomersDialog } from "@/components/customers/form/import/ImportCustomersDialog";
 
 export default function CustomerCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,6 +63,9 @@ export default function CustomerCreate() {
       // Create customer
       const newCustomer = await createCustomer(customerData);
       
+      // Clear any draft data
+      await clearDraftCustomer();
+      
       // Set success state
       setIsSuccess(true);
       setNewCustomerId(newCustomer.id);
@@ -83,12 +87,23 @@ export default function CustomerCreate() {
     }
   };
 
+  const handleImportComplete = () => {
+    toast({
+      title: "Import Complete",
+      description: "Navigate to the Customers page to see imported customers.",
+      variant: "success",
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto px-4 sm:px-6">
-      <WorkOrderFormHeader
-        title="Add New Customer"
-        description="Create a new customer record in the system"
-      />
+      <div className="flex justify-between items-center">
+        <WorkOrderFormHeader
+          title="Add New Customer"
+          description="Create a new customer record in the system"
+        />
+        <ImportCustomersDialog onImportComplete={handleImportComplete} />
+      </div>
 
       {isSuccess && newCustomerId ? (
         <Alert variant="success" className="bg-green-50 border-green-200">
