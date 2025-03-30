@@ -73,7 +73,7 @@ export function AppSidebar() {
         {
           title: "Customer Analytics",
           href: "/customer-analytics",
-          disabled: false,
+          icon: <BarChart3 className="mr-2 h-4 w-4" />,
         },
         // Can add more analytics pages later
       ],
