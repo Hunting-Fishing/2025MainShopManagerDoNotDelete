@@ -1,12 +1,10 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Customer } from "@/types/customer";
 import { CustomerInteraction } from "@/types/interaction";
 import { CustomerCommunication } from "@/types/customer";
-import { AddCommunicationDialog } from "@/components/communications/AddCommunicationDialog";
-import { CustomerNotes } from "@/components/customers/details/CustomerNotes";
-import { CustomerWorkOrders } from "@/components/customers/details/CustomerWorkOrders";
-import { CustomerDocuments } from "@/components/customers/details/CustomerDocuments";
+import { AddCommunicationDialog } from "@/components/customers/communications/AddCommunicationDialog";
 import { CustomerAnalyticsSection } from './details/CustomerAnalyticsSection';
 
 interface CustomerDetailsTabsProps {
@@ -47,7 +45,22 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       </TabsList>
       
       <TabsContent value="service">
-        <CustomerWorkOrders customer={customer} workOrders={customerWorkOrders} />
+        <div>
+          {customerWorkOrders && customerWorkOrders.length > 0 ? (
+            <div className="grid gap-4">
+              {customerWorkOrders.map((workOrder) => (
+                <div key={workOrder.id} className="p-4 border rounded-lg">
+                  <h3 className="font-medium">Work Order #{workOrder.id}</h3>
+                  <p className="text-sm text-gray-500">{workOrder.description}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No service history found for this customer.
+            </div>
+          )}
+        </div>
       </TabsContent>
       
       <TabsContent value="interactions">
@@ -66,9 +79,9 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       
       <TabsContent value="communications">
         <AddCommunicationDialog
+          customer={customer}
           open={addCommunicationOpen}
           onOpenChange={setAddCommunicationOpen}
-          customerId={customer.id}
           onCommunicationAdded={onCommunicationAdded}
         />
         <div className="flex justify-end pb-4">
@@ -88,7 +101,12 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="documents">
-        <CustomerDocuments customer={customer} />
+        <div>
+          <h3 className="text-lg font-medium mb-4">Customer Documents</h3>
+          <div className="text-center py-8 text-muted-foreground">
+            No documents found for this customer.
+          </div>
+        </div>
       </TabsContent>
       
       <TabsContent value="analytics">

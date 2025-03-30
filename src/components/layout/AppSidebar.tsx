@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -33,7 +34,7 @@ export function AppSidebar() {
   const { isOpen, onOpen, onClose } = useSidebar();
   const location = useLocation();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       title: "Dashboard",
       href: "/",
@@ -72,6 +73,7 @@ export function AppSidebar() {
         {
           title: "Customer Analytics",
           href: "/customer-analytics",
+          disabled: false,
         },
         // Can add more analytics pages later
       ],
