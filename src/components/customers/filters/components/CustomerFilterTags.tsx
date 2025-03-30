@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { TagSelector } from "../../form/TagSelector";
+import { TagSelector } from "../../form/tag";
 
 interface CustomerFilterTagsProps {
   initialTags: string[];
