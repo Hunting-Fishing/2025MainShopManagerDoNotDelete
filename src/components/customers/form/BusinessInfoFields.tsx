@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RequiredIndicator } from "@/components/ui/required-indicator";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "./CustomerFormSchema";
-import { TagSelector } from "./TagSelector";
+import { TagSelector } from "./tag";
 
 interface BusinessInfoFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
