@@ -45,7 +45,16 @@ export default function CustomerDetails() {
         .order('date', { ascending: false });
 
       if (error) throw error;
-      setCustomerCommunications(data || []);
+      
+      // Convert the type to the correct enum type
+      const typedCommunications = data?.map(comm => ({
+        ...comm,
+        type: comm.type as "email" | "phone" | "text" | "in-person",
+        direction: comm.direction as "incoming" | "outgoing",
+        status: comm.status as "completed" | "pending" | "failed"
+      })) || [];
+      
+      setCustomerCommunications(typedCommunications);
     } catch (error) {
       console.error("Error fetching communications:", error);
     } finally {
@@ -78,7 +87,15 @@ export default function CustomerDetails() {
 
       // Add the new communication to the state
       if (data && data.length > 0) {
-        setCustomerCommunications(prev => [data[0], ...prev]);
+        // Make sure we're using the correct type from the CustomerCommunication interface
+        const newComm: CustomerCommunication = {
+          ...data[0],
+          type: data[0].type as "email" | "phone" | "text" | "in-person",
+          direction: data[0].direction as "incoming" | "outgoing",
+          status: data[0].status as "completed" | "pending" | "failed"
+        };
+        
+        setCustomerCommunications(prev => [newComm, ...prev]);
       }
     } catch (error) {
       console.error("Error adding communication:", error);

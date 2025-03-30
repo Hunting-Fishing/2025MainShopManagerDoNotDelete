@@ -68,7 +68,16 @@ export const useCustomerDetails = (id?: string) => {
         .order('date', { ascending: false });
 
       if (error) throw error;
-      setCustomerCommunications(data || []);
+      
+      // Convert the type to the correct enum type
+      const typedCommunications = data?.map(comm => ({
+        ...comm,
+        type: comm.type as "email" | "phone" | "text" | "in-person",
+        direction: comm.direction as "incoming" | "outgoing",
+        status: comm.status as "completed" | "pending" | "failed"
+      })) || [];
+      
+      setCustomerCommunications(typedCommunications);
     } catch (error) {
       console.error("Error fetching communications:", error);
     }

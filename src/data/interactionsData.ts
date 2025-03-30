@@ -1,4 +1,3 @@
-
 import { CustomerInteraction } from "@/types/interaction";
 import { v4 as uuidv4 } from "uuid";
 import { workOrders } from "./workOrdersData";
@@ -169,6 +168,11 @@ export const customerInteractions: CustomerInteraction[] = [
 // Function to get interactions for a specific customer
 export const getCustomerInteractions = (customerId: string): CustomerInteraction[] => {
   return customerInteractions.filter(interaction => interaction.customerId === customerId);
+};
+
+// Export the function that was missing - using the same logic as getCustomerInteractions
+export const getMockInteractions = (customerId: string): CustomerInteraction[] => {
+  return getCustomerInteractions(customerId);
 };
 
 // Function to get pending follow-ups
