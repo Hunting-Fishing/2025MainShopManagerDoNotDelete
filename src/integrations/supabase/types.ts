@@ -183,15 +183,83 @@ export type Database = {
           },
         ]
       }
+      customer_segment_assignments: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          is_automatic: boolean | null
+          segment_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          is_automatic?: boolean | null
+          segment_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          is_automatic?: boolean | null
+          segment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_segment_assignments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_segment_assignments_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_segments: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
           created_at: string
           email: string | null
           first_name: string
+          household_id: string | null
           id: string
           last_name: string
           phone: string | null
+          segments: Json | null
           shop_id: string
           updated_at: string
         }
@@ -200,9 +268,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name: string
+          household_id?: string | null
           id?: string
           last_name: string
           phone?: string | null
+          segments?: Json | null
           shop_id: string
           updated_at?: string
         }
@@ -211,13 +281,22 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string
+          household_id?: string | null
           id?: string
           last_name?: string
           phone?: string | null
+          segments?: Json | null
           shop_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "customers_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customers_shop_id_fkey"
             columns: ["shop_id"]
@@ -226,6 +305,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      household_members: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          household_id: string | null
+          id: string
+          relationship_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          household_id?: string | null
+          id?: string
+          relationship_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          household_id?: string | null
+          id?: string
+          relationship_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       invoice_items: {
         Row: {
@@ -559,6 +704,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      segment_rules: {
+        Row: {
+          created_at: string
+          id: string
+          rule_operator: string
+          rule_type: string
+          rule_value: string
+          segment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rule_operator: string
+          rule_type: string
+          rule_value: string
+          segment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rule_operator?: string
+          rule_type?: string
+          rule_value?: string
+          segment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_rules_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shop_hours: {
         Row: {

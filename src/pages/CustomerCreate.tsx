@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Check } from "lucide-react";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
 import { ImportCustomersDialog } from "@/components/customers/form/import/ImportCustomersDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function CustomerCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,13 +37,41 @@ export default function CustomerCreate() {
     is_fleet: false,
     fleet_company: "",
     vehicles: [],
+    // New fields for Phase 3
+    segments: [],
+    create_new_household: false,
+    new_household_name: "",
+    household_relationship: "primary",
   };
 
   // Form submission handler
   const onSubmit = async (data: CustomerFormValues) => {
     setIsSubmitting(true);
     try {
-      // Prepare customer data - ensure all required fields are provided
+      // Handle household creation if needed
+      let householdId = data.household_id || "";
+      
+      if (data.create_new_household && data.new_household_name) {
+        // Create a new household
+        const { data: newHousehold, error: householdError } = await supabase
+          .from("households")
+          .insert({
+            name: data.new_household_name,
+            address: data.address
+          })
+          .select("id")
+          .single();
+        
+        if (householdError) {
+          throw householdError;
+        }
+        
+        if (newHousehold) {
+          householdId = newHousehold.id;
+        }
+      }
+      
+      // Prepare customer data
       const customerData: CustomerCreateType = {
         first_name: data.first_name,
         last_name: data.last_name,
@@ -50,7 +79,6 @@ export default function CustomerCreate() {
         phone: data.phone || "",
         address: data.address || "",
         shop_id: data.shop_id,
-        // Add the new fields
         preferred_technician_id: data.preferred_technician_id,
         referral_source: data.referral_source,
         referral_person_id: data.referral_person_id,
@@ -58,10 +86,46 @@ export default function CustomerCreate() {
         fleet_company: data.fleet_company,
         notes: data.notes,
         tags: data.tags,
+        household_id: householdId || null,
+        segments: data.segments
       };
       
       // Create customer
       const newCustomer = await createCustomer(customerData);
+      
+      // Add customer to household if a household was selected or created
+      if (householdId && data.household_relationship) {
+        const { error: relationshipError } = await supabase
+          .from("household_members")
+          .insert({
+            household_id: householdId,
+            customer_id: newCustomer.id,
+            relationship_type: data.household_relationship
+          });
+        
+        if (relationshipError) {
+          console.error("Failed to add customer to household:", relationshipError);
+          // Continue despite this error, we'll just log it
+        }
+      }
+      
+      // Add customer to segments if any were selected
+      if (data.segments && data.segments.length > 0) {
+        const segmentAssignments = data.segments.map(segmentId => ({
+          customer_id: newCustomer.id,
+          segment_id: segmentId,
+          is_automatic: false
+        }));
+        
+        const { error: segmentError } = await supabase
+          .from("customer_segment_assignments")
+          .insert(segmentAssignments);
+        
+        if (segmentError) {
+          console.error("Failed to assign segments to customer:", segmentError);
+          // Continue despite this error, we'll just log it
+        }
+      }
       
       // Clear any draft data
       await clearDraftCustomer();

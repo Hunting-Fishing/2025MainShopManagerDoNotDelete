@@ -1,16 +1,18 @@
 
 import React from "react";
-import { Badge } from "@/components/ui/badge";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle } from "lucide-react";
 
 interface FormTabsProps {
   currentTab: string;
-  setCurrentTab: (value: string) => void;
+  setCurrentTab: (tab: string) => void;
   hasPersonalErrors: boolean;
   hasBusinessErrors: boolean;
   hasPreferencesErrors: boolean;
   hasReferralFleetErrors: boolean;
   hasVehicleErrors: boolean;
+  hasHouseholdErrors?: boolean;
+  hasSegmentErrors?: boolean;
   isMobile: boolean;
 }
 
@@ -22,57 +24,54 @@ export const FormTabs: React.FC<FormTabsProps> = ({
   hasPreferencesErrors,
   hasReferralFleetErrors,
   hasVehicleErrors,
+  hasHouseholdErrors = false,
+  hasSegmentErrors = false,
   isMobile,
 }) => {
   return (
-    <div className="overflow-x-auto pb-2">
-      <TabsList className={`w-full flex ${isMobile ? "justify-start" : "justify-between"} mb-6`}>
-        <TabsTrigger 
-          value="personal" 
-          className={`${isMobile ? "flex-shrink-0" : "flex-1"} relative`}
-        >
-          Personal Info
-          {hasPersonalErrors && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center rounded-full">!</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger 
-          value="business" 
-          className={`${isMobile ? "flex-shrink-0" : "flex-1"} relative`}
-        >
-          Business
-          {hasBusinessErrors && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center rounded-full">!</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger 
-          value="preferences" 
-          className={`${isMobile ? "flex-shrink-0" : "flex-1"} relative`}
-        >
-          Preferences
-          {hasPreferencesErrors && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center rounded-full">!</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger 
-          value="referral" 
-          className={`${isMobile ? "flex-shrink-0" : "flex-1"} relative`}
-        >
-          Referral
-          {hasReferralFleetErrors && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center rounded-full">!</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger 
-          value="vehicles" 
-          className={`${isMobile ? "flex-shrink-0" : "flex-1"} relative`}
-        >
-          Vehicles
-          {hasVehicleErrors && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center rounded-full">!</Badge>
-          )}
-        </TabsTrigger>
-      </TabsList>
-    </div>
+    <TabsList className={`grid grid-cols-${isMobile ? '2' : '7'} mb-6`}>
+      <TabsTrigger value="personal" onClick={() => setCurrentTab("personal")}>
+        Personal 
+        {hasPersonalErrors && (
+          <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
+        )}
+      </TabsTrigger>
+      <TabsTrigger value="business" onClick={() => setCurrentTab("business")}>
+        Business
+        {hasBusinessErrors && (
+          <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
+        )}
+      </TabsTrigger>
+      <TabsTrigger value="preferences" onClick={() => setCurrentTab("preferences")}>
+        Preferences
+        {hasPreferencesErrors && (
+          <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
+        )}
+      </TabsTrigger>
+      <TabsTrigger value="referral" onClick={() => setCurrentTab("referral")}>
+        Referral
+        {hasReferralFleetErrors && (
+          <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
+        )}
+      </TabsTrigger>
+      <TabsTrigger value="vehicles" onClick={() => setCurrentTab("vehicles")}>
+        Vehicles
+        {hasVehicleErrors && (
+          <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
+        )}
+      </TabsTrigger>
+      <TabsTrigger value="household" onClick={() => setCurrentTab("household")}>
+        Household
+        {hasHouseholdErrors && (
+          <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
+        )}
+      </TabsTrigger>
+      <TabsTrigger value="segments" onClick={() => setCurrentTab("segments")}>
+        Segments
+        {hasSegmentErrors && (
+          <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
+        )}
+      </TabsTrigger>
+    </TabsList>
   );
 };

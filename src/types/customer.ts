@@ -22,6 +22,9 @@ export interface Customer {
   tags?: string[];
   vehicles?: CustomerVehicle[];
   
+  // New fields for Phase 3
+  segments?: string[];
+  
   // We'll add these fields for compatibility with existing components
   // They will be undefined on direct database objects, but we'll use getters
   company?: string;
@@ -72,6 +75,49 @@ export interface CustomerCommunication {
   status: 'completed' | 'pending' | 'failed';
   template_id?: string;
   template_name?: string;
+}
+
+// Define household type
+export interface Household {
+  id: string;
+  name: string;
+  address?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  members?: HouseholdMember[];
+}
+
+// Define household member type
+export interface HouseholdMember {
+  id: string;
+  household_id: string;
+  customer_id: string;
+  relationship_type?: string;
+  customer?: Customer;
+}
+
+// Define segment type
+export interface CustomerSegment {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  created_at: string;
+  updated_at: string;
+  rule_count?: number;
+  customer_count?: number;
+}
+
+// Define segment rule type
+export interface SegmentRule {
+  id: string;
+  segment_id: string;
+  rule_type: string;
+  rule_value: string;
+  rule_operator: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Helper type for creating a new customer

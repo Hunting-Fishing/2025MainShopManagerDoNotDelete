@@ -1,32 +1,50 @@
 
-import { useCallback } from "react";
+import { useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "./CustomerFormSchema";
 
 export const useFormValidation = (form: UseFormReturn<CustomerFormValues>) => {
-  const hasErrors = Object.keys(form.formState.errors).length > 0;
+  const [hasPersonalErrors, setHasPersonalErrors] = useState(false);
+  const [hasBusinessErrors, setHasBusinessErrors] = useState(false);
+  const [hasPreferencesErrors, setHasPreferencesErrors] = useState(false);
+  const [hasReferralFleetErrors, setHasReferralFleetErrors] = useState(false);
+  const [hasVehicleErrors, setHasVehicleErrors] = useState(false);
+  const [hasHouseholdErrors, setHasHouseholdErrors] = useState(false);
+  const [hasSegmentErrors, setHasSegmentErrors] = useState(false);
+  const [hasErrors, setHasErrors] = useState(false);
 
-  const checkSectionErrors = useCallback((fields: string[]) => {
-    return fields.some(field => !!form.formState.errors[field as keyof CustomerFormValues]);
-  }, [form.formState.errors]);
+  const { errors } = form.formState;
 
-  const hasPersonalErrors = checkSectionErrors([
-    "first_name", "last_name", "email", "phone", "address"
-  ]);
-  
-  const hasBusinessErrors = checkSectionErrors([
-    "company", "shop_id", "notes", "tags"
-  ]);
-  
-  const hasPreferencesErrors = checkSectionErrors([
-    "preferred_technician_id"
-  ]);
-  
-  const hasReferralFleetErrors = checkSectionErrors([
-    "referral_source", "referral_person_id", "is_fleet", "fleet_company"
-  ]);
-  
-  const hasVehicleErrors = !!form.formState.errors.vehicles;
+  useEffect(() => {
+    // Personal errors
+    const personalFields = ['first_name', 'last_name', 'email', 'phone', 'address', 'shop_id'];
+    setHasPersonalErrors(personalFields.some(field => !!errors[field as keyof typeof errors]));
+
+    // Business errors
+    const businessFields = ['company', 'tags', 'notes'];
+    setHasBusinessErrors(businessFields.some(field => !!errors[field as keyof typeof errors]));
+
+    // Preferences errors
+    const preferencesFields = ['preferred_technician_id'];
+    setHasPreferencesErrors(preferencesFields.some(field => !!errors[field as keyof typeof errors]));
+
+    // Referral / Fleet errors
+    const referralFleetFields = ['referral_source', 'referral_person_id', 'is_fleet', 'fleet_company'];
+    setHasReferralFleetErrors(referralFleetFields.some(field => !!errors[field as keyof typeof errors]));
+
+    // Vehicle errors
+    setHasVehicleErrors(!!errors.vehicles);
+
+    // Household errors
+    const householdFields = ['household_id', 'create_new_household', 'new_household_name', 'household_relationship'];
+    setHasHouseholdErrors(householdFields.some(field => !!errors[field as keyof typeof errors]));
+
+    // Segment errors
+    setHasSegmentErrors(!!errors.segments);
+
+    // Overall validation
+    setHasErrors(Object.keys(errors).length > 0);
+  }, [errors]);
 
   return {
     hasErrors,
@@ -34,6 +52,8 @@ export const useFormValidation = (form: UseFormReturn<CustomerFormValues>) => {
     hasBusinessErrors,
     hasPreferencesErrors,
     hasReferralFleetErrors,
-    hasVehicleErrors
+    hasVehicleErrors,
+    hasHouseholdErrors,
+    hasSegmentErrors
   };
 };

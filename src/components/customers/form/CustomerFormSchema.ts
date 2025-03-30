@@ -35,6 +35,12 @@ export const customerSchema = z.object({
   
   // Vehicle fields with proper validation
   vehicles: z.array(vehicleSchema).optional().default([]),
+
+  // New fields for Phase 3
+  segments: z.string().array().optional().default([]),
+  create_new_household: z.boolean().optional().default(false),
+  new_household_name: z.string().optional(),
+  household_relationship: z.string().optional(),
 });
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -78,6 +84,26 @@ export const predefinedTags = [
   { id: "contract", label: "Contract", color: "bg-teal-500" },
   { id: "recurring", label: "Recurring", color: "bg-pink-500" },
   { id: "leads", label: "Leads", color: "bg-orange-500" },
+];
+
+// Customer relationship types
+export const relationshipTypes = [
+  { id: "primary", label: "Primary" },
+  { id: "spouse", label: "Spouse" },
+  { id: "partner", label: "Partner" },
+  { id: "child", label: "Child" },
+  { id: "parent", label: "Parent" },
+  { id: "sibling", label: "Sibling" },
+  { id: "other", label: "Other" }
+];
+
+// Customer segments for dropdown
+export const predefinedSegments = [
+  { id: "high_value", label: "High Value", color: "bg-emerald-500" },
+  { id: "regular", label: "Regular", color: "bg-blue-500" },
+  { id: "infrequent", label: "Infrequent", color: "bg-yellow-500" },
+  { id: "new", label: "New", color: "bg-green-500" },
+  { id: "dormant", label: "Dormant", color: "bg-gray-500" },
 ];
 
 // Helper to identify required fields for UI purposes

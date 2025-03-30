@@ -1,46 +1,34 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 export const useFormNavigation = () => {
   const [currentTab, setCurrentTab] = useState("personal");
 
-  const handleNext = useCallback(() => {
-    switch (currentTab) {
-      case "personal":
-        setCurrentTab("business");
-        break;
-      case "business":
-        setCurrentTab("preferences");
-        break;
-      case "preferences":
-        setCurrentTab("referral");
-        break;
-      case "referral":
-        setCurrentTab("vehicles");
-        break;
-      default:
-        break;
-    }
-  }, [currentTab]);
+  const tabOrder = [
+    "personal", 
+    "business", 
+    "preferences", 
+    "referral", 
+    "vehicles", 
+    "household", 
+    "segments"
+  ];
 
-  const handlePrevious = useCallback(() => {
-    switch (currentTab) {
-      case "business":
-        setCurrentTab("personal");
-        break;
-      case "preferences":
-        setCurrentTab("business");
-        break;
-      case "referral":
-        setCurrentTab("preferences");
-        break;
-      case "vehicles":
-        setCurrentTab("referral");
-        break;
-      default:
-        break;
+  const handleNext = () => {
+    const currentIndex = tabOrder.indexOf(currentTab);
+    
+    if (currentIndex < tabOrder.length - 1) {
+      setCurrentTab(tabOrder[currentIndex + 1]);
     }
-  }, [currentTab]);
+  };
+
+  const handlePrevious = () => {
+    const currentIndex = tabOrder.indexOf(currentTab);
+    
+    if (currentIndex > 0) {
+      setCurrentTab(tabOrder[currentIndex - 1]);
+    }
+  };
 
   return {
     currentTab,

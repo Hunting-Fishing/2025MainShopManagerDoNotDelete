@@ -9,6 +9,8 @@ import { PreferencesFields } from "./PreferencesFields";
 import { ReferralFields } from "./ReferralFields";
 import { FleetFields } from "./FleetFields";
 import { VehiclesFields } from "./VehiclesFields";
+import { HouseholdFields } from "./HouseholdFields";
+import { SegmentFields } from "./SegmentFields";
 
 interface FormContentProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -46,6 +48,18 @@ export const FormContent: React.FC<FormContentProps> = ({ form, currentTab }) =>
       <TabsContent value="vehicles" className="mt-0">
         <div className="grid grid-cols-1 gap-6">
           <VehiclesFields form={form} />
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="household" className="mt-0">
+        <div className="grid grid-cols-1 gap-6">
+          <HouseholdFields form={form} />
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="segments" className="mt-0">
+        <div className="grid grid-cols-1 gap-6">
+          <SegmentFields form={form} />
         </div>
       </TabsContent>
     </>
