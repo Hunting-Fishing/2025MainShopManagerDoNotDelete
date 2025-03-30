@@ -8,14 +8,14 @@ export const getAllReminders = async (): Promise<ServiceReminder[]> => {
   const { data, error } = await supabase
     .from("service_reminders")
     .select("*")
-    .order("dueDate", { ascending: true });
+    .order("due_date", { ascending: true });
 
   if (error) {
     console.error("Error fetching reminders:", error);
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(mapReminderFromDb);
 };
 
 // Get reminders for a specific customer
@@ -24,14 +24,14 @@ export const getCustomerReminders = async (customerId: string): Promise<ServiceR
     .from("service_reminders")
     .select("*")
     .eq("customer_id", customerId)
-    .order("dueDate", { ascending: true });
+    .order("due_date", { ascending: true });
 
   if (error) {
     console.error("Error fetching customer reminders:", error);
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(mapReminderFromDb);
 };
 
 // Get reminders for a specific vehicle
@@ -40,14 +40,14 @@ export const getVehicleReminders = async (vehicleId: string): Promise<ServiceRem
     .from("service_reminders")
     .select("*")
     .eq("vehicle_id", vehicleId)
-    .order("dueDate", { ascending: true });
+    .order("due_date", { ascending: true });
 
   if (error) {
     console.error("Error fetching vehicle reminders:", error);
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(mapReminderFromDb);
 };
 
 // Get upcoming reminders (due in the next X days)
@@ -73,7 +73,7 @@ export const getUpcomingReminders = async (days: number = 7): Promise<ServiceRem
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(mapReminderFromDb);
 };
 
 // Create a new reminder
@@ -150,8 +150,8 @@ export const sendReminderNotification = async (reminderId: string): Promise<bool
     .from("service_reminders")
     .select(`
       *,
-      customers(email, first_name, last_name),
-      vehicles(make, model, year)
+      customers (email, first_name, last_name),
+      vehicles (make, model, year)
     `)
     .eq("id", reminderId)
     .single();

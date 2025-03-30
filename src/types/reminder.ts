@@ -1,6 +1,5 @@
 
 import { Customer } from "./customer";
-import { Vehicle } from "./vehicle";
 
 export type ReminderStatus = "pending" | "sent" | "completed" | "cancelled";
 export type ReminderType = "service" | "maintenance" | "follow_up" | "warranty" | "other";
@@ -25,7 +24,14 @@ export interface ServiceReminder {
 
 export interface ReminderWithDetails extends ServiceReminder {
   customer?: Customer;
-  vehicle?: Vehicle;
+  vehicle?: {
+    id: string;
+    make?: string;
+    model?: string;
+    year?: number;
+    vin?: string;
+    license_plate?: string;
+  };
 }
 
 export interface CreateReminderParams {

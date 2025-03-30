@@ -961,6 +961,75 @@ export type Database = {
           },
         ]
       }
+      service_reminders: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string
+          customer_id: string
+          description: string
+          due_date: string
+          id: string
+          notes: string | null
+          notification_date: string | null
+          notification_sent: boolean
+          status: string
+          title: string
+          type: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by: string
+          customer_id: string
+          description: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          notification_date?: string | null
+          notification_sent?: boolean
+          status?: string
+          title: string
+          type: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          description?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          notification_date?: string | null
+          notification_sent?: boolean
+          status?: string
+          title?: string
+          type?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_reminders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reminders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_hours: {
         Row: {
           close_time: string
