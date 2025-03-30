@@ -2,7 +2,7 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "./CustomerFormSchema";
-import { VehicleSelector } from "./VehicleSelector";
+import { VehicleSelector } from "./vehicle/VehicleSelector";
 import { Button } from "@/components/ui/button";
 import { Plus, Car } from "lucide-react";
 
