@@ -10,19 +10,21 @@ import {
 } from "./searchProviders";
 
 // Perform a search across all data sources with improved relevance
-export const performSearch = (query: string): SearchResult[] => {
+export const performSearch = async (query: string): Promise<SearchResult[]> => {
   if (!query || query.trim() === '') return [];
   
   // Save the search term
   saveRecentSearch(query.trim());
   
   // Get results from all search providers
+  const customerResults = await searchCustomers(query);
+  
   const results: SearchResult[] = [
-    ...searchWorkOrders(query),
-    ...searchInvoices(query),
-    ...searchCustomers(query),
-    ...searchEquipment(query),
-    ...searchInventory(query)
+    ...await searchWorkOrders(query),
+    ...await searchInvoices(query),
+    ...customerResults,
+    ...await searchEquipment(query),
+    ...await searchInventory(query)
   ];
   
   // Sort by relevance score (highest first)

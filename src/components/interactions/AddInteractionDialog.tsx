@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Customer } from "@/types/customer";
+import { Customer, getCustomerFullName } from "@/types/customer";
 import {
   Dialog,
   DialogContent,
@@ -94,11 +94,12 @@ export const AddInteractionDialog: React.FC<AddInteractionDialogProps> = ({
       }
 
       const today = new Date().toISOString().split("T")[0];
+      const customerName = customer.name || getCustomerFullName(customer);
       
       // Create interaction data
       const interactionData: Omit<CustomerInteraction, "id"> = {
         customerId: customer.id,
-        customerName: customer.name,
+        customerName: customerName,
         date: today,
         type: values.type as InteractionType,
         description: values.description,

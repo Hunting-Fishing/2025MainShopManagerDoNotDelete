@@ -1,4 +1,5 @@
 
+
 // Define the customer interface based on Supabase table structure
 export interface Customer {
   id: string;
@@ -17,6 +18,8 @@ export interface Customer {
   notes?: string;
   status?: string;
   lastServiceDate?: string;
+  name?: string;
+  dateAdded?: string;
 }
 
 // Helper type for creating a new customer
@@ -34,6 +37,8 @@ export const adaptCustomerForUI = (customer: Customer): Customer => {
     // Add UI-expected fields (these will be used by the components)
     status: 'active', // Default status since we don't have this in the database yet
     lastServiceDate: undefined, // This would need to come from work orders in a real implementation
+    name: getCustomerFullName(customer),
+    dateAdded: customer.created_at,
   };
 };
 
@@ -46,10 +51,11 @@ export const createCustomerForUI = (
     lastServiceDate?: string;
     status?: string;
   }
-): Customer & {name: string} => {
+): Customer => {
   return {
     ...dbCustomer,
     ...additionalProps,
     name: getCustomerFullName(dbCustomer),
-  } as Customer & {name: string};
+    dateAdded: dbCustomer.created_at,
+  };
 };

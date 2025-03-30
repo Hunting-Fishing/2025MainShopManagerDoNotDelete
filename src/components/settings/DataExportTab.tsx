@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { invoices } from "@/data/invoiceData";
 import { workOrders } from "@/data/workOrdersData";
 import { customers } from "@/data/customersData";
 import { inventoryItems } from "@/data/mockInventoryData";
+import { getCustomerFullName } from "@/types/customer";
 
 const DataExportTab = () => {
   const [isExporting, setIsExporting] = useState<Record<string, boolean>>({});
@@ -32,20 +32,24 @@ const DataExportTab = () => {
       let data: any[] = [];
       let columns: { header: string; dataKey: string }[] = [];
       
-      // Prepare data based on data type
       switch (dataType) {
         case "customers":
-          data = customers.map(customer => ({
-            id: customer.id,
-            name: customer.name,
-            company: customer.company || '',
-            email: customer.email || '',
-            phone: customer.phone || '',
-            address: customer.address || '',
-            dateAdded: customer.dateAdded,
-            lastServiceDate: customer.lastServiceDate || '',
-            status: customer.status
-          }));
+          data = customers.map(customer => {
+            const customerName = customer.name || getCustomerFullName(customer);
+            const dateAdded = customer.dateAdded || customer.created_at.split('T')[0];
+            
+            return {
+              id: customer.id,
+              name: customerName,
+              company: customer.company || '',
+              email: customer.email || '',
+              phone: customer.phone || '',
+              address: customer.address || '',
+              dateAdded: dateAdded,
+              lastServiceDate: customer.lastServiceDate || '',
+              status: customer.status || 'active'
+            };
+          });
           
           columns = [
             { header: "ID", dataKey: "id" },
@@ -143,19 +147,23 @@ const DataExportTab = () => {
           break;
           
         case "completeBackup":
-          // For complete backup, we'll create a multi-sheet Excel file
           const backupData = {
-            "Customers": customers.map(customer => ({
-              id: customer.id,
-              name: customer.name,
-              company: customer.company || '',
-              email: customer.email || '',
-              phone: customer.phone || '',
-              address: customer.address || '',
-              dateAdded: customer.dateAdded,
-              lastServiceDate: customer.lastServiceDate || '',
-              status: customer.status
-            })),
+            "Customers": customers.map(customer => {
+              const customerName = customer.name || getCustomerFullName(customer);
+              const dateAdded = customer.dateAdded || customer.created_at.split('T')[0];
+              
+              return {
+                id: customer.id,
+                name: customerName,
+                company: customer.company || '',
+                email: customer.email || '',
+                phone: customer.phone || '',
+                address: customer.address || '',
+                dateAdded: dateAdded,
+                lastServiceDate: customer.lastServiceDate || '',
+                status: customer.status || 'active'
+              };
+            }),
             "Work Orders": workOrders.map(order => ({
               id: order.id,
               customer: order.customer,
@@ -193,7 +201,6 @@ const DataExportTab = () => {
             }))
           };
           
-          // Export as Excel only for complete backup
           exportMultiSheetExcel(backupData, `Shop_Data_Backup_${new Date().toISOString().split('T')[0]}`);
           finishExport(exportKey);
           
@@ -204,7 +211,6 @@ const DataExportTab = () => {
           return;
       }
       
-      // Export based on format
       switch (format) {
         case "csv":
           exportToCSV(data, `${dataType}_${new Date().toISOString().split('T')[0]}`);
@@ -257,7 +263,6 @@ const DataExportTab = () => {
         
         <TabsContent value="individual" className="space-y-4 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Customers Export */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -331,7 +336,6 @@ const DataExportTab = () => {
               </CardFooter>
             </Card>
             
-            {/* Work Orders Export */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -405,7 +409,6 @@ const DataExportTab = () => {
               </CardFooter>
             </Card>
             
-            {/* Invoices Export */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -479,7 +482,6 @@ const DataExportTab = () => {
               </CardFooter>
             </Card>
             
-            {/* Inventory Export */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
