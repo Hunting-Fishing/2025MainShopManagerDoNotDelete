@@ -1,31 +1,56 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { customers } from "@/data/customersData";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, User, UserRound } from "lucide-react";
+import { Plus, Search, UserRound } from "lucide-react";
+import { Customer, getCustomerFullName } from "@/types/customer";
+import { getAllCustomers } from "@/services/customerService";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Customers() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
-  // Filter customers based on search query and status filter
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllCustomers();
+        setCustomers(data);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+        toast({
+          title: "Error fetching customers",
+          description: "Could not load customer data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, [toast]);
+  
+  // Filter customers based on search query
   const filteredCustomers = customers.filter(customer => {
+    const fullName = getCustomerFullName(customer);
     const matchesSearch = 
       !searchQuery ||
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (customer.company && customer.company.toLowerCase().includes(searchQuery.toLowerCase()));
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = 
-      statusFilter === "all" || customer.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+    // Since we don't have a status field in the real database table,
+    // we'll just show all customers when "all" is selected
+    return matchesSearch;
   });
 
   return (
@@ -62,9 +87,7 @@ export default function Customers() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="all">All Customers</option>
             </select>
           </div>
 
@@ -74,15 +97,20 @@ export default function Customers() {
                 <TableRow>
                   <TableHead className="w-[250px]">Customer</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Last Service</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Address</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers.length === 0 ? (
+                {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      Loading customers...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredCustomers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
                       No customers found.
                     </TableCell>
                   </TableRow>
@@ -99,11 +127,8 @@ export default function Customers() {
                               to={`/customers/${customer.id}`}
                               className="font-medium text-blue-600 hover:underline"
                             >
-                              {customer.name}
+                              {getCustomerFullName(customer)}
                             </Link>
-                            {customer.company && (
-                              <p className="text-sm text-slate-500">{customer.company}</p>
-                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -114,32 +139,10 @@ export default function Customers() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {customer.lastServiceDate ? (
-                          <p className="text-sm">
-                            {new Date(customer.lastServiceDate).toLocaleDateString()}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-slate-500">No service history</p>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={customer.status === 'active' ? 'default' : 'secondary'}
-                        >
-                          {customer.status === 'active' ? 'Active' : 'Inactive'}
-                        </Badge>
+                        <p className="text-sm">{customer.address}</p>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline" 
-                            size="sm" 
-                            asChild
-                          >
-                            <Link to={`/customer-service-history/${encodeURIComponent(customer.name)}`}>
-                              View History
-                            </Link>
-                          </Button>
                           <Button 
                             variant="outline" 
                             size="sm"

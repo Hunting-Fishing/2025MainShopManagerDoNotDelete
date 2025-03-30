@@ -77,12 +77,12 @@ export const searchCustomers = (query: string): SearchResult[] => {
 
   customers.forEach(customer => {
     let relevance = 0;
+    const fullName = `${customer.first_name} ${customer.last_name}`;
     
     relevance = Math.max(
       relevance,
       findMatches(customer.id, normalizedQuery),
-      findMatches(customer.name, normalizedQuery),
-      customer.company ? findMatches(customer.company, normalizedQuery) * 0.9 : 0,
+      findMatches(fullName, normalizedQuery),
       customer.email ? findMatches(customer.email, normalizedQuery) * 0.8 : 0,
       customer.phone ? findMatches(customer.phone, normalizedQuery) * 0.7 : 0
     );
@@ -90,8 +90,8 @@ export const searchCustomers = (query: string): SearchResult[] => {
     if (relevance > 0) {
       results.push({
         id: customer.id,
-        title: customer.name,
-        subtitle: `Customer${customer.company ? ` - ${customer.company}` : ''}`,
+        title: fullName,
+        subtitle: `Customer`,
         type: 'customer',
         url: `/customers/${customer.id}`,
         relevance

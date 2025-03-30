@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { findCustomerById } from "@/data/customersData";
-import { Customer } from "@/types/customer";
+import { Customer, getCustomerFullName } from "@/types/customer";
+import { getCustomerById } from "@/services/customerService";
 import { workOrders } from "@/data/workOrdersData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ export default function CustomerDetails() {
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
-    const fetchCustomerData = () => {
+    const fetchCustomerData = async () => {
       setLoading(true);
       try {
         if (!id) {
@@ -35,20 +35,25 @@ export default function CustomerDetails() {
           return;
         }
 
-        const foundCustomer = findCustomerById(id);
+        const foundCustomer = await getCustomerById(id);
         
         if (foundCustomer) {
           setCustomer(foundCustomer);
           
           // Filter work orders for this customer
+          // In a real implementation, we would fetch work orders from Supabase
+          // Since we're still using mock work order data, we need to match on names
+          const customerFullName = getCustomerFullName(foundCustomer);
           const filteredOrders = workOrders.filter(
-            (order) => order.customer.toLowerCase() === foundCustomer.name.toLowerCase()
+            (order) => order.customer.toLowerCase() === customerFullName.toLowerCase()
           );
           
           setCustomerWorkOrders(filteredOrders);
           
           // Get customer interactions
-          const interactions = getCustomerInteractions(foundCustomer.id);
+          // Note: In a real implementation, we would fetch interactions from Supabase
+          // The mock interaction data expects the old customer format, so we need to adapt
+          const interactions = getCustomerInteractions(id);
           setCustomerInteractions(interactions);
         } else {
           toast({
@@ -71,7 +76,7 @@ export default function CustomerDetails() {
     };
 
     fetchCustomerData();
-  }, [id, navigate]);
+  }, [id, navigate, toast]);
 
   // Handle adding a new interaction
   const handleInteractionAdded = (interaction: CustomerInteraction) => {
@@ -90,10 +95,23 @@ export default function CustomerDetails() {
     return null;
   }
 
+  // Create a backward compatible customer object for components that expect the old format
+  const adaptedCustomer = {
+    id: customer.id,
+    name: getCustomerFullName(customer),
+    email: customer.email,
+    phone: customer.phone,
+    address: customer.address,
+    company: "", // We don't have this in the real database
+    dateAdded: customer.created_at,
+    lastServiceDate: customerWorkOrders.length > 0 ? customerWorkOrders[0].date : undefined,
+    status: "active" // Default status since we don't have this in the real database
+  };
+
   return (
     <div className="space-y-6">
       <CustomerHeader 
-        customer={customer}
+        customer={adaptedCustomer}
         setAddInteractionOpen={setAddInteractionOpen}
       />
 
@@ -111,9 +129,9 @@ export default function CustomerDetails() {
         
         <TabsContent value="overview" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <CustomerInfoCard customer={customer} />
+            <CustomerInfoCard customer={adaptedCustomer} />
             <CustomerSummaryCard 
-              customer={customer}
+              customer={adaptedCustomer}
               customerWorkOrders={customerWorkOrders}
               customerInteractions={customerInteractions}
               setActiveTab={setActiveTab}
@@ -130,7 +148,7 @@ export default function CustomerDetails() {
         
         <TabsContent value="service" className="mt-6">
           <CustomerServiceTab
-            customer={customer}
+            customer={adaptedCustomer}
             customerWorkOrders={customerWorkOrders}
           />
         </TabsContent>
@@ -138,7 +156,7 @@ export default function CustomerDetails() {
       
       {customer && (
         <AddInteractionDialog
-          customer={customer}
+          customer={adaptedCustomer}
           open={addInteractionOpen}
           onOpenChange={setAddInteractionOpen}
           onInteractionAdded={handleInteractionAdded}

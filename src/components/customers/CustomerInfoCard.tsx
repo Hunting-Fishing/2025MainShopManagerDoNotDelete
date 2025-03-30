@@ -2,10 +2,17 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Building2, Calendar } from "lucide-react";
-import { Customer } from "@/types/customer";
 
 interface CustomerInfoCardProps {
-  customer: Customer;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    company?: string;
+    dateAdded: string;
+  };
 }
 
 export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({ customer }) => {
