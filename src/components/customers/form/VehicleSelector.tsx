@@ -15,7 +15,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Car, Plus, Trash } from "lucide-react";
+import { Car, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "./CustomerFormSchema";
