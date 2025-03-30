@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,12 +37,10 @@ export function LoyaltyTab() {
   const loadSettings = async () => {
     setIsLoading(true);
     try {
-      // In a real implementation, we'd get the shop ID from the user context
       const shopId = "DEFAULT-SHOP-ID"; // Placeholder
       const settingsData = await getLoyaltySettings(shopId);
       setSettings(settingsData);
       
-      // Load rewards
       if (settingsData) {
         const rewardsData = await getAvailableRewards(settingsData.shop_id);
         setRewards(rewardsData);

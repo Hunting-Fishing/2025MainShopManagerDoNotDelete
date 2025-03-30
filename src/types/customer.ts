@@ -173,3 +173,5 @@ export const createCustomerForUI = (
     dateAdded: dbCustomer.created_at,
   };
 };
+
+import { CustomerLoyalty } from './loyalty';

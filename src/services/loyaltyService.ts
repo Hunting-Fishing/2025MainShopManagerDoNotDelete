@@ -204,7 +204,14 @@ export const getTierByName = (tierName: string): LoyaltyTier => {
 };
 
 // Create a loyalty transaction
-export const createLoyaltyTransaction = async (transaction: Partial<LoyaltyTransaction>): Promise<LoyaltyTransaction> => {
+export const createLoyaltyTransaction = async (transaction: {
+  customer_id: string;
+  points: number;
+  transaction_type: 'earn' | 'redeem' | 'expire' | 'adjust';
+  description?: string;
+  reference_id?: string;
+  reference_type?: string;
+}): Promise<LoyaltyTransaction> => {
   const { data, error } = await supabase
     .from("loyalty_transactions")
     .insert(transaction)
@@ -216,7 +223,7 @@ export const createLoyaltyTransaction = async (transaction: Partial<LoyaltyTrans
     throw error;
   }
 
-  return data;
+  return data as LoyaltyTransaction;
 };
 
 // Get loyalty transactions for a customer
@@ -232,7 +239,7 @@ export const getCustomerTransactions = async (customerId: string): Promise<Loyal
     throw error;
   }
 
-  return data || [];
+  return data as LoyaltyTransaction[];
 };
 
 // Get available rewards
@@ -248,11 +255,19 @@ export const getAvailableRewards = async (shopId: string): Promise<LoyaltyReward
     throw error;
   }
 
-  return data || [];
+  return data as LoyaltyReward[];
 };
 
 // Create a new reward
-export const createReward = async (reward: Partial<LoyaltyReward>): Promise<LoyaltyReward> => {
+export const createReward = async (reward: {
+  shop_id: string;
+  name: string;
+  description?: string;
+  points_cost: number;
+  is_active: boolean;
+  reward_type: 'discount' | 'service' | 'product' | 'other';
+  reward_value?: number;
+}): Promise<LoyaltyReward> => {
   const { data, error } = await supabase
     .from("loyalty_rewards")
     .insert(reward)
@@ -264,11 +279,11 @@ export const createReward = async (reward: Partial<LoyaltyReward>): Promise<Loya
     throw error;
   }
 
-  return data;
+  return data as LoyaltyReward;
 };
 
 // Update a reward
-export const updateReward = async (reward: Partial<LoyaltyReward>): Promise<LoyaltyReward> => {
+export const updateReward = async (reward: Partial<LoyaltyReward> & { id: string }): Promise<LoyaltyReward> => {
   const { data, error } = await supabase
     .from("loyalty_rewards")
     .update(reward)
@@ -281,7 +296,7 @@ export const updateReward = async (reward: Partial<LoyaltyReward>): Promise<Loya
     throw error;
   }
 
-  return data;
+  return data as LoyaltyReward;
 };
 
 // Delete a reward
@@ -321,7 +336,7 @@ export const redeemPoints = async (
       customer_id: customerId,
       reward_id: rewardId,
       points_used: pointsCost,
-      status: 'pending'
+      status: 'pending' as const
     })
     .select()
     .single();
@@ -356,7 +371,10 @@ export const redeemPoints = async (
     throw updateError;
   }
   
-  return { redemption, updatedLoyalty };
+  return { 
+    redemption: redemption as LoyaltyRedemption, 
+    updatedLoyalty: updatedLoyalty as CustomerLoyalty 
+  };
 };
 
 // Get customer redemptions
@@ -375,7 +393,7 @@ export const getCustomerRedemptions = async (customerId: string): Promise<Loyalt
     throw error;
   }
 
-  return data || [];
+  return data as LoyaltyRedemption[];
 };
 
 // Update redemption status
@@ -413,7 +431,7 @@ export const updateRedemptionStatus = async (
   if (status === 'cancelled') {
     try {
       // Get the redemption data
-      const redemption = data;
+      const redemption = data as LoyaltyRedemption;
       
       // Refund points
       await addCustomerPoints(
@@ -432,7 +450,7 @@ export const updateRedemptionStatus = async (
     }
   }
 
-  return data;
+  return data as LoyaltyRedemption;
 };
 
 // Calculate lifetime value from invoices and update customer loyalty
@@ -479,5 +497,8 @@ export const updateCustomerLifetimeValue = async (customerId: string): Promise<C
     throw error;
   }
   
-  return data;
+  return data as CustomerLoyalty;
 };
+
+// Export the tier definitions for use in components
+export { DEFAULT_LOYALTY_TIERS };

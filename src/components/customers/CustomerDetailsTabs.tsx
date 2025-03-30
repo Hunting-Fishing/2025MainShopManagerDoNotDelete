@@ -22,16 +22,16 @@ export const CustomerDetailsTabs = ({ customer, onEdit }: CustomerDetailsTabsPro
             <TabsTrigger value="interactions">Interactions</TabsTrigger>
           </TabsList>
           <TabsContent value="service">
-            <CustomerServiceTab customerId={customer.id} vehicles={customer.vehicles || []} />
+            <CustomerServiceTab customer={customer} />
           </TabsContent>
           <TabsContent value="interactions">
-            <CustomerInteractionsTab customerId={customer.id} />
+            <CustomerInteractionsTab customer={customer} />
           </TabsContent>
         </Tabs>
       </div>
       <div className="space-y-6">
-        <CustomerInfoCard customer={customer} onEdit={onEdit} />
-        <CustomerSummaryCard customer={customer} />
+        <CustomerInfoCard customer={customer} />
+        <CustomerSummaryCard customer={customer} customerWorkOrders={[]} customerInteractions={[]} setActiveTab={() => {}} />
         <CustomerLoyaltyCard customerId={customer.id} />
       </div>
     </div>
