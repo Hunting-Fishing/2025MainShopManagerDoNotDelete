@@ -44,7 +44,6 @@ export function ReportScheduleForm({
           <div className="grid gap-2">
             <Label htmlFor="schedule-frequency">Frequency</Label>
             <Select
-              id="schedule-frequency"
               value={scheduleFrequency}
               onValueChange={setScheduleFrequency}
             >

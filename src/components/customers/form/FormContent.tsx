@@ -29,6 +29,7 @@ export const FormContent: React.FC<FormContentProps> = ({ form, currentTab }) =>
       <TabsContent value="business" className="mt-0">
         <div className="grid grid-cols-1 gap-6">
           <BusinessInfoFields form={form} />
+          <FleetFields form={form} />
         </div>
       </TabsContent>
       
@@ -41,7 +42,6 @@ export const FormContent: React.FC<FormContentProps> = ({ form, currentTab }) =>
       <TabsContent value="referral" className="mt-0">
         <div className="grid grid-cols-1 gap-6">
           <ReferralFields form={form} />
-          <FleetFields form={form} />
         </div>
       </TabsContent>
       

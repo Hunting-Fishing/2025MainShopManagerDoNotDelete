@@ -20,17 +20,17 @@ export const useFormValidation = (form: UseFormReturn<CustomerFormValues>) => {
     const personalFields = ['first_name', 'last_name', 'email', 'phone', 'address', 'shop_id'];
     setHasPersonalErrors(personalFields.some(field => !!errors[field as keyof typeof errors]));
 
-    // Business errors
-    const businessFields = ['company', 'tags', 'notes'];
+    // Business errors (now includes fleet fields)
+    const businessFields = ['company', 'tags', 'notes', 'is_fleet', 'fleet_company'];
     setHasBusinessErrors(businessFields.some(field => !!errors[field as keyof typeof errors]));
 
     // Preferences errors
     const preferencesFields = ['preferred_technician_id'];
     setHasPreferencesErrors(preferencesFields.some(field => !!errors[field as keyof typeof errors]));
 
-    // Referral / Fleet errors
-    const referralFleetFields = ['referral_source', 'referral_person_id', 'is_fleet', 'fleet_company'];
-    setHasReferralFleetErrors(referralFleetFields.some(field => !!errors[field as keyof typeof errors]));
+    // Referral errors (no longer includes fleet fields)
+    const referralFields = ['referral_source', 'referral_person_id'];
+    setHasReferralFleetErrors(referralFields.some(field => !!errors[field as keyof typeof errors]));
 
     // Vehicle errors
     setHasVehicleErrors(!!errors.vehicles);
