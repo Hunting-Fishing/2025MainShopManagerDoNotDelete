@@ -16,14 +16,34 @@ interface SidebarNavItemProps {
   item: NavItem;
 }
 
-export function SidebarNavItem({ item }: SidebarNavItemProps) {
+// Additional interface for direct prop passing
+interface DirectNavItemProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  disabled?: boolean;
+  submenu?: NavItem[];
+}
+
+// Component accepts either item object or direct props
+export function SidebarNavItem({ item, to, icon, label, disabled, submenu }: SidebarNavItemProps | DirectNavItemProps) {
   const location = useLocation();
-  const isActive = location.pathname === item.href;
-  const hasActiveSubmenu = item.submenu && item.submenu.some(subItem => location.pathname === subItem.href);
-  const showSubmenu = item.submenu && (location.pathname.startsWith(item.href) || hasActiveSubmenu);
+  
+  // Handle both formats (backward compatibility)
+  const navItem: NavItem = item || {
+    title: label || "",
+    href: to || "",
+    icon: icon,
+    disabled: disabled,
+    submenu: submenu
+  };
+  
+  const isActive = location.pathname === navItem.href;
+  const hasActiveSubmenu = navItem.submenu && navItem.submenu.some(subItem => location.pathname === subItem.href);
+  const showSubmenu = navItem.submenu && (location.pathname.startsWith(navItem.href) || hasActiveSubmenu);
 
   return (
-    <div key={item.title}>
+    <div key={navItem.title}>
       <Button
         asChild
         variant="ghost"
@@ -33,16 +53,16 @@ export function SidebarNavItem({ item }: SidebarNavItemProps) {
             ? "bg-secondary/50 font-semibold"
             : "font-medium"
         )}
-        disabled={item.disabled}
+        disabled={navItem.disabled}
       >
-        <Link to={item.href}>
-          {item.icon}
-          <span>{item.title}</span>
+        <Link to={navItem.href}>
+          {navItem.icon}
+          <span>{navItem.title}</span>
         </Link>
       </Button>
-      {item.submenu && showSubmenu && (
+      {navItem.submenu && showSubmenu && (
         <div className="ml-4 mt-1 flex flex-col space-y-1">
-          {item.submenu.map((subItem) => (
+          {navItem.submenu.map((subItem) => (
             <Button
               key={subItem.title}
               asChild
