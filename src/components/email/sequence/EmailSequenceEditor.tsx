@@ -532,9 +532,9 @@ export function EmailSequenceEditor({
                                               <SelectContent>
                                                 <SelectItem value="=">Equals (=)</SelectItem>
                                                 <SelectItem value="!=">Not Equals (!=)</SelectItem>
-                                                <SelectItem value=">">Greater Than (>)</SelectItem>
+                                                <SelectItem value=">">Greater Than (&gt;)</SelectItem>
                                                 <SelectItem value="<">Less Than (&lt;)</SelectItem>
-                                                <SelectItem value=">=">Greater Than or Equal (>=)</SelectItem>
+                                                <SelectItem value=">=">Greater Than or Equal (&gt;=)</SelectItem>
                                                 <SelectItem value="<=">Less Than or Equal (&lt;=)</SelectItem>
                                               </SelectContent>
                                             </Select>
