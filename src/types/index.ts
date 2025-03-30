@@ -15,3 +15,4 @@ export * from './reports';
 export * from './chat';
 export * from './repairPlan';
 export * from './loyalty';
+export * from './document';

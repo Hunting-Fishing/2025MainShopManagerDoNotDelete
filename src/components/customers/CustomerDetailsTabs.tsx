@@ -10,6 +10,7 @@ import { CustomerServiceReminders } from "./CustomerServiceReminders";
 import { Customer, CustomerCommunication } from "@/types/customer";
 import { CommunicationHistory } from "./communications/CommunicationHistory";
 import { CustomerNotesTimeline } from "./notes/CustomerNotesTimeline";
+import { CustomerDocumentsTab } from "./documents/CustomerDocumentsTab";
 
 interface CustomerDetailsTabsProps {
   customer: Customer;
@@ -44,6 +45,7 @@ export const CustomerDetailsTabs = ({
             <TabsTrigger value="service">Service History</TabsTrigger>
             <TabsTrigger value="interactions">Interactions</TabsTrigger>
             <TabsTrigger value="communications">Communications</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
           <TabsContent value="service">
@@ -64,6 +66,9 @@ export const CustomerDetailsTabs = ({
               communications={customerCommunications}
               onCommunicationAdded={onCommunicationAdded}
             />
+          </TabsContent>
+          <TabsContent value="documents">
+            <CustomerDocumentsTab customer={customer} />
           </TabsContent>
           <TabsContent value="notes">
             <CustomerNotesTimeline 

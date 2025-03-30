@@ -5,3 +5,4 @@ export * from './recentSearches';
 export * from './relevanceUtils';
 export * from './searchProviders';
 export * from './searchService';
+export * from './customerSearch';

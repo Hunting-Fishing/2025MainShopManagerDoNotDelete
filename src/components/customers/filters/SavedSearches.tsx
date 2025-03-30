@@ -5,12 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Star, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface SavedSearch {
-  id: string;
-  name: string;
-  filters: Record<string, any>;
-}
+import { SavedSearch } from "@/types/document";
+import { deleteSavedSearch, getSavedSearches, saveSavedSearch } from "@/services/searchService";
 
 interface SavedSearchesProps {
   currentFilters: Record<string, any>;
@@ -26,20 +22,17 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
   const [searchName, setSearchName] = useState("");
   const { toast } = useToast();
 
-  // Load saved searches from localStorage
+  // Load saved searches
   useEffect(() => {
-    const storedSearches = localStorage.getItem("customerSavedSearches");
-    if (storedSearches) {
-      setSavedSearches(JSON.parse(storedSearches));
-    }
+    const loadSavedSearches = async () => {
+      const searches = await getSavedSearches();
+      setSavedSearches(searches);
+    };
+    
+    loadSavedSearches();
   }, []);
 
-  // Save searches to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem("customerSavedSearches", JSON.stringify(savedSearches));
-  }, [savedSearches]);
-
-  const handleSaveSearch = () => {
+  const handleSaveSearch = async () => {
     if (!searchName.trim()) {
       toast({
         title: "Error",
@@ -49,25 +42,28 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
       return;
     }
 
-    const newSearch: SavedSearch = {
-      id: Date.now().toString(),
-      name: searchName,
-      filters: currentFilters,
-    };
+    const result = await saveSavedSearch(searchName, currentFilters);
+    
+    if (result) {
+      setSavedSearches(prev => [result, ...prev]);
+      setIsDialogOpen(false);
+      setSearchName("");
 
-    setSavedSearches([...savedSearches, newSearch]);
-    setIsDialogOpen(false);
-    setSearchName("");
-
-    toast({
-      title: "Search saved",
-      description: "Your search filters have been saved",
-      variant: "success",
-    });
+      toast({
+        title: "Search saved",
+        description: "Your search filters have been saved",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to save search",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleApplySearch = (search: SavedSearch) => {
-    onApplySearch(search.filters);
+    onApplySearch(search.search_query);
     
     toast({
       title: "Search applied",
@@ -75,13 +71,23 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
     });
   };
 
-  const handleDeleteSearch = (id: string) => {
-    setSavedSearches(savedSearches.filter(search => search.id !== id));
+  const handleDeleteSearch = async (id: string) => {
+    const success = await deleteSavedSearch(id);
     
-    toast({
-      title: "Search deleted",
-      description: "The saved search has been removed",
-    });
+    if (success) {
+      setSavedSearches(prev => prev.filter(search => search.id !== id));
+      
+      toast({
+        title: "Search deleted",
+        description: "The saved search has been removed",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete saved search",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
