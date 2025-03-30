@@ -16,18 +16,23 @@ export function SearchBar() {
   const [isSearching, setIsSearching] = useState(false);
 
   // Handle search form submission
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setIsSearching(true);
-      const results = performSearch(searchQuery);
-      setSearchResults(results);
-      setShowResults(true);
-      setIsSearching(false);
-      
-      // Track search analytics
-      if (results.length === 0) {
-        console.log('Search with no results:', searchQuery);
+      try {
+        const results = await performSearch(searchQuery);
+        setSearchResults(results);
+        setShowResults(true);
+        
+        // Track search analytics
+        if (results.length === 0) {
+          console.log('Search with no results:', searchQuery);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearching(false);
       }
     }
   };
@@ -36,10 +41,16 @@ export function SearchBar() {
   useEffect(() => {
     if (searchQuery.trim() && searchQuery.length >= 2) {
       setIsSearching(true);
-      const timer = setTimeout(() => {
-        setSearchResults(performSearch(searchQuery));
-        setShowResults(true);
-        setIsSearching(false);
+      const timer = setTimeout(async () => {
+        try {
+          const results = await performSearch(searchQuery);
+          setSearchResults(results);
+          setShowResults(true);
+        } catch (error) {
+          console.error('Search error:', error);
+        } finally {
+          setIsSearching(false);
+        }
       }, 300); // Debounce
       
       return () => clearTimeout(timer);
