@@ -153,8 +153,15 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
             <div className="space-y-2">
               <Label>Tags</Label>
               <TagSelector 
-                selectedTags={tempTags} 
-                onTagsChange={handleTagsChange} 
+                form={{ 
+                  setValue: (name, value) => handleTagsChange(value), 
+                  watch: () => tempTags
+                }}
+                field={{ 
+                  name: "tags", 
+                  value: tempTags,
+                  onChange: handleTagsChange 
+                }}
               />
             </div>
 

@@ -125,8 +125,7 @@ export const useCustomerDetails = (id: string | undefined) => {
     ? createCustomerForUI(customer, {
         lastServiceDate: customerWorkOrders.length > 0 ? customerWorkOrders[0].date : undefined,
         status: 'active',
-        noteEntries: notes,
-        communications: communications
+        notes: customer.notes
       })
     : null;
 
