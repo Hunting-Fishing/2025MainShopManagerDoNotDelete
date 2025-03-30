@@ -23,8 +23,9 @@ export const decodeVin = (vin: string): VinDecodeResult | null => {
     // Search for a matching prefix in our mock database
     for (const prefix in mockVinDatabase) {
       if (vinPrefix.startsWith(prefix)) {
-        console.log(`VIN decoded: ${vin} -> `, mockVinDatabase[prefix]);
-        return mockVinDatabase[prefix];
+        const result = { ...mockVinDatabase[prefix] };
+        console.log(`VIN decoded: ${vin} -> `, result);
+        return result;
       }
     }
     
@@ -35,12 +36,12 @@ export const decodeVin = (vin: string): VinDecodeResult | null => {
     const index = vinFirstChar.charCodeAt(0) % mockVins.length;
     const selectedMockVin = mockVins[index];
     
-    console.log(`No exact VIN match, using consistent vehicle for ${vin}:`, mockVinDatabase[selectedMockVin]);
-    return mockVinDatabase[selectedMockVin];
+    const result = { ...mockVinDatabase[selectedMockVin] };
+    console.log(`No exact VIN match, using consistent vehicle for ${vin}:`, result);
+    return result;
     
   } catch (err) {
     console.error("Error decoding VIN:", err);
     return null;
   }
 };
-

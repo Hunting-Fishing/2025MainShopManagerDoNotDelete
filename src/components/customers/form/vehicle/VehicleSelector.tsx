@@ -55,7 +55,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Year Field */}
-        <YearField form={form} index={index} years={years} makes={makes} models={models} selectedMake={selectedMake} />
+        <YearField form={form} index={index} years={years} />
 
         {/* Make Field */}
         <MakeField 

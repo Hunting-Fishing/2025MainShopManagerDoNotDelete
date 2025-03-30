@@ -6,18 +6,13 @@ import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "../CustomerFormSchema";
 
-interface VehicleFieldProps {
+interface BaseFieldProps {
   form: UseFormReturn<CustomerFormValues>;
   index: number;
-  models: any[];
-  years: number[];
-  makes: any[];
-  selectedMake: string;
-  loading?: boolean;
 }
 
 // VIN Input Field
-export const VinField: React.FC<Omit<VehicleFieldProps, 'models' | 'makes' | 'years' | 'selectedMake'>> = ({ form, index }) => {
+export const VinField: React.FC<BaseFieldProps> = ({ form, index }) => {
   return (
     <FormField
       control={form.control}
@@ -43,7 +38,7 @@ export const VinField: React.FC<Omit<VehicleFieldProps, 'models' | 'makes' | 'ye
 };
 
 // Year Field
-export const YearField: React.FC<VehicleFieldProps> = ({ form, index, years }) => {
+export const YearField: React.FC<BaseFieldProps & { years: number[] }> = ({ form, index, years }) => {
   return (
     <FormField
       control={form.control}
@@ -76,8 +71,10 @@ export const YearField: React.FC<VehicleFieldProps> = ({ form, index, years }) =
 };
 
 // Make Field
-export const MakeField: React.FC<Omit<VehicleFieldProps, 'models' | 'years' | 'selectedMake'> & { onMakeChange: (value: string) => void }> = 
-  ({ form, index, makes, onMakeChange }) => {
+export const MakeField: React.FC<BaseFieldProps & { 
+  makes: any[]; 
+  onMakeChange: (value: string) => void 
+}> = ({ form, index, makes, onMakeChange }) => {
   return (
     <FormField
       control={form.control}
@@ -110,8 +107,10 @@ export const MakeField: React.FC<Omit<VehicleFieldProps, 'models' | 'years' | 's
 };
 
 // Model Field
-export const ModelField: React.FC<Pick<VehicleFieldProps, 'form' | 'index' | 'models' | 'selectedMake'>> = 
-  ({ form, index, models, selectedMake }) => {
+export const ModelField: React.FC<BaseFieldProps & {
+  models: any[];
+  selectedMake: string;
+}> = ({ form, index, models, selectedMake }) => {
   return (
     <FormField
       control={form.control}
@@ -151,7 +150,7 @@ export const ModelField: React.FC<Pick<VehicleFieldProps, 'form' | 'index' | 'mo
 };
 
 // License Plate Field
-export const LicensePlateField: React.FC<Omit<VehicleFieldProps, 'models' | 'makes' | 'years' | 'selectedMake'>> = ({ form, index }) => {
+export const LicensePlateField: React.FC<BaseFieldProps> = ({ form, index }) => {
   return (
     <FormField
       control={form.control}
