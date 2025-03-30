@@ -1,63 +1,103 @@
 
-import React from "react";
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, Clock, History } from "lucide-react";
+import {
+  ClipboardList,
+  Clock,
+  Package,
+  MessageSquare,
+  History,
+  AlertCircle,
+  Phone
+} from "lucide-react";
 import { WorkOrder } from "@/data/workOrdersData";
 import { TimeEntry } from "@/types/workOrder";
-import { TimeTrackingSection } from "../time-tracking/TimeTrackingSection";
-import { WorkOrderInformation } from "./WorkOrderInformation";
-import { WorkOrderInventoryItems } from "./WorkOrderInventoryItems";
-import { WorkOrderActivityHistory } from "./WorkOrderActivityHistory";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { WorkOrderExportMenu } from "../WorkOrderExportMenu";
+import { WorkOrderInventoryItems } from "@/components/work-orders/details/WorkOrderInventoryItems";
+import { WorkOrderNotes } from "@/components/work-orders/details/WorkOrderNotes";
+import { WorkOrderStatusTimeline } from "@/components/work-orders/details/WorkOrderStatusTimeline";
+import { WorkOrderTimeTracking } from "@/components/work-orders/details/WorkOrderTimeTracking";
+import { WorkOrderActivityHistory } from "@/components/work-orders/details/WorkOrderActivityHistory";
+import { CallLogger } from '@/components/calls/CallLogger';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
-  onUpdateTimeEntries: (timeEntries: TimeEntry[]) => void;
+  onUpdateTimeEntries: (entries: TimeEntry[]) => void;
 }
 
 export function WorkOrderDetailsTabs({ workOrder, onUpdateTimeEntries }: WorkOrderDetailsTabsProps) {
-  const isMobile = useIsMobile();
-  
   return (
-    <div className="space-y-4">
-      <div className={`flex ${isMobile ? 'justify-end' : 'justify-end'}`}>
-        <WorkOrderExportMenu workOrder={workOrder} />
-      </div>
+    <Tabs defaultValue="details" className="space-y-4">
+      <TabsList className="flex h-auto flex-wrap justify-start bg-transparent p-0 w-full border-b">
+        <TabsTrigger
+          value="details"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <ClipboardList className="h-4 w-4 mr-2" />
+          Details
+        </TabsTrigger>
+        <TabsTrigger
+          value="time"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <Clock className="h-4 w-4 mr-2" />
+          Time Tracking
+        </TabsTrigger>
+        <TabsTrigger
+          value="inventory"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <Package className="h-4 w-4 mr-2" />
+          Parts & Inventory
+        </TabsTrigger>
+        <TabsTrigger
+          value="notes"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Notes
+        </TabsTrigger>
+        <TabsTrigger
+          value="activity"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <History className="h-4 w-4 mr-2" />
+          Activity
+        </TabsTrigger>
+        <TabsTrigger
+          value="communications"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <Phone className="h-4 w-4 mr-2" />
+          Communications
+        </TabsTrigger>
+      </TabsList>
       
-      <Tabs defaultValue="details">
-        <TabsList className={isMobile ? "w-full grid grid-cols-3" : ""}>
-          <TabsTrigger value="details" className={isMobile ? "flex flex-col items-center py-2 px-1" : ""}>
-            <ClipboardList className={isMobile ? "h-4 w-4 mb-1" : "mr-2 h-4 w-4"} />
-            <span className={isMobile ? "text-xs" : ""}>Details</span>
-          </TabsTrigger>
-          <TabsTrigger value="time-tracking" className={isMobile ? "flex flex-col items-center py-2 px-1" : ""}>
-            <Clock className={isMobile ? "h-4 w-4 mb-1" : "mr-2 h-4 w-4"} />
-            <span className={isMobile ? "text-xs" : ""}>Time Tracking</span>
-          </TabsTrigger>
-          <TabsTrigger value="activity" className={isMobile ? "flex flex-col items-center py-2 px-1" : ""}>
-            <History className={isMobile ? "h-4 w-4 mb-1" : "mr-2 h-4 w-4"} />
-            <span className={isMobile ? "text-xs" : ""}>Activity</span>
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="details" className="space-y-6">
-          <WorkOrderInformation workOrder={workOrder} />
-          <WorkOrderInventoryItems inventoryItems={workOrder.inventoryItems} />
-        </TabsContent>
-        
-        <TabsContent value="time-tracking">
-          <TimeTrackingSection 
-            workOrderId={workOrder.id}
-            timeEntries={workOrder.timeEntries || []}
-            onUpdateTimeEntries={onUpdateTimeEntries}
-          />
-        </TabsContent>
-        
-        <TabsContent value="activity">
-          <WorkOrderActivityHistory workOrderId={workOrder.id} />
-        </TabsContent>
-      </Tabs>
-    </div>
+      <TabsContent value="details" className="space-y-4 mt-4">
+        <WorkOrderStatusTimeline workOrder={workOrder} />
+      </TabsContent>
+      
+      <TabsContent value="time" className="space-y-4 mt-4">
+        <WorkOrderTimeTracking 
+          workOrder={workOrder} 
+          onUpdateTimeEntries={onUpdateTimeEntries}
+        />
+      </TabsContent>
+      
+      <TabsContent value="inventory" className="space-y-4 mt-4">
+        <WorkOrderInventoryItems workOrder={workOrder} />
+      </TabsContent>
+      
+      <TabsContent value="notes" className="space-y-4 mt-4">
+        <WorkOrderNotes workOrder={workOrder} />
+      </TabsContent>
+      
+      <TabsContent value="activity" className="space-y-4 mt-4">
+        <WorkOrderActivityHistory workOrderId={workOrder.id} />
+      </TabsContent>
+      
+      <TabsContent value="communications" className="space-y-4 mt-4">
+        <CallLogger workOrder={workOrder} />
+      </TabsContent>
+    </Tabs>
   );
 }

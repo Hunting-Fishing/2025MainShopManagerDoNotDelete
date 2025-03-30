@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Phone } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { initiateVoiceCall, VoiceCallType } from '@/services/calls/callService';
+import { recordCallActivity } from '@/utils/activityTracker';
 
 interface VoiceCallButtonProps {
   phoneNumber: string;
   callType: VoiceCallType;
   customerId?: string;
+  workOrderId?: string;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
@@ -19,6 +21,7 @@ export const VoiceCallButton = ({
   phoneNumber,
   callType,
   customerId,
+  workOrderId,
   variant = 'outline',
   size = 'sm',
   className = '',
@@ -43,6 +46,21 @@ export const VoiceCallButton = ({
         call_type: callType,
         customer_id: customerId
       });
+
+      // Record the call activity in work order history if applicable
+      if (workOrderId) {
+        try {
+          await recordCallActivity(
+            workOrderId,
+            phoneNumber,
+            callType,
+            "user-123", // This would be the actual user ID in a real app
+            "System User" // This would be the actual user name in a real app
+          );
+        } catch (activityError) {
+          console.error("Error recording call activity:", activityError);
+        }
+      }
 
       toast({
         title: "Call initiated",

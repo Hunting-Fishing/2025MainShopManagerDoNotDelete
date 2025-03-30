@@ -1,79 +1,85 @@
 
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { recordWorkOrderActivity } from "@/utils/workOrderUtils";
+import { supabase } from '@/integrations/supabase/client';
 
-// Types of trackable activities
-export type ActivityType = "login" | "workOrder" | "invoice";
-
-// Structure for an activity record
-export interface ActivityRecord {
-  id: string;
-  type: ActivityType;
-  description: string;
-  date: string;
-  staffId: string;
-  staffName: string;
-  relatedId?: string; // Work order ID, invoice ID, etc.
-}
-
-// Function to record staff activity
-export const recordActivity = async (
-  type: ActivityType,
-  description: string,
-  staffId: string,
-  staffName: string,
-  relatedId?: string
-): Promise<ActivityRecord | null> => {
+// Record work order activity
+export const recordWorkOrderActivity = async (
+  action: string,
+  workOrderId: string,
+  userId: string,
+  userName: string
+) => {
   try {
-    // In a real app with a more complete Supabase setup,
-    // we would insert into a general activity log table here
-    
-    // For now, we'll just log to console and return a mock record
-    console.log("Activity recorded:", {
-      type,
-      description,
-      staffId,
-      staffName,
-      relatedId
-    });
-    
-    return {
-      id: crypto.randomUUID(),
-      type,
-      description,
-      date: new Date().toISOString(),
-      staffId,
-      staffName,
-      relatedId
-    };
+    const { data, error } = await supabase
+      .from('work_order_activities')
+      .insert([
+        {
+          work_order_id: workOrderId,
+          action: action,
+          user_id: userId,
+          user_name: userName
+        }
+      ]);
+
+    if (error) throw error;
+    return data;
   } catch (error) {
-    console.error("Error recording activity:", error);
-    return null;
+    console.error('Error recording work order activity:', error);
+    throw error;
   }
 };
 
-// We've moved recordWorkOrderActivity to workOrderUtils.ts
-// to avoid circular dependencies, so let's re-export it here for compatibility
-export { recordWorkOrderActivity };
+// Record SMS communication activity
+export const recordSmsActivity = async (
+  workOrderId: string,
+  phoneNumber: string,
+  message: string,
+  userId: string,
+  userName: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_activities')
+      .insert([
+        {
+          work_order_id: workOrderId,
+          action: `SMS sent to ${phoneNumber}`,
+          user_id: userId,
+          user_name: userName
+        }
+      ]);
 
-// Function to record invoice activity specifically
-export const recordInvoiceActivity = async (
-  action: string,
-  invoiceId: string,
-  staffId: string,
-  staffName: string,
-  showToast: boolean = true
-): Promise<ActivityRecord | null> => {
-  const description = `${action} invoice ${invoiceId}`;
-  
-  if (showToast) {
-    toast({
-      title: "Activity Recorded",
-      description: description,
-      variant: "success",
-    });
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error recording SMS activity:', error);
+    throw error;
   }
-  
-  return recordActivity("invoice", description, staffId, staffName, invoiceId);
+};
+
+// Record call activity
+export const recordCallActivity = async (
+  workOrderId: string,
+  phoneNumber: string,
+  callType: string,
+  userId: string,
+  userName: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_activities')
+      .insert([
+        {
+          work_order_id: workOrderId,
+          action: `${callType} call initiated to ${phoneNumber}`,
+          user_id: userId,
+          user_name: userName
+        }
+      ]);
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error recording call activity:', error);
+    throw error;
+  }
 };

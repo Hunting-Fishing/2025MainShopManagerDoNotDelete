@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Wrench } from "lucide-react";
 import { RepairPlan } from "@/types/repairPlan";
 import { formatDate } from "@/utils/workOrderUtils";
+import { SendSmsButton } from "@/components/calls/SendSmsButton";
+import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
 
 interface RepairPlanDetailsCardProps {
   repairPlan: RepairPlan;
@@ -17,13 +19,35 @@ export function RepairPlanDetailsCard({
   getStatusColor, 
   getPriorityColor 
 }: RepairPlanDetailsCardProps) {
+  // This would come from customer data in a real app
+  const phoneNumber = "";
+  const customerId = "";
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <Wrench className="mr-2 h-5 w-5" />
-          Plan Details
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center">
+            <Wrench className="mr-2 h-5 w-5" />
+            Plan Details
+          </CardTitle>
+          <div className="flex space-x-2">
+            <SendSmsButton 
+              phoneNumber={phoneNumber} 
+              message={`Hello, regarding your repair plan: ${repairPlan.description}`} 
+              customerId={customerId}
+              variant="outline"
+              size="sm"
+            />
+            <VoiceCallButton
+              phoneNumber={phoneNumber}
+              callType="service_update" 
+              customerId={customerId}
+              variant="outline"
+              size="sm"
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

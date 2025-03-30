@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServiceHistoryTable } from "@/components/service-history/ServiceHistoryTable";
 import { toast } from "@/hooks/use-toast";
+import { SendSmsButton } from "@/components/calls/SendSmsButton";
+import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
 
 export default function CustomerServiceHistory() {
   const { customer } = useParams<{ customer: string }>();
@@ -64,6 +66,10 @@ export default function CustomerServiceHistory() {
     ? customerWorkOrders[0].customer 
     : customer;
 
+  // This would come from customer data in a real app
+  const phoneNumber = "";
+  const customerId = "";
+
   return (
     <div className="space-y-6">
       <div>
@@ -83,6 +89,23 @@ export default function CustomerServiceHistory() {
             <p className="text-muted-foreground">
               Service history for {customerName}
             </p>
+          </div>
+          
+          <div className="flex space-x-2 mt-4 md:mt-0">
+            <SendSmsButton 
+              phoneNumber={phoneNumber} 
+              message={`Hello ${customerName}, regarding your service history`} 
+              customerId={customerId}
+              variant="outline"
+              size="sm"
+            />
+            <VoiceCallButton
+              phoneNumber={phoneNumber}
+              callType="service_update" 
+              customerId={customerId}
+              variant="outline"
+              size="sm"
+            />
           </div>
         </div>
       </div>
@@ -118,6 +141,15 @@ export default function CustomerServiceHistory() {
         </CardHeader>
         <CardContent className="pt-6">
           <ServiceHistoryTable workOrders={customerWorkOrders} showEquipment={true} />
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="bg-slate-50 border-b">
+          <CardTitle className="text-lg">Communication History</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <CallHistory customerId={customerId || ""} />
         </CardContent>
       </Card>
     </div>

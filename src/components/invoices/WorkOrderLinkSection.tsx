@@ -1,6 +1,6 @@
 
 import React from "react";
-import { X, Check, LinkIcon } from "lucide-react";
+import { X, Check, LinkIcon, MessageSquare, Phone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SendSmsButton } from "@/components/calls/SendSmsButton";
+import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
 
 interface WorkOrder {
   id: string;
@@ -43,6 +45,10 @@ export function WorkOrderLinkSection({
   showWorkOrderDialog,
   setShowWorkOrderDialog,
 }: WorkOrderLinkSectionProps) {
+  // This would come from customer data in a real app
+  const phoneNumber = "";
+  const customerId = "";
+
   return (
     <>
       <div className="flex items-center justify-between mb-2">
@@ -90,9 +96,25 @@ export function WorkOrderLinkSection({
               <div className="font-medium">{workOrderId}</div>
               <div className="text-sm text-slate-500">{description}</div>
             </div>
-            <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={onClearWorkOrder}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <SendSmsButton 
+                phoneNumber={phoneNumber} 
+                message={`Hello, regarding your work order ${workOrderId}`} 
+                customerId={customerId}
+                variant="ghost"
+                size="sm"
+              />
+              <VoiceCallButton
+                phoneNumber={phoneNumber}
+                callType="service_update" 
+                customerId={customerId}
+                variant="ghost"
+                size="sm"
+              />
+              <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={onClearWorkOrder}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       ) : (

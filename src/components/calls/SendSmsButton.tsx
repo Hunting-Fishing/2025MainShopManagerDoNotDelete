@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { sendSms } from '@/services/calls/callService';
+import { recordSmsActivity } from '@/utils/activityTracker';
 
 interface SendSmsButtonProps {
   phoneNumber: string;
   message: string;
   customerId?: string;
   templateId?: string;
+  workOrderId?: string;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
@@ -21,6 +23,7 @@ export const SendSmsButton = ({
   message,
   customerId,
   templateId,
+  workOrderId,
   variant = 'outline',
   size = 'sm',
   className = '',
@@ -46,6 +49,21 @@ export const SendSmsButton = ({
         customer_id: customerId,
         template_id: templateId
       });
+
+      // Record the SMS activity in work order history if applicable
+      if (workOrderId) {
+        try {
+          await recordSmsActivity(
+            workOrderId,
+            phoneNumber,
+            message,
+            "user-123", // This would be the actual user ID in a real app
+            "System User" // This would be the actual user name in a real app
+          );
+        } catch (activityError) {
+          console.error("Error recording SMS activity:", activityError);
+        }
+      }
 
       toast({
         title: "SMS sent",

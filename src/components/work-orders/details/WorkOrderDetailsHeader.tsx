@@ -8,7 +8,8 @@ import {
   Edit, 
   MoreHorizontal, 
   FileText,
-  Trash2
+  Trash2,
+  Phone
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -21,6 +22,8 @@ import {
 import { formatDate } from '@/utils/workOrderUtils';
 import { WorkOrderChatButton } from '../WorkOrderChatButton';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SendSmsButton } from '@/components/calls/SendSmsButton';
+import { VoiceCallButton } from '@/components/calls/VoiceCallButton';
 
 interface WorkOrderDetailsHeaderProps {
   workOrder: WorkOrder;
@@ -38,6 +41,10 @@ function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderP
   const handleCreateInvoice = () => {
     navigate(`/invoices/new?workOrder=${workOrder.id}`);
   };
+
+  // This would come from customer data in a real app
+  const phoneNumber = "";
+  const customerId = "";
 
   return (
     <div className="flex flex-col space-y-4 pb-4 md:pb-6">
@@ -63,6 +70,24 @@ function WorkOrderDetailsHeader({ workOrder, onDelete }: WorkOrderDetailsHeaderP
             workOrderId={workOrder.id} 
             workOrderName={`${workOrder.id}: ${workOrder.description}`}
           />
+          
+          {/* SMS and Call buttons */}
+          <SendSmsButton 
+            phoneNumber={phoneNumber} 
+            message={`Hello, regarding your work order ${workOrder.id}`}
+            customerId={customerId}
+            variant="outline"
+            size="sm"
+          />
+          
+          <VoiceCallButton
+            phoneNumber={phoneNumber}
+            callType="appointment_reminder"
+            customerId={customerId}
+            variant="outline"
+            size="sm"
+          />
+          
           {!isMobile && (
             <Button variant="outline" size="sm">
               <Printer className="h-4 w-4 mr-2" />
