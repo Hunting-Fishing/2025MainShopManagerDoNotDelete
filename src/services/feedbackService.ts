@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { FeedbackForm, FeedbackQuestion, FeedbackResponse, FeedbackAnalytics } from "@/types/feedback";
+import { FeedbackForm, FeedbackQuestion, FeedbackResponse, FeedbackAnalytics, QuestionType } from "@/types/feedback";
 import { toast } from "@/hooks/use-toast";
 
 // Fetch all feedback forms for a shop
@@ -41,9 +41,16 @@ export const getFeedbackFormWithQuestions = async (formId: string): Promise<Feed
 
     if (questionsError) throw questionsError;
     
+    // Map questions to the correct type (casting question_type to QuestionType)
+    const typedQuestions: FeedbackQuestion[] = questionsData?.map(q => ({
+      ...q,
+      question_type: q.question_type as QuestionType,
+      options: q.options as string[] | null
+    })) || [];
+    
     return {
       ...formData,
-      questions: questionsData || []
+      questions: typedQuestions
     };
   } catch (error) {
     console.error('Error fetching feedback form with questions:', error);
@@ -124,7 +131,15 @@ export const createFeedbackQuestions = async (questions: Omit<FeedbackQuestion, 
       .select();
 
     if (error) throw error;
-    return data;
+    
+    // Map questions to the correct type
+    const typedQuestions: FeedbackQuestion[] = data?.map(q => ({
+      ...q,
+      question_type: q.question_type as QuestionType,
+      options: q.options as string[] | null
+    })) || [];
+    
+    return typedQuestions;
   } catch (error) {
     console.error('Error creating feedback questions:', error);
     toast({
@@ -188,7 +203,12 @@ export const submitFeedbackResponse = async (response: Omit<FeedbackResponse, 'i
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Cast the response_data to Record<string, any>
+    return {
+      ...data,
+      response_data: data.response_data as Record<string, any>
+    };
   } catch (error) {
     console.error('Error submitting feedback response:', error);
     toast({
@@ -210,7 +230,12 @@ export const getFeedbackResponses = async (formId: string): Promise<FeedbackResp
       .order('submitted_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Map the responses to cast response_data to Record<string, any>
+    return (data || []).map(response => ({
+      ...response,
+      response_data: response.response_data as Record<string, any>
+    }));
   } catch (error) {
     console.error('Error fetching feedback responses:', error);
     return [];
@@ -227,7 +252,12 @@ export const getCustomerFeedbackResponses = async (customerId: string): Promise<
       .order('submitted_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Map the responses to cast response_data to Record<string, any>
+    return (data || []).map(response => ({
+      ...response,
+      response_data: response.response_data as Record<string, any>
+    }));
   } catch (error) {
     console.error('Error fetching customer feedback responses:', error);
     return [];
@@ -244,7 +274,12 @@ export const getWorkOrderFeedbackResponses = async (workOrderId: string): Promis
       .order('submitted_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Map the responses to cast response_data to Record<string, any>
+    return (data || []).map(response => ({
+      ...response,
+      response_data: response.response_data as Record<string, any>
+    }));
   } catch (error) {
     console.error('Error fetching work order feedback responses:', error);
     return [];
