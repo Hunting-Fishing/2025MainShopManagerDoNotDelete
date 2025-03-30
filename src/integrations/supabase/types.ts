@@ -183,6 +183,112 @@ export type Database = {
           },
         ]
       }
+      communication_templates: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          name: string
+          shop_id: string
+          subject: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          name: string
+          shop_id: string
+          subject?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          shop_id?: string
+          subject?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_communications: {
+        Row: {
+          content: string
+          created_at: string
+          customer_id: string
+          date: string
+          direction: string
+          id: string
+          staff_member_id: string
+          staff_member_name: string
+          status: string
+          subject: string | null
+          template_id: string | null
+          template_name: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          customer_id: string
+          date?: string
+          direction: string
+          id?: string
+          staff_member_id: string
+          staff_member_name: string
+          status: string
+          subject?: string | null
+          template_id?: string | null
+          template_name?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          customer_id?: string
+          date?: string
+          direction?: string
+          id?: string
+          staff_member_id?: string
+          staff_member_name?: string
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+          template_name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_communications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_loyalty: {
         Row: {
           created_at: string

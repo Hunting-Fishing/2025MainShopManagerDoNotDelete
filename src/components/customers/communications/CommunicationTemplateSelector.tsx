@@ -1,46 +1,42 @@
 
 import React, { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
-interface CommunicationTemplate {
-  id: string;
-  name: string;
-  type: "email" | "phone" | "text" | "in-person";
-  subject?: string;
-  content: string;
-}
-
-// Sample templates - in a real app, these would come from the database
-const templates: CommunicationTemplate[] = [
+// This would come from the Supabase database in a real implementation
+const TEMPLATES = [
   {
     id: "1",
     name: "Service Follow-up",
     type: "email",
-    subject: "Following up on your recent service",
-    content: "Dear customer,\n\nI wanted to follow up regarding your recent service with us. Is everything working to your satisfaction? Please let us know if you have any questions or concerns.\n\nBest regards,"
+    subject: "Follow-up on your recent service",
+    content: "Dear customer,\n\nThank you for bringing your vehicle in for service recently. We wanted to check if everything is working well and if you have any questions.\n\nBest regards,\nYour Service Team",
   },
   {
     id: "2",
     name: "Appointment Reminder",
-    type: "text",
-    content: "Hi there! This is a reminder about your upcoming appointment with us on [DATE]. Please reply to confirm or reschedule."
+    type: "email",
+    subject: "Reminder: Your upcoming appointment",
+    content: "Dear customer,\n\nThis is a friendly reminder about your upcoming service appointment. We look forward to seeing you soon.\n\nBest regards,\nYour Service Team",
   },
   {
     id: "3",
-    name: "Service Quote",
-    type: "email",
-    subject: "Your service quote",
-    content: "Dear customer,\n\nThank you for contacting us about your service needs. Based on our discussion, we're providing the following quote:\n\n[QUOTE DETAILS]\n\nPlease let us know if you have any questions or if you'd like to proceed with scheduling.\n\nBest regards,"
+    name: "Service Reminder",
+    type: "text",
+    content: "Hi! Just a reminder that your vehicle is due for service. Please call us to schedule your appointment.",
   },
   {
     id: "4",
-    name: "Phone Call Notes",
+    name: "Thank You",
     type: "phone",
-    content: "Called customer to discuss:\n- Current service status\n- Upcoming maintenance needs\n- Scheduling options\n\nAction items:"
-  }
+    content: "Thank you for your business. Discuss recent service work and ask if they have any questions.",
+  },
 ];
 
 interface CommunicationTemplateSelectorProps {
@@ -52,43 +48,37 @@ interface CommunicationTemplateSelectorProps {
 export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelectorProps> = ({
   onTemplateSelect,
   type,
-  setType
+  setType,
 }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
-  
-  // Filter templates by the selected type
-  const filteredTemplates = templates.filter(template => 
-    type === "all" || template.type === type
+
+  // Filter templates by communication type
+  const filteredTemplates = TEMPLATES.filter(template => 
+    template.type === type || type === ""
   );
 
-  const handleTypeChange = (newType: string) => {
-    setType(newType);
-    setSelectedTemplateId("");
-  };
-
   const handleTemplateSelect = (templateId: string) => {
-    const selectedTemplate = templates.find(t => t.id === templateId);
-    if (selectedTemplate) {
-      setSelectedTemplateId(templateId);
-      onTemplateSelect(
-        selectedTemplate.id,
-        selectedTemplate.name,
-        selectedTemplate.content,
-        selectedTemplate.subject
-      );
-      
-      // Ensure the type matches the template
-      if (selectedTemplate.type !== type) {
-        setType(selectedTemplate.type);
-      }
-    }
+    const template = TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+    
+    setSelectedTemplateId(templateId);
+    setType(template.type);
+    onTemplateSelect(
+      template.id, 
+      template.name, 
+      template.content, 
+      template.subject
+    );
   };
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="template-type">Communication Type</Label>
-        <Select value={type} onValueChange={handleTypeChange}>
+        <Label>Communication Type</Label>
+        <Select
+          value={type}
+          onValueChange={(value) => setType(value)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select type" />
           </SelectTrigger>
@@ -100,36 +90,24 @@ export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelect
           </SelectContent>
         </Select>
       </div>
-      
+
       <div className="space-y-2">
-        <Label>Select a Template</Label>
-        {filteredTemplates.length > 0 ? (
-          <div className="space-y-2 max-h-[200px] overflow-y-auto">
+        <Label>Select Template</Label>
+        <Select
+          value={selectedTemplateId}
+          onValueChange={handleTemplateSelect}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Choose a template" />
+          </SelectTrigger>
+          <SelectContent>
             {filteredTemplates.map(template => (
-              <Card 
-                key={template.id}
-                className={`p-3 cursor-pointer hover:bg-slate-50 transition-colors ${
-                  selectedTemplateId === template.id ? "border-primary ring-1 ring-primary" : ""
-                }`}
-                onClick={() => handleTemplateSelect(template.id)}
-              >
-                <div className="font-medium">{template.name}</div>
-                {template.subject && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Subject: {template.subject}
-                  </div>
-                )}
-                <div className="text-xs text-muted-foreground mt-1 truncate">
-                  {template.content.substring(0, 60)}...
-                </div>
-              </Card>
+              <SelectItem key={template.id} value={template.id}>
+                {template.name}
+              </SelectItem>
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            No templates available for this communication type.
-          </div>
-        )}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

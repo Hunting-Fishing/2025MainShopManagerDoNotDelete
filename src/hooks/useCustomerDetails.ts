@@ -1,147 +1,105 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Customer, getCustomerFullName, createCustomerForUI, CustomerNote, CustomerCommunication } from "@/types/customer";
-import { CustomerInteraction } from "@/types/interaction";
+import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { getCustomerById } from "@/services/customerService";
-import { workOrders } from "@/data/workOrdersData";
-import { getCustomerInteractions } from "@/data/interactionsData";
+import { CustomerInteraction } from "@/types/interaction";
+import { getMockInteractions } from "@/data/interactionsData";
 import { useToast } from "@/hooks/use-toast";
-import { isValidUUID } from "@/utils/validators";
+import { supabase } from "@/integrations/supabase/client";
 
-export const useCustomerDetails = (id: string | undefined) => {
-  const navigate = useNavigate();
+export const useCustomerDetails = (id?: string) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [customerWorkOrders, setCustomerWorkOrders] = useState<any[]>([]);
   const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
-  const [notes, setNotes] = useState<CustomerNote[]>([]);
-  const [communications, setCommunications] = useState<CustomerCommunication[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [customerCommunications, setCustomerCommunications] = useState<CustomerCommunication[]>([]);
+  const [customerNotes, setCustomerNotes] = useState<CustomerNote[]>([]);
+  const [loading, setLoading] = useState(true);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("service");
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchCustomerData = async () => {
-      setLoading(true);
-      try {
-        if (!id) {
-          navigate("/customers");
-          return;
-        }
+    if (id) {
+      loadCustomerDetails(id);
+    }
+  }, [id]);
 
-        // Check if the ID is valid before fetching
-        if (!isValidUUID(id)) {
-          toast({
-            title: "Invalid customer ID",
-            description: "The requested customer ID is not valid.",
-            variant: "destructive",
-          });
-          navigate("/customers");
-          return;
-        }
-
-        const foundCustomer = await getCustomerById(id);
-        
-        if (foundCustomer) {
-          setCustomer(foundCustomer);
-          
-          // Filter work orders for this customer
-          // In a real implementation, we would fetch work orders from Supabase
-          // Since we're still using mock work order data, we need to match on names
-          const customerFullName = getCustomerFullName(foundCustomer);
-          const filteredOrders = workOrders.filter(
-            (order) => order.customer.toLowerCase() === customerFullName.toLowerCase()
-          );
-          
-          setCustomerWorkOrders(filteredOrders);
-          
-          // Get customer interactions
-          // Note: In a real implementation, we would fetch interactions from Supabase
-          // The mock interaction data expects the old customer format, so we need to adapt
-          const interactions = getCustomerInteractions(id);
-          setCustomerInteractions(interactions);
-          
-          // Initialize empty arrays for notes and communications
-          // In a real implementation, we would fetch these from Supabase
-          setNotes(foundCustomer.noteEntries || []);
-          setCommunications(foundCustomer.communications || []);
-        } else {
-          toast({
-            title: "Customer not found",
-            description: "The requested customer could not be found.",
-            variant: "destructive",
-          });
-          navigate("/customers");
-        }
-      } catch (error) {
-        console.error("Error fetching customer data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load customer details.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+  const loadCustomerDetails = async (customerId: string) => {
+    setLoading(true);
+    try {
+      // Fetch customer data
+      const customerData = await getCustomerById(customerId);
+      if (customerData) {
+        setCustomer(customerData);
       }
-    };
 
-    fetchCustomerData();
-  }, [id, navigate, toast]);
+      // Load work orders (would be fetched from Supabase in a real implementation)
+      setCustomerWorkOrders([]);
 
-  // Handle adding a new interaction
+      // Load interactions
+      const interactions = await getMockInteractions(customerId);
+      setCustomerInteractions(interactions);
+
+      // Fetch communications from Supabase
+      fetchCustomerCommunications(customerId);
+      
+      // Fetch notes from Supabase (would be implemented in a real app)
+      // We're not implementing this for now
+      setCustomerNotes([]);
+
+    } catch (error) {
+      console.error("Error loading customer details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load customer details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCustomerCommunications = async (customerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_communications')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      setCustomerCommunications(data || []);
+    } catch (error) {
+      console.error("Error fetching communications:", error);
+    }
+  };
+
   const handleInteractionAdded = (interaction: CustomerInteraction) => {
-    setCustomerInteractions([interaction, ...customerInteractions]);
+    setCustomerInteractions(prev => [interaction, ...prev]);
+    setActiveTab("interactions");
   };
 
-  // Handle adding a new note
-  const handleNoteAdded = (note: CustomerNote) => {
-    setNotes([note, ...notes]);
-    
-    // Update the customer object to include the new note
-    if (customer) {
-      setCustomer({
-        ...customer,
-        noteEntries: [note, ...(customer.noteEntries || [])],
-      });
-    }
-  };
-
-  // Handle adding a new communication
   const handleCommunicationAdded = (communication: CustomerCommunication) => {
-    setCommunications([communication, ...communications]);
-    
-    // Update the customer object to include the new communication
-    if (customer) {
-      setCustomer({
-        ...customer,
-        communications: [communication, ...(customer.communications || [])],
-      });
-    }
+    setCustomerCommunications(prev => [communication, ...prev]);
   };
 
-  // Create a backward compatible customer object for components that expect the old format
-  const adaptedCustomer = customer 
-    ? createCustomerForUI(customer, {
-        lastServiceDate: customerWorkOrders.length > 0 ? customerWorkOrders[0].date : undefined,
-        status: 'active',
-        notes: customer.notes
-      })
-    : null;
+  const handleNoteAdded = (note: CustomerNote) => {
+    setCustomerNotes(prev => [note, ...prev]);
+  };
 
   return {
-    customer: adaptedCustomer,
+    customer,
     customerWorkOrders,
     customerInteractions,
-    notes,
-    communications,
+    customerCommunications,
+    customerNotes,
     loading,
     addInteractionOpen,
     setAddInteractionOpen,
     activeTab,
     setActiveTab,
     handleInteractionAdded,
-    handleNoteAdded,
-    handleCommunicationAdded
+    handleCommunicationAdded,
+    handleNoteAdded
   };
 };

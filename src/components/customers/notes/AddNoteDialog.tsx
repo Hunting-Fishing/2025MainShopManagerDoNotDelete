@@ -35,11 +35,11 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
   onNoteAdded,
 }) => {
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState<"service" | "sales" | "follow-up" | "general">("general");
+  const [category, setCategory] = useState<string>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!content.trim()) {
       toast({
         title: "Error",
@@ -56,9 +56,9 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
         id: uuidv4(),
         customer_id: customer.id,
         date: new Date().toISOString(),
-        category,
+        category: category as 'service' | 'sales' | 'follow-up' | 'general',
         content,
-        created_by: "Current User", // In a real app, this would be the logged-in user
+        created_by: "Current User", // In a real app, this would be the logged-in user's name
         created_at: new Date().toISOString(),
       };
       
@@ -67,7 +67,7 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
       
       toast({
         title: "Note added",
-        description: "The note has been added successfully",
+        description: "Your note has been added successfully",
       });
       
       // Close the dialog and reset form
@@ -92,10 +92,11 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Add Note for {customer.first_name} {customer.last_name}</DialogTitle>
         </DialogHeader>
+        
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={(value: any) => setCategory(value)}>
+            <Select value={category} onValueChange={setCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -107,11 +108,12 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="note">Note</Label>
+            <Label htmlFor="content">Note</Label>
             <Textarea
-              id="note"
-              placeholder="Enter your note..."
+              id="content"
+              placeholder="Enter your note here..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={5}
@@ -119,16 +121,21 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
             />
           </div>
         </div>
+        
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              setContent("");
+              setCategory("general");
+              onOpenChange(false);
+            }}
             disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Adding..." : "Add Note"}
+            {isSubmitting ? "Saving..." : "Save Note"}
           </Button>
         </DialogFooter>
       </DialogContent>
