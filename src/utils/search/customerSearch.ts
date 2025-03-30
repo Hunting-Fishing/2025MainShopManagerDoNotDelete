@@ -97,7 +97,7 @@ const applyDateRangeFilter = (customer: Customer, dateRange: DateRange): boolean
 
 const applyHasVehiclesFilter = (customer: Customer, hasVehicles: string): boolean => {
   if (hasVehicles === "yes") {
-    return customer.vehicles && customer.vehicles.length > 0;
+    return customer.vehicles !== undefined && customer.vehicles.length > 0;
   } else if (hasVehicles === "no") {
     return !customer.vehicles || customer.vehicles.length === 0;
   }

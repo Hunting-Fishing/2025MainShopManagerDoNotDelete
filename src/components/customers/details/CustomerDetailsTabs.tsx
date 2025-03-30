@@ -2,12 +2,14 @@
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Customer } from "@/types/customer";
+import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { CustomerInteraction } from "@/types/interaction";
 import { CustomerInfoCard } from "../CustomerInfoCard";
-import { CustomerSummaryCard } from "../CustomerSummaryCard";
+import { EnhancedCustomerPreview } from "../EnhancedCustomerPreview";
 import { CustomerInteractionsTab } from "../CustomerInteractionsTab";
 import { CustomerServiceTab } from "../CustomerServiceTab";
+import { CustomerNotesTimeline } from "../notes/CustomerNotesTimeline";
+import { CommunicationHistory } from "../communications/CommunicationHistory";
 
 interface CustomerDetailsTabsProps {
   customer: Customer & { name?: string, status?: string, lastServiceDate?: string };
@@ -26,10 +28,38 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   activeTab,
   setActiveTab
 }) => {
+  // State for customer notes and communications
+  const [notes, setNotes] = useState<CustomerNote[]>(customer.noteEntries || []);
+  const [communications, setCommunications] = useState<CustomerCommunication[]>(
+    customer.communications || []
+  );
+
+  // Handle adding a new note
+  const handleNoteAdded = (newNote: CustomerNote) => {
+    setNotes([newNote, ...notes]);
+  };
+
+  // Handle adding a new communication
+  const handleCommunicationAdded = (newCommunication: CustomerCommunication) => {
+    setCommunications([newCommunication, ...communications]);
+  };
+
   return (
     <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
       <TabsList>
         <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="notes">
+          Notes
+          {notes.length > 0 && (
+            <Badge className="ml-2 bg-blue-100 text-blue-800">{notes.length}</Badge>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="communications">
+          Communications
+          {communications.length > 0 && (
+            <Badge className="ml-2 bg-green-100 text-green-800">{communications.length}</Badge>
+          )}
+        </TabsTrigger>
         <TabsTrigger value="interactions">
           Interaction History 
           {customerInteractions.length > 0 && (
@@ -42,13 +72,28 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       <TabsContent value="overview" className="space-y-6 mt-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <CustomerInfoCard customer={customer} />
-          <CustomerSummaryCard 
+          <EnhancedCustomerPreview 
             customer={customer}
-            customerWorkOrders={customerWorkOrders}
-            customerInteractions={customerInteractions}
-            setActiveTab={setActiveTab}
+            workOrderCount={customerWorkOrders.length}
+            lastServiceDate={customer.lastServiceDate}
           />
         </div>
+      </TabsContent>
+      
+      <TabsContent value="notes" className="mt-6">
+        <CustomerNotesTimeline
+          customer={customer}
+          notes={notes}
+          onNoteAdded={handleNoteAdded}
+        />
+      </TabsContent>
+      
+      <TabsContent value="communications" className="mt-6">
+        <CommunicationHistory
+          customer={customer}
+          communications={communications}
+          onCommunicationAdded={handleCommunicationAdded}
+        />
       </TabsContent>
       
       <TabsContent value="interactions" className="mt-6">

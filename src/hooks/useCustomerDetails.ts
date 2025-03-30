@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Customer, getCustomerFullName, createCustomerForUI } from "@/types/customer";
+import { Customer, getCustomerFullName, createCustomerForUI, CustomerNote, CustomerCommunication } from "@/types/customer";
 import { CustomerInteraction } from "@/types/interaction";
 import { getCustomerById } from "@/services/customerService";
 import { workOrders } from "@/data/workOrdersData";
@@ -14,6 +14,8 @@ export const useCustomerDetails = (id: string | undefined) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [customerWorkOrders, setCustomerWorkOrders] = useState<any[]>([]);
   const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
+  const [notes, setNotes] = useState<CustomerNote[]>([]);
+  const [communications, setCommunications] = useState<CustomerCommunication[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -59,6 +61,11 @@ export const useCustomerDetails = (id: string | undefined) => {
           // The mock interaction data expects the old customer format, so we need to adapt
           const interactions = getCustomerInteractions(id);
           setCustomerInteractions(interactions);
+          
+          // Initialize empty arrays for notes and communications
+          // In a real implementation, we would fetch these from Supabase
+          setNotes(foundCustomer.noteEntries || []);
+          setCommunications(foundCustomer.communications || []);
         } else {
           toast({
             title: "Customer not found",
@@ -87,11 +94,39 @@ export const useCustomerDetails = (id: string | undefined) => {
     setCustomerInteractions([interaction, ...customerInteractions]);
   };
 
+  // Handle adding a new note
+  const handleNoteAdded = (note: CustomerNote) => {
+    setNotes([note, ...notes]);
+    
+    // Update the customer object to include the new note
+    if (customer) {
+      setCustomer({
+        ...customer,
+        noteEntries: [note, ...(customer.noteEntries || [])],
+      });
+    }
+  };
+
+  // Handle adding a new communication
+  const handleCommunicationAdded = (communication: CustomerCommunication) => {
+    setCommunications([communication, ...communications]);
+    
+    // Update the customer object to include the new communication
+    if (customer) {
+      setCustomer({
+        ...customer,
+        communications: [communication, ...(customer.communications || [])],
+      });
+    }
+  };
+
   // Create a backward compatible customer object for components that expect the old format
   const adaptedCustomer = customer 
     ? createCustomerForUI(customer, {
         lastServiceDate: customerWorkOrders.length > 0 ? customerWorkOrders[0].date : undefined,
-        status: 'active'
+        status: 'active',
+        noteEntries: notes,
+        communications: communications
       })
     : null;
 
@@ -99,11 +134,15 @@ export const useCustomerDetails = (id: string | undefined) => {
     customer: adaptedCustomer,
     customerWorkOrders,
     customerInteractions,
+    notes,
+    communications,
     loading,
     addInteractionOpen,
     setAddInteractionOpen,
     activeTab,
     setActiveTab,
-    handleInteractionAdded
+    handleInteractionAdded,
+    handleNoteAdded,
+    handleCommunicationAdded
   };
 };

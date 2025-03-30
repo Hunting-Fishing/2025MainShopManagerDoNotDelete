@@ -1,18 +1,29 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, ChevronDown, Filter, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { DateRange } from "react-day-picker";
-import { TagSelector } from "@/components/customers/form/TagSelector";
-import { X, ChevronDown, ChevronUp, Filter, Calendar, Tag } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { TagSelector } from "../form/TagSelector";
 import { SavedSearches } from "./SavedSearches";
+import { DateRange } from "react-day-picker";
 
 export interface CustomerFilters {
   searchQuery: string;
-  tags: string[];
+  tags?: string[];
   vehicleType?: string;
   dateRange?: DateRange;
   hasVehicles?: string;
@@ -27,157 +38,130 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
   filters,
   onFilterChange,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [localFilters, setLocalFilters] = useState<CustomerFilters>(filters);
-  const [activeFilterCount, setActiveFilterCount] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const [tempTags, setTempTags] = useState<string[]>(filters.tags || []);
 
-  // Update local state when parent filters change
-  useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
-
-  // Calculate the number of active filters
-  useEffect(() => {
-    let count = 0;
-    if (filters.tags && filters.tags.length > 0) count++;
-    if (filters.vehicleType) count++;
-    if (filters.dateRange && (filters.dateRange.from || filters.dateRange.to)) count++;
-    if (filters.hasVehicles) count++;
-    setActiveFilterCount(count);
-  }, [filters]);
-
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFilters = { ...localFilters, searchQuery: e.target.value };
-    setLocalFilters(newFilters);
-    onFilterChange(newFilters);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange({
+      ...filters,
+      searchQuery: e.target.value,
+    });
   };
 
   const handleTagsChange = (newTags: string[]) => {
-    const newFilters = { ...localFilters, tags: newTags };
-    setLocalFilters(newFilters);
-    onFilterChange(newFilters);
+    setTempTags(newTags);
+    onFilterChange({
+      ...filters,
+      tags: newTags,
+    });
   };
 
   const handleVehicleTypeChange = (value: string) => {
-    const newFilters = { ...localFilters, vehicleType: value };
-    setLocalFilters(newFilters);
-    onFilterChange(newFilters);
-  };
-
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    const newFilters = { ...localFilters, dateRange: range };
-    setLocalFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({
+      ...filters,
+      vehicleType: value || undefined,
+    });
   };
 
   const handleHasVehiclesChange = (value: string) => {
-    const newFilters = { ...localFilters, hasVehicles: value };
-    setLocalFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({
+      ...filters,
+      hasVehicles: value,
+    });
   };
 
-  const handleClearFilters = () => {
-    const clearedFilters: CustomerFilters = {
-      searchQuery: localFilters.searchQuery, // Keep the search query
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    onFilterChange({
+      ...filters,
+      dateRange: range,
+    });
+  };
+
+  const resetFilters = () => {
+    onFilterChange({
+      searchQuery: "",
       tags: [],
       vehicleType: undefined,
       dateRange: undefined,
       hasVehicles: undefined,
-    };
-    setLocalFilters(clearedFilters);
-    onFilterChange(clearedFilters);
+    });
+    setTempTags([]);
   };
 
-  const handleApplySavedSearch = (savedFilters: Record<string, any>) => {
-    const newFilters = { ...savedFilters };
-    setLocalFilters(newFilters as CustomerFilters);
-    onFilterChange(newFilters as CustomerFilters);
-    setIsExpanded(true); // Expand to show the applied filters
-  };
-
-  const hasActiveFilters = activeFilterCount > 0;
+  const activeFiltersCount = 
+    (filters.tags && filters.tags.length > 0 ? 1 : 0) +
+    (filters.vehicleType ? 1 : 0) +
+    (filters.dateRange && (filters.dateRange.from || filters.dateRange.to) ? 1 : 0) +
+    (filters.hasVehicles ? 1 : 0);
 
   return (
-    <div className="space-y-4 mb-6 border rounded-lg p-4">
-      <div className="flex flex-col gap-4">
-        <div className="relative flex-1">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-grow">
           <Input
-            type="search"
             placeholder="Search customers..."
-            className="pl-8"
-            value={localFilters.searchQuery}
-            onChange={handleSearchInputChange}
+            value={filters.searchQuery}
+            onChange={handleSearchChange}
+            className="pl-10"
           />
-          <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
         </div>
-
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-1"
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4" /> Hide Filters
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" /> Show Filters
-                  {hasActiveFilters && (
-                    <Badge variant="secondary" className="ml-1">
-                      {activeFilterCount}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </Button>
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearFilters}
-                className="text-xs"
-              >
-                <X className="h-3 w-3 mr-1" /> Clear Filters
-              </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={expanded ? "secondary" : "outline"}
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1"
+          >
+            <Filter className="h-4 w-4" />
+            <span className="hidden sm:inline">Filters</span>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="ml-1">
+                {activeFiltersCount}
+              </Badge>
             )}
-          </div>
+          </Button>
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={resetFilters}
+              title="Clear all filters"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t mt-2">
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium flex items-center mb-1">
-                <Tag className="h-4 w-4 mr-1" /> Customer Tags
-              </label>
+      {expanded && (
+        <Card className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Tags</Label>
               <TagSelector 
-                value={localFilters.tags || []} 
-                onChange={handleTagsChange} 
+                selectedTags={tempTags} 
+                onTagsChange={handleTagsChange} 
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium flex items-center mb-1">
-                <Calendar className="h-4 w-4 mr-1" /> Service Date Range
-              </label>
-              <DatePickerWithRange
-                date={localFilters.dateRange}
-                setDate={handleDateRangeChange}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Vehicle Type</label>
-              <Select 
-                value={localFilters.vehicleType || ""} 
+            <div className="space-y-2">
+              <Label>Vehicle Type</Label>
+              <Select
+                value={filters.vehicleType || ""}
                 onValueChange={handleVehicleTypeChange}
               >
                 <SelectTrigger>
@@ -189,19 +173,66 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
                   <SelectItem value="suv">SUV</SelectItem>
                   <SelectItem value="truck">Truck</SelectItem>
                   <SelectItem value="van">Van</SelectItem>
-                  <SelectItem value="coupe">Coupe</SelectItem>
-                  <SelectItem value="wagon">Wagon</SelectItem>
-                  <SelectItem value="convertible">Convertible</SelectItem>
-                  <SelectItem value="hatchback">Hatchback</SelectItem>
-                  <SelectItem value="crossover">Crossover</SelectItem>
+                  <SelectItem value="sports">Sports</SelectItem>
+                  <SelectItem value="luxury">Luxury</SelectItem>
+                  <SelectItem value="hybrid">Hybrid</SelectItem>
+                  <SelectItem value="electric">Electric</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1 block">Has Vehicles</label>
-              <Select 
-                value={localFilters.hasVehicles || ""} 
+            <div className="space-y-2">
+              <Label>Service Date Range</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filters.dateRange?.from && !filters.dateRange?.to && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dateRange?.from ? (
+                      filters.dateRange.to ? (
+                        <>
+                          {format(filters.dateRange.from, "LLL dd, y")} -{" "}
+                          {format(filters.dateRange.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(filters.dateRange.from, "LLL dd, y")
+                      )
+                    ) : filters.dateRange?.to ? (
+                      format(filters.dateRange.to, "LLL dd, y")
+                    ) : (
+                      <span>Service date range</span>
+                    )}
+                    {(filters.dateRange?.from || filters.dateRange?.to) && (
+                      <X 
+                        className="ml-auto h-4 w-4 hover:scale-110 transition-transform cursor-pointer" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDateRangeChange(undefined);
+                        }}
+                      />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={filters.dateRange}
+                    onSelect={handleDateRangeChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Has Vehicles</Label>
+              <Select
+                value={filters.hasVehicles || ""}
                 onValueChange={handleHasVehiclesChange}
               >
                 <SelectTrigger>
@@ -214,13 +245,13 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
                 </SelectContent>
               </Select>
             </div>
-
-            <SavedSearches 
-              currentFilters={localFilters} 
-              onApplySearch={handleApplySavedSearch} 
-            />
           </div>
-        </div>
+
+          <SavedSearches
+            currentFilters={filters}
+            onApplySearch={onFilterChange}
+          />
+        </Card>
       )}
     </div>
   );

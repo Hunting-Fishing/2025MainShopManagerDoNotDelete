@@ -20,6 +20,7 @@ export interface Customer {
   fleet_company?: string;
   notes?: string;
   tags?: string[];
+  vehicles?: CustomerVehicle[];
   
   // We'll add these fields for compatibility with existing components
   // They will be undefined on direct database objects, but we'll use getters
@@ -28,6 +29,49 @@ export interface Customer {
   lastServiceDate?: string;
   name?: string;
   dateAdded?: string;
+  
+  // New fields for Phase 2
+  communications?: CustomerCommunication[];
+  noteEntries?: CustomerNote[];
+}
+
+// Define vehicle information
+export interface CustomerVehicle {
+  id: string;
+  year?: number;
+  make?: string;
+  model?: string;
+  vin?: string;
+  license_plate?: string;
+  color?: string;
+  last_service_date?: string;
+}
+
+// Define customer note entry
+export interface CustomerNote {
+  id: string;
+  customer_id: string;
+  date: string;
+  category: 'service' | 'sales' | 'follow-up' | 'general';
+  content: string;
+  created_by: string;
+  created_at: string;
+}
+
+// Define customer communication
+export interface CustomerCommunication {
+  id: string;
+  customer_id: string;
+  date: string;
+  type: 'email' | 'phone' | 'text' | 'in-person';
+  direction: 'incoming' | 'outgoing';
+  subject?: string;
+  content: string;
+  staff_member_id: string;
+  staff_member_name: string;
+  status: 'completed' | 'pending' | 'failed';
+  template_id?: string;
+  template_name?: string;
 }
 
 // Helper type for creating a new customer

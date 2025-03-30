@@ -264,7 +264,7 @@ export const getCustomersWithVehicles = async (): Promise<Customer[]> => {
       customers.map(async (customer) => {
         try {
           // In a real implementation, this would fetch from Supabase
-          // Here we'll just use any existing vehicles already in the customer object
+          // Here we'll set an empty array if no vehicles exist
           if (!customer.vehicles) {
             customer.vehicles = [];
           }
