@@ -62,7 +62,13 @@ export class MockWebSocket {
 
   private trigger(event: string, data: any) {
     if (this.callbacks[event]) {
-      this.callbacks[event].forEach(callback => callback(data));
+      this.callbacks[event].forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`Error in ${event} callback:`, error);
+        }
+      });
     }
   }
 

@@ -37,10 +37,12 @@ export class NotificationService implements INotificationService {
       this.updateConnectionStatus(true);
       
       // Subscribe to user-specific channel
-      this.socket.send(JSON.stringify({
-        type: 'subscribe',
-        channel: `user:${userId}`
-      }));
+      if (this.socket) {
+        this.socket.send(JSON.stringify({
+          type: 'subscribe',
+          channel: `user:${userId}`
+        }));
+      }
     });
     
     this.socket.on('close', () => {
@@ -140,10 +142,12 @@ export class NotificationService implements INotificationService {
       };
       
       // Send via WebSocket
-      this.socket.simulateMessage({
-        type: 'notification',
-        notification
-      });
+      if (this.socket) {
+        this.socket.simulateMessage({
+          type: 'notification',
+          notification
+        });
+      }
     }
   }
 
