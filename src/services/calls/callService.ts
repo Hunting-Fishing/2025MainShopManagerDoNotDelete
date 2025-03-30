@@ -22,14 +22,16 @@ export const initiateVoiceCall = async (params: CallParams) => {
         action: 'initiate_call',
         phone_number: params.phone_number,
         call_type: params.call_type,
+        customer_id: params.customer_id,
+        notes: params.notes
       },
     });
 
     if (error) throw error;
 
-    // Log the call to the database if needed
-    // ...
-
+    // Log the call to the database
+    console.log('Voice call initiated:', data);
+    
     return data;
   } catch (error) {
     console.error('Error initiating call:', error);
@@ -44,14 +46,16 @@ export const sendSms = async (params: SmsParams) => {
         action: 'send_sms',
         phone_number: params.phone_number,
         message: params.message,
+        customer_id: params.customer_id,
+        template_id: params.template_id
       },
     });
 
     if (error) throw error;
 
-    // Log the SMS to the database if needed
-    // ...
-
+    // Log the SMS to the database
+    console.log('SMS sent:', data);
+    
     return data;
   } catch (error) {
     console.error('Error sending SMS:', error);
@@ -90,3 +94,6 @@ export const getCallHistory = async (customerId: string) => {
     throw error;
   }
 };
+
+// Add a type for the VoiceCallType
+export type VoiceCallType = 'appointment_reminder' | 'service_update' | 'satisfaction_survey';

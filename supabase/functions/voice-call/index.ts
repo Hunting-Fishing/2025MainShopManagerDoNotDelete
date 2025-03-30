@@ -21,11 +21,15 @@ serve(async (req) => {
       throw new Error('Missing Twilio credentials. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER in your environment variables.');
     }
 
-    const { action, phone_number, message, call_type } = await req.json();
+    console.log('Processing request to voice-call function');
+    const requestData = await req.json();
+    const { action, phone_number, message, call_type, customer_id, notes } = requestData;
+
+    console.log('Request data:', { action, phone_number, call_type, customer_id });
 
     // Basic validation
     if (!action || !phone_number) {
-      throw new Error('Missing required parameters');
+      throw new Error('Missing required parameters: action and phone_number are required');
     }
 
     // Handle different actions
@@ -33,6 +37,8 @@ serve(async (req) => {
       if (!message) {
         throw new Error('Message is required for SMS');
       }
+
+      console.log(`Sending SMS to ${phone_number}: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`);
 
       // Call Twilio API to send SMS
       const twilioResponse = await fetch(
@@ -54,8 +60,11 @@ serve(async (req) => {
       const twilioData = await twilioResponse.json();
       
       if (!twilioResponse.ok) {
+        console.error('Twilio SMS API error:', twilioData);
         throw new Error(`Twilio API error: ${JSON.stringify(twilioData)}`);
       }
+
+      console.log('SMS sent successfully:', twilioData.sid);
 
       return new Response(
         JSON.stringify({ success: true, data: twilioData }),
@@ -66,6 +75,8 @@ serve(async (req) => {
       if (!call_type) {
         throw new Error('Call type is required for initiating calls');
       }
+
+      console.log(`Initiating ${call_type} call to ${phone_number}`);
 
       // TwiML for different call types
       let twiml = '';
@@ -103,6 +114,8 @@ serve(async (req) => {
         `;
       }
 
+      console.log('Using TwiML:', twiml.replace(/\s+/g, ' ').trim());
+
       // Call Twilio API to initiate call
       const twilioResponse = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`,
@@ -123,12 +136,69 @@ serve(async (req) => {
       const twilioData = await twilioResponse.json();
       
       if (!twilioResponse.ok) {
+        console.error('Twilio Call API error:', twilioData);
         throw new Error(`Twilio API error: ${JSON.stringify(twilioData)}`);
       }
+
+      console.log('Call initiated successfully:', twilioData.sid);
 
       return new Response(
         JSON.stringify({ success: true, data: twilioData }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    else if (action === 'handle_response') {
+      // This would handle responses from TwiML Gather actions
+      console.log('Handling call response:', requestData);
+      
+      // Process the DTMF input
+      const Digits = requestData.Digits;
+      const type = requestData.type;
+      
+      let responseTwiml = '';
+      
+      if (type === 'appointment') {
+        if (Digits === '1') {
+          responseTwiml = `
+            <Response>
+              <Say>Thank you for confirming your appointment. We look forward to seeing you.</Say>
+            </Response>
+          `;
+        } else if (Digits === '2') {
+          responseTwiml = `
+            <Response>
+              <Say>We understand you need to reschedule. A representative will contact you shortly to arrange a new appointment time.</Say>
+            </Response>
+          `;
+        }
+      }
+      else if (type === 'service') {
+        if (Digits === '1') {
+          responseTwiml = `
+            <Response>
+              <Say>Thank you for acknowledging our message. We'll keep your vehicle ready for pickup.</Say>
+            </Response>
+          `;
+        } else if (Digits === '2') {
+          responseTwiml = `
+            <Response>
+              <Say>We're transferring you to a representative. Please hold.</Say>
+              <Dial>+15551234567</Dial>
+            </Response>
+          `;
+        }
+      }
+      else if (type === 'survey') {
+        responseTwiml = `
+          <Response>
+            <Say>Thank you for your feedback. We appreciate your business.</Say>
+          </Response>
+        `;
+      }
+      
+      return new Response(
+        responseTwiml,
+        { headers: { 'Content-Type': 'text/xml' } }
       );
     }
     
@@ -142,7 +212,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in voice-call function:', error);
     
     return new Response(
       JSON.stringify({ error: error.message }),
