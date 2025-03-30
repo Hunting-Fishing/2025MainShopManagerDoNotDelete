@@ -54,7 +54,19 @@ export const addCustomerPoints = async (
     throw error;
   }
 
-  return { loyalty: data, transaction };
+  return { 
+    loyalty: {
+      id: data.id,
+      customer_id: data.customer_id,
+      current_points: data.current_points,
+      lifetime_points: data.lifetime_points,
+      lifetime_value: data.lifetime_value,
+      tier: data.tier,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    }, 
+    transaction 
+  };
 };
 
 // Create a loyalty transaction

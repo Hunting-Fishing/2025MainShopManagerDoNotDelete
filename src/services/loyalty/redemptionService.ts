@@ -66,7 +66,16 @@ export const redeemPoints = async (
   
   return { 
     redemption: redemption as LoyaltyRedemption, 
-    updatedLoyalty: updatedLoyalty as CustomerLoyalty 
+    updatedLoyalty: {
+      id: updatedLoyalty.id,
+      customer_id: updatedLoyalty.customer_id,
+      current_points: updatedLoyalty.current_points,
+      lifetime_points: updatedLoyalty.lifetime_points,
+      lifetime_value: updatedLoyalty.lifetime_value,
+      tier: updatedLoyalty.tier,
+      created_at: updatedLoyalty.created_at,
+      updated_at: updatedLoyalty.updated_at
+    }
   };
 };
 

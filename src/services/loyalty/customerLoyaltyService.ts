@@ -22,13 +22,47 @@ export const getCustomerLoyalty = async (customerId: string): Promise<CustomerLo
   if (!data) return null;
 
   return {
-    customerId: data.customer_id,
-    currentPoints: data.current_points,
-    lifetimePoints: data.lifetime_points,
-    lifetimeValue: data.lifetime_value,
-    currentTier: data.current_tier,
-    joinDate: data.join_date,
-    lastActivity: data.last_activity
+    id: data.id,
+    customer_id: data.customer_id,
+    current_points: data.current_points,
+    lifetime_points: data.lifetime_points,
+    lifetime_value: data.lifetime_value,
+    tier: data.tier,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
+};
+
+// Create a new customer loyalty record
+export const createCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty> => {
+  const newLoyalty = {
+    customer_id: customerId,
+    current_points: 0,
+    lifetime_points: 0,
+    lifetime_value: 0,
+    tier: "Standard"
+  };
+
+  const { data, error } = await supabase
+    .from("customer_loyalty")
+    .insert(newLoyalty)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating customer loyalty:", error);
+    throw error;
+  }
+
+  return {
+    id: data.id,
+    customer_id: data.customer_id,
+    current_points: data.current_points,
+    lifetime_points: data.lifetime_points,
+    lifetime_value: data.lifetime_value,
+    tier: data.tier,
+    created_at: data.created_at,
+    updated_at: data.updated_at
   };
 };
 
@@ -42,47 +76,18 @@ export const updateCustomerLoyaltyPoints = async (
 
   if (!existing) {
     // If no loyalty record exists, create a new one
-    const newLoyalty = {
-      customer_id: customerId,
-      current_points: pointsToAdd,
-      lifetime_points: pointsToAdd,
-      lifetime_value: 0,
-      current_tier: "standard",
-      join_date: new Date().toISOString(),
-      last_activity: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabase
-      .from("customer_loyalty")
-      .insert(newLoyalty)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating customer loyalty:", error);
-      throw error;
-    }
-
-    return {
-      customerId: data.customer_id,
-      currentPoints: data.current_points,
-      lifetimePoints: data.lifetime_points,
-      lifetimeValue: data.lifetime_value,
-      currentTier: data.current_tier,
-      joinDate: data.join_date,
-      lastActivity: data.last_activity
-    };
+    return createCustomerLoyalty(customerId);
   } else {
     // Update the existing record
-    const updatedPoints = existing.currentPoints + pointsToAdd;
-    const updatedLifetimePoints = existing.lifetimePoints + pointsToAdd;
+    const updatedPoints = existing.current_points + pointsToAdd;
+    const updatedLifetimePoints = existing.lifetime_points + pointsToAdd;
 
     const { data, error } = await supabase
       .from("customer_loyalty")
       .update({
         current_points: updatedPoints,
         lifetime_points: updatedLifetimePoints,
-        last_activity: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq("customer_id", customerId)
       .select()
@@ -94,13 +99,14 @@ export const updateCustomerLoyaltyPoints = async (
     }
 
     return {
-      customerId: data.customer_id,
-      currentPoints: data.current_points,
-      lifetimePoints: data.lifetime_points,
-      lifetimeValue: data.lifetime_value,
-      currentTier: data.current_tier,
-      joinDate: data.join_date,
-      lastActivity: data.last_activity
+      id: data.id,
+      customer_id: data.customer_id,
+      current_points: data.current_points,
+      lifetime_points: data.lifetime_points,
+      lifetime_value: data.lifetime_value,
+      tier: data.tier,
+      created_at: data.created_at,
+      updated_at: data.updated_at
     };
   }
 };
