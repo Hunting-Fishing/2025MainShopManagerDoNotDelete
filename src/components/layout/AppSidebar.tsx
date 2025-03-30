@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Sheet,
@@ -7,9 +8,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { SidebarNavItem } from "./SidebarNavItem"
-import { SidebarNavList } from "./SidebarNavList"
-import { SidebarContent, SidebarHeader } from "./Sidebar"
+import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem"
+import { SidebarNavList } from "@/components/layout/sidebar/SidebarNavList"
+import { SidebarContent, SidebarHeader } from "@/components/layout/sidebar/SidebarContent"
 import {
   HomeIcon,
   ClipboardList,
@@ -18,7 +19,7 @@ import {
   Calendar,
   Package,
   HardDrive,
-  Tool,
+  Wrench,
   Users2,
   BarChart,
   Settings,
@@ -35,14 +36,14 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 export function AppSidebar() {
-  const { isOpen, onOpen, onClose } = useSidebar();
+  const { collapsed, toggleCollapsed } = useSidebar();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   return (
     <>
       {isMobile ? (
-        <Sheet open={isOpen} onOpenChange={onClose}>
+        <Sheet open={collapsed} onOpenChange={toggleCollapsed}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm" className="md:hidden">
               Open Menu
@@ -64,7 +65,7 @@ export function AppSidebar() {
                 <SidebarNavItem to="/calendar" icon={<Calendar />}>Calendar</SidebarNavItem>
                 <SidebarNavItem to="/inventory" icon={<Package />}>Inventory</SidebarNavItem>
                 <SidebarNavItem to="/equipment" icon={<HardDrive />}>Equipment</SidebarNavItem>
-                <SidebarNavItem to="/maintenance" icon={<Tool />}>Maintenance</SidebarNavItem>
+                <SidebarNavItem to="/maintenance" icon={<Wrench />}>Maintenance</SidebarNavItem>
                 <SidebarNavItem to="/repair-plans" icon={<Clipboard />}>Repair Plans</SidebarNavItem>
                 <SidebarNavItem to="/reminders" icon={<Bell />}>Reminders</SidebarNavItem>
                 <SidebarNavItem to="/team" icon={<Users2 />}>Team</SidebarNavItem>
@@ -80,7 +81,7 @@ export function AppSidebar() {
                   <SidebarNavItem to="/email-templates" icon={<FileText />}>Email Templates</SidebarNavItem>
                   <SidebarNavItem to="/email-campaigns" icon={<Mail />}>Email Campaigns</SidebarNavItem>
                   <SidebarNavItem to="/email-sequences" icon={<ArrowRight />}>Email Sequences</SidebarNavItem>
-                  <SidebarNavItem to="/sms-templates" icon={<MessageSquare />}>SMS Templates</SidebarNavItem>
+                  <SidebarNavItem to="/sms-templates" icon={<MessageSquare />}>SMS Management</SidebarNavItem>
                 </div>
                 
                 <SidebarNavItem to="/settings" icon={<Settings />}>Settings</SidebarNavItem>
@@ -105,7 +106,7 @@ export function AppSidebar() {
               <SidebarNavItem to="/calendar" icon={<Calendar />}>Calendar</SidebarNavItem>
               <SidebarNavItem to="/inventory" icon={<Package />}>Inventory</SidebarNavItem>
               <SidebarNavItem to="/equipment" icon={<HardDrive />}>Equipment</SidebarNavItem>
-              <SidebarNavItem to="/maintenance" icon={<Tool />}>Maintenance</SidebarNavItem>
+              <SidebarNavItem to="/maintenance" icon={<Wrench />}>Maintenance</SidebarNavItem>
               <SidebarNavItem to="/repair-plans" icon={<Clipboard />}>Repair Plans</SidebarNavItem>
               <SidebarNavItem to="/reminders" icon={<Bell />}>Reminders</SidebarNavItem>
               <SidebarNavItem to="/team" icon={<Users2 />}>Team</SidebarNavItem>
@@ -121,7 +122,7 @@ export function AppSidebar() {
                 <SidebarNavItem to="/email-templates" icon={<FileText />}>Email Templates</SidebarNavItem>
                 <SidebarNavItem to="/email-campaigns" icon={<Mail />}>Email Campaigns</SidebarNavItem>
                 <SidebarNavItem to="/email-sequences" icon={<ArrowRight />}>Email Sequences</SidebarNavItem>
-                <SidebarNavItem to="/sms-templates" icon={<MessageSquare />}>SMS Templates</SidebarNavItem>
+                <SidebarNavItem to="/sms-templates" icon={<MessageSquare />}>SMS Management</SidebarNavItem>
               </div>
               
               <SidebarNavItem to="/settings" icon={<Settings />}>Settings</SidebarNavItem>

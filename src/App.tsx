@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import {
   BrowserRouter as Router,
@@ -5,33 +6,33 @@ import {
   Route,
   Navigate
 } from 'react-router-dom';
-import { Dashboard } from '@/pages/Dashboard';
-import { WorkOrders } from '@/pages/WorkOrders';
-import { Customers } from '@/pages/Customers';
-import { Invoices } from '@/pages/Invoices';
-import { Calendar } from '@/pages/Calendar';
-import { Reports } from '@/pages/Reports';
-import { Inventory } from '@/pages/Inventory';
-import { Team } from '@/pages/Team';
-import { Settings } from '@/pages/Settings';
-import { SmsTemplates } from '@/pages/SmsTemplates';
-import { Maintenance } from '@/pages/Maintenance';
-import { Equipment } from '@/pages/Equipment';
-import { Reminders } from '@/pages/Reminders';
+import Dashboard from '@/pages/Dashboard';
+import WorkOrders from '@/pages/WorkOrders';
+import Customers from '@/pages/Customers';
+import Invoices from '@/pages/Invoices';
+import Calendar from '@/pages/Calendar';
+import Reports from '@/pages/Reports';
+import Inventory from '@/pages/Inventory';
+import Team from '@/pages/Team';
+import Settings from '@/pages/Settings';
+import SmsManagement from '@/pages/SmsManagement';
+import Maintenance from '@/pages/Maintenance';
+import Equipment from '@/pages/Equipment';
+import Reminders from '@/pages/Reminders';
 import { Layout } from '@/components/layout/Layout';
-import { WorkOrderDetails } from '@/pages/WorkOrderDetails';
-import { CustomerDetails } from '@/pages/CustomerDetails';
-import { CreateWorkOrder } from '@/pages/CreateWorkOrder';
-import { CreateCustomer } from '@/pages/CreateCustomer';
-import { CreateInvoice } from '@/pages/CreateInvoice';
-import { TeamMemberProfile } from '@/pages/TeamMemberProfile';
-import { CreateTeamMember } from '@/pages/CreateTeamMember';
+import WorkOrderDetails from '@/pages/WorkOrderDetails';
+import CustomerDetails from '@/pages/CustomerDetails';
+import CreateWorkOrder from '@/pages/CreateWorkOrder';
+import CreateCustomer from '@/pages/CreateCustomer';
+import CreateInvoice from '@/pages/CreateInvoice';
+import TeamMemberProfile from '@/pages/TeamMemberProfile';
+import CreateTeamMember from '@/pages/CreateTeamMember';
 import CustomerServiceHistory from '@/pages/CustomerServiceHistory';
-import { InvoiceDetails } from '@/pages/InvoiceDetails';
-import { EquipmentDetails } from '@/pages/EquipmentDetails';
-import { RepairPlans } from '@/pages/RepairPlans';
-import { RepairPlanDetails } from '@/pages/RepairPlanDetails';
-import { CreateRepairPlan } from '@/pages/CreateRepairPlan';
+import InvoiceDetails from '@/pages/InvoiceDetails';
+import EquipmentDetails from '@/pages/EquipmentDetails';
+import RepairPlans from '@/pages/RepairPlans';
+import RepairPlanDetails from '@/pages/RepairPlanDetails';
+import CreateRepairPlan from '@/pages/CreateRepairPlan';
 import EmailTemplates from '@/pages/EmailTemplates';
 import EmailCampaigns from '@/pages/EmailCampaigns';
 import EmailSequences from '@/pages/EmailSequences';
@@ -61,7 +62,7 @@ function App() {
             <Route path="team/create" element={<CreateTeamMember />} />
             <Route path="team/:id" element={<TeamMemberProfile />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="sms-templates" element={<SmsTemplates />} />
+            <Route path="sms-templates" element={<SmsManagement />} />
             <Route path="maintenance" element={<Maintenance />} />
             <Route path="equipment" element={<Equipment />} />
             <Route path="equipment/:id" element={<EquipmentDetails />} />

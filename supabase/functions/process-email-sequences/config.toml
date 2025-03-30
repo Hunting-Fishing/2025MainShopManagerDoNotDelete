@@ -1,2 +1,5 @@
 
 project_id = "oudkbrnvommbvtuispla"
+services = [
+  { name = "process-email-sequences", path = "." }
+]
