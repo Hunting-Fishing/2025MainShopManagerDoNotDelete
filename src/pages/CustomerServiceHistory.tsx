@@ -9,7 +9,7 @@ import { ServiceHistoryTable } from "@/components/service-history/ServiceHistory
 import { toast } from "@/hooks/use-toast";
 import { SendSmsButton } from "@/components/calls/SendSmsButton";
 import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
-import { CallHistory } from "@/components/calls/CallHistory";
+import { CallHistory } from "@/components/calls/CallHistory"; // Make sure this import is correct
 
 export default function CustomerServiceHistory() {
   const { customer } = useParams<{ customer: string }>();

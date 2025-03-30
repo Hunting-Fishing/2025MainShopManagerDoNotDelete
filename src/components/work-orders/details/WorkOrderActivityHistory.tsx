@@ -35,7 +35,17 @@ export function WorkOrderActivityHistory({ workOrderId }: WorkOrderActivityHisto
           
         if (error) throw error;
         
-        setActivities(data || []);
+        // Map the response data to match the Activity interface
+        const formattedActivities: Activity[] = (data || []).map((item: any) => ({
+          id: item.id,
+          work_order_id: item.work_order_id,
+          action: item.action,
+          user_id: item.user_id,
+          user_name: item.user_name,
+          created_at: item.timestamp || item.created_at // Handle both field names
+        }));
+        
+        setActivities(formattedActivities);
       } catch (error) {
         console.error('Error fetching work order activities:', error);
       } finally {

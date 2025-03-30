@@ -84,7 +84,7 @@ export const recordCallActivity = async (
   }
 };
 
-// Record invoice activity
+// Record invoice activity - We'll adapt this to use the work_order_activities table
 export const recordInvoiceActivity = async (
   action: string,
   invoiceId: string,
@@ -92,12 +92,16 @@ export const recordInvoiceActivity = async (
   userName: string
 ) => {
   try {
+    // Check if the invoiceId is a work order ID format, if not, use a fallback empty ID
+    // We'll store the invoice information in the action text
+    const workOrderId = invoiceId.startsWith('WO-') ? invoiceId : '00000000-0000-0000-0000-000000000000';
+    
     const { data, error } = await supabase
-      .from('invoice_activities')
+      .from('work_order_activities')
       .insert([
         {
-          invoice_id: invoiceId,
-          action: action,
+          work_order_id: workOrderId,
+          action: `Invoice ${invoiceId}: ${action}`,
           user_id: userId,
           user_name: userName
         }
@@ -110,4 +114,3 @@ export const recordInvoiceActivity = async (
     throw error;
   }
 };
-
