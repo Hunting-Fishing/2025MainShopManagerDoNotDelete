@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Define types for car data
 export interface CarMake {
@@ -16,6 +15,14 @@ export interface CarModel {
 
 export interface CarYear {
   year: number;
+}
+
+// Define type for VIN decode result
+export interface VinDecodeResult {
+  year: string;
+  make: string;
+  model: string;
+  trim?: string;
 }
 
 // Mock car makes data
@@ -347,6 +354,31 @@ const mockModelsByMake: Record<string, CarModel[]> = {
   ],
 };
 
+// Mock VIN database - simplified for demo purposes
+// Structure: VIN prefix (first 8 chars) -> vehicle info
+const mockVinDatabase: Record<string, VinDecodeResult> = {
+  "1FTFW1ET": { year: "2018", make: "ford", model: "F-150" },
+  "1G1ZD5ST": { year: "2017", make: "chevrolet", model: "Malibu" },
+  "1HGCV1F3": { year: "2019", make: "honda", model: "Accord" },
+  "2T1BURH": { year: "2020", make: "toyota", model: "Corolla" },
+  "JN1AZ4EH": { year: "2016", make: "nissan", model: "370Z" },
+  "3VWCB7AU": { year: "2021", make: "volkswagen", model: "Jetta" },
+  "5YJSA1E4": { year: "2019", make: "tesla", model: "Model S" },
+  "WAUENAF4": { year: "2017", make: "audi", model: "A4" },
+  "4JGDA5HB": { year: "2020", make: "mercedes-benz", model: "GLE" },
+  "WBA3N5C5": { year: "2018", make: "bmw", model: "3 Series" },
+  "YV4A22PK": { year: "2021", make: "volvo", model: "XC60" },
+  "5TFDY5F1": { year: "2022", make: "toyota", model: "Tundra" },
+  "1C6SRFJT": { year: "2023", make: "ram", model: "1500" },
+  "1C4RJFBG": { year: "2020", make: "jeep", model: "Grand Cherokee" },
+  "KM8J3CAL": { year: "2021", make: "hyundai", model: "Santa Fe" },
+  "5XXG64J2": { year: "2019", make: "kia", model: "Optima" },
+  "JF2GTAMC": { year: "2022", make: "subaru", model: "Forester" },
+  "KMHLM4AG": { year: "2023", make: "hyundai", model: "Elantra" },
+  "2HGFC2F5": { year: "2022", make: "honda", model: "Civic" },
+  "3GNAXKEV": { year: "2021", make: "chevrolet", model: "Equinox" }
+};
+
 export const useVehicleData = () => {
   const [makes, setMakes] = useState<CarMake[]>([]);
   const [models, setModels] = useState<CarModel[]>([]);
@@ -379,7 +411,7 @@ export const useVehicleData = () => {
   }, []);
 
   // Function to fetch models for a selected make
-  const fetchModels = (make: string) => {
+  const fetchModels = useCallback((make: string) => {
     if (!make) return;
     
     setLoading(true);
@@ -397,7 +429,40 @@ export const useVehicleData = () => {
       setError("Could not load vehicle models");
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Function to decode VIN and return vehicle information
+  const decodeVin = useCallback((vin: string): VinDecodeResult | null => {
+    // Validate VIN format (basic validation)
+    if (!vin || vin.length !== 17) {
+      return null;
+    }
+
+    try {
+      // In a real implementation, this would call a VIN decoder API
+      // For this mock version, we'll check our static database for matching VIN prefixes
+      
+      // Check if the first 8 characters match any of our mock VINs
+      const vinPrefix = vin.substring(0, 8);
+      
+      // Search for a matching prefix in our mock database
+      for (const prefix in mockVinDatabase) {
+        if (vinPrefix.startsWith(prefix)) {
+          console.log(`VIN decoded: ${vin} -> `, mockVinDatabase[prefix]);
+          return mockVinDatabase[prefix];
+        }
+      }
+      
+      // If no exact match, return a random vehicle for demo purposes
+      const randomMockVin = Object.keys(mockVinDatabase)[Math.floor(Math.random() * Object.keys(mockVinDatabase).length)];
+      console.log(`No exact VIN match, using random vehicle:`, mockVinDatabase[randomMockVin]);
+      return mockVinDatabase[randomMockVin];
+      
+    } catch (err) {
+      console.error("Error decoding VIN:", err);
+      return null;
+    }
+  }, []);
 
   return {
     makes,
@@ -410,6 +475,7 @@ export const useVehicleData = () => {
     selectedYear,
     setSelectedModel,
     setSelectedYear,
-    fetchModels
+    fetchModels,
+    decodeVin
   };
 };

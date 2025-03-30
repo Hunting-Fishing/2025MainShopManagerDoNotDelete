@@ -39,10 +39,12 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     years, 
     loading, 
     error,
-    fetchModels 
+    fetchModels,
+    decodeVin
   } = useVehicleData();
 
   const selectedMake = form.watch(`vehicles.${index}.make`);
+  const vin = form.watch(`vehicles.${index}.vin`);
 
   // Fetch models when make changes
   useEffect(() => {
@@ -50,6 +52,22 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       fetchModels(selectedMake);
     }
   }, [selectedMake, fetchModels]);
+
+  // Auto-populate fields when VIN changes
+  useEffect(() => {
+    if (vin && vin.length >= 17) {
+      const vehicleInfo = decodeVin(vin);
+      if (vehicleInfo) {
+        // Update form fields with decoded VIN information
+        form.setValue(`vehicles.${index}.year`, vehicleInfo.year);
+        form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
+        
+        // Fetch models for this make first, then set the model
+        fetchModels(vehicleInfo.make);
+        form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+      }
+    }
+  }, [vin, form, index, decodeVin, fetchModels]);
 
   const handleMakeChange = (value: string) => {
     // Update the form
@@ -76,6 +94,28 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           <Trash className="h-4 w-4 text-destructive" />
         </Button>
       </div>
+
+      {/* VIN Field - Moved to top for better UX since it auto-populates other fields */}
+      <FormField
+        control={form.control}
+        name={`vehicles.${index}.vin`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>VIN</FormLabel>
+            <FormControl>
+              <Input 
+                {...field} 
+                placeholder="Enter 17-digit VIN to auto-populate" 
+                className="font-mono"
+              />
+            </FormControl>
+            <FormDescription>
+              Enter a complete 17-digit VIN to auto-populate vehicle details
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Year Field */}
@@ -167,21 +207,6 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
                   )}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* VIN Field */}
-        <FormField
-          control={form.control}
-          name={`vehicles.${index}.vin`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>VIN</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Vehicle Identification Number" />
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}
