@@ -1,9 +1,18 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { CustomerLoyalty } from "@/types/loyalty";
-import { calculateTier } from './tierService';
 
-// Get customer loyalty profile
+export interface CustomerLoyalty {
+  id: string;
+  customerId: string;
+  currentPoints: number;
+  lifetimePoints: number;
+  lifetimeValue: number;
+  tier: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Fetch a customer's loyalty details
 export const getCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty | null> => {
   const { data, error } = await supabase
     .from("customer_loyalty")
@@ -12,80 +21,109 @@ export const getCustomerLoyalty = async (customerId: string): Promise<CustomerLo
     .single();
 
   if (error) {
-    // If no loyalty profile found, create a default one
-    if (error.code === 'PGRST116') {
-      return createCustomerLoyalty(customerId);
+    if (error.code === "PGRST116") {
+      // No loyalty record found
+      return null;
     }
     console.error("Error fetching customer loyalty:", error);
     throw error;
   }
 
-  return data;
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    customerId: data.customer_id,
+    currentPoints: data.current_points,
+    lifetimePoints: data.lifetime_points,
+    lifetimeValue: data.lifetime_value,
+    tier: data.tier,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 };
 
-// Create customer loyalty profile
-export const createCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty> => {
-  const defaultLoyalty = {
-    customer_id: customerId,
-    current_points: 0,
-    lifetime_points: 0,
-    lifetime_value: 0,
-    tier: 'Standard'
-  };
+// Initialize loyalty account for a customer
+export const initializeCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty> => {
+  // Check if account already exists
+  const existing = await getCustomerLoyalty(customerId);
+  if (existing) {
+    return existing;
+  }
 
+  // Create new loyalty account
   const { data, error } = await supabase
     .from("customer_loyalty")
-    .insert(defaultLoyalty)
+    .insert({
+      customer_id: customerId,
+      current_points: 0,
+      lifetime_points: 0,
+      lifetime_value: 0,
+      tier: "Standard",
+    })
     .select()
     .single();
 
   if (error) {
-    console.error("Error creating customer loyalty:", error);
+    console.error("Error initializing customer loyalty:", error);
     throw error;
   }
 
-  return data;
+  return {
+    id: data.id,
+    customerId: data.customer_id,
+    currentPoints: data.current_points,
+    lifetimePoints: data.lifetime_points,
+    lifetimeValue: data.lifetime_value,
+    tier: data.tier,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 };
 
-// Calculate lifetime value from invoices and update customer loyalty
-export const updateCustomerLifetimeValue = async (customerId: string): Promise<CustomerLoyalty> => {
-  // Get current loyalty profile
-  const loyalty = await getCustomerLoyalty(customerId);
+// Add points to a customer's loyalty account
+export const addLoyaltyPoints = async (
+  customerId: string,
+  points: number,
+  transactionType: string,
+  referenceId?: string,
+  description?: string
+): Promise<void> => {
+  // Get current loyalty data
+  let loyalty = await getCustomerLoyalty(customerId);
   
+  // If customer doesn't have a loyalty account, create one
   if (!loyalty) {
-    throw new Error("Customer loyalty profile not found");
+    loyalty = await initializeCustomerLoyalty(customerId);
   }
   
-  // In a real implementation, you would fetch all invoices and sum up totals
-  // Then calculate points based on settings.points_per_dollar
-  
-  const { data: invoiceData, error: invoiceError } = await supabase
-    .from("invoices")
-    .select("total")
-    .like("customer", `%${customerId}%`);
-    
-  if (invoiceError) {
-    console.error("Error fetching invoices:", invoiceError);
-    throw invoiceError;
-  }
-  
-  // Calculate lifetime value from invoices
-  const lifetimeValue = invoiceData?.reduce((total, invoice) => total + (parseFloat(invoice.total) || 0), 0) || 0;
-  
-  // Update loyalty record
-  const { data, error } = await supabase
+  // Update points
+  const { error: updateError } = await supabase
     .from("customer_loyalty")
     .update({
-      lifetime_value: lifetimeValue
+      current_points: loyalty.currentPoints + points,
+      lifetime_points: loyalty.lifetimePoints + points,
     })
-    .eq("id", loyalty.id)
-    .select()
-    .single();
-    
-  if (error) {
-    console.error("Error updating customer lifetime value:", error);
-    throw error;
+    .eq("customer_id", customerId);
+
+  if (updateError) {
+    console.error("Error updating loyalty points:", updateError);
+    throw updateError;
   }
   
-  return data as CustomerLoyalty;
+  // Record the transaction
+  const { error: transactionError } = await supabase
+    .from("loyalty_transactions")
+    .insert({
+      customer_id: customerId,
+      points: points,
+      transaction_type: transactionType,
+      reference_id: referenceId,
+      description: description,
+    });
+
+  if (transactionError) {
+    console.error("Error recording loyalty transaction:", transactionError);
+    throw transactionError;
+  }
 };
