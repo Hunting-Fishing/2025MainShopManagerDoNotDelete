@@ -119,7 +119,7 @@ export const HouseholdFields: React.FC<HouseholdFieldsProps> = ({ form, disabled
               <Select
                 disabled={disabled || loading}
                 onValueChange={field.onChange}
-                value={field.value || ""}
+                value={field.value || "_none"}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -127,7 +127,7 @@ export const HouseholdFields: React.FC<HouseholdFieldsProps> = ({ form, disabled
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="_none">None</SelectItem>
                   {households.map((household) => (
                     <SelectItem key={household.id} value={household.id}>
                       {household.name}

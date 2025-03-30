@@ -53,7 +53,7 @@ export function RepairPlanDetailsFields({ form, technicians }: RepairPlanDetails
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="_unassigned">Unassigned</SelectItem>
                   {technicians.map((tech) => (
                     <SelectItem key={tech} value={tech}>
                       {tech}

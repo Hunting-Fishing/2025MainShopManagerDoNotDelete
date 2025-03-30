@@ -16,14 +16,14 @@ export const CustomerVehicleTypeFilter: React.FC<CustomerVehicleTypeFilterProps>
     <div className="space-y-2">
       <Label>Vehicle Type</Label>
       <Select
-        value={vehicleType || ""}
+        value={vehicleType || "_any"}
         onValueChange={onVehicleTypeChange}
       >
         <SelectTrigger>
           <SelectValue placeholder="Any vehicle type" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Any vehicle type</SelectItem>
+          <SelectItem value="_any">Any vehicle type</SelectItem>
           <SelectItem value="sedan">Sedan</SelectItem>
           <SelectItem value="suv">SUV</SelectItem>
           <SelectItem value="truck">Truck</SelectItem>

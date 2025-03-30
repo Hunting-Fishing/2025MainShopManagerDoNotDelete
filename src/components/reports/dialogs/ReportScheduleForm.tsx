@@ -3,6 +3,13 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 interface ReportScheduleFormProps {
   scheduleReport: boolean;
@@ -36,16 +43,20 @@ export function ReportScheduleForm({
         <div className="grid grid-cols-2 gap-4 pl-6">
           <div className="grid gap-2">
             <Label htmlFor="schedule-frequency">Frequency</Label>
-            <select
+            <Select
               id="schedule-frequency"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={scheduleFrequency}
-              onChange={(e) => setScheduleFrequency(e.target.value)}
+              onValueChange={setScheduleFrequency}
             >
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid gap-2">

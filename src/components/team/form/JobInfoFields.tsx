@@ -44,6 +44,7 @@ export function JobInfoFields({ control, availableRoles, availableDepartments }:
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="_select_role">Select a role</SelectItem>
                 {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
                     {role}
@@ -72,6 +73,7 @@ export function JobInfoFields({ control, availableRoles, availableDepartments }:
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="_select_department">Select a department</SelectItem>
                 {availableDepartments.map((department) => (
                   <SelectItem key={department} value={department}>
                     {department}

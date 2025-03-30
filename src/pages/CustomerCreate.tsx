@@ -41,6 +41,7 @@ export default function CustomerCreate() {
     segments: [],
     create_new_household: false,
     new_household_name: "",
+    household_id: "_none", // Changed from empty string to "_none"
     household_relationship: "primary",
   };
 
@@ -49,7 +50,7 @@ export default function CustomerCreate() {
     setIsSubmitting(true);
     try {
       // Handle household creation if needed
-      let householdId = data.household_id || "";
+      let householdId = data.household_id === "_none" ? "" : data.household_id; // Handle the placeholder value
       
       if (data.create_new_household && data.new_household_name) {
         // Create a new household
@@ -71,6 +72,10 @@ export default function CustomerCreate() {
         }
       }
       
+      // Convert placeholder values to empty strings/nulls where needed
+      const preferredTechnicianId = data.preferred_technician_id === "_none" ? "" : data.preferred_technician_id;
+      const referralSource = data.referral_source === "_none" ? "" : data.referral_source;
+      
       // Prepare customer data
       const customerData: CustomerCreateType = {
         first_name: data.first_name,
@@ -79,8 +84,8 @@ export default function CustomerCreate() {
         phone: data.phone || "",
         address: data.address || "",
         shop_id: data.shop_id,
-        preferred_technician_id: data.preferred_technician_id,
-        referral_source: data.referral_source,
+        preferred_technician_id: preferredTechnicianId,
+        referral_source: referralSource,
         referral_person_id: data.referral_person_id,
         is_fleet: data.is_fleet,
         fleet_company: data.fleet_company,
