@@ -7,7 +7,7 @@ import { Customer } from "@/types/customer";
 import { CustomerInteraction } from "@/types/interaction";
 
 interface CustomerSummaryCardProps {
-  customer: Customer;
+  customer: Customer & { name?: string, lastServiceDate?: string, notes?: string };
   customerWorkOrders: any[];
   customerInteractions: CustomerInteraction[];
   setActiveTab: (tab: string) => void;

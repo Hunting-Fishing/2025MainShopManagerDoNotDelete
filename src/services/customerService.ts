@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Customer, CustomerCreate } from "@/types/customer";
+import { Customer, CustomerCreate, adaptCustomerForUI, createCustomerForUI } from "@/types/customer";
 
 // Fetch all customers
 export const getAllCustomers = async (): Promise<Customer[]> => {
@@ -14,7 +14,8 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
     throw error;
   }
 
-  return data || [];
+  // Adapt each customer for UI components
+  return (data || []).map(customer => adaptCustomerForUI(customer));
 };
 
 // Fetch a customer by ID
@@ -30,7 +31,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     throw error;
   }
 
-  return data;
+  return data ? adaptCustomerForUI(data) : null;
 };
 
 // Create a new customer
@@ -46,7 +47,7 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     throw error;
   }
 
-  return data;
+  return adaptCustomerForUI(data);
 };
 
 // Update a customer
@@ -63,7 +64,7 @@ export const updateCustomer = async (id: string, updates: Partial<Customer>): Pr
     throw error;
   }
 
-  return data;
+  return adaptCustomerForUI(data);
 };
 
 // Delete a customer
@@ -92,5 +93,5 @@ export const searchCustomers = async (query: string): Promise<Customer[]> => {
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(customer => adaptCustomerForUI(customer));
 };

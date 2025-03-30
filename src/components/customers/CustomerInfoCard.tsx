@@ -2,20 +2,16 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Building2, Calendar } from "lucide-react";
+import { Customer, getCustomerFullName } from "@/types/customer";
 
 interface CustomerInfoCardProps {
-  customer: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-    company?: string;
-    dateAdded: string;
-  };
+  customer: Customer & { name?: string, dateAdded?: string };
 }
 
 export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({ customer }) => {
+  const customerName = customer.name || getCustomerFullName(customer);
+  const dateAdded = customer.dateAdded || customer.created_at;
+  
   return (
     <Card className="md:col-span-1">
       <CardHeader className="bg-slate-50 border-b">
@@ -61,7 +57,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({ customer }) 
             <Calendar className="h-5 w-5 text-slate-500 mr-2 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-slate-500">Customer Since</p>
-              <p className="text-sm">{new Date(customer.dateAdded).toLocaleDateString()}</p>
+              <p className="text-sm">{new Date(dateAdded).toLocaleDateString()}</p>
             </div>
           </div>
         </div>

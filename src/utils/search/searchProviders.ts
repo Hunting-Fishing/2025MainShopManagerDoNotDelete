@@ -1,11 +1,11 @@
-
 import { workOrders } from "@/data/workOrdersData";
 import { invoices } from "@/data/invoiceData";
-import { customers } from "@/data/customersData";
+import { getCustomerFullName } from "@/types/customer";
 import { equipment } from "@/data/equipmentData";
 import { inventoryItems } from "@/data/mockInventoryData";
 import { findMatches } from "./relevanceUtils";
 import { SearchResult, SearchResultType } from "./types";
+import { getAllCustomers } from "@/services/customerService";
 
 // Search work orders
 export const searchWorkOrders = (query: string): SearchResult[] => {
@@ -15,7 +15,6 @@ export const searchWorkOrders = (query: string): SearchResult[] => {
   workOrders.forEach(order => {
     let relevance = 0;
     
-    // Check different fields with different weights
     relevance = Math.max(
       relevance,
       findMatches(order.id, normalizedQuery),
@@ -70,34 +69,40 @@ export const searchInvoices = (query: string): SearchResult[] => {
   return results;
 };
 
-// Search customers
-export const searchCustomers = (query: string): SearchResult[] => {
+// Search customers - updated to work with real customer data
+export const searchCustomers = async (query: string): Promise<SearchResult[]> => {
   const normalizedQuery = query.toLowerCase().trim();
   const results: SearchResult[] = [];
 
-  customers.forEach(customer => {
-    let relevance = 0;
-    const fullName = `${customer.first_name} ${customer.last_name}`;
+  try {
+    const customers = await getAllCustomers();
     
-    relevance = Math.max(
-      relevance,
-      findMatches(customer.id, normalizedQuery),
-      findMatches(fullName, normalizedQuery),
-      customer.email ? findMatches(customer.email, normalizedQuery) * 0.8 : 0,
-      customer.phone ? findMatches(customer.phone, normalizedQuery) * 0.7 : 0
-    );
-    
-    if (relevance > 0) {
-      results.push({
-        id: customer.id,
-        title: fullName,
-        subtitle: `Customer`,
-        type: 'customer',
-        url: `/customers/${customer.id}`,
-        relevance
-      });
-    }
-  });
+    customers.forEach(customer => {
+      let relevance = 0;
+      const fullName = getCustomerFullName(customer);
+      
+      relevance = Math.max(
+        relevance,
+        findMatches(customer.id, normalizedQuery),
+        findMatches(fullName, normalizedQuery),
+        customer.email ? findMatches(customer.email, normalizedQuery) * 0.8 : 0,
+        customer.phone ? findMatches(customer.phone, normalizedQuery) * 0.7 : 0
+      );
+      
+      if (relevance > 0) {
+        results.push({
+          id: customer.id,
+          title: fullName,
+          subtitle: `Customer`,
+          type: 'customer',
+          url: `/customers/${customer.id}`,
+          relevance
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error searching customers:", error);
+  }
 
   return results;
 };

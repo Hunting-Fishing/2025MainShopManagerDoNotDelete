@@ -4,11 +4,11 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
-import { Customer } from "@/types/customer";
+import { Customer, getCustomerFullName } from "@/types/customer";
 import { ServiceHistoryTable } from "@/components/service-history/ServiceHistoryTable";
 
 interface CustomerServiceTabProps {
-  customer: Customer;
+  customer: Customer & { name?: string };
   customerWorkOrders: any[];
 }
 
@@ -16,6 +16,8 @@ export const CustomerServiceTab: React.FC<CustomerServiceTabProps> = ({
   customer,
   customerWorkOrders
 }) => {
+  const customerName = customer.name || getCustomerFullName(customer);
+  
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -24,7 +26,7 @@ export const CustomerServiceTab: React.FC<CustomerServiceTabProps> = ({
           asChild
           variant="outline"
         >
-          <Link to={`/customer-service-history/${encodeURIComponent(customer.name)}`}>
+          <Link to={`/customer-service-history/${encodeURIComponent(customerName)}`}>
             <FileText className="mr-2 h-4 w-4" /> View Full History
           </Link>
         </Button>

@@ -4,10 +4,10 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Edit, ClipboardList, MessageSquare } from "lucide-react";
-import { Customer } from "@/types/customer";
+import { Customer, getCustomerFullName } from "@/types/customer";
 
 interface CustomerHeaderProps {
-  customer: Customer;
+  customer: Customer & { name?: string, status?: string };
   setAddInteractionOpen: (open: boolean) => void;
 }
 
@@ -16,6 +16,8 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({
   setAddInteractionOpen 
 }) => {
   const navigate = useNavigate();
+  const customerName = customer.name || getCustomerFullName(customer);
+  const customerStatus = customer.status || 'active';
 
   return (
     <div>
@@ -32,11 +34,11 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{customer.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{customerName}</h1>
             <Badge 
-              variant={customer.status === 'active' ? 'default' : 'secondary'}
+              variant={customerStatus === 'active' ? 'default' : 'secondary'}
             >
-              {customer.status === 'active' ? 'Active' : 'Inactive'}
+              {customerStatus === 'active' ? 'Active' : 'Inactive'}
             </Badge>
           </div>
           {customer.company && (
@@ -54,7 +56,7 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({
             variant="outline"
             asChild
           >
-            <Link to={`/work-orders/new?customer=${encodeURIComponent(customer.name)}`}>
+            <Link to={`/work-orders/new?customer=${encodeURIComponent(customerName)}`}>
               <ClipboardList className="mr-2 h-4 w-4" /> New Work Order
             </Link>
           </Button>

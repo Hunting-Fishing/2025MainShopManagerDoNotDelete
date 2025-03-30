@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Customer, getCustomerFullName } from "@/types/customer";
+import { Customer, getCustomerFullName, createCustomerForUI } from "@/types/customer";
 import { getCustomerById } from "@/services/customerService";
 import { workOrders } from "@/data/workOrdersData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,7 +76,7 @@ export default function CustomerDetails() {
     };
 
     fetchCustomerData();
-  }, [id, navigate, toast]);
+  }, [id, navigate]);
 
   // Handle adding a new interaction
   const handleInteractionAdded = (interaction: CustomerInteraction) => {
@@ -96,17 +96,10 @@ export default function CustomerDetails() {
   }
 
   // Create a backward compatible customer object for components that expect the old format
-  const adaptedCustomer = {
-    id: customer.id,
-    name: getCustomerFullName(customer),
-    email: customer.email,
-    phone: customer.phone,
-    address: customer.address,
-    company: "", // We don't have this in the real database
-    dateAdded: customer.created_at,
+  const adaptedCustomer = createCustomerForUI(customer, {
     lastServiceDate: customerWorkOrders.length > 0 ? customerWorkOrders[0].date : undefined,
-    status: "active" // Default status since we don't have this in the real database
-  };
+    status: 'active'
+  });
 
   return (
     <div className="space-y-6">
