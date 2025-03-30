@@ -2,14 +2,19 @@
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
+import { WorkOrder } from "@/data/workOrdersData";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface WorkOrderInventoryItemsProps {
+  workOrder: WorkOrder;
   inventoryItems?: WorkOrderInventoryItem[];
 }
 
-export function WorkOrderInventoryItems({ inventoryItems }: WorkOrderInventoryItemsProps) {
-  if (!inventoryItems || inventoryItems.length === 0) {
+export function WorkOrderInventoryItems({ workOrder, inventoryItems }: WorkOrderInventoryItemsProps) {
+  // Use items from workOrder if available, otherwise use provided items or empty array
+  const items = workOrder.inventoryItems || inventoryItems || [];
+  
+  if (!items.length) {
     return (
       <Card>
         <CardHeader className="bg-slate-50 border-b">
@@ -53,7 +58,7 @@ export function WorkOrderInventoryItems({ inventoryItems }: WorkOrderInventoryIt
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {inventoryItems.map((item) => (
+            {items.map((item) => (
               <tr key={item.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                   {item.name}

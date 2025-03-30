@@ -7,7 +7,6 @@ import {
   Package,
   MessageSquare,
   History,
-  AlertCircle,
   Phone
 } from "lucide-react";
 import { WorkOrder } from "@/data/workOrdersData";

@@ -83,3 +83,31 @@ export const recordCallActivity = async (
     throw error;
   }
 };
+
+// Record invoice activity
+export const recordInvoiceActivity = async (
+  action: string,
+  invoiceId: string,
+  userId: string,
+  userName: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('invoice_activities')
+      .insert([
+        {
+          invoice_id: invoiceId,
+          action: action,
+          user_id: userId,
+          user_name: userName
+        }
+      ]);
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error recording invoice activity:', error);
+    throw error;
+  }
+};
+
