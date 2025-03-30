@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { CustomerFormActions } from "./CustomerFormActions";
 
 interface FormNavigationProps {
   currentTab: string;
@@ -37,7 +38,6 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
           Next
         </Button>
       ) : (
-        // Import is now from the external component
         <CustomerFormActions isSubmitting={isSubmitting} />
       )}
     </div>
