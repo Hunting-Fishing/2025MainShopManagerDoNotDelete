@@ -28,13 +28,19 @@ export const decodeVin = (vin: string): VinDecodeResult | null => {
       }
     }
     
-    // If no exact match, return a random vehicle for demo purposes
-    const randomMockVin = Object.keys(mockVinDatabase)[Math.floor(Math.random() * Object.keys(mockVinDatabase).length)];
-    console.log(`No exact VIN match, using random vehicle:`, mockVinDatabase[randomMockVin]);
-    return mockVinDatabase[randomMockVin];
+    // If no exact match, return a consistent result based on the VIN
+    // Use the first character of the VIN to determine which mock vehicle to return
+    const mockVins = Object.keys(mockVinDatabase);
+    const vinFirstChar = vin.charAt(0);
+    const index = vinFirstChar.charCodeAt(0) % mockVins.length;
+    const selectedMockVin = mockVins[index];
+    
+    console.log(`No exact VIN match, using consistent vehicle for ${vin}:`, mockVinDatabase[selectedMockVin]);
+    return mockVinDatabase[selectedMockVin];
     
   } catch (err) {
     console.error("Error decoding VIN:", err);
     return null;
   }
 };
+
