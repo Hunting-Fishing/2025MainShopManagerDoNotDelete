@@ -30,6 +30,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     years,
     error,
     selectedMake,
+    vinProcessing,
     handleMakeChange
   } = useVehicleForm({ form, index });
 
@@ -50,8 +51,8 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
         </Button>
       </div>
 
-      {/* VIN Field - Moved to top for better UX since it auto-populates other fields */}
-      <VinField form={form} index={index} />
+      {/* VIN Field - Placed at top for better UX since it auto-populates other fields */}
+      <VinField form={form} index={index} processing={vinProcessing} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Year Field */}

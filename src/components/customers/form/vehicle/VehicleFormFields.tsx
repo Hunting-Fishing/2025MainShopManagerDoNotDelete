@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "../CustomerFormSchema";
+import { Loader2 } from "lucide-react";
 
 interface BaseFieldProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -12,7 +13,9 @@ interface BaseFieldProps {
 }
 
 // VIN Input Field
-export const VinField: React.FC<BaseFieldProps> = ({ form, index }) => {
+export const VinField: React.FC<BaseFieldProps & { 
+  processing?: boolean 
+}> = ({ form, index, processing = false }) => {
   return (
     <FormField
       control={form.control}
@@ -20,13 +23,22 @@ export const VinField: React.FC<BaseFieldProps> = ({ form, index }) => {
       render={({ field }) => (
         <FormItem>
           <FormLabel>VIN</FormLabel>
-          <FormControl>
-            <Input 
-              {...field} 
-              placeholder="Enter 17-digit VIN to auto-populate" 
-              className="font-mono"
-            />
-          </FormControl>
+          <div className="relative">
+            <FormControl>
+              <Input 
+                {...field} 
+                placeholder="Enter 17-digit VIN to auto-populate" 
+                className="font-mono pr-8"
+                maxLength={17}
+                disabled={processing}
+              />
+            </FormControl>
+            {processing && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </div>
           <FormDescription>
             Enter a complete 17-digit VIN to auto-populate vehicle details
           </FormDescription>
@@ -38,7 +50,9 @@ export const VinField: React.FC<BaseFieldProps> = ({ form, index }) => {
 };
 
 // Year Field
-export const YearField: React.FC<BaseFieldProps & { years: number[] }> = ({ form, index, years }) => {
+export const YearField: React.FC<BaseFieldProps & { 
+  years: number[] 
+}> = ({ form, index, years }) => {
   return (
     <FormField
       control={form.control}
