@@ -9,11 +9,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { createCustomer, CustomerCreate } from "@/services/customerService";
+import { createCustomer } from "@/services/customerService";
+import type { CustomerCreate as CustomerCreateType } from "@/services/customerService";
 import { useToast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Buildings, UserRound, Phone, Mail, MapPin, Building, Bookmark } from "lucide-react";
+import { Building, UserRound, Phone, Mail, MapPin, Bookmark } from "lucide-react";
 
 // Regex for phone validation
 const PHONE_REGEX = /^(\+\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}$/;
@@ -64,7 +65,7 @@ export default function CustomerCreate() {
     setIsSubmitting(true);
     try {
       // Prepare customer data - ensure all required fields are provided
-      const customerData: CustomerCreate = {
+      const customerData: CustomerCreateType = {
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
@@ -206,7 +207,7 @@ export default function CustomerCreate() {
                           <FormControl>
                             <div className="relative w-full">
                               <div className="absolute left-3 top-2.5 text-muted-foreground">
-                                <Buildings className="h-4 w-4" />
+                                <Building className="h-4 w-4" />
                               </div>
                               <Input {...field} className="pl-10" placeholder="ABC Company" />
                             </div>
