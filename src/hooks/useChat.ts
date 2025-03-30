@@ -27,7 +27,10 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     error: messagesError,
     newMessageText,
     setNewMessageText,
-    handleSendMessage
+    handleSendMessage,
+    handleSendVoiceMessage,
+    isTyping,
+    handleTyping
   } = useChatMessages({ 
     userId, 
     userName, 
@@ -50,6 +53,8 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     setNewMessageText,
     selectRoom,
     handleSendMessage,
+    handleSendVoiceMessage,
+    isTyping,
     refreshRooms
   };
 };

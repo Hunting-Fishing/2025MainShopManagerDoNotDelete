@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
 import { useChat } from '@/hooks/useChat';
@@ -7,6 +7,7 @@ import { useAuthUser } from '@/hooks/useAuthUser';
 import { useChatRoomActions } from '@/hooks/useChatRoomActions';
 import { ChatLoading } from '@/components/chat/ChatLoading';
 import { ChatPageLayout } from '@/components/chat/ChatPageLayout';
+import { useChatNotifications } from '@/hooks/useChatNotifications';
 
 export default function Chat() {
   const { roomId } = useParams<{ roomId?: string }>();
@@ -21,8 +22,10 @@ export default function Chat() {
     error,
     newMessageText,
     setNewMessageText,
-    selectRoom,
     handleSendMessage,
+    handleSendVoiceMessage,
+    isTyping,
+    selectRoom,
     refreshRooms
   } = useChat({
     userId: userId || '',
@@ -36,6 +39,9 @@ export default function Chat() {
     openWorkOrderChat,
     handleViewWorkOrderDetails
   } = useChatRoomActions(userId, selectRoom, refreshRooms);
+
+  // Use chat notifications hook
+  useChatNotifications({ userId: userId || '' });
 
   // Load specified room if roomId is provided in URL
   useEffect(() => {
@@ -60,10 +66,13 @@ export default function Chat() {
         currentRoom={currentRoom}
         messages={messages}
         userId={userId || ''}
+        userName={userName}
         newMessageText={newMessageText}
         setNewMessageText={setNewMessageText}
         onSelectRoom={selectRoom}
         onSendMessage={handleSendMessage}
+        onSendVoiceMessage={handleSendVoiceMessage}
+        isTyping={isTyping}
         onViewWorkOrderDetails={() => currentRoom?.work_order_id && handleViewWorkOrderDetails(currentRoom.work_order_id)}
         navigateToRoom={(roomId) => navigate(`/chat/${roomId}`)}
         onNewChat={() => setShowNewChatDialog(true)}

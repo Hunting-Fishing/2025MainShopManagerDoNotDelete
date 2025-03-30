@@ -20,6 +20,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newMessageText, setNewMessageText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimer, setTypingTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Fetch messages for a selected room
   const fetchMessages = useCallback(async (roomId: string) => {
@@ -74,7 +76,7 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     };
   }, [currentRoomId, userId, fetchMessages]);
 
-  // Send a new message
+  // Send a new text message
   const handleSendMessage = useCallback(async () => {
     if (!currentRoomId || !newMessageText.trim() || !userId) return;
     
@@ -99,12 +101,58 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     }
   }, [currentRoomId, newMessageText, userId, userName]);
 
+  // Send a voice message
+  const handleSendVoiceMessage = useCallback(async (audioUrl: string) => {
+    if (!currentRoomId || !userId) return;
+    
+    try {
+      await sendMessage({
+        room_id: currentRoomId,
+        sender_id: userId,
+        sender_name: userName,
+        content: audioUrl
+      });
+    } catch (err) {
+      console.error('Failed to send voice message:', err);
+      setError('Failed to send voice message');
+      toast({
+        title: "Error",
+        description: "Failed to send voice message. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [currentRoomId, userId, userName]);
+
+  // Simulate typing indicator
+  const handleTyping = useCallback(() => {
+    setIsTyping(true);
+    
+    if (typingTimer) {
+      clearTimeout(typingTimer);
+    }
+    
+    const timer = setTimeout(() => {
+      setIsTyping(false);
+    }, 3000);
+    
+    setTypingTimer(timer);
+    
+    return () => {
+      if (typingTimer) {
+        clearTimeout(typingTimer);
+      }
+    };
+  }, [typingTimer]);
+
   return {
     messages,
     loading,
     error,
     newMessageText,
     setNewMessageText,
-    handleSendMessage
+    handleSendMessage,
+    handleSendVoiceMessage,
+    isTyping,
+    handleTyping
   };
 };

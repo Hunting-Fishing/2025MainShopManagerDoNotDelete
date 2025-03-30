@@ -9,10 +9,13 @@ interface ChatPageLayoutProps {
   currentRoom: ChatRoom | null;
   messages: any[];
   userId: string;
+  userName: string;
   newMessageText: string;
   setNewMessageText: (text: string) => void;
   onSelectRoom: (room: ChatRoom) => void;
   onSendMessage: () => void;
+  onSendVoiceMessage?: (audioUrl: string) => void;
+  isTyping?: boolean;
   onViewWorkOrderDetails?: () => void;
   navigateToRoom: (roomId: string) => void;
   onNewChat: () => void;
@@ -23,10 +26,13 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   currentRoom,
   messages,
   userId,
+  userName,
   newMessageText,
   setNewMessageText,
   onSelectRoom,
   onSendMessage,
+  onSendVoiceMessage,
+  isTyping,
   onViewWorkOrderDetails,
   navigateToRoom,
   onNewChat
@@ -55,9 +61,12 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
             room={currentRoom}
             messages={messages}
             userId={userId}
+            userName={userName}
             messageText={newMessageText}
             setMessageText={setNewMessageText}
             onSendMessage={onSendMessage}
+            onSendVoiceMessage={onSendVoiceMessage}
+            isTyping={isTyping}
             onViewInfo={currentRoom?.work_order_id ? onViewWorkOrderDetails : undefined}
           />
         </div>
