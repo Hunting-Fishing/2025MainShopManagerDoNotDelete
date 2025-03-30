@@ -453,6 +453,199 @@ export type Database = {
           },
         ]
       }
+      email_sequence_analytics: {
+        Row: {
+          active_enrollments: number
+          average_time_to_complete: number | null
+          completed_enrollments: number
+          conversion_rate: number | null
+          id: string
+          sequence_id: string
+          total_enrollments: number
+          updated_at: string
+        }
+        Insert: {
+          active_enrollments?: number
+          average_time_to_complete?: number | null
+          completed_enrollments?: number
+          conversion_rate?: number | null
+          id?: string
+          sequence_id: string
+          total_enrollments?: number
+          updated_at?: string
+        }
+        Update: {
+          active_enrollments?: number
+          average_time_to_complete?: number | null
+          completed_enrollments?: number
+          conversion_rate?: number | null
+          id?: string
+          sequence_id?: string
+          total_enrollments?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sequence_analytics_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "email_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sequence_enrollments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_step_id: string | null
+          customer_id: string
+          id: string
+          metadata: Json | null
+          next_send_time: string | null
+          sequence_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_step_id?: string | null
+          customer_id: string
+          id?: string
+          metadata?: Json | null
+          next_send_time?: string | null
+          sequence_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_step_id?: string | null
+          customer_id?: string
+          id?: string
+          metadata?: Json | null
+          next_send_time?: string | null
+          sequence_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sequence_enrollments_current_step_id_fkey"
+            columns: ["current_step_id"]
+            isOneToOne: false
+            referencedRelation: "email_sequence_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sequence_enrollments_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "email_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sequence_steps: {
+        Row: {
+          condition_operator: string | null
+          condition_type: string | null
+          condition_value: string | null
+          created_at: string
+          delay_hours: number
+          delay_type: string
+          id: string
+          is_active: boolean
+          name: string
+          position: number
+          sequence_id: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          condition_operator?: string | null
+          condition_type?: string | null
+          condition_value?: string | null
+          created_at?: string
+          delay_hours?: number
+          delay_type?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          position: number
+          sequence_id: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          condition_operator?: string | null
+          condition_type?: string | null
+          condition_value?: string | null
+          created_at?: string
+          delay_hours?: number
+          delay_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: number
+          sequence_id?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sequence_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "email_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sequences: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          shop_id: string | null
+          trigger_event: string | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          shop_id?: string | null
+          trigger_event?: string | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          shop_id?: string | null
+          trigger_event?: string | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feedback_forms: {
         Row: {
           created_at: string | null

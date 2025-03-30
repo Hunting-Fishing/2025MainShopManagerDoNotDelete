@@ -1,4 +1,3 @@
-
 export type EmailTemplateVariable = {
   name: string;
   defaultValue: string;
@@ -85,10 +84,11 @@ export type EmailSequence = {
   id: string;
   name: string;
   description: string;
-  trigger: 'manual' | 'event' | 'schedule';
+  triggerType: 'manual' | 'event' | 'schedule';
   triggerEvent?: string;
   steps: EmailSequenceStep[];
   isActive: boolean;
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -97,13 +97,38 @@ export type EmailSequenceStep = {
   id: string;
   name: string;
   templateId: string;
-  delay: number; // in hours
+  delayHours: number;
   delayType: 'fixed' | 'business_days';
+  position: number;
+  isActive: boolean;
   condition?: {
     type: 'event' | 'property';
     value: string;
     operator: '=' | '!=' | '>' | '<' | '>=' | '<=';
   };
+};
+
+export type EmailSequenceEnrollment = {
+  id: string;
+  sequenceId: string;
+  customerId: string;
+  currentStepId?: string;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  startedAt: string;
+  completedAt?: string;
+  nextSendTime?: string;
+  metadata?: Record<string, any>;
+};
+
+export type EmailSequenceAnalytics = {
+  id: string;
+  sequenceId: string;
+  totalEnrollments: number;
+  activeEnrollments: number;
+  completedEnrollments: number;
+  conversionRate?: number;
+  averageTimeToComplete?: number;
+  updatedAt: string;
 };
 
 export type EmailCampaignAnalytics = {

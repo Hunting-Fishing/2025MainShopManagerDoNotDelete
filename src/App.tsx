@@ -1,107 +1,82 @@
+import React, { Suspense } from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from 'react-router-dom';
+import { Dashboard } from '@/pages/Dashboard';
+import { WorkOrders } from '@/pages/WorkOrders';
+import { Customers } from '@/pages/Customers';
+import { Invoices } from '@/pages/Invoices';
+import { Calendar } from '@/pages/Calendar';
+import { Reports } from '@/pages/Reports';
+import { Inventory } from '@/pages/Inventory';
+import { Team } from '@/pages/Team';
+import { Settings } from '@/pages/Settings';
+import { SmsTemplates } from '@/pages/SmsTemplates';
+import { Maintenance } from '@/pages/Maintenance';
+import { Equipment } from '@/pages/Equipment';
+import { Reminders } from '@/pages/Reminders';
+import { Layout } from '@/components/layout/Layout';
+import { WorkOrderDetails } from '@/pages/WorkOrderDetails';
+import { CustomerDetails } from '@/pages/CustomerDetails';
+import { CreateWorkOrder } from '@/pages/CreateWorkOrder';
+import { CreateCustomer } from '@/pages/CreateCustomer';
+import { CreateInvoice } from '@/pages/CreateInvoice';
+import { TeamMemberProfile } from '@/pages/TeamMemberProfile';
+import { CreateTeamMember } from '@/pages/CreateTeamMember';
+import CustomerServiceHistory from '@/pages/CustomerServiceHistory';
+import { InvoiceDetails } from '@/pages/InvoiceDetails';
+import { EquipmentDetails } from '@/pages/EquipmentDetails';
+import { RepairPlans } from '@/pages/RepairPlans';
+import { RepairPlanDetails } from '@/pages/RepairPlanDetails';
+import { CreateRepairPlan } from '@/pages/CreateRepairPlan';
+import EmailTemplates from '@/pages/EmailTemplates';
+import EmailCampaigns from '@/pages/EmailCampaigns';
+import EmailSequences from '@/pages/EmailSequences';
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import WorkOrders from './pages/WorkOrders';
-import WorkOrderCreate from './pages/WorkOrderCreate';
-import WorkOrderDetails from './pages/WorkOrderDetails';
-import Customers from './pages/Customers';
-import CustomerDetails from './pages/CustomerDetails';
-import CustomerServiceHistory from './pages/CustomerServiceHistory';
-import CustomerFollowUps from './pages/CustomerFollowUps';
-import Equipment from './pages/Equipment';
-import EquipmentDetails from './pages/EquipmentDetails';
-import Inventory from './pages/Inventory';
-import Invoices from './pages/Invoices';
-import InvoiceCreate from './pages/InvoiceCreate';
-import InvoiceDetails from './pages/InvoiceDetails';
-import Team from './pages/Team';
-import TeamMemberCreate from './pages/TeamMemberCreate';
-import TeamRoles from './pages/TeamRoles';
-import TeamMemberProfile from './pages/TeamMemberProfile';
-import MaintenanceDashboard from './pages/MaintenanceDashboard';
-import Calendar from './pages/Calendar';
-import Chat from './pages/Chat';
-import Reports from './pages/Reports';
-import SettingsPage from './pages/Settings';
-import NotFound from './pages/NotFound';
-import { Toaster } from "@/components/ui/toaster"
-import Analytics from './pages/Analytics';
-import RepairPlanDetails from './pages/RepairPlanDetails';
-import RepairPlans from './pages/RepairPlans';
-import Index from './pages/Index';
-import CustomerCreate from './pages/CustomerCreate';
-import CreateRepairPlan from './pages/CreateRepairPlan';
-import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
-import FeedbackFormEditorPage from './pages/feedback/FeedbackFormEditorPage';
-import FeedbackAnalyticsPage from './pages/feedback/FeedbackAnalyticsPage';
-import CustomerAnalytics from "./pages/CustomerAnalytics";
-import EmailTemplates from "@/pages/EmailTemplates";
-import EmailCampaigns from "@/pages/EmailCampaigns";
-import SmsManagement from "@/pages/SmsManagement";
-
-import { RecoilRoot } from 'recoil';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ToastProvider, ToastViewport } from '@/components/ui/toast';
-
-// Create a client
-const queryClient = new QueryClient();
-
-export function App() {
+function App() {
   return (
-    <RecoilRoot>
-      <QueryClientProvider client={queryClient}>
-        <Router>
-          <ToastProvider>
-            <ToastViewport />
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Index />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="work-orders" element={<WorkOrders />} />
-                <Route path="work-orders/new" element={<WorkOrderCreate />} />
-                <Route path="work-orders/:id" element={<WorkOrderDetails />} />
-                <Route path="work-orders/:id/edit" element={<WorkOrderCreate />} />
-                <Route path="work-orders/:id/chat" element={<Chat />} />
-                <Route path="invoices" element={<Invoices />} />
-                <Route path="invoices/new" element={<InvoiceCreate />} />
-                <Route path="invoices/:id" element={<InvoiceDetails />} />
-                <Route path="customers" element={<Customers />} />
-                <Route path="customers/new" element={<CustomerCreate />} />
-                <Route path="customers/:id" element={<CustomerDetails />} />
-                <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
-                <Route path="customers/follow-ups" element={<CustomerFollowUps />} />
-                <Route path="repair-plans" element={<RepairPlans />} />
-                <Route path="repair-plans/new" element={<CreateRepairPlan />} />
-                <Route path="repair-plans/:id" element={<RepairPlanDetails />} />
-                <Route path="calendar" element={<Calendar />} />
-                <Route path="inventory" element={<Inventory />} />
-                <Route path="equipment" element={<Equipment />} />
-                <Route path="equipment/:id" element={<EquipmentDetails />} />
-                <Route path="maintenance" element={<MaintenanceDashboard />} />
-                <Route path="team" element={<Team />} />
-                <Route path="team/roles" element={<TeamRoles />} />
-                <Route path="team/new" element={<TeamMemberCreate />} />
-                <Route path="team/:id" element={<TeamMemberProfile />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="analytics" element={<Analytics />} />
-                <Route path="sms" element={<SmsManagement />} />
-                <Route path="feedback/forms" element={<FeedbackFormsPage />} />
-                <Route path="feedback/forms/new" element={<FeedbackFormEditorPage />} />
-                <Route path="feedback/forms/:formId/edit" element={<FeedbackFormEditorPage />} />
-                <Route path="feedback/forms/:formId/analytics" element={<FeedbackAnalyticsPage />} />
-                <Route path="customer-analytics" element={<CustomerAnalytics />} />
-                <Route path="settings/*" element={<SettingsPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-              <Route path="/email-templates" element={<Layout><EmailTemplates /></Layout>} />
-              <Route path="/email-campaigns" element={<Layout><EmailCampaigns /></Layout>} />
-            </Routes>
-          </ToastProvider>
-        </Router>
-      </QueryClientProvider>
-    </RecoilRoot>
+    <Suspense fallback={<div>Loading...</div>}>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="work-orders" element={<WorkOrders />} />
+            <Route path="work-orders/:id" element={<WorkOrderDetails />} />
+            <Route path="work-orders/create" element={<CreateWorkOrder />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="customers/:id" element={<CustomerDetails />} />
+            <Route path="customers/create" element={<CreateCustomer />} />
+            <Route path="customers/service-history/:customer" element={<CustomerServiceHistory />} />
+            <Route path="invoices" element={<Invoices />} />
+            <Route path="invoices/create" element={<CreateInvoice />} />
+            <Route path="invoices/:id" element={<InvoiceDetails />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="team" element={<Team />} />
+            <Route path="team/create" element={<CreateTeamMember />} />
+            <Route path="team/:id" element={<TeamMemberProfile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="sms-templates" element={<SmsTemplates />} />
+            <Route path="maintenance" element={<Maintenance />} />
+            <Route path="equipment" element={<Equipment />} />
+            <Route path="equipment/:id" element={<EquipmentDetails />} />
+            <Route path="reminders" element={<Reminders />} />
+            <Route path="repair-plans" element={<RepairPlans />} />
+            <Route path="repair-plans/create" element={<CreateRepairPlan />} />
+            <Route path="repair-plans/:id" element={<RepairPlanDetails />} />
+            <Route path="email-templates" element={<EmailTemplates />} />
+            <Route path="email-campaigns" element={<EmailCampaigns />} />
+            <Route path="email-sequences" element={<EmailSequences />} />
+            <Route path="*" element={<div>Not Found</div>} />
+          </Route>
+        </Routes>
+      </Router>
+    </Suspense>
   );
 }
 
