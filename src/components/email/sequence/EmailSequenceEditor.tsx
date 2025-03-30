@@ -63,7 +63,9 @@ export function EmailSequenceEditor({
 }: EmailSequenceEditorProps) {
   const [name, setName] = useState(sequence?.name || "");
   const [description, setDescription] = useState(sequence?.description || "");
-  const [triggerType, setTriggerType] = useState(sequence?.triggerType || "manual");
+  const [triggerType, setTriggerType] = useState<"manual" | "event" | "schedule">(
+    (sequence?.triggerType as "manual" | "event" | "schedule") || "manual"
+  );
   const [triggerEvent, setTriggerEvent] = useState(sequence?.triggerEvent || "");
   const [isActive, setIsActive] = useState(sequence?.isActive || false);
   const [steps, setSteps] = useState<EmailSequenceStep[]>(sequence?.steps || []);
@@ -99,7 +101,7 @@ export function EmailSequenceEditor({
       const sequenceData: Partial<EmailSequence> = {
         name,
         description,
-        triggerType: triggerType as 'manual' | 'event' | 'schedule',
+        triggerType,
         triggerEvent: triggerType === 'event' ? triggerEvent : undefined,
         isActive,
         steps: updatedSteps
@@ -167,7 +169,17 @@ export function EmailSequenceEditor({
   };
 
   const getTemplateById = (id: string): EmailTemplate | undefined => {
-    return templates.find(template => template.id === id);
+    const template = templates.find(t => t.id === id);
+    // Create a full EmailTemplate from a preview if needed
+    if (template) {
+      return {
+        ...template,
+        content: '',
+        variables: [],
+        isArchived: false
+      };
+    }
+    return undefined;
   };
 
   return (
@@ -206,7 +218,7 @@ export function EmailSequenceEditor({
                 <Label htmlFor="trigger-type">Trigger Type</Label>
                 <Select 
                   value={triggerType} 
-                  onValueChange={setTriggerType}
+                  onValueChange={(value: "manual" | "event" | "schedule") => setTriggerType(value)}
                 >
                   <SelectTrigger id="trigger-type">
                     <SelectValue placeholder="Select trigger type" />
@@ -410,10 +422,10 @@ export function EmailSequenceEditor({
                           <Label htmlFor="delay-type">Delay Type</Label>
                           <Select 
                             value={editingStep.delayType} 
-                            onValueChange={(value) => updateStepField(
+                            onValueChange={(value: "fixed" | "business_days") => updateStepField(
                               editingStep.id, 
                               'delayType', 
-                              value as 'fixed' | 'business_days'
+                              value
                             )}
                           >
                             <SelectTrigger id="delay-type">

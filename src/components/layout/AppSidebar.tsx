@@ -8,9 +8,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem"
-import { SidebarNavList } from "@/components/layout/sidebar/SidebarNavList"
-import { SidebarContent, SidebarHeader } from "@/components/layout/sidebar/SidebarContent"
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   HomeIcon,
   ClipboardList,
@@ -30,10 +31,21 @@ import {
   Clipboard,
   ArrowRight
 } from "lucide-react"
-import { useSidebar } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+
+// Create a simple navigation item component
+const NavItem = ({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) => {
+  const navigate = useNavigate();
+  return (
+    <Button 
+      variant="ghost" 
+      className="w-full justify-start" 
+      onClick={() => navigate(to)}
+    >
+      <span className="mr-2">{icon}</span>
+      <span>{children}</span>
+    </Button>
+  );
+};
 
 export function AppSidebar() {
   const { collapsed, toggleCollapsed } = useSidebar();
@@ -50,84 +62,89 @@ export function AppSidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-3/4 sm:w-2/3 md:w-1/2">
-            <SidebarContent>
-              <SidebarHeader>
-                <SheetTitle>Menu</SheetTitle>
-                <SheetDescription>
-                  Navigate your dashboard
-                </SheetDescription>
-              </SidebarHeader>
-              <SidebarNavList>
-                <SidebarNavItem to="/dashboard" icon={<HomeIcon />}>Dashboard</SidebarNavItem>
-                <SidebarNavItem to="/work-orders" icon={<ClipboardList />}>Work Orders</SidebarNavItem>
-                <SidebarNavItem to="/customers" icon={<Users />}>Customers</SidebarNavItem>
-                <SidebarNavItem to="/invoices" icon={<Receipt />}>Invoices</SidebarNavItem>
-                <SidebarNavItem to="/calendar" icon={<Calendar />}>Calendar</SidebarNavItem>
-                <SidebarNavItem to="/inventory" icon={<Package />}>Inventory</SidebarNavItem>
-                <SidebarNavItem to="/equipment" icon={<HardDrive />}>Equipment</SidebarNavItem>
-                <SidebarNavItem to="/maintenance" icon={<Wrench />}>Maintenance</SidebarNavItem>
-                <SidebarNavItem to="/repair-plans" icon={<Clipboard />}>Repair Plans</SidebarNavItem>
-                <SidebarNavItem to="/reminders" icon={<Bell />}>Reminders</SidebarNavItem>
-                <SidebarNavItem to="/team" icon={<Users2 />}>Team</SidebarNavItem>
-                <SidebarNavItem to="/reports" icon={<BarChart />}>Reports</SidebarNavItem>
-                
-                {/* Marketing Section */}
-                <div className="pt-4">
-                  <div className="mb-2 px-3">
-                    <div className="text-xs font-semibold text-muted-foreground tracking-wider">
-                      MARKETING
-                    </div>
-                  </div>
-                  <SidebarNavItem to="/email-templates" icon={<FileText />}>Email Templates</SidebarNavItem>
-                  <SidebarNavItem to="/email-campaigns" icon={<Mail />}>Email Campaigns</SidebarNavItem>
-                  <SidebarNavItem to="/email-sequences" icon={<ArrowRight />}>Email Sequences</SidebarNavItem>
-                  <SidebarNavItem to="/sms-templates" icon={<MessageSquare />}>SMS Management</SidebarNavItem>
-                </div>
-                
-                <SidebarNavItem to="/settings" icon={<Settings />}>Settings</SidebarNavItem>
-              </SidebarNavList>
-            </SidebarContent>
-          </SheetContent>
-        </Sheet>
-      ) : (
-        <aside className="hidden md:flex md:w-64 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <SidebarContent>
-            <SidebarHeader>
-              {/* You can add a logo or branding here */}
-              <Button variant="link" className="text-2xl font-bold p-0" onClick={() => navigate('/dashboard')}>
-                Your Company
-              </Button>
-            </SidebarHeader>
-            <SidebarNavList>
-              <SidebarNavItem to="/dashboard" icon={<HomeIcon />}>Dashboard</SidebarNavItem>
-              <SidebarNavItem to="/work-orders" icon={<ClipboardList />}>Work Orders</SidebarNavItem>
-              <SidebarNavItem to="/customers" icon={<Users />}>Customers</SidebarNavItem>
-              <SidebarNavItem to="/invoices" icon={<Receipt />}>Invoices</SidebarNavItem>
-              <SidebarNavItem to="/calendar" icon={<Calendar />}>Calendar</SidebarNavItem>
-              <SidebarNavItem to="/inventory" icon={<Package />}>Inventory</SidebarNavItem>
-              <SidebarNavItem to="/equipment" icon={<HardDrive />}>Equipment</SidebarNavItem>
-              <SidebarNavItem to="/maintenance" icon={<Wrench />}>Maintenance</SidebarNavItem>
-              <SidebarNavItem to="/repair-plans" icon={<Clipboard />}>Repair Plans</SidebarNavItem>
-              <SidebarNavItem to="/reminders" icon={<Bell />}>Reminders</SidebarNavItem>
-              <SidebarNavItem to="/team" icon={<Users2 />}>Team</SidebarNavItem>
-              <SidebarNavItem to="/reports" icon={<BarChart />}>Reports</SidebarNavItem>
+            <SheetHeader>
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>
+                Navigate your dashboard
+              </SheetDescription>
+            </SheetHeader>
+            <div className="space-y-4 mt-4">
+              <div className="space-y-1">
+                <NavItem to="/dashboard" icon={<HomeIcon size={18} />}>Dashboard</NavItem>
+                <NavItem to="/work-orders" icon={<ClipboardList size={18} />}>Work Orders</NavItem>
+                <NavItem to="/customers" icon={<Users size={18} />}>Customers</NavItem>
+                <NavItem to="/invoices" icon={<Receipt size={18} />}>Invoices</NavItem>
+                <NavItem to="/calendar" icon={<Calendar size={18} />}>Calendar</NavItem>
+                <NavItem to="/inventory" icon={<Package size={18} />}>Inventory</NavItem>
+                <NavItem to="/equipment" icon={<HardDrive size={18} />}>Equipment</NavItem>
+                <NavItem to="/maintenance" icon={<Wrench size={18} />}>Maintenance</NavItem>
+                <NavItem to="/repair-plans" icon={<Clipboard size={18} />}>Repair Plans</NavItem>
+                <NavItem to="/reminders" icon={<Bell size={18} />}>Reminders</NavItem>
+                <NavItem to="/team" icon={<Users2 size={18} />}>Team</NavItem>
+                <NavItem to="/reports" icon={<BarChart size={18} />}>Reports</NavItem>
+              </div>
               
               {/* Marketing Section */}
-              <div className="pt-4">
-                <div className="mb-2 px-3">
+              <div className="pt-2">
+                <div className="mb-2 px-2">
                   <div className="text-xs font-semibold text-muted-foreground tracking-wider">
                     MARKETING
                   </div>
                 </div>
-                <SidebarNavItem to="/email-templates" icon={<FileText />}>Email Templates</SidebarNavItem>
-                <SidebarNavItem to="/email-campaigns" icon={<Mail />}>Email Campaigns</SidebarNavItem>
-                <SidebarNavItem to="/email-sequences" icon={<ArrowRight />}>Email Sequences</SidebarNavItem>
-                <SidebarNavItem to="/sms-templates" icon={<MessageSquare />}>SMS Management</SidebarNavItem>
+                <div className="space-y-1">
+                  <NavItem to="/email-templates" icon={<FileText size={18} />}>Email Templates</NavItem>
+                  <NavItem to="/email-campaigns" icon={<Mail size={18} />}>Email Campaigns</NavItem>
+                  <NavItem to="/email-sequences" icon={<ArrowRight size={18} />}>Email Sequences</NavItem>
+                  <NavItem to="/sms-templates" icon={<MessageSquare size={18} />}>SMS Management</NavItem>
+                </div>
               </div>
               
-              <SidebarNavItem to="/settings" icon={<Settings />}>Settings</SidebarNavItem>
-            </SidebarNavList>
-          </SidebarContent>
+              <NavItem to="/settings" icon={<Settings size={18} />}>Settings</NavItem>
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <aside className="hidden md:flex md:w-64 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <Button variant="link" className="text-2xl font-bold p-0" onClick={() => navigate('/dashboard')}>
+              Your Company
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto p-3">
+            <div className="space-y-1">
+              <NavItem to="/dashboard" icon={<HomeIcon size={18} />}>Dashboard</NavItem>
+              <NavItem to="/work-orders" icon={<ClipboardList size={18} />}>Work Orders</NavItem>
+              <NavItem to="/customers" icon={<Users size={18} />}>Customers</NavItem>
+              <NavItem to="/invoices" icon={<Receipt size={18} />}>Invoices</NavItem>
+              <NavItem to="/calendar" icon={<Calendar size={18} />}>Calendar</NavItem>
+              <NavItem to="/inventory" icon={<Package size={18} />}>Inventory</NavItem>
+              <NavItem to="/equipment" icon={<HardDrive size={18} />}>Equipment</NavItem>
+              <NavItem to="/maintenance" icon={<Wrench size={18} />}>Maintenance</NavItem>
+              <NavItem to="/repair-plans" icon={<Clipboard size={18} />}>Repair Plans</NavItem>
+              <NavItem to="/reminders" icon={<Bell size={18} />}>Reminders</NavItem>
+              <NavItem to="/team" icon={<Users2 size={18} />}>Team</NavItem>
+              <NavItem to="/reports" icon={<BarChart size={18} />}>Reports</NavItem>
+            </div>
+            
+            {/* Marketing Section */}
+            <div className="pt-4">
+              <div className="mb-2 px-1">
+                <div className="text-xs font-semibold text-muted-foreground tracking-wider">
+                  MARKETING
+                </div>
+              </div>
+              <div className="space-y-1">
+                <NavItem to="/email-templates" icon={<FileText size={18} />}>Email Templates</NavItem>
+                <NavItem to="/email-campaigns" icon={<Mail size={18} />}>Email Campaigns</NavItem>
+                <NavItem to="/email-sequences" icon={<ArrowRight size={18} />}>Email Sequences</NavItem>
+                <NavItem to="/sms-templates" icon={<MessageSquare size={18} />}>SMS Management</NavItem>
+              </div>
+            </div>
+            
+            <div className="pt-4">
+              <NavItem to="/settings" icon={<Settings size={18} />}>Settings</NavItem>
+            </div>
+          </div>
         </aside>
       )}
     </>
