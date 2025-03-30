@@ -41,7 +41,7 @@ export const useVehicleData = () => {
   }, []);
 
   // Function to fetch models for a selected make
-  const fetchModels = useCallback((make: string) => {
+  const fetchModels = useCallback(async (make: string) => {
     if (!make) return;
     
     setLoading(true);
@@ -53,11 +53,20 @@ export const useVehicleData = () => {
       // Get models from our mock data
       const modelsForMake = mockModelsByMake[make] || [];
       setModels(modelsForMake);
-      setLoading(false);
+      
+      // Return a promise that resolves when models are set
+      // This allows components to wait for models to be loaded
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          setLoading(false);
+          resolve();
+        }, 100);
+      });
     } catch (err) {
       console.error("Error setting mock models:", err);
       setError("Could not load vehicle models");
       setLoading(false);
+      return Promise.reject(err);
     }
   }, []);
 
@@ -66,6 +75,19 @@ export const useVehicleData = () => {
     setLoading(true);
     try {
       const result = await decodeVinUtil(vin);
+      
+      // If we got a make, ensure it's mapped to an ID we have in our system
+      if (result?.make) {
+        const matchingMake = makes.find(m => 
+          m.make_id.toLowerCase() === result.make.toLowerCase() || 
+          m.make_display.toLowerCase() === result.make.toLowerCase()
+        );
+        
+        if (matchingMake) {
+          result.make = matchingMake.make_id;
+        }
+      }
+      
       setLoading(false);
       return result;
     } catch (error) {
@@ -74,7 +96,7 @@ export const useVehicleData = () => {
       setLoading(false);
       return null;
     }
-  }, []);
+  }, [makes]);
 
   return {
     makes,

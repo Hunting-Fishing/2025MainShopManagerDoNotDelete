@@ -36,6 +36,37 @@ interface NhtsaVehicleInfo {
   [key: string]: any; // For other properties in the response
 }
 
+// Map of manufacturer names to consistent make_id values
+const makeNameMap: Record<string, string> = {
+  "DODGE": "dodge",
+  "CHRYSLER": "chrysler",
+  "JEEP": "jeep",
+  "RAM": "ram",
+  "FORD": "ford",
+  "CHEVROLET": "chevrolet",
+  "GMC": "gmc",
+  "HONDA": "honda",
+  "TOYOTA": "toyota",
+  "NISSAN": "nissan",
+  "HYUNDAI": "hyundai",
+  "KIA": "kia",
+  "MAZDA": "mazda",
+  "BMW": "bmw",
+  "MERCEDES-BENZ": "mercedes-benz",
+  "AUDI": "audi",
+  "LEXUS": "lexus",
+  "ACURA": "acura",
+  "INFINITI": "infiniti",
+  "SUBARU": "subaru",
+  "VOLKSWAGEN": "volkswagen",
+  "VOLVO": "volvo",
+  "TESLA": "tesla",
+  "BUICK": "buick",
+  "CADILLAC": "cadillac",
+  "LINCOLN": "lincoln",
+  // Add other mappings as needed
+};
+
 /**
  * Decode a VIN using the NHTSA API
  * @param vin The 17-digit Vehicle Identification Number
@@ -71,10 +102,14 @@ export const decodeVinWithApi = async (vin: string): Promise<VinDecodeResult | n
       throw new Error(`API error: ${vehicleInfo.ErrorText}`);
     }
 
+    // Normalize the make to match our application's make_id format
+    const normalizedMake = vehicleInfo.Make?.toUpperCase() || "";
+    const makeId = makeNameMap[normalizedMake] || normalizedMake.toLowerCase();
+
     // Map the API response to our VinDecodeResult format
     const result: VinDecodeResult = {
       year: vehicleInfo.ModelYear || "",
-      make: vehicleInfo.Make || "",
+      make: makeId,
       model: vehicleInfo.Model || "",
       trim: vehicleInfo.Trim || ""
     };

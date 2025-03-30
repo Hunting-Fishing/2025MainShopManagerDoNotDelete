@@ -24,11 +24,11 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
     const apiResult = await decodeVinWithApi(normalizedVin);
     
     // If we got a valid result from the API, return it
-    if (apiResult) {
+    if (apiResult && apiResult.make && apiResult.model && apiResult.year) {
       return apiResult;
     }
     
-    console.log("API decode failed or returned no results, falling back to mock data");
+    console.log("API decode failed or returned incomplete results, falling back to mock data");
     
     // Fall back to mock database if API fails
     // Check if the first 8 characters match any of our mock VINs

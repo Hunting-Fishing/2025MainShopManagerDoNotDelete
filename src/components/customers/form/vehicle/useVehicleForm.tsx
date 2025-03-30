@@ -16,7 +16,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     makes, 
     models, 
     years, 
-    loading, 
+    loading: dataLoading, 
     error,
     fetchModels,
     decodeVin
@@ -25,6 +25,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [vinProcessing, setVinProcessing] = useState<boolean>(false);
   const [lastProcessedVin, setLastProcessedVin] = useState<string>('');
   const [vinDecodeTimeout, setVinDecodeTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   
   const selectedMake = form.watch(`vehicles.${index}.make`);
   const vin = form.watch(`vehicles.${index}.vin`);
@@ -32,7 +33,10 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   // Fetch models when make changes
   useEffect(() => {
     if (selectedMake) {
-      fetchModels(selectedMake);
+      setModelsLoaded(false);
+      fetchModels(selectedMake).then(() => {
+        setModelsLoaded(true);
+      });
     }
   }, [selectedMake, fetchModels]);
 
@@ -48,29 +52,39 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       form.setValue(`vehicles.${index}.year`, vehicleInfo.year);
       
       // Then set the make and fetch models for this make
-      form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
-      await fetchModels(vehicleInfo.make);
-      
-      // Wait to ensure models are loaded before setting model
-      setTimeout(() => {
-        // Finally set the model after models are fetched
-        form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+      if (vehicleInfo.make) {
+        form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
         
-        // Trigger form validation after all fields are set
-        form.trigger([
-          `vehicles.${index}.year`,
-          `vehicles.${index}.make`,
-          `vehicles.${index}.model`
-        ]);
+        // Wait for models to load
+        await fetchModels(vehicleInfo.make);
+        setModelsLoaded(true);
         
-        toast({
-          title: "VIN Decoded",
-          description: "Vehicle information has been populated.",
-          variant: "success",
-        });
-        
+        // Set the model after models are fetched
+        if (vehicleInfo.model) {
+          setTimeout(() => {
+            form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+            
+            // Trigger form validation after all fields are set
+            form.trigger([
+              `vehicles.${index}.year`,
+              `vehicles.${index}.make`,
+              `vehicles.${index}.model`
+            ]);
+            
+            toast({
+              title: "VIN Decoded",
+              description: "Vehicle information has been populated.",
+              variant: "success",
+            });
+            
+            setVinProcessing(false);
+          }, 300); // Small delay to ensure models are loaded
+        } else {
+          setVinProcessing(false);
+        }
+      } else {
         setVinProcessing(false);
-      }, 300); // Small delay to ensure models are loaded
+      }
     } catch (err) {
       console.error("Error populating vehicle form:", err);
       setVinProcessing(false);
@@ -143,10 +157,11 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     makes,
     models,
     years,
-    loading,
+    loading: dataLoading,
     error,
     selectedMake,
     vinProcessing,
+    modelsLoaded,
     handleMakeChange
   };
 };
