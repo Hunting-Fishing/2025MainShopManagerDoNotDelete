@@ -10,6 +10,7 @@ interface Activity {
   action: string;
   user_name: string;
   timestamp: string;
+  work_order_id?: string;
 }
 
 interface WorkOrderActivityHistoryProps {
@@ -25,6 +26,7 @@ export function WorkOrderActivityHistory({ workOrderId }: WorkOrderActivityHisto
       try {
         setLoading(true);
         
+        // Using a raw query to get around type issues
         const { data, error } = await supabase
           .from('work_order_activities')
           .select('*')
@@ -33,7 +35,7 @@ export function WorkOrderActivityHistory({ workOrderId }: WorkOrderActivityHisto
           
         if (error) throw error;
         
-        setActivities(data || []);
+        setActivities(data as Activity[] || []);
       } catch (error) {
         console.error("Error fetching activities:", error);
       } finally {

@@ -7,6 +7,7 @@ import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination"
 import { WorkOrder } from "@/data/workOrdersData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { mapFromDbWorkOrder } from "@/utils/supabaseMappers";
 
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,32 +36,42 @@ export default function WorkOrders() {
           throw error;
         }
         
-        // Fetch time entries and inventory items for each work order
+        // Process each work order with its related data
         const completeWorkOrders = await Promise.all(
           data.map(async (order) => {
             // Fetch time entries
-            const { data: timeEntries } = await supabase
-              .from('work_order_time_entries')
-              .select('*')
-              .eq('work_order_id', order.id);
-              
+            const timeEntriesResult = await supabase.rpc('get_work_order_time_entries', { 
+              work_order_id: order.id 
+            });
+            
             // Fetch inventory items
-            const { data: inventoryItems } = await supabase
-              .from('work_order_inventory_items')
-              .select('*')
-              .eq('work_order_id', order.id);
-              
-            // Convert unit_price to unitPrice for consistency with our interfaces
-            const formattedInventoryItems = inventoryItems?.map(item => ({
-              ...item,
+            const inventoryItemsResult = await supabase.rpc('get_work_order_inventory_items', { 
+              work_order_id: order.id 
+            });
+            
+            // Convert to our application format
+            const timeEntries = (timeEntriesResult.data || []).map((entry: any) => ({
+              id: entry.id,
+              employeeId: entry.employee_id,
+              employeeName: entry.employee_name,
+              startTime: entry.start_time,
+              endTime: entry.end_time,
+              duration: entry.duration,
+              notes: entry.notes,
+              billable: entry.billable
+            }));
+            
+            const inventoryItems = (inventoryItemsResult.data || []).map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              sku: item.sku,
+              category: item.category,
+              quantity: item.quantity,
               unitPrice: item.unit_price
             }));
-              
-            return {
-              ...order,
-              timeEntries: timeEntries || [],
-              inventoryItems: formattedInventoryItems || []
-            };
+            
+            // Map DB format to application format
+            return mapFromDbWorkOrder(order, timeEntries, inventoryItems);
           })
         );
         
@@ -124,11 +135,6 @@ export default function WorkOrders() {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-  };
-
-  // Get unique technicians from work orders (for backward compatibility)
-  const getUniqueTechnicians = () => {
-    return technicians;
   };
 
   if (loading) {

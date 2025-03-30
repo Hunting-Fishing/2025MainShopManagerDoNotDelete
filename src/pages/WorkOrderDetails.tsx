@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/data/workOrdersData";
-import { findWorkOrderById } from "@/utils/workOrderUtils";
+import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrderUtils";
 import WorkOrderDetailsView from "@/components/work-orders/WorkOrderDetailsView";
 import WorkOrderEditForm from "@/components/work-orders/WorkOrderEditForm";
 import { toast } from "@/hooks/use-toast";
+import { TimeEntry } from "@/types/workOrder";
 
 interface WorkOrderDetailsProps {
   edit?: boolean;
@@ -16,6 +17,33 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
   const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Update time entries in the state
+  const handleUpdateTimeEntries = async (updatedEntries: TimeEntry[]) => {
+    if (!workOrder) return;
+    
+    const updatedWorkOrder = {
+      ...workOrder,
+      timeEntries: updatedEntries,
+      totalBillableTime: updatedEntries.reduce((total, entry) => {
+        return entry.billable ? total + entry.duration : total;
+      }, 0)
+    };
+    
+    setWorkOrder(updatedWorkOrder);
+    
+    try {
+      // Save the updated work order to persist the time entries
+      await updateWorkOrder(updatedWorkOrder);
+    } catch (error) {
+      console.error("Error updating time entries:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save time entries.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchWorkOrder = async () => {
@@ -72,7 +100,10 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
       {edit ? (
         <WorkOrderEditForm workOrder={workOrder} />
       ) : (
-        <WorkOrderDetailsView workOrder={workOrder} />
+        <WorkOrderDetailsView 
+          workOrder={workOrder} 
+          onUpdateTimeEntries={handleUpdateTimeEntries}
+        />
       )}
     </div>
   );

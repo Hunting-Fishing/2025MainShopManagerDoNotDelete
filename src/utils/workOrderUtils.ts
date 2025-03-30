@@ -5,6 +5,50 @@ import { handleApiError } from "@/utils/errorHandling";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 
+// Maps our application WorkOrder type to Supabase database format
+const mapToDbWorkOrder = (workOrder: Partial<WorkOrder>) => {
+  return {
+    id: workOrder.id,
+    customer: workOrder.customer,
+    description: workOrder.description,
+    status: workOrder.status,
+    priority: workOrder.priority,
+    date: workOrder.date,
+    due_date: workOrder.dueDate,
+    technician: workOrder.technician,
+    location: workOrder.location,
+    notes: workOrder.notes,
+    total_billable_time: workOrder.totalBillableTime,
+    created_by: workOrder.createdBy,
+    created_at: workOrder.createdAt,
+    last_updated_by: workOrder.lastUpdatedBy,
+    last_updated_at: workOrder.lastUpdatedAt
+  };
+};
+
+// Maps from Supabase to our application WorkOrder format
+const mapFromDbWorkOrder = (dbWorkOrder: any, timeEntries: TimeEntry[] = [], inventoryItems: WorkOrderInventoryItem[] = []): WorkOrder => {
+  return {
+    id: dbWorkOrder.id,
+    customer: dbWorkOrder.customer,
+    description: dbWorkOrder.description || '',
+    status: dbWorkOrder.status,
+    priority: dbWorkOrder.priority,
+    date: dbWorkOrder.date,
+    dueDate: dbWorkOrder.due_date,
+    technician: dbWorkOrder.technician,
+    location: dbWorkOrder.location,
+    notes: dbWorkOrder.notes || '',
+    totalBillableTime: dbWorkOrder.total_billable_time || 0,
+    createdBy: dbWorkOrder.created_by,
+    createdAt: dbWorkOrder.created_at,
+    lastUpdatedBy: dbWorkOrder.last_updated_by,
+    lastUpdatedAt: dbWorkOrder.last_updated_at,
+    timeEntries,
+    inventoryItems
+  };
+};
+
 // Find a work order by ID
 export const findWorkOrderById = async (id: string): Promise<WorkOrder | undefined> => {
   try {
@@ -19,28 +63,38 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | undefin
     
     if (!workOrder) return undefined;
     
-    // Fetch time entries for this work order
-    const { data: timeEntries, error: timeEntriesError } = await supabase
-      .from('work_order_time_entries')
-      .select('*')
-      .eq('work_order_id', id);
-      
-    if (timeEntriesError) throw timeEntriesError;
+    // Fetch time entries for this work order using raw query
+    const timeEntriesResult = await supabase.rpc('get_work_order_time_entries', { work_order_id: id });
+    const timeEntries = timeEntriesResult.data || [];
     
-    // Fetch inventory items for this work order
-    const { data: inventoryItems, error: inventoryItemsError } = await supabase
-      .from('work_order_inventory_items')
-      .select('*')
-      .eq('work_order_id', id);
-      
-    if (inventoryItemsError) throw inventoryItemsError;
+    // Format the time entries to match our application format
+    const formattedTimeEntries: TimeEntry[] = timeEntries.map((entry: any) => ({
+      id: entry.id,
+      employeeId: entry.employee_id,
+      employeeName: entry.employee_name,
+      startTime: entry.start_time,
+      endTime: entry.end_time,
+      duration: entry.duration,
+      notes: entry.notes,
+      billable: entry.billable
+    }));
+    
+    // Fetch inventory items for this work order using raw query
+    const inventoryItemsResult = await supabase.rpc('get_work_order_inventory_items', { work_order_id: id });
+    const inventoryItems = inventoryItemsResult.data || [];
+    
+    // Format the inventory items to match our application format
+    const formattedInventoryItems: WorkOrderInventoryItem[] = inventoryItems.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      quantity: item.quantity,
+      unitPrice: item.unit_price
+    }));
     
     // Combine all data into the WorkOrder object
-    return {
-      ...workOrder,
-      timeEntries: timeEntries || [],
-      inventoryItems: inventoryItems || []
-    } as WorkOrder;
+    return mapFromDbWorkOrder(workOrder, formattedTimeEntries, formattedInventoryItems);
   } catch (error) {
     handleApiError(error, "Error finding work order");
     return undefined;
@@ -54,74 +108,73 @@ export const updateWorkOrder = async (workOrder: WorkOrder): Promise<WorkOrder> 
     const timeEntries = workOrder.timeEntries || [];
     const inventoryItems = workOrder.inventoryItems || [];
     
-    // Create a copy of the work order without these arrays
-    const { timeEntries: _, inventoryItems: __, ...workOrderData } = workOrder;
+    // Map to database format
+    const dbWorkOrder = mapToDbWorkOrder(workOrder);
     
     // Update the work order in Supabase
     const { data, error } = await supabase
       .from('work_orders')
-      .update(workOrderData)
+      .update(dbWorkOrder)
       .eq('id', workOrder.id)
       .select()
       .single();
       
     if (error) throw error;
     
-    // Handle time entries updates
+    // Handle time entries using stored procedures to avoid type issues
     if (timeEntries.length > 0) {
       // First delete existing time entries
-      const { error: deleteError } = await supabase
-        .from('work_order_time_entries')
-        .delete()
-        .eq('work_order_id', workOrder.id);
+      const deleteTimeEntries = await supabase.rpc('delete_work_order_time_entries', {
+        work_order_id: workOrder.id
+      });
         
-      if (deleteError) throw deleteError;
+      if (deleteTimeEntries.error) throw deleteTimeEntries.error;
       
       // Then insert the updated ones
-      const { error: insertError } = await supabase
-        .from('work_order_time_entries')
-        .insert(
-          timeEntries.map(entry => ({
-            ...entry,
-            work_order_id: workOrder.id
-          }))
-        );
+      for (const entry of timeEntries) {
+        const insertTimeEntry = await supabase.rpc('insert_work_order_time_entry', {
+          p_work_order_id: workOrder.id,
+          p_employee_id: entry.employeeId,
+          p_employee_name: entry.employeeName,
+          p_start_time: entry.startTime,
+          p_end_time: entry.endTime,
+          p_duration: entry.duration,
+          p_notes: entry.notes || null,
+          p_billable: entry.billable
+        });
         
-      if (insertError) throw insertError;
+        if (insertTimeEntry.error) throw insertTimeEntry.error;
+      }
     }
     
-    // Handle inventory items updates
+    // Handle inventory items using stored procedures to avoid type issues
     if (inventoryItems.length > 0) {
       // First delete existing inventory items
-      const { error: deleteError } = await supabase
-        .from('work_order_inventory_items')
-        .delete()
-        .eq('work_order_id', workOrder.id);
+      const deleteInventoryItems = await supabase.rpc('delete_work_order_inventory_items', {
+        work_order_id: workOrder.id
+      });
         
-      if (deleteError) throw deleteError;
+      if (deleteInventoryItems.error) throw deleteInventoryItems.error;
       
       // Then insert the updated ones
-      const { error: insertError } = await supabase
-        .from('work_order_inventory_items')
-        .insert(
-          inventoryItems.map(item => ({
-            ...item,
-            work_order_id: workOrder.id,
-            unit_price: item.unitPrice // Map to the database column name
-          }))
-        );
+      for (const item of inventoryItems) {
+        const insertInventoryItem = await supabase.rpc('insert_work_order_inventory_item', {
+          p_work_order_id: workOrder.id,
+          p_name: item.name,
+          p_sku: item.sku,
+          p_category: item.category,
+          p_quantity: item.quantity,
+          p_unit_price: item.unitPrice
+        });
         
-      if (insertError) throw insertError;
+        if (insertInventoryItem.error) throw insertInventoryItem.error;
+      }
     }
     
     // Record activity
     await recordWorkOrderActivity("Updated", workOrder.id, "system", workOrder.lastUpdatedBy || "System");
     
-    return {
-      ...data,
-      timeEntries,
-      inventoryItems
-    } as WorkOrder;
+    return mapFromDbWorkOrder(data, timeEntries, inventoryItems);
   } catch (error) {
     const formattedError = handleApiError(error, "Failed to update work order");
     throw new Error(formattedError.message);
@@ -156,19 +209,16 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
     const timeEntries = workOrderData.timeEntries || [];
     const inventoryItems = workOrderData.inventoryItems || [];
     
-    // Create a copy of the work order without these arrays
-    const { timeEntries: _, inventoryItems: __, ...workOrderInfo } = workOrderData;
-    
-    // Set the current date
-    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    // Create DB format object
+    const dbWorkOrder = mapToDbWorkOrder({
+      ...workOrderData,
+      date: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    });
     
     // Create the work order in Supabase
     const { data, error } = await supabase
       .from('work_orders')
-      .insert({
-        ...workOrderInfo,
-        date: currentDate
-      })
+      .insert(dbWorkOrder)
       .select()
       .single();
       
@@ -176,44 +226,45 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
     
     const workOrderId = data.id;
     
-    // Handle time entries if present
+    // Handle time entries using stored procedures
     if (timeEntries.length > 0) {
-      const { error: timeError } = await supabase
-        .from('work_order_time_entries')
-        .insert(
-          timeEntries.map(entry => ({
-            ...entry,
-            work_order_id: workOrderId
-          }))
-        );
+      for (const entry of timeEntries) {
+        const insertTimeEntry = await supabase.rpc('insert_work_order_time_entry', {
+          p_work_order_id: workOrderId,
+          p_employee_id: entry.employeeId,
+          p_employee_name: entry.employeeName,
+          p_start_time: entry.startTime,
+          p_end_time: entry.endTime,
+          p_duration: entry.duration,
+          p_notes: entry.notes || null,
+          p_billable: entry.billable
+        });
         
-      if (timeError) throw timeError;
+        if (insertTimeEntry.error) throw insertTimeEntry.error;
+      }
     }
     
-    // Handle inventory items if present
+    // Handle inventory items using stored procedures
     if (inventoryItems.length > 0) {
-      const { error: inventoryError } = await supabase
-        .from('work_order_inventory_items')
-        .insert(
-          inventoryItems.map(item => ({
-            ...item,
-            work_order_id: workOrderId,
-            unit_price: item.unitPrice // Map to the database column name
-          }))
-        );
+      for (const item of inventoryItems) {
+        const insertInventoryItem = await supabase.rpc('insert_work_order_inventory_item', {
+          p_work_order_id: workOrderId,
+          p_name: item.name,
+          p_sku: item.sku,
+          p_category: item.category,
+          p_quantity: item.quantity,
+          p_unit_price: item.unitPrice
+        });
         
-      if (inventoryError) throw inventoryError;
+        if (insertInventoryItem.error) throw insertInventoryItem.error;
+      }
     }
     
     // Record activity
     await recordWorkOrderActivity("Created", workOrderId, "system", workOrderData.createdBy || "System");
     
     // Return the complete work order
-    return {
-      ...data,
-      timeEntries,
-      inventoryItems
-    } as WorkOrder;
+    return mapFromDbWorkOrder(data, timeEntries, inventoryItems);
   } catch (error) {
     const formattedError = handleApiError(error, "Failed to create work order");
     throw new Error(formattedError.message);
@@ -279,14 +330,13 @@ export const recordWorkOrderActivity = async (
   showToast: boolean = true
 ): Promise<void> => {
   try {
-    const { error } = await supabase
-      .from('work_order_activities')
-      .insert({
-        work_order_id: workOrderId,
-        action,
-        user_id: userId,
-        user_name: userName
-      });
+    // Using a stored procedure to avoid type issues
+    const { error } = await supabase.rpc('record_work_order_activity', {
+      p_action: action,
+      p_work_order_id: workOrderId,
+      p_user_id: userId,
+      p_user_name: userName
+    });
       
     if (error) throw error;
     
