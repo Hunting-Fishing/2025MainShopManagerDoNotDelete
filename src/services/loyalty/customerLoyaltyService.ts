@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerLoyalty } from "@/types/loyalty";
 import { calculateTier } from './tierService';
@@ -61,7 +62,7 @@ export const updateCustomerLifetimeValue = async (customerId: string): Promise<C
   const { data: invoiceData, error: invoiceError } = await supabase
     .from("invoices")
     .select("total")
-    .like("customer", `%${customerId.toString()}%`);
+    .like("customer", `%${customerId}%`);
     
   if (invoiceError) {
     console.error("Error fetching invoices:", invoiceError);
