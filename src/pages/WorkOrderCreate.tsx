@@ -25,11 +25,12 @@ export default function WorkOrderCreate() {
         // In a real implementation, this would query a staff or users table
         const { data, error } = await supabase
           .from('work_orders')
-          .select('technician');
+          .select('*');
           
         if (error) throw error;
         
         if (data && data.length > 0) {
+          // Extract unique technician values
           const uniqueTechnicians = Array.from(
             new Set(data.map(item => item.technician).filter(Boolean))
           ).sort();

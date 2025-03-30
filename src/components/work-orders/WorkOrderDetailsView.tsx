@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Pencil, Trash, ArrowLeft } from "lucide-react";
-import { WorkOrderDetailsHeader } from "@/components/work-orders/details/WorkOrderDetailsHeader";
+import WorkOrderDetailsHeader from "@/components/work-orders/details/WorkOrderDetailsHeader";
 import { WorkOrderDetailsTabs } from "@/components/work-orders/details/WorkOrderDetailsTabs";
 import { WorkOrderChatButton } from "@/components/work-orders/WorkOrderChatButton";
 import { TimeEntry } from "@/types/workOrder";
@@ -71,7 +71,10 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
         </Button>
         
         <div className="flex space-x-2">
-          <WorkOrderChatButton workOrderId={workOrder.id} />
+          <WorkOrderChatButton 
+            workOrderId={workOrder.id} 
+            workOrderName={`${workOrder.id}: ${workOrder.description}`}
+          />
           
           <Button 
             variant="outline" 
@@ -108,7 +111,7 @@ export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsView
       </div>
       
       {/* Work Order Details Header */}
-      <WorkOrderDetailsHeader workOrder={workOrder} />
+      <WorkOrderDetailsHeader workOrder={workOrder} onDelete={handleDelete} />
       
       {/* Work Order Content Tabs */}
       <WorkOrderDetailsTabs 

@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface WorkOrderChatButtonProps {
+export interface WorkOrderChatButtonProps {
   workOrderId: string;
   workOrderName: string;
 }
