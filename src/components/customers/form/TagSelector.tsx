@@ -1,18 +1,12 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues, predefinedTags } from "./CustomerFormSchema";
 import { FormControl } from "@/components/ui/form";
 import { X, Plus, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-interface TagSelectorProps {
-  form: UseFormReturn<CustomerFormValues>;
-  field: any;
-  disabled?: boolean;
-}
+import { TagSelectorProps } from "./TagSelectorTypes";
 
 export const TagSelector: React.FC<TagSelectorProps> = ({ form, field, disabled }) => {
   const [inputValue, setInputValue] = useState("");
