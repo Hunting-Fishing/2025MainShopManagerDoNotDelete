@@ -9,6 +9,7 @@ import { CustomerForm } from "@/components/customers/form/CustomerForm";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Check } from "lucide-react";
+import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
 
 export default function CustomerCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,13 +83,11 @@ export default function CustomerCreate() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Add New Customer</h1>
-        <p className="text-muted-foreground">
-          Create a new customer record in the system
-        </p>
-      </div>
+    <div className="space-y-6 max-w-6xl mx-auto px-4 sm:px-6">
+      <WorkOrderFormHeader
+        title="Add New Customer"
+        description="Create a new customer record in the system"
+      />
 
       {isSuccess && newCustomerId ? (
         <Alert variant="success" className="bg-green-50 border-green-200">
@@ -107,4 +106,4 @@ export default function CustomerCreate() {
       )}
     </div>
   );
-}
+};
