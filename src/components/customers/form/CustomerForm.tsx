@@ -9,6 +9,7 @@ import { BusinessInfoFields } from "./BusinessInfoFields";
 import { PreferencesFields } from "./PreferencesFields";
 import { ReferralFields } from "./ReferralFields";
 import { FleetFields } from "./FleetFields";
+import { VehiclesFields } from "./VehiclesFields";
 import { CustomerFormActions } from "./CustomerFormActions";
 import { customerSchema, CustomerFormValues } from "./CustomerFormSchema";
 import { NotificationsProvider } from "@/context/notifications";
@@ -54,6 +55,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               
               <div className="grid grid-cols-1 gap-6 pt-4">
                 <FleetFields form={form} />
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6 pt-4">
+                <VehiclesFields form={form} />
               </div>
 
               <CustomerFormActions isSubmitting={isSubmitting} />

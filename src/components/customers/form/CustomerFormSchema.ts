@@ -4,6 +4,15 @@ import { z } from "zod";
 // Regex for phone validation
 export const PHONE_REGEX = /^(\+\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}$/;
 
+// Vehicle schema for validation
+export const vehicleSchema = z.object({
+  make: z.string().optional(),
+  model: z.string().optional(),
+  year: z.string().optional(),
+  vin: z.string().optional(),
+  license_plate: z.string().optional(),
+});
+
 // Form validation schema
 export const customerSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -24,16 +33,8 @@ export const customerSchema = z.object({
   is_fleet: z.boolean().optional().default(false),
   fleet_company: z.string().optional(),
   
-  // Vehicle fields will be handled separately
-  vehicles: z.array(
-    z.object({
-      make: z.string().optional(),
-      model: z.string().optional(),
-      year: z.string().optional(),
-      vin: z.string().optional(),
-      license_plate: z.string().optional(),
-    })
-  ).optional().default([]),
+  // Vehicle fields with proper validation
+  vehicles: z.array(vehicleSchema).optional().default([]),
 });
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
