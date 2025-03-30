@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   FormField, 
   FormItem, 
@@ -41,6 +41,15 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     error,
     fetchModels 
   } = useVehicleData();
+
+  const selectedMake = form.watch(`vehicles.${index}.make`);
+
+  // Fetch models when make changes
+  useEffect(() => {
+    if (selectedMake) {
+      fetchModels(selectedMake);
+    }
+  }, [selectedMake, fetchModels]);
 
   const handleMakeChange = (value: string) => {
     // Update the form
@@ -137,7 +146,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               <Select 
                 onValueChange={field.onChange} 
                 value={field.value}
-                disabled={models.length === 0}
+                disabled={!selectedMake || models.length === 0}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -145,11 +154,17 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {models.map(model => (
-                    <SelectItem key={model.model_name} value={model.model_name}>
-                      {model.model_name}
+                  {models.length > 0 ? (
+                    models.map(model => (
+                      <SelectItem key={model.model_name} value={model.model_name}>
+                        {model.model_name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-models" disabled>
+                      {selectedMake ? "No models available" : "Select a make first"}
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
