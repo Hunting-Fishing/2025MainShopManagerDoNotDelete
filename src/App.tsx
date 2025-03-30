@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
@@ -40,8 +41,11 @@ import EmailTemplates from "@/pages/EmailTemplates";
 import EmailCampaigns from "@/pages/EmailCampaigns";
 
 import { RecoilRoot } from 'recoil';
-import { QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider, ToastViewport } from '@/components/ui/toast';
+
+// Create a client
+const queryClient = new QueryClient();
 
 export function App() {
   return (

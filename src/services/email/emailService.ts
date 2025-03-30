@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from 'uuid';
 import { 
   EmailTemplate, 
   EmailTemplatePreview,
@@ -9,364 +9,337 @@ import {
   EmailCategory
 } from "@/types/email";
 
+// Mock data for email templates
+const mockTemplates: EmailTemplate[] = [
+  {
+    id: "1",
+    name: "Welcome Email",
+    subject: "Welcome to our service!",
+    description: "Sent to new customers after sign-up",
+    category: "welcome",
+    content: "<p>Welcome to our service! We're glad to have you.</p>",
+    variables: [
+      { name: "firstName", defaultValue: "Customer", description: "Customer's first name" },
+      { name: "companyName", defaultValue: "Our Company", description: "Company name" }
+    ],
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: "2",
+    name: "Follow-up Email",
+    subject: "Following up on your recent service",
+    description: "Sent after service completion",
+    category: "follow_up",
+    content: "<p>Thank you for choosing our service. How was your experience?</p>",
+    variables: [
+      { name: "firstName", defaultValue: "Customer", description: "Customer's first name" },
+      { name: "serviceName", defaultValue: "Our Service", description: "Service provided" }
+    ],
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+// Mock data for email campaigns
+const mockCampaigns: EmailCampaign[] = [
+  {
+    id: "1",
+    name: "Summer Promotion",
+    subject: "Special Summer Offers Inside!",
+    status: "scheduled",
+    scheduledDate: new Date(Date.now() + 86400000).toISOString(),
+    sentDate: null,
+    totalRecipients: 150,
+    opened: 0,
+    clicked: 0,
+    templateId: "1",
+    content: "<p>Check out our summer promotions!</p>",
+    segmentIds: ["1", "2"],
+    recipientIds: [],
+    personalizations: [],
+    metadata: {},
+    abTest: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+// Mock data for email sequences
+const mockSequences: EmailSequence[] = [
+  {
+    id: "1",
+    name: "Customer Onboarding",
+    description: "Sequence to help new customers get started",
+    trigger: "event",
+    triggerEvent: "new_customer",
+    steps: [
+      {
+        id: "step1",
+        name: "Welcome Email",
+        templateId: "1",
+        delay: 0,
+        delayType: "fixed",
+      },
+      {
+        id: "step2",
+        name: "Follow-up Email",
+        templateId: "2",
+        delay: 72,
+        delayType: "fixed",
+      }
+    ],
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
 export const emailService = {
   // Template functions
   async getTemplates(): Promise<EmailTemplatePreview[]> {
-    const { data, error } = await supabase
-      .from('email_templates')
-      .select('id, name, subject, description, category, created_at, updated_at')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return (data || []).map(mapTemplateFromDB);
+    return mockTemplates.map(mapTemplateToPreview);
   },
   
   async getTemplatesByCategory(category: EmailCategory): Promise<EmailTemplatePreview[]> {
-    const { data, error } = await supabase
-      .from('email_templates')
-      .select('id, name, subject, description, category, created_at, updated_at')
-      .eq('category', category)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return (data || []).map(mapTemplateFromDB);
+    return mockTemplates
+      .filter(template => template.category === category)
+      .map(mapTemplateToPreview);
   },
   
   async getTemplateById(id: string): Promise<EmailTemplate | null> {
-    const { data, error } = await supabase
-      .from('email_templates')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Record not found
-      throw error;
-    }
-    
-    return data ? mapFullTemplateFromDB(data) : null;
+    const template = mockTemplates.find(t => t.id === id);
+    return template || null;
   },
   
   async createTemplate(template: Partial<EmailTemplate>): Promise<EmailTemplate> {
-    const { data, error } = await supabase
-      .from('email_templates')
-      .insert([mapTemplateToDB(template)])
-      .select('*')
-      .single();
+    const newTemplate: EmailTemplate = {
+      id: uuidv4(),
+      name: template.name || "New Template",
+      subject: template.subject || "",
+      description: template.description || "",
+      category: template.category || "custom",
+      content: template.content || "",
+      variables: template.variables || [],
+      isArchived: template.isArchived || false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     
-    if (error) throw error;
-    
-    return mapFullTemplateFromDB(data);
+    mockTemplates.push(newTemplate);
+    return newTemplate;
   },
   
   async updateTemplate(id: string, template: Partial<EmailTemplate>): Promise<EmailTemplate> {
-    const { data, error } = await supabase
-      .from('email_templates')
-      .update(mapTemplateToDB(template))
-      .eq('id', id)
-      .select('*')
-      .single();
+    const index = mockTemplates.findIndex(t => t.id === id);
     
-    if (error) throw error;
+    if (index === -1) {
+      throw new Error("Template not found");
+    }
     
-    return mapFullTemplateFromDB(data);
+    const updatedTemplate = {
+      ...mockTemplates[index],
+      ...template,
+      updatedAt: new Date().toISOString()
+    };
+    
+    mockTemplates[index] = updatedTemplate;
+    return updatedTemplate;
   },
   
   async deleteTemplate(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('email_templates')
-      .delete()
-      .eq('id', id);
+    const index = mockTemplates.findIndex(t => t.id === id);
     
-    if (error) throw error;
+    if (index !== -1) {
+      mockTemplates.splice(index, 1);
+    }
   },
   
   // Campaign functions
   async getCampaigns(): Promise<EmailCampaignPreview[]> {
-    const { data, error } = await supabase
-      .from('email_campaigns')
-      .select('id, name, subject, status, scheduled_date, sent_date, total_recipients, opened, clicked, created_at, updated_at')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return (data || []).map(mapCampaignFromDB);
+    return mockCampaigns.map(mapCampaignToPreview);
   },
   
   async getCampaignById(id: string): Promise<EmailCampaign | null> {
-    const { data, error } = await supabase
-      .from('email_campaigns')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Record not found
-      throw error;
-    }
-    
-    return data ? mapFullCampaignFromDB(data) : null;
+    const campaign = mockCampaigns.find(c => c.id === id);
+    return campaign || null;
   },
   
   async createCampaign(campaign: Partial<EmailCampaign>): Promise<EmailCampaign> {
-    const { data, error } = await supabase
-      .from('email_campaigns')
-      .insert([mapCampaignToDB(campaign)])
-      .select('*')
-      .single();
+    const newCampaign: EmailCampaign = {
+      id: uuidv4(),
+      name: campaign.name || "New Campaign",
+      subject: campaign.subject || "",
+      status: campaign.status || "draft",
+      scheduledDate: campaign.scheduledDate || null,
+      sentDate: campaign.sentDate || null,
+      totalRecipients: campaign.totalRecipients || 0,
+      opened: campaign.opened || 0,
+      clicked: campaign.clicked || 0,
+      templateId: campaign.templateId || "",
+      content: campaign.content || "",
+      segmentIds: campaign.segmentIds || [],
+      recipientIds: campaign.recipientIds || [],
+      personalizations: campaign.personalizations || [],
+      metadata: campaign.metadata || {},
+      abTest: campaign.abTest || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     
-    if (error) throw error;
-    
-    return mapFullCampaignFromDB(data);
+    mockCampaigns.push(newCampaign);
+    return newCampaign;
   },
   
   async updateCampaign(id: string, campaign: Partial<EmailCampaign>): Promise<EmailCampaign> {
-    const { data, error } = await supabase
-      .from('email_campaigns')
-      .update(mapCampaignToDB(campaign))
-      .eq('id', id)
-      .select('*')
-      .single();
+    const index = mockCampaigns.findIndex(c => c.id === id);
     
-    if (error) throw error;
+    if (index === -1) {
+      throw new Error("Campaign not found");
+    }
     
-    return mapFullCampaignFromDB(data);
+    const updatedCampaign = {
+      ...mockCampaigns[index],
+      ...campaign,
+      updatedAt: new Date().toISOString()
+    };
+    
+    mockCampaigns[index] = updatedCampaign;
+    return updatedCampaign;
   },
   
   async deleteCampaign(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('email_campaigns')
-      .delete()
-      .eq('id', id);
+    const index = mockCampaigns.findIndex(c => c.id === id);
     
-    if (error) throw error;
+    if (index !== -1) {
+      mockCampaigns.splice(index, 1);
+    }
   },
   
   // Sequences functions
   async getSequences(): Promise<EmailSequence[]> {
-    const { data, error } = await supabase
-      .from('email_sequences')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return (data || []).map(mapSequenceFromDB);
+    return [...mockSequences];
   },
   
   async getSequenceById(id: string): Promise<EmailSequence | null> {
-    const { data, error } = await supabase
-      .from('email_sequences')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Record not found
-      throw error;
-    }
-    
-    return data ? mapSequenceFromDB(data) : null;
+    const sequence = mockSequences.find(s => s.id === id);
+    return sequence ? { ...sequence } : null;
   },
   
   async createSequence(sequence: Partial<EmailSequence>): Promise<EmailSequence> {
-    const { data, error } = await supabase
-      .from('email_sequences')
-      .insert([mapSequenceToDB(sequence)])
-      .select('*')
-      .single();
+    const newSequence: EmailSequence = {
+      id: uuidv4(),
+      name: sequence.name || "New Sequence",
+      description: sequence.description || "",
+      trigger: sequence.trigger || "manual",
+      triggerEvent: sequence.triggerEvent,
+      steps: sequence.steps || [],
+      isActive: sequence.isActive || false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     
-    if (error) throw error;
-    
-    return mapSequenceFromDB(data);
+    mockSequences.push(newSequence);
+    return newSequence;
   },
   
   async updateSequence(id: string, sequence: Partial<EmailSequence>): Promise<EmailSequence> {
-    const { data, error } = await supabase
-      .from('email_sequences')
-      .update(mapSequenceToDB(sequence))
-      .eq('id', id)
-      .select('*')
-      .single();
+    const index = mockSequences.findIndex(s => s.id === id);
     
-    if (error) throw error;
+    if (index === -1) {
+      throw new Error("Sequence not found");
+    }
     
-    return mapSequenceFromDB(data);
+    const updatedSequence = {
+      ...mockSequences[index],
+      ...sequence,
+      updatedAt: new Date().toISOString()
+    };
+    
+    mockSequences[index] = updatedSequence;
+    return updatedSequence;
   },
   
   async deleteSequence(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('email_sequences')
-      .delete()
-      .eq('id', id);
+    const index = mockSequences.findIndex(s => s.id === id);
     
-    if (error) throw error;
+    if (index !== -1) {
+      mockSequences.splice(index, 1);
+    }
   },
   
   // Send email functions
   async sendTestEmail(templateId: string, recipientEmail: string, personalizations?: Record<string, string>): Promise<void> {
-    const { error } = await supabase.functions.invoke('send-test-email', {
-      body: {
-        templateId,
-        recipientEmail,
-        personalizations: personalizations || {}
-      }
-    });
-    
-    if (error) throw error;
+    console.log(`Sending test email (Template ID: ${templateId}) to ${recipientEmail}`, personalizations);
+    // In a real implementation, this would call the Supabase Edge Function
   },
   
   async scheduleEmailCampaign(campaignId: string, scheduledDate: string): Promise<void> {
-    const { error } = await supabase
-      .from('email_campaigns')
-      .update({ 
-        status: 'scheduled',
-        scheduled_date: scheduledDate 
-      })
-      .eq('id', campaignId);
+    const campaign = mockCampaigns.find(c => c.id === campaignId);
     
-    if (error) throw error;
+    if (campaign) {
+      campaign.status = 'scheduled';
+      campaign.scheduledDate = scheduledDate;
+      campaign.updatedAt = new Date().toISOString();
+    }
   },
   
   async sendEmailCampaignNow(campaignId: string): Promise<void> {
-    const { error } = await supabase.functions.invoke('trigger-email-campaign', {
-      body: { campaignId }
-    });
+    const campaign = mockCampaigns.find(c => c.id === campaignId);
     
-    if (error) throw error;
+    if (campaign) {
+      campaign.status = 'sent';
+      campaign.sentDate = new Date().toISOString();
+      campaign.updatedAt = new Date().toISOString();
+    }
   },
   
   async pauseEmailCampaign(campaignId: string): Promise<void> {
-    const { error } = await supabase
-      .from('email_campaigns')
-      .update({ status: 'paused' })
-      .eq('id', campaignId);
+    const campaign = mockCampaigns.find(c => c.id === campaignId);
     
-    if (error) throw error;
+    if (campaign) {
+      campaign.status = 'paused';
+      campaign.updatedAt = new Date().toISOString();
+    }
   },
   
   async cancelEmailCampaign(campaignId: string): Promise<void> {
-    const { error } = await supabase
-      .from('email_campaigns')
-      .update({ status: 'cancelled' })
-      .eq('id', campaignId);
+    const campaign = mockCampaigns.find(c => c.id === campaignId);
     
-    if (error) throw error;
+    if (campaign) {
+      campaign.status = 'cancelled';
+      campaign.updatedAt = new Date().toISOString();
+    }
   }
 };
 
-// Utility mapping functions
-function mapTemplateFromDB(dbTemplate: any): EmailTemplatePreview {
+// Helper functions for mapping data
+function mapTemplateToPreview(template: EmailTemplate): EmailTemplatePreview {
   return {
-    id: dbTemplate.id,
-    name: dbTemplate.name,
-    subject: dbTemplate.subject,
-    description: dbTemplate.description,
-    category: dbTemplate.category,
-    createdAt: dbTemplate.created_at,
-    updatedAt: dbTemplate.updated_at
+    id: template.id,
+    name: template.name,
+    subject: template.subject,
+    description: template.description,
+    category: template.category,
+    createdAt: template.createdAt,
+    updatedAt: template.updatedAt
   };
 }
 
-function mapFullTemplateFromDB(dbTemplate: any): EmailTemplate {
+function mapCampaignToPreview(campaign: EmailCampaign): EmailCampaignPreview {
   return {
-    ...mapTemplateFromDB(dbTemplate),
-    content: dbTemplate.content,
-    variables: dbTemplate.variables || [],
-    isArchived: dbTemplate.is_archived || false
+    id: campaign.id,
+    name: campaign.name,
+    subject: campaign.subject,
+    status: campaign.status,
+    scheduledDate: campaign.scheduledDate,
+    sentDate: campaign.sentDate,
+    totalRecipients: campaign.totalRecipients,
+    opened: campaign.opened,
+    clicked: campaign.clicked,
+    createdAt: campaign.createdAt,
+    updatedAt: campaign.updatedAt
   };
-}
-
-function mapTemplateToDB(template: Partial<EmailTemplate>): Record<string, any> {
-  const dbTemplate: Record<string, any> = {};
-  
-  if (template.name) dbTemplate.name = template.name;
-  if (template.subject) dbTemplate.subject = template.subject;
-  if (template.description) dbTemplate.description = template.description;
-  if (template.category) dbTemplate.category = template.category;
-  if (template.content) dbTemplate.content = template.content;
-  if (template.variables) dbTemplate.variables = template.variables;
-  if (typeof template.isArchived === 'boolean') dbTemplate.is_archived = template.isArchived;
-  
-  return dbTemplate;
-}
-
-function mapCampaignFromDB(dbCampaign: any): EmailCampaignPreview {
-  return {
-    id: dbCampaign.id,
-    name: dbCampaign.name,
-    subject: dbCampaign.subject,
-    status: dbCampaign.status,
-    scheduledDate: dbCampaign.scheduled_date,
-    sentDate: dbCampaign.sent_date,
-    totalRecipients: dbCampaign.total_recipients || 0,
-    opened: dbCampaign.opened || 0,
-    clicked: dbCampaign.clicked || 0,
-    createdAt: dbCampaign.created_at,
-    updatedAt: dbCampaign.updated_at
-  };
-}
-
-function mapFullCampaignFromDB(dbCampaign: any): EmailCampaign {
-  return {
-    ...mapCampaignFromDB(dbCampaign),
-    templateId: dbCampaign.template_id,
-    content: dbCampaign.content,
-    segmentIds: dbCampaign.segment_ids || [],
-    recipientIds: dbCampaign.recipient_ids || [],
-    personalizations: dbCampaign.personalizations || [],
-    metadata: dbCampaign.metadata || {},
-    abTest: dbCampaign.ab_test || null,
-  };
-}
-
-function mapCampaignToDB(campaign: Partial<EmailCampaign>): Record<string, any> {
-  const dbCampaign: Record<string, any> = {};
-  
-  if (campaign.name) dbCampaign.name = campaign.name;
-  if (campaign.subject) dbCampaign.subject = campaign.subject;
-  if (campaign.status) dbCampaign.status = campaign.status;
-  if (campaign.scheduledDate) dbCampaign.scheduled_date = campaign.scheduledDate;
-  if (campaign.sentDate) dbCampaign.sent_date = campaign.sentDate;
-  if (campaign.totalRecipients !== undefined) dbCampaign.total_recipients = campaign.totalRecipients;
-  if (campaign.opened !== undefined) dbCampaign.opened = campaign.opened;
-  if (campaign.clicked !== undefined) dbCampaign.clicked = campaign.clicked;
-  if (campaign.templateId) dbCampaign.template_id = campaign.templateId;
-  if (campaign.content) dbCampaign.content = campaign.content;
-  if (campaign.segmentIds) dbCampaign.segment_ids = campaign.segmentIds;
-  if (campaign.recipientIds) dbCampaign.recipient_ids = campaign.recipientIds;
-  if (campaign.personalizations) dbCampaign.personalizations = campaign.personalizations;
-  if (campaign.metadata) dbCampaign.metadata = campaign.metadata;
-  if (campaign.abTest) dbCampaign.ab_test = campaign.abTest;
-  
-  return dbCampaign;
-}
-
-function mapSequenceFromDB(dbSequence: any): EmailSequence {
-  return {
-    id: dbSequence.id,
-    name: dbSequence.name,
-    description: dbSequence.description,
-    trigger: dbSequence.trigger,
-    triggerEvent: dbSequence.trigger_event,
-    steps: dbSequence.steps || [],
-    isActive: dbSequence.is_active,
-    createdAt: dbSequence.created_at,
-    updatedAt: dbSequence.updated_at
-  };
-}
-
-function mapSequenceToDB(sequence: Partial<EmailSequence>): Record<string, any> {
-  const dbSequence: Record<string, any> = {};
-  
-  if (sequence.name) dbSequence.name = sequence.name;
-  if (sequence.description) dbSequence.description = sequence.description;
-  if (sequence.trigger) dbSequence.trigger = sequence.trigger;
-  if (sequence.triggerEvent) dbSequence.trigger_event = sequence.triggerEvent;
-  if (sequence.steps) dbSequence.steps = sequence.steps;
-  if (typeof sequence.isActive === 'boolean') dbSequence.is_active = sequence.isActive;
-  
-  return dbSequence;
 }
