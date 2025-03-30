@@ -18,9 +18,8 @@ import {
   createReward,
   updateReward,
   deleteReward,
-  DEFAULT_LOYALTY_TIERS
-} from "@/services/loyaltyService";
-import { LoyaltySettings, LoyaltyReward } from "@/types/loyalty";
+} from "@/services/loyalty";
+import { LoyaltySettings, LoyaltyReward, DEFAULT_LOYALTY_TIERS } from "@/types/loyalty";
 
 export function LoyaltyTab() {
   const [settings, setSettings] = useState<LoyaltySettings | null>(null);

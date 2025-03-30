@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import {
   updateRedemptionStatus,
   getTierByName,
   getLoyaltySettings
-} from "@/services/loyaltyService";
+} from "@/services/loyalty";
 
 interface CustomerLoyaltyCardProps {
   customerId: string;
@@ -37,7 +36,6 @@ export function CustomerLoyaltyCard({ customerId }: CustomerLoyaltyCardProps) {
   const loadCustomerLoyalty = async () => {
     setIsLoading(true);
     try {
-      // First check if loyalty program is enabled
       const shopId = "DEFAULT-SHOP-ID"; // Placeholder - would come from user context
       const settings = await getLoyaltySettings(shopId);
       setLoyaltyEnabled(settings?.is_enabled || false);
@@ -113,7 +111,6 @@ export function CustomerLoyaltyCard({ customerId }: CustomerLoyaltyCardProps) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4">
-          {/* Loyalty summary */}
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -146,7 +143,6 @@ export function CustomerLoyaltyCard({ customerId }: CustomerLoyaltyCardProps) {
             </Dialog>
           </div>
 
-          {/* Tab navigation */}
           <div className="flex border-b">
             <button
               className={`px-4 py-2 ${activeTab === 'points' ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
@@ -168,7 +164,6 @@ export function CustomerLoyaltyCard({ customerId }: CustomerLoyaltyCardProps) {
             </button>
           </div>
 
-          {/* Tab content */}
           <div className="min-h-[250px]">
             {activeTab === 'points' && (
               <RewardsTab 
@@ -199,7 +194,6 @@ export function CustomerLoyaltyCard({ customerId }: CustomerLoyaltyCardProps) {
   );
 }
 
-// Add Points Form
 interface AddPointsFormProps {
   customerId: string;
   onSuccess: (updatedLoyalty: CustomerLoyalty) => void;
@@ -268,7 +262,6 @@ function AddPointsForm({ customerId, onSuccess }: AddPointsFormProps) {
   );
 }
 
-// Rewards Tab
 interface RewardsTabProps {
   customerId: string;
   currentPoints: number;
@@ -368,7 +361,6 @@ function RewardsTab({ customerId, currentPoints, onRedemption }: RewardsTabProps
   );
 }
 
-// Redemptions Tab
 interface RedemptionsTabProps {
   customerId: string;
   onStatusUpdate: (updatedLoyalty: CustomerLoyalty | null) => void;
@@ -404,14 +396,11 @@ function RedemptionsTab({ customerId, onStatusUpdate }: RedemptionsTabProps) {
         status
       );
       
-      // Update the redemptions list
       setRedemptions(redemptions.map(r => 
         r.id === redemptionId ? updatedRedemption : r
       ));
       
-      // If cancelled, the customer loyalty will have been updated
       if (status === 'cancelled') {
-        // Reload customer loyalty to get updated points
         const updatedLoyalty = await getCustomerLoyalty(customerId);
         onStatusUpdate(updatedLoyalty);
       } else {
@@ -475,7 +464,6 @@ function RedemptionsTab({ customerId, onStatusUpdate }: RedemptionsTabProps) {
               </Badge>
             </div>
             
-            {/* Action buttons for pending redemptions */}
             {redemption.status === 'pending' && (
               <div className="flex justify-end gap-2 mt-3">
                 <Button
@@ -503,7 +491,6 @@ function RedemptionsTab({ customerId, onStatusUpdate }: RedemptionsTabProps) {
   );
 }
 
-// Transaction History Tab
 interface HistoryTabProps {
   customerId: string;
 }
@@ -571,7 +558,6 @@ function HistoryTab({ customerId }: HistoryTabProps) {
   );
 }
 
-// Helper function to get user-friendly transaction type labels
 function getTransactionTypeLabel(type: string): string {
   switch (type) {
     case 'earn':
