@@ -1,35 +1,32 @@
 
-import React from "react";
-import { format } from "date-fns";
-import { DateRange } from "react-day-picker";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface CustomerDateRangeFilterProps {
   dateRange?: DateRange;
-  onDateRangeChange: (range?: DateRange) => void;
-  label?: string;
+  onDateRangeChange: (range: DateRange | undefined) => void;
 }
 
 export const CustomerDateRangeFilter: React.FC<CustomerDateRangeFilterProps> = ({
   dateRange,
-  onDateRangeChange,
-  label = "Service Date Range"
+  onDateRangeChange
 }) => {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className="grid gap-2">
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            id="date"
+            variant={"outline"}
             className={cn(
               "w-full justify-start text-left font-normal",
-              !dateRange?.from && !dateRange?.to && "text-muted-foreground"
+              !dateRange && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -42,28 +39,19 @@ export const CustomerDateRangeFilter: React.FC<CustomerDateRangeFilterProps> = (
               ) : (
                 format(dateRange.from, "LLL dd, y")
               )
-            ) : dateRange?.to ? (
-              format(dateRange.to, "LLL dd, y")
             ) : (
-              <span>Service date range</span>
-            )}
-            {(dateRange?.from || dateRange?.to) && (
-              <X 
-                className="ml-auto h-4 w-4 hover:scale-110 transition-transform cursor-pointer" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDateRangeChange(undefined);
-                }}
-              />
+              <span>Pick a date range</span>
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
+            initialFocus
             mode="range"
+            defaultMonth={dateRange?.from}
             selected={dateRange}
             onSelect={onDateRangeChange}
-            initialFocus
+            numberOfMonths={2}
           />
         </PopoverContent>
       </Popover>

@@ -4,19 +4,19 @@ import { Label } from "@/components/ui/label";
 import { TagSelector } from "../../form/tag";
 
 interface CustomerFilterTagsProps {
-  initialTags: string[];
-  onTagsChange: (tags: string[]) => void;
+  tags: string[];
+  onChange: (tags: string[]) => void;
 }
 
 export const CustomerFilterTags: React.FC<CustomerFilterTagsProps> = ({
-  initialTags,
-  onTagsChange,
+  tags,
+  onChange,
 }) => {
-  const [tempTags, setTempTags] = useState<string[]>(initialTags || []);
+  const [tempTags, setTempTags] = useState<string[]>(tags || []);
 
   const handleTagsChange = (newTags: string[]) => {
     setTempTags(newTags);
-    onTagsChange(newTags);
+    onChange(newTags);
   };
 
   return (

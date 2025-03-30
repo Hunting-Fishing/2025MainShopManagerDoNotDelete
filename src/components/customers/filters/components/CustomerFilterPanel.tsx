@@ -34,7 +34,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Customer Tags</h3>
             <CustomerFilterTags
-              selectedTags={filters.tags || []}
+              tags={filters.tags || []}
               onChange={onTagsChange}
             />
           </div>
@@ -44,7 +44,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Vehicle Type</h3>
             <CustomerVehicleTypeFilter
-              value={filters.vehicleType || ''}
+              vehicleType={filters.vehicleType || ''}
               onChange={onVehicleTypeChange}
             />
           </div>
@@ -54,7 +54,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Has Vehicles</h3>
             <CustomerHasVehiclesFilter
-              value={filters.hasVehicles || ''}
+              hasVehicles={filters.hasVehicles || ''}
               onChange={onHasVehiclesChange}
             />
           </div>
@@ -65,7 +65,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
             <h3 className="text-sm font-medium mb-2">Date Added</h3>
             <CustomerDateRangeFilter
               dateRange={filters.dateRange}
-              onChange={onDateRangeChange}
+              onDateRangeChange={onDateRangeChange}
             />
           </div>
           

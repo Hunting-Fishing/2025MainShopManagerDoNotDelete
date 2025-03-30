@@ -5,19 +5,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface CustomerHasVehiclesFilterProps {
   hasVehicles?: string;
-  onHasVehiclesChange: (value: string) => void;
+  onChange: (value: string) => void;
 }
 
 export const CustomerHasVehiclesFilter: React.FC<CustomerHasVehiclesFilterProps> = ({
   hasVehicles,
-  onHasVehiclesChange,
+  onChange,
 }) => {
   return (
     <div className="space-y-2">
       <Label>Has Vehicles</Label>
       <Select
         value={hasVehicles || "_any"}
-        onValueChange={onHasVehiclesChange}
+        onValueChange={onChange}
       >
         <SelectTrigger>
           <SelectValue placeholder="Any" />
