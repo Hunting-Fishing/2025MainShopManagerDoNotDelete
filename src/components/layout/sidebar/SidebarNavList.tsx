@@ -1,100 +1,91 @@
 
 import React from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { SidebarNavItem, NavItem } from "./SidebarNavItem";
-import { 
-  Home, 
-  Users, 
-  Calendar, 
-  ShoppingCart, 
-  Truck, 
-  Settings, 
+import { NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Users,
   FileText,
-  BarChart3,
-  Mail,
-  MailPlus
+  Wrench,
+  Package,
+  BarChart2,
+  CalendarDays,
+  Settings,
+  MessageCircle,
+  Megaphone,
+  MailOpen,
 } from "lucide-react";
-
-export function getNavItems(): NavItem[] {
-  return [
-    {
-      title: "Dashboard",
-      href: "/",
-      icon: <Home className="mr-2 h-4 w-4" />,
-    },
-    {
-      title: "Customers",
-      href: "/customers",
-      icon: <Users className="mr-2 h-4 w-4" />,
-    },
-    {
-      title: "Work Orders",
-      href: "/work-orders",
-      icon: <FileText className="mr-2 h-4 w-4" />,
-    },
-    {
-      title: "Calendar",
-      href: "/calendar",
-      icon: <Calendar className="mr-2 h-4 w-4" />,
-    },
-    {
-      title: "Inventory",
-      href: "/inventory",
-      icon: <ShoppingCart className="mr-2 h-4 w-4" />,
-    },
-    {
-      title: "Vehicles",
-      href: "/vehicles",
-      icon: <Truck className="mr-2 h-4 w-4" />,
-    },
-    {
-      title: "Marketing",
-      href: "/email-templates",
-      icon: <Mail className="mr-2 h-4 w-4" />,
-      submenu: [
-        {
-          title: "Email Templates",
-          href: "/email-templates",
-          icon: <FileText className="mr-2 h-4 w-4" />,
-        },
-        {
-          title: "Email Campaigns",
-          href: "/email-campaigns",
-          icon: <MailPlus className="mr-2 h-4 w-4" />,
-        },
-      ],
-    },
-    {
-      title: "Analytics",
-      href: "/customer-analytics",
-      icon: <BarChart3 className="mr-2 h-4 w-4" />,
-      submenu: [
-        {
-          title: "Customer Analytics",
-          href: "/customer-analytics",
-          icon: <BarChart3 className="mr-2 h-4 w-4" />,
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      href: "/settings",
-      icon: <Settings className="mr-2 h-4 w-4" />,
-      disabled: true,
-    },
-  ];
-}
+import { SidebarNavItem } from "./SidebarNavItem";
 
 export function SidebarNavList() {
-  const navItems = getNavItems();
-  
   return (
-    <ScrollArea className="h-[calc(100vh-8rem)]">
-      <div className="flex flex-col space-y-2 px-7">
-        {navItems.map((item) => (
-          <SidebarNavItem key={item.title} item={item} />
-        ))}
-      </div>
-    </ScrollArea>
+    <div className="grid grid-flow-row auto-rows-max text-sm gap-0.5 group-[[data-collapsed=true]]:justify-center overflow-auto max-h-[calc(100vh-var(--header-height)-theme(spacing.6))]">
+      <NavLink
+        to="/"
+        className={({ isActive }) =>
+          `group flex w-full items-center py-2 px-7 gap-3 text-sm hover:text-foreground text-muted-foreground transition-colors ${
+            isActive ? "bg-accent text-foreground" : ""
+          }`
+        }
+      >
+        <LayoutDashboard className="h-5 w-5" />
+        <span>Dashboard</span>
+      </NavLink>
+      <SidebarNavItem 
+        to="/work-orders" 
+        icon={<ClipboardList className="h-5 w-5" />} 
+        label="Work Orders" 
+      />
+      <SidebarNavItem 
+        to="/invoices" 
+        icon={<FileText className="h-5 w-5" />} 
+        label="Invoices" 
+      />
+      <SidebarNavItem 
+        to="/customers" 
+        icon={<Users className="h-5 w-5" />} 
+        label="Customers" 
+      />
+      <SidebarNavItem 
+        to="/equipment" 
+        icon={<Wrench className="h-5 w-5" />} 
+        label="Equipment" 
+      />
+      <SidebarNavItem 
+        to="/inventory" 
+        icon={<Package className="h-5 w-5" />} 
+        label="Inventory" 
+      />
+      <SidebarNavItem 
+        to="/calendar" 
+        icon={<CalendarDays className="h-5 w-5" />} 
+        label="Calendar" 
+      />
+      <SidebarNavItem 
+        to="/reports" 
+        icon={<BarChart2 className="h-5 w-5" />} 
+        label="Reports" 
+      />
+      <SidebarNavItem 
+        to="/sms" 
+        icon={<MessageCircle className="h-5 w-5" />} 
+        label="SMS" 
+      />
+      <SidebarNavItem 
+        to="/email-templates" 
+        icon={<MailOpen className="h-5 w-5" />} 
+        label="Email Templates" 
+      />
+      <SidebarNavItem 
+        to="/email-campaigns" 
+        icon={<Megaphone className="h-5 w-5" />} 
+        label="Email Campaigns" 
+      />
+      <SidebarNavItem 
+        to="/settings" 
+        icon={<Settings className="h-5 w-5" />} 
+        label="Settings" 
+      />
+    </div>
   );
 }

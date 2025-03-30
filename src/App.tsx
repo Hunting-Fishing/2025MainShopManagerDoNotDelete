@@ -39,6 +39,7 @@ import FeedbackAnalyticsPage from './pages/feedback/FeedbackAnalyticsPage';
 import CustomerAnalytics from "./pages/CustomerAnalytics";
 import EmailTemplates from "@/pages/EmailTemplates";
 import EmailCampaigns from "@/pages/EmailCampaigns";
+import SmsManagement from "@/pages/SmsManagement";
 
 import { RecoilRoot } from 'recoil';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -85,6 +86,7 @@ export function App() {
                 <Route path="team/:id" element={<TeamMemberProfile />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="analytics" element={<Analytics />} />
+                <Route path="sms" element={<SmsManagement />} />
                 <Route path="feedback/forms" element={<FeedbackFormsPage />} />
                 <Route path="feedback/forms/new" element={<FeedbackFormEditorPage />} />
                 <Route path="feedback/forms/:formId/edit" element={<FeedbackFormEditorPage />} />

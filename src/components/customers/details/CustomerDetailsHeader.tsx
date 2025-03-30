@@ -3,8 +3,9 @@ import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Edit, ClipboardList, MessageSquare } from "lucide-react";
+import { ChevronLeft, Edit, ClipboardList, MessageSquare, MessageCircle } from "lucide-react";
 import { Customer, getCustomerFullName } from "@/types/customer";
+import { SendSmsDialog } from "@/components/sms/SendSmsDialog";
 
 interface CustomerDetailsHeaderProps {
   customer: Customer & { name?: string, status?: string };
@@ -18,6 +19,7 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
   const navigate = useNavigate();
   const customerName = customer.name || getCustomerFullName(customer);
   const customerStatus = customer.status || 'active';
+  const [sendSmsOpen, setSendSmsOpen] = React.useState(false);
 
   return (
     <div>
@@ -48,6 +50,12 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
         <div className="flex gap-2 mt-4 md:mt-0">
           <Button 
             variant="outline"
+            onClick={() => setSendSmsOpen(true)}
+          >
+            <MessageCircle className="mr-2 h-4 w-4" /> Send SMS
+          </Button>
+          <Button 
+            variant="outline"
             onClick={() => setAddInteractionOpen(true)}
           >
             <MessageSquare className="mr-2 h-4 w-4" /> Record Interaction
@@ -70,6 +78,12 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
           </Button>
         </div>
       </div>
+      
+      <SendSmsDialog
+        customer={customer}
+        open={sendSmsOpen}
+        onOpenChange={setSendSmsOpen}
+      />
     </div>
   );
 };
