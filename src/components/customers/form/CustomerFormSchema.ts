@@ -65,3 +65,10 @@ export const referralSources = [
   "Walk-in",
   "Other"
 ];
+
+// Helper to identify required fields for UI purposes
+export const requiredFields = {
+  first_name: true,
+  last_name: true,
+  shop_id: true
+};

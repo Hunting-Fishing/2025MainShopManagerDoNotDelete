@@ -7,9 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
 import { CustomerForm } from "@/components/customers/form/CustomerForm";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Check } from "lucide-react";
 
 export default function CustomerCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -56,18 +60,23 @@ export default function CustomerCreate() {
       // Create customer
       const newCustomer = await createCustomer(customerData);
       
+      // Set success state
+      setIsSuccess(true);
+      setNewCustomerId(newCustomer.id);
+      
       // Show success message
       toast({
-        title: "Customer created",
-        description: "The customer has been successfully created.",
-        variant: "default",
+        title: "Customer Created Successfully",
+        description: `${data.first_name} ${data.last_name} has been added to your customers.`,
+        variant: "success",
       });
       
-      // Navigate to the new customer's detail page
-      navigate(`/customers/${newCustomer.id}`);
+      // Redirect after a short delay to allow the user to see the success message
+      setTimeout(() => {
+        navigate(`/customers/${newCustomer.id}`);
+      }, 2000);
     } catch (error) {
       handleApiError(error, "Failed to create customer");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -81,11 +90,21 @@ export default function CustomerCreate() {
         </p>
       </div>
 
-      <CustomerForm 
-        defaultValues={defaultValues} 
-        onSubmit={onSubmit} 
-        isSubmitting={isSubmitting}
-      />
+      {isSuccess && newCustomerId ? (
+        <Alert variant="success" className="bg-green-50 border-green-200">
+          <Check className="h-5 w-5 text-green-600" />
+          <AlertTitle className="text-green-800 text-lg">Customer Created Successfully</AlertTitle>
+          <AlertDescription className="text-green-700">
+            The new customer has been added to the system. You will be redirected to the customer details page shortly.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <CustomerForm 
+          defaultValues={defaultValues} 
+          onSubmit={onSubmit} 
+          isSubmitting={isSubmitting}
+        />
+      )}
     </div>
   );
 }
