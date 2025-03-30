@@ -4,6 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "../CustomerFormSchema";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { toast } from "@/hooks/use-toast";
+import { VinDecodeResult } from "@/types/vehicle";
 
 interface UseVehicleFormProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -23,6 +24,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
 
   const [vinProcessing, setVinProcessing] = useState<boolean>(false);
   const [lastProcessedVin, setLastProcessedVin] = useState<string>('');
+  const [vinDecodeTimeout, setVinDecodeTimeout] = useState<NodeJS.Timeout | null>(null);
   
   const selectedMake = form.watch(`vehicles.${index}.make`);
   const vin = form.watch(`vehicles.${index}.vin`);
@@ -35,7 +37,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   }, [selectedMake, fetchModels]);
 
   // Enhanced auto-populate function that ensures proper order of operations
-  const populateVehicleFromVin = useCallback(async (vehicleInfo: any) => {
+  const populateVehicleFromVin = useCallback(async (vehicleInfo: VinDecodeResult) => {
     if (!vehicleInfo) return;
     
     setVinProcessing(true);
@@ -64,7 +66,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         toast({
           title: "VIN Decoded",
           description: "Vehicle information has been populated.",
-          variant: "default",
+          variant: "success",
         });
         
         setVinProcessing(false);
@@ -79,32 +81,54 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         variant: "destructive",
       });
     }
-  }, [form, index, fetchModels, toast]);
+  }, [form, index, fetchModels]);
 
-  // Auto-populate fields when VIN changes
+  // Auto-populate fields when VIN changes with improved debouncing
   useEffect(() => {
     // Skip if the VIN hasn't changed or is not long enough
     if (!vin || vin.length < 17 || vin === lastProcessedVin || vinProcessing) {
       return;
     }
     
-    setLastProcessedVin(vin);
+    // Clear existing timeout if any
+    if (vinDecodeTimeout) {
+      clearTimeout(vinDecodeTimeout);
+    }
     
-    const timeoutId = setTimeout(() => {
-      const vehicleInfo = decodeVin(vin);
-      if (vehicleInfo) {
-        populateVehicleFromVin(vehicleInfo);
-      } else {
+    // Set a new timeout for debouncing
+    const timeoutId = setTimeout(async () => {
+      setVinProcessing(true);
+      setLastProcessedVin(vin);
+      
+      try {
+        const vehicleInfo = await decodeVin(vin);
+        if (vehicleInfo) {
+          await populateVehicleFromVin(vehicleInfo);
+        } else {
+          setVinProcessing(false);
+          toast({
+            title: "Invalid VIN",
+            description: "Could not decode the provided VIN. Please check and try again.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("VIN decode error:", error);
+        setVinProcessing(false);
         toast({
-          title: "Invalid VIN",
-          description: "Could not decode the provided VIN. Please check and try again.",
+          title: "VIN Decode Error",
+          description: "An error occurred while decoding the VIN.",
           variant: "destructive",
         });
       }
-    }, 500); // Debounce to prevent multiple calls
+    }, 800); // Increased debounce time for better UX
     
-    return () => clearTimeout(timeoutId);
-  }, [vin, populateVehicleFromVin, decodeVin, lastProcessedVin, vinProcessing]);
+    setVinDecodeTimeout(timeoutId);
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [vin, populateVehicleFromVin, lastProcessedVin, vinProcessing, decodeVin]);
 
   const handleMakeChange = (value: string) => {
     // Update the form

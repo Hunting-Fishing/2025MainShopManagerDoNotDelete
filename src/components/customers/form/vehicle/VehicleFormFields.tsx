@@ -31,6 +31,10 @@ export const VinField: React.FC<BaseFieldProps & {
                 className="font-mono pr-8"
                 maxLength={17}
                 disabled={processing}
+                onChange={(e) => {
+                  // Convert to uppercase as user types
+                  field.onChange(e.target.value.toUpperCase());
+                }}
               />
             </FormControl>
             {processing && (

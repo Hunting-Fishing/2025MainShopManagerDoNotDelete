@@ -61,9 +61,19 @@ export const useVehicleData = () => {
     }
   }, []);
 
-  // Function to decode VIN and return vehicle information
-  const decodeVin = useCallback((vin: string): VinDecodeResult | null => {
-    return decodeVinUtil(vin);
+  // Function to decode VIN and return vehicle information - now async
+  const decodeVin = useCallback(async (vin: string): Promise<VinDecodeResult | null> => {
+    setLoading(true);
+    try {
+      const result = await decodeVinUtil(vin);
+      setLoading(false);
+      return result;
+    } catch (error) {
+      console.error("Error in decodeVin:", error);
+      setError("Failed to decode VIN");
+      setLoading(false);
+      return null;
+    }
   }, []);
 
   return {
