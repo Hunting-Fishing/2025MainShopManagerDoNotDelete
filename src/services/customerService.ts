@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI, createCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -252,4 +251,35 @@ export const importCustomersFromCSV = async (file: File): Promise<{ imported: nu
     
     reader.readAsText(file);
   });
+};
+
+// Get customers with their vehicles
+export const getCustomersWithVehicles = async (): Promise<Customer[]> => {
+  try {
+    // First get all customers
+    const customers = await getAllCustomers();
+    
+    // For each customer, get their vehicles
+    const customersWithVehicles = await Promise.all(
+      customers.map(async (customer) => {
+        try {
+          // In a real implementation, this would fetch from Supabase
+          // Here we'll just use any existing vehicles already in the customer object
+          if (!customer.vehicles) {
+            customer.vehicles = [];
+          }
+          
+          return customer;
+        } catch (error) {
+          console.error(`Error fetching vehicles for customer ${customer.id}:`, error);
+          return { ...customer, vehicles: [] };
+        }
+      })
+    );
+    
+    return customersWithVehicles;
+  } catch (error) {
+    console.error("Error fetching customers with vehicles:", error);
+    throw error;
+  }
 };

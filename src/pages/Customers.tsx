@@ -3,18 +3,22 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, UserRound } from "lucide-react";
+import { Plus, UserRound } from "lucide-react";
 import { Customer, getCustomerFullName } from "@/types/customer";
 import { getAllCustomers } from "@/services/customerService";
 import { useToast } from "@/hooks/use-toast";
+import { CustomerFilterControls, CustomerFilters } from "@/components/customers/filters/CustomerFilterControls";
+import { filterCustomers } from "@/utils/search/customerSearch";
 
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [filters, setFilters] = useState<CustomerFilters>({
+    searchQuery: "",
+    tags: [],
+  });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
@@ -24,6 +28,7 @@ export default function Customers() {
         setLoading(true);
         const data = await getAllCustomers();
         setCustomers(data);
+        setFilteredCustomers(data);
       } catch (error) {
         console.error("Error fetching customers:", error);
         toast({
@@ -39,19 +44,14 @@ export default function Customers() {
     fetchCustomers();
   }, [toast]);
   
-  // Filter customers based on search query
-  const filteredCustomers = customers.filter(customer => {
-    const fullName = getCustomerFullName(customer);
-    const matchesSearch = 
-      !searchQuery ||
-      fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Since we don't have a status field in the real database table,
-    // we'll just show all customers when "all" is selected
-    return matchesSearch;
-  });
+  useEffect(() => {
+    // Apply filters whenever customers or filters change
+    setFilteredCustomers(filterCustomers(customers, filters));
+  }, [customers, filters]);
+
+  const handleFilterChange = (newFilters: CustomerFilters) => {
+    setFilters(newFilters);
+  };
 
   return (
     <div className="space-y-6">
@@ -71,25 +71,10 @@ export default function Customers() {
 
       <Card>
         <div className="p-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search customers..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <select
-              className="h-10 w-full md:w-[180px] rounded-md border border-input bg-background px-3 py-2"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Customers</option>
-            </select>
-          </div>
+          <CustomerFilterControls 
+            filters={filters}
+            onFilterChange={handleFilterChange}
+          />
 
           <div className="rounded-md border">
             <Table>
@@ -98,19 +83,20 @@ export default function Customers() {
                   <TableHead className="w-[250px]">Customer</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Address</TableHead>
+                  <TableHead>Tags</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
                       Loading customers...
                     </TableCell>
                   </TableRow>
                 ) : filteredCustomers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
                       No customers found.
                     </TableCell>
                   </TableRow>
@@ -129,6 +115,9 @@ export default function Customers() {
                             >
                               {getCustomerFullName(customer)}
                             </Link>
+                            {customer.company && (
+                              <p className="text-xs text-slate-500">{customer.company}</p>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -140,6 +129,19 @@ export default function Customers() {
                       </TableCell>
                       <TableCell>
                         <p className="text-sm">{customer.address}</p>
+                      </TableCell>
+                      <TableCell>
+                        {customer.tags && customer.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {customer.tags.map((tag, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-slate-400">No tags</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
