@@ -19,7 +19,9 @@ import {
   Truck, 
   Settings, 
   FileText,
-  BarChart3 
+  BarChart3,
+  Mail,
+  MailPlus
 } from "lucide-react";
 
 interface NavItem {
@@ -64,6 +66,23 @@ export function AppSidebar() {
       title: "Vehicles",
       href: "/vehicles",
       icon: <Truck className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Marketing",
+      href: "/email-templates",
+      icon: <Mail className="mr-2 h-4 w-4" />,
+      submenu: [
+        {
+          title: "Email Templates",
+          href: "/email-templates",
+          icon: <FileText className="mr-2 h-4 w-4" />,
+        },
+        {
+          title: "Email Campaigns",
+          href: "/email-campaigns",
+          icon: <MailPlus className="mr-2 h-4 w-4" />,
+        },
+      ],
     },
     {
       title: "Analytics",

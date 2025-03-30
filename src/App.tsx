@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import WorkOrders from './pages/WorkOrders';
@@ -36,54 +36,66 @@ import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from './pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from './pages/feedback/FeedbackAnalyticsPage';
 import CustomerAnalytics from "./pages/CustomerAnalytics";
+import EmailTemplates from "@/pages/EmailTemplates";
+import EmailCampaigns from "@/pages/EmailCampaigns";
 
-function App() {
+import { RecoilRoot } from 'recoil';
+import { QueryClientProvider } from 'react-query';
+import { ToastProvider, ToastViewport } from '@/components/ui/toast';
+
+export function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Index />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="work-orders" element={<WorkOrders />} />
-            <Route path="work-orders/new" element={<WorkOrderCreate />} />
-            <Route path="work-orders/:id" element={<WorkOrderDetails />} />
-            <Route path="work-orders/:id/edit" element={<WorkOrderCreate />} />
-            <Route path="work-orders/:id/chat" element={<Chat />} />
-            <Route path="invoices" element={<Invoices />} />
-            <Route path="invoices/new" element={<InvoiceCreate />} />
-            <Route path="invoices/:id" element={<InvoiceDetails />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="customers/new" element={<CustomerCreate />} />
-            <Route path="customers/:id" element={<CustomerDetails />} />
-            <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
-            <Route path="customers/follow-ups" element={<CustomerFollowUps />} />
-            <Route path="repair-plans" element={<RepairPlans />} />
-            <Route path="repair-plans/new" element={<CreateRepairPlan />} />
-            <Route path="repair-plans/:id" element={<RepairPlanDetails />} />
-            <Route path="calendar" element={<Calendar />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="equipment" element={<Equipment />} />
-            <Route path="equipment/:id" element={<EquipmentDetails />} />
-            <Route path="maintenance" element={<MaintenanceDashboard />} />
-            <Route path="team" element={<Team />} />
-            <Route path="team/roles" element={<TeamRoles />} />
-            <Route path="team/new" element={<TeamMemberCreate />} />
-            <Route path="team/:id" element={<TeamMemberProfile />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="feedback/forms" element={<FeedbackFormsPage />} />
-            <Route path="feedback/forms/new" element={<FeedbackFormEditorPage />} />
-            <Route path="feedback/forms/:formId/edit" element={<FeedbackFormEditorPage />} />
-            <Route path="feedback/forms/:formId/analytics" element={<FeedbackAnalyticsPage />} />
-            <Route path="customer-analytics" element={<CustomerAnalytics />} />
-            <Route path="settings/*" element={<SettingsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-      <Toaster />
-    </div>
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <ToastProvider>
+            <ToastViewport />
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Index />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="work-orders" element={<WorkOrders />} />
+                <Route path="work-orders/new" element={<WorkOrderCreate />} />
+                <Route path="work-orders/:id" element={<WorkOrderDetails />} />
+                <Route path="work-orders/:id/edit" element={<WorkOrderCreate />} />
+                <Route path="work-orders/:id/chat" element={<Chat />} />
+                <Route path="invoices" element={<Invoices />} />
+                <Route path="invoices/new" element={<InvoiceCreate />} />
+                <Route path="invoices/:id" element={<InvoiceDetails />} />
+                <Route path="customers" element={<Customers />} />
+                <Route path="customers/new" element={<CustomerCreate />} />
+                <Route path="customers/:id" element={<CustomerDetails />} />
+                <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
+                <Route path="customers/follow-ups" element={<CustomerFollowUps />} />
+                <Route path="repair-plans" element={<RepairPlans />} />
+                <Route path="repair-plans/new" element={<CreateRepairPlan />} />
+                <Route path="repair-plans/:id" element={<RepairPlanDetails />} />
+                <Route path="calendar" element={<Calendar />} />
+                <Route path="inventory" element={<Inventory />} />
+                <Route path="equipment" element={<Equipment />} />
+                <Route path="equipment/:id" element={<EquipmentDetails />} />
+                <Route path="maintenance" element={<MaintenanceDashboard />} />
+                <Route path="team" element={<Team />} />
+                <Route path="team/roles" element={<TeamRoles />} />
+                <Route path="team/new" element={<TeamMemberCreate />} />
+                <Route path="team/:id" element={<TeamMemberProfile />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="feedback/forms" element={<FeedbackFormsPage />} />
+                <Route path="feedback/forms/new" element={<FeedbackFormEditorPage />} />
+                <Route path="feedback/forms/:formId/edit" element={<FeedbackFormEditorPage />} />
+                <Route path="feedback/forms/:formId/analytics" element={<FeedbackAnalyticsPage />} />
+                <Route path="customer-analytics" element={<CustomerAnalytics />} />
+                <Route path="settings/*" element={<SettingsPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+              <Route path="/email-templates" element={<Layout><EmailTemplates /></Layout>} />
+              <Route path="/email-campaigns" element={<Layout><EmailCampaigns /></Layout>} />
+            </Routes>
+          </ToastProvider>
+        </Router>
+      </QueryClientProvider>
+    </RecoilRoot>
   );
 }
 
