@@ -1,0 +1,33 @@
+
+import React from "react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface CustomerHasVehiclesFilterProps {
+  hasVehicles?: string;
+  onHasVehiclesChange: (value: string) => void;
+}
+
+export const CustomerHasVehiclesFilter: React.FC<CustomerHasVehiclesFilterProps> = ({
+  hasVehicles,
+  onHasVehiclesChange,
+}) => {
+  return (
+    <div className="space-y-2">
+      <Label>Has Vehicles</Label>
+      <Select
+        value={hasVehicles || ""}
+        onValueChange={onHasVehiclesChange}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Any" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Any</SelectItem>
+          <SelectItem value="yes">Has vehicles</SelectItem>
+          <SelectItem value="no">No vehicles</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
