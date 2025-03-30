@@ -1,6 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI, createCustomerForUI } from "@/types/customer";
+
+// Export CustomerCreate type
+export type { CustomerCreate };
 
 // Fetch all customers
 export const getAllCustomers = async (): Promise<Customer[]> => {

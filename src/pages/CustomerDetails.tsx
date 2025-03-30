@@ -14,7 +14,8 @@ import { CustomerInfoCard } from "@/components/customers/CustomerInfoCard";
 import { CustomerSummaryCard } from "@/components/customers/CustomerSummaryCard";
 import { CustomerInteractionsTab } from "@/components/customers/CustomerInteractionsTab";
 import { CustomerServiceTab } from "@/components/customers/CustomerServiceTab";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { isValidUUID } from "@/utils/validators";
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
@@ -25,12 +26,24 @@ export default function CustomerDetails() {
   const [loading, setLoading] = useState<boolean>(true);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchCustomerData = async () => {
       setLoading(true);
       try {
         if (!id) {
+          navigate("/customers");
+          return;
+        }
+
+        // Check if the ID is valid before fetching
+        if (!isValidUUID(id)) {
+          toast({
+            title: "Invalid customer ID",
+            description: "The requested customer ID is not valid.",
+            variant: "destructive",
+          });
           navigate("/customers");
           return;
         }
@@ -76,7 +89,7 @@ export default function CustomerDetails() {
     };
 
     fetchCustomerData();
-  }, [id, navigate]);
+  }, [id, navigate, toast]);
 
   // Handle adding a new interaction
   const handleInteractionAdded = (interaction: CustomerInteraction) => {
