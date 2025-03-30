@@ -226,7 +226,11 @@ export function LoyaltyTab() {
                       } else {
                         const newReward = await createReward({
                           ...reward,
-                          shop_id: settings.shop_id
+                          shop_id: settings.shop_id,
+                          name: reward.name || '',
+                          points_cost: reward.points_cost || 0,
+                          is_active: reward.is_active ?? true,
+                          reward_type: reward.reward_type || 'discount'
                         });
                         setRewards([...rewards, newReward]);
                         toast.success("Reward created successfully");

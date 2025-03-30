@@ -25,7 +25,7 @@ export const CustomerDetailsTabs = ({ customer, onEdit }: CustomerDetailsTabsPro
             <CustomerServiceTab customer={customer} customerWorkOrders={[]} />
           </TabsContent>
           <TabsContent value="interactions">
-            <CustomerInteractionsTab customerInteractions={[]} setActiveTab={() => {}} />
+            <CustomerInteractionsTab customerInteractions={[]} setAddInteractionOpen={() => {}} />
           </TabsContent>
         </Tabs>
       </div>
