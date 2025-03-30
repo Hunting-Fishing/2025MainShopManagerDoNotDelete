@@ -12,7 +12,7 @@ export const saveSavedSearch = async (
 ): Promise<SavedSearch | null> => {
   try {
     const { data, error } = await supabase
-      .from('saved_searches')
+      .from('saved_searches' as any)
       .insert([
         {
           name,
@@ -26,7 +26,7 @@ export const saveSavedSearch = async (
       .single();
     
     if (error) throw error;
-    return data;
+    return data as unknown as SavedSearch;
   } catch (error) {
     console.error("Error saving search:", error);
     return null;
@@ -38,12 +38,12 @@ export const getSavedSearches = async (): Promise<SavedSearch[]> => {
   try {
     // In a real app with auth, this would include WHERE user_id = auth.uid() OR is_global = true
     const { data, error } = await supabase
-      .from('saved_searches')
+      .from('saved_searches' as any)
       .select('*')
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as SavedSearch[];
   } catch (error) {
     console.error("Error fetching saved searches:", error);
     return [];
@@ -54,7 +54,7 @@ export const getSavedSearches = async (): Promise<SavedSearch[]> => {
 export const deleteSavedSearch = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('saved_searches')
+      .from('saved_searches' as any)
       .delete()
       .eq('id', id);
     
@@ -74,7 +74,7 @@ export const trackSearch = async (
 ): Promise<void> => {
   try {
     await supabase
-      .from('search_analytics')
+      .from('search_analytics' as any)
       .insert([
         {
           query,

@@ -20,7 +20,7 @@ export const uploadDocument = async (params: DocumentUploadParams): Promise<Cust
     
     // 2. Create document record in database
     const { data: documentData, error: documentError } = await supabase
-      .from('customer_documents')
+      .from('customer_documents' as any)
       .insert([
         {
           customer_id: customerId,
@@ -52,7 +52,7 @@ export const uploadDocument = async (params: DocumentUploadParams): Promise<Cust
       throw documentError;
     }
     
-    return documentData;
+    return documentData as unknown as CustomerDocument;
   } catch (error) {
     console.error("Error uploading document:", error);
     return null;
@@ -66,14 +66,14 @@ export const updateDocument = async (
 ): Promise<CustomerDocument | null> => {
   try {
     const { data, error } = await supabase
-      .from('customer_documents')
+      .from('customer_documents' as any)
       .update(updates)
       .eq('id', documentId)
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return data as unknown as CustomerDocument;
   } catch (error) {
     console.error("Error updating document:", error);
     return null;
@@ -85,7 +85,7 @@ export const deleteDocument = async (documentId: string): Promise<boolean> => {
   try {
     // Get the document to get the file path
     const { data: document, error: getError } = await supabase
-      .from('customer_documents')
+      .from('customer_documents' as any)
       .select('file_path')
       .eq('id', documentId)
       .single();
@@ -94,17 +94,17 @@ export const deleteDocument = async (documentId: string): Promise<boolean> => {
     
     // Delete the document record
     const { error: deleteError } = await supabase
-      .from('customer_documents')
+      .from('customer_documents' as any)
       .delete()
       .eq('id', documentId);
     
     if (deleteError) throw deleteError;
     
     // Delete the file from storage
-    if (document && document.file_path) {
+    if (document && (document as any).file_path) {
       const { error: storageError } = await supabase.storage
         .from('customer_documents')
-        .remove([document.file_path]);
+        .remove([(document as any).file_path]);
       
       if (storageError) throw storageError;
     }
@@ -125,19 +125,19 @@ export const uploadDocumentVersion = async (
   try {
     // Get current document
     const { data: document, error: docError } = await supabase
-      .from('customer_documents')
+      .from('customer_documents' as any)
       .select('customer_id, version')
       .eq('id', documentId)
       .single();
     
     if (docError) throw docError;
     
-    const newVersion = (document.version || 0) + 1;
+    const newVersion = ((document as any).version || 0) + 1;
     
     // 1. Upload file to storage
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_v${newVersion}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${document.customer_id}/${fileName}`;
+    const filePath = `${(document as any).customer_id}/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
       .from('customer_documents')
@@ -147,7 +147,7 @@ export const uploadDocumentVersion = async (
     
     // 2. Create version record in database
     const { data: versionData, error: versionError } = await supabase
-      .from('document_versions')
+      .from('document_versions' as any)
       .insert([
         {
           document_id: documentId,
@@ -173,7 +173,7 @@ export const uploadDocumentVersion = async (
     
     // 3. Update document record with new version number
     await supabase
-      .from('customer_documents')
+      .from('customer_documents' as any)
       .update({ 
         version: newVersion,
         file_name: fileName,
@@ -185,7 +185,7 @@ export const uploadDocumentVersion = async (
       })
       .eq('id', documentId);
     
-    return versionData;
+    return versionData as unknown as DocumentVersion;
   } catch (error) {
     console.error("Error uploading document version:", error);
     return null;
@@ -196,13 +196,13 @@ export const uploadDocumentVersion = async (
 export const getDocumentVersions = async (documentId: string): Promise<DocumentVersion[]> => {
   try {
     const { data, error } = await supabase
-      .from('document_versions')
+      .from('document_versions' as any)
       .select('*')
       .eq('document_id', documentId)
       .order('version_number', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as DocumentVersion[];
   } catch (error) {
     console.error("Error fetching document versions:", error);
     return [];
@@ -213,13 +213,13 @@ export const getDocumentVersions = async (documentId: string): Promise<DocumentV
 export const getCustomerDocuments = async (customerId: string): Promise<CustomerDocument[]> => {
   try {
     const { data, error } = await supabase
-      .from('customer_documents')
+      .from('customer_documents' as any)
       .select('*')
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as CustomerDocument[];
   } catch (error) {
     console.error("Error fetching customer documents:", error);
     return [];
@@ -230,12 +230,12 @@ export const getCustomerDocuments = async (customerId: string): Promise<Customer
 export const getDocumentCategories = async (): Promise<DocumentCategory[]> => {
   try {
     const { data, error } = await supabase
-      .from('document_categories')
+      .from('document_categories' as any)
       .select('*')
       .order('name', { ascending: true });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as DocumentCategory[];
   } catch (error) {
     console.error("Error fetching document categories:", error);
     return [];
@@ -249,7 +249,7 @@ export const createDocumentCategory = async (
 ): Promise<DocumentCategory | null> => {
   try {
     const { data, error } = await supabase
-      .from('document_categories')
+      .from('document_categories' as any)
       .insert([
         {
           name,
@@ -262,7 +262,7 @@ export const createDocumentCategory = async (
       .single();
     
     if (error) throw error;
-    return data;
+    return data as unknown as DocumentCategory;
   } catch (error) {
     console.error("Error creating document category:", error);
     return null;

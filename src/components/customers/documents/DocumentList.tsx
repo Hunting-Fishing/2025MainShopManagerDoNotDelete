@@ -55,7 +55,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
       const url = await getDocumentDownloadUrl(document.file_path);
       if (url) {
         // Create a temporary anchor element and trigger download
-        const a = document.createElement('a');
+        const a = document.createElement('a') as HTMLAnchorElement;
         a.href = url;
         a.download = document.original_name;
         document.body.appendChild(a);
