@@ -1,4 +1,3 @@
-
 // Define the customer interface based on Supabase table structure
 export interface Customer {
   id: string;
@@ -24,6 +23,9 @@ export interface Customer {
   
   // New fields for Phase 3 - updated to handle JSON data from Supabase
   segments?: string[] | any; // This allows for both string[] and JSON from database
+  
+  // New fields for Phase 4 - Loyalty
+  loyalty?: CustomerLoyalty;
   
   // We'll add these fields for compatibility with existing components
   // They will be undefined on direct database objects, but we'll use getters

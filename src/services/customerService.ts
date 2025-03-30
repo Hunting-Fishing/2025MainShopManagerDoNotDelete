@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI, createCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { getCustomerLoyalty } from "./loyaltyService";
 
 // Export CustomerCreate type
 export type { CustomerCreate };
@@ -21,7 +22,26 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
   }
 
   // Adapt each customer for UI components
-  return (data || []).map(customer => adaptCustomerForUI(customer));
+  const customers = (data || []).map(customer => adaptCustomerForUI(customer));
+  
+  // Fetch loyalty data for each customer
+  // This is done separately to keep the initial customer query simple
+  try {
+    for (const customer of customers) {
+      try {
+        const loyalty = await getCustomerLoyalty(customer.id);
+        if (loyalty) {
+          customer.loyalty = loyalty;
+        }
+      } catch (error) {
+        console.error(`Error fetching loyalty for customer ${customer.id}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching customer loyalty data:", error);
+  }
+
+  return customers;
 };
 
 // Fetch a customer by ID
@@ -37,7 +57,21 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     throw error;
   }
 
-  return data ? adaptCustomerForUI(data) : null;
+  if (!data) return null;
+  
+  const customer = adaptCustomerForUI(data);
+  
+  // Fetch loyalty data
+  try {
+    const loyalty = await getCustomerLoyalty(customer.id);
+    if (loyalty) {
+      customer.loyalty = loyalty;
+    }
+  } catch (error) {
+    console.error(`Error fetching loyalty for customer ${customer.id}:`, error);
+  }
+
+  return customer;
 };
 
 // Create a new customer
