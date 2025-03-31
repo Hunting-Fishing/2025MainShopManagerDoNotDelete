@@ -106,7 +106,7 @@ export const useEmailCampaignDetails = () => {
       } else {
         // If no analytics data, check for events directly
         // Using RPC calls instead of direct table access to avoid type errors
-        const { count: openCount, error: openError } = await supabase.rpc(
+        const { data: openData, error: openError } = await supabase.rpc(
           'count_email_events',
           { 
             campaign_id_param: campaignId,
@@ -114,7 +114,7 @@ export const useEmailCampaignDetails = () => {
           }
         );
         
-        const { count: clickCount, error: clickError } = await supabase.rpc(
+        const { data: clickData, error: clickError } = await supabase.rpc(
           'count_email_events',
           { 
             campaign_id_param: campaignId,
@@ -124,6 +124,9 @@ export const useEmailCampaignDetails = () => {
           
         if (openError) throw openError;
         if (clickError) throw clickError;
+        
+        const openCount = openData;
+        const clickCount = clickData;
         
         if (openCount !== null || clickCount !== null) {
           setCampaign(prevCampaign => {

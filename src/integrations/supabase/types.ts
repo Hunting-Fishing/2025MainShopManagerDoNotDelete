@@ -2335,6 +2335,13 @@ export type Database = {
         }
         Returns: string
       }
+      count_email_events: {
+        Args: {
+          campaign_id_param: string
+          event_type_param: string
+        }
+        Returns: number
+      }
       create_audit_log: {
         Args: {
           user_id: string
