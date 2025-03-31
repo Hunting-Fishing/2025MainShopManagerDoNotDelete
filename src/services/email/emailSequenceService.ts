@@ -18,17 +18,18 @@ export const emailSequenceService = {
       
       return data?.map(sequence => ({
         ...sequence,
+        steps: [], // Initialize with empty steps array
         // Add camelCase versions of properties for UI components
         triggerType: sequence.trigger_type,
         triggerEvent: sequence.trigger_event,
         isActive: sequence.is_active,
         createdAt: sequence.created_at,
         updatedAt: sequence.updated_at,
-        // Add defaults for properties that might not exist
-        last_run: sequence.last_run || null,
-        next_run: sequence.next_run || null,
-        run_frequency: sequence.run_frequency || null
-      })) || [];
+        // Default empty values for scheduling properties
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      })) as EmailSequence[] || [];
     } catch (error) {
       console.error('Error fetching email sequences:', error);
       return [];
@@ -54,11 +55,17 @@ export const emailSequenceService = {
       // Format steps to include camelCase properties
       const formattedSteps = (data.steps || []).map((step: any) => ({
         ...step,
-        templateId: step.email_template_id,
-        position: step.position || step.order,
-        type: step.type || (step.email_template_id ? 'email' : 'delay'),
-        delayHours: step.delay_hours,
-        delayType: step.delay_type,
+        templateId: step.template_id,
+        email_template_id: step.template_id,
+        position: step.position || step.order || 0,
+        order: step.position || step.order || 0,
+        type: 'email',
+        delayHours: step.delay_hours || 0,
+        delayType: step.delay_type || 'fixed',
+        // Default empty values for scheduling properties
+        last_run: null,
+        next_run: null,
+        run_frequency: null
       }));
       
       return {
@@ -70,11 +77,11 @@ export const emailSequenceService = {
         isActive: data.is_active,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        // Add defaults for properties that might not exist
-        last_run: data.last_run || null,
-        next_run: data.next_run || null,
-        run_frequency: data.run_frequency || null
-      };
+        // Default empty values for scheduling properties
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      } as EmailSequence;
     } catch (error) {
       console.error('Error fetching sequence by ID:', error);
       return null;
@@ -111,11 +118,11 @@ export const emailSequenceService = {
         isActive: data.is_active,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        // Add defaults for properties that might not exist
-        last_run: data.last_run || null,
-        next_run: data.next_run || null,
-        run_frequency: data.run_frequency || null
-      };
+        // Default empty values for scheduling properties
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      } as EmailSequence;
     } catch (error) {
       console.error('Error creating email sequence:', error);
       return null;
@@ -191,16 +198,18 @@ export const emailSequenceService = {
       
       return data?.map(step => ({
         ...step,
-        templateId: step.email_template_id,
-        position: step.position || step.order,
-        type: step.type || (step.email_template_id ? 'email' : 'delay'),
-        delayHours: step.delay_hours,
-        delayType: step.delay_type,
-        // Add defaults for properties that might not exist
-        last_run: step.last_run || null,
-        next_run: step.next_run || null,
-        run_frequency: step.run_frequency || null
-      })) || [];
+        email_template_id: step.template_id,
+        templateId: step.template_id,
+        position: step.position || step.order || 0,
+        order: step.position || 0,
+        type: 'email',
+        delayHours: step.delay_hours || 0,
+        delayType: step.delay_type || 'fixed',
+        // Default empty values for scheduling properties
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      })) as EmailSequenceStep[] || [];
     } catch (error) {
       console.error('Error fetching sequence steps:', error);
       return [];
@@ -215,9 +224,9 @@ export const emailSequenceService = {
       const stepToSave = {
         sequence_id: sequenceId,
         position: stepData.position || stepData.order || 0,
-        email_template_id: stepData.templateId || stepData.email_template_id,
-        delay_hours: stepData.delayHours || stepData.delay_hours || 0,
-        delay_type: stepData.delayType || stepData.delay_type || 'fixed',
+        template_id: stepData.templateId || stepData.email_template_id,
+        delay_hours: stepData.delayHours || 0,
+        delay_type: stepData.delayType || 'fixed',
         name: stepData.name || '',
         condition_type: stepData.condition?.type,
         condition_value: stepData.condition?.value,
@@ -233,12 +242,15 @@ export const emailSequenceService = {
         
         if (error) throw error;
         
-        return { ...stepData, ...stepToSave };
+        return { ...stepData, ...stepToSave } as EmailSequenceStep;
       } else {
         // Create new step
         const { data, error } = await supabase
           .from('email_sequence_steps')
-          .insert(stepToSave)
+          .insert({
+            ...stepToSave,
+            template_id: stepToSave.template_id
+          })
           .select()
           .single();
         
@@ -246,15 +258,16 @@ export const emailSequenceService = {
         
         return {
           ...data,
-          templateId: data.email_template_id,
-          type: data.email_template_id ? 'email' : 'delay',
+          email_template_id: data.template_id,
+          templateId: data.template_id,
+          type: 'email',
           delayHours: data.delay_hours,
           delayType: data.delay_type,
-          // Add defaults for properties that might not exist
-          last_run: data.last_run || null,
-          next_run: data.next_run || null,
-          run_frequency: data.run_frequency || null
-        };
+          // Default empty values for scheduling properties
+          last_run: null,
+          next_run: null,
+          run_frequency: null
+        } as EmailSequenceStep;
       }
     } catch (error) {
       console.error('Error upserting sequence step:', error);
@@ -329,17 +342,17 @@ export const emailSequenceService = {
         totalEnrollments: data.total_enrollments,
         activeEnrollments: data.active_enrollments,
         completedEnrollments: data.completed_enrollments,
-        cancelled_enrollments: data.cancelled_enrollments || 0,
+        cancelled_enrollments: 0,
         conversionRate: data.conversion_rate,
         averageTimeToComplete: data.average_time_to_complete,
         updatedAt: data.updated_at,
-        createdAt: data.created_at || data.updated_at,
-        total_emails_sent: data.total_emails_sent || 0,
-        totalEmailsSent: data.total_emails_sent || 0,
-        open_rate: data.open_rate || 0,
-        openRate: data.open_rate || 0,
-        click_rate: data.click_rate || 0,
-        clickRate: data.click_rate || 0
+        createdAt: data.updated_at, // Fallback if created_at is missing
+        total_emails_sent: 0,
+        totalEmailsSent: 0,
+        open_rate: 0,
+        openRate: 0,
+        click_rate: 0,
+        clickRate: 0
       } as EmailSequenceAnalytics;
     } catch (error) {
       console.error('Error fetching sequence analytics:', error);

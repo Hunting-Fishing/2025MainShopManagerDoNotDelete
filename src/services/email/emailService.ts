@@ -32,5 +32,24 @@ export const emailService = {
   getTemplateById: emailTemplateService.getTemplateById,
   createTemplate: emailTemplateService.createTemplate,
   updateTemplate: emailTemplateService.updateTemplate,
-  deleteTemplate: emailTemplateService.deleteTemplate
+  deleteTemplate: emailTemplateService.deleteTemplate,
+  sendTestEmail: async (templateId: string, recipientEmail: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-test-email', {
+        body: { 
+          templateId,
+          recipientEmail
+        }
+      });
+      
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      return { success: false, error };
+    }
+  }
 };
+
+// Import supabase for the sendTestEmail function
+import { supabase } from '@/lib/supabase';

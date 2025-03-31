@@ -16,7 +16,16 @@ export const useSequenceCRUD = () => {
     try {
       const data = await emailService.getSequences();
       if (Array.isArray(data)) {
-        setSequences(data);
+        // Map returned data to ensure full EmailSequence compatibility
+        const formattedSequences: EmailSequence[] = data.map(seq => ({
+          ...seq,
+          steps: seq.steps || [],
+          trigger_type: seq.triggerType || seq.trigger_type || 'manual',
+          trigger_event: seq.triggerEvent || seq.trigger_event || '',
+          is_active: seq.isActive || seq.is_active || false
+        }));
+        
+        setSequences(formattedSequences);
       } else {
         console.error("Expected an array of sequences");
         setSequences([]);
@@ -37,8 +46,21 @@ export const useSequenceCRUD = () => {
     setSequenceLoading(true);
     try {
       const sequence = await emailService.getSequenceById(id);
-      setCurrentSequence(sequence);
-      return sequence;
+      if (sequence) {
+        // Ensure full EmailSequence compatibility
+        const formattedSequence: EmailSequence = {
+          ...sequence,
+          steps: sequence.steps || [],
+          trigger_type: sequence.triggerType || sequence.trigger_type || 'manual',
+          trigger_event: sequence.triggerEvent || sequence.trigger_event || '',
+          is_active: sequence.isActive || sequence.is_active || false
+        };
+        
+        setCurrentSequence(formattedSequence);
+        return formattedSequence;
+      } else {
+        return null;
+      }
     } catch (error) {
       console.error("Error fetching email sequence:", error);
       toast({
@@ -60,12 +82,24 @@ export const useSequenceCRUD = () => {
         ...sequence,
         steps: sequence.steps || [],
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        trigger_type: sequence.triggerType || sequence.trigger_type || 'manual',
+        trigger_event: sequence.triggerEvent || sequence.trigger_event || '',
+        is_active: sequence.isActive || sequence.is_active || false
       } as EmailSequence;
       
       const newSequence = await emailService.createSequence(tempSequence);
       if (newSequence) {
-        setSequences((prev) => [newSequence, ...prev]);
+        // Ensure full EmailSequence compatibility before adding to state
+        const formattedSequence: EmailSequence = {
+          ...newSequence,
+          steps: newSequence.steps || [],
+          trigger_type: newSequence.triggerType || newSequence.trigger_type || 'manual',
+          trigger_event: newSequence.triggerEvent || newSequence.trigger_event || '',
+          is_active: newSequence.isActive || newSequence.is_active || false
+        };
+        
+        setSequences((prev) => [formattedSequence, ...prev]);
         toast({
           title: "Success",
           description: "Email sequence created successfully",
@@ -87,11 +121,20 @@ export const useSequenceCRUD = () => {
     try {
       const updatedSequence = await emailService.updateSequence(id, sequence);
       if (updatedSequence) {
+        // Ensure full EmailSequence compatibility before updating state
+        const formattedSequence: EmailSequence = {
+          ...updatedSequence,
+          steps: updatedSequence.steps || [],
+          trigger_type: updatedSequence.triggerType || updatedSequence.trigger_type || 'manual',
+          trigger_event: updatedSequence.triggerEvent || updatedSequence.trigger_event || '',
+          is_active: updatedSequence.isActive || updatedSequence.is_active || false
+        };
+        
         setSequences((prev) => 
-          prev.map((s) => s.id === id ? updatedSequence : s)
+          prev.map((s) => s.id === id ? formattedSequence : s)
         );
         if (currentSequence && currentSequence.id === id) {
-          setCurrentSequence(updatedSequence);
+          setCurrentSequence(formattedSequence);
         }
         toast({
           title: "Success",

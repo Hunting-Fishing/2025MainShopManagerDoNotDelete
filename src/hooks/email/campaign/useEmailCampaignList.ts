@@ -29,14 +29,18 @@ export const useEmailCampaignList = () => {
         subject: item.subject,
         status: validateCampaignStatus(item.status),
         scheduled_at: item.scheduled_date,
+        scheduledAt: item.scheduled_date,
         sent_at: item.sent_date,
+        sentAt: item.sent_date,
         created_at: item.created_at,
+        createdAt: item.created_at,
+        updated_at: item.updated_at,
+        updatedAt: item.updated_at,
         total_recipients: item.total_recipients || 0,
+        totalRecipients: item.total_recipients || 0,
         opened: item.opened || 0,
         clicked: item.clicked || 0,
-        totalRecipients: item.total_recipients || 0,
-        scheduledDate: item.scheduled_date,
-        sentDate: item.sent_date
+        has_ab_test: !!item.ab_test
       }));
 
       setCampaigns(formattedCampaigns);

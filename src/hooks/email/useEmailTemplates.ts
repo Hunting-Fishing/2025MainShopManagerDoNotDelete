@@ -1,29 +1,27 @@
+import { useState, useEffect } from 'react';
+import { EmailTemplate } from '@/types/email';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
-import { useState, useEffect } from "react";
-import { emailService } from "@/services/email/emailService";
-import { EmailTemplate, EmailTemplatePreview, EmailCategory } from "@/types/email";
-import { useToast } from "@/hooks/use-toast";
-
-export const useEmailTemplates = (category?: EmailCategory) => {
-  const [templates, setTemplates] = useState<EmailTemplatePreview[]>([]);
+export const useEmailTemplates = () => {
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchTemplates();
-  }, [category]);
-
+  /**
+   * Fetch all email templates
+   */
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      // Remove the category parameter if undefined to fetch all templates
-      const data = await emailService.getTemplates(category);
-      if (Array.isArray(data)) {
-        setTemplates(data);
-      } else {
-        console.error("Expected an array of templates but received a single template");
-        setTemplates([]);
-      }
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setTemplates(data || []);
     } catch (error) {
       console.error("Error fetching email templates:", error);
       toast({
@@ -36,14 +34,20 @@ export const useEmailTemplates = (category?: EmailCategory) => {
     }
   };
 
-  const fetchTemplateById = async (id: string) => {
-    setLoading(true);
+  /**
+   * Get a single template by ID
+   */
+  const getTemplateById = async (id: string) => {
     try {
-      const template = await emailService.getTemplateById(id);
-      if (template) {
-        return template;
-      }
-      return null;
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      return data as EmailTemplate;
     } catch (error) {
       console.error("Error fetching email template:", error);
       toast({
@@ -52,36 +56,34 @@ export const useEmailTemplates = (category?: EmailCategory) => {
         variant: "destructive",
       });
       return null;
-    } finally {
-      setLoading(false);
     }
   };
 
+  /**
+   * Create a new email template
+   */
   const createTemplate = async (template: Partial<EmailTemplate>) => {
     try {
-      const tempTemplate = {
-        id: Date.now().toString(),
-        ...template
-      } as EmailTemplate;
-      
-      const newTemplate = await emailService.createTemplate(tempTemplate);
-      if (newTemplate) {
-        setTemplates((prev) => [
-          {
-            id: newTemplate.id,
-            name: newTemplate.name,
-            subject: newTemplate.subject,
-            category: newTemplate.category,
-            created_at: newTemplate.created_at
-          },
-          ...prev,
-        ]);
-        toast({
-          title: "Success",
-          description: "Email template created successfully",
-        });
-      }
-      return newTemplate;
+      const { data, error } = await supabase
+        .from('email_templates')
+        .insert({
+          name: template.name,
+          subject: template.subject,
+          body: template.body,
+          category: template.category || 'marketing',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Email template created successfully",
+      });
+
+      fetchTemplates();
+      return data as EmailTemplate;
     } catch (error) {
       console.error("Error creating email template:", error);
       toast({
@@ -93,28 +95,32 @@ export const useEmailTemplates = (category?: EmailCategory) => {
     }
   };
 
+  /**
+   * Update an existing email template
+   */
   const updateTemplate = async (id: string, template: Partial<EmailTemplate>) => {
     try {
-      const updatedTemplate = await emailService.updateTemplate(id, template);
-      if (updatedTemplate) {
-        setTemplates((prev) =>
-          prev.map((t) =>
-            t.id === id
-              ? {
-                  ...t,
-                  name: updatedTemplate.name,
-                  subject: updatedTemplate.subject,
-                  category: updatedTemplate.category,
-                }
-              : t
-          )
-        );
-        toast({
-          title: "Success",
-          description: "Email template updated successfully",
-        });
-      }
-      return updatedTemplate;
+      const { data, error } = await supabase
+        .from('email_templates')
+        .update({
+          name: template.name,
+          subject: template.subject,
+          body: template.body,
+          category: template.category,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Email template updated successfully",
+      });
+
+      fetchTemplates();
+      return data as EmailTemplate;
     } catch (error) {
       console.error("Error updating email template:", error);
       toast({
@@ -126,14 +132,24 @@ export const useEmailTemplates = (category?: EmailCategory) => {
     }
   };
 
+  /**
+   * Delete an email template
+   */
   const deleteTemplate = async (id: string) => {
     try {
-      await emailService.deleteTemplate(id);
-      setTemplates((prev) => prev.filter((t) => t.id !== id));
+      const { error } = await supabase
+        .from('email_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "Email template deleted successfully",
       });
+
+      fetchTemplates();
       return true;
     } catch (error) {
       console.error("Error deleting email template:", error);
@@ -146,16 +162,31 @@ export const useEmailTemplates = (category?: EmailCategory) => {
     }
   };
 
-  const sendTestEmail = async (templateId: string, recipientEmail: string, personalizations?: Record<string, string>) => {
+  // Load templates on initial mount
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+  
+  /**
+   * Send a test email using a template
+   */
+  const sendTestEmail = async (templateId: string, recipientEmail: string) => {
     try {
-      const result = await emailService.sendTestEmail(templateId, recipientEmail, personalizations);
-      if (result) {
-        toast({
-          title: "Success",
-          description: "Test email sent successfully",
-        });
-      }
-      return result;
+      const { data, error } = await supabase.functions.invoke('send-test-email', {
+        body: { 
+          templateId,
+          recipientEmail
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Test Email Sent",
+        description: `A test email has been sent to ${recipientEmail}`,
+      });
+      
+      return { success: true, data };
     } catch (error) {
       console.error("Error sending test email:", error);
       toast({
@@ -163,7 +194,7 @@ export const useEmailTemplates = (category?: EmailCategory) => {
         description: "Failed to send test email",
         variant: "destructive",
       });
-      return false;
+      return { success: false, error };
     }
   };
 
@@ -171,7 +202,7 @@ export const useEmailTemplates = (category?: EmailCategory) => {
     templates,
     loading,
     fetchTemplates,
-    fetchTemplateById,
+    getTemplateById,
     createTemplate,
     updateTemplate,
     deleteTemplate,

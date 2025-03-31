@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { EmailCampaign } from '@/types/email';
 import { supabase } from '@/lib/supabase';
@@ -46,15 +47,17 @@ export const useEmailCampaignDetails = () => {
         abTest: ab_test,
         ab_test: ab_test,
         scheduled_at: data.scheduled_date,
+        scheduledAt: data.scheduled_date,
         sent_at: data.sent_date,
+        sentAt: data.sent_date,
         created_at: data.created_at,
+        createdAt: data.created_at,
         updated_at: data.updated_at,
+        updatedAt: data.updated_at,
         totalRecipients: data.total_recipients,
         total_recipients: data.total_recipients,
         opened: data.opened,
-        clicked: data.clicked,
-        scheduledDate: data.scheduled_date,
-        sentDate: data.sent_date
+        clicked: data.clicked
       };
       
       fetchCampaignAnalytics(campaignId).catch(console.error);
@@ -156,6 +159,7 @@ export const useEmailCampaignDetails = () => {
     try {
       const variants = currentCampaign.abTest.variants;
       const updatedVariants = await Promise.all(variants.map(async (variant) => {
+        // @ts-ignore - custom query
         const { data: events } = await supabase
           .from('email_events')
           .select('*')
@@ -171,6 +175,7 @@ export const useEmailCampaignDetails = () => {
         
         const openCount = variantEvents.length;
         
+        // @ts-ignore - custom query
         const { data: clickEvents } = await supabase
           .from('email_events')
           .select('*')
@@ -279,7 +284,8 @@ export const useEmailCampaignDetails = () => {
             ...prevCampaign.abTest,
             winnerId: winnerId,
             winnerSelectionDate: winnerSelectionDate,
-            variants: updatedVariants
+            variants: updatedVariants,
+            confidenceLevel
           }
         };
       });

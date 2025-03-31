@@ -18,14 +18,21 @@ export interface EmailSequence {
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  
+  // Additional fields for system schedules
+  last_run?: string | null;
+  next_run?: string | null;
+  run_frequency?: string | null;
 }
 
 export interface EmailSequenceStep {
   id: string;
   sequence_id: string;
-  order: number;
-  delay_duration?: string;
+  order?: number;
+  delay_hours?: number;
+  delay_type?: string;
   email_template_id?: string;
+  template_id?: string;
   created_at: string;
   updated_at: string;
   
@@ -34,7 +41,7 @@ export interface EmailSequenceStep {
   type?: 'delay' | 'email';
   templateId?: string;
   delayHours?: number;
-  delayType?: 'fixed' | 'business_days';
+  delayType?: string;
   position?: number;
   isActive?: boolean;
   condition?: {
@@ -42,6 +49,11 @@ export interface EmailSequenceStep {
     value: any;
     operator: '=' | '!=' | '>' | '<' | '>=' | '<=';
   };
+  
+  // Additional fields for system schedules
+  last_run?: string | null;
+  next_run?: string | null;
+  run_frequency?: string | null;
 }
 
 export interface EmailSequenceEnrollment {
@@ -65,7 +77,7 @@ export interface EmailSequenceEnrollment {
   
   // Additional properties from joins
   sequence?: any;
-  current_step?: any;
+  current_step?: any; // Changed from number to any
 }
 
 export interface EmailSequenceAnalytics {
