@@ -524,6 +524,53 @@ export type Database = {
           },
         ]
       }
+      email_campaign_recipients: {
+        Row: {
+          campaign_id: string
+          clicked_at: string | null
+          created_at: string
+          id: string
+          opened_at: string | null
+          personalization: Json | null
+          recipient_email: string
+          recipient_name: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          personalization?: Json | null
+          recipient_email: string
+          recipient_name?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          personalization?: Json | null
+          recipient_email?: string
+          recipient_name?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_campaigns: {
         Row: {
           ab_test: Json | null

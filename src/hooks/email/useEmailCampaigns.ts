@@ -11,8 +11,8 @@ export const useEmailCampaigns = () => {
   const { toast } = useToast();
   
   // Use our specialized hooks
-  const { campaigns, loading, fetchCampaigns } = useEmailCampaignList();
-  const { campaign, loading: campaignLoading, fetchCampaignDetails } = useEmailCampaignDetails();
+  const { campaigns, loading: listLoading, fetchCampaigns } = useEmailCampaignList();
+  const { campaign, loading: detailsLoading, fetchCampaignDetails } = useEmailCampaignDetails();
   const { 
     processing,
     scheduleCampaign,
@@ -20,6 +20,9 @@ export const useEmailCampaigns = () => {
     pauseCampaign,
     cancelCampaign
   } = useEmailCampaignActions();
+
+  // Combined loading state
+  const loading = listLoading || detailsLoading || processing;
 
   const fetchCampaignById = async (id: string) => {
     const campaign = await fetchCampaignDetails(id);
@@ -114,7 +117,6 @@ export const useEmailCampaigns = () => {
     campaigns,
     currentCampaign,
     loading,
-    campaignLoading: campaignLoading || processing,
     fetchCampaigns,
     fetchCampaignById,
     createCampaign,

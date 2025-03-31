@@ -8,20 +8,36 @@ export interface EmailCampaign {
   name: string;
   subject: string;
   body: string;
-  segment_id?: string;
-  template_id?: string;
+  content?: string;
   status: EmailCampaignStatus;
   scheduled_at?: string;
+  scheduledAt?: string;
   sent_at?: string;
+  sentAt?: string;
   created_at: string;
+  createdAt?: string;
   updated_at: string;
-  content?: string;
-  recipientIds?: string[];
+  updatedAt?: string;
+  
+  // IDs
+  template_id?: string;
+  templateId?: string;
+  segment_id?: string;
+  segmentId?: string;
   recipient_ids: string[];
+  recipientIds?: string[];
+  segment_ids: string[];
+  segmentIds?: string[];
+  
+  // Data
   personalizations: Record<string, any>;
   metadata: Record<string, any>;
-  abTest?: EmailABTest | null;
+  
+  // A/B Testing
   ab_test?: EmailABTest | null;
+  abTest?: EmailABTest | null;
+  
+  // Analytics data
   totalRecipients?: number;
   total_recipients?: number;
   opened?: number;
@@ -29,12 +45,6 @@ export interface EmailCampaign {
   bounced?: number;
   complained?: number;
   unsubscribed?: number;
-  sentDate?: string;
-  scheduledDate?: string;
-  // UI component support
-  templateId?: string;
-  segmentIds?: string[];
-  segment_ids: string[];
 }
 
 export interface EmailCampaignPreview {
@@ -43,14 +53,18 @@ export interface EmailCampaignPreview {
   subject: string;
   status: EmailCampaignStatus;
   scheduled_at?: string;
+  scheduledAt?: string;
   sent_at?: string;
+  sentAt?: string;
   created_at: string;
+  createdAt?: string;
+  updated_at: string;
+  updatedAt?: string;
   total_recipients: number;
+  totalRecipients?: number;
   opened: number;
   clicked: number;
-  totalRecipients?: number; // Alias for UI components
-  scheduledDate?: string;   // Alias for UI components
-  sentDate?: string;        // Alias for UI components
+  has_ab_test: boolean;
 }
 
 export interface EmailCampaignTimelinePoint {
@@ -65,6 +79,7 @@ export interface EmailCampaignAnalytics {
   id: string;
   name: string;
   campaign_id: string;
+  // Total numbers
   sent: number;
   delivered: number;
   opened: number;
@@ -72,12 +87,23 @@ export interface EmailCampaignAnalytics {
   bounced: number;
   complained: number;
   unsubscribed: number;
+  // For UI compatibility
+  total_sent: number;
+  total_delivered: number;
+  total_opened: number;
+  total_clicked: number;
+  total_bounced: number;
+  total_complained: number;
+  total_unsubscribed: number;
+  // Rates
   open_rate: number;
   click_rate: number;
   click_to_open_rate: number;
   bounced_rate: number;
   unsubscribe_rate: number;
+  // Timeline data
   timeline: EmailCampaignTimelinePoint[];
+  // Metadata
   created_at: string;
   updated_at: string;
 }

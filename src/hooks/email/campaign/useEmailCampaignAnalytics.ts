@@ -76,12 +76,12 @@ interface AnalyticsAggregate {
 // Helper function to parse campaign details
 const parseCampaignDetails = (campaignData: any): EmailCampaign => {
   // Process recipient_ids and segment_ids
-  const recipientIds = parseJsonField(campaignData.recipient_ids, []);
-  const segmentIds = parseJsonField(campaignData.segment_ids, []);
+  const recipientIds = parseJsonField<string[]>(campaignData.recipient_ids, []);
+  const segmentIds = parseJsonField<string[]>(campaignData.segment_ids, []);
   
   // Process personalizations and metadata
-  const personalizations = parseJsonField(campaignData.personalizations, {});
-  const metadata = parseJsonField(campaignData.metadata, {});
+  const personalizations = parseJsonField<Record<string, any>>(campaignData.personalizations, {});
+  const metadata = parseJsonField<Record<string, any>>(campaignData.metadata, {});
   
   // Process ab_test
   const abTest = parseABTest(campaignData.ab_test);
@@ -94,24 +94,29 @@ const parseCampaignDetails = (campaignData: any): EmailCampaign => {
     content: campaignData.content,
     status: validateCampaignStatus(campaignData.status),
     template_id: campaignData.template_id,
+    templateId: campaignData.template_id,
     segment_ids: segmentIds,
+    segmentIds: segmentIds,
     segment_id: undefined, // Not in the database schema
+    segmentId: undefined,
     recipient_ids: recipientIds,
     recipientIds: recipientIds,
     personalizations: personalizations,
     metadata: metadata,
-    abTest: abTest,
     ab_test: abTest,
+    abTest: abTest,
     scheduled_at: campaignData.scheduled_date,
+    scheduledAt: campaignData.scheduled_date,
     sent_at: campaignData.sent_date,
+    sentAt: campaignData.sent_date,
     created_at: campaignData.created_at,
+    createdAt: campaignData.created_at,
     updated_at: campaignData.updated_at,
+    updatedAt: campaignData.updated_at,
     totalRecipients: campaignData.total_recipients,
     total_recipients: campaignData.total_recipients,
     opened: campaignData.opened,
-    clicked: campaignData.clicked,
-    scheduledDate: campaignData.scheduled_date,
-    sentDate: campaignData.sent_date
+    clicked: campaignData.clicked
   };
 };
 
@@ -127,7 +132,7 @@ const parseTimelineData = (analyticsData: any): EmailCampaignTimelinePoint[] => 
     }));
   } 
   
-  const parsed = parseJsonField(analyticsData.timeline, []);
+  const parsed = parseJsonField<any[]>(analyticsData.timeline, []);
   if (Array.isArray(parsed)) {
     return parsed.map(point => ({
       date: point.date || '',
@@ -255,6 +260,7 @@ export const useEmailCampaignAnalytics = () => {
         id: analyticsData.id,
         name: analyticsData.name,
         campaign_id: analyticsData.campaign_id,
+        // Total numbers
         sent: analyticsData.sent,
         delivered: analyticsData.delivered,
         opened: analyticsData.opened,
@@ -262,12 +268,23 @@ export const useEmailCampaignAnalytics = () => {
         bounced: analyticsData.bounced,
         complained: analyticsData.complained,
         unsubscribed: analyticsData.unsubscribed,
+        // Copy for UI compatibility
+        total_sent: analyticsData.sent,
+        total_delivered: analyticsData.delivered,
+        total_opened: analyticsData.opened,
+        total_clicked: analyticsData.clicked,
+        total_bounced: analyticsData.bounced,
+        total_complained: analyticsData.complained,
+        total_unsubscribed: analyticsData.unsubscribed,
+        // Rates
         open_rate: analyticsData.open_rate,
         click_rate: analyticsData.click_rate,
         click_to_open_rate: analyticsData.click_to_open_rate,
         bounced_rate: analyticsData.bounced_rate,
         unsubscribe_rate: analyticsData.unsubscribe_rate,
+        // Timeline
         timeline: timelineData,
+        // Metadata
         created_at: analyticsData.created_at,
         updated_at: analyticsData.updated_at
       };

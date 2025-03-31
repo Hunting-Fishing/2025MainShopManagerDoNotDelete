@@ -1,62 +1,55 @@
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { EmailSequenceAnalytics } from '@/types/email';
-import { useToast } from '@/hooks/use-toast';
+import { emailService } from '@/services/email/emailService';
 
 export const useSequenceAnalytics = () => {
   const [analytics, setAnalytics] = useState<EmailSequenceAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  const { toast } = useToast();
 
+  /**
+   * Fetch analytics data for a sequence
+   */
   const fetchSequenceAnalytics = async (sequenceId: string) => {
     setAnalyticsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('email_sequence_analytics')
-        .select('*')
-        .eq('sequence_id', sequenceId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching sequence analytics:", error);
-        setAnalytics(null);
-        toast({
-          title: "Error",
-          description: "Failed to load sequence analytics",
-          variant: "destructive",
-        });
-        return null;
+      const analyticsData = await emailService.getSequenceAnalytics(sequenceId);
+      
+      if (analyticsData) {
+        const formattedAnalytics: EmailSequenceAnalytics = {
+          id: analyticsData.id,
+          sequence_id: analyticsData.sequence_id,
+          sequenceId: analyticsData.sequence_id,
+          total_enrollments: analyticsData.total_enrollments,
+          totalEnrollments: analyticsData.total_enrollments,
+          active_enrollments: analyticsData.active_enrollments,
+          activeEnrollments: analyticsData.active_enrollments,
+          completed_enrollments: analyticsData.completed_enrollments,
+          completedEnrollments: analyticsData.completed_enrollments,
+          cancelled_enrollments: analyticsData.cancelled_enrollments || 0,
+          total_emails_sent: analyticsData.total_emails_sent || 0,
+          totalEmailsSent: analyticsData.total_emails_sent || 0,
+          open_rate: analyticsData.open_rate || 0,
+          openRate: analyticsData.open_rate || 0,
+          click_rate: analyticsData.click_rate || 0,
+          clickRate: analyticsData.click_rate || 0,
+          conversion_rate: analyticsData.conversion_rate,
+          conversionRate: analyticsData.conversion_rate,
+          average_time_to_complete: analyticsData.average_time_to_complete,
+          averageTimeToComplete: analyticsData.average_time_to_complete,
+          updated_at: analyticsData.updated_at,
+          updatedAt: analyticsData.updated_at,
+          created_at: analyticsData.created_at || analyticsData.updated_at,
+          createdAt: analyticsData.created_at || analyticsData.updated_at
+        };
+        
+        setAnalytics(formattedAnalytics);
+        return formattedAnalytics;
       }
-
-      const analyticsData: EmailSequenceAnalytics = {
-        id: data.id,
-        sequenceId: data.sequence_id,
-        sequence_id: data.sequence_id,
-        totalEnrollments: data.total_enrollments,
-        total_enrollments: data.total_enrollments,
-        activeEnrollments: data.active_enrollments,
-        active_enrollments: data.active_enrollments,
-        completedEnrollments: data.completed_enrollments,
-        completed_enrollments: data.completed_enrollments,
-        conversionRate: data.conversion_rate,
-        conversion_rate: data.conversion_rate,
-        averageTimeToComplete: data.average_time_to_complete,
-        average_time_to_complete: data.average_time_to_complete,
-        updatedAt: data.updated_at,
-        updated_at: data.updated_at
-      };
-
-      setAnalytics(analyticsData);
-      return analyticsData;
+      
+      return null;
     } catch (error) {
-      console.error("Error in fetchSequenceAnalytics:", error);
-      setAnalytics(null);
-      toast({
-        title: "Error",
-        description: "Failed to load sequence analytics",
-        variant: "destructive",
-      });
+      console.error('Error fetching sequence analytics:', error);
       return null;
     } finally {
       setAnalyticsLoading(false);

@@ -23,7 +23,6 @@ export interface EmailSequence {
 export interface EmailSequenceStep {
   id: string;
   sequence_id: string;
-  type: 'delay' | 'email';
   order: number;
   delay_duration?: string;
   email_template_id?: string;
@@ -32,6 +31,7 @@ export interface EmailSequenceStep {
   
   // UI component support
   name?: string;
+  type?: 'delay' | 'email';
   templateId?: string;
   delayHours?: number;
   delayType?: 'fixed' | 'business_days';
@@ -62,22 +62,37 @@ export interface EmailSequenceEnrollment {
   completedAt?: string;
   nextSendTime?: string;
   metadata?: Record<string, any>;
+  
+  // Additional properties from joins
+  sequence?: any;
+  current_step?: any;
 }
 
 export interface EmailSequenceAnalytics {
   id: string;
-  sequenceId: string;
   sequence_id: string;
-  totalEnrollments: number;
+  sequenceId?: string;
   total_enrollments: number;
-  activeEnrollments: number;
+  totalEnrollments?: number;
   active_enrollments: number;
-  completedEnrollments: number;
+  activeEnrollments?: number;
   completed_enrollments: number;
-  conversionRate: number;
+  completedEnrollments?: number;
+  cancelled_enrollments?: number;
   conversion_rate: number;
-  averageTimeToComplete: number;
+  conversionRate?: number;
   average_time_to_complete: number;
-  updatedAt: string;
+  averageTimeToComplete?: number;
   updated_at: string;
+  updatedAt?: string;
+  created_at?: string;
+  createdAt?: string;
+  
+  // Additional analytics properties
+  total_emails_sent?: number;
+  totalEmailsSent?: number;
+  open_rate?: number;
+  openRate?: number;
+  click_rate?: number;
+  clickRate?: number;
 }

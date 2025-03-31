@@ -11,11 +11,26 @@ import { emailProcessingService } from './emailProcessingService';
 // Export a combined emailService that maintains the same API structure
 export const emailService = {
   // Email sequence processing methods
-  ...emailProcessingService,
+  getSequenceProcessingSchedule: emailProcessingService.getSequenceProcessingSchedule,
+  updateSequenceProcessingSchedule: emailProcessingService.updateSequenceProcessingSchedule,
+  triggerSequenceProcessing: emailProcessingService.triggerSequenceProcessing,
+  selectABTestWinner: emailProcessingService.selectABTestWinner,
   
   // Email sequence methods
-  ...emailSequenceService,
+  getSequences: emailSequenceService.getSequences,
+  getSequenceById: emailSequenceService.getSequenceById,
+  createSequence: emailSequenceService.createSequence,
+  updateSequence: emailSequenceService.updateSequence,
+  deleteSequence: emailSequenceService.deleteSequence,
+  getSequenceSteps: emailSequenceService.getSequenceSteps,
+  upsertSequenceStep: emailSequenceService.upsertSequenceStep,
+  deleteSequenceStep: emailSequenceService.deleteSequenceStep,
+  getSequenceAnalytics: emailSequenceService.getSequenceAnalytics,
   
   // Email template methods
-  ...emailTemplateService
+  getTemplates: emailTemplateService.getTemplates,
+  getTemplateById: emailTemplateService.getTemplateById,
+  createTemplate: emailTemplateService.createTemplate,
+  updateTemplate: emailTemplateService.updateTemplate,
+  deleteTemplate: emailTemplateService.deleteTemplate
 };

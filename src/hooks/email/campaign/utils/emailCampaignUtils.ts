@@ -1,3 +1,4 @@
+
 import { EmailCampaignStatus, EmailABTest } from '@/types/email';
 
 /**
@@ -22,7 +23,7 @@ export const validateCampaignStatus = (status: string): EmailCampaignStatus => {
 /**
  * Safely parses a JSON field with error handling
  */
-export const parseJsonField = (field: any, defaultValue: any) => {
+export const parseJsonField = <T>(field: any, defaultValue: T): T => {
   try {
     if (field === null || field === undefined) return defaultValue;
     
@@ -60,8 +61,32 @@ export const parseABTest = (abTestData: any): EmailABTest | null => {
         enabled: testData.enabled,
         variants: testData.variants,
         winnerCriteria: testData.winnerCriteria as 'open_rate' | 'click_rate',
+        winner_criteria: testData.winnerCriteria as 'open_rate' | 'click_rate',
         winnerSelectionDate: testData.winnerSelectionDate,
-        winnerId: testData.winnerId
+        winner_selection_date: testData.winnerSelectionDate,
+        winnerId: testData.winnerId,
+        winner_id: testData.winnerId,
+        confidenceLevel: testData.confidenceLevel,
+        confidence_level: testData.confidenceLevel
+      };
+    } else if (
+      testData &&
+      typeof testData === 'object' &&
+      typeof testData.enabled === 'boolean' && 
+      Array.isArray(testData.variants) && 
+      typeof testData.winner_criteria === 'string'
+    ) {
+      return {
+        enabled: testData.enabled,
+        variants: testData.variants,
+        winnerCriteria: testData.winner_criteria as 'open_rate' | 'click_rate',
+        winner_criteria: testData.winner_criteria as 'open_rate' | 'click_rate',
+        winnerSelectionDate: testData.winner_selection_date,
+        winner_selection_date: testData.winner_selection_date,
+        winnerId: testData.winner_id,
+        winner_id: testData.winner_id,
+        confidenceLevel: testData.confidence_level,
+        confidence_level: testData.confidence_level
       };
     }
   } catch (e) {
