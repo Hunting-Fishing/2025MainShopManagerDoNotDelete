@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailCampaign, EmailCampaignPreview } from "@/types/email";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useEmailCampaigns = () => {
   const [campaigns, setCampaigns] = useState<EmailCampaignPreview[]>([]);
@@ -135,9 +136,19 @@ export const useEmailCampaigns = () => {
     }
   };
 
+  // Update this method to use real data
   const scheduleCampaign = async (id: string, date: string) => {
     try {
-      await emailService.scheduleCampaign(id, date);
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .update({ 
+          status: 'scheduled',
+          scheduled_at: date 
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
       fetchCampaigns();
       toast({
         title: "Success",
@@ -157,7 +168,13 @@ export const useEmailCampaigns = () => {
 
   const sendCampaignNow = async (id: string) => {
     try {
-      await emailService.sendCampaignNow(id);
+      // Call Supabase Edge Function to trigger the campaign
+      const { data, error } = await supabase.functions.invoke('trigger-email-campaign', {
+        body: { campaignId: id }
+      });
+      
+      if (error) throw error;
+      
       fetchCampaigns();
       toast({
         title: "Success",

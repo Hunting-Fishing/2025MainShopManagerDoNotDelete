@@ -75,10 +75,10 @@ serve(async (req) => {
 
     // For any remaining variables, use default values from template
     if (templateData.variables) {
-      templateData.variables.forEach((variable: { name: string; defaultValue: string }) => {
+      templateData.variables.forEach((variable: { name: string; default_value: string }) => {
         const regex = new RegExp(`{{${variable.name}}}`, "g");
-        htmlContent = htmlContent.replace(regex, variable.defaultValue);
-        subject = subject.replace(regex, variable.defaultValue);
+        htmlContent = htmlContent.replace(regex, variable.default_value || '');
+        subject = subject.replace(regex, variable.default_value || '');
       });
     }
 
