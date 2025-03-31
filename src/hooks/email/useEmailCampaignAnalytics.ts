@@ -5,7 +5,8 @@ import {
   EmailCampaignAnalytics, 
   EmailCampaign,
   EmailCampaignTimelinePoint,
-  EmailCampaignStatus
+  EmailCampaignStatus,
+  EmailABTest
 } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
 
@@ -77,7 +78,11 @@ export const useEmailCampaignAnalytics = () => {
         // Convert metadata from Json to Record<string, any>
         metadata: typeof campaignData.metadata === 'object' 
           ? campaignData.metadata as Record<string, any> 
-          : {}
+          : {},
+        // Convert ab_test from Json to EmailABTest or null
+        ab_test: typeof campaignData.ab_test === 'object' && campaignData.ab_test !== null
+          ? campaignData.ab_test as EmailABTest
+          : null
       };
       
       setCampaignDetails(campaignWithBody);
