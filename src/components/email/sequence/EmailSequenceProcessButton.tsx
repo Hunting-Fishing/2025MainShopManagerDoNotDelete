@@ -17,7 +17,10 @@ export function EmailSequenceProcessButton({ className, sequenceId }: EmailSeque
   const handleProcess = async () => {
     setIsProcessing(true);
     try {
-      const success = await emailService.triggerSequenceProcessing(sequenceId);
+      // Pass the sequenceId as an object with the correct shape
+      const success = await emailService.triggerSequenceProcessing({ 
+        sequenceId: sequenceId
+      });
       
       if (success) {
         toast({

@@ -55,7 +55,10 @@ export const useEnrollCustomer = (onEnrollmentComplete?: (customerId: string) =>
       
       // Trigger immediate processing of the sequence
       try {
-        await emailService.triggerSequenceProcessing(sequenceId);
+        // Pass the sequenceId as an object with the correct shape
+        await emailService.triggerSequenceProcessing({ 
+          sequenceId: sequenceId 
+        });
       } catch (processError) {
         console.error('Error triggering sequence processing:', processError);
         // Non-critical error, don't throw

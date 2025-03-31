@@ -2,6 +2,32 @@
 import { supabase } from '@/lib/supabase';
 import { EmailSequence } from '@/types/email';
 
+// Define an interface for the system_schedules table data
+interface SystemSchedule {
+  id: string;
+  type: string;
+  is_active: boolean;
+  cron_expression: string;
+  last_run: string | null;
+  next_run: string | null;
+  sequence_ids: string[] | string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Define an interface for the email AB test data
+interface EmailABTest {
+  id: string;
+  campaign_id: string;
+  variants: any[];
+  winner_criteria: string;
+  winner_id?: string;
+  winner_selection_date?: string;
+  confidence_level?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export const emailProcessingService = {
   /**
    * Get the current sequence processing schedule
@@ -9,12 +35,12 @@ export const emailProcessingService = {
    */
   async getSequenceProcessingSchedule() {
     try {
-      // @ts-ignore - system_schedules is a custom table not in the generated types
+      // Use a type assertion to handle the custom table
       const { data, error } = await supabase
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
-        .maybeSingle();
+        .maybeSingle() as { data: SystemSchedule | null, error: any };
       
       if (error) throw error;
       
@@ -24,7 +50,7 @@ export const emailProcessingService = {
         lastRun: data?.last_run || null,
         nextRun: data?.next_run || null,
         sequenceIds: data?.sequence_ids ? 
-          (Array.isArray(data.sequence_ids) ? data.sequence_ids : JSON.parse(data.sequence_ids)) 
+          (Array.isArray(data.sequence_ids) ? data.sequence_ids : JSON.parse(data.sequence_ids as string)) 
           : []
       };
     } catch (error) {
@@ -50,17 +76,17 @@ export const emailProcessingService = {
     sequenceIds?: string[];
   }) {
     try {
-      // @ts-ignore - system_schedules is a custom table not in the generated types
+      // Use a type assertion to handle the custom table
       const { data: existing, error: fetchError } = await supabase
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
-        .maybeSingle();
+        .maybeSingle() as { data: SystemSchedule | null, error: any };
       
       if (fetchError) throw fetchError;
       
       if (existing) {
-        // @ts-ignore - system_schedules is a custom table not in the generated types
+        // Use a type assertion to handle the custom table
         const { data, error } = await supabase
           .from('system_schedules')
           .update({
@@ -71,12 +97,12 @@ export const emailProcessingService = {
           })
           .eq('id', existing.id)
           .select()
-          .single();
+          .single() as { data: SystemSchedule | null, error: any };
         
         if (error) throw error;
         return { success: true, data };
       } else {
-        // @ts-ignore - system_schedules is a custom table not in the generated types
+        // Use a type assertion to handle the custom table
         const { data, error } = await supabase
           .from('system_schedules')
           .insert({
@@ -86,7 +112,7 @@ export const emailProcessingService = {
             sequence_ids: config.sequenceIds || []
           })
           .select()
-          .single();
+          .single() as { data: SystemSchedule | null, error: any };
         
         if (error) throw error;
         return { success: true, data };
@@ -156,12 +182,12 @@ export const emailProcessingService = {
    */
   async selectABTestWinner(campaignId: string, forceWinnerId?: string) {
     try {
-      // @ts-ignore - email_ab_tests is a custom table not in the generated types
+      // Use a type assertion to handle the custom table
       const { data: abTest, error: abTestError } = await supabase
         .from('email_ab_tests')
         .select('*')
         .eq('campaign_id', campaignId)
-        .single();
+        .single() as { data: EmailABTest | null, error: any };
       
       if (abTestError) throw abTestError;
       
