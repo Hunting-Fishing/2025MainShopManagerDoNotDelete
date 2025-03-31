@@ -14,13 +14,17 @@ import { EmailSequence, EmailSequenceAnalytics } from "@/types/email";
 import { EmailSequenceFlow } from "./EmailSequenceFlow";
 import { EmailSequenceAnalyticsCard } from "./EmailSequenceAnalytics";
 import { EmailSequenceEditor } from "@/components/email/sequence/EmailSequenceEditor";
+import { EnrollCustomerForm } from "@/components/email/sequence/EnrollCustomerForm";
 import { 
   Edit, 
   Trash2, 
   ArrowLeft, 
   User, 
   Play,
-  Pause
+  Pause,
+  Activity,
+  Users,
+  History
 } from "lucide-react";
 
 interface EmailSequenceDetailsProps {
@@ -44,10 +48,8 @@ export function EmailSequenceDetails({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEnrollCustomerModalOpen, setIsEnrollCustomerModalOpen] = useState(false);
-  const [customerId, setCustomerId] = useState("");
   const [isActive, setIsActive] = useState(sequence.isActive);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [enrollLoading, setEnrollLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -67,29 +69,29 @@ export function EmailSequenceDetails({
     }
   };
 
-  const handleEnrollCustomer = async () => {
+  const handleEnrollCustomer = async (customerId: string) => {
     if (!customerId.trim()) {
       toast({
         title: "Error",
         description: "Please enter a customer ID",
         variant: "destructive",
       });
-      return;
+      return false;
     }
     
-    setEnrollLoading(true);
+    setIsUpdating(true);
     try {
       const success = await onEnrollCustomer(sequence.id, customerId);
       if (success) {
         setIsEnrollCustomerModalOpen(false);
-        setCustomerId("");
         toast({
           title: "Success",
           description: "Customer enrolled successfully",
         });
       }
+      return success;
     } finally {
-      setEnrollLoading(false);
+      setIsUpdating(false);
     }
   };
 
@@ -176,10 +178,11 @@ export function EmailSequenceDetails({
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="grid grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="flow">Flow</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6 mt-6">
@@ -230,12 +233,23 @@ export function EmailSequenceDetails({
                   </div>
                   
                   <div>
-                    <dt className="text-sm font-medium text-muted-foreground">Total Steps</dt>
+                    <dt className="text-sm font-medium text-muted-foreground">Status</dt>
+                    <dd className="mt-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </dd>
+                  </div>
+                  
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Number of Steps</dt>
                     <dd className="mt-1">{sequence.steps.length}</dd>
                   </div>
                   
                   <div>
-                    <dt className="text-sm font-medium text-muted-foreground">Created</dt>
+                    <dt className="text-sm font-medium text-muted-foreground">Created At</dt>
                     <dd className="mt-1">{new Date(sequence.createdAt).toLocaleString()}</dd>
                   </div>
                   
@@ -247,10 +261,44 @@ export function EmailSequenceDetails({
               </CardContent>
             </Card>
             
-            <EmailSequenceAnalyticsCard 
-              analytics={analytics} 
-              loading={analyticsLoading} 
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Sequence Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Enrollments</p>
+                      <p className="text-2xl font-bold">{analytics?.totalEnrollments || 0}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="bg-blue-100 p-3 rounded-full">
+                      <Activity className="h-5 w-5 text-blue-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Active Enrollments</p>
+                      <p className="text-2xl font-bold">{analytics?.activeEnrollments || 0}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="bg-green-100 p-3 rounded-full">
+                      <History className="h-5 w-5 text-green-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Completed</p>
+                      <p className="text-2xl font-bold">{analytics?.completedEnrollments || 0}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
         
@@ -259,7 +307,7 @@ export function EmailSequenceDetails({
             <CardHeader>
               <CardTitle>Sequence Flow</CardTitle>
               <CardDescription>
-                Visual representation of the email sequence flow
+                Visual representation of email sequence steps and conditions
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -269,34 +317,53 @@ export function EmailSequenceDetails({
         </TabsContent>
         
         <TabsContent value="analytics" className="mt-6">
+          <EmailSequenceAnalyticsCard 
+            analytics={analytics} 
+            loading={analyticsLoading} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="enrollments" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Sequence Analytics</CardTitle>
-              <CardDescription>
-                Performance metrics for this email sequence
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Customer Enrollments</CardTitle>
+                <CardDescription>
+                  Manage customers enrolled in this sequence
+                </CardDescription>
+              </div>
+              
+              {sequence.triggerType === 'manual' && (
+                <Button
+                  onClick={() => setIsEnrollCustomerModalOpen(true)}
+                  disabled={!isActive}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Enroll Customer
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
-              <EmailSequenceAnalyticsCard 
-                analytics={analytics} 
-                loading={analyticsLoading} 
-              />
+              {/* Enrollments will be implemented in a separate component */}
+              <p className="text-center py-6 text-muted-foreground">
+                Customer enrollment management will be available soon.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
       
-      {/* Edit Sequence Modal */}
+      {/* Edit Dialog */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Email Sequence</DialogTitle>
+            <DialogTitle>Edit Sequence</DialogTitle>
             <DialogDescription>
-              Modify your email sequence settings and steps
+              Make changes to your email sequence.
             </DialogDescription>
           </DialogHeader>
-          <EmailSequenceEditor
-            sequence={sequence}
+          <EmailSequenceEditor 
+            sequence={sequence} 
             onSave={handleUpdateSequence}
             onCancel={() => setIsEditModalOpen(false)}
           />
@@ -309,12 +376,16 @@ export function EmailSequenceDetails({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Sequence</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this email sequence? This action cannot be undone.
+              Are you sure you want to delete this sequence? This action cannot be undone
+              and will cancel all active customer enrollments.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSequence} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction 
+              onClick={handleDeleteSequence}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -327,37 +398,14 @@ export function EmailSequenceDetails({
           <DialogHeader>
             <DialogTitle>Enroll Customer</DialogTitle>
             <DialogDescription>
-              Add a customer to this email sequence
+              Add a customer to this email sequence.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer-id">Customer ID</Label>
-              <Input
-                id="customer-id"
-                placeholder="Enter customer ID"
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Enter the unique identifier of the customer to enroll in this sequence
-              </p>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEnrollCustomerModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleEnrollCustomer}
-              disabled={enrollLoading || !customerId.trim()}
-            >
-              {enrollLoading ? "Enrolling..." : "Enroll Customer"}
-            </Button>
-          </div>
+          <EnrollCustomerForm 
+            sequenceId={sequence.id}
+            onEnroll={handleEnrollCustomer}
+            isLoading={isUpdating}
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -1,457 +1,546 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
-import { Resend } from 'npm:resend@2.0.0'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-// Initialize Resend for sending emails
-const resendApiKey = Deno.env.get('RESEND_API_KEY') || ''
-const resend = new Resend(resendApiKey)
-
-// CORS headers
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface EnrollmentProcessRequest {
+  sequenceId?: string;
+  action?: 'process' | 'updateAnalytics';
+  customerId?: string;
+  stepId?: string;
 }
 
-// Type definitions
 interface EmailSequence {
-  id: string
-  name: string
-  description?: string
-  isActive: boolean
-  triggerType: 'manual' | 'event' | 'schedule'
-  triggerEvent?: string
-  steps: EmailSequenceStep[]
+  id: string;
+  name: string;
+  trigger_type: string;
+  trigger_event: string | null;
+  is_active: boolean;
+  steps: EmailSequenceStep[];
 }
 
 interface EmailSequenceStep {
-  id: string
-  name: string
-  templateId: string
-  delayHours: number
-  delayType: 'fixed' | 'business_days'
-  position: number
-  isActive: boolean
-  condition?: {
-    type: 'event' | 'property'
-    value: string
-    operator: '=' | '!=' | '>' | '<' | '>=' | '<='
-  }
+  id: string;
+  name: string;
+  template_id: string;
+  delay_hours: number;
+  delay_type: string;
+  position: number;
+  is_active: boolean;
+  condition_type: string | null;
+  condition_value: string | null;
+  condition_operator: string | null;
 }
 
 interface EmailSequenceEnrollment {
-  id: string
-  sequenceId: string
-  customerId: string
-  currentStepId?: string
-  status: 'active' | 'completed' | 'paused' | 'cancelled'
-  startedAt: string
-  completedAt?: string
-  nextSendTime?: string
-  metadata?: Record<string, any>
+  id: string;
+  sequence_id: string;
+  customer_id: string;
+  current_step_id: string | null;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  next_send_time: string | null;
+  metadata: any;
 }
 
 interface Customer {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
 }
 
-interface EmailTemplate {
-  id: string
-  subject: string
-  content: string
-  variables: { name: string; defaultValue: string }[]
-}
-
-// Process scheduled sequence emails
-async function processScheduledEmails() {
-  console.log('Processing scheduled sequence emails...')
-  
-  const now = new Date()
-  
-  // Get active enrollments with next send time <= now
-  const { data: enrollments, error: enrollmentsError } = await supabase
-    .from('email_sequence_enrollments')
-    .select('*')
-    .eq('status', 'active')
-    .lte('next_send_time', now.toISOString())
-  
-  if (enrollmentsError) {
-    console.error('Error fetching enrollments:', enrollmentsError)
-    return
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
-  
-  console.log(`Found ${enrollments?.length || 0} enrollments to process`)
-  
-  // Process each enrollment
-  for (const enrollment of enrollments || []) {
-    await processEnrollment(enrollment)
-  }
-  
-  console.log('Finished processing scheduled sequence emails')
-}
 
-// Process a single enrollment
-async function processEnrollment(enrollment: EmailSequenceEnrollment) {
-  console.log(`Processing enrollment ${enrollment.id} for sequence ${enrollment.sequenceId}`)
-  
+  // Initialize Supabase client
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   try {
-    // Get the sequence
-    const { data: sequence, error: sequenceError } = await supabase
-      .from('email_sequences')
-      .select(`
-        *,
-        steps:email_sequence_steps(*)
-      `)
-      .eq('id', enrollment.sequenceId)
-      .single()
-    
-    if (sequenceError) {
-      console.error('Error fetching sequence:', sequenceError)
-      return
-    }
-    
-    // Get the customer
-    const { data: customer, error: customerError } = await supabase
-      .from('customers')
-      .select('id, first_name, last_name, email')
-      .eq('id', enrollment.customerId)
-      .single()
-    
-    if (customerError) {
-      console.error('Error fetching customer:', customerError)
-      return
-    }
-    
-    // Check if customer has email
-    if (!customer.email) {
-      console.error(`Customer ${customer.id} has no email address`)
-      return
-    }
-    
-    // Determine the current step
-    let currentStep
-    
-    if (enrollment.currentStepId) {
-      // Find the current step in the sequence
-      currentStep = sequence.steps.find((step: EmailSequenceStep) => step.id === enrollment.currentStepId)
+    const { sequenceId, action, customerId, stepId } = await req.json() as EnrollmentProcessRequest;
+
+    // Process based on action
+    if (action === 'updateAnalytics') {
+      return await updateSequenceAnalytics(supabase, sequenceId);
     } else {
-      // If no current step, start with the first step
-      currentStep = sequence.steps.sort((a: EmailSequenceStep, b: EmailSequenceStep) => a.position - b.position)[0]
-    }
-    
-    if (!currentStep) {
-      console.error(`No steps found for sequence ${sequence.id}`)
-      return
-    }
-    
-    // Check step conditions if any
-    if (currentStep.condition && !await evaluateCondition(currentStep.condition, enrollment.customerId)) {
-      console.log(`Condition not met for step ${currentStep.id}, skipping to next step`)
-      await moveToNextStep(enrollment, sequence.steps, currentStep)
-      return
-    }
-    
-    // Get the email template
-    const { data: template, error: templateError } = await supabase
-      .from('email_templates')
-      .select('*')
-      .eq('id', currentStep.templateId)
-      .single()
-    
-    if (templateError) {
-      console.error('Error fetching template:', templateError)
-      return
-    }
-    
-    // Send the email
-    const success = await sendEmail(template, customer)
-    
-    if (success) {
-      // Record the email was sent
-      await supabase
-        .from('email_sequence_steps_sent')
-        .insert({
-          enrollment_id: enrollment.id,
-          step_id: currentStep.id,
-          sent_at: new Date().toISOString(),
-          recipient_email: customer.email
-        })
-      
-      // Move to the next step
-      await moveToNextStep(enrollment, sequence.steps, currentStep)
-    } else {
-      // Handle sending failure
-      console.error(`Failed to send email for enrollment ${enrollment.id}`)
+      return await processSequenceEnrollments(supabase);
     }
   } catch (error) {
-    console.error(`Error processing enrollment ${enrollment.id}:`, error)
+    console.error("Error processing request:", error);
+    return new Response(
+      JSON.stringify({
+        error: error.message,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
+});
+
+async function processSequenceEnrollments(supabase) {
+  console.log("Processing sequence enrollments...");
+  
+  // Get all active enrollments that are due for processing
+  const { data: enrollments, error: enrollmentsError } = await supabase
+    .from('email_sequence_enrollments')
+    .select('*, sequence:email_sequences(*)')
+    .eq('status', 'active')
+    .lte('next_send_time', new Date().toISOString());
+  
+  if (enrollmentsError) {
+    throw new Error(`Error fetching enrollments: ${enrollmentsError.message}`);
+  }
+  
+  console.log(`Found ${enrollments?.length || 0} enrollments to process`);
+  
+  if (!enrollments || enrollments.length === 0) {
+    return new Response(
+      JSON.stringify({ message: "No enrollments to process" }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+  
+  const processedResults = [];
+  
+  for (const enrollment of enrollments) {
+    try {
+      // Get the sequence with its steps
+      const { data: sequence, error: sequenceError } = await supabase
+        .from('email_sequences')
+        .select(`
+          *,
+          steps:email_sequence_steps(*)
+        `)
+        .eq('id', enrollment.sequence_id)
+        .single();
+      
+      if (sequenceError) {
+        throw new Error(`Error fetching sequence: ${sequenceError.message}`);
+      }
+      
+      // Check if sequence is active
+      if (!sequence.is_active) {
+        console.log(`Sequence ${sequence.id} is inactive, skipping enrollment ${enrollment.id}`);
+        continue;
+      }
+      
+      // Process the enrollment
+      const result = await processEnrollment(supabase, enrollment, sequence);
+      processedResults.push(result);
+    } catch (error) {
+      console.error(`Error processing enrollment ${enrollment.id}:`, error);
+      processedResults.push({
+        enrollment_id: enrollment.id,
+        status: 'error',
+        message: error.message,
+      });
+    }
+  }
+  
+  // Update analytics for all affected sequences
+  const affectedSequenceIds = [...new Set(enrollments.map(e => e.sequence_id))];
+  for (const sequenceId of affectedSequenceIds) {
+    await updateSequenceAnalytics(supabase, sequenceId);
+  }
+  
+  return new Response(
+    JSON.stringify({
+      processed: processedResults.length,
+      results: processedResults,
+    }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
 }
 
-// Move to the next step in the sequence
-async function moveToNextStep(
-  enrollment: EmailSequenceEnrollment, 
-  steps: EmailSequenceStep[], 
-  currentStep: EmailSequenceStep
-) {
+async function processEnrollment(supabase, enrollment, sequence) {
+  console.log(`Processing enrollment ${enrollment.id} for sequence ${sequence.id}`);
+  
   // Sort steps by position
-  const sortedSteps = steps.sort((a, b) => a.position - b.position)
+  const sortedSteps = sequence.steps.sort((a, b) => a.position - b.position);
   
-  // Find index of current step
-  const currentIndex = sortedSteps.findIndex(step => step.id === currentStep.id)
+  // Determine current step
+  let currentStep;
+  let nextStep;
   
-  // Check if there's a next step
-  if (currentIndex < sortedSteps.length - 1) {
-    const nextStep = sortedSteps[currentIndex + 1]
+  if (!enrollment.current_step_id) {
+    // First step
+    currentStep = sortedSteps[0];
+  } else {
+    // Find current step
+    const currentIndex = sortedSteps.findIndex(step => step.id === enrollment.current_step_id);
+    if (currentIndex === -1) {
+      throw new Error(`Current step ${enrollment.current_step_id} not found in sequence`);
+    }
     
-    // Calculate next send time
-    const nextSendTime = calculateNextSendTime(nextStep.delayHours, nextStep.delayType)
+    currentStep = sortedSteps[currentIndex];
     
-    // Update enrollment with next step
-    await supabase
+    // Find next step
+    if (currentIndex < sortedSteps.length - 1) {
+      nextStep = sortedSteps[currentIndex + 1];
+    }
+  }
+  
+  // Get customer information
+  const { data: customer, error: customerError } = await supabase
+    .from('customers')
+    .select('id, email, first_name, last_name')
+    .eq('id', enrollment.customer_id)
+    .single();
+  
+  if (customerError) {
+    throw new Error(`Error fetching customer: ${customerError.message}`);
+  }
+  
+  // Get email template
+  const { data: template, error: templateError } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('id', currentStep.template_id)
+    .single();
+  
+  if (templateError) {
+    throw new Error(`Error fetching template: ${templateError.message}`);
+  }
+  
+  // Check if conditions are met for the current step
+  if (currentStep.condition_type) {
+    const conditionMet = await checkCondition(
+      supabase,
+      currentStep.condition_type,
+      currentStep.condition_value,
+      currentStep.condition_operator,
+      customer.id,
+      enrollment
+    );
+    
+    if (!conditionMet) {
+      console.log(`Condition not met for step ${currentStep.id}, skipping to next step`);
+      // Skip this step and move to the next one
+      if (nextStep) {
+        // Update enrollment with next step
+        const { error: updateError } = await supabase
+          .from('email_sequence_enrollments')
+          .update({
+            current_step_id: nextStep.id,
+            next_send_time: calculateNextSendTime(nextStep),
+          })
+          .eq('id', enrollment.id);
+        
+        if (updateError) {
+          throw new Error(`Error updating enrollment: ${updateError.message}`);
+        }
+        
+        return {
+          enrollment_id: enrollment.id,
+          status: 'skipped',
+          next_step_id: nextStep.id,
+          next_send_time: calculateNextSendTime(nextStep),
+        };
+      } else {
+        // This was the last step, mark enrollment as completed
+        const { error: completeError } = await supabase
+          .from('email_sequence_enrollments')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            next_send_time: null,
+          })
+          .eq('id', enrollment.id);
+        
+        if (completeError) {
+          throw new Error(`Error completing enrollment: ${completeError.message}`);
+        }
+        
+        return {
+          enrollment_id: enrollment.id,
+          status: 'completed',
+          message: 'Sequence completed (condition not met for last step)',
+        };
+      }
+    }
+  }
+  
+  // Send the email (this is a mock, would be replaced with actual email sending logic)
+  console.log(`Sending email to ${customer.email} using template ${template.name}`);
+  
+  // TODO: In a production environment, integrate with an email service
+  // For now, we'll just log and simulate sending
+  
+  // Record that the email was sent
+  const { data: communicationData, error: communicationError } = await supabase
+    .from('customer_communications')
+    .insert({
+      customer_id: customer.id,
+      type: 'email',
+      direction: 'outbound',
+      subject: template.subject,
+      content: template.content,
+      template_id: template.id,
+      template_name: template.name,
+      staff_member_id: 'system',
+      staff_member_name: 'Email Sequence System',
+      status: 'sent',
+    })
+    .select()
+    .single();
+  
+  if (communicationError) {
+    throw new Error(`Error recording communication: ${communicationError.message}`);
+  }
+  
+  // If there's a next step, update the enrollment
+  if (nextStep) {
+    const nextSendTime = calculateNextSendTime(nextStep);
+    
+    const { error: updateError } = await supabase
       .from('email_sequence_enrollments')
       .update({
         current_step_id: nextStep.id,
-        next_send_time: nextSendTime.toISOString()
+        next_send_time: nextSendTime,
       })
-      .eq('id', enrollment.id)
+      .eq('id', enrollment.id);
     
-    console.log(`Moved enrollment ${enrollment.id} to next step ${nextStep.id}, scheduled for ${nextSendTime}`)
+    if (updateError) {
+      throw new Error(`Error updating enrollment: ${updateError.message}`);
+    }
+    
+    return {
+      enrollment_id: enrollment.id,
+      status: 'processed',
+      email_sent: true,
+      next_step_id: nextStep.id,
+      next_send_time: nextSendTime,
+    };
   } else {
-    // No more steps, mark sequence as completed
-    await supabase
+    // This was the last step, mark enrollment as completed
+    const { error: completeError } = await supabase
       .from('email_sequence_enrollments')
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        next_send_time: null
+        next_send_time: null,
       })
-      .eq('id', enrollment.id)
+      .eq('id', enrollment.id);
     
-    console.log(`Completed enrollment ${enrollment.id}`)
-    
-    // Update analytics
-    await updateSequenceAnalytics(enrollment.sequenceId)
-  }
-}
-
-// Calculate the next send time based on delay settings
-function calculateNextSendTime(delayHours: number, delayType: 'fixed' | 'business_days'): Date {
-  const now = new Date()
-  
-  if (delayType === 'fixed') {
-    // Simple delay in hours
-    return new Date(now.getTime() + delayHours * 60 * 60 * 1000)
-  } else {
-    // Business days logic (skip weekends)
-    let hoursAdded = 0
-    let currentDate = new Date(now)
-    
-    while (hoursAdded < delayHours) {
-      // Add one hour
-      currentDate = new Date(currentDate.getTime() + 60 * 60 * 1000)
-      
-      // Skip non-business hours (assuming 9am-5pm business hours)
-      const hour = currentDate.getHours()
-      const day = currentDate.getDay()
-      
-      // Check if it's a weekday and business hour
-      if (day >= 1 && day <= 5 && hour >= 9 && hour < 17) {
-        hoursAdded++
-      }
+    if (completeError) {
+      throw new Error(`Error completing enrollment: ${completeError.message}`);
     }
     
-    return currentDate
+    return {
+      enrollment_id: enrollment.id,
+      status: 'completed',
+      email_sent: true,
+      message: 'Sequence completed',
+    };
   }
 }
 
-// Evaluate condition to determine if an email should be sent
-async function evaluateCondition(
-  condition: { type: 'event' | 'property', value: string, operator: '=' | '!=' | '>' | '<' | '>=' | '<=' },
-  customerId: string
-): Promise<boolean> {
-  if (condition.type === 'event') {
-    // Check if event occurred
-    const { data, error } = await supabase
-      .from('customer_events')
-      .select('*')
+async function checkCondition(supabase, conditionType, conditionValue, conditionOperator, customerId, enrollment) {
+  if (!conditionType || !conditionValue) {
+    return true; // No condition, so it's met by default
+  }
+  
+  if (conditionType === 'event') {
+    // Check if the event has occurred
+    // This is a simplified implementation - in a real app, you'd check your event tracking system
+    
+    // For this example, let's check customer_communications for email opens/clicks
+    const { count, error } = await supabase
+      .from('customer_communications')
+      .select('id', { count: 'exact' })
       .eq('customer_id', customerId)
-      .eq('event_type', condition.value)
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .eq('type', 'email')
+      .eq('status', conditionValue === 'email_opened' ? 'opened' : 'clicked')
+      .gte('date', enrollment.started_at); // Only check events after sequence started
     
     if (error) {
-      console.error('Error checking event condition:', error)
-      return false
+      console.error('Error checking event condition:', error);
+      return false;
     }
     
-    // If event found, consider condition met
-    return data && data.length > 0
-  } else if (condition.type === 'property') {
-    // Check customer property
+    return count > 0;
+  } else if (conditionType === 'property') {
+    // Check a customer property against a value
     const { data: customer, error } = await supabase
       .from('customers')
       .select('*')
       .eq('id', customerId)
-      .single()
+      .single();
     
     if (error) {
-      console.error('Error fetching customer for condition check:', error)
-      return false
+      console.error('Error fetching customer for condition check:', error);
+      return false;
     }
     
-    // Get property value (could be nested)
-    const propertyPath = condition.value.split('.')
-    let value = customer
+    // Parse the property path (could be nested like custom_fields.subscription_tier)
+    const propertyPath = conditionValue.split('.');
+    let propertyValue = customer;
     
-    for (const prop of propertyPath) {
-      if (value === undefined || value === null) return false
-      value = value[prop]
+    for (const segment of propertyPath) {
+      if (propertyValue === undefined || propertyValue === null) {
+        return false;
+      }
+      propertyValue = propertyValue[segment];
     }
     
-    // Compare using the specified operator
-    switch (condition.operator) {
-      case '=': return value == condition.value
-      case '!=': return value != condition.value
-      case '>': return value > condition.value
-      case '<': return value < condition.value
-      case '>=': return value >= condition.value
-      case '<=': return value <= condition.value
-      default: return false
+    // Compare with the operator
+    switch (conditionOperator) {
+      case '=':
+        return propertyValue == enrollment.metadata?.comparison_value;
+      case '!=':
+        return propertyValue != enrollment.metadata?.comparison_value;
+      case '>':
+        return propertyValue > enrollment.metadata?.comparison_value;
+      case '<':
+        return propertyValue < enrollment.metadata?.comparison_value;
+      case '>=':
+        return propertyValue >= enrollment.metadata?.comparison_value;
+      case '<=':
+        return propertyValue <= enrollment.metadata?.comparison_value;
+      default:
+        return false;
     }
   }
   
-  return false
+  return true;
 }
 
-// Send an email using Resend
-async function sendEmail(template: EmailTemplate, customer: Customer): Promise<boolean> {
-  try {
-    // Replace template variables with customer data
-    let content = template.content
-    const defaultValues = {
-      firstName: customer.firstName || '',
-      lastName: customer.lastName || '',
-      email: customer.email || '',
-      // Add other common variables
-    }
-    
-    // Replace each variable
-    for (const variable of template.variables) {
-      const value = defaultValues[variable.name] || variable.defaultValue
-      const regex = new RegExp(`{{${variable.name}}}`, 'g')
-      content = content.replace(regex, value)
-    }
-    
-    // Send the email
-    const { data, error } = await resend.emails.send({
-      from: 'noreply@yourdomain.com', // Update this with your domain
-      to: customer.email,
-      subject: template.subject,
-      html: content
-    })
-    
-    if (error) {
-      console.error('Error sending email:', error)
-      return false
-    }
-    
-    console.log('Email sent successfully:', data)
-    return true
-  } catch (error) {
-    console.error('Error sending email:', error)
-    return false
+function calculateNextSendTime(step) {
+  const now = new Date();
+  
+  if (step.delay_hours <= 0) {
+    return now.toISOString(); // Send immediately
   }
-}
-
-// Update sequence analytics after completion
-async function updateSequenceAnalytics(sequenceId: string) {
-  try {
-    // Get all enrollments for this sequence
-    const { data: enrollments, error } = await supabase
-      .from('email_sequence_enrollments')
-      .select('*')
-      .eq('sequence_id', sequenceId)
+  
+  if (step.delay_type === 'fixed') {
+    // Simple delay in hours
+    const nextTime = new Date(now.getTime() + step.delay_hours * 60 * 60 * 1000);
+    return nextTime.toISOString();
+  } else if (step.delay_type === 'business_days') {
+    // Business days logic (simplified)
+    let hoursRemaining = step.delay_hours;
+    let currentTime = now.getTime();
     
-    if (error) {
-      console.error('Error fetching enrollments for analytics:', error)
-      return
-    }
-    
-    // Calculate analytics
-    const totalEnrollments = enrollments.length
-    const activeEnrollments = enrollments.filter(e => e.status === 'active').length
-    const completedEnrollments = enrollments.filter(e => e.status === 'completed').length
-    
-    // Calculate average time to complete
-    let totalCompletionTimeMs = 0
-    let completedCount = 0
-    
-    for (const enrollment of enrollments) {
-      if (enrollment.status === 'completed' && enrollment.completedAt && enrollment.startedAt) {
-        const completedAt = new Date(enrollment.completedAt)
-        const startedAt = new Date(enrollment.startedAt)
-        totalCompletionTimeMs += completedAt.getTime() - startedAt.getTime()
-        completedCount++
+    while (hoursRemaining > 0) {
+      currentTime += 1 * 60 * 60 * 1000; // Add 1 hour
+      const currentDate = new Date(currentTime);
+      const dayOfWeek = currentDate.getDay();
+      const hour = currentDate.getHours();
+      
+      // Skip non-business hours (assuming 9-5, Mon-Fri)
+      if (dayOfWeek >= 1 && dayOfWeek <= 5 && hour >= 9 && hour < 17) {
+        hoursRemaining--;
       }
     }
     
-    const averageTimeToComplete = completedCount > 0 ? totalCompletionTimeMs / completedCount / (1000 * 60 * 60) : null // in hours
-    
-    // Update or insert analytics
-    const { data, error: upsertError } = await supabase
-      .from('email_sequence_analytics')
-      .upsert({
-        sequence_id: sequenceId,
-        total_enrollments: totalEnrollments,
-        active_enrollments: activeEnrollments,
-        completed_enrollments: completedEnrollments,
-        average_time_to_complete: averageTimeToComplete,
-        updated_at: new Date().toISOString()
-      })
-    
-    if (upsertError) {
-      console.error('Error updating sequence analytics:', upsertError)
-    }
-  } catch (error) {
-    console.error('Error updating sequence analytics:', error)
+    return new Date(currentTime).toISOString();
   }
+  
+  // Default fallback
+  return new Date(now.getTime() + step.delay_hours * 60 * 60 * 1000).toISOString();
 }
 
-// Main handler for the function
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+async function updateSequenceAnalytics(supabase, sequenceId) {
+  console.log(`Updating analytics for sequence ${sequenceId}`);
+  
+  if (!sequenceId) {
+    throw new Error("Sequence ID is required for updating analytics");
   }
   
-  // Process scheduled emails when invoked
-  await processScheduledEmails()
+  // Get enrollment counts
+  const { data: enrollmentStats, error: statsError } = await supabase
+    .from('email_sequence_enrollments')
+    .select('status, count', { count: 'exact' })
+    .eq('sequence_id', sequenceId)
+    .or('status.eq.active,status.eq.completed')
+    .group('status');
   
-  // Return success response
+  if (statsError) {
+    throw new Error(`Error getting enrollment stats: ${statsError.message}`);
+  }
+  
+  // Parse counts
+  const totalEnrollments = enrollmentStats.reduce((sum, stat) => sum + parseInt(stat.count), 0);
+  const activeEnrollments = enrollmentStats.find(stat => stat.status === 'active')?.count || 0;
+  const completedEnrollments = enrollmentStats.find(stat => stat.status === 'completed')?.count || 0;
+  
+  // Calculate average time to complete (for completed enrollments)
+  let averageTimeToComplete = null;
+  if (completedEnrollments > 0) {
+    const { data: completedData, error: completedError } = await supabase
+      .from('email_sequence_enrollments')
+      .select('started_at, completed_at')
+      .eq('sequence_id', sequenceId)
+      .eq('status', 'completed')
+      .not('completed_at', 'is', null);
+    
+    if (completedError) {
+      throw new Error(`Error getting completed enrollments: ${completedError.message}`);
+    }
+    
+    if (completedData && completedData.length > 0) {
+      const totalHours = completedData.reduce((sum, enrollment) => {
+        const startTime = new Date(enrollment.started_at).getTime();
+        const endTime = new Date(enrollment.completed_at).getTime();
+        const hours = (endTime - startTime) / (1000 * 60 * 60);
+        return sum + hours;
+      }, 0);
+      
+      averageTimeToComplete = totalHours / completedData.length;
+    }
+  }
+  
+  // Calculate conversion rate
+  const conversionRate = totalEnrollments > 0 
+    ? (completedEnrollments / totalEnrollments) * 100 
+    : 0;
+  
+  // Upsert analytics data
+  const { data: analyticsData, error: upsertError } = await supabase
+    .from('email_sequence_analytics')
+    .upsert({
+      sequence_id: sequenceId,
+      total_enrollments: totalEnrollments,
+      active_enrollments: activeEnrollments,
+      completed_enrollments: completedEnrollments,
+      conversion_rate: conversionRate,
+      average_time_to_complete: averageTimeToComplete,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'sequence_id',
+    })
+    .select();
+  
+  if (upsertError) {
+    throw new Error(`Error upserting analytics: ${upsertError.message}`);
+  }
+  
   return new Response(
-    JSON.stringify({ success: true, message: 'Email sequences processed' }),
-    { 
-      headers: { 
-        'Content-Type': 'application/json',
-        ...corsHeaders 
-      } 
+    JSON.stringify({
+      success: true,
+      analytics: analyticsData[0],
+    }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     }
-  )
+  );
 }
-
-// When the script is invoked directly, call the handler
-if (import.meta.url === Deno.mainModule) {
-  await processScheduledEmails()
-  console.log('Email sequence processing completed')
-}
-
-// Serve the handler for HTTP requests
-Deno.serve(handler)

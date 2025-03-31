@@ -453,6 +453,148 @@ export type Database = {
           },
         ]
       }
+      email_campaign_analytics: {
+        Row: {
+          bounced: number | null
+          bounced_rate: number | null
+          campaign_id: string | null
+          click_rate: number | null
+          click_to_open_rate: number | null
+          clicked: number | null
+          complained: number | null
+          created_at: string | null
+          delivered: number | null
+          id: string
+          name: string
+          open_rate: number | null
+          opened: number | null
+          sent: number | null
+          timeline: Json | null
+          unsubscribe_rate: number | null
+          unsubscribed: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bounced?: number | null
+          bounced_rate?: number | null
+          campaign_id?: string | null
+          click_rate?: number | null
+          click_to_open_rate?: number | null
+          clicked?: number | null
+          complained?: number | null
+          created_at?: string | null
+          delivered?: number | null
+          id?: string
+          name: string
+          open_rate?: number | null
+          opened?: number | null
+          sent?: number | null
+          timeline?: Json | null
+          unsubscribe_rate?: number | null
+          unsubscribed?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bounced?: number | null
+          bounced_rate?: number | null
+          campaign_id?: string | null
+          click_rate?: number | null
+          click_to_open_rate?: number | null
+          clicked?: number | null
+          complained?: number | null
+          created_at?: string | null
+          delivered?: number | null
+          id?: string
+          name?: string
+          open_rate?: number | null
+          opened?: number | null
+          sent?: number | null
+          timeline?: Json | null
+          unsubscribe_rate?: number | null
+          unsubscribed?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          ab_test: Json | null
+          clicked: number | null
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          opened: number | null
+          personalizations: Json | null
+          recipient_ids: Json | null
+          scheduled_date: string | null
+          segment_ids: Json | null
+          sent_date: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          total_recipients: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ab_test?: Json | null
+          clicked?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          opened?: number | null
+          personalizations?: Json | null
+          recipient_ids?: Json | null
+          scheduled_date?: string | null
+          segment_ids?: Json | null
+          sent_date?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          total_recipients?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ab_test?: Json | null
+          clicked?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          opened?: number | null
+          personalizations?: Json | null
+          recipient_ids?: Json | null
+          scheduled_date?: string | null
+          segment_ids?: Json | null
+          sent_date?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          total_recipients?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_sequence_analytics: {
         Row: {
           active_enrollments: number
@@ -643,6 +785,45 @@ export type Database = {
           trigger_event?: string | null
           trigger_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_archived: boolean | null
+          name: string
+          subject: string
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean | null
+          name: string
+          subject: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean | null
+          name?: string
+          subject?: string
+          updated_at?: string | null
+          variables?: Json | null
         }
         Relationships: []
       }
@@ -2067,6 +2248,13 @@ export type Database = {
           role_id_param: string
         }
         Returns: boolean
+      }
+      calculate_ab_test_winner: {
+        Args: {
+          campaign_id: string
+          criteria?: string
+        }
+        Returns: string
       }
       create_audit_log: {
         Args: {

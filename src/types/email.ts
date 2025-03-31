@@ -165,3 +165,33 @@ export type EmailRecipient = {
   bounceStatus: 'none' | 'soft' | 'hard';
   lastEngagement: string | null;
 };
+
+// New enhanced types for campaign analytics
+export type EmailCampaignTimelinePoint = {
+  date: string;
+  opens: number;
+  clicks: number;
+  unsubscribes?: number;
+  complaints?: number;
+};
+
+export type EmailCampaignPerformanceMetrics = {
+  openRate: number;
+  clickRate: number;
+  clickToOpenRate: number;
+  conversionRate?: number;
+  revenuePerEmail?: number;
+};
+
+export type EmailABTestResult = {
+  testId: string;
+  campaignId: string;
+  variants: {
+    id: string;
+    name: string;
+    metrics: EmailCampaignPerformanceMetrics;
+    improvement?: number; // Percentage improvement over control
+  }[];
+  winningVariantId?: string;
+  confidenceLevel?: number; // Statistical confidence in the result
+};
