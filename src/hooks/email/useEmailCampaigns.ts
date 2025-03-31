@@ -19,7 +19,13 @@ export const useEmailCampaigns = () => {
     setLoading(true);
     try {
       const data = await emailService.getCampaigns();
-      setCampaigns(data);
+      // Fix the type error by checking if data is an array
+      if (Array.isArray(data)) {
+        setCampaigns(data);
+      } else {
+        console.error("Expected an array of campaigns but received a single campaign");
+        setCampaigns([]); // Set to empty array as fallback
+      }
     } catch (error) {
       console.error("Error fetching email campaigns:", error);
       toast({
@@ -36,8 +42,15 @@ export const useEmailCampaigns = () => {
     setCampaignLoading(true);
     try {
       const campaign = await emailService.getCampaigns(id); // Use getCampaigns with ID parameter
-      setCurrentCampaign(campaign as EmailCampaign); // Cast to EmailCampaign
-      return campaign;
+      
+      // Need to check if the result is a single campaign and not an array
+      if (!Array.isArray(campaign)) {
+        setCurrentCampaign(campaign as EmailCampaign);
+        return campaign;
+      } else {
+        console.error("Expected a single campaign but received an array");
+        return null;
+      }
     } catch (error) {
       console.error("Error fetching email campaign:", error);
       toast({
