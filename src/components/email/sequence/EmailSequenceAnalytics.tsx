@@ -1,138 +1,115 @@
 
 import React, { useEffect } from 'react';
 import { useSequenceAnalytics } from '@/hooks/email/sequence/useSequenceAnalytics';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarClock, Users, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface EmailSequenceAnalyticsProps {
   sequenceId: string;
 }
 
 export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsProps) {
-  const { 
-    analytics, 
-    analyticsLoading, 
-    fetchSequenceAnalytics 
-  } = useSequenceAnalytics();
-  
+  const { analytics, loading, error, fetchAnalytics } = useSequenceAnalytics(sequenceId);
+
   useEffect(() => {
     if (sequenceId) {
-      fetchSequenceAnalytics(sequenceId);
+      fetchAnalytics();
     }
-  }, [sequenceId, fetchSequenceAnalytics]);
-  
-  if (analyticsLoading) {
+  }, [sequenceId]);
+
+  if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>
-            <Skeleton className="h-6 w-48" />
-          </CardTitle>
-          <CardDescription>
-            <Skeleton className="h-4 w-64" />
-          </CardDescription>
+          <CardTitle>Sequence Analytics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-24 w-full" />
-            ))}
+          <div className="h-64 flex items-center justify-center">
+            <p>Loading analytics data...</p>
           </div>
         </CardContent>
       </Card>
     );
   }
-  
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Sequence Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center">
+            <p className="text-red-500">Error loading analytics: {error.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!analytics) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Sequence Analytics</CardTitle>
-          <CardDescription>
-            No analytics data available for this sequence yet
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <TrendingUp className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-            <p>Start enrolling customers to generate analytics</p>
+          <div className="h-64 flex items-center justify-center">
+            <p>No analytics data available for this sequence.</p>
           </div>
         </CardContent>
       </Card>
     );
   }
-  
-  // Format number with percentage
-  const formatPercent = (value: number) => {
-    return `${(value * 100).toFixed(1)}%`;
-  };
-  
-  // Format time in hours to readable format
-  const formatTime = (hours: number) => {
-    if (!hours && hours !== 0) return 'N/A';
-    
-    if (hours < 24) {
-      return `${hours.toFixed(1)} hours`;
-    } else {
-      const days = hours / 24;
-      return `${days.toFixed(1)} days`;
-    }
-  };
-  
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Sequence Analytics</CardTitle>
-        <CardDescription>
-          Performance metrics for this email sequence
-        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 border rounded-md bg-gray-50">
-            <div className="flex items-center mb-2">
-              <Users className="mr-2 h-5 w-5 text-primary" />
-              <h3 className="font-medium">Enrollments</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{analytics.totalEnrollments || analytics.total_enrollments || 0}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold">{analytics.activeEnrollments || analytics.active_enrollments || 0}</p>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Total Enrollments</h3>
+            <p className="text-2xl font-bold">{analytics.totalEnrollments}</p>
           </div>
-          
-          <div className="p-4 border rounded-md bg-gray-50">
-            <div className="flex items-center mb-2">
-              <TrendingUp className="mr-2 h-5 w-5 text-primary" />
-              <h3 className="font-medium">Conversion Rate</h3>
-            </div>
-            <p className="text-3xl font-bold">
-              {formatPercent(analytics.conversionRate || analytics.conversion_rate || 0)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {analytics.completedEnrollments || analytics.completed_enrollments || 0} completed
-            </p>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Active Enrollments</h3>
+            <p className="text-2xl font-bold">{analytics.activeEnrollments}</p>
           </div>
-          
-          <div className="p-4 border rounded-md bg-gray-50">
-            <div className="flex items-center mb-2">
-              <CalendarClock className="mr-2 h-5 w-5 text-primary" />
-              <h3 className="font-medium">Time to Complete</h3>
-            </div>
-            <p className="text-3xl font-bold">
-              {formatTime(analytics.averageTimeToComplete || analytics.average_time_to_complete || 0)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Average duration
-            </p>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Completed</h3>
+            <p className="text-2xl font-bold">{analytics.completedEnrollments}</p>
+          </div>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Emails Sent</h3>
+            <p className="text-2xl font-bold">{analytics.emailsSent}</p>
           </div>
         </div>
+        
+        {analytics.timeline && analytics.timeline.length > 0 && (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={analytics.timeline}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="enrollments" name="Enrollments" stroke="#8884d8" />
+                <Line type="monotone" dataKey="emailsSent" name="Emails Sent" stroke="#82ca9d" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        
+        {(!analytics.timeline || analytics.timeline.length === 0) && (
+          <div className="h-64 flex items-center justify-center">
+            <p className="text-gray-500">No timeline data available yet.</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
