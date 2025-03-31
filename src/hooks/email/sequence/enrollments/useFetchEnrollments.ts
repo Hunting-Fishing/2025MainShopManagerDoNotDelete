@@ -31,7 +31,7 @@ export const useFetchEnrollments = (
             if (typeof item.metadata === 'string') {
               metadata = JSON.parse(item.metadata);
             } else if (typeof item.metadata === 'object') {
-              metadata = item.metadata;
+              metadata = item.metadata as Record<string, any>;
             }
           } catch (e) {
             console.error('Error parsing enrollment metadata:', e);

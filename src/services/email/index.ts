@@ -1,9 +1,4 @@
 
-/**
- * This file is now a re-export of the modular email services.
- * See individual service files for implementation details.
- */
-
 import { emailSequenceService } from './emailSequenceService';
 import { emailTemplateService } from './emailTemplateService';
 import { emailProcessingService } from './emailProcessingService';
@@ -19,3 +14,6 @@ export const emailService = {
   // Email template methods
   ...emailTemplateService
 };
+
+// Also export individual services for more granular usage
+export { emailSequenceService, emailTemplateService, emailProcessingService };
