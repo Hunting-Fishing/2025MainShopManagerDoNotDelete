@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { sequenceProcessingService } from '@/services/email/sequenceProcessingService';
+import { sequenceProcessingService } from '@/services/email/sequences/sequenceProcessingService';
 
 interface EmailSequenceProcessButtonProps {
   className?: string;
@@ -22,7 +22,7 @@ export function EmailSequenceProcessButton({ className, sequenceId }: EmailSeque
         sequenceId: sequenceId
       });
       
-      if (result.success) {
+      if (result.data) {
         toast({
           title: "Processing triggered",
           description: sequenceId 

@@ -1,10 +1,23 @@
 
-import { emailSequenceService } from './emailSequenceService';
-import { emailTemplateService } from './emailTemplateService';
-import { emailProcessingService } from './emailProcessingService';
-import { schedulingService } from './schedulingService';
-import { abTestingService } from './abTestingService';
-import { sequenceProcessingService } from './sequenceProcessingService';
+import { emailSequenceService } from './sequences/emailSequenceService';
+import { emailTemplateService } from './templates/emailTemplateService';
+import { schedulingService } from './scheduling/schedulingService';
+import { abTestingService } from './ab-testing/abTestingService';
+import { sequenceProcessingService } from './sequences/sequenceProcessingService';
+import { emailCampaignService } from './campaigns/emailCampaignService';
+
+// Combine smaller services into the email processing service for backward compatibility
+export const emailProcessingService = {
+  // Schedule management
+  getSequenceProcessingSchedule: schedulingService.getSequenceProcessingSchedule,
+  updateSequenceProcessingSchedule: schedulingService.updateSequenceProcessingSchedule,
+  
+  // Sequence processing
+  triggerSequenceProcessing: sequenceProcessingService.triggerSequenceProcessing,
+  
+  // A/B testing
+  selectABTestWinner: abTestingService.selectABTestWinner
+};
 
 // Export a combined emailService that maintains the same API structure
 export const emailService = {
@@ -15,7 +28,10 @@ export const emailService = {
   ...emailSequenceService,
   
   // Email template methods
-  ...emailTemplateService
+  ...emailTemplateService,
+
+  // Email campaign methods
+  ...emailCampaignService
 };
 
 // Also export individual services for more granular usage
@@ -25,5 +41,6 @@ export {
   emailProcessingService,
   schedulingService,
   abTestingService,
-  sequenceProcessingService
+  sequenceProcessingService,
+  emailCampaignService
 };
