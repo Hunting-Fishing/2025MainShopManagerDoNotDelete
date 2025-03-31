@@ -35,7 +35,10 @@ export const useFetchEnrollments = (
         sequence: item.sequence,
         current_step: item.current_step,
         nextSendTime: item.next_send_time,
-        metadata: item.metadata
+        // Convert JSON metadata to a proper Record type or default to empty object
+        metadata: typeof item.metadata === 'string' 
+          ? JSON.parse(item.metadata) 
+          : (item.metadata as Record<string, any> || {})
       })) || [];
       
       setEnrollments(transformedData);

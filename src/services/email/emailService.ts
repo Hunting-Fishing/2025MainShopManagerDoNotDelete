@@ -1,6 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
-import { EmailSequence, EmailTemplate } from '@/types/email';
+import { EmailSequence, EmailTemplate, EmailCategory, EmailTemplateVariable } from '@/types/email';
 
 export const emailService = {
   /**
@@ -67,7 +67,28 @@ export const emailService = {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform the database records to match the EmailSequence type
+      return (data || []).map(sequence => ({
+        id: sequence.id,
+        name: sequence.name,
+        description: sequence.description || '',
+        steps: [], // Initialize with empty steps array, they'll be fetched separately if needed
+        created_at: sequence.created_at,
+        updated_at: sequence.updated_at,
+        shop_id: sequence.shop_id,
+        created_by: sequence.created_by,
+        trigger_type: sequence.trigger_type,
+        trigger_event: sequence.trigger_event,
+        is_active: sequence.is_active,
+        
+        // UI component support
+        triggerType: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: sequence.trigger_event,
+        isActive: sequence.is_active,
+        createdAt: sequence.created_at,
+        updatedAt: sequence.updated_at
+      }));
     } catch (error) {
       console.error('Error fetching email sequences:', error);
       return [];
@@ -91,7 +112,54 @@ export const emailService = {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Transform the sequence steps to match the EmailSequenceStep type
+      const steps = (data.steps || []).map(step => ({
+        id: step.id,
+        sequence_id: step.sequence_id,
+        type: step.delay_hours > 0 ? 'delay' : 'email' as 'delay' | 'email',
+        order: step.position,
+        delay_duration: step.delay_hours ? `${step.delay_hours}h` : undefined,
+        email_template_id: step.template_id,
+        created_at: step.created_at,
+        updated_at: step.updated_at,
+        
+        // UI component support
+        name: step.name,
+        templateId: step.template_id,
+        delayHours: step.delay_hours,
+        delayType: step.delay_type as 'fixed' | 'business_days',
+        position: step.position,
+        isActive: step.is_active,
+        condition: step.condition_type ? {
+          type: step.condition_type as 'event' | 'property',
+          value: step.condition_value,
+          operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+        } : undefined
+      }));
+      
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: steps,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type,
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error fetching email sequence:', error);
       return null;
@@ -118,7 +186,28 @@ export const emailService = {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Return the created sequence with empty steps array
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: [], // New sequence has no steps yet
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type,
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error creating email sequence:', error);
       return null;
@@ -147,7 +236,28 @@ export const emailService = {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Return the updated sequence with empty steps array (steps would be fetched separately if needed)
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: sequence.steps || [], // Preserve steps if provided, otherwise empty array
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type,
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error updating email sequence:', error);
       return null;
@@ -193,7 +303,21 @@ export const emailService = {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data || [];
+      
+      // Map the database records to the EmailTemplate type
+      return (data || []).map(template => ({
+        id: template.id,
+        name: template.name,
+        subject: template.subject,
+        description: template.description || '',
+        category: template.category as EmailCategory,
+        content: template.content,
+        variables: template.variables as EmailTemplateVariable[] || [],
+        created_at: template.created_at,
+        updated_at: template.updated_at,
+        body: template.content, // For backward compatibility
+        is_archived: template.is_archived || false
+      }));
     } catch (error) {
       console.error('Error fetching email templates:', error);
       return [];
@@ -214,7 +338,23 @@ export const emailService = {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Map the database record to the EmailTemplate type
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        description: data.description || '',
+        category: data.category as EmailCategory,
+        content: data.content,
+        variables: data.variables as EmailTemplateVariable[] || [],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        body: data.content, // For backward compatibility
+        is_archived: data.is_archived || false
+      };
     } catch (error) {
       console.error('Error fetching email template:', error);
       return null;
@@ -241,7 +381,21 @@ export const emailService = {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Map the database record to the EmailTemplate type
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        description: data.description || '',
+        category: data.category as EmailCategory,
+        content: data.content,
+        variables: data.variables as EmailTemplateVariable[] || [],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        body: data.content, // For backward compatibility
+        is_archived: data.is_archived || false
+      };
     } catch (error) {
       console.error('Error creating email template:', error);
       return null;
@@ -270,7 +424,21 @@ export const emailService = {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Map the database record to the EmailTemplate type
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        description: data.description || '',
+        category: data.category as EmailCategory,
+        content: data.content,
+        variables: data.variables as EmailTemplateVariable[] || [],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        body: data.content, // For backward compatibility
+        is_archived: data.is_archived || false
+      };
     } catch (error) {
       console.error('Error updating email template:', error);
       return null;
