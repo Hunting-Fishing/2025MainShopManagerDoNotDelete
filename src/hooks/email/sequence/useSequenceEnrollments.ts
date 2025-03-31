@@ -14,8 +14,6 @@ export const useSequenceEnrollments = () => {
     setEnrollments
   );
   
-  const { enrollCustomer } = useEnrollCustomer(fetchCustomerEnrollments);
-
   // Wrapper function that integrates the state management with data fetching
   const fetchCustomerEnrollments = async (customerId: string): Promise<EmailSequenceEnrollment[]> => {
     setLoading(true);
@@ -27,6 +25,9 @@ export const useSequenceEnrollments = () => {
       setLoading(false);
     }
   };
+  
+  // Now use the enrollCustomer hook with our fetchCustomerEnrollments function
+  const { enrollCustomer } = useEnrollCustomer(fetchCustomerEnrollments);
 
   return {
     enrollments,
