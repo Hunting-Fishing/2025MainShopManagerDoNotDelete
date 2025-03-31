@@ -2,31 +2,9 @@
 import { supabase } from '@/lib/supabase';
 import { EmailSequence } from '@/types/email';
 
-// Define an interface for the system_schedules table data
-interface SystemSchedule {
-  id: string;
-  type: string;
-  is_active: boolean;
-  cron_expression: string;
-  last_run: string | null;
-  next_run: string | null;
-  sequence_ids: string[] | string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Define an interface for the email AB test data
-interface EmailABTest {
-  id: string;
-  campaign_id: string;
-  variants: any[];
-  winner_criteria: string;
-  winner_id?: string;
-  winner_selection_date?: string;
-  confidence_level?: number;
-  created_at: string;
-  updated_at: string;
-}
+// Use a more straightforward approach to handle custom tables
+// Instead of trying to use TypeScript interface with the DatabaseSchemaT
+// we'll use "any" for the queries and then convert the results
 
 export const emailProcessingService = {
   /**
@@ -35,12 +13,12 @@ export const emailProcessingService = {
    */
   async getSequenceProcessingSchedule() {
     try {
-      // Use a type assertion to handle the custom table
+      // Use a more direct approach to query the custom table
       const { data, error } = await supabase
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
-        .maybeSingle() as { data: SystemSchedule | null, error: any };
+        .maybeSingle() as { data: any, error: any };
       
       if (error) throw error;
       
@@ -76,17 +54,17 @@ export const emailProcessingService = {
     sequenceIds?: string[];
   }) {
     try {
-      // Use a type assertion to handle the custom table
+      // Check for existing schedule using the direct approach
       const { data: existing, error: fetchError } = await supabase
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
-        .maybeSingle() as { data: SystemSchedule | null, error: any };
+        .maybeSingle() as { data: any, error: any };
       
       if (fetchError) throw fetchError;
       
       if (existing) {
-        // Use a type assertion to handle the custom table
+        // Update existing schedule
         const { data, error } = await supabase
           .from('system_schedules')
           .update({
@@ -96,13 +74,12 @@ export const emailProcessingService = {
             updated_at: new Date().toISOString()
           })
           .eq('id', existing.id)
-          .select()
-          .single() as { data: SystemSchedule | null, error: any };
+          .select() as { data: any, error: any };
         
         if (error) throw error;
         return { success: true, data };
       } else {
-        // Use a type assertion to handle the custom table
+        // Create new schedule
         const { data, error } = await supabase
           .from('system_schedules')
           .insert({
@@ -111,8 +88,7 @@ export const emailProcessingService = {
             cron_expression: config.cron || '0 * * * *',
             sequence_ids: config.sequenceIds || []
           })
-          .select()
-          .single() as { data: SystemSchedule | null, error: any };
+          .select() as { data: any, error: any };
         
         if (error) throw error;
         return { success: true, data };
@@ -182,12 +158,12 @@ export const emailProcessingService = {
    */
   async selectABTestWinner(campaignId: string, forceWinnerId?: string) {
     try {
-      // Use a type assertion to handle the custom table
+      // Use a straightforward approach to query the custom table
       const { data: abTest, error: abTestError } = await supabase
         .from('email_ab_tests')
         .select('*')
         .eq('campaign_id', campaignId)
-        .single() as { data: EmailABTest | null, error: any };
+        .single() as { data: any, error: any };
       
       if (abTestError) throw abTestError;
       
