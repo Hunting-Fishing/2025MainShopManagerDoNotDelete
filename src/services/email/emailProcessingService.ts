@@ -81,5 +81,34 @@ export const emailProcessingService = {
       console.error('Exception in sendTestEmail:', error);
       return false;
     }
+  },
+  
+  /**
+   * Selects a winner for an A/B test campaign
+   * @param campaignId The campaign ID to select a winner for
+   * @param forceWinnerId Optional - force a specific variant as the winner
+   * @param confidenceThreshold Optional - minimum confidence level required to select a winner (default: 95)
+   * @returns Promise with the winner information or null on failure
+   */
+  async selectABTestWinner(campaignId: string, forceWinnerId?: string, confidenceThreshold?: number): Promise<any> {
+    try {
+      const { data, error } = await supabase.functions.invoke('select-abtest-winner', {
+        body: { 
+          campaignId,
+          forceWinnerId,
+          confidenceThreshold
+        }
+      });
+      
+      if (error) {
+        console.error('Error selecting A/B test winner:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Exception in selectABTestWinner:', error);
+      return null;
+    }
   }
 };

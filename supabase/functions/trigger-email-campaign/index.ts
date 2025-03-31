@@ -98,6 +98,24 @@ serve(async (req) => {
       });
     }
 
+    // Check if A/B testing is enabled for this campaign
+    const abTest = campaignData.ab_test;
+    let isAbTestEnabled = abTest && abTest.enabled && Array.isArray(abTest.variants) && abTest.variants.length > 1;
+    
+    // If AB testing is enabled, prepare the variants
+    let variants = [];
+    let recipientCountsByVariant = {};
+    
+    if (isAbTestEnabled) {
+      variants = abTest.variants;
+      // Initialize recipient counts for tracking
+      variants.forEach(variant => {
+        recipientCountsByVariant[variant.id] = 0;
+      });
+      
+      console.log(`A/B Testing enabled with ${variants.length} variants`);
+    }
+
     // Use the campaign template to send emails
     const template = campaignData.email_templates;
     let sentCount = 0;
@@ -111,9 +129,31 @@ serve(async (req) => {
       // Send emails to each recipient in the batch
       const sendPromises = batch.map(async (customer) => {
         try {
+          // Determine which variant to use if A/B testing is enabled
+          let selectedVariant = null;
+          let subject = campaignData.subject;
+          let content = campaignData.content || template.content;
+          let variantId = null;
+          
+          if (isAbTestEnabled) {
+            // Assign variant based on percentages
+            selectedVariant = assignVariantBasedOnPercentage(variants, recipientCountsByVariant, customers.length);
+            
+            if (selectedVariant) {
+              subject = selectedVariant.subject;
+              content = selectedVariant.content;
+              variantId = selectedVariant.id;
+              
+              // Update count for this variant
+              recipientCountsByVariant[variantId]++;
+              
+              console.log(`Customer ${customer.id} assigned to variant ${selectedVariant.name} (${variantId})`);
+            }
+          }
+          
           // Personalize the email content
-          let personalizedSubject = campaignData.subject;
-          let personalizedContent = campaignData.content || template.content;
+          let personalizedSubject = subject;
+          let personalizedContent = content;
           
           // Apply basic personalization
           personalizedSubject = personalizedSubject
@@ -138,7 +178,8 @@ serve(async (req) => {
           
           // Add tracking pixel for open tracking
           const trackingId = crypto.randomUUID();
-          const trackingPixel = `<img src="${Deno.env.get("SUPABASE_URL")}/functions/track-email-open?t=${trackingId}&c=${campaignId}&r=${customer.id}" width="1" height="1" alt="">`;
+          const variantParam = variantId ? `&v=${variantId}` : '';
+          const trackingPixel = `<img src="${Deno.env.get("SUPABASE_URL")}/functions/track-email-open?t=${trackingId}&c=${campaignId}&r=${customer.id}${variantParam}" width="1" height="1" alt="">`;
           
           // Add at the end of the email body
           if (personalizedContent.includes('</body>')) {
@@ -153,19 +194,22 @@ serve(async (req) => {
           let match;
           while ((match = linkRegex.exec(personalizedContent)) !== null) {
             const originalUrl = match[2];
-            const trackingUrl = `${Deno.env.get("SUPABASE_URL")}/functions/track-email-click?t=${trackingId}&c=${campaignId}&r=${customer.id}&u=${encodeURIComponent(originalUrl)}`;
+            const trackingUrl = `${Deno.env.get("SUPABASE_URL")}/functions/track-email-click?t=${trackingId}&c=${campaignId}&r=${customer.id}${variantParam}&u=${encodeURIComponent(originalUrl)}`;
             personalizedContent = personalizedContent.replace(`href="${originalUrl}"`, `href="${trackingUrl}"`);
           }
           
           // Store tracking info in the database
+          const eventData = {
+            tracking_id: trackingId,
+            campaign_id: campaignId,
+            recipient_id: customer.id,
+            variant_id: variantId,
+            sent_at: new Date().toISOString()
+          };
+          
           await req.supabaseClient
             .from("email_tracking")
-            .insert({
-              tracking_id: trackingId,
-              campaign_id: campaignId,
-              recipient_id: customer.id,
-              sent_at: new Date().toISOString()
-            });
+            .insert(eventData);
             
           // Send the email using Resend
           const { data: emailData, error: emailError } = await resend.emails.send({
@@ -190,7 +234,8 @@ serve(async (req) => {
                 event_type: "sent",
                 event_data: { 
                   email_id: emailData.id,
-                  recipient: customer.email
+                  recipient: customer.email,
+                  variant_id: variantId
                 }
               });
           }
@@ -202,6 +247,29 @@ serve(async (req) => {
       
       // Wait for all emails in this batch to be sent
       await Promise.all(sendPromises);
+    }
+
+    // If A/B testing was enabled, update the variant stats in the campaign
+    if (isAbTestEnabled) {
+      // Update the campaign with the actual recipient counts for each variant
+      const updatedVariants = variants.map(variant => ({
+        ...variant,
+        recipients: recipientCountsByVariant[variant.id] || 0
+      }));
+      
+      const updatedAbTest = {
+        ...abTest,
+        variants: updatedVariants
+      };
+      
+      await req.supabaseClient
+        .from("email_campaigns")
+        .update({ 
+          ab_test: updatedAbTest
+        })
+        .eq("id", campaignId);
+        
+      console.log("Updated A/B test variants with recipient counts:", recipientCountsByVariant);
     }
 
     // Create analytics entry or update existing one
@@ -237,7 +305,8 @@ serve(async (req) => {
       campaignId,
       sent: sentCount,
       errors: errorCount,
-      total: customers.length
+      total: customers.length,
+      abTestApplied: isAbTestEnabled
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -250,3 +319,72 @@ serve(async (req) => {
     });
   }
 });
+
+/**
+ * Assigns a variant to a recipient based on configured percentages
+ * This ensures distribution matches the configured percentages while accounting for already sent emails
+ */
+function assignVariantBasedOnPercentage(variants, currentCounts, totalRecipients) {
+  // If there's only one variant or no variants, return null or the only variant
+  if (!variants || variants.length === 0) return null;
+  if (variants.length === 1) return variants[0];
+
+  // Calculate total current recipients
+  const currentTotalRecipients = Object.values(currentCounts).reduce((sum, count) => sum + (count as number), 0) as number;
+  
+  // If we've already assigned all recipients, assign randomly according to percentages
+  if (currentTotalRecipients >= totalRecipients) {
+    return assignVariantRandomly(variants);
+  }
+  
+  // Calculate the target count for each variant based on percentage
+  const targetCounts = {};
+  variants.forEach(variant => {
+    targetCounts[variant.id] = Math.round((variant.recipientPercentage / 100) * totalRecipients);
+  });
+  
+  // Find variants that haven't met their target count yet
+  const eligibleVariants = variants.filter(variant => 
+    (currentCounts[variant.id] || 0) < (targetCounts[variant.id] || 0)
+  );
+  
+  // If all variants have met their targets, assign randomly
+  if (eligibleVariants.length === 0) {
+    return assignVariantRandomly(variants);
+  }
+  
+  // Find the variant furthest from its target percentage
+  let selectedVariant = eligibleVariants[0];
+  let maxPercentageShortfall = -1;
+  
+  eligibleVariants.forEach(variant => {
+    const currentPercentage = currentCounts[variant.id] / currentTotalRecipients * 100 || 0;
+    const targetPercentage = variant.recipientPercentage;
+    const shortfall = targetPercentage - currentPercentage;
+    
+    if (shortfall > maxPercentageShortfall) {
+      maxPercentageShortfall = shortfall;
+      selectedVariant = variant;
+    }
+  });
+  
+  return selectedVariant;
+}
+
+/**
+ * Assigns a variant randomly based on configured percentages
+ */
+function assignVariantRandomly(variants) {
+  const random = Math.random() * 100;
+  let cumulativePercentage = 0;
+  
+  for (const variant of variants) {
+    cumulativePercentage += variant.recipientPercentage;
+    if (random <= cumulativePercentage) {
+      return variant;
+    }
+  }
+  
+  // Fallback to the last variant if we somehow exceed 100%
+  return variants[variants.length - 1];
+}

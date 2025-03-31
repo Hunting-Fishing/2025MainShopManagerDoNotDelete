@@ -3,6 +3,7 @@ import { EmailCampaign } from '@/types/email';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { validateCampaignStatus, parseJsonField, parseABTest } from './utils/emailCampaignUtils';
+import { emailService } from '@/services/email/emailService';
 
 export const useEmailCampaignDetails = () => {
   const [campaign, setCampaign] = useState<EmailCampaign | null>(null);
@@ -224,22 +225,15 @@ export const useEmailCampaignDetails = () => {
         throw new Error("A/B testing is not enabled for this campaign");
       }
 
-      let winnerId: string;
-
-      if (forceWinnerId) {
-        winnerId = forceWinnerId;
-      } else {
-        const { data, error } = await supabase.rpc(
-          'calculate_ab_test_winner',
-          { 
-            campaign_id: campaignId,
-            criteria: campaign.abTest.winnerCriteria
-          }
-        );
-        
-        if (error) throw error;
-        winnerId = data;
+      const result = await emailService.selectABTestWinner(campaignId, forceWinnerId);
+      
+      if (!result || result.error) {
+        throw new Error(result?.error || "Failed to determine a winner");
       }
+
+      const winnerId = result.winnerId;
+      const winnerSelectionDate = result.winnerSelectionDate;
+      const confidenceLevel = result.confidenceLevel;
 
       if (!winnerId) {
         throw new Error("Failed to determine a winner");
@@ -248,19 +242,51 @@ export const useEmailCampaignDetails = () => {
       setCampaign(prevCampaign => {
         if (!prevCampaign || !prevCampaign.abTest) return prevCampaign;
         
+        const updatedVariants = prevCampaign.abTest.variants.map(variant => {
+          const isWinner = variant.id === winnerId;
+          
+          let improvement = undefined;
+          if (isWinner) {
+            const winnerMetric = prevCampaign.abTest.winnerCriteria === 'open_rate' 
+              ? variant.metrics?.openRate 
+              : variant.metrics?.clickRate;
+              
+            const otherVariants = prevCampaign.abTest.variants.filter(v => v.id !== winnerId);
+            const otherMetrics = otherVariants.map(v => 
+              prevCampaign.abTest.winnerCriteria === 'open_rate' 
+                ? v.metrics?.openRate 
+                : v.metrics?.clickRate
+            ).filter(rate => rate !== undefined);
+            
+            const avgOtherRate = otherMetrics.length > 0 
+              ? otherMetrics.reduce((sum, rate) => sum + (rate || 0), 0) / otherMetrics.length 
+              : 0;
+            
+            if (winnerMetric && avgOtherRate > 0) {
+              improvement = ((winnerMetric - avgOtherRate) / avgOtherRate) * 100;
+            }
+          }
+          
+          return {
+            ...variant,
+            improvement: isWinner ? improvement : undefined
+          };
+        });
+        
         return {
           ...prevCampaign,
           abTest: {
             ...prevCampaign.abTest,
             winnerId: winnerId,
-            winnerSelectionDate: new Date().toISOString()
+            winnerSelectionDate: winnerSelectionDate,
+            variants: updatedVariants
           }
         };
       });
 
       toast({
         title: "Winner Selected",
-        description: "A/B test winner has been selected successfully",
+        description: `A/B test winner has been selected${confidenceLevel ? ` with ${confidenceLevel}% confidence` : ''}`,
       });
 
       return winnerId;
