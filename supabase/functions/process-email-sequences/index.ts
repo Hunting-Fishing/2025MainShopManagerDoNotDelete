@@ -14,47 +14,6 @@ interface EnrollmentProcessRequest {
   stepId?: string;
 }
 
-interface EmailSequence {
-  id: string;
-  name: string;
-  trigger_type: string;
-  trigger_event: string | null;
-  is_active: boolean;
-  steps: EmailSequenceStep[];
-}
-
-interface EmailSequenceStep {
-  id: string;
-  name: string;
-  template_id: string;
-  delay_hours: number;
-  delay_type: string;
-  position: number;
-  is_active: boolean;
-  condition_type: string | null;
-  condition_value: string | null;
-  condition_operator: string | null;
-}
-
-interface EmailSequenceEnrollment {
-  id: string;
-  sequence_id: string;
-  customer_id: string;
-  current_step_id: string | null;
-  status: string;
-  started_at: string;
-  completed_at: string | null;
-  next_send_time: string | null;
-  metadata: any;
-}
-
-interface Customer {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -67,7 +26,7 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    const { sequenceId, action, customerId, stepId } = await req.json() as EnrollmentProcessRequest;
+    const { sequenceId, action, customerId } = await req.json() as EnrollmentProcessRequest;
 
     // Process based on action
     if (action === 'updateAnalytics') {
@@ -120,27 +79,24 @@ async function processSequenceEnrollments(supabase) {
   for (const enrollment of enrollments) {
     try {
       // Get the sequence with its steps
-      const { data: sequence, error: sequenceError } = await supabase
-        .from('email_sequences')
-        .select(`
-          *,
-          steps:email_sequence_steps(*)
-        `)
-        .eq('id', enrollment.sequence_id)
-        .single();
+      const { data: steps, error: stepsError } = await supabase
+        .from('email_sequence_steps')
+        .select('*')
+        .eq('sequence_id', enrollment.sequence_id)
+        .order('position', { ascending: true });
       
-      if (sequenceError) {
-        throw new Error(`Error fetching sequence: ${sequenceError.message}`);
+      if (stepsError) {
+        throw new Error(`Error fetching steps: ${stepsError.message}`);
       }
       
       // Check if sequence is active
-      if (!sequence.is_active) {
-        console.log(`Sequence ${sequence.id} is inactive, skipping enrollment ${enrollment.id}`);
+      if (!enrollment.sequence.is_active) {
+        console.log(`Sequence ${enrollment.sequence_id} is inactive, skipping enrollment ${enrollment.id}`);
         continue;
       }
       
       // Process the enrollment
-      const result = await processEnrollment(supabase, enrollment, sequence);
+      const result = await processEnrollment(supabase, enrollment, steps);
       processedResults.push(result);
     } catch (error) {
       console.error(`Error processing enrollment ${enrollment.id}:`, error);
@@ -170,11 +126,11 @@ async function processSequenceEnrollments(supabase) {
   );
 }
 
-async function processEnrollment(supabase, enrollment, sequence) {
-  console.log(`Processing enrollment ${enrollment.id} for sequence ${sequence.id}`);
+async function processEnrollment(supabase, enrollment, steps) {
+  console.log(`Processing enrollment ${enrollment.id} for sequence ${enrollment.sequence_id}`);
   
   // Sort steps by position
-  const sortedSteps = sequence.steps.sort((a, b) => a.position - b.position);
+  const sortedSteps = steps.sort((a, b) => a.position - b.position);
   
   // Determine current step
   let currentStep;
@@ -280,9 +236,6 @@ async function processEnrollment(supabase, enrollment, sequence) {
   
   // Send the email (this is a mock, would be replaced with actual email sending logic)
   console.log(`Sending email to ${customer.email} using template ${template.name}`);
-  
-  // TODO: In a production environment, integrate with an email service
-  // For now, we'll just log and simulate sending
   
   // Record that the email was sent
   const { data: communicationData, error: communicationError } = await supabase
@@ -510,7 +463,7 @@ async function updateSequenceAnalytics(supabase, sequenceId) {
   
   // Calculate conversion rate
   const conversionRate = totalEnrollments > 0 
-    ? (completedEnrollments / totalEnrollments) * 100 
+    ? (completedEnrollments / totalEnrollments) 
     : 0;
   
   // Upsert analytics data
