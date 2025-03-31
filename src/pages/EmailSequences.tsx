@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -29,6 +30,7 @@ import {
   Plus, Mail, ArrowRight, Clock, Play, BarChart2, 
   Trash2, Calendar, PauseCircle, ScrollText 
 } from 'lucide-react';
+import { ManageSequenceProcessingButton } from '@/components/email/sequence/ManageSequenceProcessingButton';
 
 const sequenceSchema = z.object({
   name: z.string().min(2, {
@@ -87,9 +89,12 @@ export default function EmailSequences() {
             Automate your email marketing with targeted sequences
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Create Sequence
-        </Button>
+        <div className="flex gap-2">
+          <ManageSequenceProcessingButton />
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Create Sequence
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -118,6 +123,7 @@ export default function EmailSequences() {
                   <TableRow>
                     <TableHead>Sequence Name</TableHead>
                     <TableHead>Trigger</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -141,6 +147,13 @@ export default function EmailSequences() {
                           </div>
                         ) : (
                           <Badge variant="outline">Scheduled</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {sequence.is_active ? (
+                          <Badge variant="success" className="bg-green-500">Active</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
                         )}
                       </TableCell>
                       <TableCell>
