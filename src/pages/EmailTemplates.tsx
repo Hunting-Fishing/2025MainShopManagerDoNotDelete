@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,8 +57,7 @@ export default function EmailTemplates() {
     });
 
   const handleEdit = (template: EmailTemplatePreview) => {
-    setSelectedTemplate(template);
-    setIsEditModalOpen(true);
+    navigate(`/email-template-editor/${template.id}`);
   };
 
   const handleDelete = async (id: string) => {
