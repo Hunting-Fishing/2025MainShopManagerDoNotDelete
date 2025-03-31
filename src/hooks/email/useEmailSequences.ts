@@ -66,13 +66,13 @@ export const useEmailSequences = () => {
       const data = await emailService.getSequenceAnalytics(sequenceId);
       if (data) {
         const transformedData: EmailSequenceAnalytics = {
-          id: data.id,
+          id: data.id || "",
           sequenceId: data.sequence_id,
           totalEnrollments: data.total_enrollments,
           activeEnrollments: data.active_enrollments,
           completedEnrollments: data.completed_enrollments,
-          conversionRate: data.conversion_rate,
-          averageTimeToComplete: data.average_time_to_complete,
+          conversionRate: data.conversion_rate || 0,
+          averageTimeToComplete: data.average_time_to_complete || 0,
           updatedAt: data.updated_at
         };
         setAnalytics(transformedData);
@@ -103,9 +103,9 @@ export const useEmailSequences = () => {
         currentStepId: enrollment.current_step_id,
         status: enrollment.status as 'active' | 'completed' | 'paused' | 'cancelled',
         startedAt: enrollment.started_at,
-        completedAt: enrollment.completed_at,
-        nextSendTime: enrollment.next_send_time,
-        metadata: enrollment.metadata
+        completedAt: enrollment.completed_at || undefined,
+        nextSendTime: enrollment.next_send_time || undefined,
+        metadata: enrollment.metadata as Record<string, any> || {}
       }));
       setEnrollments(transformedEnrollments);
       return transformedEnrollments;

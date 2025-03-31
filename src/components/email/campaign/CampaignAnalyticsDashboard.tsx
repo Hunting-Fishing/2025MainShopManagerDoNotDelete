@@ -1,466 +1,905 @@
-
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+import { EmailCampaignAnalytics, EmailCampaignTimelinePoint, EmailABTestResult } from '@/types/email';
 import { Badge } from "@/components/ui/badge";
-import { EmailCampaignAnalytics, EmailABTestResult } from "@/types/email";
-import { Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Bar, BarChart, Legend } from "recharts";
+import { Separator } from "@/components/ui/separator";
+import { format, parseISO } from 'date-fns';
 import { 
-  BarChart2, 
+  ArrowUpRight, 
+  ArrowDownRight, 
   Mail, 
   MousePointerClick, 
-  Eye, 
   AlertTriangle, 
-  ThumbsDown, 
-  LineChart as LineChartIcon,
-  Users,
-  Inbox,
-  BarChart as BarChartIcon, 
-  Medal
-} from "lucide-react";
+  UserX, 
+  CheckCircle2, 
+  BarChart3, 
+  PieChart as PieChartIcon,
+  LineChart,
+  Trophy
+} from 'lucide-react';
 
-interface CampaignAnalyticsDashboardProps {
-  campaignId: string;
-  analytics: EmailCampaignAnalytics | null;
-  abTestResult?: EmailABTestResult | null;
+// Colors for charts
+const COLORS = {
+  primary: '#0ea5e9',
+  secondary: '#8b5cf6',
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger: '#ef4444',
+  info: '#3b82f6',
+  light: '#f3f4f6',
+  dark: '#1f2937',
+  muted: '#9ca3af',
+  opens: '#0ea5e9',
+  clicks: '#8b5cf6',
+  bounces: '#ef4444',
+  complaints: '#f59e0b',
+  unsubscribes: '#10b981',
+  delivered: '#3b82f6',
+};
+
+// Pie chart colors
+const PIE_COLORS = [COLORS.primary, COLORS.secondary, COLORS.success, COLORS.warning, COLORS.danger];
+
+type CampaignAnalyticsDashboardProps = {
+  analytics: EmailCampaignAnalytics;
+  abTestResults?: EmailABTestResult;
   isLoading?: boolean;
-}
+};
 
-export function CampaignAnalyticsDashboard({
-  campaignId,
+const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
   analytics,
-  abTestResult,
-  isLoading = false
-}: CampaignAnalyticsDashboardProps) {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [timelineData, setTimelineData] = useState<any[]>([]);
-  const [formattedMetrics, setFormattedMetrics] = useState<any[]>([]);
-  
-  useEffect(() => {
-    if (analytics?.timeline) {
-      // Process the timeline data for the charts
-      const processedData = analytics.timeline.map(point => ({
-        date: new Date(point.date).toLocaleDateString(),
-        opens: point.opens,
-        clicks: point.clicks
-      }));
-      setTimelineData(processedData);
-      
-      // Format metrics for the comparison chart
-      setFormattedMetrics([
-        { name: 'Open Rate', value: analytics.openRate, color: '#3b82f6' },
-        { name: 'Click Rate', value: analytics.clickRate, color: '#10b981' },
-        { name: 'Click to Open', value: analytics.clickToOpenRate, color: '#6366f1' },
-        { name: 'Unsubscribe Rate', value: analytics.unsubscribeRate, color: '#f43f5e' },
-        { name: 'Bounce Rate', value: analytics.bouncedRate, color: '#f59e0b' }
-      ]);
-    }
-  }, [analytics]);
-  
+  abTestResults,
+  isLoading = false,
+}) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-60 animate-pulse bg-gray-200 rounded"></div>
+        <div className="h-8 w-48 bg-gray-200 animate-pulse rounded"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-40 animate-pulse bg-gray-200 rounded"></div>
-          <div className="h-40 animate-pulse bg-gray-200 rounded"></div>
-          <div className="h-40 animate-pulse bg-gray-200 rounded"></div>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-32 bg-gray-200 animate-pulse rounded"></div>
+          ))}
         </div>
-        <div className="h-72 animate-pulse bg-gray-200 rounded mt-6"></div>
+        <div className="h-80 bg-gray-200 animate-pulse rounded"></div>
       </div>
     );
   }
-  
-  if (!analytics) {
-    return (
-      <div className="text-center py-12">
-        <BarChart2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium mb-2">No Analytics Available</h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Analytics data for this campaign hasn't been generated yet. This usually happens after the campaign has been sent.
-        </p>
-      </div>
-    );
-  }
-  
+
+  // Format timeline data for charts
+  const timelineData = analytics.timeline.map(point => ({
+    date: format(parseISO(point.date), 'MMM d'),
+    opens: point.opens,
+    clicks: point.clicks,
+    unsubscribes: point.unsubscribes || 0,
+    complaints: point.complaints || 0,
+  }));
+
+  // Calculate percentage changes for KPIs (mock data for now)
+  const percentageChanges = {
+    openRate: 5.2,
+    clickRate: -2.1,
+    unsubscribeRate: -0.5,
+    bounceRate: 1.2,
+  };
+
+  // Data for engagement breakdown pie chart
+  const engagementData = [
+    { name: 'Opened', value: analytics.opened },
+    { name: 'Clicked', value: analytics.clicked },
+    { name: 'No Engagement', value: analytics.delivered - analytics.opened },
+  ];
+
+  // Data for delivery status pie chart
+  const deliveryData = [
+    { name: 'Delivered', value: analytics.delivered },
+    { name: 'Bounced', value: analytics.bounced },
+  ];
+
+  // Data for bar chart comparison
+  const comparisonData = [
+    { name: 'Open Rate', value: analytics.openRate * 100, avg: 22.5 },
+    { name: 'Click Rate', value: analytics.clickRate * 100, avg: 3.2 },
+    { name: 'Click-to-Open', value: analytics.clickToOpenRate * 100, avg: 14.8 },
+    { name: 'Unsubscribe', value: analytics.unsubscribeRate * 100, avg: 0.2 },
+  ];
+
+  const renderPercentageChange = (value: number) => {
+    if (value > 0) {
+      return (
+        <div className="flex items-center text-green-600">
+          <ArrowUpRight className="h-4 w-4 mr-1" />
+          <span>+{value.toFixed(1)}%</span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center text-red-600">
+          <ArrowDownRight className="h-4 w-4 mr-1" />
+          <span>{value.toFixed(1)}%</span>
+        </div>
+      );
+    }
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border rounded shadow-sm">
+          <p className="font-medium">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={`item-${index}`} style={{ color: entry.color }}>
+              {entry.name}: {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const ComparisonTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border rounded shadow-sm">
+          <p className="font-medium">{label}</p>
+          <p style={{ color: COLORS.primary }}>
+            This Campaign: {typeof payload[0].value === 'number' ? payload[0].value.toFixed(2) : payload[0].value}%
+          </p>
+          <p style={{ color: COLORS.muted }}>
+            Average: {typeof payload[1].value === 'number' ? payload[1].value.toFixed(2) : payload[1].value}%
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">
-            <BarChart2 className="h-4 w-4 mr-2" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="engagement">
-            <LineChartIcon className="h-4 w-4 mr-2" />
-            Engagement
-          </TabsTrigger>
-          {abTestResult && (
-            <TabsTrigger value="ab-testing">
-              <Medal className="h-4 w-4 mr-2" />
-              A/B Test Results
-            </TabsTrigger>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="engagement">Engagement</TabsTrigger>
+          <TabsTrigger value="delivery">Delivery</TabsTrigger>
+          {abTestResults && (
+            <TabsTrigger value="abtest">A/B Test Results</TabsTrigger>
           )}
         </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6 mt-6">
-          {/* KPI Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Delivery
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Inbox className="h-5 w-5 mr-2 text-blue-600" />
-                    <span className="text-2xl font-bold">
-                      {((analytics.delivered / analytics.sent) * 100).toFixed(1)}%
-                    </span>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Open Rate</p>
+                    <p className="text-2xl font-bold">{(analytics.openRate * 100).toFixed(1)}%</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground">Delivered</div>
-                    <div className="font-medium">{analytics.delivered} / {analytics.sent}</div>
+                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Mail className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
-                <Progress 
-                  value={(analytics.delivered / analytics.sent) * 100} 
-                  className="h-2 mt-2" 
-                />
+                <div className="mt-4">
+                  {renderPercentageChange(percentageChanges.openRate)}
+                  <p className="text-xs text-muted-foreground mt-1">vs. previous campaign</p>
+                </div>
               </CardContent>
             </Card>
-            
+
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Open Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Eye className="h-5 w-5 mr-2 text-green-600" />
-                    <span className="text-2xl font-bold">
-                      {analytics.openRate.toFixed(1)}%
-                    </span>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Click Rate</p>
+                    <p className="text-2xl font-bold">{(analytics.clickRate * 100).toFixed(1)}%</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground">Opened</div>
-                    <div className="font-medium">{analytics.opened} / {analytics.delivered}</div>
+                  <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <MousePointerClick className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
-                <Progress 
-                  value={analytics.openRate} 
-                  className="h-2 mt-2" 
-                />
+                <div className="mt-4">
+                  {renderPercentageChange(percentageChanges.clickRate)}
+                  <p className="text-xs text-muted-foreground mt-1">vs. previous campaign</p>
+                </div>
               </CardContent>
             </Card>
-            
+
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Click Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <MousePointerClick className="h-5 w-5 mr-2 text-indigo-600" />
-                    <span className="text-2xl font-bold">
-                      {analytics.clickRate.toFixed(1)}%
-                    </span>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Bounce Rate</p>
+                    <p className="text-2xl font-bold">{(analytics.bouncedRate * 100).toFixed(1)}%</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground">Clicked</div>
-                    <div className="font-medium">{analytics.clicked} / {analytics.delivered}</div>
+                  <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-red-600" />
                   </div>
                 </div>
-                <Progress 
-                  value={analytics.clickRate} 
-                  className="h-2 mt-2" 
-                />
+                <div className="mt-4">
+                  {renderPercentageChange(percentageChanges.bounceRate)}
+                  <p className="text-xs text-muted-foreground mt-1">vs. previous campaign</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Unsubscribe Rate</p>
+                    <p className="text-2xl font-bold">{(analytics.unsubscribeRate * 100).toFixed(1)}%</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <UserX className="h-6 w-6 text-amber-600" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  {renderPercentageChange(percentageChanges.unsubscribeRate)}
+                  <p className="text-xs text-muted-foreground mt-1">vs. previous campaign</p>
+                </div>
               </CardContent>
             </Card>
           </div>
-          
-          {/* Additional Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Performance Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
+
+          {/* Summary Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Campaign Summary</CardTitle>
+              <CardDescription>
+                Key metrics for the email campaign
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="bg-blue-100 p-2 rounded-full mr-3">
-                        <Eye className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <span>Open Rate</span>
+                  <h3 className="text-lg font-medium">Delivery</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Sent</span>
+                      <span className="font-medium">{analytics.sent.toLocaleString()}</span>
                     </div>
-                    <div className="font-medium">{analytics.openRate.toFixed(1)}%</div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="bg-green-100 p-2 rounded-full mr-3">
-                        <MousePointerClick className="h-4 w-4 text-green-600" />
-                      </div>
-                      <span>Click Rate</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Delivered</span>
+                      <span className="font-medium">{analytics.delivered.toLocaleString()}</span>
                     </div>
-                    <div className="font-medium">{analytics.clickRate.toFixed(1)}%</div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 p-2 rounded-full mr-3">
-                        <BarChartIcon className="h-4 w-4 text-indigo-600" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Bounced</span>
+                      <div className="flex items-center">
+                        <span className="font-medium mr-2">{analytics.bounced.toLocaleString()}</span>
+                        <Badge variant="outline">{(analytics.bouncedRate * 100).toFixed(1)}%</Badge>
                       </div>
-                      <span>Click-to-Open Rate</span>
-                    </div>
-                    <div className="font-medium">{analytics.clickToOpenRate.toFixed(1)}%</div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="bg-amber-100 p-2 rounded-full mr-3">
-                        <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <span>Bounce Rate</span>
-                    </div>
-                    <div className="font-medium">{analytics.bouncedRate.toFixed(1)}%</div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="bg-red-100 p-2 rounded-full mr-3">
-                        <ThumbsDown className="h-4 w-4 text-red-600" />
-                      </div>
-                      <span>Unsubscribe Rate</span>
-                    </div>
-                    <div className="font-medium">{analytics.unsubscribeRate.toFixed(1)}%</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Delivery Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-4">
-                  <div className="flex-1">
-                    <div className="text-center space-y-1">
-                      <div className="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto">
-                        <Mail className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <div className="text-2xl font-bold">{analytics.sent}</div>
-                      <div className="text-sm text-muted-foreground">Sent</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="text-center space-y-1">
-                      <div className="bg-green-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto">
-                        <Inbox className="h-8 w-8 text-green-600" />
-                      </div>
-                      <div className="text-2xl font-bold">{analytics.delivered}</div>
-                      <div className="text-sm text-muted-foreground">Delivered</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="text-center space-y-1">
-                      <div className="bg-amber-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto">
-                        <AlertTriangle className="h-8 w-8 text-amber-600" />
-                      </div>
-                      <div className="text-2xl font-bold">{analytics.bounced}</div>
-                      <div className="text-sm text-muted-foreground">Bounced</div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="mt-6">
-                  <h4 className="font-medium mb-2">Delivery Rate</h4>
-                  <Progress 
-                    value={(analytics.delivered / analytics.sent) * 100} 
-                    className="h-3" 
-                  />
-                  <div className="flex justify-between text-sm mt-1">
-                    <span className="text-muted-foreground">
-                      {((analytics.delivered / analytics.sent) * 100).toFixed(1)}% Delivered
-                    </span>
-                    <span className="text-muted-foreground">
-                      {((analytics.bounced / analytics.sent) * 100).toFixed(1)}% Bounced
-                    </span>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Engagement</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Opens</span>
+                      <div className="flex items-center">
+                        <span className="font-medium mr-2">{analytics.opened.toLocaleString()}</span>
+                        <Badge variant="outline">{(analytics.openRate * 100).toFixed(1)}%</Badge>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Clicks</span>
+                      <div className="flex items-center">
+                        <span className="font-medium mr-2">{analytics.clicked.toLocaleString()}</span>
+                        <Badge variant="outline">{(analytics.clickRate * 100).toFixed(1)}%</Badge>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Click-to-Open</span>
+                      <Badge variant="outline">{(analytics.clickToOpenRate * 100).toFixed(1)}%</Badge>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="engagement" className="space-y-6 mt-6">
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Negative Metrics</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Unsubscribes</span>
+                      <div className="flex items-center">
+                        <span className="font-medium mr-2">{analytics.unsubscribed.toLocaleString()}</span>
+                        <Badge variant="outline">{(analytics.unsubscribeRate * 100).toFixed(1)}%</Badge>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Complaints</span>
+                      <div className="flex items-center">
+                        <span className="font-medium mr-2">{analytics.complained.toLocaleString()}</span>
+                        <Badge variant="outline">
+                          {analytics.sent > 0 ? ((analytics.complained / analytics.sent) * 100).toFixed(2) : '0.00'}%
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Timeline Chart */}
           <Card>
             <CardHeader>
               <CardTitle>Engagement Timeline</CardTitle>
               <CardDescription>
-                Opens and clicks over time after sending the campaign
+                Opens and clicks over time after sending
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
+                  <AreaChart
                     data={timelineData}
-                    margin={{
-                      top: 10,
-                      right: 30,
-                      left: 0,
-                      bottom: 10,
-                    }}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="opens"
-                      stroke="#3b82f6"
-                      activeDot={{ r: 8 }}
+                    <Area 
+                      type="monotone" 
+                      dataKey="opens" 
+                      stackId="1"
+                      stroke={COLORS.opens} 
+                      fill={COLORS.opens} 
+                      fillOpacity={0.6}
                       name="Opens"
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="clicks"
-                      stroke="#10b981"
+                    <Area 
+                      type="monotone" 
+                      dataKey="clicks" 
+                      stackId="2"
+                      stroke={COLORS.clicks} 
+                      fill={COLORS.clicks} 
+                      fillOpacity={0.6}
                       name="Clicks"
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
-          
+
+          {/* Comparison Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Performance Metrics Comparison</CardTitle>
+              <CardTitle>Performance Comparison</CardTitle>
               <CardDescription>
-                Comparing key performance indicators
+                How this campaign compares to average metrics
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={formattedMetrics}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 10,
-                    }}
+                    data={comparisonData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, 'Rate']} />
-                    <Bar
-                      dataKey="value"
-                      name="Rate"
-                      fill="#3b82f6"
-                      barSize={60}
-                    />
+                    <Tooltip content={<ComparisonTooltip />} />
+                    <Legend />
+                    <Bar dataKey="value" name="This Campaign" fill={COLORS.primary} />
+                    <Bar dataKey="avg" name="Industry Average" fill={COLORS.muted} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        
-        {abTestResult && (
-          <TabsContent value="ab-testing" className="space-y-6 mt-6">
+
+        <TabsContent value="engagement" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Engagement Overview */}
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>A/B Test Results</CardTitle>
-                  {abTestResult.winningVariantId && (
-                    <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-                      Winner Selected
-                    </Badge>
+                <CardTitle>Engagement Overview</CardTitle>
+                <CardDescription>
+                  How recipients interacted with your email
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={engagementData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      >
+                        {engagementData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [value, 'Recipients']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Click-to-Open Analysis */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Click-to-Open Analysis</CardTitle>
+                <CardDescription>
+                  Percentage of recipients who clicked after opening
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center justify-center h-64">
+                <div className="relative h-40 w-40">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-4xl font-bold">{(analytics.clickToOpenRate * 100).toFixed(1)}%</p>
+                      <p className="text-sm text-muted-foreground">Click-to-Open Rate</p>
+                    </div>
+                  </div>
+                  <svg className="h-full w-full" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="#f3f4f6"
+                      strokeWidth="10"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke={COLORS.primary}
+                      strokeWidth="10"
+                      strokeDasharray={`${analytics.clickToOpenRate * 283} 283`}
+                      strokeLinecap="round"
+                      transform="rotate(-90 50 50)"
+                    />
+                  </svg>
+                </div>
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {analytics.clicked} clicks from {analytics.opened} opens
+                  </p>
+                  <p className="text-sm font-medium mt-2">
+                    {analytics.clickToOpenRate > 0.15 ? (
+                      <span className="text-green-600 flex items-center justify-center">
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        Good engagement rate
+                      </span>
+                    ) : (
+                      <span className="text-amber-600 flex items-center justify-center">
+                        <AlertTriangle className="h-4 w-4 mr-1" />
+                        Below average engagement
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Engagement Metrics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Detailed Engagement Metrics</CardTitle>
+              <CardDescription>
+                Breakdown of all engagement metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Opens</p>
+                    <div className="flex items-end gap-2">
+                      <p className="text-3xl font-bold">{analytics.opened.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        ({(analytics.openRate * 100).toFixed(1)}%)
+                      </p>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-blue-600 h-2.5 rounded-full" 
+                        style={{ width: `${analytics.openRate * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Clicks</p>
+                    <div className="flex items-end gap-2">
+                      <p className="text-3xl font-bold">{analytics.clicked.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        ({(analytics.clickRate * 100).toFixed(1)}%)
+                      </p>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-purple-600 h-2.5 rounded-full" 
+                        style={{ width: `${analytics.clickRate * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">No Engagement</p>
+                    <div className="flex items-end gap-2">
+                      <p className="text-3xl font-bold">
+                        {(analytics.delivered - analytics.opened).toLocaleString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        ({((analytics.delivered - analytics.opened) / analytics.delivered * 100).toFixed(1)}%)
+                      </p>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-gray-400 h-2.5 rounded-full" 
+                        style={{ width: `${(analytics.delivered - analytics.opened) / analytics.delivered * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Engagement Timeline</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={timelineData}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
+                        <Area 
+                          type="monotone" 
+                          dataKey="opens" 
+                          stroke={COLORS.opens} 
+                          fill={COLORS.opens} 
+                          fillOpacity={0.6}
+                          name="Opens"
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="clicks" 
+                          stroke={COLORS.clicks} 
+                          fill={COLORS.clicks} 
+                          fillOpacity={0.6}
+                          name="Clicks"
+                        />
+                        {timelineData[0].unsubscribes > 0 && (
+                          <Area 
+                            type="monotone" 
+                            dataKey="unsubscribes" 
+                            stroke={COLORS.unsubscribes} 
+                            fill={COLORS.unsubscribes} 
+                            fillOpacity={0.6}
+                            name="Unsubscribes"
+                          />
+                        )}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="delivery" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Delivery Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Delivery Overview</CardTitle>
+                <CardDescription>
+                  Email delivery status breakdown
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={deliveryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      >
+                        <Cell fill={COLORS.success} />
+                        <Cell fill={COLORS.danger} />
+                      </Pie>
+                      <Tooltip formatter={(value) => [value, 'Recipients']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bounce Analysis */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Bounce Analysis</CardTitle>
+                <CardDescription>
+                  Breakdown of bounced emails
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col h-64">
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Bounce Rate</p>
+                    <p className="text-2xl font-bold">{(analytics.bouncedRate * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {analytics.bounced} of {analytics.sent} emails
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Delivery Rate</p>
+                    <p className="text-2xl font-bold">{((analytics.delivered / analytics.sent) * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {analytics.delivered} of {analytics.sent} emails
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex items-center justify-center">
+                  {analytics.bouncedRate > 0.05 ? (
+                    <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200 max-w-md">
+                      <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                      <h3 className="font-medium text-red-800">High Bounce Rate Detected</h3>
+                      <p className="text-sm text-red-600 mt-1">
+                        Your bounce rate is above the recommended threshold of 5%. 
+                        Consider cleaning your email list to improve deliverability.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200 max-w-md">
+                      <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                      <h3 className="font-medium text-green-800">Good Delivery Rate</h3>
+                      <p className="text-sm text-green-600 mt-1">
+                        Your bounce rate is within acceptable limits.
+                        This indicates a healthy email list.
+                      </p>
+                    </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Delivery Metrics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Detailed Delivery Metrics</CardTitle>
+              <CardDescription>
+                Complete breakdown of delivery statistics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Sent</p>
+                    <p className="text-3xl font-bold">{analytics.sent.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Total emails sent</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Delivered</p>
+                    <div className="flex items-end gap-2">
+                      <p className="text-3xl font-bold">{analytics.delivered.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        ({((analytics.delivered / analytics.sent) * 100).toFixed(1)}%)
+                      </p>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-green-600 h-2.5 rounded-full" 
+                        style={{ width: `${(analytics.delivered / analytics.sent) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Bounced</p>
+                    <div className="flex items-end gap-2">
+                      <p className="text-3xl font-bold">{analytics.bounced.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        ({(analytics.bouncedRate * 100).toFixed(1)}%)
+                      </p>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-red-600 h-2.5 rounded-full" 
+                        style={{ width: `${analytics.bouncedRate * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Negative Metrics</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Unsubscribes</p>
+                      <div className="flex items-end gap-2">
+                        <p className="text-3xl font-bold">{analytics.unsubscribed.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          ({(analytics.unsubscribeRate * 100).toFixed(2)}%)
+                        </p>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className="bg-amber-600 h-2.5 rounded-full" 
+                          style={{ width: `${analytics.unsubscribeRate * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Complaints</p>
+                      <div className="flex items-end gap-2">
+                        <p className="text-3xl font-bold">{analytics.complained.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          ({((analytics.complained / analytics.sent) * 100).toFixed(2)}%)
+                        </p>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className="bg-red-600 h-2.5 rounded-full" 
+                          style={{ width: `${(analytics.complained / analytics.sent) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {abTestResults && (
+          <TabsContent value="abtest" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>A/B Test Results</CardTitle>
                 <CardDescription>
-                  Performance comparison of different email variants
+                  Performance comparison of different variants
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div>
-                    <h4 className="font-medium mb-3">Variant Performance</h4>
-                    <div className="space-y-4">
-                      {abTestResult.variants.map((variant) => (
-                        <div key={variant.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <div className="flex items-center">
-                              <h5 className="font-medium">{variant.name}</h5>
-                              {abTestResult.winningVariantId === variant.id && (
-                                <Badge className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-200">
-                                  <Medal className="h-3 w-3 mr-1" />
-                                  Winner
-                                </Badge>
-                              )}
-                            </div>
-                            {variant.improvement !== undefined && variant.improvement > 0 && (
-                              <Badge className="bg-green-100 text-green-800">
-                                +{variant.improvement.toFixed(1)}%
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <div className="grid grid-cols-3 gap-4 mt-3">
-                            <div>
-                              <div className="text-sm text-muted-foreground">Open Rate</div>
-                              <div className="font-medium">{variant.metrics.openRate.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Click Rate</div>
-                              <div className="font-medium">{variant.metrics.clickRate.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Click-to-Open</div>
-                              <div className="font-medium">{variant.metrics.clickToOpenRate.toFixed(1)}%</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {abTestResult.confidenceLevel && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-start">
-                        <div className="bg-blue-100 p-2 rounded-full mr-3">
-                          <BarChart2 className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h5 className="font-medium text-blue-800">Statistical Confidence</h5>
-                          <p className="text-sm text-blue-700 mt-1">
-                            The winner was determined with {abTestResult.confidenceLevel}% confidence. 
-                            {abTestResult.confidenceLevel >= 95 
-                              ? ' This is a statistically significant result.'
-                              : ' This result is not statistically significant and may be due to chance.'}
-                          </p>
-                        </div>
+                  {/* Winner Banner */}
+                  {abTestResults.winningVariantId && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center">
+                      <Trophy className="h-8 w-8 text-yellow-500 mr-4" />
+                      <div>
+                        <h3 className="font-medium text-yellow-800">
+                          Winning Variant: {
+                            abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.name
+                          }
+                        </h3>
+                        <p className="text-sm text-yellow-600 mt-1">
+                          This variant performed best with a {
+                            typeof abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.improvement === 'number' ? 
+                            abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.improvement?.toFixed(2) : 
+                            abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.improvement
+                          }% improvement over the control.
+                          {abTestResults.confidenceLevel && ` Confidence level: ${abTestResults.confidenceLevel}%`}
+                        </p>
                       </div>
                     </div>
                   )}
+
+                  {/* Variants Comparison */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="text-left p-3 border">Variant</th>
+                          <th className="text-center p-3 border">Open Rate</th>
+                          <th className="text-center p-3 border">Click Rate</th>
+                          <th className="text-center p-3 border">Click-to-Open</th>
+                          {abTestResults.variants[0].metrics.conversionRate !== undefined && (
+                            <th className="text-center p-3 border">Conversion</th>
+                          )}
+                          <th className="text-center p-3 border">Improvement</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {abTestResults.variants.map((variant, index) => (
+                          <tr key={variant.id} className={variant.id === abTestResults.winningVariantId ? "bg-yellow-50" : ""}>
+                            <td className="p-3 border font-medium">
+                              {variant.name}
+                              {index === 0 && <span className="text-xs text-muted-foreground ml-2">(control)</span>}
+                              {variant.id === abTestResults.winningVariantId && (
+                                <Badge className="ml-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Winner</Badge>
+                              )}
+                            </td>
+                            <td className="text-center p-3 border">
+                              {(variant.metrics.openRate * 100).toFixed(2)}%
+                            </td>
+                            <td className="text-center p-3 border">
+                              {(variant.metrics.clickRate * 100).toFixed(2)}%
+                            </td>
+                            <td className="text-center p-3 border">
+                              {(variant.metrics.clickToOpenRate * 100).toFixed(2)}%
+                            </td>
+                            {variant.metrics.conversionRate !== undefined && (
+                              <td className="text-center p-3 border">
+                                {(variant.metrics.conversionRate * 100).toFixed(2)}%
+                              </td>
+                            )}
+                            <td className="text-center p-3 border">
+                              {index === 0 ? (
+                                <span className="text-muted-foreground">-</span>
+                              ) : (
+                                <span className={variant.improvement && variant.improvement > 0 ? "text-green-600" : "text-red-600"}>
+                                  {variant.improvement ? (variant.improvement > 0 ? "+" : "") + variant.improvement.toFixed(2) + "%" : "-"}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Comparison Chart */}
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={abTestResults.variants.map(v => ({
+                          name: v.name,
+                          openRate: v.metrics.openRate * 100,
+                          clickRate: v.metrics.clickRate * 100,
+                          clickToOpen: v.metrics.clickToOpenRate * 100,
+                          conversion: v.metrics.conversionRate ? v.metrics.conversionRate * 100 : undefined
+                        }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
+                        <Tooltip formatter={(value) => {
+                          return typeof value === 'number' ? value.toFixed(2) + '%' : value;
+                        }} />
+                        <Legend />
+                        <Bar dataKey="openRate" name="Open Rate" fill={COLORS.opens} />
+                        <Bar dataKey="clickRate" name="Click Rate" fill={COLORS.clicks} />
+                        <Bar dataKey="clickToOpen" name="Click-to-Open" fill={COLORS.primary} />
+                        {abTestResults.variants[0].metrics.conversionRate !== undefined && (
+                          <Bar dataKey="conversion" name="Conversion Rate" fill={COLORS.success} />
+                        )}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -469,4 +908,6 @@ export function CampaignAnalyticsDashboard({
       </Tabs>
     </div>
   );
-}
+};
+
+export default CampaignAnalyticsDashboard;

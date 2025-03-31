@@ -7,7 +7,8 @@ import {
   EmailCampaignPreview,
   EmailSequence,
   EmailSequenceStep,
-  EmailSequenceEnrollment
+  EmailSequenceEnrollment,
+  EmailTemplateVariable
 } from '@/types/email';
 
 // Mock data for development - keeping as reference
@@ -117,7 +118,7 @@ export const emailService = {
         description: data.description,
         category: data.category as EmailCategory,
         content: data.content,
-        variables: data.variables || [],
+        variables: Array.isArray(data.variables) ? data.variables : [],
         isArchived: data.is_archived || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -138,7 +139,7 @@ export const emailService = {
           description: template.description,
           category: template.category,
           content: template.content,
-          variables: template.variables,
+          variables: template.variables || [],
           is_archived: false,
         })
         .select()
@@ -156,7 +157,7 @@ export const emailService = {
         description: data.description,
         category: data.category as EmailCategory,
         content: data.content,
-        variables: data.variables || [],
+        variables: Array.isArray(data.variables) ? data.variables : [],
         isArchived: data.is_archived || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -177,7 +178,7 @@ export const emailService = {
           description: template.description,
           category: template.category,
           content: template.content,
-          variables: template.variables,
+          variables: template.variables || [],
         })
         .eq('id', id)
         .select()
@@ -195,7 +196,7 @@ export const emailService = {
         description: data.description,
         category: data.category as EmailCategory,
         content: data.content,
-        variables: data.variables || [],
+        variables: Array.isArray(data.variables) ? data.variables : [],
         isArchived: data.is_archived || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -250,10 +251,10 @@ export const emailService = {
           updatedAt: data.updated_at,
           templateId: data.template_id,
           content: data.content,
-          segmentIds: data.segment_ids || [],
-          recipientIds: data.recipient_ids || [],
-          personalizations: data.personalizations || [],
-          metadata: data.metadata || {},
+          segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids : [],
+          recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
+          personalizations: Array.isArray(data.personalizations) ? data.personalizations : [],
+          metadata: typeof data.metadata === 'object' ? data.metadata : {},
           abTest: data.ab_test || null,
         };
       } else {
@@ -296,10 +297,10 @@ export const emailService = {
           scheduled_date: campaign.scheduledDate,
           template_id: campaign.templateId,
           content: campaign.content,
-          segment_ids: campaign.segmentIds,
-          recipient_ids: campaign.recipientIds,
-          personalizations: campaign.personalizations,
-          metadata: campaign.metadata,
+          segment_ids: campaign.segmentIds || [],
+          recipient_ids: campaign.recipientIds || [],
+          personalizations: campaign.personalizations || [],
+          metadata: campaign.metadata || {},
           ab_test: campaign.abTest,
         })
         .select()
@@ -324,10 +325,10 @@ export const emailService = {
         updatedAt: data.updated_at,
         templateId: data.template_id,
         content: data.content,
-        segmentIds: data.segment_ids || [],
-        recipientIds: data.recipient_ids || [],
-        personalizations: data.personalizations || [],
-        metadata: data.metadata || {},
+        segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids : [],
+        recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
+        personalizations: Array.isArray(data.personalizations) ? data.personalizations : [],
+        metadata: typeof data.metadata === 'object' ? data.metadata : {},
         abTest: data.ab_test || null,
       };
     } catch (error) {
@@ -347,10 +348,10 @@ export const emailService = {
           scheduled_date: campaign.scheduledDate,
           template_id: campaign.templateId,
           content: campaign.content,
-          segment_ids: campaign.segmentIds,
-          recipient_ids: campaign.recipientIds,
-          personalizations: campaign.personalizations,
-          metadata: campaign.metadata,
+          segment_ids: campaign.segmentIds || [],
+          recipient_ids: campaign.recipientIds || [],
+          personalizations: campaign.personalizations || [],
+          metadata: campaign.metadata || {},
           ab_test: campaign.abTest,
         })
         .eq('id', id)
@@ -376,30 +377,15 @@ export const emailService = {
         updatedAt: data.updated_at,
         templateId: data.template_id,
         content: data.content,
-        segmentIds: data.segment_ids || [],
-        recipientIds: data.recipient_ids || [],
-        personalizations: data.personalizations || [],
-        metadata: data.metadata || {},
+        segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids : [],
+        recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
+        personalizations: Array.isArray(data.personalizations) ? data.personalizations : [],
+        metadata: typeof data.metadata === 'object' ? data.metadata : {},
         abTest: data.ab_test || null,
       };
     } catch (error) {
       console.error('Error updating email campaign:', error);
       return null;
-    }
-  },
-
-  deleteCampaign: async (id: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('email_campaigns')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('Error deleting email campaign:', error);
-      return false;
     }
   },
 
@@ -688,7 +674,7 @@ export const emailService = {
           const newSteps = stepsToInsert.map(step => ({
             sequence_id: id,
             name: step.name,
-            template_id: step.templateId,
+            template_id: step.template_id,
             delay_hours: step.delayHours,
             delay_type: step.delayType,
             position: step.position,
@@ -711,7 +697,7 @@ export const emailService = {
           const newTempSteps = tempSteps.map(step => ({
             sequence_id: id,
             name: step.name,
-            template_id: step.templateId,
+            template_id: step.template_id,
             delay_hours: step.delayHours,
             delay_type: step.delayType,
             position: step.position,
@@ -879,7 +865,7 @@ export const emailService = {
     }
   },
 
-  getCustomerEnrollments: async (customerId: string): Promise<EmailSequenceEnrollment[]> => {
+  getCustomerEnrollments: async (customerId: string): Promise<any[]> => {
     try {
       const { data, error } = await supabase
         .from('email_sequence_enrollments')
@@ -891,18 +877,8 @@ export const emailService = {
 
       if (error) throw error;
       
-      // Transform to match EmailSequenceEnrollment interface
-      return data?.map(enrollment => ({
-        id: enrollment.id,
-        sequenceId: enrollment.sequence_id,
-        customerId: enrollment.customer_id,
-        currentStepId: enrollment.current_step_id,
-        status: enrollment.status as 'active' | 'completed' | 'paused' | 'cancelled',
-        startedAt: enrollment.started_at,
-        completedAt: enrollment.completed_at,
-        nextSendTime: enrollment.next_send_time,
-        metadata: enrollment.metadata
-      })) || [];
+      // Return raw data to be transformed in the hook
+      return data || [];
     } catch (error) {
       console.error('Error fetching customer enrollments:', error);
       return [];
@@ -919,6 +895,7 @@ export const emailService = {
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "Row not found"
       
+      // Return raw data to be transformed in the hook
       return data || {
         sequence_id: sequenceId,
         total_enrollments: 0,

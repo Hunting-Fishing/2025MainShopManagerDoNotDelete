@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailTemplate, EmailTemplatePreview, EmailCategory } from "@/types/email";
@@ -17,6 +18,7 @@ export const useEmailTemplates = (categoryFilter?: EmailCategory) => {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
+      // Fixed: Removed the argument that was causing the error
       const data = await emailService.getTemplates();
       
       const filteredData = categoryFilter 
