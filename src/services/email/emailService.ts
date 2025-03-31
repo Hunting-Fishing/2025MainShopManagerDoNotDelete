@@ -1,739 +1,825 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import {
   EmailTemplate,
   EmailTemplatePreview,
+  EmailCategory,
   EmailCampaign,
   EmailCampaignPreview,
-  EmailCampaignStatus,
-  EmailCategory,
   EmailSequence,
   EmailSequenceStep,
-  EmailSequenceEnrollment,
-  EmailSequenceAnalytics,
-  EmailCampaignAnalytics,
-  EmailRecipient
+  EmailSequenceEnrollment
 } from '@/types/email';
-import { supabase } from '@/lib/supabase';
 
-// Mock database for development
-const mockTemplates: EmailTemplate[] = [
+// Mock data for development
+const mockTemplates = [
   {
     id: '1',
     name: 'Welcome Email',
-    subject: 'Welcome to our service!',
-    description: 'Sent to new customers after sign up',
-    category: 'welcome',
-    content: '<p>Hello {{name}},</p><p>Welcome to our service! We\'re excited to have you on board.</p><p>Best regards,<br>The Team</p>',
-    variables: [
-      { name: 'name', defaultValue: 'there', description: 'Customer name' }
-    ],
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    subject: 'Welcome to Our Service!',
+    description: 'Initial welcome email for new customers',
+    category: 'welcome' as EmailCategory,
+    createdAt: '2023-06-01T10:00:00Z',
+    updatedAt: '2023-06-01T10:00:00Z'
   },
   {
     id: '2',
-    name: 'Service Reminder',
-    subject: 'Your upcoming service',
-    description: 'Service reminder for scheduled appointments',
-    category: 'reminder',
-    content: '<p>Hello {{name}},</p><p>This is a reminder about your upcoming service on {{date}}.</p><p>Best regards,<br>The Team</p>',
-    variables: [
-      { name: 'name', defaultValue: 'there', description: 'Customer name' },
-      { name: 'date', defaultValue: 'tomorrow', description: 'Service date' }
-    ],
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    name: 'Discount Offer',
+    subject: 'Exclusive Discount Inside!',
+    description: 'Email offering a discount to loyal customers',
+    category: 'marketing' as EmailCategory,
+    createdAt: '2023-06-05T14:30:00Z',
+    updatedAt: '2023-06-05T14:30:00Z'
   },
   {
     id: '3',
-    name: 'Invoice Paid',
-    subject: 'Receipt for your payment',
-    description: 'Sent after an invoice is paid',
-    category: 'transactional',
-    content: '<p>Hello {{name}},</p><p>Thank you for your payment of {{amount}}.</p><p>Invoice: {{invoice_number}}</p><p>Best regards,<br>The Team</p>',
-    variables: [
-      { name: 'name', defaultValue: 'there', description: 'Customer name' },
-      { name: 'amount', defaultValue: '$100.00', description: 'Payment amount' },
-      { name: 'invoice_number', defaultValue: 'INV-001', description: 'Invoice number' }
-    ],
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    name: 'Appointment Reminder',
+    subject: 'Reminder: Your Appointment is Coming Up',
+    description: 'Reminder email for upcoming appointments',
+    category: 'reminder' as EmailCategory,
+    createdAt: '2023-06-10T09:15:00Z',
+    updatedAt: '2023-06-10T09:15:00Z'
   },
-  {
-    id: '4',
-    name: 'Monthly Newsletter',
-    subject: 'This month\'s updates and tips',
-    description: 'Monthly newsletter with updates and maintenance tips',
-    category: 'marketing',
-    content: '<p>Hello {{name}},</p><p>Here are this month\'s updates and maintenance tips...</p><p>Best regards,<br>The Team</p>',
-    variables: [
-      { name: 'name', defaultValue: 'there', description: 'Customer name' }
-    ],
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
 ];
 
-const mockCampaigns: EmailCampaignPreview[] = [
+const mockCampaigns = [
   {
-    id: '1',
-    name: 'Spring Maintenance Promotion',
-    subject: 'Get ready for spring with our maintenance special',
-    status: 'sent',
-    scheduledDate: null,
-    sentDate: new Date('2023-03-15').toISOString(),
-    totalRecipients: 235,
-    opened: 142,
-    clicked: 58,
-    createdAt: new Date('2023-03-10').toISOString(),
-    updatedAt: new Date('2023-03-15').toISOString()
-  },
-  {
-    id: '2',
-    name: 'Summer Cooling Tips',
-    subject: 'Keep your home cool efficiently this summer',
-    status: 'scheduled',
-    scheduledDate: new Date('2023-06-01').toISOString(),
-    sentDate: null,
-    totalRecipients: 278,
-    opened: 0,
-    clicked: 0,
-    createdAt: new Date('2023-05-20').toISOString(),
-    updatedAt: new Date('2023-05-20').toISOString()
-  },
-  {
-    id: '3',
-    name: 'Winter Preparation Guide',
-    subject: 'Is your system ready for winter?',
+    id: '101',
+    name: 'Summer Sale',
+    subject: 'Our Biggest Sale of the Year!',
     status: 'draft',
-    scheduledDate: null,
+    scheduledDate: '2023-07-01T00:00:00Z',
     sentDate: null,
-    totalRecipients: 0,
-    opened: 0,
-    clicked: 0,
-    createdAt: new Date('2023-09-10').toISOString(),
-    updatedAt: new Date('2023-09-10').toISOString()
-  }
-];
-
-const mockSequences: EmailSequence[] = [
-  {
-    id: '1',
-    name: 'New Customer Onboarding',
-    description: 'Welcome series for new customers',
-    triggerType: 'manual',
-    steps: [
-      {
-        id: 'step_1',
-        name: 'Welcome Email',
-        templateId: '1',
-        delayHours: 0,
-        delayType: 'fixed',
-        position: 1,
-        isActive: true
-      },
-      {
-        id: 'step_2',
-        name: 'First Follow-up',
-        templateId: '4',
-        delayHours: 72,
-        delayType: 'fixed',
-        position: 2,
-        isActive: true
-      }
-    ],
-    isActive: true,
-    createdAt: new Date('2023-01-10').toISOString(),
-    updatedAt: new Date('2023-01-10').toISOString()
+    totalRecipients: 500,
+    opened: 250,
+    clicked: 50,
+    createdAt: '2023-06-15T11:00:00Z',
+    updatedAt: '2023-06-15T11:00:00Z'
   },
   {
-    id: '2',
-    name: 'Post-Service Follow-up',
-    description: 'Feedback and maintenance reminders after service',
-    triggerType: 'event',
-    triggerEvent: 'service_complete',
-    steps: [
-      {
-        id: 'step_1',
-        name: 'Thank You',
-        templateId: '3',
-        delayHours: 24,
-        delayType: 'fixed',
-        position: 1,
-        isActive: true
-      },
-      {
-        id: 'step_2',
-        name: 'Feedback Request',
-        templateId: '4',
-        delayHours: 72,
-        delayType: 'fixed',
-        position: 2,
-        isActive: true,
-        condition: {
-          type: 'event',
-          value: 'email_opened',
-          operator: '='
-        }
-      }
-    ],
-    isActive: true,
-    createdAt: new Date('2023-02-15').toISOString(),
-    updatedAt: new Date('2023-02-15').toISOString()
-  }
+    id: '102',
+    name: 'New Product Launch',
+    subject: 'Introducing Our Latest Innovation',
+    status: 'scheduled',
+    scheduledDate: '2023-06-25T00:00:00Z',
+    sentDate: null,
+    totalRecipients: 300,
+    opened: 150,
+    clicked: 30,
+    createdAt: '2023-06-20T16:45:00Z',
+    updatedAt: '2023-06-20T16:45:00Z'
+  },
 ];
 
-// Email Service
+// Email Templates
 export const emailService = {
-  // Templates
-  getTemplates: async (category?: EmailCategory): Promise<EmailTemplatePreview[]> => {
+  getTemplates: async (): Promise<EmailTemplatePreview[]> => {
+    // return mockTemplates;
     try {
-      console.log("Fetching email templates...", category);
-      
-      // In a real app, this would make a request to your backend
-      // For now, we'll use mock data
-      let templates = [...mockTemplates];
-      
-      if (category) {
-        templates = templates.filter(template => template.category === category);
-      }
-      
-      // Convert to previews
-      const previews: EmailTemplatePreview[] = templates.map(t => ({
-        id: t.id,
-        name: t.name,
-        subject: t.subject,
-        description: t.description,
-        category: t.category,
-        createdAt: t.createdAt,
-        updatedAt: t.updatedAt
-      }));
-      
-      console.log(`Found ${previews.length} templates`);
-      return previews;
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
-      console.error("Error fetching email templates:", error);
-      throw error;
+      console.error('Error fetching email templates:', error);
+      return [];
     }
   },
-  
+
   getTemplateById: async (id: string): Promise<EmailTemplate | null> => {
+    // const template = mockTemplates.find((t) => t.id === id);
+    // return template || null;
     try {
-      console.log(`Fetching email template with ID: ${id}`);
-      
-      // In a real app, this would make a request to your backend
-      const template = mockTemplates.find(t => t.id === id);
-      
-      if (!template) {
-        console.log(`Template with ID ${id} not found`);
-        return null;
-      }
-      
-      console.log(`Found template: ${template.name}`);
-      return template;
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error("Error fetching email template:", error);
-      throw error;
+      console.error('Error fetching email template:', error);
+      return null;
     }
   },
-  
-  createTemplate: async (template: Partial<EmailTemplate>): Promise<EmailTemplate> => {
+
+  createTemplate: async (template: Partial<EmailTemplate>): Promise<EmailTemplate | null> => {
+    // const newTemplate: EmailTemplate = {
+    //   id: Date.now().toString(),
+    //   name: template.name || 'New Template',
+    //   subject: template.subject || '',
+    //   description: template.description || '',
+    //   category: (template.category || 'marketing') as EmailCategory,
+    //   content: template.content || '',
+    //   variables: template.variables || [],
+    //   isArchived: false,
+    //   createdAt: new Date().toISOString(),
+    //   updatedAt: new Date().toISOString(),
+    // };
+    // mockTemplates.push(newTemplate);
+    // return newTemplate;
     try {
-      console.log("Creating new email template");
-      
-      // In a real app, this would make a request to your backend
-      const newTemplate: EmailTemplate = {
-        id: `template_${Date.now()}`,
-        name: template.name || 'Untitled Template',
-        subject: template.subject || '',
-        description: template.description || '',
-        category: template.category || 'custom',
-        content: template.content || '',
-        variables: template.variables || [],
-        isArchived: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Add to mock data
-      mockTemplates.push(newTemplate);
-      
-      console.log(`Created template with ID: ${newTemplate.id}`);
-      return newTemplate;
+      const { data, error } = await supabase
+        .from('email_templates')
+        .insert({
+          name: template.name,
+          subject: template.subject,
+          description: template.description,
+          category: template.category,
+          content: template.content,
+          variables: template.variables,
+          is_archived: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error("Error creating email template:", error);
-      throw error;
+      console.error('Error creating email template:', error);
+      return null;
     }
   },
-  
-  updateTemplate: async (id: string, template: Partial<EmailTemplate>): Promise<EmailTemplate> => {
+
+  updateTemplate: async (id: string, template: Partial<EmailTemplate>): Promise<EmailTemplate | null> => {
+    // const templateIndex = mockTemplates.findIndex((t) => t.id === id);
+    // if (templateIndex === -1) return null;
+    // mockTemplates[templateIndex] = { ...mockTemplates[templateIndex], ...template, updatedAt: new Date().toISOString() };
+    // return mockTemplates[templateIndex];
     try {
-      console.log(`Updating email template with ID: ${id}`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockTemplates.findIndex(t => t.id === id);
-      
-      if (index === -1) {
-        throw new Error(`Template with ID ${id} not found`);
-      }
-      
-      // Update template
-      const updatedTemplate: EmailTemplate = {
-        ...mockTemplates[index],
-        ...template,
-        updatedAt: new Date().toISOString()
-      };
-      
-      mockTemplates[index] = updatedTemplate;
-      
-      console.log(`Updated template: ${updatedTemplate.name}`);
-      return updatedTemplate;
+      const { data, error } = await supabase
+        .from('email_templates')
+        .update({
+          name: template.name,
+          subject: template.subject,
+          description: template.description,
+          category: template.category,
+          content: template.content,
+          variables: template.variables,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error("Error updating email template:", error);
-      throw error;
+      console.error('Error updating email template:', error);
+      return null;
     }
   },
-  
+
   deleteTemplate: async (id: string): Promise<boolean> => {
+    // const templateIndex = mockTemplates.findIndex((t) => t.id === id);
+    // if (templateIndex === -1) return false;
+    // mockTemplates.splice(templateIndex, 1);
+    // return true;
     try {
-      console.log(`Deleting email template with ID: ${id}`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockTemplates.findIndex(t => t.id === id);
-      
-      if (index === -1) {
-        throw new Error(`Template with ID ${id} not found`);
-      }
-      
-      // Remove from mock data
-      mockTemplates.splice(index, 1);
-      
-      console.log(`Deleted template with ID: ${id}`);
+      const { error } = await supabase
+        .from('email_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error deleting email template:", error);
-      throw error;
+      console.error('Error deleting email template:', error);
+      return false;
     }
   },
-  
-  sendTestEmail: async (templateId: string, email: string): Promise<boolean> => {
+
+  // Email Campaigns
+  getCampaigns: async (id?: string): Promise<EmailCampaignPreview[] | EmailCampaign | null> => {
+    // if (id) {
+    //   const campaign = mockCampaigns.find((c) => c.id === id);
+    //   return campaign || null;
+    // }
+    // return mockCampaigns;
     try {
-      console.log(`Sending test email using template ID: ${templateId} to: ${email}`);
-      
-      // In a real app, this would make a request to your backend
-      // For now, we'll just simulate success
-      
-      console.log(`Test email sent to: ${email}`);
+      if (id) {
+        const { data, error } = await supabase
+          .from('email_campaigns')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('email_campaigns')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+      }
+    } catch (error) {
+      console.error('Error fetching email campaigns:', error);
+      return [];
+    }
+  },
+
+  createCampaign: async (campaign: Partial<EmailCampaign>): Promise<EmailCampaign | null> => {
+    // const newCampaign: EmailCampaign = {
+    //   id: Date.now().toString(),
+    //   name: campaign.name || 'New Campaign',
+    //   subject: campaign.subject || '',
+    //   status: 'draft',
+    //   scheduledDate: campaign.scheduledDate || null,
+    //   sentDate: null,
+    //   totalRecipients: 0,
+    //   opened: 0,
+    //   clicked: 0,
+    //   createdAt: new Date().toISOString(),
+    //   updatedAt: new Date().toISOString(),
+    //   templateId: campaign.templateId || '',
+    //   content: campaign.content || '',
+    //   segmentIds: campaign.segmentIds || [],
+    //   recipientIds: campaign.recipientIds || [],
+    //   personalizations: campaign.personalizations || [],
+    //   metadata: campaign.metadata || {},
+    //   abTest: campaign.abTest || null,
+    // };
+    // mockCampaigns.push(newCampaign);
+    // return newCampaign;
+    try {
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .insert({
+          name: campaign.name,
+          subject: campaign.subject,
+          status: 'draft',
+          scheduled_date: campaign.scheduledDate,
+          template_id: campaign.templateId,
+          content: campaign.content,
+          segment_ids: campaign.segmentIds,
+          recipient_ids: campaign.recipientIds,
+          personalizations: campaign.personalizations,
+          metadata: campaign.metadata,
+          ab_test: campaign.abTest,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating email campaign:', error);
+      return null;
+    }
+  },
+
+  updateCampaign: async (id: string, campaign: Partial<EmailCampaign>): Promise<EmailCampaign | null> => {
+    // const campaignIndex = mockCampaigns.findIndex((c) => c.id === id);
+    // if (campaignIndex === -1) return null;
+    // mockCampaigns[campaignIndex] = { ...mockCampaigns[campaignIndex], ...campaign, updatedAt: new Date().toISOString() };
+    // return mockCampaigns[campaignIndex];
+    try {
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .update({
+          name: campaign.name,
+          subject: campaign.subject,
+          status: campaign.status,
+          scheduled_date: campaign.scheduledDate,
+          template_id: campaign.templateId,
+          content: campaign.content,
+          segment_ids: campaign.segmentIds,
+          recipient_ids: campaign.recipientIds,
+          personalizations: campaign.personalizations,
+          metadata: campaign.metadata,
+          ab_test: campaign.abTest,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating email campaign:', error);
+      return null;
+    }
+  },
+
+  deleteCampaign: async (id: string): Promise<boolean> => {
+    // const campaignIndex = mockCampaigns.findIndex((c) => c.id === id);
+    // if (campaignIndex === -1) return false;
+    // mockCampaigns.splice(campaignIndex, 1);
+    // return true;
+    try {
+      const { error } = await supabase
+        .from('email_campaigns')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error sending test email:", error);
-      throw error;
+      console.error('Error deleting email campaign:', error);
+      return false;
     }
   },
-  
-  // Campaigns
-  getCampaigns: async (campaignId?: string): Promise<EmailCampaignPreview[] | EmailCampaign> => {
+
+  scheduleCampaign: async (id: string, date: string): Promise<boolean> => {
     try {
-      console.log("Fetching email campaigns...");
-      
-      // If ID provided, return a single campaign
-      if (campaignId) {
-        const campaign = mockCampaigns.find(c => c.id === campaignId);
-        
-        if (!campaign) {
-          throw new Error(`Campaign with ID ${campaignId} not found`);
-        }
-        
-        // In a real app, we'd return the full campaign details
-        // Here we just mock it by adding the minimal fields needed for EmailCampaign type
-        const fullCampaign: EmailCampaign = {
-          ...campaign,
-          templateId: '1', // Mock template ID
-          content: '<p>Campaign content</p>',
-          segmentIds: [],
-          recipientIds: [],
-          personalizations: [],
-          metadata: {},
-          abTest: null
-        };
-        
-        console.log(`Found campaign: ${campaign.name}`);
-        return fullCampaign;
-      }
-      
-      // Otherwise return all campaigns
-      let campaigns = [...mockCampaigns];
-      
-      console.log(`Found ${campaigns.length} campaigns`);
-      return campaigns;
-    } catch (error) {
-      console.error("Error fetching email campaigns:", error);
-      throw error;
-    }
-  },
-  
-  getCampaignAnalytics: async (campaignId: string): Promise<EmailCampaignAnalytics> => {
-    try {
-      console.log(`Fetching analytics for campaign ID: ${campaignId}`);
-      
-      // Find campaign
-      const campaign = mockCampaigns.find(c => c.id === campaignId);
-      
-      if (!campaign) {
-        throw new Error(`Campaign with ID ${campaignId} not found`);
-      }
-      
-      // In a real app, this would fetch detailed analytics
-      const mockAnalytics: EmailCampaignAnalytics = {
-        campaignId,
-        name: campaign.name,
-        sent: campaign.totalRecipients,
-        delivered: campaign.totalRecipients - Math.floor(campaign.totalRecipients * 0.02), // 2% bounce rate
-        bounced: Math.floor(campaign.totalRecipients * 0.02),
-        opened: campaign.opened,
-        clicked: campaign.clicked,
-        unsubscribed: Math.floor(campaign.totalRecipients * 0.01),
-        complained: Math.floor(campaign.totalRecipients * 0.005),
-        openRate: campaign.totalRecipients > 0 ? campaign.opened / campaign.totalRecipients : 0,
-        clickRate: campaign.totalRecipients > 0 ? campaign.clicked / campaign.totalRecipients : 0,
-        clickToOpenRate: campaign.opened > 0 ? campaign.clicked / campaign.opened : 0,
-        unsubscribeRate: campaign.totalRecipients > 0 ? Math.floor(campaign.totalRecipients * 0.01) / campaign.totalRecipients : 0,
-        bouncedRate: campaign.totalRecipients > 0 ? Math.floor(campaign.totalRecipients * 0.02) / campaign.totalRecipients : 0,
-        timeline: [
-          { date: '2023-05-01', opens: 42, clicks: 18 },
-          { date: '2023-05-02', opens: 35, clicks: 14 },
-          { date: '2023-05-03', opens: 28, clicks: 11 },
-          { date: '2023-05-04', opens: 21, clicks: 8 },
-          { date: '2023-05-05', opens: 16, clicks: 7 }
-        ]
-      };
-      
-      console.log(`Fetched analytics for campaign: ${campaign.name}`);
-      return mockAnalytics;
-    } catch (error) {
-      console.error("Error fetching campaign analytics:", error);
-      throw error;
-    }
-  },
-  
-  scheduleCampaign: async (campaignId: string, scheduledDate: string): Promise<boolean> => {
-    try {
-      console.log(`Scheduling campaign ID: ${campaignId} for ${scheduledDate}`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockCampaigns.findIndex(c => c.id === campaignId);
-      
-      if (index === -1) {
-        throw new Error(`Campaign with ID ${campaignId} not found`);
-      }
-      
-      // Update campaign
-      mockCampaigns[index] = {
-        ...mockCampaigns[index],
-        status: 'scheduled',
-        scheduledDate,
-        updatedAt: new Date().toISOString()
-      };
-      
-      console.log(`Scheduled campaign: ${mockCampaigns[index].name}`);
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .update({
+          scheduled_date: date,
+          status: 'scheduled',
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error scheduling campaign:", error);
-      throw error;
+      console.error('Error scheduling email campaign:', error);
+      return false;
     }
   },
-  
-  sendCampaignNow: async (campaignId: string): Promise<boolean> => {
+
+  sendCampaignNow: async (id: string): Promise<boolean> => {
     try {
-      console.log(`Sending campaign ID: ${campaignId} now`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockCampaigns.findIndex(c => c.id === campaignId);
-      
-      if (index === -1) {
-        throw new Error(`Campaign with ID ${campaignId} not found`);
-      }
-      
-      // Update campaign
-      mockCampaigns[index] = {
-        ...mockCampaigns[index],
-        status: 'sending',
-        scheduledDate: null,
-        sentDate: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Simulate campaign completion after 5 seconds
-      setTimeout(() => {
-        mockCampaigns[index] = {
-          ...mockCampaigns[index],
-          status: 'sent',
-          updatedAt: new Date().toISOString()
-        };
-        console.log(`Campaign ${campaignId} completed`);
-      }, 5000);
-      
-      console.log(`Started sending campaign: ${mockCampaigns[index].name}`);
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .update({
+          status: 'sending',
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error sending campaign:", error);
-      throw error;
+      console.error('Error sending email campaign:', error);
+      return false;
     }
   },
-  
-  pauseCampaign: async (campaignId: string): Promise<boolean> => {
+
+  pauseCampaign: async (id: string): Promise<boolean> => {
     try {
-      console.log(`Pausing campaign ID: ${campaignId}`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockCampaigns.findIndex(c => c.id === campaignId);
-      
-      if (index === -1) {
-        throw new Error(`Campaign with ID ${campaignId} not found`);
-      }
-      
-      // Update campaign
-      mockCampaigns[index] = {
-        ...mockCampaigns[index],
-        status: 'paused',
-        updatedAt: new Date().toISOString()
-      };
-      
-      console.log(`Paused campaign: ${mockCampaigns[index].name}`);
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .update({
+          status: 'paused',
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error pausing campaign:", error);
-      throw error;
+      console.error('Error pausing email campaign:', error);
+      return false;
     }
   },
-  
-  cancelCampaign: async (campaignId: string): Promise<boolean> => {
+
+  cancelCampaign: async (id: string): Promise<boolean> => {
     try {
-      console.log(`Cancelling campaign ID: ${campaignId}`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockCampaigns.findIndex(c => c.id === campaignId);
-      
-      if (index === -1) {
-        throw new Error(`Campaign with ID ${campaignId} not found`);
-      }
-      
-      // Update campaign
-      mockCampaigns[index] = {
-        ...mockCampaigns[index],
-        status: 'cancelled',
-        updatedAt: new Date().toISOString()
-      };
-      
-      console.log(`Cancelled campaign: ${mockCampaigns[index].name}`);
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .update({
+          status: 'cancelled',
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error cancelling campaign:", error);
-      throw error;
+      console.error('Error cancelling email campaign:', error);
+      return false;
     }
   },
-  
-  // Sequences
+
+  // Email Sequences
   getSequences: async (): Promise<EmailSequence[]> => {
     try {
-      console.log("Fetching email sequences...");
-      
-      // In a real app, this would make a request to your backend
-      const sequences = [...mockSequences];
-      
-      console.log(`Found ${sequences.length} sequences`);
-      return sequences;
+      const { data, error } = await supabase
+        .from('email_sequences')
+        .select(`
+          *,
+          steps:email_sequence_steps(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
-      console.error("Error fetching email sequences:", error);
-      throw error;
+      console.error('Error fetching email sequences:', error);
+      return [];
     }
   },
-  
+
   getSequenceById: async (id: string): Promise<EmailSequence | null> => {
     try {
-      console.log(`Fetching email sequence with ID: ${id}`);
-      
-      // In a real app, this would make a request to your backend
-      const sequence = mockSequences.find(s => s.id === id);
-      
-      if (!sequence) {
-        console.log(`Sequence with ID ${id} not found`);
-        return null;
-      }
-      
-      console.log(`Found sequence: ${sequence.name}`);
-      return sequence;
-    } catch (error) {
-      console.error("Error fetching email sequence:", error);
-      throw error;
-    }
-  },
-  
-  createSequence: async (sequence: Partial<EmailSequence>): Promise<EmailSequence> => {
-    try {
-      console.log("Creating new email sequence");
-      
-      // In a real app, this would make a request to your backend
-      const steps = sequence.steps || [];
-      const typedSteps: EmailSequenceStep[] = steps.map(step => ({
-        ...step,
-        delayType: (step.delayType as "fixed" | "business_days") || "fixed"
-      }));
+      const { data, error } = await supabase
+        .from('email_sequences')
+        .select(`
+          *,
+          steps:email_sequence_steps(*)
+        `)
+        .eq('id', id)
+        .single();
 
-      const newSequence: EmailSequence = {
-        id: `sequence_${Date.now()}`,
-        name: sequence.name || 'Untitled Sequence',
-        description: sequence.description || '',
-        triggerType: sequence.triggerType || 'manual',
-        triggerEvent: sequence.triggerType === 'event' ? sequence.triggerEvent : undefined,
-        steps: typedSteps,
-        isActive: sequence.isActive || false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Add to mock data
-      mockSequences.push(newSequence);
-      
-      console.log(`Created sequence with ID: ${newSequence.id}`);
-      return newSequence;
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error("Error creating email sequence:", error);
-      throw error;
+      console.error('Error fetching email sequence:', error);
+      return null;
     }
   },
-  
-  updateSequence: async (id: string, sequence: Partial<EmailSequence>): Promise<EmailSequence> => {
+
+  createSequence: async (sequence: Partial<EmailSequence>): Promise<EmailSequence | null> => {
     try {
-      console.log(`Updating email sequence with ID: ${id}`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockSequences.findIndex(s => s.id === id);
-      
-      if (index === -1) {
-        throw new Error(`Sequence with ID ${id} not found`);
+      // First create the sequence
+      const { data: sequenceData, error: sequenceError } = await supabase
+        .from('email_sequences')
+        .insert({
+          name: sequence.name,
+          description: sequence.description,
+          trigger_type: sequence.triggerType,
+          trigger_event: sequence.triggerEvent,
+          is_active: sequence.isActive
+        })
+        .select()
+        .single();
+
+      if (sequenceError) throw sequenceError;
+
+      // Then create the steps if any
+      if (sequence.steps && sequence.steps.length > 0) {
+        const stepsToInsert = sequence.steps.map(step => ({
+          sequence_id: sequenceData.id,
+          name: step.name,
+          template_id: step.templateId,
+          delay_hours: step.delayHours,
+          delay_type: step.delayType,
+          position: step.position,
+          is_active: step.isActive,
+          condition_type: step.condition?.type,
+          condition_value: step.condition?.value,
+          condition_operator: step.condition?.operator
+        }));
+
+        const { error: stepsError } = await supabase
+          .from('email_sequence_steps')
+          .insert(stepsToInsert);
+
+        if (stepsError) throw stepsError;
       }
-      
-      // Update sequence ensuring correct types
-      const updatedSequence: EmailSequence = {
-        ...mockSequences[index],
-        ...sequence,
-        triggerType: (sequence.triggerType as "manual" | "event" | "schedule") || mockSequences[index].triggerType,
-        steps: sequence.steps ? sequence.steps.map(step => ({
-          ...step,
-          delayType: (step.delayType as "fixed" | "business_days") || "fixed"
-        })) : mockSequences[index].steps,
-        updatedAt: new Date().toISOString()
-      };
-      
-      mockSequences[index] = updatedSequence;
-      
-      console.log(`Updated sequence: ${updatedSequence.name}`);
-      return updatedSequence;
+
+      // Return the full sequence with steps
+      return await emailService.getSequenceById(sequenceData.id);
     } catch (error) {
-      console.error("Error updating email sequence:", error);
-      throw error;
+      console.error('Error creating email sequence:', error);
+      return null;
     }
   },
-  
+
+  updateSequence: async (id: string, sequence: Partial<EmailSequence>): Promise<EmailSequence | null> => {
+    try {
+      // Update the sequence
+      const { error: sequenceError } = await supabase
+        .from('email_sequences')
+        .update({
+          name: sequence.name,
+          description: sequence.description,
+          trigger_type: sequence.triggerType,
+          trigger_event: sequence.triggerEvent,
+          is_active: sequence.isActive
+        })
+        .eq('id', id);
+
+      if (sequenceError) throw sequenceError;
+
+      // Handle steps updates if provided
+      if (sequence.steps) {
+        // Get existing steps
+        const { data: existingSteps, error: fetchError } = await supabase
+          .from('email_sequence_steps')
+          .select('*')
+          .eq('sequence_id', id);
+
+        if (fetchError) throw fetchError;
+
+        // Identify steps to delete, update, or insert
+        const existingIds = existingSteps?.map(step => step.id) || [];
+        const newStepIds = sequence.steps.map(step => step.id);
+        
+        const stepsToDelete = existingIds.filter(id => !newStepIds.includes(id));
+        const stepsToUpdate = sequence.steps.filter(step => existingIds.includes(step.id));
+        const stepsToInsert = sequence.steps.filter(step => !existingIds.includes(step.id) && !step.id.startsWith('temp-'));
+
+        // Delete steps
+        if (stepsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('email_sequence_steps')
+            .delete()
+            .in('id', stepsToDelete);
+
+          if (deleteError) throw deleteError;
+        }
+
+        // Update steps
+        for (const step of stepsToUpdate) {
+          const { error: updateError } = await supabase
+            .from('email_sequence_steps')
+            .update({
+              name: step.name,
+              template_id: step.templateId,
+              delay_hours: step.delayHours,
+              delay_type: step.delayType,
+              position: step.position,
+              is_active: step.isActive,
+              condition_type: step.condition?.type,
+              condition_value: step.condition?.value,
+              condition_operator: step.condition?.operator
+            })
+            .eq('id', step.id);
+
+          if (updateError) throw updateError;
+        }
+
+        // Insert new steps
+        if (stepsToInsert.length > 0) {
+          const newSteps = stepsToInsert.map(step => ({
+            sequence_id: id,
+            name: step.name,
+            template_id: step.templateId,
+            delay_hours: step.delayHours,
+            delay_type: step.delayType,
+            position: step.position,
+            is_active: step.isActive,
+            condition_type: step.condition?.type,
+            condition_value: step.condition?.value,
+            condition_operator: step.condition?.operator
+          }));
+
+          const { error: insertError } = await supabase
+            .from('email_sequence_steps')
+            .insert(newSteps);
+
+          if (insertError) throw insertError;
+        }
+
+        // Insert temporary steps (new steps without real IDs)
+        const tempSteps = sequence.steps.filter(step => step.id.startsWith('temp-'));
+        if (tempSteps.length > 0) {
+          const newTempSteps = tempSteps.map(step => ({
+            sequence_id: id,
+            name: step.name,
+            template_id: step.templateId,
+            delay_hours: step.delayHours,
+            delay_type: step.delayType,
+            position: step.position,
+            is_active: step.isActive,
+            condition_type: step.condition?.type,
+            condition_value: step.condition?.value,
+            condition_operator: step.condition?.operator
+          }));
+
+          const { error: insertTempError } = await supabase
+            .from('email_sequence_steps')
+            .insert(newTempSteps);
+
+          if (insertTempError) throw insertTempError;
+        }
+      }
+
+      // Return the updated sequence with steps
+      return await emailService.getSequenceById(id);
+    } catch (error) {
+      console.error('Error updating email sequence:', error);
+      return null;
+    }
+  },
+
   deleteSequence: async (id: string): Promise<boolean> => {
     try {
-      console.log(`Deleting email sequence with ID: ${id}`);
-      
-      // In a real app, this would make a request to your backend
-      const index = mockSequences.findIndex(s => s.id === id);
-      
-      if (index === -1) {
-        throw new Error(`Sequence with ID ${id} not found`);
-      }
-      
-      // Remove from mock data
-      mockSequences.splice(index, 1);
-      
-      console.log(`Deleted sequence with ID: ${id}`);
+      // First delete all steps
+      const { error: stepsError } = await supabase
+        .from('email_sequence_steps')
+        .delete()
+        .eq('sequence_id', id);
+
+      if (stepsError) throw stepsError;
+
+      // Then delete the sequence
+      const { error: sequenceError } = await supabase
+        .from('email_sequences')
+        .delete()
+        .eq('id', id);
+
+      if (sequenceError) throw sequenceError;
+
       return true;
     } catch (error) {
-      console.error("Error deleting email sequence:", error);
-      throw error;
+      console.error('Error deleting email sequence:', error);
+      return false;
     }
   },
-  
-  getSequenceAnalytics: async (sequenceId: string): Promise<EmailSequenceAnalytics> => {
-    try {
-      console.log(`Fetching analytics for sequence ID: ${sequenceId}`);
-      
-      // Find sequence
-      const sequence = mockSequences.find(s => s.id === sequenceId);
-      
-      if (!sequence) {
-        throw new Error(`Sequence with ID ${sequenceId} not found`);
-      }
-      
-      // In a real app, this would fetch detailed analytics
-      const mockAnalytics: EmailSequenceAnalytics = {
-        id: `analytics_${sequenceId}`,
-        sequenceId,
-        totalEnrollments: 125,
-        activeEnrollments: 48,
-        completedEnrollments: 77,
-        conversionRate: 0.62,
-        averageTimeToComplete: 4.5, // days
-        updatedAt: new Date().toISOString()
-      };
-      
-      console.log(`Fetched analytics for sequence: ${sequence.name}`);
-      return mockAnalytics;
-    } catch (error) {
-      console.error("Error fetching sequence analytics:", error);
-      throw error;
-    }
-  },
-  
+
   enrollCustomerInSequence: async (sequenceId: string, customerId: string): Promise<boolean> => {
     try {
-      console.log(`Enrolling customer ${customerId} in sequence ${sequenceId}`);
-      // Mock implementation
+      // Get the sequence to check if it's active
+      const { data: sequence, error: sequenceError } = await supabase
+        .from('email_sequences')
+        .select('*, steps:email_sequence_steps(*)')
+        .eq('id', sequenceId)
+        .single();
+
+      if (sequenceError) throw sequenceError;
+
+      // Check if sequence is active
+      if (!sequence.is_active) {
+        throw new Error('Cannot enroll customer in inactive sequence');
+      }
+
+      // Get the first step
+      const firstStep = sequence.steps.sort((a, b) => a.position - b.position)[0];
+      if (!firstStep) {
+        throw new Error('Sequence has no steps');
+      }
+
+      // Calculate next send time based on the first step
+      const now = new Date();
+      let nextSendTime;
+
+      if (firstStep.delay_hours > 0) {
+        // Use delay for the first step
+        if (firstStep.delay_type === 'fixed') {
+          nextSendTime = new Date(now.getTime() + firstStep.delay_hours * 60 * 60 * 1000);
+        } else {
+          // Business days logic would be implemented here
+          // For simplicity, using fixed delay for now
+          nextSendTime = new Date(now.getTime() + firstStep.delay_hours * 60 * 60 * 1000);
+        }
+      } else {
+        // Send immediately
+        nextSendTime = now;
+      }
+
+      // Create enrollment
+      const { error: enrollError } = await supabase
+        .from('email_sequence_enrollments')
+        .insert({
+          sequence_id: sequenceId,
+          customer_id: customerId,
+          current_step_id: firstStep.id,
+          status: 'active',
+          started_at: now.toISOString(),
+          next_send_time: nextSendTime.toISOString()
+        });
+
+      if (enrollError) throw enrollError;
+
+      // Update analytics
+      await emailService.updateSequenceAnalytics(sequenceId);
+
       return true;
     } catch (error) {
-      console.error("Error enrolling customer in sequence:", error);
-      throw error;
+      console.error('Error enrolling customer in sequence:', error);
+      return false;
     }
   },
-  
+
   pauseCustomerEnrollment: async (enrollmentId: string): Promise<boolean> => {
     try {
-      console.log(`Pausing enrollment ${enrollmentId}`);
-      // Mock implementation
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({
+          status: 'paused'
+        })
+        .eq('id', enrollmentId);
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error pausing enrollment:", error);
-      throw error;
+      console.error('Error pausing customer enrollment:', error);
+      return false;
     }
   },
-  
+
   resumeCustomerEnrollment: async (enrollmentId: string): Promise<boolean> => {
     try {
-      console.log(`Resuming enrollment ${enrollmentId}`);
-      // Mock implementation
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({
+          status: 'active',
+          // Set next send time to now for immediate processing
+          next_send_time: new Date().toISOString()
+        })
+        .eq('id', enrollmentId);
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error resuming enrollment:", error);
-      throw error;
+      console.error('Error resuming customer enrollment:', error);
+      return false;
     }
   },
-  
+
   cancelCustomerEnrollment: async (enrollmentId: string): Promise<boolean> => {
     try {
-      console.log(`Cancelling enrollment ${enrollmentId}`);
-      // Mock implementation
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({
+          status: 'cancelled'
+        })
+        .eq('id', enrollmentId);
+
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error cancelling enrollment:", error);
-      throw error;
+      console.error('Error cancelling customer enrollment:', error);
+      return false;
     }
-  }
+  },
+
+  getCustomerEnrollments: async (customerId: string): Promise<EmailSequenceEnrollment[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .select(`
+          *,
+          sequence:email_sequences(id, name)
+        `)
+        .eq('customer_id', customerId);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching customer enrollments:', error);
+      return [];
+    }
+  },
+
+  getSequenceAnalytics: async (sequenceId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_analytics')
+        .select('*')
+        .eq('sequence_id', sequenceId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "Row not found"
+      
+      return data || {
+        sequence_id: sequenceId,
+        total_enrollments: 0,
+        active_enrollments: 0,
+        completed_enrollments: 0,
+        average_time_to_complete: null,
+        updated_at: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error fetching sequence analytics:', error);
+      return null;
+    }
+  },
+
+  updateSequenceAnalytics: async (sequenceId: string): Promise<boolean> => {
+    try {
+      // This function would normally be called by the edge function
+      // But we provide a client-side version for immediate feedback
+      
+      // Call the edge function to update analytics
+      const response = await fetch(`${process.env.SUPABASE_URL}/functions/v1/process-email-sequences`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ sequenceId, action: 'updateAnalytics' })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update analytics: ${response.statusText}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating sequence analytics:', error);
+      return false;
+    }
+  },
+
+  // Mock methods for testing purposes
+  // You should replace these with actual implementations
+  // when you connect to a real email service.
+  sendTestEmail: async (templateId: string, recipientEmail: string): Promise<boolean> => {
+    console.log(`Sending test email using template ${templateId} to ${recipientEmail}`);
+    return true;
+  },
 };

@@ -1,19 +1,29 @@
 
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
-import { EmailSequence, EmailTemplate } from "@/types/email";
+import { EmailSequence, EmailSequenceStep, EmailSequenceEnrollment, EmailSequenceAnalytics } from "@/types/email";
 import { useToast } from "@/hooks/use-toast";
 
 export const useEmailSequences = () => {
   const [sequences, setSequences] = useState<EmailSequence[]>([]);
   const [currentSequence, setCurrentSequence] = useState<EmailSequence | null>(null);
+  const [analytics, setAnalytics] = useState<EmailSequenceAnalytics | null>(null);
+  const [enrollments, setEnrollments] = useState<EmailSequenceEnrollment[]>([]);
   const [loading, setLoading] = useState(false);
   const [sequenceLoading, setSequenceLoading] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchSequences();
   }, []);
+
+  useEffect(() => {
+    if (currentSequence) {
+      fetchSequenceAnalytics(currentSequence.id);
+    }
+  }, [currentSequence]);
 
   const fetchSequences = async () => {
     setLoading(true);
@@ -51,14 +61,54 @@ export const useEmailSequences = () => {
     }
   };
 
+  const fetchSequenceAnalytics = async (sequenceId: string) => {
+    setAnalyticsLoading(true);
+    try {
+      const data = await emailService.getSequenceAnalytics(sequenceId);
+      setAnalytics(data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching sequence analytics:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load sequence analytics",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchCustomerEnrollments = async (customerId: string) => {
+    setEnrollmentsLoading(true);
+    try {
+      const data = await emailService.getCustomerEnrollments(customerId);
+      setEnrollments(data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching customer enrollments:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load customer enrollments",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setEnrollmentsLoading(false);
+    }
+  };
+
   const createSequence = async (sequence: Partial<EmailSequence>) => {
     try {
       const newSequence = await emailService.createSequence(sequence);
-      setSequences((prev) => [newSequence, ...prev]);
-      toast({
-        title: "Success",
-        description: "Email sequence created successfully",
-      });
+      if (newSequence) {
+        setSequences((prev) => [newSequence, ...prev]);
+        toast({
+          title: "Success",
+          description: "Email sequence created successfully",
+        });
+      }
       return newSequence;
     } catch (error) {
       console.error("Error creating email sequence:", error);
@@ -74,16 +124,18 @@ export const useEmailSequences = () => {
   const updateSequence = async (id: string, sequence: Partial<EmailSequence>) => {
     try {
       const updatedSequence = await emailService.updateSequence(id, sequence);
-      setSequences((prev) => 
-        prev.map((s) => s.id === id ? updatedSequence : s)
-      );
-      if (currentSequence && currentSequence.id === id) {
-        setCurrentSequence(updatedSequence);
+      if (updatedSequence) {
+        setSequences((prev) => 
+          prev.map((s) => s.id === id ? updatedSequence : s)
+        );
+        if (currentSequence && currentSequence.id === id) {
+          setCurrentSequence(updatedSequence);
+        }
+        toast({
+          title: "Success",
+          description: "Email sequence updated successfully",
+        });
       }
-      toast({
-        title: "Success",
-        description: "Email sequence updated successfully",
-      });
       return updatedSequence;
     } catch (error) {
       console.error("Error updating email sequence:", error);
@@ -121,12 +173,18 @@ export const useEmailSequences = () => {
 
   const enrollCustomer = async (sequenceId: string, customerId: string) => {
     try {
-      await emailService.enrollCustomerInSequence(sequenceId, customerId);
-      toast({
-        title: "Success",
-        description: "Customer enrolled in sequence successfully",
-      });
-      return true;
+      const success = await emailService.enrollCustomerInSequence(sequenceId, customerId);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Customer enrolled in sequence successfully",
+        });
+        // Refresh sequence analytics
+        if (currentSequence && currentSequence.id === sequenceId) {
+          fetchSequenceAnalytics(sequenceId);
+        }
+      }
+      return success;
     } catch (error) {
       console.error("Error enrolling customer in sequence:", error);
       toast({
@@ -138,16 +196,100 @@ export const useEmailSequences = () => {
     }
   };
 
+  const pauseEnrollment = async (enrollmentId: string) => {
+    try {
+      const success = await emailService.pauseCustomerEnrollment(enrollmentId);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Enrollment paused successfully",
+        });
+        // Update enrollments list
+        setEnrollments(prev => 
+          prev.map(e => e.id === enrollmentId ? { ...e, status: 'paused' } : e)
+        );
+      }
+      return success;
+    } catch (error) {
+      console.error("Error pausing enrollment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to pause enrollment",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const resumeEnrollment = async (enrollmentId: string) => {
+    try {
+      const success = await emailService.resumeCustomerEnrollment(enrollmentId);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Enrollment resumed successfully",
+        });
+        // Update enrollments list
+        setEnrollments(prev => 
+          prev.map(e => e.id === enrollmentId ? { ...e, status: 'active' } : e)
+        );
+      }
+      return success;
+    } catch (error) {
+      console.error("Error resuming enrollment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to resume enrollment",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const cancelEnrollment = async (enrollmentId: string) => {
+    try {
+      const success = await emailService.cancelCustomerEnrollment(enrollmentId);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Enrollment cancelled successfully",
+        });
+        // Update enrollments list
+        setEnrollments(prev => 
+          prev.map(e => e.id === enrollmentId ? { ...e, status: 'cancelled' } : e)
+        );
+      }
+      return success;
+    } catch (error) {
+      console.error("Error cancelling enrollment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel enrollment",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   return {
     sequences,
     currentSequence,
+    analytics,
+    enrollments,
     loading,
     sequenceLoading,
+    analyticsLoading,
+    enrollmentsLoading,
     fetchSequences,
     fetchSequenceById,
+    fetchSequenceAnalytics,
+    fetchCustomerEnrollments,
     createSequence,
     updateSequence,
     deleteSequence,
     enrollCustomer,
+    pauseEnrollment,
+    resumeEnrollment,
+    cancelEnrollment
   };
 };

@@ -1,3 +1,4 @@
+
 export type EmailTemplateVariable = {
   name: string;
   defaultValue: string;
