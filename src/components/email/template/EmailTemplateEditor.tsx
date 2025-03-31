@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EmailTemplate, EmailCategory, EmailTemplateVariable } from "@/types/email";
-import { Plus, X, Save, Send } from "lucide-react";
+import { Plus, X, Save, Send, MessageSquare, Code, Eye } from "lucide-react";
 
 const emailCategoryOptions: { value: EmailCategory; label: string }[] = [
   { value: 'transactional', label: 'Transactional' },
@@ -71,15 +72,15 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         name: template.name,
         subject: template.subject,
         description: template.description || '',
-        category: template.category,
-        content: template.content,
+        category: template.category || 'marketing',
+        content: template.content || '',
       });
       
       if (template.variables) {
         setVariables(template.variables);
       }
     }
-  }, [template]);
+  }, [template, form]);
 
   const handleAddVariable = () => {
     if (!newVariableName) return;
@@ -270,9 +271,18 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
             <CardTitle>Template Content</CardTitle>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList>
-                <TabsTrigger value="editor">Editor</TabsTrigger>
-                <TabsTrigger value="variables">Variables</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
+                <TabsTrigger value="editor">
+                  <Code className="h-4 w-4 mr-2" />
+                  Editor
+                </TabsTrigger>
+                <TabsTrigger value="variables">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Variables
+                </TabsTrigger>
+                <TabsTrigger value="preview">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </CardHeader>
@@ -325,7 +335,7 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                           <div>
                             <p className="font-medium">&#123;&#123;{variable.name}&#125;&#125;</p>
                             <p className="text-sm text-muted-foreground">{variable.description}</p>
-                            <div className="text-sm text-muted-foreground mb-2">
+                            <div className="text-sm text-muted-foreground">
                               Default: {variable.default_value || 'None'}
                             </div>
                           </div>
