@@ -65,7 +65,11 @@ export const useEmailCampaignAnalytics = () => {
       const campaignWithBody: EmailCampaign = {
         ...campaignData,
         body: campaignData.content || '', // Using content as body or empty string if not available
-        status: campaignData.status as EmailCampaignStatus // Explicitly cast to EmailCampaignStatus
+        status: campaignData.status as EmailCampaignStatus, // Explicitly cast to EmailCampaignStatus
+        // Convert recipient_ids from Json to string[]
+        recipient_ids: Array.isArray(campaignData.recipient_ids) 
+          ? campaignData.recipient_ids as string[] 
+          : []
       };
       
       setCampaignDetails(campaignWithBody);
