@@ -96,21 +96,7 @@ serve(async (req) => {
         .eq("tracking_id", trackingId);
         
       // Update campaign analytics
-      await req.supabaseClient.rpc("increment_campaign_clicks", { 
-        campaign_id: campaignId,
-        device_type: deviceType,
-        country: geoData.country || null,
-        url_domain: linkData.domain
-      });
-      
-      // Also update analytics aggregates for various dimensions
-      await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'device', deviceType);
-      await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'link', linkData.domain);
-      if (geoData.country) {
-        await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'country', geoData.country);
-      }
-      // Add tracking for email client
-      await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'email_client', emailClient);
+      await incrementCampaignClicks(req.supabaseClient, campaignId);
     }
   } catch (error) {
     console.error("Error in email click tracking:", error);
@@ -126,40 +112,48 @@ serve(async (req) => {
   });
 });
 
-async function updateAnalyticsAggregates(supabase, campaignId, dimension, value) {
+async function incrementCampaignClicks(supabase, campaignId) {
   try {
-    // Check if the aggregate record exists
-    const { data, error } = await supabase
-      .from("email_analytics_aggregates")
-      .select("*")
+    // Get the current analytics
+    const { data: analytics, error: getError } = await supabase
+      .from("email_campaign_analytics")
+      .select("clicked, click_rate, opened, click_to_open_rate, sent")
       .eq("campaign_id", campaignId)
-      .eq("dimension", dimension)
-      .eq("value", value)
       .single();
     
-    if (error && error.code !== 'PGRST116') {
-      console.error(`Error checking analytics aggregates for ${dimension}:`, error);
+    if (getError || !analytics) {
+      console.error("Error fetching analytics:", getError);
       return;
     }
     
-    if (data) {
-      // Update existing record
-      await supabase
-        .from("email_analytics_aggregates")
-        .update({ count: data.count + 1 })
-        .eq("id", data.id);
-    } else {
-      // Create new record
-      await supabase
-        .from("email_analytics_aggregates")
-        .insert({
-          campaign_id: campaignId,
-          dimension: dimension,
-          value: value,
-          count: 1
-        });
+    // Calculate new values
+    const clicked = (analytics.clicked || 0) + 1;
+    const sent = analytics.sent || 0;
+    const opened = analytics.opened || 0;
+    const clickRate = sent > 0 ? Math.round((clicked / sent) * 100) : 0;
+    const clickToOpenRate = opened > 0 ? Math.round((clicked / opened) * 100) : 0;
+    
+    // Update analytics
+    const { error: updateError } = await supabase
+      .from("email_campaign_analytics")
+      .update({ 
+        clicked: clicked,
+        click_rate: clickRate,
+        click_to_open_rate: clickToOpenRate
+      })
+      .eq("campaign_id", campaignId);
+    
+    if (updateError) {
+      console.error("Error updating analytics:", updateError);
     }
+    
+    // Also update the campaign
+    await supabase
+      .from("email_campaigns")
+      .update({ clicked: clicked })
+      .eq("id", campaignId);
+      
   } catch (error) {
-    console.error(`Error updating analytics aggregates for ${dimension}:`, error);
+    console.error("Error in incrementCampaignClicks:", error);
   }
 }
