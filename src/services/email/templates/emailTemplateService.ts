@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { EmailTemplate, EmailCategory } from '@/types/email';
 import { GenericResponse } from '../utils/supabaseHelper';
@@ -95,10 +94,12 @@ export const emailTemplateService = {
         .insert({
           name: template.name || 'Untitled Template',
           subject: template.subject || '',
-          description: template.description,
+          content: template.content || template.body,
           category: template.category || 'marketing',
-          content: template.content || '',
+          description: template.description,
           variables: variables,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -110,9 +111,10 @@ export const emailTemplateService = {
         id: data.id,
         name: data.name,
         subject: data.subject,
-        description: data.description || '',
-        category: data.category as EmailCategory,
         content: data.content,
+        body: data.content,
+        category: data.category as EmailCategory,
+        description: data.description,
         variables: data.variables ? 
           (typeof data.variables === 'string' ? 
             JSON.parse(data.variables) : data.variables) : [],
@@ -144,9 +146,9 @@ export const emailTemplateService = {
         .update({
           name: updates.name,
           subject: updates.subject,
-          description: updates.description,
-          category: updates.category,
           content: updates.content,
+          category: updates.category,
+          description: updates.description,
           variables: variables,
           is_archived: updates.is_archived
         })
@@ -161,9 +163,10 @@ export const emailTemplateService = {
         id: data.id,
         name: data.name,
         subject: data.subject,
-        description: data.description || '',
-        category: data.category as EmailCategory,
         content: data.content,
+        body: data.content,
+        category: data.category as EmailCategory,
+        description: data.description,
         variables: data.variables ? 
           (typeof data.variables === 'string' ? 
             JSON.parse(data.variables) : data.variables) : [],

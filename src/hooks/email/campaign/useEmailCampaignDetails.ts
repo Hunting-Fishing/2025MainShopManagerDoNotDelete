@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { EmailCampaign } from '@/types/email';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { validateCampaignStatus, parseJsonField, parseABTest } from './utils/emailCampaignUtils';
-import { emailService } from '@/services/email/emailService';
+import { emailService } from '@/services/email';
 
 export const useEmailCampaignDetails = () => {
   const [campaign, setCampaign] = useState<EmailCampaign | null>(null);

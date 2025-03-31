@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { EmailSequence, EmailSequenceStep, EmailSequenceAnalytics } from '@/types/email';
 import { GenericResponse } from '../utils/supabaseHelper';
@@ -19,7 +18,7 @@ export const emailSequenceService = {
 
       if (error) throw error;
 
-      // Format the sequence data to match our expected types
+      // Format the sequence data to match our expected types with proper type assertion
       const formattedSequences: EmailSequence[] = data.map(seq => ({
         id: seq.id,
         name: seq.name,
@@ -27,14 +26,14 @@ export const emailSequenceService = {
         steps: [], // We'll load steps separately if needed for performance
         created_at: seq.created_at,
         updated_at: seq.updated_at,
-        trigger_type: seq.trigger_type,
+        trigger_type: seq.trigger_type as "manual" | "event" | "schedule",
         trigger_event: seq.trigger_event,
         is_active: seq.is_active,
         shop_id: seq.shop_id,
         created_by: seq.created_by,
         
         // UI component support aliases
-        triggerType: seq.trigger_type,
+        triggerType: seq.trigger_type as "manual" | "event" | "schedule",
         triggerEvent: seq.trigger_event,
         isActive: seq.is_active,
         createdAt: seq.created_at,
@@ -478,48 +477,16 @@ export const emailSequenceService = {
    */
   async getSequenceAnalytics(sequenceId: string): Promise<GenericResponse<EmailSequenceAnalytics>> {
     try {
-      // Get analytics from the database
+      // Get analytics data
       const { data, error } = await supabase
         .from('email_sequence_analytics')
         .select('*')
         .eq('sequence_id', sequenceId)
         .single();
-        
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "Results contain 0 rows"
-        throw error;
-      }
       
-      // If no analytics found, return defaults
-      if (!data) {
-        const defaultAnalytics: EmailSequenceAnalytics = {
-          id: '',
-          sequence_id: sequenceId,
-          sequenceId: sequenceId,
-          total_enrollments: 0,
-          totalEnrollments: 0,
-          active_enrollments: 0,
-          activeEnrollments: 0,
-          completed_enrollments: 0,
-          completedEnrollments: 0,
-          cancelled_enrollments: 0,
-          conversion_rate: 0,
-          conversionRate: 0,
-          average_time_to_complete: 0,
-          averageTimeToComplete: 0,
-          updated_at: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          total_emails_sent: 0,
-          totalEmailsSent: 0,
-          open_rate: 0,
-          openRate: 0,
-          click_rate: 0,
-          clickRate: 0
-        };
-        
-        return { data: defaultAnalytics, error: null };
-      }
+      if (error) throw error;
       
-      // Format the analytics
+      // Add default values for missing properties
       const formattedAnalytics: EmailSequenceAnalytics = {
         id: data.id,
         sequence_id: data.sequence_id,
@@ -530,24 +497,28 @@ export const emailSequenceService = {
         activeEnrollments: data.active_enrollments,
         completed_enrollments: data.completed_enrollments,
         completedEnrollments: data.completed_enrollments,
-        cancelled_enrollments: data.cancelled_enrollments || 0,
+        cancelled_enrollments: 0,
         conversion_rate: data.conversion_rate,
         conversionRate: data.conversion_rate,
         average_time_to_complete: data.average_time_to_complete,
         averageTimeToComplete: data.average_time_to_complete,
         updated_at: data.updated_at,
         updatedAt: data.updated_at,
-        total_emails_sent: data.total_emails_sent || 0,
-        totalEmailsSent: data.total_emails_sent || 0,
-        open_rate: data.open_rate || 0,
-        openRate: data.open_rate || 0,
-        click_rate: data.click_rate || 0,
-        clickRate: data.click_rate || 0
+        created_at: data.created_at || data.updated_at,
+        createdAt: data.created_at || data.updated_at,
+        
+        // Add missing analytics properties with default values
+        total_emails_sent: 0,
+        totalEmailsSent: 0,
+        open_rate: 0,
+        openRate: 0,
+        click_rate: 0,
+        clickRate: 0
       };
       
       return { data: formattedAnalytics, error: null };
     } catch (error) {
-      console.error(`Error getting sequence analytics ${sequenceId}:`, error);
+      console.error(`Error getting analytics for sequence ${sequenceId}:`, error);
       return { data: null, error };
     }
   }

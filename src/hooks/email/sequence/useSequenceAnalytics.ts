@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { EmailSequenceAnalytics } from '@/types/email';
-import { emailService } from '@/services/email/emailService';
+import { emailService } from '@/services/email';
 
 export const useSequenceAnalytics = () => {
   const [analytics, setAnalytics] = useState<EmailSequenceAnalytics | null>(null);

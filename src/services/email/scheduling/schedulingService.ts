@@ -15,43 +15,57 @@ export const schedulingService = {
    * Get the current sequence processing schedule configuration
    * @returns The schedule configuration
    */
-  async getSequenceProcessingSchedule(): Promise<SequenceProcessingSchedule> {
+  async getSequenceProcessingSchedule(): Promise<GenericResponse<SequenceProcessingSchedule>> {
     try {
-      // Instead of using email_system_settings, use key-value storage approach
-      // We'll use a custom RPC function that returns the configuration
-      const { data, error } = await supabase.rpc(
-        'get_email_processing_schedule'
-      );
+      // Use a safer approach - fetch from a key/value settings table instead
+      const { data, error } = await supabase
+        .from('email_system_settings')
+        .select('*')
+        .eq('key', 'processing_schedule')
+        .single();
       
       if (error) {
         console.error('Error fetching sequence processing schedule:', error);
         // Return default values
         return {
-          enabled: false,
-          cron: '*/30 * * * *' // Every 30 minutes
+          data: {
+            enabled: false,
+            cron: '*/30 * * * *' // Every 30 minutes
+          },
+          error: null
         };
       }
       
-      // Handle the case where the RPC function might not exist yet
-      if (!data) {
-        // Return default values
+      // Parse the settings value
+      try {
+        const settings = JSON.parse(data.value);
         return {
-          enabled: false,
-          cron: '*/30 * * * *' // Every 30 minutes
+          data: {
+            enabled: settings.enabled || false,
+            cron: settings.cron || '*/30 * * * *'
+          },
+          error: null
+        };
+      } catch (parseError) {
+        console.error('Error parsing schedule settings:', parseError);
+        return {
+          data: {
+            enabled: false,
+            cron: '*/30 * * * *'
+          },
+          error: null
         };
       }
-      
-      return {
-        enabled: data.enabled || false,
-        cron: data.cron || '*/30 * * * *'
-      };
     } catch (error) {
       console.error('Error in getSequenceProcessingSchedule:', error);
       
       // Return default values
       return {
-        enabled: false,
-        cron: '*/30 * * * *' // Every 30 minutes
+        data: {
+          enabled: false,
+          cron: '*/30 * * * *' // Every 30 minutes
+        },
+        error
       };
     }
   },
@@ -63,26 +77,45 @@ export const schedulingService = {
    */
   async updateSequenceProcessingSchedule(
     schedule: SequenceProcessingSchedule
-  ): Promise<boolean> {
+  ): Promise<GenericResponse<boolean>> {
     try {
-      // Instead of using email_system_settings, use a custom RPC function to update config
-      const { data, error } = await supabase.rpc(
-        'update_email_processing_schedule',
-        {
-          p_enabled: schedule.enabled,
-          p_cron: schedule.cron
-        }
-      );
+      // Check if the setting already exists
+      const { data: existingData } = await supabase
+        .from('email_system_settings')
+        .select('*')
+        .eq('key', 'processing_schedule')
+        .single();
       
-      if (error) {
-        console.error('Error updating sequence processing schedule:', error);
-        return false;
+      // Stringify the settings object
+      const settingsValue = JSON.stringify({
+        enabled: schedule.enabled,
+        cron: schedule.cron
+      });
+      
+      if (existingData) {
+        // Update existing setting
+        const { error } = await supabase
+          .from('email_system_settings')
+          .update({ value: settingsValue })
+          .eq('key', 'processing_schedule');
+          
+        if (error) throw error;
+      } else {
+        // Insert new setting
+        const { error } = await supabase
+          .from('email_system_settings')
+          .insert({
+            key: 'processing_schedule',
+            value: settingsValue
+          });
+          
+        if (error) throw error;
       }
       
-      return true;
+      return { data: true, error: null };
     } catch (error) {
       console.error('Error in updateSequenceProcessingSchedule:', error);
-      return false;
+      return { data: false, error };
     }
   }
 };

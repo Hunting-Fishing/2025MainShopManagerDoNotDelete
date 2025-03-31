@@ -1,9 +1,9 @@
 
-import { emailSequenceService } from './sequences/emailSequenceService';
+import { abTestingService } from './ab-testing/abTestingService';
 import { emailTemplateService } from './templates/emailTemplateService';
 import { schedulingService } from './scheduling/schedulingService';
-import { abTestingService } from './ab-testing/abTestingService';
 import { sequenceProcessingService } from './sequences/sequenceProcessingService';
+import { emailSequenceService } from './sequences/emailSequenceService';
 import { emailCampaignService } from './campaigns/emailCampaignService';
 
 // Export a combined emailService that maintains the same API structure
@@ -30,10 +30,10 @@ export const emailService = {
 
 // Also export individual services for more granular usage
 export {
-  emailSequenceService,
+  abTestingService,
   emailTemplateService,
   schedulingService,
-  abTestingService,
   sequenceProcessingService,
+  emailSequenceService,
   emailCampaignService
 };

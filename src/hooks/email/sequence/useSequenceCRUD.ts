@@ -1,8 +1,7 @@
-
 import { useState } from "react";
-import { emailService } from "@/services/email/emailService";
-import { EmailSequence } from "@/types/email";
-import { useToast } from "@/hooks/use-toast";
+import { emailService } from '@/services/email';
+import { EmailSequence, EmailSequenceStep } from '@/types/email';
+import { useToast } from '@/hooks/use-toast';
 
 export const useSequenceCRUD = () => {
   const [sequences, setSequences] = useState<EmailSequence[]>([]);
@@ -16,7 +15,6 @@ export const useSequenceCRUD = () => {
     try {
       const data = await emailService.getSequences();
       if (Array.isArray(data)) {
-        // Map returned data to ensure full EmailSequence compatibility
         const formattedSequences: EmailSequence[] = data.map(seq => ({
           ...seq,
           steps: seq.steps || [],
@@ -47,7 +45,6 @@ export const useSequenceCRUD = () => {
     try {
       const sequence = await emailService.getSequenceById(id);
       if (sequence) {
-        // Ensure full EmailSequence compatibility
         const formattedSequence: EmailSequence = {
           ...sequence,
           steps: sequence.steps || [],
@@ -76,7 +73,6 @@ export const useSequenceCRUD = () => {
 
   const createSequence = async (sequence: Partial<EmailSequence>) => {
     try {
-      // Generate a temp ID for the sequence
       const tempSequence = {
         id: Date.now().toString(),
         ...sequence,
@@ -90,7 +86,6 @@ export const useSequenceCRUD = () => {
       
       const newSequence = await emailService.createSequence(tempSequence);
       if (newSequence) {
-        // Ensure full EmailSequence compatibility before adding to state
         const formattedSequence: EmailSequence = {
           ...newSequence,
           steps: newSequence.steps || [],
@@ -121,7 +116,6 @@ export const useSequenceCRUD = () => {
     try {
       const updatedSequence = await emailService.updateSequence(id, sequence);
       if (updatedSequence) {
-        // Ensure full EmailSequence compatibility before updating state
         const formattedSequence: EmailSequence = {
           ...updatedSequence,
           steps: updatedSequence.steps || [],

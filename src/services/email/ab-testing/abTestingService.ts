@@ -1,144 +1,134 @@
 
 import { supabase } from '@/lib/supabase';
-import { GenericResponse } from '../utils/supabaseHelper';
 import { EmailABTest, EmailABTestVariant } from '@/types/email';
+import { GenericResponse, customTableQuery } from '../utils/supabaseHelper';
 
 /**
- * Service for handling A/B testing functionality
+ * Calculate confidence level for AB test results using basic statistical methods
+ */
+const calculateConfidenceLevel = (
+  variantA: EmailABTestVariant,
+  variantB: EmailABTestVariant,
+  criteria: 'open_rate' | 'click_rate'
+): number => {
+  // Basic implementation - can be enhanced with more sophisticated statistical methods
+  const metricA = criteria === 'open_rate' 
+    ? (variantA.opened / variantA.recipients)
+    : (variantA.clicked / variantA.recipients);
+  
+  const metricB = criteria === 'open_rate' 
+    ? (variantB.opened / variantB.recipients)
+    : (variantB.clicked / variantB.recipients);
+  
+  // Calculate a simple difference ratio
+  const diff = Math.abs(metricA - metricB) / Math.max(metricA, metricB);
+  
+  // Convert to confidence percentage (simplified approach)
+  return Math.min(Math.round(diff * 100 * 2), 99);
+};
+
+/**
+ * Service for handling A/B testing related operations
  */
 export const abTestingService = {
   /**
-   * Select a winner for an A/B test based on performance metrics
-   * @param campaignId ID of the campaign with A/B test
-   * @param forceWinnerId Optional ID to force as the winner
-   * @returns Winner information
+   * Select a winner for an A/B test based on performance data
    */
-  async selectABTestWinner(
-    campaignId: string,
-    forceWinnerId?: string
-  ): Promise<GenericResponse<{
-    winnerId: string;
-    winnerSelectionDate: string;
-    confidenceLevel?: number;
-  }>> {
+  async selectABTestWinner(campaignId: string, forceWinnerId?: string): Promise<GenericResponse<any>> {
     try {
-      // Get the campaign with AB test data
+      // Get the campaign with A/B test data
       const { data: campaign, error: campaignError } = await supabase
         .from('email_campaigns')
-        .select('ab_test')
+        .select('*')
         .eq('id', campaignId)
         .single();
       
       if (campaignError) throw campaignError;
       
-      if (!campaign?.ab_test) {
-        throw new Error("No A/B test found for this campaign");
-      }
-      
       // Parse AB test data
-      const abTestData = typeof campaign.ab_test === 'string' 
-        ? JSON.parse(campaign.ab_test) 
-        : campaign.ab_test;
+      const abTest = campaign.ab_test as any;
       
-      // Check if A/B testing is enabled
-      if (!abTestData || !abTestData.enabled) {
-        throw new Error("A/B testing is not enabled for this campaign");
+      if (!abTest || !abTest.enabled) {
+        return { 
+          data: null, 
+          error: 'No A/B test configured for this campaign' 
+        };
       }
       
-      // Get the variants from the AB test data
-      const variants = abTestData.variants || [];
-      if (!Array.isArray(variants) || variants.length === 0) {
-        throw new Error("No variants found in A/B test");
-      }
+      let winnerId: string;
+      let confidenceLevel: number | undefined;
 
-      // Get the winner criteria
-      const criteria = abTestData.winner_criteria || abTestData.winnerCriteria || 'open_rate';
-
-      // If a winning variant ID is specified, use that
-      let winnerId = forceWinnerId;
-      let confidenceLevel: number | undefined = undefined;
-      
-      if (!winnerId) {
-        // Call the Supabase function to calculate the winner
-        const { data: winnerData, error: winnerError } = await supabase.rpc(
-          'calculate_ab_test_winner',
-          { 
-            campaign_id: campaignId,
-            criteria
-          }
-        );
+      // If a winner ID is forced (manual selection), use that
+      if (forceWinnerId) {
+        winnerId = forceWinnerId;
+      } else {
+        // Get variants data
+        const variants = abTest.variants || [];
         
-        if (winnerError) {
-          console.error('Error calculating A/B test winner:', winnerError);
-          
-          // Fallback: Select the winner manually by comparing rates
-          let bestValue = -1;
-          
-          for (const variant of variants) {
-            const openRate = variant.recipients > 0 ? variant.opened / variant.recipients : 0;
-            const clickRate = variant.recipients > 0 ? variant.clicked / variant.recipients : 0;
-            
-            const valueToCompare = criteria === 'open_rate' ? openRate : clickRate;
-            
-            if (valueToCompare > bestValue) {
-              bestValue = valueToCompare;
-              winnerId = variant.id;
-            }
-          }
-          
-          // Calculate a simple confidence level
-          if (winnerId) {
-            const winnerVariant = variants.find(v => v.id === winnerId);
-            const otherVariants = variants.filter(v => v.id !== winnerId);
-            
-            if (winnerVariant && otherVariants.length > 0) {
-              const winnerRate = criteria === 'open_rate'
-                ? (winnerVariant.recipients > 0 ? winnerVariant.opened / winnerVariant.recipients : 0)
-                : (winnerVariant.recipients > 0 ? winnerVariant.clicked / winnerVariant.recipients : 0);
-                
-              const otherRates = otherVariants.map(v => criteria === 'open_rate'
-                ? (v.recipients > 0 ? v.opened / v.recipients : 0)
-                : (v.recipients > 0 ? v.clicked / v.recipients : 0));
-                
-              const avgOtherRate = otherRates.reduce((sum, rate) => sum + rate, 0) / otherRates.length;
-              
-              if (winnerRate > 0 && avgOtherRate > 0) {
-                const difference = winnerRate - avgOtherRate;
-                confidenceLevel = Math.min(Math.round((difference / avgOtherRate) * 100), 95);
-              }
-            }
-          }
-        } else {
-          winnerId = winnerData;
-          confidenceLevel = 95; // Default confidence level when using the database function
+        if (variants.length < 2) {
+          return { 
+            data: null, 
+            error: 'A/B test requires at least 2 variants' 
+          };
         }
+        
+        // Get the winner selection criteria
+        const criteria = abTest.winner_criteria || abTest.winnerCriteria || 'open_rate';
+        
+        // Find the best performing variant
+        let bestVariant: any = null;
+        let bestMetric = -1;
+        
+        for (const variant of variants) {
+          const numerator = criteria === 'open_rate' ? variant.opened : variant.clicked;
+          const denominator = variant.recipients || 1; // Avoid division by zero
+          const metric = numerator / denominator;
+          
+          if (metric > bestMetric) {
+            bestMetric = metric;
+            bestVariant = variant;
+          }
+        }
+        
+        if (!bestVariant) {
+          return { 
+            data: null, 
+            error: 'Could not determine a winner' 
+          };
+        }
+        
+        // Calculate confidence level if we have multiple variants
+        if (variants.length >= 2) {
+          const runnerUp = variants.find(v => v.id !== bestVariant.id) || variants[1];
+          confidenceLevel = calculateConfidenceLevel(bestVariant, runnerUp, criteria as any);
+        }
+        
+        winnerId = bestVariant.id;
       }
       
-      if (!winnerId) {
-        throw new Error("Could not determine a winner");
-      }
-      
-      // Update the campaign with the winner information
+      // Update the AB test with the winner
       const winnerSelectionDate = new Date().toISOString();
       
-      // Create updated ab_test data
+      // Convert to JSON to ensure proper storage
       const updatedAbTest = {
-        ...abTestData,
+        ...abTest,
         winnerId: winnerId,
         winner_id: winnerId,
-        variants: abTestData.variants || [],
         winnerSelectionDate: winnerSelectionDate,
-        winner_selection_date: winnerSelectionDate,
-        winnerCriteria: criteria,
-        winner_criteria: criteria,
-        confidenceLevel,
-        confidence_level: confidenceLevel
+        winner_selection_date: winnerSelectionDate
       };
       
+      // If we calculated a confidence level, include it
+      if (confidenceLevel !== undefined) {
+        updatedAbTest.confidenceLevel = confidenceLevel;
+        updatedAbTest.confidence_level = confidenceLevel;
+      }
+      
+      // Update the campaign with the winner
       const { error: updateError } = await supabase
         .from('email_campaigns')
-        .update({ 
-          ab_test: updatedAbTest 
+        .update({
+          ab_test: updatedAbTest
         })
         .eq('id', campaignId);
       
@@ -153,10 +143,75 @@ export const abTestingService = {
         error: null 
       };
     } catch (error) {
-      console.error('Error selecting A/B test winner:', error);
+      console.error(`Error selecting A/B test winner for campaign ${campaignId}:`, error);
       return { 
         data: null, 
-        error 
+        error: error 
+      };
+    }
+  },
+  
+  /**
+   * Get A/B test results for a campaign
+   */
+  async getABTestResults(campaignId: string): Promise<GenericResponse<any>> {
+    try {
+      const { data: campaign, error: campaignError } = await supabase
+        .from('email_campaigns')
+        .select('*')
+        .eq('id', campaignId)
+        .single();
+      
+      if (campaignError) throw campaignError;
+      
+      const abTest = campaign.ab_test as any;
+      
+      if (!abTest || !abTest.enabled) {
+        return { 
+          data: null, 
+          error: 'No A/B test configured for this campaign' 
+        };
+      }
+      
+      // Get winner ID
+      const winnerId = abTest.winnerId || abTest.winner_id;
+      const isComplete = !!winnerId;
+      
+      // Get variants with additional metrics
+      const variants = (abTest.variants || []).map((variant: any) => {
+        const isWinner = variant.id === winnerId;
+        const openRate = variant.recipients > 0 ? variant.opened / variant.recipients : 0;
+        const clickRate = variant.recipients > 0 ? variant.clicked / variant.recipients : 0;
+        const clickToOpenRate = variant.opened > 0 ? variant.clicked / variant.opened : 0;
+        
+        return {
+          ...variant,
+          metrics: {
+            openRate,
+            clickRate,
+            clickToOpenRate
+          },
+          isWinner
+        };
+      });
+      
+      return {
+        data: {
+          campaignId,
+          variants,
+          winnerSelectionDate: abTest.winnerSelectionDate || abTest.winner_selection_date,
+          winnerCriteria: abTest.winnerCriteria || abTest.winner_criteria,
+          winnerId,
+          isComplete,
+          confidenceLevel: abTest.confidenceLevel || abTest.confidence_level
+        },
+        error: null
+      };
+    } catch (error) {
+      console.error(`Error getting A/B test results for campaign ${campaignId}:`, error);
+      return { 
+        data: null, 
+        error: error 
       };
     }
   }
