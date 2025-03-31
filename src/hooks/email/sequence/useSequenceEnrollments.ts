@@ -27,7 +27,7 @@ export const useSequenceEnrollments = () => {
         sequenceId: enrollment.sequence_id,
         customer_id: enrollment.customer_id,
         customerId: enrollment.customer_id,
-        status: enrollment.status,
+        status: enrollment.status as 'active' | 'paused' | 'completed' | 'cancelled',
         current_step_id: enrollment.current_step_id,
         currentStepId: enrollment.current_step_id,
         created_at: enrollment.created_at,
@@ -61,7 +61,7 @@ export const useSequenceEnrollments = () => {
         setEnrollments(prev => 
           prev.map(enrollment => 
             enrollment.id === enrollmentId 
-              ? { ...enrollment, status: 'paused' } 
+              ? { ...enrollment, status: 'paused' as const } 
               : enrollment
           )
         );
@@ -98,7 +98,7 @@ export const useSequenceEnrollments = () => {
         setEnrollments(prev => 
           prev.map(enrollment => 
             enrollment.id === enrollmentId 
-              ? { ...enrollment, status: 'active' } 
+              ? { ...enrollment, status: 'active' as const } 
               : enrollment
           )
         );
@@ -135,7 +135,7 @@ export const useSequenceEnrollments = () => {
         setEnrollments(prev => 
           prev.map(enrollment => 
             enrollment.id === enrollmentId 
-              ? { ...enrollment, status: 'cancelled' } 
+              ? { ...enrollment, status: 'cancelled' as const } 
               : enrollment
           )
         );
@@ -186,7 +186,7 @@ export const useSequenceEnrollments = () => {
         sequenceId: data.sequence_id,
         customer_id: data.customer_id,
         customerId: data.customer_id,
-        status: data.status,
+        status: data.status as 'active' | 'paused' | 'completed' | 'cancelled',
         current_step_id: data.current_step_id,
         currentStepId: data.current_step_id,
         created_at: data.created_at,

@@ -137,6 +137,15 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
     { name: 'Unsubscribe', value: analytics.unsubscribe_rate * 100, avg: 0.2 },
   ];
 
+  const formatRate = (value: any): string => {
+    if (typeof value === 'number') {
+      return value.toFixed(2);
+    } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+      return parseFloat(value).toFixed(2);
+    }
+    return '0.00';
+  };
+
   const renderPercentageChange = (value: number) => {
     if (value > 0) {
       return (
@@ -454,7 +463,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                           <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [value, 'Recipients']} />
+                      <Tooltip formatter={(value) => `${formatRate(value)}%`} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -658,7 +667,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                         <Cell fill={COLORS.success} />
                         <Cell fill={COLORS.danger} />
                       </Pie>
-                      <Tooltip formatter={(value) => [value, 'Recipients']} />
+                      <Tooltip formatter={(value) => `${formatRate(value)}%`} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>

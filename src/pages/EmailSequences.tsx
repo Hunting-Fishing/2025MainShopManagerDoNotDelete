@@ -151,10 +151,10 @@ export default function EmailSequences() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate(`/email-sequences/${sequence.id}`)}
+                            onClick={() => navigate(`/email-sequence-details/${sequence.id}`)}
                           >
                             <ScrollText className="mr-2 h-4 w-4" />
-                            View
+                            View Details
                           </Button>
                           <Button
                             variant="destructive"

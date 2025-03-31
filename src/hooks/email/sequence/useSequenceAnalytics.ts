@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { emailService } from "@/services/email/emailService";
 import { EmailSequenceAnalytics } from "@/types/email";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";

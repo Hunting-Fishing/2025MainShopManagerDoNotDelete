@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import {
   Email,
@@ -48,11 +49,11 @@ class EmailService {
           name: data.name,
           subject: data.subject,
           description: data.description,
-          category: data.category,
+          category: data.category as EmailCategory,
           content: data.content,
           created_at: data.created_at,
           updated_at: data.updated_at,
-          variables: data.variables || [],
+          variables: (data.variables || []) as EmailTemplateVariable[],
           is_archived: data.is_archived || false
         };
         
@@ -73,7 +74,7 @@ class EmailService {
         id: item.id,
         name: item.name,
         subject: item.subject,
-        category: item.category,
+        category: item.category as EmailCategory,
         created_at: item.created_at,
         description: item.description
       }));
@@ -102,9 +103,9 @@ class EmailService {
           name: template.name,
           subject: template.subject,
           description: template.description,
-          category: template.category,
+          category: template.category as string,
           content: template.content,
-          variables: template.variables || []
+          variables: JSON.stringify(template.variables || [])
         })
         .select()
         .single();
@@ -116,11 +117,11 @@ class EmailService {
         name: data.name,
         subject: data.subject,
         description: data.description,
-        category: data.category,
+        category: data.category as EmailCategory,
         content: data.content,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        variables: data.variables || []
+        variables: (data.variables || []) as EmailTemplateVariable[]
       };
       
       return newTemplate;
@@ -138,9 +139,9 @@ class EmailService {
           name: template.name,
           subject: template.subject,
           description: template.description,
-          category: template.category,
+          category: template.category as string,
           content: template.content,
-          variables: template.variables || []
+          variables: JSON.stringify(template.variables || [])
         })
         .eq('id', id)
         .select()
@@ -153,11 +154,11 @@ class EmailService {
         name: data.name,
         subject: data.subject,
         description: data.description,
-        category: data.category,
+        category: data.category as EmailCategory,
         content: data.content,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        variables: data.variables || []
+        variables: (data.variables || []) as EmailTemplateVariable[]
       };
       
       return updatedTemplate;
@@ -192,13 +193,13 @@ class EmailService {
           subject: data.subject,
           body: data.content || '',
           content: data.content,
-          status: data.status,
+          status: data.status as EmailCampaignStatus,
           template_id: data.template_id,
-          segment_ids: data.segment_ids,
-          recipientIds: data.recipient_ids,
-          personalizations: data.personalizations,
-          metadata: data.metadata,
-          abTest: data.ab_test,
+          segment_ids: Array.isArray(data.segment_ids) ? data.segment_ids : [],
+          recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
+          personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
+          metadata: typeof data.metadata === 'object' ? data.metadata : {},
+          abTest: data.ab_test as EmailABTest || undefined,
           scheduled_at: data.scheduled_date,
           sent_at: data.sent_date,
           created_at: data.created_at,
@@ -224,7 +225,7 @@ class EmailService {
         id: item.id,
         name: item.name,
         subject: item.subject,
-        status: item.status,
+        status: item.status as EmailCampaignStatus,
         scheduled_at: item.scheduled_date,
         sent_at: item.sent_date,
         created_at: item.created_at,
@@ -251,15 +252,14 @@ class EmailService {
           name: campaign.name,
           subject: campaign.subject,
           content: campaign.body || campaign.content,
-          status: campaign.status || 'draft',
+          status: (campaign.status || 'draft') as string,
           scheduled_date: campaign.scheduled_at || campaign.scheduledDate,
           template_id: campaign.template_id || campaign.templateId,
-          content: campaign.content,
-          segment_ids: campaign.segment_ids || campaign.segmentIds,
-          recipient_ids: campaign.recipientIds,
-          personalizations: campaign.personalizations,
-          metadata: campaign.metadata,
-          ab_test: campaign.abTest
+          segment_ids: JSON.stringify(campaign.segment_ids || campaign.segmentIds || []),
+          recipient_ids: JSON.stringify(campaign.recipientIds || []),
+          personalizations: JSON.stringify(campaign.personalizations || {}),
+          metadata: JSON.stringify(campaign.metadata || {}),
+          ab_test: JSON.stringify(campaign.abTest || null)
         })
         .select()
         .single();
@@ -272,7 +272,7 @@ class EmailService {
         subject: data.subject,
         body: data.content,
         content: data.content,
-        status: data.status,
+        status: data.status as EmailCampaignStatus,
         template_id: data.template_id,
         scheduled_at: data.scheduled_date,
         scheduledDate: data.scheduled_date,
@@ -294,22 +294,38 @@ class EmailService {
 
   async updateCampaign(id: string, campaign: Partial<EmailCampaign>): Promise<EmailCampaign | null> {
     try {
+      const updateData: any = {
+        name: campaign.name,
+        subject: campaign.subject,
+        content: campaign.body || campaign.content,
+        status: campaign.status as string,
+        scheduled_date: campaign.scheduled_at || campaign.scheduledDate,
+        template_id: campaign.template_id || campaign.templateId
+      };
+      
+      if (campaign.segment_ids || campaign.segmentIds) {
+        updateData.segment_ids = JSON.stringify(campaign.segment_ids || campaign.segmentIds);
+      }
+      
+      if (campaign.recipientIds) {
+        updateData.recipient_ids = JSON.stringify(campaign.recipientIds);
+      }
+      
+      if (campaign.personalizations) {
+        updateData.personalizations = JSON.stringify(campaign.personalizations);
+      }
+      
+      if (campaign.metadata) {
+        updateData.metadata = JSON.stringify(campaign.metadata);
+      }
+      
+      if (campaign.abTest) {
+        updateData.ab_test = JSON.stringify(campaign.abTest);
+      }
+
       const { data, error } = await supabase
         .from('email_campaigns')
-        .update({
-          name: campaign.name,
-          subject: campaign.subject,
-          content: campaign.body || campaign.content,
-          status: campaign.status,
-          scheduled_date: campaign.scheduled_at || campaign.scheduledDate,
-          template_id: campaign.template_id || campaign.templateId,
-          content: campaign.content,
-          segment_ids: campaign.segment_ids || campaign.segmentIds,
-          recipient_ids: campaign.recipientIds,
-          personalizations: campaign.personalizations,
-          metadata: campaign.metadata,
-          ab_test: campaign.abTest
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -322,7 +338,7 @@ class EmailService {
         subject: data.subject,
         body: data.content,
         content: data.content,
-        status: data.status,
+        status: data.status as EmailCampaignStatus,
         template_id: data.template_id,
         scheduled_at: data.scheduled_date,
         scheduledDate: data.scheduled_date,
@@ -439,7 +455,7 @@ class EmailService {
           name: step.name,
           templateId: step.template_id,
           delayHours: step.delay_hours,
-          delayType: step.delay_type,
+          delayType: (step.delay_type || 'fixed') as 'fixed' | 'business_days',
           position: step.position,
           isActive: step.is_active,
           condition: step.condition_type ? {
@@ -456,7 +472,7 @@ class EmailService {
           steps,
           created_at: seq.created_at,
           updated_at: seq.updated_at,
-          triggerType: seq.trigger_type,
+          triggerType: seq.trigger_type as 'manual' | 'event' | 'schedule',
           triggerEvent: seq.trigger_event,
           isActive: seq.is_active
         });
@@ -499,7 +515,7 @@ class EmailService {
         name: step.name,
         templateId: step.template_id,
         delayHours: step.delay_hours,
-        delayType: step.delay_type,
+        delayType: (step.delay_type || 'fixed') as 'fixed' | 'business_days',
         position: step.position,
         isActive: step.is_active,
         condition: step.condition_type ? {
@@ -516,7 +532,7 @@ class EmailService {
         steps,
         created_at: sequence.created_at,
         updated_at: sequence.updated_at,
-        triggerType: sequence.trigger_type,
+        triggerType: sequence.trigger_type as 'manual' | 'event' | 'schedule',
         triggerEvent: sequence.trigger_event,
         isActive: sequence.is_active
       };
@@ -533,7 +549,7 @@ class EmailService {
         .insert({
           name: sequence.name,
           description: sequence.description,
-          trigger_type: sequence.triggerType || sequence.trigger_type,
+          trigger_type: (sequence.triggerType || sequence.trigger_type) as string,
           trigger_event: sequence.triggerEvent || sequence.trigger_event,
           is_active: sequence.isActive || sequence.is_active || false
         })
@@ -551,7 +567,7 @@ class EmailService {
             name: step.name,
             template_id: step.templateId || step.email_template_id,
             delay_hours: step.delayHours || 0,
-            delay_type: step.delayType || 'fixed',
+            delay_type: (step.delayType || 'fixed') as 'fixed' | 'business_days',
             position: step.position || index,
             is_active: step.isActive !== undefined ? step.isActive : true,
             condition_type: step.condition?.type,
@@ -579,7 +595,7 @@ class EmailService {
             name: newStep.name,
             templateId: newStep.template_id,
             delayHours: newStep.delay_hours,
-            delayType: newStep.delay_type,
+            delayType: (newStep.delay_type || 'fixed') as 'fixed' | 'business_days',
             position: newStep.position,
             isActive: newStep.is_active,
             condition: newStep.condition_type ? {
@@ -598,7 +614,7 @@ class EmailService {
         steps,
         created_at: newSequence.created_at,
         updated_at: newSequence.updated_at,
-        triggerType: newSequence.trigger_type,
+        triggerType: newSequence.trigger_type as 'manual' | 'event' | 'schedule',
         triggerEvent: newSequence.trigger_event,
         isActive: newSequence.is_active
       };
@@ -660,7 +676,7 @@ class EmailService {
         id,
         sequence_id: '',
         customer_id: '',
-        status: 'active' as 'active' | 'paused' | 'completed' | 'cancelled',
+        status: 'active',
         created_at: '',
         updated_at: ''
       };
@@ -811,7 +827,7 @@ class EmailService {
 
   async getSequenceAnalytics(sequenceId: string): Promise<any> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await supabase
         .from('email_sequence_analytics')
         .select('*')
         .eq('sequence_id', sequenceId)
