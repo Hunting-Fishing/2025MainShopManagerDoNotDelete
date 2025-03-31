@@ -12,6 +12,7 @@ import { useEmailCampaigns } from "@/hooks/email/useEmailCampaigns";
 import { EmailCampaignStatus } from "@/types/email";
 import { format } from "date-fns";
 import { Plus, Calendar, Play, PauseCircle, XCircle, Clock, Users, Mail, BarChart } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function EmailCampaigns() {
   const [activeStatus, setActiveStatus] = useState<EmailCampaignStatus | 'all'>('all');
@@ -410,10 +411,10 @@ export default function EmailCampaigns() {
                               size="sm"
                               asChild
                             >
-                              <a href={`/email-campaigns/${campaign.id}`}>
+                              <Link to={`/email-campaigns/${campaign.id}/analytics`}>
                                 <BarChart className="mr-1 h-3 w-3" />
                                 View Report
-                              </a>
+                              </Link>
                             </Button>
                           )}
                         </div>

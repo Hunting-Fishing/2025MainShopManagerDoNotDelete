@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import Layout from '@/components/layout/Layout';
@@ -46,6 +45,7 @@ import Chat from '@/pages/Chat';
 import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
+import EmailCampaignAnalytics from "./pages/EmailCampaignAnalytics";
 import './App.css';
 
 function App() {
@@ -96,6 +96,7 @@ function App() {
           <Route path="feedback/forms" element={<FeedbackFormsPage />} />
           <Route path="feedback/forms/editor/:id?" element={<FeedbackFormEditorPage />} />
           <Route path="feedback/analytics/:id" element={<FeedbackAnalyticsPage />} />
+          <Route path="/email-campaigns/:id/analytics" element={<EmailCampaignAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
