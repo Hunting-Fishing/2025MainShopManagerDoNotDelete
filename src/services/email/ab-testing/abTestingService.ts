@@ -1,44 +1,20 @@
+
 import { supabase } from '@/lib/supabase';
-import { EmailABTest, EmailABTestVariant } from '@/types/email';
-import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
+import { EmailABTest } from '@/types/email';
+import { GenericResponse } from '../utils/supabaseHelper';
 
 /**
- * Service for A/B testing functionality
+ * Service for managing email A/B testing functionality
  */
 export const abTestingService = {
   /**
-   * Get A/B test data for a campaign
+   * Select a winner for an A/B test in a campaign
    * @param campaignId Campaign ID
-   * @returns A/B test data
-   */
-  async getABTestData(campaignId: string): Promise<GenericResponse<EmailABTest>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_campaigns')
-        .select('ab_test')
-        .eq('id', campaignId)
-        .single();
-
-      if (error) throw error;
-
-      // Parse the AB test data
-      const abTestData = parseJsonField<EmailABTest | null>(data?.ab_test, null);
-      
-      return { data: abTestData, error: null };
-    } catch (error) {
-      console.error(`Error getting A/B test data for campaign ${campaignId}:`, error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Select a winner for an A/B test
-   * @param campaignId Campaign ID
-   * @param forceWinnerId Optional ID to force as winner
-   * @returns Winner selection result
+   * @param forceWinnerId Optional ID to force a specific variant to win
+   * @returns The winner ID and related data
    */
   async selectABTestWinner(
-    campaignId: string,
+    campaignId: string, 
     forceWinnerId?: string
   ): Promise<GenericResponse<{
     winnerId: string;
@@ -46,57 +22,60 @@ export const abTestingService = {
     confidenceLevel?: number;
   }>> {
     try {
-      // First get the current AB test data
-      const { data: abTest, error: fetchError } = await this.getABTestData(campaignId);
+      // Get the A/B test data
+      const { data: abTestData, error: abTestError } = await supabase
+        .from('email_campaigns')
+        .select('ab_test')
+        .eq('id', campaignId)
+        .single();
       
-      if (fetchError) throw fetchError;
-      if (!abTest || !abTest.enabled) {
+      if (abTestError) throw abTestError;
+      
+      // Parse the abTest data
+      const abTest = abTestData?.ab_test;
+      if (!abTest || typeof abTest !== 'object') {
         throw new Error("A/B testing is not enabled for this campaign");
       }
-
-      let winnerId: string | null = null;
-      let confidenceLevel: number | undefined = undefined;
       
-      if (forceWinnerId) {
-        // If a winner is forced, use that ID
-        winnerId = forceWinnerId;
-        
-        // Validate that the forced winner ID actually exists in the variants
-        const variantExists = abTest.variants.some(v => v.id === forceWinnerId);
-        if (!variantExists) {
-          throw new Error(`Forced winner ID ${forceWinnerId} does not exist in variants`);
-        }
-      } else {
-        // Otherwise, calculate the winner based on metrics
+      let winnerId = forceWinnerId;
+      let confidenceLevel = 0;
+      
+      // If no winner ID is forced, calculate the winner based on metrics
+      if (!winnerId) {
+        // Call the calculate_ab_test_winner function
         const { data: winnerData, error: calcError } = await supabase
           .rpc('calculate_ab_test_winner', {
-            campaign_id_param: campaignId,
-            criteria_param: abTest.winnerCriteria || abTest.winner_criteria || 'open_rate'
+            campaign_id: campaignId,
+            criteria: abTest.winnerCriteria || abTest.winner_criteria || 'open_rate'
           });
-          
+        
         if (calcError) throw calcError;
         
-        winnerId = winnerData?.winner_id;
-        confidenceLevel = winnerData?.confidence_level;
+        // Extract the winner information from the response
+        if (winnerData && typeof winnerData === 'object') {
+          // Access the winner data properties safely
+          winnerId = typeof winnerData === 'string' ? winnerData : 
+                    'winner_id' in winnerData ? String(winnerData.winner_id) : null;
+          
+          confidenceLevel = typeof winnerData === 'string' ? 0 : 
+                          'confidence_level' in winnerData ? Number(winnerData.confidence_level) : 0;
+        }
         
         if (!winnerId) {
           throw new Error("Could not determine a winner");
         }
       }
       
-      // Update the AB test data with the winner
+      // Create a timestamp for the winner selection
       const winnerSelectionDate = new Date().toISOString();
       
-      // Create updated AB test object
-      const updatedAbTest: EmailABTest = {
-        enabled: abTest.enabled,
-        variants: abTest.variants,
-        winnerCriteria: abTest.winnerCriteria || abTest.winner_criteria || 'open_rate',
-        winner_criteria: abTest.winnerCriteria || abTest.winner_criteria || 'open_rate',
-        winnerSelectionDate: winnerSelectionDate,
-        winner_selection_date: winnerSelectionDate,
+      // Create a properly typed object for the update
+      const updatedAbTestData = {
+        ...abTest,
         winnerId: winnerId,
         winner_id: winnerId,
+        winnerSelectionDate: winnerSelectionDate,
+        winner_selection_date: winnerSelectionDate,
         confidenceLevel: confidenceLevel,
         confidence_level: confidenceLevel
       };
@@ -105,22 +84,22 @@ export const abTestingService = {
       const { error: updateError } = await supabase
         .from('email_campaigns')
         .update({
-          ab_test: updatedAbTest
+          ab_test: updatedAbTestData
         })
         .eq('id', campaignId);
       
       if (updateError) throw updateError;
       
-      return { 
+      return {
         data: {
           winnerId,
           winnerSelectionDate,
           confidenceLevel
-        }, 
-        error: null 
+        },
+        error: null
       };
     } catch (error) {
-      console.error(`Error selecting A/B test winner for campaign ${campaignId}:`, error);
+      console.error('Error selecting A/B test winner:', error);
       return { data: null, error };
     }
   }

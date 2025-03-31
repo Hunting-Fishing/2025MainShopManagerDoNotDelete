@@ -1,3 +1,4 @@
+
 /**
  * Generic response interface for service methods
  */
@@ -8,9 +9,17 @@ export interface GenericResponse<T> {
 
 /**
  * Utility function for custom table queries
+ * @param tableName Table name to query
+ * @param query Query builder function
+ * @returns Response with data or error
  */
-export const customTableQuery = async <T>(tableName: string, query: any): Promise<GenericResponse<T>> => {
+export const customTableQuery = async <T>(
+  tableName: string,
+  queryCallback: (supabase: any) => any
+): Promise<GenericResponse<T>> => {
   try {
+    const { supabase } = await import('@/lib/supabase');
+    const query = queryCallback(supabase);
     const { data, error } = await query;
     
     if (error) {

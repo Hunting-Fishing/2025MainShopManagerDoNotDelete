@@ -1,524 +1,33 @@
-
 import { supabase } from '@/lib/supabase';
-import { EmailSequence, EmailSequenceStep, EmailSequenceEnrollment, EmailSequenceAnalytics } from '@/types/email';
+import { 
+  EmailSequence, 
+  EmailSequenceStep, 
+  EmailSequenceEnrollment,
+  EmailSequenceAnalytics
+} from '@/types/email';
 import { GenericResponse } from '../utils/supabaseHelper';
 
-/**
- * Service for managing email sequences
- */
-export const emailSequenceService = {
-  /**
-   * Get all email sequences
-   */
-  async getSequences(): Promise<GenericResponse<EmailSequence[]>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequences')
-        .select(`
-          *,
-          steps:email_sequence_steps(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Format and return sequences with their steps included
-      const formatted: EmailSequence[] = (data || []).map(sequence => ({
-        id: sequence.id,
-        name: sequence.name,
-        description: sequence.description || '',
-        steps: (sequence.steps || []).map(step => formatSequenceStep(step)),
-        created_at: sequence.created_at,
-        updated_at: sequence.updated_at,
-        trigger_type: ensureTriggerType(sequence.trigger_type),
-        trigger_event: sequence.trigger_event || '',
-        is_active: sequence.is_active || false,
-        shop_id: sequence.shop_id,
-        created_by: sequence.created_by,
-        triggerType: ensureTriggerType(sequence.trigger_type),
-        triggerEvent: sequence.trigger_event || '',
-        isActive: sequence.is_active || false,
-        createdAt: sequence.created_at,
-        updatedAt: sequence.updated_at
-      }));
-
-      return { data: formatted, error: null };
-    } catch (error) {
-      console.error('Error getting email sequences:', error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Get a sequence by ID
-   * @param id Sequence ID
-   */
-  async getSequenceById(id: string): Promise<GenericResponse<EmailSequence>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequences')
-        .select(`
-          *,
-          steps:email_sequence_steps(*)
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      // Format the sequence and its steps
-      const sequence: EmailSequence = {
-        id: data.id,
-        name: data.name,
-        description: data.description || '',
-        steps: (data.steps || []).map(step => formatSequenceStep(step)),
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        trigger_type: ensureTriggerType(data.trigger_type),
-        trigger_event: data.trigger_event || '',
-        is_active: data.is_active || false,
-        shop_id: data.shop_id,
-        created_by: data.created_by,
-        triggerType: ensureTriggerType(data.trigger_type),
-        triggerEvent: data.trigger_event || '',
-        isActive: data.is_active || false,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
-      };
-
-      return { data: sequence, error: null };
-    } catch (error) {
-      console.error(`Error getting email sequence with ID ${id}:`, error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Create a new email sequence
-   * @param sequence Sequence data
-   */
-  async createSequence(sequence: Partial<EmailSequence>): Promise<GenericResponse<EmailSequence>> {
-    try {
-      // Insert sequence data
-      const { data, error } = await supabase
-        .from('email_sequences')
-        .insert({
-          name: sequence.name,
-          description: sequence.description,
-          trigger_type: ensureTriggerType(sequence.trigger_type || sequence.triggerType),
-          trigger_event: sequence.trigger_event || sequence.triggerEvent,
-          is_active: sequence.is_active || sequence.isActive || false,
-          shop_id: sequence.shop_id,
-          created_by: sequence.created_by
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Create a new sequence object with the returned data
-      const newSequence: EmailSequence = {
-        id: data.id,
-        name: data.name,
-        description: data.description || '',
-        steps: [], // New sequence has no steps yet
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        trigger_type: ensureTriggerType(data.trigger_type),
-        trigger_event: data.trigger_event || '',
-        is_active: data.is_active || false,
-        shop_id: data.shop_id,
-        created_by: data.created_by,
-        triggerType: ensureTriggerType(data.trigger_type),
-        triggerEvent: data.trigger_event || '',
-        isActive: data.is_active || false,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
-      };
-
-      return { data: newSequence, error: null };
-    } catch (error) {
-      console.error('Error creating email sequence:', error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Update an existing email sequence
-   * @param id Sequence ID
-   * @param sequence Updated sequence data
-   */
-  async updateSequence(id: string, sequence: Partial<EmailSequence>): Promise<GenericResponse<EmailSequence>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequences')
-        .update({
-          name: sequence.name,
-          description: sequence.description,
-          trigger_type: ensureTriggerType(sequence.trigger_type || sequence.triggerType),
-          trigger_event: sequence.trigger_event || sequence.triggerEvent,
-          is_active: sequence.is_active || sequence.isActive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Get the steps for this sequence
-      const { data: stepsData, error: stepsError } = await supabase
-        .from('email_sequence_steps')
-        .select('*')
-        .eq('sequence_id', id)
-        .order('position', { ascending: true });
-
-      if (stepsError) throw stepsError;
-
-      // Format the steps
-      const steps: EmailSequenceStep[] = (stepsData || []).map(step => formatSequenceStep(step));
-
-      // Create a formatted sequence object with the updated data
-      const updatedSequence: EmailSequence = {
-        id: data.id,
-        name: data.name,
-        description: data.description || '',
-        steps,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        trigger_type: ensureTriggerType(data.trigger_type),
-        trigger_event: data.trigger_event || '',
-        is_active: data.is_active || false,
-        shop_id: data.shop_id,
-        created_by: data.created_by,
-        triggerType: ensureTriggerType(data.trigger_type),
-        triggerEvent: data.trigger_event || '',
-        isActive: data.is_active || false,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
-      };
-
-      return { data: updatedSequence, error: null };
-    } catch (error) {
-      console.error(`Error updating email sequence ${id}:`, error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Delete an email sequence
-   * @param id Sequence ID
-   */
-  async deleteSequence(id: string): Promise<GenericResponse<boolean>> {
-    try {
-      // First delete all related steps
-      const { error: stepsError } = await supabase
-        .from('email_sequence_steps')
-        .delete()
-        .eq('sequence_id', id);
-
-      if (stepsError) throw stepsError;
-
-      // Then delete the sequence itself
-      const { error } = await supabase
-        .from('email_sequences')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      return { data: true, error: null };
-    } catch (error) {
-      console.error(`Error deleting email sequence ${id}:`, error);
-      return { data: false, error };
-    }
-  },
-
-  /**
-   * Get a sequence step by ID
-   * @param id Step ID
-   */
-  async getSequenceStepById(id: string): Promise<GenericResponse<EmailSequenceStep>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequence_steps')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      return { data: formatSequenceStep(data), error: null };
-    } catch (error) {
-      console.error(`Error getting email sequence step ${id}:`, error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Create a new step in a sequence
-   * @param step Step data
-   */
-  async createSequenceStep(step: Partial<EmailSequenceStep>): Promise<GenericResponse<EmailSequenceStep>> {
-    try {
-      // Validate the step data
-      if (!step.sequence_id) {
-        throw new Error('Sequence ID is required');
-      }
-      if (!step.template_id) {
-        throw new Error('Template ID is required');
-      }
-
-      // Get current highest position for this sequence
-      const { data: lastStep, error: posError } = await supabase
-        .from('email_sequence_steps')
-        .select('position')
-        .eq('sequence_id', step.sequence_id)
-        .order('position', { ascending: false })
-        .limit(1)
-        .single();
-
-      const newPosition = lastStep ? (lastStep.position + 1) : 0;
-
-      const { data, error } = await supabase
-        .from('email_sequence_steps')
-        .insert({
-          sequence_id: step.sequence_id,
-          name: step.name || `Step ${newPosition + 1}`,
-          template_id: step.template_id,
-          position: newPosition,
-          delay_hours: step.delay_hours || 0,
-          delay_type: step.delay_type || 'fixed',
-          is_active: step.is_active !== undefined ? step.is_active : true,
-          condition_type: step.condition_type,
-          condition_value: step.condition_value,
-          condition_operator: step.condition_operator
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return { data: formatSequenceStep(data), error: null };
-    } catch (error) {
-      console.error('Error creating email sequence step:', error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Update an existing sequence step
-   * @param id Step ID
-   * @param step Updated step data
-   */
-  async updateSequenceStep(id: string, step: Partial<EmailSequenceStep>): Promise<GenericResponse<EmailSequenceStep>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequence_steps')
-        .update({
-          name: step.name,
-          template_id: step.template_id,
-          position: step.position || step.order,
-          delay_hours: step.delay_hours || step.delayHours,
-          delay_type: step.delay_type || step.delayType,
-          is_active: step.is_active !== undefined ? step.is_active : step.isActive,
-          condition_type: step.condition_type || (step.condition ? step.condition.type : null),
-          condition_value: step.condition_value || (step.condition ? step.condition.value : null),
-          condition_operator: step.condition_operator || (step.condition ? step.condition.operator : null),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return { data: formatSequenceStep(data), error: null };
-    } catch (error) {
-      console.error(`Error updating email sequence step ${id}:`, error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Delete a sequence step
-   * @param id Step ID
-   */
-  async deleteSequenceStep(id: string): Promise<GenericResponse<boolean>> {
-    try {
-      // Get the step to be deleted
-      const { data: stepData, error: fetchError } = await supabase
-        .from('email_sequence_steps')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Delete the step
-      const { error: deleteError } = await supabase
-        .from('email_sequence_steps')
-        .delete()
-        .eq('id', id);
-
-      if (deleteError) throw deleteError;
-
-      // Reorder remaining steps if needed
-      if (stepData) {
-        const { data: remainingSteps, error: getError } = await supabase
-          .from('email_sequence_steps')
-          .select('*')
-          .eq('sequence_id', stepData.sequence_id)
-          .order('position', { ascending: true });
-
-        if (getError) throw getError;
-
-        // Update positions to be sequential
-        for (let i = 0; i < remainingSteps.length; i++) {
-          const step = remainingSteps[i];
-          if (step.position !== i) {
-            const { error: updateError } = await supabase
-              .from('email_sequence_steps')
-              .update({ position: i })
-              .eq('id', step.id);
-
-            if (updateError) throw updateError;
-          }
-        }
-      }
-
-      return { data: true, error: null };
-    } catch (error) {
-      console.error(`Error deleting email sequence step ${id}:`, error);
-      return { data: false, error };
-    }
-  },
-
-  /**
-   * Get analytics for a sequence
-   * @param sequenceId Sequence ID
-   */
-  async getSequenceAnalytics(sequenceId: string): Promise<GenericResponse<EmailSequenceAnalytics>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequence_analytics')
-        .select('*')
-        .eq('sequence_id', sequenceId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No analytics records found, create default analytics
-          return this.createDefaultSequenceAnalytics(sequenceId);
-        }
-        throw error;
-      }
-
-      const analytics: EmailSequenceAnalytics = {
-        id: data.id,
-        sequence_id: data.sequence_id,
-        sequenceId: data.sequence_id,
-        total_enrollments: data.total_enrollments,
-        totalEnrollments: data.total_enrollments,
-        active_enrollments: data.active_enrollments,
-        activeEnrollments: data.active_enrollments,
-        completed_enrollments: data.completed_enrollments,
-        completedEnrollments: data.completed_enrollments,
-        cancelled_enrollments: data.cancelled_enrollments || 0,
-        total_emails_sent: data.total_emails_sent || 0,
-        totalEmailsSent: data.total_emails_sent || 0,
-        open_rate: data.open_rate || 0,
-        openRate: data.open_rate || 0,
-        click_rate: data.click_rate || 0,
-        clickRate: data.click_rate || 0,
-        conversion_rate: data.conversion_rate,
-        conversionRate: data.conversion_rate,
-        average_time_to_complete: data.average_time_to_complete,
-        averageTimeToComplete: data.average_time_to_complete,
-        updated_at: data.updated_at,
-        updatedAt: data.updated_at
-      };
-
-      return { data: analytics, error: null };
-    } catch (error) {
-      console.error(`Error getting sequence analytics for ${sequenceId}:`, error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Create default analytics for a sequence
-   * @param sequenceId Sequence ID
-   */
-  async createDefaultSequenceAnalytics(sequenceId: string): Promise<GenericResponse<EmailSequenceAnalytics>> {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequence_analytics')
-        .insert({
-          sequence_id: sequenceId,
-          total_enrollments: 0,
-          active_enrollments: 0,
-          completed_enrollments: 0,
-          conversion_rate: 0,
-          average_time_to_complete: 0
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const analytics: EmailSequenceAnalytics = {
-        id: data.id,
-        sequence_id: data.sequence_id,
-        sequenceId: data.sequence_id,
-        total_enrollments: data.total_enrollments,
-        totalEnrollments: data.total_enrollments,
-        active_enrollments: data.active_enrollments,
-        activeEnrollments: data.active_enrollments,
-        completed_enrollments: data.completed_enrollments,
-        completedEnrollments: data.completed_enrollments,
-        cancelled_enrollments: 0,
-        total_emails_sent: 0,
-        totalEmailsSent: 0,
-        open_rate: 0,
-        openRate: 0,
-        click_rate: 0,
-        clickRate: 0,
-        conversion_rate: data.conversion_rate,
-        conversionRate: data.conversion_rate,
-        average_time_to_complete: data.average_time_to_complete,
-        averageTimeToComplete: data.average_time_to_complete,
-        updated_at: data.updated_at,
-        updatedAt: data.updated_at
-      };
-
-      return { data: analytics, error: null };
-    } catch (error) {
-      console.error(`Error creating default analytics for sequence ${sequenceId}:`, error);
-      return { data: null, error };
-    }
-  }
-};
-
-// Helper function to format a sequence step from the database
-const formatSequenceStep = (step: any): EmailSequenceStep => {
+// Update the sequence step mapping function to better handle properties
+const mapSequenceStep = (step: any): EmailSequenceStep => {
   return {
     id: step.id,
     sequence_id: step.sequence_id,
     order: step.position,
-    delay_hours: step.delay_hours,
-    delay_type: step.delay_type,
-    email_template_id: step.template_id,
+    delay_hours: step.delay_hours || 0,
+    delay_type: step.delay_type || 'fixed',
     template_id: step.template_id,
+    email_template_id: step.template_id,
     created_at: step.created_at,
     updated_at: step.updated_at,
-    name: step.name,
+    
+    // UI component support
+    name: step.name || '',
     type: 'email',
     templateId: step.template_id,
-    delayHours: step.delay_hours,
-    delayType: step.delay_type,
-    position: step.position,
-    isActive: step.is_active,
+    delayHours: step.delay_hours || 0,
+    delayType: step.delay_type || 'fixed',
+    position: step.position || 0,
+    isActive: step.is_active === true,
     condition: step.condition_type ? {
       type: step.condition_type as 'event' | 'property',
       value: step.condition_value,
@@ -527,8 +36,538 @@ const formatSequenceStep = (step: any): EmailSequenceStep => {
   };
 };
 
-// Helper function to ensure trigger_type is one of the valid values
-const ensureTriggerType = (type: string): 'manual' | 'event' | 'schedule' => {
-  const validTypes: Array<'manual' | 'event' | 'schedule'> = ['manual', 'event', 'schedule'];
-  return validTypes.includes(type as any) ? (type as 'manual' | 'event' | 'schedule') : 'manual';
+/**
+ * Service for email sequence operations
+ */
+export const emailSequenceService = {
+  /**
+   * Get all sequences
+   */
+  async getSequences(): Promise<GenericResponse<EmailSequence[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequences')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Map the sequences to the expected format
+      const mappedSequences: EmailSequence[] = data.map(sequence => ({
+        id: sequence.id,
+        name: sequence.name,
+        description: sequence.description || '',
+        steps: [], // Steps will be fetched separately
+        created_at: sequence.created_at,
+        updated_at: sequence.updated_at,
+        shop_id: sequence.shop_id,
+        created_by: sequence.created_by,
+        trigger_type: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+        trigger_event: sequence.trigger_event,
+        is_active: sequence.is_active,
+        
+        // UI component support
+        triggerType: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: sequence.trigger_event,
+        isActive: sequence.is_active,
+        createdAt: sequence.created_at,
+        updatedAt: sequence.updated_at
+      }));
+      
+      return { data: mappedSequences, error: null };
+    } catch (error) {
+      console.error('Error getting sequences:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Get a sequence by ID with its steps
+   */
+  async getSequenceById(sequenceId: string): Promise<GenericResponse<EmailSequence>> {
+    try {
+      // Fetch the sequence
+      const { data: sequence, error } = await supabase
+        .from('email_sequences')
+        .select('*')
+        .eq('id', sequenceId)
+        .single();
+      
+      if (error) throw error;
+      
+      // Fetch the steps for this sequence
+      const { data: steps, error: stepsError } = await supabase
+        .from('email_sequence_steps')
+        .select('*')
+        .eq('sequence_id', sequenceId)
+        .order('position', { ascending: true });
+      
+      if (stepsError) throw stepsError;
+      
+      // Map the sequence and steps to the expected format
+      const mappedSequence: EmailSequence = {
+        id: sequence.id,
+        name: sequence.name,
+        description: sequence.description || '',
+        steps: steps ? steps.map(mapSequenceStep) : [],
+        created_at: sequence.created_at,
+        updated_at: sequence.updated_at,
+        shop_id: sequence.shop_id,
+        created_by: sequence.created_by,
+        trigger_type: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+        trigger_event: sequence.trigger_event,
+        is_active: sequence.is_active,
+        
+        // UI component support
+        triggerType: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: sequence.trigger_event,
+        isActive: sequence.is_active,
+        createdAt: sequence.created_at,
+        updatedAt: sequence.updated_at
+      };
+      
+      return { data: mappedSequence, error: null };
+    } catch (error) {
+      console.error(`Error getting sequence ${sequenceId}:`, error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Create a new sequence
+   */
+  async createSequence(sequence: Partial<EmailSequence>): Promise<GenericResponse<EmailSequence>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequences')
+        .insert({
+          name: sequence.name,
+          description: sequence.description,
+          trigger_type: sequence.triggerType || sequence.trigger_type || 'manual',
+          trigger_event: sequence.triggerEvent || sequence.trigger_event,
+          is_active: sequence.isActive !== undefined ? sequence.isActive : true
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      const mappedSequence: EmailSequence = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: [],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type as 'manual' | 'event' | 'schedule',
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      
+      return { data: mappedSequence, error: null };
+    } catch (error) {
+      console.error('Error creating sequence:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Update an existing sequence
+   */
+  async updateSequence(
+    sequenceId: string,
+    sequence: Partial<EmailSequence>
+  ): Promise<GenericResponse<EmailSequence>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequences')
+        .update({
+          name: sequence.name,
+          description: sequence.description,
+          trigger_type: sequence.triggerType || sequence.trigger_type,
+          trigger_event: sequence.triggerEvent || sequence.trigger_event,
+          is_active: sequence.isActive
+        })
+        .eq('id', sequenceId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      const mappedSequence: EmailSequence = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: [],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type as 'manual' | 'event' | 'schedule',
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      
+      return { data: mappedSequence, error: null };
+    } catch (error) {
+      console.error(`Error updating sequence ${sequenceId}:`, error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Delete a sequence
+   */
+  async deleteSequence(sequenceId: string): Promise<GenericResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('email_sequences')
+        .delete()
+        .eq('id', sequenceId);
+      
+      if (error) throw error;
+      
+      return { data: true, error: null };
+    } catch (error) {
+      console.error(`Error deleting sequence ${sequenceId}:`, error);
+      return { data: false, error };
+    }
+  },
+
+  /**
+   * Get all steps for a sequence
+   */
+  async getSequenceSteps(sequenceId: string): Promise<GenericResponse<EmailSequenceStep[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_steps')
+        .select('*')
+        .eq('sequence_id', sequenceId)
+        .order('position', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Map the steps to the expected format
+      const mappedSteps: EmailSequenceStep[] = data.map(mapSequenceStep);
+      
+      return { data: mappedSteps, error: null };
+    } catch (error) {
+      console.error(`Error getting steps for sequence ${sequenceId}:`, error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Update a sequence step
+   */
+  async updateSequenceStep(
+    stepId: string, 
+    stepData: Partial<EmailSequenceStep>
+  ): Promise<GenericResponse<EmailSequenceStep>> {
+    try {
+      const updateData = {
+        name: stepData.name,
+        position: stepData.position || stepData.order,
+        delay_hours: stepData.delay_hours || stepData.delayHours,
+        delay_type: stepData.delay_type || stepData.delayType,
+        template_id: stepData.template_id || stepData.templateId || stepData.email_template_id,
+        is_active: stepData.isActive !== undefined ? stepData.isActive : true,
+        condition_type: stepData.condition?.type,
+        condition_value: stepData.condition?.value,
+        condition_operator: stepData.condition?.operator
+      };
+      
+      const { data, error } = await supabase
+        .from('email_sequence_steps')
+        .update(updateData)
+        .eq('id', stepId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { data: mapSequenceStep(data), error: null };
+    } catch (error) {
+      console.error(`Error updating sequence step ${stepId}:`, error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Delete a sequence step
+   */
+  async deleteSequenceStep(stepId: string): Promise<GenericResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_steps')
+        .delete()
+        .eq('id', stepId);
+      
+      if (error) throw error;
+      
+      return { data: true, error: null };
+    } catch (error) {
+      console.error(`Error deleting sequence step ${stepId}:`, error);
+      return { data: false, error };
+    }
+  },
+
+  /**
+   * Create a new sequence step
+   */
+  async createSequenceStep(
+    stepData: Partial<EmailSequenceStep>
+  ): Promise<GenericResponse<EmailSequenceStep>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_steps')
+        .insert({
+          sequence_id: stepData.sequence_id || stepData.sequenceId,
+          name: stepData.name || 'New Step',
+          template_id: stepData.template_id || stepData.templateId || stepData.email_template_id,
+          position: stepData.position || stepData.order || 0,
+          delay_hours: stepData.delay_hours || stepData.delayHours || 24,
+          delay_type: stepData.delay_type || stepData.delayType || 'fixed',
+          is_active: stepData.isActive !== undefined ? stepData.isActive : true,
+          condition_type: stepData.condition?.type,
+          condition_value: stepData.condition?.value,
+          condition_operator: stepData.condition?.operator
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { data: mapSequenceStep(data), error: null };
+    } catch (error) {
+      console.error('Error creating sequence step:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Get analytics for a sequence
+   */
+  async getAnalytics(sequenceId: string): Promise<GenericResponse<any>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_analytics')
+        .select('*')
+        .eq('sequence_id', sequenceId)
+        .single();
+      
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error(`Error getting analytics for sequence ${sequenceId}:`, error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Get detailed sequence analytics
+   */
+  async getSequenceAnalytics(sequenceId: string): Promise<GenericResponse<EmailSequenceAnalytics>> {
+    try {
+      // Fetch the analytics from the table
+      const { data, error } = await supabase
+        .from('email_sequence_analytics')
+        .select('*')
+        .eq('sequence_id', sequenceId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      if (!data) {
+        // If no analytics found, create default values
+        return {
+          data: {
+            id: '', // This would be filled when saved
+            sequence_id: sequenceId,
+            sequenceId: sequenceId,
+            total_enrollments: 0,
+            totalEnrollments: 0,
+            active_enrollments: 0,
+            activeEnrollments: 0,
+            completed_enrollments: 0,
+            completedEnrollments: 0,
+            cancelled_enrollments: 0,
+            conversion_rate: 0,
+            conversionRate: 0,
+            average_time_to_complete: 0,
+            averageTimeToComplete: 0,
+            total_emails_sent: 0,
+            totalEmailsSent: 0,
+            open_rate: 0,
+            openRate: 0,
+            click_rate: 0,
+            clickRate: 0,
+            updated_at: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+          },
+          error: null
+        };
+      }
+      
+      // Add additional properties that might not be in the base analytics
+      const analytics: EmailSequenceAnalytics = {
+        id: data.id,
+        sequence_id: data.sequence_id,
+        sequenceId: data.sequence_id,
+        total_enrollments: data.total_enrollments,
+        totalEnrollments: data.total_enrollments,
+        active_enrollments: data.active_enrollments,
+        activeEnrollments: data.active_enrollments,
+        completed_enrollments: data.completed_enrollments,
+        completedEnrollments: data.completed_enrollments,
+        cancelled_enrollments: 0, // Default value if not present
+        conversion_rate: data.conversion_rate,
+        conversionRate: data.conversion_rate,
+        average_time_to_complete: data.average_time_to_complete,
+        averageTimeToComplete: data.average_time_to_complete,
+        total_emails_sent: 0, // Default value if not present
+        totalEmailsSent: 0, // Default value if not present
+        open_rate: 0, // Default value if not present
+        openRate: 0, // Default value if not present
+        click_rate: 0, // Default value if not present
+        clickRate: 0, // Default value if not present
+        updated_at: data.updated_at,
+        updatedAt: data.updated_at,
+        created_at: data.updated_at, // Use updated_at as fallback
+        createdAt: data.updated_at
+      };
+      
+      return { data: analytics, error: null };
+    } catch (error) {
+      console.error(`Error getting sequence analytics for ${sequenceId}:`, error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Get all enrollments for a sequence
+   */
+  async getEnrollments(sequenceId: string): Promise<GenericResponse<EmailSequenceEnrollment[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .select('*')
+        .eq('sequence_id', sequenceId);
+      
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error(`Error getting enrollments for sequence ${sequenceId}:`, error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Enroll a customer in a sequence
+   */
+  async enrollCustomer(sequenceId: string, customerId: string): Promise<GenericResponse<boolean>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .insert({
+          sequence_id: sequenceId,
+          customer_id: customerId,
+          status: 'active'
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { data: true, error: null };
+    } catch (error) {
+      console.error(`Error enrolling customer ${customerId} in sequence ${sequenceId}:`, error);
+      return { data: false, error };
+    }
+  },
+
+  /**
+   * Pause an enrollment
+   */
+  async pauseEnrollment(enrollmentId: string): Promise<GenericResponse<boolean>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ status: 'paused' })
+        .eq('id', enrollmentId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { data: true, error: null };
+    } catch (error) {
+      console.error(`Error pausing enrollment ${enrollmentId}:`, error);
+      return { data: false, error };
+    }
+  },
+
+  /**
+   * Resume an enrollment
+   */
+  async resumeEnrollment(enrollmentId: string): Promise<GenericResponse<boolean>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ status: 'active' })
+        .eq('id', enrollmentId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { data: true, error: null };
+    } catch (error) {
+      console.error(`Error resuming enrollment ${enrollmentId}:`, error);
+      return { data: false, error };
+    }
+  },
+
+  /**
+   * Cancel an enrollment
+   */
+  async cancelEnrollment(enrollmentId: string): Promise<GenericResponse<boolean>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ status: 'cancelled' })
+        .eq('id', enrollmentId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { data: true, error: null };
+    } catch (error) {
+      console.error(`Error cancelling enrollment ${enrollmentId}:`, error);
+      return { data: false, error };
+    }
+  }
 };

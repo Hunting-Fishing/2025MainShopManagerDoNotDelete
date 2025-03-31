@@ -1,6 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
-import { EmailCampaign, EmailABTest } from '@/types/email';
+import { EmailCampaign, EmailABTest, EmailCampaignStatus } from '@/types/email';
 import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
 
 /**
@@ -26,10 +26,12 @@ export const emailCampaignService = {
         subject: campaign.subject,
         body: campaign.content || '',
         content: campaign.content,
-        status: campaign.status,
+        status: campaign.status as EmailCampaignStatus,
         template_id: campaign.template_id,
-        segment_ids: Array.isArray(campaign.segment_ids) ? campaign.segment_ids : [],
-        recipient_ids: Array.isArray(campaign.recipient_ids) ? campaign.recipient_ids : [],
+        segment_ids: Array.isArray(campaign.segment_ids) ? 
+          campaign.segment_ids.map(id => String(id)) : [],
+        recipient_ids: Array.isArray(campaign.recipient_ids) ? 
+          campaign.recipient_ids.map(id => String(id)) : [],
         personalizations: typeof campaign.personalizations === 'object' ? campaign.personalizations : {},
         metadata: typeof campaign.metadata === 'object' ? campaign.metadata : {},
         ab_test: parseJsonField<EmailABTest | null>(campaign.ab_test, null),
@@ -75,10 +77,12 @@ export const emailCampaignService = {
         subject: data.subject,
         body: data.content || '',
         content: data.content,
-        status: data.status,
+        status: data.status as EmailCampaignStatus,
         template_id: data.template_id,
-        segment_ids: Array.isArray(data.segment_ids) ? data.segment_ids : [],
-        recipient_ids: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
+        segment_ids: Array.isArray(data.segment_ids) ? 
+          data.segment_ids.map(id => String(id)) : [],
+        recipient_ids: Array.isArray(data.recipient_ids) ? 
+          data.recipient_ids.map(id => String(id)) : [],
         personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
         metadata: typeof data.metadata === 'object' ? data.metadata : {},
         ab_test: parseJsonField<EmailABTest | null>(data.ab_test, null),
@@ -109,11 +113,8 @@ export const emailCampaignService = {
    */
   async createCampaign(campaign: Partial<EmailCampaign>): Promise<GenericResponse<EmailCampaign>> {
     try {
-      // Convert the ab_test object to a JSON-serializable value
-      let abTestData = null;
-      if (campaign.abTest || campaign.ab_test) {
-        abTestData = campaign.abTest || campaign.ab_test;
-      }
+      // Convert the AB test object to a serializable format
+      const abTestData = campaign.abTest || campaign.ab_test;
 
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -141,10 +142,12 @@ export const emailCampaignService = {
         subject: data.subject,
         body: data.content || '',
         content: data.content,
-        status: data.status,
+        status: data.status as EmailCampaignStatus,
         template_id: data.template_id,
-        segment_ids: Array.isArray(data.segment_ids) ? data.segment_ids : [],
-        recipient_ids: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
+        segment_ids: Array.isArray(data.segment_ids) ? 
+          data.segment_ids.map(id => String(id)) : [],
+        recipient_ids: Array.isArray(data.recipient_ids) ? 
+          data.recipient_ids.map(id => String(id)) : [],
         personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
         metadata: typeof data.metadata === 'object' ? data.metadata : {},
         ab_test: parseJsonField<EmailABTest | null>(data.ab_test, null),
@@ -179,10 +182,7 @@ export const emailCampaignService = {
   ): Promise<GenericResponse<EmailCampaign>> {
     try {
       // Prepare ab_test data
-      let abTestData = null;
-      if (campaign.abTest || campaign.ab_test) {
-        abTestData = campaign.abTest || campaign.ab_test;
-      }
+      const abTestData = campaign.abTest || campaign.ab_test;
 
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -211,10 +211,12 @@ export const emailCampaignService = {
         subject: data.subject,
         body: data.content || '',
         content: data.content,
-        status: data.status,
+        status: data.status as EmailCampaignStatus,
         template_id: data.template_id,
-        segment_ids: Array.isArray(data.segment_ids) ? data.segment_ids : [],
-        recipient_ids: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
+        segment_ids: Array.isArray(data.segment_ids) ? 
+          data.segment_ids.map(id => String(id)) : [],
+        recipient_ids: Array.isArray(data.recipient_ids) ? 
+          data.recipient_ids.map(id => String(id)) : [],
         personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
         metadata: typeof data.metadata === 'object' ? data.metadata : {},
         ab_test: parseJsonField<EmailABTest | null>(data.ab_test, null),

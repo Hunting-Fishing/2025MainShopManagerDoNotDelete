@@ -1,5 +1,11 @@
 
-import { customTableQuery, GenericResponse } from './utils/supabaseHelper';
+import { supabase } from '@/lib/supabase';
+import { GenericResponse } from './utils/supabaseHelper';
+
+export interface SequenceProcessingSchedule {
+  enabled: boolean;
+  cron: string;
+}
 
 /**
  * Service for managing email sequence processing schedules
@@ -9,35 +15,41 @@ export const schedulingService = {
    * Get the current sequence processing schedule
    * @returns Processing schedule configuration
    */
-  async getSequenceProcessingSchedule() {
+  async getSequenceProcessingSchedule(): Promise<GenericResponse<SequenceProcessingSchedule>> {
     try {
-      const response = await customTableQuery('system_schedules')
+      // Query the email_system_settings table directly
+      const { data, error } = await supabase
+        .from('email_system_settings')
         .select('*')
-        .eq('type', 'email_sequence_processing')
-        .maybeSingle();
+        .eq('key', 'processing_schedule')
+        .single();
         
-      // Cast the response to break the circular type reference
-      const { data, error } = response as GenericResponse;
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
       
-      if (error) throw error;
+      if (!data || !data.value) {
+        return {
+          data: { enabled: false, cron: '0 * * * *' },
+          error: null
+        };
+      }
+      
+      // Cast the value to access the properties
+      const valueObj = data.value as Record<string, any>;
       
       return {
-        enabled: data?.is_active || false,
-        cron: data?.cron_expression || '0 * * * *', // Default to hourly
-        lastRun: data?.last_run || null,
-        nextRun: data?.next_run || null,
-        sequenceIds: data?.sequence_ids ? 
-          (Array.isArray(data.sequence_ids) ? data.sequence_ids : JSON.parse(data.sequence_ids as string)) 
-          : []
+        data: {
+          enabled: valueObj.enabled === true,
+          cron: valueObj.cron || '0 * * * *'
+        },
+        error: null
       };
     } catch (error) {
       console.error('Error getting sequence processing schedule:', error);
       return {
-        enabled: false,
-        cron: '0 * * * *',
-        lastRun: null,
-        nextRun: null,
-        sequenceIds: []
+        data: { enabled: false, cron: '0 * * * *' },
+        error
       };
     }
   },
@@ -51,54 +63,54 @@ export const schedulingService = {
     cron?: string; 
     enabled: boolean;
     sequenceIds?: string[];
-  }) {
+  }): Promise<GenericResponse<{success: boolean}>> {
     try {
       // Check for existing schedule
-      const existingResponse = await customTableQuery('system_schedules')
+      const { data: existing, error: fetchError } = await supabase
+        .from('email_system_settings')
         .select('*')
-        .eq('type', 'email_sequence_processing')
-        .maybeSingle();
+        .eq('key', 'processing_schedule')
+        .single();
       
-      // Cast to avoid circular type reference
-      const { data: existing, error: fetchError } = existingResponse as GenericResponse;
-      
-      if (fetchError) throw fetchError;
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
       
       if (existing) {
         // Update existing schedule
-        const updateResponse = await customTableQuery('system_schedules')
+        const existingValue = existing.value as Record<string, any>;
+        const { error } = await supabase
+          .from('email_system_settings')
           .update({
-            is_active: config.enabled,
-            cron_expression: config.cron || existing.cron_expression,
-            sequence_ids: config.sequenceIds || existing.sequence_ids,
-            updated_at: new Date().toISOString()
+            value: {
+              enabled: config.enabled,
+              cron: config.cron || existingValue.cron || '0 * * * *',
+              sequence_ids: config.sequenceIds || existingValue.sequence_ids || []
+            }
           })
-          .eq('id', existing.id)
-          .select();
-        
-        const { data, error } = updateResponse as GenericResponse;
+          .eq('key', 'processing_schedule');
         
         if (error) throw error;
-        return { success: true, data };
+        return { data: { success: true }, error: null };
       } else {
         // Create new schedule
-        const insertResponse = await customTableQuery('system_schedules')
+        const { error } = await supabase
+          .from('email_system_settings')
           .insert({
-            type: 'email_sequence_processing',
-            is_active: config.enabled,
-            cron_expression: config.cron || '0 * * * *',
-            sequence_ids: config.sequenceIds || []
-          })
-          .select();
-        
-        const { data, error } = insertResponse as GenericResponse;
+            key: 'processing_schedule',
+            value: {
+              enabled: config.enabled,
+              cron: config.cron || '0 * * * *',
+              sequence_ids: config.sequenceIds || []
+            }
+          });
         
         if (error) throw error;
-        return { success: true, data };
+        return { data: { success: true }, error: null };
       }
     } catch (error) {
       console.error('Error updating sequence processing schedule:', error);
-      return { success: false, error };
+      return { data: { success: false }, error };
     }
   }
 };
