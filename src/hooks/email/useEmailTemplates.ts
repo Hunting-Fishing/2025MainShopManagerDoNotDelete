@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailTemplate, EmailTemplatePreview, EmailCategory } from "@/types/email";
@@ -15,7 +16,7 @@ export const useEmailTemplates = (category?: EmailCategory) => {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const data = await emailService.getTemplates();
+      const data = await emailService.getTemplates(category);
       if (Array.isArray(data)) {
         setTemplates(data);
       } else {

@@ -1,13 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { EmailSequence, EmailTemplate, EmailTemplateVariable } from '@/types/email';
 
-type PostgrestResult<T> = {
-  data: T | null;
-  error: any;
-}
-
 class EmailService {
-  async getTemplates(limit?: number, category?: string): Promise<EmailTemplate[]> {
+  async getTemplates(category?: string): Promise<EmailTemplate[]> {
     let query = supabase
       .from('email_templates')
       .select('*')
@@ -15,10 +10,6 @@ class EmailService {
     
     if (category) {
       query = query.eq('category', category);
-    }
-
-    if (limit) {
-      query = query.limit(limit);
     }
 
     const { data, error } = await query;
@@ -35,7 +26,7 @@ class EmailService {
       description: template.description || '',
       category: template.category as any,
       content: template.content,
-      variables: template.variables as EmailTemplateVariable[] || [],
+      variables: template.variables ? (template.variables as any[] || []) : [],
       created_at: template.created_at,
       updated_at: template.updated_at,
       is_archived: template.is_archived || false,
@@ -61,7 +52,7 @@ class EmailService {
       description: data.description || '',
       category: data.category as any,
       content: data.content,
-      variables: data.variables as EmailTemplateVariable[] || [],
+      variables: data.variables ? (data.variables as any[] || []) : [],
       created_at: data.created_at,
       updated_at: data.updated_at,
       is_archived: data.is_archived || false,
@@ -96,7 +87,7 @@ class EmailService {
       description: data.description || '',
       category: data.category as any,
       content: data.content,
-      variables: data.variables as EmailTemplateVariable[] || [],
+      variables: data.variables ? (data.variables as any[] || []) : [],
       created_at: data.created_at,
       updated_at: data.updated_at,
       is_archived: data.is_archived || false,
@@ -104,7 +95,10 @@ class EmailService {
   }
 
   async updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
-    const updateData: any = { ...updates };
+    const updateData: any = { 
+      ...updates,
+      variables: updates.variables ? updates.variables : undefined
+    };
     
     const { data, error } = await supabase
       .from('email_templates')
@@ -125,7 +119,7 @@ class EmailService {
       description: data.description || '',
       category: data.category as any,
       content: data.content,
-      variables: data.variables as EmailTemplateVariable[] || [],
+      variables: data.variables ? (data.variables as any[] || []) : [],
       created_at: data.created_at,
       updated_at: data.updated_at,
       is_archived: data.is_archived || false,
@@ -212,7 +206,7 @@ class EmailService {
       updated_at: sequence.updated_at,
       shop_id: sequence.shop_id,
       created_by: sequence.created_by,
-      trigger_type: sequence.trigger_type,
+      trigger_type: sequence.trigger_type as "manual" | "event" | "schedule",
       trigger_event: sequence.trigger_event,
       is_active: sequence.is_active,
       steps: (sequence.steps || []).map((step: any) => ({
@@ -221,13 +215,13 @@ class EmailService {
         type: step.delay_hours > 0 ? 'delay' : 'email',
         order: step.position,
         position: step.position,
-        delay_hours: step.delay_hours,
-        delay_type: step.delay_type,
+        delayHours: step.delay_hours,
+        delayType: step.delay_type as "fixed" | "business_days",
         email_template_id: step.template_id,
         created_at: step.created_at,
         updated_at: step.updated_at,
         isActive: step.is_active,
-        name: step.name
+        name: step.name || `Step ${step.position + 1}`
       }))
     }));
   }
@@ -252,7 +246,7 @@ class EmailService {
       updated_at: data.updated_at,
       shop_id: data.shop_id,
       created_by: data.created_by,
-      trigger_type: data.trigger_type,
+      trigger_type: data.trigger_type as "manual" | "event" | "schedule",
       trigger_event: data.trigger_event,
       is_active: data.is_active,
       steps: (data.steps || []).map((step: any) => ({
@@ -261,13 +255,13 @@ class EmailService {
         type: step.delay_hours > 0 ? 'delay' : 'email',
         order: step.position,
         position: step.position,
-        delay_hours: step.delay_hours,
-        delay_type: step.delay_type,
+        delayHours: step.delay_hours,
+        delayType: step.delay_type as "fixed" | "business_days",
         email_template_id: step.template_id,
         created_at: step.created_at,
         updated_at: step.updated_at,
         isActive: step.is_active,
-        name: step.name
+        name: step.name || `Step ${step.position + 1}`
       }))
     };
   }
@@ -276,7 +270,7 @@ class EmailService {
     const sequenceData = {
       name: sequence.name,
       description: sequence.description,
-      trigger_type: sequence.triggerType || sequence.trigger_type,
+      trigger_type: (sequence.triggerType || sequence.trigger_type || 'manual') as string,
       trigger_event: sequence.triggerEvent || sequence.trigger_event,
       is_active: sequence.isActive || sequence.is_active || false
     };
@@ -297,8 +291,8 @@ class EmailService {
         sequence_id: sequenceResult.id,
         template_id: step.templateId || step.email_template_id,
         position: index,
-        delay_hours: step.delayHours || step.delay_hours || 0,
-        delay_type: step.delayType || step.delay_type || 'fixed',
+        delay_hours: step.delayHours || 0,
+        delay_type: step.delayType || 'fixed',
         name: step.name || `Step ${index + 1}`,
         is_active: step.isActive !== undefined ? step.isActive : true
       }));
@@ -314,14 +308,15 @@ class EmailService {
 
       return {
         ...sequenceResult,
+        trigger_type: sequenceResult.trigger_type as "manual" | "event" | "schedule",
         steps: (stepsResult || []).map((step: any) => ({
           id: step.id,
           sequence_id: step.sequence_id,
           type: step.delay_hours > 0 ? 'delay' : 'email',
           order: step.position,
           position: step.position,
-          delay_hours: step.delay_hours,
-          delay_type: step.delay_type,
+          delayHours: step.delay_hours,
+          delayType: step.delay_type as "fixed" | "business_days",
           email_template_id: step.template_id,
           created_at: step.created_at,
           updated_at: step.updated_at,
@@ -333,6 +328,7 @@ class EmailService {
 
     return {
       ...sequenceResult,
+      trigger_type: sequenceResult.trigger_type as "manual" | "event" | "schedule",
       steps: []
     };
   }
@@ -341,7 +337,7 @@ class EmailService {
     const sequenceData = {
       name: sequence.name,
       description: sequence.description,
-      trigger_type: sequence.triggerType || sequence.trigger_type,
+      trigger_type: (sequence.triggerType || sequence.trigger_type || 'manual') as string,
       trigger_event: sequence.triggerEvent || sequence.trigger_event,
       is_active: sequence.isActive || sequence.is_active
     };
@@ -365,8 +361,8 @@ class EmailService {
         sequence_id: id,
         template_id: step.templateId || step.email_template_id,
         position: index,
-        delay_hours: step.delayHours || step.delay_hours || 0,
-        delay_type: step.delayType || step.delay_type || 'fixed',
+        delay_hours: step.delayHours || 0,
+        delay_type: step.delayType || 'fixed',
         name: step.name || `Step ${index + 1}`,
         is_active: step.isActive !== undefined ? step.isActive : true
       }));
@@ -382,14 +378,15 @@ class EmailService {
 
       return {
         ...sequenceResult,
+        trigger_type: sequenceResult.trigger_type as "manual" | "event" | "schedule",
         steps: (stepsResult || []).map((step: any) => ({
           id: step.id,
           sequence_id: step.sequence_id,
           type: step.delay_hours > 0 ? 'delay' : 'email',
           order: step.position,
           position: step.position,
-          delay_hours: step.delay_hours,
-          delay_type: step.delay_type,
+          delayHours: step.delay_hours,
+          delayType: step.delay_type as "fixed" | "business_days",
           email_template_id: step.template_id,
           created_at: step.created_at,
           updated_at: step.updated_at,
@@ -401,6 +398,7 @@ class EmailService {
 
     return {
       ...sequenceResult,
+      trigger_type: sequenceResult.trigger_type as "manual" | "event" | "schedule",
       steps: []
     };
   }
