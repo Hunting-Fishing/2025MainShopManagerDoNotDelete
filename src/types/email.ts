@@ -1,3 +1,4 @@
+
 export interface Email {
   id: string;
   subject: string;
@@ -43,6 +44,10 @@ export interface EmailTemplatePreview {
   subject: string;
   category?: EmailCategory;
   created_at: string;
+  description?: string;
+  is_archived?: boolean;
+  // Alias properties for UI components
+  createdAt?: string;
 }
 
 export interface EmailCampaign {
@@ -59,10 +64,13 @@ export interface EmailCampaign {
   updated_at: string;
   content?: string;
   recipientIds?: string[];
+  recipient_ids?: string[];
   personalizations?: Record<string, any>;
   metadata?: Record<string, any>;
   abTest?: EmailABTest;
+  ab_test?: EmailABTest;
   totalRecipients?: number;
+  total_recipients?: number;
   opened?: number;
   clicked?: number;
   bounced?: number;
@@ -70,6 +78,10 @@ export interface EmailCampaign {
   unsubscribed?: number;
   sentDate?: string;
   scheduledDate?: string;
+  // UI component support
+  templateId?: string;
+  segmentIds?: string[];
+  segment_ids?: string[];
 }
 
 export type EmailCampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'completed' | 'cancelled';
@@ -85,9 +97,9 @@ export interface EmailCampaignPreview {
   total_recipients: number;
   opened: number;
   clicked: number;
-  totalRecipients?: number;
-  scheduledDate?: string;
-  sentDate?: string;
+  totalRecipients?: number; // Alias for UI components
+  scheduledDate?: string;   // Alias for UI components
+  sentDate?: string;        // Alias for UI components
 }
 
 export interface EmailSequence {
@@ -103,9 +115,12 @@ export interface EmailSequence {
   trigger_event?: string;
   is_active?: boolean;
   
+  // UI component support
   triggerType?: 'manual' | 'event' | 'schedule';
   triggerEvent?: string;
   isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface EmailSequenceStep {
@@ -118,6 +133,7 @@ export interface EmailSequenceStep {
   created_at: string;
   updated_at: string;
   
+  // UI component support
   name?: string;
   templateId?: string;
   delayHours?: number;
@@ -140,6 +156,8 @@ export interface EmailSequenceEnrollment {
   created_at: string;
   updated_at: string;
   completed_at?: string;
+  
+  // UI component support
   sequenceId?: string;
   customerId?: string;
   currentStepId?: string;

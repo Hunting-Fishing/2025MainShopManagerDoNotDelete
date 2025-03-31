@@ -1,15 +1,43 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, Move } from "lucide-react";
-import { useEmailTemplates } from "@/hooks/email/useEmailTemplates";
-import { EmailSequence, EmailSequenceStep, EmailTemplate, EmailTemplatePreview } from "@/types/email";
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { 
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useEmailSequences } from '@/hooks/email/useEmailSequences';
+import { useEmailTemplates } from '@/hooks/email/useEmailTemplates';
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@/components/ui/select';
+import { 
+  Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage 
+} from '@/components/ui/form';
+import { 
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger 
+} from '@/components/ui/dialog';
+import { 
+  Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@/components/ui/tabs';
+import { 
+  EmailSequence, EmailSequenceStep, EmailTemplate 
+} from '@/types/email';
+import { 
+  DragDropContext, Droppable, Draggable, DropResult 
+} from 'react-beautiful-dnd';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Plus, XCircle, ArrowRight, Clock, Mail, ChevronDown, ChevronUp, 
+  GripVertical, Settings, Save, ArrowLeft 
+} from 'lucide-react';
 
 interface EmailSequenceEditorProps {
   sequence?: EmailSequence;
@@ -46,23 +74,23 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
   }, [sequence]);
 
   const addStep = (type: 'delay' | 'email') => {
-  const newStep: Partial<EmailSequenceStep> = {
-    id: `temp-${Date.now()}`,
-    sequence_id: sequence?.id || '',
-    type: type,
-    order: steps.length,
-    name: type === 'delay' ? 'Wait' : 'Send Email',
-    templateId: '',
-    delayHours: type === 'delay' ? 24 : 0,
-    delayType: 'fixed',
-    position: steps.length,
-    isActive: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
+    const newStep: Partial<EmailSequenceStep> = {
+      id: `temp-${Date.now()}`,
+      sequence_id: sequence?.id || '',
+      type: type,
+      order: steps.length,
+      name: type === 'delay' ? 'Wait' : 'Send Email',
+      templateId: '',
+      delayHours: type === 'delay' ? 24 : 0,
+      delayType: 'fixed',
+      position: steps.length,
+      isActive: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
   
-  setSteps([...steps, newStep as EmailSequenceStep]);
-};
+    setSteps([...steps, newStep as EmailSequenceStep]);
+  };
 
   const updateStep = (id: string, updates: Partial<EmailSequenceStep>) => {
     setSteps(prev =>
@@ -89,7 +117,7 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
     await onSave(sequenceData);
   };
 
-  const onDragEnd = (result: any) => {
+  const onDragEnd = (result: DropResult) => {
     if (!result.destination) {
       return;
     }

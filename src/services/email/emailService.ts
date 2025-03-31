@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import {
   Email,
   EmailTemplate,
@@ -14,10 +14,24 @@ import {
   EmailTemplateVariable,
   EmailABTest,
   EmailABTestResult,
+  EmailCampaignStatus
 } from "@/types/email";
 
+const mockCampaigns: EmailCampaign[] = [];
+const mockSegments: { id: string, name: string, description?: string, criteria: any[], created_at: string, updated_at: string }[] = [];
+const mockSequences: EmailSequence[] = [];
+const mockEnrollments: EmailSequenceEnrollment[] = [];
+
+interface EmailSegment {
+  id: string;
+  name: string;
+  description?: string;
+  criteria: any[];
+  created_at: string;
+  updated_at: string;
+}
+
 class EmailService {
-  // Template functions
   async getTemplates(id?: string, category?: EmailCategory): Promise<EmailTemplatePreview[] | EmailTemplate> {
     try {
       if (id) {
@@ -29,7 +43,6 @@ class EmailService {
 
         if (error) throw error;
         
-        // Convert the database object to the EmailTemplate interface
         const template: EmailTemplate = {
           id: data.id,
           name: data.name,
@@ -56,7 +69,6 @@ class EmailService {
 
       if (error) throw error;
 
-      // Convert the array of database objects to EmailTemplatePreview array
       const templates: EmailTemplatePreview[] = data.map(item => ({
         id: item.id,
         name: item.name,
@@ -99,7 +111,6 @@ class EmailService {
 
       if (error) throw error;
 
-      // Convert the database object to the EmailTemplate interface
       const newTemplate: EmailTemplate = {
         id: data.id,
         name: data.name,
@@ -137,7 +148,6 @@ class EmailService {
 
       if (error) throw error;
 
-      // Convert the database object to the EmailTemplate interface
       const updatedTemplate: EmailTemplate = {
         id: data.id,
         name: data.name,
@@ -176,12 +186,11 @@ class EmailService {
 
         if (error) throw error;
         
-        // Convert database object to EmailCampaign
         const campaign: EmailCampaign = {
           id: data.id,
           name: data.name,
           subject: data.subject,
-          body: data.content || '', // Map content to body for compatibility
+          body: data.content || '',
           content: data.content,
           status: data.status,
           template_id: data.template_id,
@@ -211,7 +220,6 @@ class EmailService {
 
       if (error) throw error;
 
-      // Convert database objects to EmailCampaignPreview array
       const campaigns: EmailCampaignPreview[] = data.map(item => ({
         id: item.id,
         name: item.name,
@@ -223,7 +231,6 @@ class EmailService {
         total_recipients: item.total_recipients,
         opened: item.opened,
         clicked: item.clicked,
-        // Support for UI properties
         totalRecipients: item.total_recipients,
         scheduledDate: item.scheduled_date,
         sentDate: item.sent_date
@@ -259,7 +266,6 @@ class EmailService {
 
       if (error) throw error;
 
-      // Convert database object to EmailCampaign
       const newCampaign: EmailCampaign = {
         id: data.id,
         name: data.name,
@@ -310,7 +316,6 @@ class EmailService {
 
       if (error) throw error;
 
-      // Convert database object to EmailCampaign
       const updatedCampaign: EmailCampaign = {
         id: data.id,
         name: data.name,
@@ -338,63 +343,68 @@ class EmailService {
   }
 
   async scheduleCampaign(id: string, date: string): Promise<EmailCampaign> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ ...mockCampaigns.find((campaign) => campaign.id === id), scheduled_at: date } as EmailCampaign);
-      }, 500);
-    });
+    return { 
+      id, 
+      scheduled_at: date,
+      name: '',
+      subject: '',
+      body: '',
+      status: 'scheduled' as EmailCampaignStatus,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
   }
 
   async sendCampaignNow(id: string): Promise<EmailCampaign> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ ...mockCampaigns.find((campaign) => campaign.id === id), status: 'sending' } as EmailCampaign);
-      }, 500);
-    });
+    return { 
+      id, 
+      status: 'sending' as EmailCampaignStatus,
+      name: '',
+      subject: '',
+      body: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
   }
 
   async pauseCampaign(id: string): Promise<EmailCampaign> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ ...mockCampaigns.find((campaign) => campaign.id === id), status: 'paused' } as EmailCampaign);
-      }, 500);
-    });
+    return { 
+      id, 
+      status: 'paused' as EmailCampaignStatus,
+      name: '',
+      subject: '',
+      body: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
   }
 
   async cancelCampaign(id: string): Promise<EmailCampaign> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ ...mockCampaigns.find((campaign) => campaign.id === id), status: 'cancelled' } as EmailCampaign);
-      }, 500);
-    });
+    return { 
+      id, 
+      status: 'cancelled' as EmailCampaignStatus,
+      name: '',
+      subject: '',
+      body: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
   }
 
   async getSegments(id?: string): Promise<EmailSegment | EmailSegment[]> {
-    return id ? mockSegments.find((segment) => segment.id === id) as EmailSegment : mockSegments;
+    return id ? { id, name: '', criteria: [], created_at: '', updated_at: '' } : [];
   }
 
   async createSegment(segment: EmailSegment): Promise<EmailSegment> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ ...segment, id: Math.random().toString() });
-      }, 500);
-    });
+    return { ...segment, id: Math.random().toString() };
   }
 
   async updateSegment(id: string, updates: Partial<EmailSegment>): Promise<EmailSegment> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ ...mockSegments.find((segment) => segment.id === id), ...updates } as EmailSegment);
-      }, 500);
-    });
+    return { ...updates, id, criteria: [], created_at: '', updated_at: '' } as EmailSegment;
   }
 
   async deleteSegment(id: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 500);
-    });
+    return true;
   }
 
   async getSequences(): Promise<EmailSequence[]> {
@@ -409,7 +419,6 @@ class EmailService {
       const sequences: EmailSequence[] = [];
 
       for (const seq of sequencesData) {
-        // Get steps for each sequence
         const { data: stepsData, error: stepsError } = await supabase
           .from('email_sequence_steps')
           .select('*')
@@ -418,7 +427,6 @@ class EmailService {
 
         if (stepsError) throw stepsError;
 
-        // Map database steps to EmailSequenceStep interface
         const steps: EmailSequenceStep[] = stepsData.map(step => ({
           id: step.id,
           sequence_id: step.sequence_id,
@@ -428,7 +436,6 @@ class EmailService {
           email_template_id: step.template_id,
           created_at: step.created_at,
           updated_at: step.updated_at,
-          // UI properties
           name: step.name,
           templateId: step.template_id,
           delayHours: step.delay_hours,
@@ -442,7 +449,6 @@ class EmailService {
           } : undefined
         }));
 
-        // Add sequence with its steps to the result
         sequences.push({
           id: seq.id,
           name: seq.name,
@@ -450,7 +456,6 @@ class EmailService {
           steps,
           created_at: seq.created_at,
           updated_at: seq.updated_at,
-          // UI properties
           triggerType: seq.trigger_type,
           triggerEvent: seq.trigger_event,
           isActive: seq.is_active
@@ -474,7 +479,6 @@ class EmailService {
 
       if (sequenceError) throw sequenceError;
 
-      // Get steps for the sequence
       const { data: stepsData, error: stepsError } = await supabase
         .from('email_sequence_steps')
         .select('*')
@@ -483,7 +487,6 @@ class EmailService {
 
       if (stepsError) throw stepsError;
 
-      // Map database steps to EmailSequenceStep interface
       const steps: EmailSequenceStep[] = stepsData.map(step => ({
         id: step.id,
         sequence_id: step.sequence_id,
@@ -493,7 +496,6 @@ class EmailService {
         email_template_id: step.template_id,
         created_at: step.created_at,
         updated_at: step.updated_at,
-        // UI properties
         name: step.name,
         templateId: step.template_id,
         delayHours: step.delay_hours,
@@ -507,7 +509,6 @@ class EmailService {
         } : undefined
       }));
 
-      // Construct and return the sequence with its steps
       return {
         id: sequence.id,
         name: sequence.name,
@@ -515,7 +516,6 @@ class EmailService {
         steps,
         created_at: sequence.created_at,
         updated_at: sequence.updated_at,
-        // UI properties
         triggerType: sequence.trigger_type,
         triggerEvent: sequence.trigger_event,
         isActive: sequence.is_active
@@ -528,7 +528,6 @@ class EmailService {
 
   async createSequence(sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
     try {
-      // Insert the sequence
       const { data: newSequence, error: sequenceError } = await supabase
         .from('email_sequences')
         .insert({
@@ -545,7 +544,6 @@ class EmailService {
 
       const steps: EmailSequenceStep[] = [];
       
-      // Insert steps if any
       if (sequence.steps && sequence.steps.length > 0) {
         for (const [index, step] of sequence.steps.entries()) {
           const stepData = {
@@ -569,7 +567,6 @@ class EmailService {
 
           if (stepError) throw stepError;
           
-          // Map database step to EmailSequenceStep interface
           steps.push({
             id: newStep.id,
             sequence_id: newStep.sequence_id,
@@ -579,7 +576,6 @@ class EmailService {
             email_template_id: newStep.template_id,
             created_at: newStep.created_at,
             updated_at: newStep.updated_at,
-            // UI properties
             name: newStep.name,
             templateId: newStep.template_id,
             delayHours: newStep.delay_hours,
@@ -595,7 +591,6 @@ class EmailService {
         }
       }
 
-      // Return the new sequence with its steps
       return {
         id: newSequence.id,
         name: newSequence.name,
@@ -603,7 +598,6 @@ class EmailService {
         steps,
         created_at: newSequence.created_at,
         updated_at: newSequence.updated_at,
-        // UI properties
         triggerType: newSequence.trigger_type,
         triggerEvent: newSequence.trigger_event,
         isActive: newSequence.is_active
@@ -615,19 +609,17 @@ class EmailService {
   }
 
   async updateSequence(id: string, updates: Partial<EmailSequence>): Promise<EmailSequence | null> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ ...mockSequences.find((sequence) => sequence.id === id), ...updates } as EmailSequence);
-      }, 500);
-    });
+    return { 
+      ...updates, 
+      id, 
+      steps: updates.steps || [],
+      created_at: '',
+      updated_at: ''
+    } as EmailSequence;
   }
 
   async deleteSequence(id: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 500);
-    });
+    return true;
   }
 
   async getSequenceSteps(sequenceId: string): Promise<EmailSequenceStep[]> {
@@ -663,7 +655,17 @@ class EmailService {
   }
 
   async getEnrollments(id?: string): Promise<EmailSequenceEnrollment | EmailSequenceEnrollment[]> {
-    return id ? mockEnrollments.find((enrollment) => enrollment.id === id) as EmailSequenceEnrollment : mockEnrollments;
+    if (id) {
+      return {
+        id,
+        sequence_id: '',
+        customer_id: '',
+        status: 'active' as 'active' | 'paused' | 'completed' | 'cancelled',
+        created_at: '',
+        updated_at: ''
+      };
+    }
+    return [];
   }
 
   async enrollCustomerInSequence(enrollment: EmailSequenceEnrollment): Promise<EmailSequenceEnrollment> {
@@ -760,14 +762,12 @@ class EmailService {
 
       if (error) throw error;
       
-      // Convert database timeline JSON to EmailCampaignTimelinePoint array
       let timelinePoints: EmailCampaignTimelinePoint[] = [];
       if (data.timeline) {
         try {
           timelinePoints = (typeof data.timeline === 'string' ? 
             JSON.parse(data.timeline) : data.timeline) as EmailCampaignTimelinePoint[];
           
-          // Ensure required properties exist
           timelinePoints = timelinePoints.map(point => ({
             date: point.date,
             opens: point.opens || 0,
@@ -819,7 +819,6 @@ class EmailService {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // Record not found, return default analytics
           return {
             id: null,
             sequence_id: sequenceId,

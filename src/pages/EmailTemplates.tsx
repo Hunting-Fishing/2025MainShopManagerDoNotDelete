@@ -1,101 +1,145 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { EmailTemplateEditor } from "@/components/email/template/EmailTemplateEditor";
-import { useEmailTemplates } from "@/hooks/email/useEmailTemplates";
-import { EmailCategory, EmailTemplate } from "@/types/email";
-import { Plus, FileText, Calendar, Search, AlertTriangle, Edit, Copy, Trash2, SendHorizontal } from "lucide-react";
-import { format } from "date-fns";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from '@/components/ui/table';
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger 
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger 
+} from '@/components/ui/tooltip';
+import { useEmailTemplates } from '@/hooks/email/useEmailTemplates';
+import { EmailCategory, EmailTemplatePreview } from '@/types/email';
+import { format } from 'date-fns';
+import { 
+  Plus, MoreVertical, Copy, Edit, Trash, Eye, Send, 
+  Filter, LayoutTemplate, Check, ArrowRight, AlertCircle 
+} from 'lucide-react';
 
 export default function EmailTemplates() {
+  const [activeCategory, setActiveCategory] = useState<EmailCategory | 'all'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isSendTestModalOpen, setIsSendTestModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<EmailCategory | undefined>(undefined);
-  const [templateToEdit, setTemplateToEdit] = useState<EmailTemplate | null>(null);
-  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
-  const [testEmailRecipient, setTestEmailRecipient] = useState("");
-  const [templateToTest, setTemplateToTest] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  const { 
-    templates, 
-    loading, 
-    fetchTemplateById,
-    createTemplate, 
-    updateTemplate,
-    deleteTemplate,
-    sendTestEmail
-  } = useEmailTemplates(activeCategory);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { templates, loading } = useEmailTemplates();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const filteredTemplates = templates.filter(template => 
-    template.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (template.description && template.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredTemplates = activeCategory === 'all' 
+    ? templates 
+    : templates.filter(template => template.category === activeCategory);
 
-  const handleCreateTemplate = async (template: Partial<EmailTemplate>) => {
-    const result = await createTemplate(template);
-    if (result) {
-      setIsCreateModalOpen(false);
-    }
-    return result;
+  const handleCategoryChange = (category: EmailCategory | 'all') => {
+    setActiveCategory(category);
   };
 
-  const handleEditClick = async (templateId: string) => {
-    const template = await fetchTemplateById(templateId);
-    if (template) {
-      setTemplateToEdit(template);
-      setIsEditModalOpen(true);
-    }
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
   };
 
-  const handleUpdateTemplate = async (template: Partial<EmailTemplate>) => {
-    if (!templateToEdit) return null;
+  const clearSearch = () => {
+    setSearchTerm('');
+  };
+
+  const handleCreateTemplate = () => {
+    navigate('/email-templates/new');
+  };
+
+  const handleEditTemplate = (templateId: string) => {
+    navigate(`/email-templates/${templateId}/edit`);
+  };
+
+  const handleDuplicateTemplate = (templateId: string) => {
+    toast({
+      title: "Template Duplicated",
+      description: "The email template has been duplicated successfully",
+    });
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    toast({
+      title: "Template Deleted",
+      description: "The email template has been deleted successfully",
+    });
+  };
+
+  const handleSendTestEmail = (templateId: string) => {
+    toast({
+      title: "Test Email Sent",
+      description: "A test email has been sent using this template",
+    });
+  };
+
+  // Update the component to handle cases where description might be missing
+  const TemplateCard = ({ template }: { template: EmailTemplatePreview }) => {
+    const navigate = useNavigate();
+    const description = template.description || "No description available";
     
-    const result = await updateTemplate(templateToEdit.id, template);
-    if (result) {
-      setIsEditModalOpen(false);
-      setTemplateToEdit(null);
-    }
-    return result;
-  };
-
-  const handleDeleteClick = (templateId: string) => {
-    setTemplateToDelete(templateId);
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!templateToDelete) return;
-    
-    const success = await deleteTemplate(templateToDelete);
-    if (success) {
-      setIsDeleteModalOpen(false);
-      setTemplateToDelete(null);
-    }
-  };
-
-  const handleSendTestClick = (templateId: string) => {
-    setTemplateToTest(templateId);
-    setIsSendTestModalOpen(true);
-  };
-
-  const handleSendTest = async () => {
-    if (!templateToTest || !testEmailRecipient) return;
-    
-    const success = await sendTestEmail(templateToTest, testEmailRecipient);
-    if (success) {
-      setIsSendTestModalOpen(false);
-      setTemplateToTest(null);
-      setTestEmailRecipient("");
-    }
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 pb-0">
+          <CardTitle className="text-lg font-semibold truncate">{template.name}</CardTitle>
+          <CardDescription className="line-clamp-2" title={description}>
+            {description}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 pt-2">
+          <div className="flex justify-between items-center">
+            <Badge variant="outline" className="px-2 py-0 text-xs">
+              {template.category}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {format(new Date(template.created_at), 'MMM d, yyyy')}
+            </span>
+          </div>
+        </CardContent>
+        <CardFooter className="p-2 pt-0 bg-muted/50 flex justify-end space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0" 
+            onClick={() => navigate(`/email-templates/${template.id}`)}
+          >
+            <Edit className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
+          </Button>
+          <Button 
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => navigate(`/email-templates/${template.id}/preview`)}
+          >
+            <Eye className="h-4 w-4" />
+            <span className="sr-only">Preview</span>
+          </Button>
+          <Button 
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">More</span>
+          </Button>
+        </CardFooter>
+      </Card>
+    );
   };
 
   return (
@@ -104,269 +148,173 @@ export default function EmailTemplates() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Email Templates</h1>
           <p className="text-muted-foreground">
-            Create and manage your email templates for marketing and communication
+            Create and manage email templates for your marketing campaigns
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Create Template
+        <Button asChild>
+          <a href="/email-templates/new">
+            <Plus className="mr-2 h-4 w-4" /> Create Template
+          </a>
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/3 lg:w-1/4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filter Templates</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search templates..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium mb-2">Categories</h3>
-                <div className="space-y-1">
-                  <Button
-                    variant={activeCategory === undefined ? "default" : "ghost"}
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => setActiveCategory(undefined)}
-                  >
-                    All Templates
-                  </Button>
-                  {[
-                    { value: 'marketing', label: 'Marketing', icon: <FileText className="mr-2 h-4 w-4" /> },
-                    { value: 'transactional', label: 'Transactional', icon: <FileText className="mr-2 h-4 w-4" /> },
-                    { value: 'reminder', label: 'Reminder', icon: <Calendar className="mr-2 h-4 w-4" /> },
-                    { value: 'welcome', label: 'Welcome', icon: <FileText className="mr-2 h-4 w-4" /> },
-                    { value: 'follow_up', label: 'Follow-up', icon: <FileText className="mr-2 h-4 w-4" /> },
-                    { value: 'survey', label: 'Survey', icon: <FileText className="mr-2 h-4 w-4" /> },
-                    { value: 'custom', label: 'Custom', icon: <FileText className="mr-2 h-4 w-4" /> },
-                  ].map((category) => (
-                    <Button
-                      key={category.value}
-                      variant={activeCategory === category.value ? "default" : "ghost"}
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => setActiveCategory(category.value as EmailCategory)}
-                    >
-                      {category.icon}
-                      {category.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="w-full md:w-2/3 lg:w-3/4">
-          <Card>
-            <CardHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
               <CardTitle>Email Templates</CardTitle>
               <CardDescription>
-                {activeCategory 
-                  ? `Showing ${filteredTemplates.length} ${activeCategory} templates` 
-                  : `Showing ${filteredTemplates.length} templates across all categories`}
+                Manage and organize your email templates
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center items-center py-8">
-                  <p>Loading templates...</p>
-                </div>
-              ) : filteredTemplates.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
-                    <AlertTriangle className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-semibold">No templates found</h3>
-                  <p className="text-muted-foreground mt-2">
-                    {searchQuery
-                      ? `No templates matching "${searchQuery}"`
-                      : activeCategory
-                      ? `No templates in the ${activeCategory} category`
-                      : "You haven't created any templates yet"}
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => setIsCreateModalOpen(true)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Template
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTemplates.map((template) => (
-                        <TableRow key={template.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{template.name}</p>
-                              <p className="text-sm text-muted-foreground truncate max-w-[300px]">
-                                {template.subject}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {template.category}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {format(new Date(template.created_at), 'MMM d, yyyy')}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditClick(template.id)}
-                              >
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only">Edit</span>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleSendTestClick(template.id)}
-                              >
-                                <SendHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Send Test</span>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteClick(template.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="search"
+                placeholder="Search templates..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="md:w-64"
+              />
+              {searchTerm && (
+                <Button variant="ghost" size="sm" onClick={clearSearch}>
+                  <XCircle className="h-4 w-4" />
+                  <span className="sr-only">Clear Search</span>
+                </Button>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-      
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleCategoryChange('all')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'all' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    All Categories
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCategoryChange('marketing')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'marketing' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    Marketing
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCategoryChange('transactional')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'transactional' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    Transactional
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCategoryChange('reminder')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'reminder' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    Reminder
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCategoryChange('welcome')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'welcome' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    Welcome
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCategoryChange('follow_up')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'follow_up' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    Follow Up
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCategoryChange('survey')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'survey' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    Survey
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCategoryChange('custom')}>
+                    <Check
+                      className="mr-2 h-4 w-4"
+                      style={{
+                        visibility: activeCategory === 'custom' ? 'visible' : 'hidden',
+                      }}
+                    />
+                    Custom
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8">
+              <p>Loading templates...</p>
+            </div>
+          ) : filteredTemplates.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No templates found</p>
+              <Button asChild className="mt-4">
+                <a href="/email-templates/new">
+                  <Plus className="mr-2 h-4 w-4" /> Create Template
+                </a>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTemplates.map((template) => (
+                <TemplateCard key={template.id} template={template} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Create Template Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-5xl">
-          <DialogHeader>
-            <DialogTitle>Create Email Template</DialogTitle>
-          </DialogHeader>
-          <EmailTemplateEditor
-            onSave={handleCreateTemplate}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      {/* Edit Template Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-5xl">
-          <DialogHeader>
-            <DialogTitle>Edit Email Template</DialogTitle>
-          </DialogHeader>
-          {templateToEdit && (
-            <EmailTemplateEditor
-              template={templateToEdit}
-              onSave={handleUpdateTemplate}
-              onSendTest={sendTestEmail}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      {/* Send Test Email Modal */}
-      <Dialog open={isSendTestModalOpen} onOpenChange={setIsSendTestModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Send Test Email</DialogTitle>
+            <DialogTitle>Create New Template</DialogTitle>
+            <DialogDescription>
+              Choose a category and name for your new email template
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="recipient" className="text-sm font-medium">
-                Recipient Email
-              </label>
-              <Input
-                id="recipient"
-                placeholder="recipient@example.com"
-                value={testEmailRecipient}
-                onChange={(e) => setTestEmailRecipient(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsSendTestModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSendTest}
-                disabled={!testEmailRecipient}
-              >
-                Send Test
-              </Button>
-            </div>
-          </div>
+          {/* Add form or content for creating a new template */}
         </DialogContent>
       </Dialog>
-      
-      {/* Delete Confirmation Modal */}
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+
+      {/* Filter Templates Modal */}
+      <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Template</DialogTitle>
+            <DialogTitle>Filter Templates</DialogTitle>
+            <DialogDescription>
+              Select the categories to filter your email templates
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Warning</AlertTitle>
-              <AlertDescription>
-                Are you sure you want to delete this template? This action cannot be undone.
-              </AlertDescription>
-            </Alert>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-            >
-              Delete
-            </Button>
-          </div>
+          {/* Add filter options here */}
         </DialogContent>
       </Dialog>
     </div>

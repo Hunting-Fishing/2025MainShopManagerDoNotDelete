@@ -12,7 +12,9 @@ export const useSequenceAnalytics = () => {
   const fetchSequenceAnalytics = async (sequenceId: string) => {
     setAnalyticsLoading(true);
     try {
+      // Use the emailService method properly
       const data = await emailService.getSequenceAnalytics(sequenceId);
+      
       if (data) {
         let transformedData: EmailSequenceAnalytics;
         
@@ -20,23 +22,37 @@ export const useSequenceAnalytics = () => {
           transformedData = {
             id: data.id,
             sequenceId: data.sequence_id,
+            sequence_id: data.sequence_id,
             totalEnrollments: data.total_enrollments,
+            total_enrollments: data.total_enrollments,
             activeEnrollments: data.active_enrollments,
+            active_enrollments: data.active_enrollments,
             completedEnrollments: data.completed_enrollments,
+            completed_enrollments: data.completed_enrollments,
             conversionRate: data.conversion_rate || 0,
+            conversion_rate: data.conversion_rate || 0,
             averageTimeToComplete: data.average_time_to_complete || 0,
-            updatedAt: data.updated_at
+            average_time_to_complete: data.average_time_to_complete || 0,
+            updatedAt: data.updated_at,
+            updated_at: data.updated_at
           };
         } else {
           transformedData = {
             id: sequenceId,
-            sequenceId: data.sequence_id,
+            sequenceId: sequenceId,
+            sequence_id: sequenceId,
             totalEnrollments: data.total_enrollments,
+            total_enrollments: data.total_enrollments,
             activeEnrollments: data.active_enrollments,
+            active_enrollments: data.active_enrollments,
             completedEnrollments: data.completed_enrollments,
+            completed_enrollments: data.completed_enrollments,
             conversionRate: 0,
+            conversion_rate: 0,
             averageTimeToComplete: data.average_time_to_complete || 0,
-            updatedAt: data.updated_at
+            average_time_to_complete: data.average_time_to_complete || 0,
+            updatedAt: data.updated_at,
+            updated_at: data.updated_at
           };
         }
         
@@ -47,12 +63,19 @@ export const useSequenceAnalytics = () => {
       const defaultAnalytics: EmailSequenceAnalytics = {
         id: sequenceId,
         sequenceId: sequenceId,
+        sequence_id: sequenceId,
         totalEnrollments: 0,
+        total_enrollments: 0,
         activeEnrollments: 0,
+        active_enrollments: 0,
         completedEnrollments: 0,
+        completed_enrollments: 0,
         conversionRate: 0,
+        conversion_rate: 0,
         averageTimeToComplete: 0,
-        updatedAt: new Date().toISOString()
+        average_time_to_complete: 0,
+        updatedAt: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       setAnalytics(defaultAnalytics);
       return defaultAnalytics;

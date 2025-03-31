@@ -1,24 +1,62 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
-import { EmailCampaignAnalytics, EmailCampaignTimelinePoint, EmailABTestResult } from '@/types/email';
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area
+} from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { 
   ArrowUpRight, 
   ArrowDownRight, 
+  BarChart2, 
+  Users, 
   Mail, 
   MousePointerClick, 
-  AlertTriangle, 
-  UserX, 
   CheckCircle2, 
-  BarChart3, 
-  PieChart as PieChartIcon,
-  LineChart,
-  Trophy
+  XCircle,
+  AlertCircle,
+  TrendingUp,
+  Clock,
+  ChevronRight,
+  ChevronsUpDown,
+  Trophy,
+  AlertTriangle
 } from 'lucide-react';
+import { EmailCampaign, EmailCampaignAnalytics, EmailCampaignStatus, EmailABTestResult, EmailABTestVariant } from '@/types/email';
+import { useEmailCampaigns } from '@/hooks/email/useEmailCampaigns';
 
 const COLORS = {
   primary: '#0ea5e9',
