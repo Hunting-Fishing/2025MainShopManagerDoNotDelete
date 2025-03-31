@@ -40,7 +40,8 @@ import {
   Smartphone,
   Laptop,
   Layers,
-  Mail
+  Mail,
+  Link as LinkIcon
 } from "lucide-react";
 import { useEmailCampaignAnalytics } from "@/hooks/email/useEmailCampaignAnalytics";
 import { ReportExportMenu } from "@/components/reports/ReportExportMenu";
@@ -64,6 +65,7 @@ export default function EmailCampaignAnalytics() {
     error,
     geoData,
     deviceData,
+    linkData,
     fetchCampaignAnalytics,
     compareCampaigns,
     comparisonData,
@@ -75,6 +77,12 @@ export default function EmailCampaignAnalytics() {
       fetchCampaignAnalytics(id);
     }
   }, [id, fetchCampaignAnalytics]);
+
+  useEffect(() => {
+    if (id && activeTab === "comparison" && (!comparisonData || comparisonData.length <= 1)) {
+      compareCampaigns(id);
+    }
+  }, [id, activeTab, comparisonData, compareCampaigns]);
 
   if (loading) {
     return (
@@ -118,7 +126,7 @@ export default function EmailCampaignAnalytics() {
     if (!analytics?.timeline) return [];
     
     return analytics.timeline.map(point => ({
-      date: format(new Date(point.date), 'MMM dd'),
+      date: point.date, 
       opens: point.opens,
       clicks: point.clicks,
       unsubscribes: point.unsubscribes || 0
@@ -129,11 +137,23 @@ export default function EmailCampaignAnalytics() {
     if (!deviceData) return [];
     
     return [
-      { name: 'Desktop', value: deviceData.desktop },
-      { name: 'Mobile', value: deviceData.mobile },
-      { name: 'Tablet', value: deviceData.tablet },
-      { name: 'Other', value: deviceData.other }
-    ];
+      { name: 'Desktop', value: deviceData.desktop || 0 },
+      { name: 'Mobile', value: deviceData.mobile || 0 },
+      { name: 'Tablet', value: deviceData.tablet || 0 },
+      { name: 'Other', value: deviceData.other || 0 }
+    ].filter(item => item.value > 0);
+  };
+
+  const getEmailClientData = () => {
+    if (!deviceData?.emailClients) return [];
+    
+    return [
+      { name: 'Gmail', value: deviceData.emailClients.gmail || 0 },
+      { name: 'Outlook', value: deviceData.emailClients.outlook || 0 },
+      { name: 'Apple Mail', value: deviceData.emailClients.apple || 0 },
+      { name: 'Yahoo', value: deviceData.emailClients.yahoo || 0 },
+      { name: 'Other', value: deviceData.emailClients.other || 0 }
+    ].filter(item => item.value > 0);
   };
 
   const getGeoData = () => {
@@ -146,7 +166,16 @@ export default function EmailCampaignAnalytics() {
       .slice(0, 10); // Top 10 countries
   };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  const getLinkData = () => {
+    if (!linkData) return [];
+    
+    return Object.entries(linkData)
+      .map(([url, count]) => ({ name: url, value: count }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10); // Top 10 links
+  };
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#4d88ff', '#ff6b6b', '#8c44ad'];
 
   const exportColumns = [
     { header: 'Date', dataKey: 'date' },
@@ -154,6 +183,11 @@ export default function EmailCampaignAnalytics() {
     { header: 'Clicks', dataKey: 'clicks' },
     { header: 'Unsubscribes', dataKey: 'unsubscribes' }
   ];
+
+  const hasGeoData = geoData && Object.keys(geoData).length > 0;
+  const hasDeviceData = deviceData && (deviceData.desktop > 0 || deviceData.mobile > 0 || deviceData.tablet > 0 || deviceData.other > 0);
+  const hasEmailClientData = deviceData?.emailClients && Object.values(deviceData.emailClients).some(v => v > 0);
+  const hasLinkData = linkData && Object.keys(linkData).length > 0;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -246,9 +280,10 @@ export default function EmailCampaignAnalytics() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 mb-4">
+        <TabsList className="grid grid-cols-4 mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="engagement">Engagement</TabsTrigger>
+          <TabsTrigger value="geography">Geography</TabsTrigger>
           <TabsTrigger value="comparison">Campaign Comparison</TabsTrigger>
         </TabsList>
         
@@ -345,64 +380,89 @@ export default function EmailCampaignAnalytics() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={getDeviceData()}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {getDeviceData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => [`${value} opens`, 'Count']} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                {hasDeviceData ? (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={getDeviceData()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {getDeviceData().map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`${value} opens`, 'Count']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Smartphone className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No device data available for this campaign</p>
+                      <p className="text-sm mt-1">Device tracking is supported for newer campaigns</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
-            {/* Geographic Distribution */}
+            {/* Email Client Distribution */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" /> 
-                  Geographic Distribution
+                  <Mail className="h-5 w-5" /> 
+                  Email Client Distribution
                 </CardTitle>
                 <CardDescription>
-                  Top countries by engagement
+                  Opens by email client
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      layout="vertical"
-                      data={getGeoData()}
-                      margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis type="category" dataKey="name" />
-                      <Tooltip />
-                      <Bar dataKey="value" name="Opens" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                {hasEmailClientData ? (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={getEmailClientData()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {getEmailClientData().map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`${value} opens`, 'Count']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Mail className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No email client data available</p>
+                      <p className="text-sm mt-1">Client tracking is supported for newer campaigns</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
         
         <TabsContent value="engagement" className="space-y-4">
-          {/* Additional engagement metrics and visualizations */}
           <Card>
             <CardHeader>
               <CardTitle>Engagement Funnel</CardTitle>
@@ -442,74 +502,91 @@ export default function EmailCampaignAnalytics() {
             </CardContent>
           </Card>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Click Timing Analysis */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Click Timing Analysis</CardTitle>
-                <CardDescription>
-                  When recipients are engaging with your content
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LinkIcon className="h-5 w-5" /> 
+                Most Clicked Links
+              </CardTitle>
+              <CardDescription>
+                Top performing links in your campaign
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {hasLinkData ? (
+                <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={analytics.timeline}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    <BarChart
+                      layout="vertical"
+                      data={getLinkData()}
+                      margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'HH:mm')} />
-                      <YAxis />
-                      <Tooltip 
-                        labelFormatter={(label) => format(new Date(label), 'MMM dd, yyyy HH:mm')} 
-                      />
-                      <Line type="monotone" dataKey="clicks" stroke="#82ca9d" name="Clicks" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Engagement by Email Client */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Engagement by Email Client</CardTitle>
-                <CardDescription>
-                  Which email clients your audience is using
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: 'Gmail', value: deviceData?.emailClients?.gmail || 0 },
-                          { name: 'Outlook', value: deviceData?.emailClients?.outlook || 0 },
-                          { name: 'Apple Mail', value: deviceData?.emailClients?.apple || 0 },
-                          { name: 'Yahoo', value: deviceData?.emailClients?.yahoo || 0 },
-                          { name: 'Other', value: deviceData?.emailClients?.other || 0 }
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {COLORS.map((color, index) => (
-                          <Cell key={`cell-${index}`} fill={color} />
-                        ))}
-                      </Pie>
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
                       <Tooltip />
-                    </PieChart>
+                      <Bar dataKey="value" name="Clicks" fill="#0088FE" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <LinkIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p>No link data available for this campaign</p>
+                    <p className="text-sm mt-1">Link tracking is supported for newer campaigns</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="geography" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" /> 
+                Geographic Distribution
+              </CardTitle>
+              <CardDescription>
+                Top countries by engagement
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {hasGeoData ? (
+                <div className="h-[500px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={getGeoData()}
+                      margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" width={100} />
+                      <Tooltip />
+                      <Bar dataKey="value" name="Opens" fill="#8884d8">
+                        {getGeoData().map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <Globe className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p>No geographic data available for this campaign</p>
+                    <p className="text-sm mt-1">Geolocation tracking is supported for newer campaigns</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Additional geographic visualizations could be added here */}
         </TabsContent>
         
         <TabsContent value="comparison" className="space-y-4">
@@ -521,7 +598,7 @@ export default function EmailCampaignAnalytics() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {comparisonData && comparisonData.length > 0 ? (
+              {comparisonData && comparisonData.length > 1 ? (
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -542,10 +619,12 @@ export default function EmailCampaignAnalytics() {
               ) : (
                 <div className="text-center p-6">
                   <p className="text-muted-foreground mb-4">
-                    Select campaigns to compare with this one
+                    {comparisonData && comparisonData.length === 1 
+                      ? "No other campaigns to compare with this one"
+                      : "Select campaigns to compare with this one"}
                   </p>
                   <Button onClick={() => compareCampaigns(id as string)}>
-                    Select Campaigns
+                    Refresh Comparison Data
                   </Button>
                 </div>
               )}

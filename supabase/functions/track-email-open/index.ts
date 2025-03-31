@@ -19,18 +19,56 @@ serve(async (req) => {
   
   try {
     if (trackingId && campaignId && recipientId) {
-      // Record the open event
+      // Parse user agent for device/client info
+      const userAgent = req.headers.get("user-agent") || "";
+      const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "";
+      
+      // Get geolocation data from Cloudflare if available
+      let geoData = {};
+      if (req.cf) {
+        geoData = {
+          country: req.cf.country,
+          city: req.cf.city,
+          continent: req.cf.continent,
+          latitude: req.cf.latitude,
+          longitude: req.cf.longitude,
+          region: req.cf.region,
+          timezone: req.cf.timezone
+        };
+      }
+      
+      // Detect device type
+      const isMobile = /Mobile|Android|iPhone|iPad|iPod|Windows Phone/i.test(userAgent);
+      const isTablet = /Tablet|iPad/i.test(userAgent);
+      const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+      
+      // Detect email client
+      let emailClient = 'other';
+      if (userAgent.includes('Thunderbird')) emailClient = 'thunderbird';
+      else if (userAgent.includes('Outlook')) emailClient = 'outlook';
+      else if (userAgent.includes('Apple-Mail')) emailClient = 'apple';
+      else if (userAgent.includes('Gmail')) emailClient = 'gmail';
+      else if (userAgent.includes('Yahoo')) emailClient = 'yahoo';
+      
+      // Create enhanced event data
+      const eventData = { 
+        tracking_id: trackingId,
+        user_agent: userAgent,
+        ip: ip,
+        device_type: deviceType,
+        email_client: emailClient,
+        geo: geoData,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Record the open event with enhanced data
       const { error } = await req.supabaseClient
         .from("email_events")
         .insert({
           campaign_id: campaignId,
           recipient_id: recipientId,
           event_type: "opened",
-          event_data: { 
-            tracking_id: trackingId,
-            user_agent: req.headers.get("user-agent") || "",
-            ip: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || ""
-          }
+          event_data: eventData
         });
         
       if (error) {
@@ -40,11 +78,27 @@ serve(async (req) => {
       // Update the tracking record
       await req.supabaseClient
         .from("email_tracking")
-        .update({ opened_at: new Date().toISOString() })
+        .update({ 
+          opened_at: new Date().toISOString(),
+          device_type: deviceType,
+          email_client: emailClient,
+          country: geoData.country || null,
+          city: geoData.city || null
+        })
         .eq("tracking_id", trackingId);
         
       // Update campaign analytics
-      await req.supabaseClient.rpc("increment_campaign_opens", { campaign_id: campaignId });
+      await req.supabaseClient.rpc("increment_campaign_opens", { 
+        campaign_id: campaignId,
+        device_type: deviceType,
+        country: geoData.country || null
+      });
+      
+      // Also update analytics aggregates for device and geo data
+      await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'device', deviceType);
+      if (geoData.country) {
+        await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'country', geoData.country);
+      }
     }
   } catch (error) {
     console.error("Error in email open tracking:", error);
@@ -61,3 +115,36 @@ serve(async (req) => {
     }
   });
 });
+
+async function updateAnalyticsAggregates(supabase, campaignId, dimension, value) {
+  try {
+    // Check if the aggregate record exists
+    const { data: existing } = await supabase
+      .from("email_analytics_aggregates")
+      .select("*")
+      .eq("campaign_id", campaignId)
+      .eq("dimension", dimension)
+      .eq("value", value)
+      .single();
+    
+    if (existing) {
+      // Update existing record
+      await supabase
+        .from("email_analytics_aggregates")
+        .update({ count: existing.count + 1 })
+        .eq("id", existing.id);
+    } else {
+      // Create new record
+      await supabase
+        .from("email_analytics_aggregates")
+        .insert({
+          campaign_id: campaignId,
+          dimension: dimension,
+          value: value,
+          count: 1
+        });
+    }
+  } catch (error) {
+    console.error(`Error updating analytics aggregates for ${dimension}:`, error);
+  }
+}

@@ -28,6 +28,10 @@ interface DeviceData {
   };
 }
 
+interface LinkData {
+  [url: string]: number;
+}
+
 interface ComparisonDataPoint {
   id: string;
   name: string;
@@ -43,10 +47,28 @@ export const useEmailCampaignAnalytics = () => {
   const [error, setError] = useState<Error | null>(null);
   const [geoData, setGeoData] = useState<GeoData | null>(null);
   const [deviceData, setDeviceData] = useState<DeviceData | null>(null);
+  const [linkData, setLinkData] = useState<LinkData | null>(null);
   const [comparisonData, setComparisonData] = useState<ComparisonDataPoint[] | null>(null);
   const [selectedCampaignsForComparison, setSelectedCampaignsForComparison] = useState<string[]>([]);
   
   const { toast } = useToast();
+
+  // Function to fetch aggregated analytics data
+  const fetchAggregatedData = async (campaignId: string, dimension: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('email_analytics_aggregates')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .eq('dimension', dimension);
+      
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error(`Error fetching ${dimension} data:`, err);
+      return [];
+    }
+  };
 
   const fetchCampaignAnalytics = useCallback(async (campaignId: string) => {
     setLoading(true);
@@ -189,19 +211,46 @@ export const useEmailCampaignAnalytics = () => {
       
       if (analyticsError) throw analyticsError;
       
-      // Ensure timeline is an array of EmailCampaignTimelinePoint
-      let timelineData: EmailCampaignTimelinePoint[] = [];
+      // Get real-time events for timeline data
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('email_events')
+        .select('event_type, created_at, event_data')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: true });
       
-      if (Array.isArray(analyticsData.timeline)) {
-        // Properly type cast the JSON data to EmailCampaignTimelinePoint[]
-        timelineData = (analyticsData.timeline as any[]).map(point => ({
-          date: point.date || '',
-          opens: point.opens || 0,
-          clicks: point.clicks || 0,
-          unsubscribes: point.unsubscribes || 0,
-          complaints: point.complaints || 0
-        }));
-      }
+      if (eventsError) throw eventsError;
+      
+      // Process timeline data from real events
+      const timelineMap = new Map<string, EmailCampaignTimelinePoint>();
+      
+      eventsData.forEach(event => {
+        const date = new Date(event.created_at);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        if (!timelineMap.has(dateKey)) {
+          timelineMap.set(dateKey, {
+            date: dateKey,
+            opens: 0,
+            clicks: 0,
+            unsubscribes: 0,
+            complaints: 0
+          });
+        }
+        
+        const point = timelineMap.get(dateKey)!;
+        
+        if (event.event_type === 'opened') {
+          point.opens += 1;
+        } else if (event.event_type === 'clicked') {
+          point.clicks += 1;
+        } else if (event.event_type === 'unsubscribed') {
+          point.unsubscribes += 1;
+        } else if (event.event_type === 'complained') {
+          point.complaints += 1;
+        }
+      });
+      
+      const timelineData = Array.from(timelineMap.values());
       
       // Format the analytics data
       const formattedAnalytics: EmailCampaignAnalytics = {
@@ -227,39 +276,85 @@ export const useEmailCampaignAnalytics = () => {
       
       setAnalytics(formattedAnalytics);
       
-      // Instead of trying to fetch from non-existent tables, use synthetic data
-      // Create synthetic geo data based on analytics
-      const syntheticGeoData: GeoData = {
-        'United States': Math.floor(analyticsData.opened * 0.4),
-        'United Kingdom': Math.floor(analyticsData.opened * 0.15),
-        'Canada': Math.floor(analyticsData.opened * 0.12),
-        'Australia': Math.floor(analyticsData.opened * 0.08),
-        'Germany': Math.floor(analyticsData.opened * 0.06),
-        'France': Math.floor(analyticsData.opened * 0.05),
-        'India': Math.floor(analyticsData.opened * 0.04),
-        'Brazil': Math.floor(analyticsData.opened * 0.03),
-        'Japan': Math.floor(analyticsData.opened * 0.02),
-        'Other': Math.floor(analyticsData.opened * 0.05),
-      };
+      // Fetch real geo data
+      const geoAggregates = await fetchAggregatedData(campaignId, 'country');
+      if (geoAggregates.length > 0) {
+        const geoMap: GeoData = {};
+        geoAggregates.forEach(item => {
+          geoMap[item.value] = item.count;
+        });
+        setGeoData(geoMap);
+      } else {
+        // Fallback for backward compatibility
+        setGeoData({});
+      }
       
-      setGeoData(syntheticGeoData);
-      
-      // Create synthetic device data based on analytics
-      const syntheticDeviceData: DeviceData = {
-        desktop: Math.floor(analyticsData.opened * 0.45),
-        mobile: Math.floor(analyticsData.opened * 0.4),
-        tablet: Math.floor(analyticsData.opened * 0.1),
-        other: Math.floor(analyticsData.opened * 0.05),
-        emailClients: {
-          gmail: Math.floor(analyticsData.opened * 0.35),
-          outlook: Math.floor(analyticsData.opened * 0.25),
-          apple: Math.floor(analyticsData.opened * 0.2),
-          yahoo: Math.floor(analyticsData.opened * 0.1),
-          other: Math.floor(analyticsData.opened * 0.1)
+      // Fetch real device data
+      const deviceAggregates = await fetchAggregatedData(campaignId, 'device');
+      if (deviceAggregates.length > 0) {
+        const deviceMap: DeviceData = {
+          desktop: 0,
+          mobile: 0,
+          tablet: 0,
+          other: 0,
+          emailClients: {
+            gmail: 0,
+            outlook: 0,
+            apple: 0,
+            yahoo: 0,
+            other: 0
+          }
+        };
+        
+        deviceAggregates.forEach(item => {
+          if (['desktop', 'mobile', 'tablet'].includes(item.value)) {
+            deviceMap[item.value as keyof typeof deviceMap] = item.count;
+          } else {
+            deviceMap.other += item.count;
+          }
+        });
+        
+        // Fetch email client data
+        const clientAggregates = await fetchAggregatedData(campaignId, 'email_client');
+        if (clientAggregates.length > 0 && deviceMap.emailClients) {
+          clientAggregates.forEach(item => {
+            if (['gmail', 'outlook', 'apple', 'yahoo'].includes(item.value)) {
+              deviceMap.emailClients![item.value as keyof typeof deviceMap.emailClients] = item.count;
+            } else {
+              deviceMap.emailClients!.other += item.count;
+            }
+          });
         }
-      };
+        
+        setDeviceData(deviceMap);
+      } else {
+        // Fallback empty data
+        setDeviceData({
+          desktop: 0,
+          mobile: 0,
+          tablet: 0,
+          other: 0,
+          emailClients: {
+            gmail: 0,
+            outlook: 0,
+            apple: 0,
+            yahoo: 0,
+            other: 0
+          }
+        });
+      }
       
-      setDeviceData(syntheticDeviceData);
+      // Fetch link click data
+      const linkAggregates = await fetchAggregatedData(campaignId, 'link');
+      if (linkAggregates.length > 0) {
+        const linkMap: LinkData = {};
+        linkAggregates.forEach(item => {
+          linkMap[item.value] = item.count;
+        });
+        setLinkData(linkMap);
+      } else {
+        setLinkData({});
+      }
       
     } catch (err) {
       console.error('Error fetching campaign analytics:', err);
@@ -335,6 +430,7 @@ export const useEmailCampaignAnalytics = () => {
     error,
     geoData,
     deviceData,
+    linkData,
     fetchCampaignAnalytics,
     compareCampaigns,
     comparisonData,

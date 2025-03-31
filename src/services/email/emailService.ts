@@ -183,11 +183,16 @@ class EmailService {
 
   async sendTestEmail(templateId: string, recipientEmail: string, personalizations?: Record<string, string>): Promise<boolean> {
     try {
+      // Generate a unique tracking ID for this test email
+      const trackingId = `test-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      
       const response = await supabase.functions.invoke('send-test-email', {
         body: { 
           templateId, 
           recipientEmail, 
-          personalizations 
+          personalizations,
+          trackingId,
+          isTest: true
         }
       });
       
