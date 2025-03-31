@@ -124,14 +124,23 @@ serve(async (req) => {
             }
             
             // Apply personalizations to template content and subject
-            const personalizations = {
+            // First, get standard personalizations
+            const standardPersonalizations = {
               first_name: customer.first_name || '',
               last_name: customer.last_name || '',
               full_name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
               email: customer.email,
               sequence_name: sequence.name,
               current_date: new Date().toLocaleDateString(),
-              // Add other personalization variables here
+            };
+            
+            // Merge with custom personalizations from enrollment metadata
+            const customPersonalizations = enrollment.metadata?.personalizations || {};
+            
+            // Create the final personalization object
+            const personalizations = {
+              ...standardPersonalizations,
+              ...customPersonalizations,
             };
             
             let emailContent = template.content;
@@ -157,7 +166,11 @@ serve(async (req) => {
                 sequenceId: sequence.id,
                 stepId: nextStep.id,
                 enrollmentId: enrollment.id,
-                customerId: enrollment.customer_id
+                customerId: enrollment.customer_id,
+                metadata: {
+                  ...enrollment.metadata,
+                  segmentData: enrollment.metadata?.segmentData || {},
+                }
               }
             });
             
