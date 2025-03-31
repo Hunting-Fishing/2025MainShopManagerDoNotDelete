@@ -53,7 +53,8 @@ import {
   ChevronRight,
   ChevronsUpDown,
   Trophy,
-  AlertTriangle
+  AlertTriangle,
+  UserMinus
 } from 'lucide-react';
 import { EmailCampaign, EmailCampaignAnalytics, EmailCampaignStatus, EmailABTestResult, EmailABTestVariant } from '@/types/email';
 import { useEmailCampaigns } from '@/hooks/email/useEmailCampaigns';
@@ -200,7 +201,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-6">
@@ -264,7 +264,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                     <p className="text-2xl font-bold">{(analytics.unsubscribe_rate * 100).toFixed(1)}%</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
-                    <UserX className="h-6 w-6 text-amber-600" />
+                    <UserMinus className="h-6 w-6 text-amber-600" />
                   </div>
                 </div>
                 <div className="mt-4">
@@ -275,7 +275,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
             </Card>
           </div>
 
-          {/* Summary Card */}
           <Card>
             <CardHeader>
               <CardTitle>Campaign Summary</CardTitle>
@@ -357,7 +356,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
             </CardContent>
           </Card>
 
-          {/* Timeline Chart */}
           <Card>
             <CardHeader>
               <CardTitle>Engagement Timeline</CardTitle>
@@ -401,7 +399,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
             </CardContent>
           </Card>
 
-          {/* Comparison Chart */}
           <Card>
             <CardHeader>
               <CardTitle>Performance Comparison</CardTitle>
@@ -432,7 +429,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
 
         <TabsContent value="engagement" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Engagement Overview */}
             <Card>
               <CardHeader>
                 <CardTitle>Engagement Overview</CardTitle>
@@ -466,7 +462,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
               </CardContent>
             </Card>
 
-            {/* Click-to-Open Analysis */}
             <Card>
               <CardHeader>
                 <CardTitle>Click-to-Open Analysis</CardTitle>
@@ -526,7 +521,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
             </Card>
           </div>
 
-          {/* Detailed Engagement Metrics */}
           <Card>
             <CardHeader>
               <CardTitle>Detailed Engagement Metrics</CardTitle>
@@ -640,7 +634,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
 
         <TabsContent value="delivery" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Delivery Overview */}
             <Card>
               <CardHeader>
                 <CardTitle>Delivery Overview</CardTitle>
@@ -673,7 +666,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
               </CardContent>
             </Card>
 
-            {/* Bounce Analysis */}
             <Card>
               <CardHeader>
                 <CardTitle>Bounce Analysis</CardTitle>
@@ -724,7 +716,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
             </Card>
           </div>
 
-          {/* Detailed Delivery Metrics */}
           <Card>
             <CardHeader>
               <CardTitle>Detailed Delivery Metrics</CardTitle>
@@ -823,77 +814,58 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
               <CardHeader>
                 <CardTitle>A/B Test Results</CardTitle>
                 <CardDescription>
-                  Performance comparison of your email variants
+                  Performance comparison between variant versions
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {abTestResults.isComplete ? (
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-6">
-                      <div className="flex items-center">
-                        <Trophy className="h-6 w-6 text-green-600 mr-3" />
-                        <div>
-                          <h3 className="text-lg font-medium text-green-800">Test Complete</h3>
-                          <p className="text-green-700">
-                            {abTestResults.winner ? 
-                              `Variant "${abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.name}" was the winner based on ${abTestResults.winnerCriteria.replace('_', ' ')}` : 
-                              'No significant winner was found'}
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Test Summary</h3>
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Winning criteria: <span className="font-medium">{abTestResults.winnerCriteria === 'open_rate' ? 'Open Rate' : 'Click Rate'}</span>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Status: <span className="font-medium">{abTestResults.isComplete ? 'Completed' : 'In Progress'}</span>
+                        </p>
+                        {abTestResults.winner && (
+                          <p className="text-sm text-muted-foreground">
+                            Winner: <span className="font-medium">{abTestResults.winner.name}</span>
                           </p>
-                        </div>
+                        )}
+                        {typeof abTestResults.winnerSelectedAt === 'string' && abTestResults.winnerSelectedAt && (
+                          <p className="text-sm text-muted-foreground">
+                            Winner selected: <span className="font-medium">{format(new Date(abTestResults.winnerSelectedAt), 'MMM d, yyyy')}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
-                      <div className="flex items-center">
-                        <LineChart className="h-6 w-6 text-blue-600 mr-3" />
-                        <div>
-                          <h3 className="text-lg font-medium text-blue-800">Test In Progress</h3>
-                          <p className="text-blue-700">
-                            Performance data is being collected. A winner will be selected based on {abTestResults.winnerCriteria.replace('_', ' ')}.
+                    
+                    {abTestResults.isComplete && abTestResults.winner && (
+                      <div className="bg-green-50 border border-green-100 rounded-md p-4 md:w-auto flex flex-col items-center">
+                        <Trophy className="h-10 w-10 text-amber-500 mb-2" />
+                        <h4 className="font-semibold text-center">{abTestResults.winner.name}</h4>
+                        <p className="text-sm text-muted-foreground text-center">Winner</p>
+                        {abTestResults.winner && abTestResults.winner.metrics && (
+                          <p className="text-sm font-medium mt-1">
+                            {abTestResults.winnerCriteria === 'open_rate' 
+                              ? `${(abTestResults.winner.metrics.openRate * 100).toFixed(1)}% open rate` 
+                              : `${(abTestResults.winner.metrics.clickRate * 100).toFixed(1)}% click rate`}
                           </p>
-                        </div>
+                        )}
+                        {abTestResults.confidenceLevel && (
+                          <p className="text-xs mt-1">{(abTestResults.confidenceLevel * 100).toFixed(0)}% confidence</p>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {abTestResults.winner && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-                        <CardContent className="p-6">
-                          <h3 className="font-medium text-amber-800 mb-1">Winning Variant</h3>
-                          <p className="text-2xl font-bold text-amber-900">{
-                            abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.name
-                          }</p>
-                          
-                          {abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.improvement && (
-                            <p className="text-amber-700 mt-2 flex items-center">
-                              <ArrowUpRight className="h-4 w-4 mr-1" />
-                              {abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.improvement}% improvement
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="col-span-2">
-                        <CardContent className="p-6">
-                          <h3 className="font-medium mb-2">Confidence Level</h3>
-                          <div className="flex items-center">
-                            <Progress value={abTestResults.confidenceLevel || 0} className="flex-1 h-2" />
-                            <span className="ml-2 font-medium">{abTestResults.confidenceLevel || 0}%</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            {abTestResults.confidenceLevel && abTestResults.confidenceLevel >= 95 
-                              ? "Statistical significance achieved" 
-                              : "Results may not be statistically significant"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
+                  <Separator />
 
                   <div>
                     <h3 className="text-lg font-medium mb-4">Variant Performance</h3>
-                    <div className="overflow-x-auto">
+                    <div className="overflow-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -901,48 +873,50 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                             <TableHead>Recipients</TableHead>
                             <TableHead>Open Rate</TableHead>
                             <TableHead>Click Rate</TableHead>
-                            <TableHead>Conversion</TableHead>
-                            <TableHead className="text-right">Improvement</TableHead>
+                            <TableHead>CTOR</TableHead>
+                            <TableHead>Improvement</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {abTestResults.variants.map((variant) => {
-                            const isWinner = abTestResults.winner && abTestResults.winner.id === variant.id;
-                            
+                            const isWinner = abTestResults.winningVariantId === variant.id;
                             return (
-                              <TableRow key={variant.id} className={isWinner ? "bg-amber-50" : ""}>
-                                <TableCell className="font-medium">
+                              <TableRow key={variant.id} className={isWinner ? "bg-green-50" : ""}>
+                                <TableCell>
                                   <div className="flex items-center">
                                     {isWinner && <Trophy className="h-4 w-4 text-amber-500 mr-2" />}
-                                    {variant.name}
+                                    <span className={isWinner ? "font-medium" : ""}>{variant.name}</span>
                                   </div>
                                 </TableCell>
-                                <TableCell>{variant.recipients}</TableCell>
+                                <TableCell>{variant.recipients.toLocaleString()}</TableCell>
                                 <TableCell>
-                                  {variant.metrics ? `${(variant.metrics.openRate * 100).toFixed(1)}%` : 
-                                   `${variant.opened > 0 && variant.recipients > 0 ? 
-                                    ((variant.opened / variant.recipients) * 100).toFixed(1) : 0}%`}
+                                  {variant.metrics && (variant.metrics.openRate * 100).toFixed(1)}%
                                 </TableCell>
                                 <TableCell>
-                                  {variant.metrics ? `${(variant.metrics.clickRate * 100).toFixed(1)}%` :
-                                   `${variant.clicked > 0 && variant.recipients > 0 ? 
-                                    ((variant.clicked / variant.recipients) * 100).toFixed(1) : 0}%`}
+                                  {variant.metrics && (variant.metrics.clickRate * 100).toFixed(1)}%
                                 </TableCell>
                                 <TableCell>
-                                  {variant.metrics && variant.metrics.conversionRate ? 
-                                   `${(variant.metrics.conversionRate * 100).toFixed(1)}%` : 'N/A'}
+                                  {variant.metrics && (variant.metrics.clickToOpenRate * 100).toFixed(1)}%
                                 </TableCell>
-                                <TableCell className="text-right">
-                                  {isWinner ? (
-                                    <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
-                                      Winner
-                                    </Badge>
-                                  ) : (
-                                    <div className={variant.improvement && variant.improvement > 0 ? 
-                                      "text-green-600" : variant.improvement && variant.improvement < 0 ? 
-                                      "text-red-600" : "text-gray-500"}>
-                                      {variant.improvement ? `${variant.improvement > 0 ? '+' : ''}${variant.improvement}%` : '--'}
+                                <TableCell>
+                                  {variant.improvement !== undefined ? (
+                                    <div className={variant.improvement > 0 ? "text-green-600 flex items-center" : variant.improvement < 0 ? "text-red-600 flex items-center" : "text-gray-500"}>
+                                      {variant.improvement > 0 ? (
+                                        <>
+                                          <ArrowUpRight className="h-4 w-4 mr-1" />
+                                          <span>+{variant.improvement.toFixed(1)}%</span>
+                                        </>
+                                      ) : variant.improvement < 0 ? (
+                                        <>
+                                          <ArrowDownRight className="h-4 w-4 mr-1" />
+                                          <span>{variant.improvement.toFixed(1)}%</span>
+                                        </>
+                                      ) : (
+                                        <span>0%</span>
+                                      )}
                                     </div>
+                                  ) : (
+                                    "-"
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -953,56 +927,34 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Open Rates</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={abTestResults.variants.map(v => ({
-                                name: v.name,
-                                value: v.metrics ? v.metrics.openRate * 100 : (v.opened / v.recipients) * 100
-                              }))}
-                              margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
-                              <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
-                              <Tooltip formatter={(value) => [`${value.toFixed(1)}%`, 'Open Rate']} />
-                              <Bar dataKey="value" fill={COLORS.opens} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <Separator />
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Click Rates</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={abTestResults.variants.map(v => ({
-                                name: v.name,
-                                value: v.metrics ? v.metrics.clickRate * 100 : (v.clicked / v.recipients) * 100
-                              }))}
-                              margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
-                              <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
-                              <Tooltip formatter={(value) => [`${value.toFixed(1)}%`, 'Click Rate']} />
-                              <Bar dataKey="value" fill={COLORS.clicks} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Variant Metrics</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={abTestResults.variants.map(variant => ({
+                          name: variant.name,
+                          openRate: variant.metrics ? (variant.metrics.openRate * 100) : 0,
+                          clickRate: variant.metrics ? (variant.metrics.clickRate * 100) : 0,
+                          ctor: variant.metrics ? (variant.metrics.clickToOpenRate * 100) : 0,
+                          convRate: variant.metrics && variant.metrics.conversionRate ? (variant.metrics.conversionRate * 100) : 0
+                        }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
+                        <Legend />
+                        <Bar dataKey="openRate" name="Open Rate" fill={COLORS.opens} />
+                        <Bar dataKey="clickRate" name="Click Rate" fill={COLORS.clicks} />
+                        <Bar dataKey="ctor" name="Click-to-Open Rate" fill={COLORS.primary} />
+                        {abTestResults.variants.some(v => v.metrics && v.metrics.conversionRate) && (
+                          <Bar dataKey="convRate" name="Conversion Rate" fill={COLORS.success} />
+                        )}
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </CardContent>

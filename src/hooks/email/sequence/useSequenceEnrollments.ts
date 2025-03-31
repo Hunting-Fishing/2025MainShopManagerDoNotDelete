@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { emailService } from '@/services/email/emailService';
 import { EmailSequenceEnrollment } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 export const useSequenceEnrollments = () => {
   const [enrollments, setEnrollments] = useState<EmailSequenceEnrollment[]>([]);
@@ -12,7 +13,7 @@ export const useSequenceEnrollments = () => {
   const fetchCustomerEnrollments = async (sequenceId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await emailService.supabase
+      const { data, error } = await supabase
         .from('email_sequence_enrollments')
         .select('*')
         .eq('sequence_id', sequenceId);
@@ -165,7 +166,7 @@ export const useSequenceEnrollments = () => {
 
   const enrollCustomer = async (sequenceId: string, customerId: string) => {
     try {
-      const { data, error } = await emailService.supabase
+      const { data, error } = await supabase
         .from('email_sequence_enrollments')
         .insert({
           sequence_id: sequenceId,

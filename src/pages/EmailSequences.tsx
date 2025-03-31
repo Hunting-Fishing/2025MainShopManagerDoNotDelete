@@ -140,7 +140,7 @@ export default function EmailSequences() {
                             <span className="text-muted-foreground">{sequence.triggerEvent}</span>
                           </div>
                         ) : (
-                          <Badge variant="ghost">Scheduled</Badge>
+                          <Badge variant="outline">Scheduled</Badge>
                         )}
                       </TableCell>
                       <TableCell>
