@@ -3,7 +3,7 @@ import { EmailCampaign } from '@/types/email';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { validateCampaignStatus, parseJsonField, parseABTest } from './utils/emailCampaignUtils';
-import { emailService } from '@/services/email';
+import { abTestingService } from '@/services/email';
 
 export const useEmailCampaignDetails = () => {
   const [campaign, setCampaign] = useState<EmailCampaign | null>(null);
@@ -229,7 +229,7 @@ export const useEmailCampaignDetails = () => {
         throw new Error("A/B testing is not enabled for this campaign");
       }
 
-      const { data, error } = await emailService.selectABTestWinner(campaignId, forceWinnerId);
+      const { data, error } = await abTestingService.selectABTestWinner(campaignId, forceWinnerId);
       
       if (error || !data) {
         throw new Error(error || "Failed to determine a winner");

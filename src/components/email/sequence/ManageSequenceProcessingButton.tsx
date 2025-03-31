@@ -1,130 +1,148 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ClockIcon, Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { emailService } from '@/services/email';
-import { Settings } from 'lucide-react';
+import { schedulingService } from '@/services/email';
+import type { SequenceProcessingSchedule } from '@/services/email/scheduling/schedulingService';
 
-export function ManageSequenceProcessingButton() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [cronExpression, setCronExpression] = useState('*/30 * * * *');
-  const [isLoading, setIsLoading] = useState(false);
+interface ManageSequenceProcessingButtonProps {
+  className?: string;
+}
+
+export function ManageSequenceProcessingButton({ className }: ManageSequenceProcessingButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [schedule, setSchedule] = useState<SequenceProcessingSchedule>({
+    enabled: false,
+    cron: '0 * * * *',
+    sequence_ids: []
+  });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchSchedule = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await emailService.getSequenceProcessingSchedule();
-        if (error) throw error;
-        
-        if (data) {
-          setIsEnabled(data.enabled);
-          setCronExpression(data.cron || '*/30 * * * *');
-        }
-      } catch (error) {
-        console.error('Error fetching sequence processing schedule:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load sequence processing settings',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (isDialogOpen) {
-      fetchSchedule();
-    }
-  }, [isDialogOpen, toast]);
-
-  const handleSave = async () => {
-    setIsLoading(true);
+  const fetchSchedule = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await emailService.updateSequenceProcessingSchedule({
-        enabled: isEnabled,
-        cron: cronExpression
-      });
-
+      const { data, error } = await schedulingService.getSequenceProcessingSchedule();
+      
       if (error) throw error;
       
-      toast({
-        title: 'Success',
-        description: `Sequence processing ${isEnabled ? 'enabled' : 'disabled'} successfully`,
-      });
-      setIsDialogOpen(false);
+      setSchedule(data || { enabled: false, cron: '0 * * * *', sequence_ids: [] });
     } catch (error) {
-      console.error('Error updating sequence processing schedule:', error);
+      console.error("Error loading processing schedule:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update sequence processing settings',
-        variant: 'destructive',
+        title: "Loading error",
+        description: "Failed to load sequence processing schedule",
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
+  const saveSchedule = async () => {
+    setLoading(true);
+    try {
+      const { error } = await schedulingService.updateSequenceProcessingSchedule(schedule);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Schedule updated",
+        description: schedule.enabled 
+          ? "Automatic sequence processing has been enabled" 
+          : "Automatic sequence processing has been disabled",
+      });
+      
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error saving processing schedule:", error);
+      toast({
+        title: "Save error",
+        description: "Failed to update sequence processing schedule",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSchedule();
+    }
+  }, [isOpen]);
+
   return (
-    <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsDialogOpen(true)}
-      >
-        <Settings className="mr-2 h-4 w-4" />
-        Sequence Processing
-      </Button>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Sequence Processing</DialogTitle>
-            <DialogDescription>
-              Configure how frequently email sequences are processed
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="enable-processing">Enable automatic processing</Label>
-              <Switch
-                id="enable-processing"
-                checked={isEnabled}
-                onCheckedChange={setIsEnabled}
-              />
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className={className}>
+          <ClockIcon className="h-4 w-4 mr-2" />
+          Schedule Processing
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Sequence Processing Schedule
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-processing">Automatic Processing</Label>
+              <div className="text-sm text-muted-foreground">
+                Enable automatic processing of email sequences
+              </div>
             </div>
-
+            <Switch
+              id="auto-processing"
+              checked={schedule.enabled}
+              onCheckedChange={(checked) => setSchedule({ ...schedule, enabled: checked })}
+              disabled={loading}
+            />
+          </div>
+          
+          {schedule.enabled && (
             <div className="space-y-2">
-              <Label htmlFor="cron-expression">Schedule (cron expression)</Label>
+              <Label htmlFor="cron-schedule">Processing Schedule (Cron)</Label>
               <Input
-                id="cron-expression"
-                value={cronExpression}
-                onChange={(e) => setCronExpression(e.target.value)}
-                placeholder="*/30 * * * *"
+                id="cron-schedule"
+                value={schedule.cron}
+                onChange={(e) => setSchedule({ ...schedule, cron: e.target.value })}
+                placeholder="0 * * * *"
+                disabled={loading}
               />
-              <p className="text-sm text-muted-foreground">
-                Default: every 30 minutes (*/30 * * * *)
+              <p className="text-xs text-muted-foreground">
+                Enter a cron expression to define when sequences should be processed.
+                Default: Every hour (0 * * * *)
               </p>
             </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          )}
+          
+          <div className="pt-4 flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save Changes'}
+            <Button 
+              onClick={saveSchedule}
+              disabled={loading}
+            >
+              Save Schedule
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

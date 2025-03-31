@@ -1,217 +1,273 @@
 
-import { useState } from "react";
-import { emailService } from '@/services/email';
+import { useState } from 'react';
 import { EmailSequence, EmailSequenceStep } from '@/types/email';
+import { emailSequenceService } from '@/services/email';
 import { useToast } from '@/hooks/use-toast';
 
 export const useSequenceCRUD = () => {
   const [sequences, setSequences] = useState<EmailSequence[]>([]);
   const [currentSequence, setCurrentSequence] = useState<EmailSequence | null>(null);
   const [loading, setLoading] = useState(false);
-  const [sequenceLoading, setSequenceLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchSequences = async () => {
     setLoading(true);
     try {
-      const { data, error } = await emailService.getSequences();
+      const { data, error } = await emailSequenceService.getSequences();
+      
       if (error) throw error;
       
-      if (Array.isArray(data)) {
-        const formattedSequences: EmailSequence[] = data.map(seq => ({
-          ...seq,
-          steps: seq.steps || [],
-          trigger_type: ensureTriggerType(seq.triggerType || seq.trigger_type || 'manual'),
-          triggerType: ensureTriggerType(seq.triggerType || seq.trigger_type || 'manual'),
-          trigger_event: seq.triggerEvent || seq.trigger_event || '',
-          triggerEvent: seq.triggerEvent || seq.trigger_event || '',
-          is_active: seq.isActive || seq.is_active || false,
-          isActive: seq.isActive || seq.is_active || false
-        }));
-        
-        setSequences(formattedSequences);
-      } else {
-        console.error("Expected an array of sequences");
-        setSequences([]);
-      }
+      setSequences(data || []);
+      return data;
     } catch (error) {
-      console.error("Error fetching email sequences:", error);
+      console.error('Error fetching sequences:', error);
       toast({
-        title: "Error",
-        description: "Failed to load email sequences",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load email sequences',
+        variant: 'destructive',
       });
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
   const fetchSequenceById = async (id: string) => {
-    setSequenceLoading(true);
+    setLoading(true);
     try {
-      const { data, error } = await emailService.getSequenceById(id);
+      const { data, error } = await emailSequenceService.getSequenceById(id);
+      
       if (error) throw error;
       
-      if (data) {
-        const formattedSequence: EmailSequence = {
-          ...data,
-          steps: data.steps || [],
-          trigger_type: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
-          triggerType: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
-          trigger_event: data.triggerEvent || data.trigger_event || '',
-          triggerEvent: data.triggerEvent || data.trigger_event || '',
-          is_active: data.isActive || data.is_active || false,
-          isActive: data.isActive || data.is_active || false
-        };
-        
-        setCurrentSequence(formattedSequence);
-        return formattedSequence;
-      } else {
-        return null;
-      }
+      setCurrentSequence(data);
+      return data;
     } catch (error) {
-      console.error("Error fetching email sequence:", error);
+      console.error(`Error fetching sequence ${id}:`, error);
       toast({
-        title: "Error",
-        description: "Failed to load email sequence",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load email sequence details',
+        variant: 'destructive',
       });
       return null;
     } finally {
-      setSequenceLoading(false);
+      setLoading(false);
     }
   };
 
   const createSequence = async (sequence: Partial<EmailSequence>) => {
+    setLoading(true);
     try {
-      const tempSequence = {
-        id: Date.now().toString(),
-        ...sequence,
-        steps: sequence.steps || [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        trigger_type: ensureTriggerType(sequence.triggerType || sequence.trigger_type || 'manual'),
-        triggerType: ensureTriggerType(sequence.triggerType || sequence.trigger_type || 'manual'),
-        trigger_event: sequence.triggerEvent || sequence.trigger_event || '',
-        triggerEvent: sequence.triggerEvent || sequence.trigger_event || '',
-        is_active: sequence.isActive || sequence.is_active || false,
-        isActive: sequence.isActive || sequence.is_active || false
-      } as EmailSequence;
+      const { data, error } = await emailSequenceService.createSequence(sequence);
       
-      const { data, error } = await emailService.createSequence(tempSequence);
       if (error) throw error;
       
-      if (data) {
-        const formattedSequence: EmailSequence = {
-          ...data,
-          steps: data.steps || [],
-          trigger_type: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
-          triggerType: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
-          trigger_event: data.triggerEvent || data.trigger_event || '',
-          triggerEvent: data.triggerEvent || data.trigger_event || '',
-          is_active: data.isActive || data.is_active || false,
-          isActive: data.isActive || data.is_active || false
-        };
-        
-        setSequences((prev) => [formattedSequence, ...prev]);
-        toast({
-          title: "Success",
-          description: "Email sequence created successfully",
-        });
-      }
+      // Update the sequences list
+      setSequences(prev => [...prev, data]);
+      
+      toast({
+        title: 'Success',
+        description: 'Email sequence created successfully',
+      });
+      
       return data;
     } catch (error) {
-      console.error("Error creating email sequence:", error);
+      console.error('Error creating sequence:', error);
       toast({
-        title: "Error",
-        description: "Failed to create email sequence",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to create email sequence',
+        variant: 'destructive',
       });
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updateSequence = async (id: string, sequence: Partial<EmailSequence>) => {
+  const updateSequence = async (id: string, updates: Partial<EmailSequence>) => {
+    setLoading(true);
     try {
-      const { data, error } = await emailService.updateSequence(id, sequence);
+      const { data, error } = await emailSequenceService.updateSequence(id, updates);
+      
       if (error) throw error;
       
-      if (data) {
-        const formattedSequence: EmailSequence = {
-          ...data,
-          steps: data.steps || [],
-          trigger_type: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
-          triggerType: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
-          trigger_event: data.triggerEvent || data.trigger_event || '',
-          triggerEvent: data.triggerEvent || data.trigger_event || '',
-          is_active: data.isActive || data.is_active || false,
-          isActive: data.isActive || data.is_active || false
-        };
-        
-        setSequences((prev) => 
-          prev.map((s) => s.id === id ? formattedSequence : s)
-        );
-        if (currentSequence && currentSequence.id === id) {
-          setCurrentSequence(formattedSequence);
-        }
-        toast({
-          title: "Success",
-          description: "Email sequence updated successfully",
-        });
+      // Update the sequences list
+      setSequences(prev => 
+        prev.map(seq => seq.id === id ? { ...seq, ...data } : seq)
+      );
+      
+      // Update current sequence if it's the one being updated
+      if (currentSequence?.id === id) {
+        setCurrentSequence({ ...currentSequence, ...data });
       }
+      
+      toast({
+        title: 'Success',
+        description: 'Email sequence updated successfully',
+      });
+      
       return data;
     } catch (error) {
-      console.error("Error updating email sequence:", error);
+      console.error(`Error updating sequence ${id}:`, error);
       toast({
-        title: "Error",
-        description: "Failed to update email sequence",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update email sequence',
+        variant: 'destructive',
       });
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteSequence = async (id: string) => {
+    setLoading(true);
     try {
-      const { error } = await emailService.deleteSequence(id);
+      const { error } = await emailSequenceService.deleteSequence(id);
+      
       if (error) throw error;
       
-      setSequences((prev) => prev.filter((s) => s.id !== id));
-      if (currentSequence && currentSequence.id === id) {
+      // Update the sequences list
+      setSequences(prev => prev.filter(seq => seq.id !== id));
+      
+      // Clear current sequence if it's the one being deleted
+      if (currentSequence?.id === id) {
         setCurrentSequence(null);
       }
+      
       toast({
-        title: "Success",
-        description: "Email sequence deleted successfully",
+        title: 'Success',
+        description: 'Email sequence deleted successfully',
       });
+      
       return true;
     } catch (error) {
-      console.error("Error deleting email sequence:", error);
+      console.error(`Error deleting sequence ${id}:`, error);
       toast({
-        title: "Error",
-        description: "Failed to delete email sequence",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to delete email sequence',
+        variant: 'destructive',
       });
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Helper function to ensure trigger_type is one of the valid values
-  const ensureTriggerType = (type: string): 'manual' | 'event' | 'schedule' => {
-    const validTypes: Array<'manual' | 'event' | 'schedule'> = ['manual', 'event', 'schedule'];
-    return validTypes.includes(type as any) ? (type as 'manual' | 'event' | 'schedule') : 'manual';
+  const createSequenceStep = async (step: Partial<EmailSequenceStep>) => {
+    setLoading(true);
+    try {
+      const { data, error } = await emailSequenceService.createSequenceStep(step);
+      
+      if (error) throw error;
+      
+      // Update current sequence if it's the one getting a new step
+      if (currentSequence?.id === step.sequence_id) {
+        setCurrentSequence({
+          ...currentSequence,
+          steps: [...currentSequence.steps, data]
+        });
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Sequence step added successfully',
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Error creating sequence step:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add sequence step',
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSequenceStep = async (stepId: string, updates: Partial<EmailSequenceStep>) => {
+    setLoading(true);
+    try {
+      const { data, error } = await emailSequenceService.updateSequenceStep(stepId, updates);
+      
+      if (error) throw error;
+      
+      // Update current sequence if it contains this step
+      if (currentSequence && currentSequence.steps.some(step => step.id === stepId)) {
+        setCurrentSequence({
+          ...currentSequence,
+          steps: currentSequence.steps.map(step => 
+            step.id === stepId ? { ...step, ...data } : step
+          )
+        });
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Sequence step updated successfully',
+      });
+      
+      return data;
+    } catch (error) {
+      console.error(`Error updating sequence step ${stepId}:`, error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update sequence step',
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteSequenceStep = async (stepId: string) => {
+    setLoading(true);
+    try {
+      const { error } = await emailSequenceService.deleteSequenceStep(stepId);
+      
+      if (error) throw error;
+      
+      // Update current sequence if it contains this step
+      if (currentSequence && currentSequence.steps.some(step => step.id === stepId)) {
+        setCurrentSequence({
+          ...currentSequence,
+          steps: currentSequence.steps.filter(step => step.id !== stepId)
+        });
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Sequence step deleted successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting sequence step ${stepId}:`, error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete sequence step',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
     sequences,
     currentSequence,
     loading,
-    sequenceLoading,
     fetchSequences,
     fetchSequenceById,
     createSequence,
     updateSequence,
     deleteSequence,
-    setCurrentSequence
+    createSequenceStep,
+    updateSequenceStep,
+    deleteSequenceStep
   };
 };
