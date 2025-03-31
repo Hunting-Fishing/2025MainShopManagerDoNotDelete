@@ -162,7 +162,10 @@ export const useEmailCampaignDetails = () => {
           .eq('event_type', 'opened');
         
         const variantEvents = events?.filter(event => 
-          event.event_data && event.event_data.variant_id === variant.id
+          event.event_data && 
+          typeof event.event_data === 'object' && 
+          'variant_id' in event.event_data && 
+          event.event_data.variant_id === variant.id
         ) || [];
         
         const openCount = variantEvents.length;
@@ -174,7 +177,10 @@ export const useEmailCampaignDetails = () => {
           .eq('event_type', 'clicked');
         
         const variantClickEvents = clickEvents?.filter(event => 
-          event.event_data && event.event_data.variant_id === variant.id
+          event.event_data && 
+          typeof event.event_data === 'object' && 
+          'variant_id' in event.event_data && 
+          event.event_data.variant_id === variant.id
         ) || [];
         
         const clickCount = variantClickEvents.length;
