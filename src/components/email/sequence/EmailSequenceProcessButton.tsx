@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { emailService } from '@/services/email/emailService';
+import { sequenceProcessingService } from '@/services/email/sequenceProcessingService';
 
 interface EmailSequenceProcessButtonProps {
   className?: string;
@@ -18,11 +18,11 @@ export function EmailSequenceProcessButton({ className, sequenceId }: EmailSeque
     setIsProcessing(true);
     try {
       // Pass the sequenceId as an object with the correct shape
-      const success = await emailService.triggerSequenceProcessing({ 
+      const result = await sequenceProcessingService.triggerSequenceProcessing({ 
         sequenceId: sequenceId
       });
       
-      if (success) {
+      if (result.success) {
         toast({
           title: "Processing triggered",
           description: sequenceId 

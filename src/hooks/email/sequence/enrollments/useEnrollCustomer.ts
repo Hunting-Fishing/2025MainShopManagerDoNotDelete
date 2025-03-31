@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { emailService } from '@/services/email/emailService';
+import { sequenceProcessingService } from '@/services/email/sequenceProcessingService';
 
 export interface EnrollCustomerParams {
   customerId: string;
@@ -56,7 +56,7 @@ export const useEnrollCustomer = (onEnrollmentComplete?: (customerId: string) =>
       // Trigger immediate processing of the sequence
       try {
         // Pass the sequenceId as an object with the correct shape
-        await emailService.triggerSequenceProcessing({ 
+        await sequenceProcessingService.triggerSequenceProcessing({ 
           sequenceId: sequenceId 
         });
       } catch (processError) {
