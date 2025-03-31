@@ -8,6 +8,7 @@ import { validateCampaignStatus, parseJsonField, parseABTest } from './utils/ema
 export const useEmailCampaignDetails = () => {
   const [campaign, setCampaign] = useState<EmailCampaign | null>(null);
   const [loading, setLoading] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchCampaignDetails = async (campaignId: string) => {
@@ -56,6 +57,9 @@ export const useEmailCampaignDetails = () => {
         sentDate: data.sent_date
       };
       
+      // Fetch latest analytics data
+      fetchCampaignAnalytics(campaignId).catch(console.error);
+      
       setCampaign(formattedCampaign);
       return formattedCampaign;
     } catch (error) {
@@ -71,9 +75,75 @@ export const useEmailCampaignDetails = () => {
     }
   };
 
+  // Fetch the latest analytics data for a campaign
+  const fetchCampaignAnalytics = async (campaignId: string) => {
+    setAnalyticsLoading(true);
+    try {
+      // First check for analytics in the dedicated analytics table
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('email_campaign_analytics')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .single();
+      
+      if (analyticsError && analyticsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw analyticsError;
+      }
+      
+      if (analyticsData) {
+        // Update the campaign with analytics data
+        setCampaign(prevCampaign => {
+          if (!prevCampaign) return null;
+          
+          return {
+            ...prevCampaign,
+            opened: analyticsData.opened,
+            clicked: analyticsData.clicked,
+            totalRecipients: analyticsData.sent,
+            total_recipients: analyticsData.sent
+          };
+        });
+      } else {
+        // If no analytics data, check for events directly
+        const { count: openCount, error: openError } = await supabase
+          .from('email_events')
+          .select('*', { count: 'exact', head: true })
+          .eq('campaign_id', campaignId)
+          .eq('event_type', 'opened');
+        
+        const { count: clickCount, error: clickError } = await supabase
+          .from('email_events')
+          .select('*', { count: 'exact', head: true })
+          .eq('campaign_id', campaignId)
+          .eq('event_type', 'clicked');
+          
+        if (openError) throw openError;
+        if (clickError) throw clickError;
+        
+        if (openCount !== null || clickCount !== null) {
+          setCampaign(prevCampaign => {
+            if (!prevCampaign) return null;
+            
+            return {
+              ...prevCampaign,
+              opened: openCount || 0,
+              clicked: clickCount || 0
+            };
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching campaign analytics:", error);
+      // Don't show toast for analytics errors to avoid disrupting the UI
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   return {
     campaign,
-    loading,
-    fetchCampaignDetails
+    loading: loading || analyticsLoading,
+    fetchCampaignDetails,
+    fetchCampaignAnalytics
   };
 };
