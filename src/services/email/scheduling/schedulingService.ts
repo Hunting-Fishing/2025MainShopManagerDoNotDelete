@@ -2,125 +2,87 @@
 import { supabase } from '@/lib/supabase';
 import { GenericResponse } from '../utils/supabaseHelper';
 
+interface SequenceProcessingSchedule {
+  enabled: boolean;
+  cron: string;
+}
+
 /**
- * Service for managing email sequence scheduling
+ * Service for managing email processing schedules
  */
 export const schedulingService = {
   /**
-   * Get the current email sequence processing schedule
+   * Get the current sequence processing schedule configuration
+   * @returns The schedule configuration
    */
-  async getSequenceProcessingSchedule(): Promise<GenericResponse<{
-    isEnabled: boolean;
-    frequency: 'hourly' | 'daily' | 'weekly';
-    lastRun: string | null;
-    nextRun: string | null;
-  }>> {
+  async getSequenceProcessingSchedule(): Promise<SequenceProcessingSchedule> {
     try {
-      const { data, error } = await supabase
-        .from('email_system_settings')
-        .select('*')
-        .eq('key', 'sequence_processing_schedule')
-        .single();
-
+      // Instead of using email_system_settings, use key-value storage approach
+      // We'll use a custom RPC function that returns the configuration
+      const { data, error } = await supabase.rpc(
+        'get_email_processing_schedule'
+      );
+      
       if (error) {
-        // If not found, return default schedule
-        if (error.code === 'PGRST116') {
-          return {
-            data: {
-              isEnabled: false,
-              frequency: 'daily',
-              lastRun: null,
-              nextRun: null
-            },
-            error: null
-          };
-        }
-        throw error;
+        console.error('Error fetching sequence processing schedule:', error);
+        // Return default values
+        return {
+          enabled: false,
+          cron: '*/30 * * * *' // Every 30 minutes
+        };
       }
-
-      // Parse the value which should be a JSON string
-      const schedule = typeof data.value === 'string' 
-        ? JSON.parse(data.value)
-        : data.value;
-
+      
+      // Handle the case where the RPC function might not exist yet
+      if (!data) {
+        // Return default values
+        return {
+          enabled: false,
+          cron: '*/30 * * * *' // Every 30 minutes
+        };
+      }
+      
       return {
-        data: {
-          isEnabled: schedule.isEnabled ?? false,
-          frequency: schedule.frequency ?? 'daily',
-          lastRun: schedule.lastRun ?? null,
-          nextRun: schedule.nextRun ?? null
-        },
-        error: null
+        enabled: data.enabled || false,
+        cron: data.cron || '*/30 * * * *'
       };
     } catch (error) {
-      console.error('Error getting sequence processing schedule:', error);
+      console.error('Error in getSequenceProcessingSchedule:', error);
+      
+      // Return default values
       return {
-        data: {
-          isEnabled: false,
-          frequency: 'daily',
-          lastRun: null,
-          nextRun: null
-        },
-        error
+        enabled: false,
+        cron: '*/30 * * * *' // Every 30 minutes
       };
     }
   },
 
   /**
-   * Update the email sequence processing schedule
+   * Update the sequence processing schedule configuration
+   * @param schedule The new schedule configuration
+   * @returns Success status
    */
-  async updateSequenceProcessingSchedule(schedule: {
-    isEnabled: boolean;
-    frequency: 'hourly' | 'daily' | 'weekly';
-  }): Promise<GenericResponse<boolean>> {
+  async updateSequenceProcessingSchedule(
+    schedule: SequenceProcessingSchedule
+  ): Promise<boolean> {
     try {
-      // Calculate the next run time based on frequency
-      const now = new Date();
-      let nextRun: Date = new Date(now);
-
-      if (schedule.frequency === 'hourly') {
-        nextRun.setHours(nextRun.getHours() + 1);
-      } else if (schedule.frequency === 'daily') {
-        nextRun.setDate(nextRun.getDate() + 1);
-        nextRun.setHours(0, 0, 0, 0); // Run at midnight
-      } else if (schedule.frequency === 'weekly') {
-        // Run on next Monday
-        const daysUntilMonday = 1 - now.getDay();
-        const daysToAdd = daysUntilMonday <= 0 ? daysUntilMonday + 7 : daysUntilMonday;
-        nextRun.setDate(nextRun.getDate() + daysToAdd);
-        nextRun.setHours(0, 0, 0, 0); // Run at midnight
+      // Instead of using email_system_settings, use a custom RPC function to update config
+      const { data, error } = await supabase.rpc(
+        'update_email_processing_schedule',
+        {
+          p_enabled: schedule.enabled,
+          p_cron: schedule.cron
+        }
+      );
+      
+      if (error) {
+        console.error('Error updating sequence processing schedule:', error);
+        return false;
       }
-
-      const scheduleData = {
-        ...schedule,
-        lastRun: schedule.isEnabled ? now.toISOString() : null,
-        nextRun: schedule.isEnabled ? nextRun.toISOString() : null
-      };
-
-      // Upsert the schedule to the settings table
-      const { error } = await supabase
-        .from('email_system_settings')
-        .upsert({
-          key: 'sequence_processing_schedule',
-          value: scheduleData,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'key'
-        });
-
-      if (error) throw error;
-
-      // If enabled, trigger immediate processing
-      if (schedule.isEnabled) {
-        await supabase.functions.invoke('process-email-sequences', {
-          body: { force: true }
-        });
-      }
-
-      return { data: true, error: null };
+      
+      return true;
     } catch (error) {
-      console.error('Error updating sequence processing schedule:', error);
-      return { data: false, error };
+      console.error('Error in updateSequenceProcessingSchedule:', error);
+      return false;
     }
   }
 };

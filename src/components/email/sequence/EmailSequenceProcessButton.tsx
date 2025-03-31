@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { sequenceProcessingService } from '@/services/email/sequences/sequenceProcessingService';
+import { sequenceProcessingService } from '@/services/email';
 
 interface EmailSequenceProcessButtonProps {
   className?: string;
@@ -17,7 +16,6 @@ export function EmailSequenceProcessButton({ className, sequenceId }: EmailSeque
   const handleProcess = async () => {
     setIsProcessing(true);
     try {
-      // Pass the sequenceId as an object with the correct shape
       const result = await sequenceProcessingService.triggerSequenceProcessing({ 
         sequenceId: sequenceId
       });

@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { emailService } from '@/services/email/emailService';
+import { emailService } from '@/services/email';
 import { Settings } from 'lucide-react';
 
 export function ManageSequenceProcessingButton() {
