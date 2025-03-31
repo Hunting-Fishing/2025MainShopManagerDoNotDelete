@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -117,7 +116,6 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
         if (error) throw error;
         setCustomer(data);
         
-        // Initialize basic personalization fields based on customer data
         const initialFields = [
           { key: 'first_name', value: data.first_name || '' },
           { key: 'last_name', value: data.last_name || '' },
@@ -137,7 +135,6 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // Convert personalization fields to record
       const personalizations = personalizationFields.reduce((acc, field) => {
         if (field.key && field.value) {
           acc[field.key] = field.value;
@@ -145,7 +142,6 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
         return acc;
       }, {} as Record<string, string>);
       
-      // Convert segment fields to record
       const segmentData = segmentFields.reduce((acc, field) => {
         if (field.key && field.value) {
           acc[field.key] = field.value;
@@ -153,7 +149,6 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
         return acc;
       }, {} as Record<string, string>);
       
-      // Parse metadata JSON
       let metadata = {};
       try {
         metadata = JSON.parse(metadataJson);
@@ -194,7 +189,6 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
         onEnroll(data.id);
       }
       
-      // Trigger sequence processing function to start the sequence
       try {
         await supabase.functions.invoke('process-email-sequences', {
           body: { 
@@ -204,7 +198,6 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
         });
       } catch (processError) {
         console.error('Error triggering sequence processing:', processError);
-        // Non-critical error, don't show to user
       }
       
     } catch (error) {
@@ -341,7 +334,7 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
                       <PlusCircle className="mr-2 h-4 w-4" /> Add Variable
                     </Button>
                     <FormDescription>
-                      Add personalization variables to use in your email templates with {"{{"}}variable_name{"}}"} syntax.
+                      Add personalization variables to use in your email templates with {'{{'} variable_name {'}}'}  syntax.
                     </FormDescription>
                   </div>
                 </AccordionContent>
