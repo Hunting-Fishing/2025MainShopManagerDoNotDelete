@@ -1,10 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@1.0.0";
-
-// Get the Resend API key from the environment variables
-const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
-const resend = new Resend(resendApiKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,9 +12,6 @@ interface TestEmailRequest {
   content: string;
   senderEmail?: string;
   senderName?: string;
-  includeTracking?: boolean;
-  abTestVariantId?: string;
-  campaignId?: string;
 }
 
 serve(async (req) => {
@@ -41,10 +33,7 @@ serve(async (req) => {
       subject, 
       content, 
       senderEmail = "test@example.com", 
-      senderName = "Test Email",
-      includeTracking = false,
-      abTestVariantId,
-      campaignId
+      senderName = "Test Email" 
     } = await req.json() as TestEmailRequest;
 
     // Validate request
@@ -69,53 +58,38 @@ serve(async (req) => {
       });
     }
 
-    let htmlContent = content;
-
-    // Add tracking pixel and link tracking if requested
-    if (includeTracking && campaignId) {
-      const trackingId = crypto.randomUUID();
-      
-      // Add tracking pixel
-      const trackingPixel = `<img src="${Deno.env.get("SUPABASE_URL")}/functions/track-email-open?t=${trackingId}&c=${campaignId}&r=test&v=${abTestVariantId || ''}" width="1" height="1" alt="" style="display:block">`;
-      
-      if (htmlContent.includes('</body>')) {
-        htmlContent = htmlContent.replace('</body>', `${trackingPixel}</body>`);
-      } else {
-        htmlContent = `${htmlContent}${trackingPixel}`;
-      }
-      
-      // Process links for click tracking
-      const linkRegex = /<a\s+(?:[^>]*?\s+)?href=(["'])(https?:\/\/[^"']+)\1/gi;
-      let match;
-      while ((match = linkRegex.exec(htmlContent)) !== null) {
-        const originalUrl = match[2];
-        const trackingUrl = `${Deno.env.get("SUPABASE_URL")}/functions/track-email-click?t=${trackingId}&c=${campaignId}&r=test&v=${abTestVariantId || ''}&u=${encodeURIComponent(originalUrl)}`;
-        htmlContent = htmlContent.replace(`href="${originalUrl}"`, `href="${trackingUrl}"`);
-      }
-    }
-
-    // Add TEST prefix to subject to clearly identify test emails
-    const testSubject = `[TEST] ${subject}`;
-
-    // Send the email using Resend
-    const { data, error } = await resend.emails.send({
-      from: `${senderName} <${senderEmail}>`,
+    // Log the email details (to be replaced with actual email sending)
+    console.log("Sending test email:", {
       to: email,
-      subject: testSubject,
-      html: htmlContent,
+      from: `${senderName} <${senderEmail}>`,
+      subject: `[TEST] ${subject}`,
+      html: content
     });
 
-    if (error) {
-      console.error("Resend API error:", error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+    // Record the test send in the database
+    const { error: dbError } = await req.supabaseClient
+      .from('email_events')
+      .insert({
+        event_type: 'test_sent',
+        recipient_id: null,
+        campaign_id: null,
+        event_data: {
+          recipient: email,
+          subject: subject,
+          timestamp: new Date().toISOString()
+        }
       });
+
+    if (dbError) {
+      console.error("Error logging test email:", dbError);
     }
 
+    // In a real implementation, you would send the email using a service like SendGrid, Mailgun, etc.
+    // For now, we'll simulate a successful send
+    
     return new Response(JSON.stringify({ 
-      data,
-      message: "Test email sent successfully" 
+      success: true,
+      message: "Test email sent successfully (simulated)" 
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },

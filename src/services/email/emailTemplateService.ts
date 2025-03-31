@@ -1,7 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
 import { EmailTemplate, EmailCategory, EmailTemplateVariable } from '@/types/email';
-import { parseJsonField } from './utils';
 
 export const emailTemplateService = {
   /**
@@ -26,8 +25,9 @@ export const emailTemplateService = {
       
       // Map the database records to the EmailTemplate type
       return (data || []).map(template => {
-        // Safely convert variables from Json type to EmailTemplateVariable[]
-        const variables = parseTemplateVariables(template.variables);
+        // Parse variables from JSON
+        const variables = template.variables ? 
+          (Array.isArray(template.variables) ? template.variables : []) : [];
         
         return {
           id: template.id,
@@ -39,7 +39,6 @@ export const emailTemplateService = {
           variables: variables,
           created_at: template.created_at,
           updated_at: template.updated_at,
-          body: template.content, // For backward compatibility
           is_archived: template.is_archived || false
         };
       });
@@ -66,8 +65,9 @@ export const emailTemplateService = {
       
       if (!data) return null;
       
-      // Safely convert variables from Json type to EmailTemplateVariable[]
-      const variables = parseTemplateVariables(data.variables);
+      // Parse variables from JSON
+      const variables = data.variables ? 
+        (Array.isArray(data.variables) ? data.variables : []) : [];
       
       // Map the database record to the EmailTemplate type
       return {
@@ -80,7 +80,6 @@ export const emailTemplateService = {
         variables: variables,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        body: data.content, // For backward compatibility
         is_archived: data.is_archived || false
       };
     } catch (error) {
@@ -103,15 +102,17 @@ export const emailTemplateService = {
           subject: template.subject,
           description: template.description,
           category: template.category,
-          content: template.content || template.body
+          content: template.content,
+          variables: template.variables
         })
         .select()
         .single();
       
       if (error) throw error;
       
-      // Safely convert variables from Json type to EmailTemplateVariable[]
-      const variables = parseTemplateVariables(data.variables);
+      // Parse variables from JSON
+      const variables = data.variables ? 
+        (Array.isArray(data.variables) ? data.variables : []) : [];
       
       // Map the database record to the EmailTemplate type
       return {
@@ -124,7 +125,6 @@ export const emailTemplateService = {
         variables: variables,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        body: data.content, // For backward compatibility
         is_archived: data.is_archived || false
       };
     } catch (error) {
@@ -148,7 +148,8 @@ export const emailTemplateService = {
           subject: template.subject,
           description: template.description,
           category: template.category,
-          content: template.content || template.body
+          content: template.content,
+          variables: template.variables
         })
         .eq('id', id)
         .select()
@@ -156,8 +157,9 @@ export const emailTemplateService = {
       
       if (error) throw error;
       
-      // Safely convert variables from Json type to EmailTemplateVariable[]
-      const variables = parseTemplateVariables(data.variables);
+      // Parse variables from JSON
+      const variables = data.variables ? 
+        (Array.isArray(data.variables) ? data.variables : []) : [];
       
       // Map the database record to the EmailTemplate type
       return {
@@ -170,7 +172,6 @@ export const emailTemplateService = {
         variables: variables,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        body: data.content, // For backward compatibility
         is_archived: data.is_archived || false
       };
     } catch (error) {
@@ -199,29 +200,3 @@ export const emailTemplateService = {
     }
   }
 };
-
-// Helper function to parse template variables
-function parseTemplateVariables(variablesData: any): EmailTemplateVariable[] {
-  let variables: EmailTemplateVariable[] = [];
-  if (variablesData) {
-    try {
-      // Handle both string and array formats
-      const varsData = typeof variablesData === 'string' 
-        ? JSON.parse(variablesData) 
-        : variablesData;
-      
-      if (Array.isArray(varsData)) {
-        variables = varsData.map((v: any) => ({
-          id: v.id || String(Math.random()),
-          name: v.name || '',
-          description: v.description || '',
-          default_value: v.default_value || v.defaultValue || '',
-          defaultValue: v.defaultValue || v.default_value || ''
-        }));
-      }
-    } catch (e) {
-      console.error('Error parsing template variables:', e);
-    }
-  }
-  return variables;
-}

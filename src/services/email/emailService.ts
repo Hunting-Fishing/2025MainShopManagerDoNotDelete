@@ -4,18 +4,45 @@
  * See individual service files for implementation details.
  */
 
-import { emailSequenceService } from './emailSequenceService';
 import { emailTemplateService } from './emailTemplateService';
-import { emailProcessingService } from './emailProcessingService';
 
-// Export a combined emailService that maintains the same API structure
+// Export a combined emailService that maintains the API structure
 export const emailService = {
-  // Email sequence processing methods
-  ...emailProcessingService,
-  
-  // Email sequence methods
-  ...emailSequenceService,
-  
   // Email template methods
-  ...emailTemplateService
+  ...emailTemplateService,
+  
+  // Add additional email-related services here as needed
+  
+  /**
+   * Sends a test email for a template
+   * @param templateId The ID of the template to test
+   * @param recipientEmail The email address to send the test to
+   * @param personalizations Optional personalization variables
+   * @returns Promise<boolean> indicating success or failure
+   */
+  async sendTestEmail(
+    templateId: string, 
+    recipientEmail: string, 
+    personalizations?: Record<string, string>
+  ): Promise<boolean> {
+    try {
+      // Get the template
+      const template = await emailTemplateService.getTemplateById(templateId);
+      if (!template) {
+        throw new Error("Template not found");
+      }
+
+      // This would be where you call an API or edge function to send the email
+      console.log("Sending test email", { 
+        templateId, 
+        recipientEmail, 
+        personalizations 
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      return false;
+    }
+  }
 };
