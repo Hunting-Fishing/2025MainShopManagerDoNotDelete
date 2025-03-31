@@ -85,7 +85,6 @@ export function EmailSequenceEnrollments({ sequenceId }: EmailSequenceEnrollment
     }
   };
   
-  // Helper function to get sequence name from metadata
   const getSequenceName = (enrollment: EmailSequenceEnrollment): string => {
     return enrollment.metadata?.sequenceName || 'Unknown Sequence';
   };

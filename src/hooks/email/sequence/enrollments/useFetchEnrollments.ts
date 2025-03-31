@@ -1,14 +1,19 @@
 
-import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { EmailSequenceEnrollment } from '@/types/email';
+import { parseJsonField } from '@/services/email/utils';
 
-export const useFetchEnrollments = (
-  setEnrollments: React.Dispatch<React.SetStateAction<EmailSequenceEnrollment[]>>,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
-) => {
-  const fetchCustomerEnrollments = async (customerId: string) => {
-    setLoading(true);
+/**
+ * Hook for fetching email sequence enrollments
+ * This hook only handles the data fetching logic, separated from state management
+ */
+export const useFetchEnrollments = () => {
+  /**
+   * Fetches enrollments for a specific customer
+   * @param customerId Customer ID to fetch enrollments for
+   * @returns Promise with the fetched and transformed enrollments
+   */
+  const fetchCustomerEnrollments = async (customerId: string): Promise<EmailSequenceEnrollment[]> => {
     try {
       const { data, error } = await supabase
         .from('email_sequence_enrollments')
@@ -24,19 +29,8 @@ export const useFetchEnrollments = (
       
       // Transform the data to match the EmailSequenceEnrollment type
       const transformedData = data?.map(item => {
-        // Process the metadata field - if it's a string, parse it, otherwise use as is
-        let metadata: Record<string, any> = {};
-        if (item.metadata) {
-          try {
-            if (typeof item.metadata === 'string') {
-              metadata = JSON.parse(item.metadata);
-            } else if (typeof item.metadata === 'object') {
-              metadata = item.metadata as Record<string, any>;
-            }
-          } catch (e) {
-            console.error('Error parsing enrollment metadata:', e);
-          }
-        }
+        // Process the metadata field using our utility function
+        const metadata = parseJsonField<Record<string, any>>(item.metadata, {});
         
         return {
           id: item.id,
@@ -54,14 +48,10 @@ export const useFetchEnrollments = (
         };
       }) || [];
       
-      setEnrollments(transformedData);
       return transformedData;
     } catch (error) {
       console.error('Error fetching enrollments:', error);
-      setEnrollments([]);
       return [];
-    } finally {
-      setLoading(false);
     }
   };
 
