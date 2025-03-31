@@ -2,9 +2,9 @@
 import { supabase } from '@/lib/supabase';
 import { EmailSequence } from '@/types/email';
 
-// Use a more straightforward approach to handle custom tables
-// Instead of trying to use TypeScript interface with the DatabaseSchemaT
-// we'll use "any" for the queries and then convert the results
+// We need to use any type for tables that aren't in the generated types
+// Using generic PostgrestResponse to avoid TypeScript circular reference issues
+type GenericResponse<T = any> = { data: T | null, error: any };
 
 export const emailProcessingService = {
   /**
@@ -13,12 +13,15 @@ export const emailProcessingService = {
    */
   async getSequenceProcessingSchedule() {
     try {
-      // Use a more direct approach to query the custom table
-      const { data, error } = await supabase
+      // Use a direct cast to avoid type inference errors
+      const response = await supabase
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
-        .maybeSingle() as { data: any, error: any };
+        .maybeSingle();
+        
+      // Cast the response to break the circular type reference
+      const { data, error } = response as GenericResponse;
       
       if (error) throw error;
       
@@ -54,18 +57,21 @@ export const emailProcessingService = {
     sequenceIds?: string[];
   }) {
     try {
-      // Check for existing schedule using the direct approach
-      const { data: existing, error: fetchError } = await supabase
+      // Check for existing schedule using direct casting
+      const existingResponse = await supabase
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
-        .maybeSingle() as { data: any, error: any };
+        .maybeSingle();
+      
+      // Cast to avoid circular type reference
+      const { data: existing, error: fetchError } = existingResponse as GenericResponse;
       
       if (fetchError) throw fetchError;
       
       if (existing) {
-        // Update existing schedule
-        const { data, error } = await supabase
+        // Update existing schedule with direct casting
+        const updateResponse = await supabase
           .from('system_schedules')
           .update({
             is_active: config.enabled,
@@ -74,13 +80,15 @@ export const emailProcessingService = {
             updated_at: new Date().toISOString()
           })
           .eq('id', existing.id)
-          .select() as { data: any, error: any };
+          .select();
+        
+        const { data, error } = updateResponse as GenericResponse;
         
         if (error) throw error;
         return { success: true, data };
       } else {
-        // Create new schedule
-        const { data, error } = await supabase
+        // Create new schedule with direct casting
+        const insertResponse = await supabase
           .from('system_schedules')
           .insert({
             type: 'email_sequence_processing',
@@ -88,7 +96,9 @@ export const emailProcessingService = {
             cron_expression: config.cron || '0 * * * *',
             sequence_ids: config.sequenceIds || []
           })
-          .select() as { data: any, error: any };
+          .select();
+        
+        const { data, error } = insertResponse as GenericResponse;
         
         if (error) throw error;
         return { success: true, data };
@@ -158,12 +168,15 @@ export const emailProcessingService = {
    */
   async selectABTestWinner(campaignId: string, forceWinnerId?: string) {
     try {
-      // Use a straightforward approach to query the custom table
-      const { data: abTest, error: abTestError } = await supabase
+      // Use direct casting for the custom table
+      const abTestResponse = await supabase
         .from('email_ab_tests')
         .select('*')
         .eq('campaign_id', campaignId)
-        .single() as { data: any, error: any };
+        .single();
+      
+      // Cast to avoid circular type reference
+      const { data: abTest, error: abTestError } = abTestResponse as GenericResponse;
       
       if (abTestError) throw abTestError;
       
