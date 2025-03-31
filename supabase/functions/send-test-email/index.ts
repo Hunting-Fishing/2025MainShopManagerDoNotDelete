@@ -12,9 +12,14 @@ const corsHeaders = {
 };
 
 interface TestEmailRequest {
-  templateId: string;
-  recipientEmail: string;
-  personalizations?: Record<string, string>;
+  email: string;
+  subject: string;
+  content: string;
+  senderEmail?: string;
+  senderName?: string;
+  includeTracking?: boolean;
+  abTestVariantId?: string;
+  campaignId?: string;
 }
 
 serve(async (req) => {
@@ -31,62 +36,72 @@ serve(async (req) => {
   }
 
   try {
-    const { templateId, recipientEmail, personalizations = {} } = await req.json() as TestEmailRequest;
+    const { 
+      email, 
+      subject, 
+      content, 
+      senderEmail = "test@example.com", 
+      senderName = "Test Email",
+      includeTracking = false,
+      abTestVariantId,
+      campaignId
+    } = await req.json() as TestEmailRequest;
 
     // Validate request
-    if (!templateId) {
-      return new Response(JSON.stringify({ error: "Template ID is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    if (!recipientEmail) {
+    if (!email) {
       return new Response(JSON.stringify({ error: "Recipient email is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Fetch the template from Supabase
-    const { data: templateData, error: templateError } = await req.supabaseClient
-      .from("email_templates")
-      .select("*")
-      .eq("id", templateId)
-      .single();
-
-    if (templateError) {
-      return new Response(JSON.stringify({ error: "Template not found" }), {
-        status: 404,
+    if (!subject) {
+      return new Response(JSON.stringify({ error: "Subject is required" }), {
+        status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Process the template content - replace variables with personalization values
-    let htmlContent = templateData.content;
-    let subject = templateData.subject;
-
-    // Replace variables in the template content
-    Object.entries(personalizations).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, "g");
-      htmlContent = htmlContent.replace(regex, value);
-      subject = subject.replace(regex, value);
-    });
-
-    // For any remaining variables, use default values from template
-    if (templateData.variables) {
-      templateData.variables.forEach((variable: { name: string; default_value: string }) => {
-        const regex = new RegExp(`{{${variable.name}}}`, "g");
-        htmlContent = htmlContent.replace(regex, variable.default_value || '');
-        subject = subject.replace(regex, variable.default_value || '');
+    if (!content) {
+      return new Response(JSON.stringify({ error: "Email content is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
+    let htmlContent = content;
+
+    // Add tracking pixel and link tracking if requested
+    if (includeTracking && campaignId) {
+      const trackingId = crypto.randomUUID();
+      
+      // Add tracking pixel
+      const trackingPixel = `<img src="${Deno.env.get("SUPABASE_URL")}/functions/track-email-open?t=${trackingId}&c=${campaignId}&r=test&v=${abTestVariantId || ''}" width="1" height="1" alt="" style="display:block">`;
+      
+      if (htmlContent.includes('</body>')) {
+        htmlContent = htmlContent.replace('</body>', `${trackingPixel}</body>`);
+      } else {
+        htmlContent = `${htmlContent}${trackingPixel}`;
+      }
+      
+      // Process links for click tracking
+      const linkRegex = /<a\s+(?:[^>]*?\s+)?href=(["'])(https?:\/\/[^"']+)\1/gi;
+      let match;
+      while ((match = linkRegex.exec(htmlContent)) !== null) {
+        const originalUrl = match[2];
+        const trackingUrl = `${Deno.env.get("SUPABASE_URL")}/functions/track-email-click?t=${trackingId}&c=${campaignId}&r=test&v=${abTestVariantId || ''}&u=${encodeURIComponent(originalUrl)}`;
+        htmlContent = htmlContent.replace(`href="${originalUrl}"`, `href="${trackingUrl}"`);
+      }
+    }
+
+    // Add TEST prefix to subject to clearly identify test emails
+    const testSubject = `[TEST] ${subject}`;
+
     // Send the email using Resend
     const { data, error } = await resend.emails.send({
-      from: "noreply@yourdomain.com",
-      to: recipientEmail,
-      subject: subject,
+      from: `${senderName} <${senderEmail}>`,
+      to: email,
+      subject: testSubject,
       html: htmlContent,
     });
 
@@ -98,7 +113,10 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ data }), {
+    return new Response(JSON.stringify({ 
+      data,
+      message: "Test email sent successfully" 
+    }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

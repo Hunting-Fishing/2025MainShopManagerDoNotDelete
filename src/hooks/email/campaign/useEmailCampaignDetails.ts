@@ -9,6 +9,7 @@ export const useEmailCampaignDetails = () => {
   const [campaign, setCampaign] = useState<EmailCampaign | null>(null);
   const [loading, setLoading] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [abTestLoading, setAbTestLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchCampaignDetails = async (campaignId: string) => {
@@ -140,6 +141,10 @@ export const useEmailCampaignDetails = () => {
           });
         }
       }
+
+      // Update A/B test variant data if A/B testing is enabled
+      updateABTestVariantMetrics(campaignId).catch(console.error);
+      
     } catch (error) {
       console.error("Error fetching campaign analytics:", error);
       // Don't show toast for analytics errors to avoid disrupting the UI
@@ -148,10 +153,140 @@ export const useEmailCampaignDetails = () => {
     }
   };
 
+  // Update A/B test variant metrics based on current data
+  const updateABTestVariantMetrics = async (campaignId: string) => {
+    const currentCampaign = campaign || await fetchCampaignDetails(campaignId);
+    if (!currentCampaign?.abTest?.enabled) return;
+
+    try {
+      const variants = currentCampaign.abTest.variants;
+      const updatedVariants = await Promise.all(variants.map(async (variant) => {
+        // Get open and click counts for this variant
+        const { data: openData } = await supabase.rpc(
+          'count_email_events',
+          { 
+            campaign_id_param: campaignId,
+            event_type_param: 'opened',
+            variant_id_param: variant.id
+          }
+        );
+        
+        const { data: clickData } = await supabase.rpc(
+          'count_email_events',
+          { 
+            campaign_id_param: campaignId,
+            event_type_param: 'clicked',
+            variant_id_param: variant.id
+          }
+        );
+
+        const openCount = openData || 0;
+        const clickCount = clickData || 0;
+        
+        // Calculate metrics
+        const openRate = variant.recipients > 0 ? openCount / variant.recipients : 0;
+        const clickRate = variant.recipients > 0 ? clickCount / variant.recipients : 0;
+        const clickToOpenRate = openCount > 0 ? clickCount / openCount : 0;
+        
+        return {
+          ...variant,
+          opened: openCount,
+          clicked: clickCount,
+          metrics: {
+            openRate: openRate,
+            clickRate: clickRate,
+            clickToOpenRate: clickToOpenRate
+          }
+        };
+      }));
+
+      // Update campaign state with new variant data
+      setCampaign(prevCampaign => {
+        if (!prevCampaign || !prevCampaign.abTest) return prevCampaign;
+        
+        return {
+          ...prevCampaign,
+          abTest: {
+            ...prevCampaign.abTest,
+            variants: updatedVariants
+          }
+        };
+      });
+    } catch (error) {
+      console.error("Error updating A/B test metrics:", error);
+    }
+  };
+
+  // Select a winner for an A/B test
+  const selectABTestWinner = async (campaignId: string, forceWinnerId?: string) => {
+    setAbTestLoading(true);
+    try {
+      if (!campaign?.abTest?.enabled) {
+        throw new Error("A/B testing is not enabled for this campaign");
+      }
+
+      let winnerId: string;
+
+      if (forceWinnerId) {
+        // Manually select the specified variant as winner
+        winnerId = forceWinnerId;
+      } else {
+        // Use database function to calculate winner based on criteria
+        const { data, error } = await supabase.rpc(
+          'calculate_ab_test_winner',
+          { 
+            campaign_id: campaignId,
+            criteria: campaign.abTest.winnerCriteria
+          }
+        );
+        
+        if (error) throw error;
+        winnerId = data;
+      }
+
+      if (!winnerId) {
+        throw new Error("Failed to determine a winner");
+      }
+
+      // Update local state
+      setCampaign(prevCampaign => {
+        if (!prevCampaign || !prevCampaign.abTest) return prevCampaign;
+        
+        return {
+          ...prevCampaign,
+          abTest: {
+            ...prevCampaign.abTest,
+            winnerId: winnerId,
+            winnerSelectionDate: new Date().toISOString()
+          }
+        };
+      });
+
+      toast({
+        title: "Winner Selected",
+        description: "A/B test winner has been selected successfully",
+      });
+
+      return winnerId;
+    } catch (error) {
+      console.error("Error selecting A/B test winner:", error);
+      toast({
+        title: "Error",
+        description: "Failed to select A/B test winner",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setAbTestLoading(false);
+    }
+  };
+
   return {
     campaign,
-    loading: loading || analyticsLoading,
+    loading: loading || analyticsLoading || abTestLoading,
     fetchCampaignDetails,
-    fetchCampaignAnalytics
+    fetchCampaignAnalytics,
+    selectABTestWinner,
+    updateABTestVariantMetrics
   };
 };
