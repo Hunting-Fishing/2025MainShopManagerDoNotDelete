@@ -1,168 +1,107 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Settings } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { emailService } from '@/services/email';
+import { Play, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { emailService } from '@/services/email/emailService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
-interface ManageSequenceProcessingButtonProps {
-  sequenceId?: string;
-}
-
-export function ManageSequenceProcessingButton({ sequenceId }: ManageSequenceProcessingButtonProps) {
-  const [open, setOpen] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [enabled, setEnabled] = useState(false);
-  const [frequency, setFrequency] = useState('daily');
+export function ManageSequenceProcessingButton() {
   const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleTriggerNow = async () => {
-    setProcessing(true);
+  const handleProcess = async () => {
+    setIsProcessing(true);
     try {
-      // If we have a specific sequence ID, process just that sequence
-      const result = await emailService.triggerSequenceProcessing(sequenceId);
+      const success = await emailService.triggerSequenceProcessing();
       
-      if (result) {
+      if (success) {
         toast({
-          title: 'Success',
-          description: 'Email sequence processing has been triggered',
+          title: "Processing triggered",
+          description: "All email sequences are now being processed",
         });
       } else {
         toast({
-          title: 'Error',
-          description: 'Failed to trigger email sequence processing',
-          variant: 'destructive',
+          title: "Processing failed",
+          description: "Could not trigger email sequence processing",
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error triggering sequence processing:', error);
+      console.error("Error triggering sequence processing:", error);
       toast({
-        title: 'Error',
-        description: 'An error occurred while triggering sequence processing',
-        variant: 'destructive',
+        title: "Processing error",
+        description: "An error occurred while processing sequences",
+        variant: "destructive",
       });
     } finally {
-      setProcessing(false);
+      setIsProcessing(false);
     }
   };
 
-  const handleSaveSchedule = async () => {
+  const handleCreateSchedule = async (interval: 'hourly' | 'daily' | 'every_6_hours') => {
+    setIsProcessing(true);
     try {
-      const schedule = {
-        cron: frequency === 'hourly' ? '0 * * * *' : frequency === 'daily' ? '0 0 * * *' : '0 0 * * 1',
-        enabled: enabled,
-        sequenceIds: sequenceId ? [sequenceId] : undefined
-      };
+      const success = await emailService.createProcessingSchedule(interval);
       
-      const result = await emailService.createProcessingSchedule(schedule);
-      
-      if (result) {
+      if (success) {
         toast({
-          title: 'Success',
-          description: 'Email sequence processing schedule has been saved',
+          title: "Schedule created",
+          description: `Email sequences will now be processed ${interval.replace('_', ' ')}`,
         });
-        setOpen(false);
       } else {
         toast({
-          title: 'Error',
-          description: 'Failed to save email sequence processing schedule',
-          variant: 'destructive',
+          title: "Scheduling failed",
+          description: "Could not create processing schedule",
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error saving processing schedule:', error);
+      console.error("Error creating schedule:", error);
       toast({
-        title: 'Error',
-        description: 'An error occurred while saving the processing schedule',
-        variant: 'destructive',
+        title: "Scheduling error",
+        description: "An error occurred while creating the schedule",
+        variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
-    <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        <Settings className="mr-2 h-4 w-4" />
-        Manage Processing
-      </Button>
-      
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Sequence Processing</DialogTitle>
-            <DialogDescription>
-              Configure automatic processing for email sequences
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="run-now" className="font-medium">Run Processing Now</Label>
-                <p className="text-sm text-muted-foreground">
-                  Triggers email sequence processing immediately
-                </p>
-              </div>
-              <Button 
-                id="run-now" 
-                onClick={handleTriggerNow}
-                disabled={processing}
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Run Now
-              </Button>
-            </div>
-            
-            <div className="border-t pt-4 mt-2">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <Label htmlFor="auto-process" className="font-medium">Automatic Processing</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable scheduled processing
-                  </p>
-                </div>
-                <Switch 
-                  id="auto-process" 
-                  checked={enabled} 
-                  onCheckedChange={setEnabled} 
-                />
-              </div>
-              
-              {enabled && (
-                <div className="mt-4">
-                  <Label htmlFor="frequency">Processing Frequency</Label>
-                  <Select 
-                    value={frequency} 
-                    onValueChange={setFrequency}
-                  >
-                    <SelectTrigger id="frequency">
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hourly">Hourly</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveSchedule}>
-              Save Settings
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          disabled={isProcessing}
+        >
+          <Clock className="mr-2 h-4 w-4" />
+          Manage Processing
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={handleProcess} disabled={isProcessing}>
+          <Play className="mr-2 h-4 w-4" />
+          Process Now
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleCreateSchedule('hourly')} disabled={isProcessing}>
+          Schedule Hourly
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCreateSchedule('every_6_hours')} disabled={isProcessing}>
+          Schedule Every 6 Hours
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCreateSchedule('daily')} disabled={isProcessing}>
+          Schedule Daily
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

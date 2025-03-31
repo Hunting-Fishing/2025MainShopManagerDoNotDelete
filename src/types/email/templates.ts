@@ -8,10 +8,10 @@ export interface EmailTemplate {
   description?: string;
   category?: EmailCategory;
   content?: string;
-  body?: string; // For backward compatibility
   variables?: EmailTemplateVariable[];
   created_at: string;
   updated_at: string;
+  body?: string;
   is_archived?: boolean;
 }
 
@@ -23,4 +23,6 @@ export interface EmailTemplatePreview {
   created_at: string;
   description?: string;
   is_archived?: boolean;
+  // Alias properties for UI components
+  createdAt?: string;
 }

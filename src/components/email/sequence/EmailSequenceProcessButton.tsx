@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { emailService } from '@/services/email';
+import { emailService } from '@/services/email/emailService';
 
 interface EmailSequenceProcessButtonProps {
   className?: string;

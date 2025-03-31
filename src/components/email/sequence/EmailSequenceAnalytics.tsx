@@ -98,11 +98,11 @@ export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsPro
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{analytics.total_enrollments || analytics.totalEnrollments || 0}</p>
+                <p className="text-2xl font-bold">{analytics.totalEnrollments || analytics.total_enrollments || 0}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold">{analytics.active_enrollments || analytics.activeEnrollments || 0}</p>
+                <p className="text-2xl font-bold">{analytics.activeEnrollments || analytics.active_enrollments || 0}</p>
               </div>
             </div>
           </div>
@@ -113,10 +113,10 @@ export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsPro
               <h3 className="font-medium">Conversion Rate</h3>
             </div>
             <p className="text-3xl font-bold">
-              {formatPercent(analytics.conversion_rate || analytics.conversionRate || 0)}
+              {formatPercent(analytics.conversionRate || analytics.conversion_rate || 0)}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              {analytics.completed_enrollments || analytics.completedEnrollments || 0} completed
+              {analytics.completedEnrollments || analytics.completed_enrollments || 0} completed
             </p>
           </div>
           
@@ -126,7 +126,7 @@ export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsPro
               <h3 className="font-medium">Time to Complete</h3>
             </div>
             <p className="text-3xl font-bold">
-              {formatTime(analytics.average_time_to_complete || analytics.averageTimeToComplete || 0)}
+              {formatTime(analytics.averageTimeToComplete || analytics.average_time_to_complete || 0)}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               Average duration

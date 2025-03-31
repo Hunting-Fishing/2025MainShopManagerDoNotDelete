@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { emailService } from "@/services/email";
+import { emailService } from "@/services/email/emailService";
 import { EmailSequence } from "@/types/email";
 import { useToast } from "@/hooks/use-toast";
 

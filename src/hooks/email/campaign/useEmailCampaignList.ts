@@ -1,61 +1,63 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { EmailCampaignPreview } from '@/types/email';
 import { supabase } from '@/lib/supabase';
-import { EmailCampaignPreview, EmailCampaignStatus } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
+import { validateCampaignStatus } from './utils/emailCampaignUtils';
 
-export function useEmailCampaignList() {
+export const useEmailCampaignList = () => {
   const [campaigns, setCampaigns] = useState<EmailCampaignPreview[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchCampaigns = useCallback(async () => {
+  /**
+   * Fetch all email campaigns
+   */
+  const fetchCampaigns = async () => {
     setLoading(true);
     try {
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
       const { data, error } = await supabase
         .from('email_campaigns')
-        .select('id, name, subject, status, scheduled_at, sent_at, created_at, updated_at, total_recipients, opened, clicked, ab_test')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      const formattedCampaigns: EmailCampaignPreview[] = data.map((campaign: any) => ({
-        id: campaign.id,
-        name: campaign.name,
-        subject: campaign.subject,
-        status: campaign.status as EmailCampaignStatus,
-        scheduled_at: campaign.scheduled_at,
-        sent_at: campaign.sent_at,
-        created_at: campaign.created_at,
-        updated_at: campaign.updated_at,
-        total_recipients: campaign.total_recipients || 0,
-        has_ab_test: !!campaign.ab_test,
-        opened: campaign.opened || 0,
-        clicked: campaign.clicked || 0,
-        totalRecipients: campaign.total_recipients || 0,
-        scheduledDate: campaign.scheduled_at,
-        sentDate: campaign.sent_at
+      const formattedCampaigns: EmailCampaignPreview[] = data.map(item => ({
+        id: item.id,
+        name: item.name,
+        subject: item.subject,
+        status: validateCampaignStatus(item.status),
+        scheduled_at: item.scheduled_date,
+        sent_at: item.sent_date,
+        created_at: item.created_at,
+        total_recipients: item.total_recipients || 0,
+        opened: item.opened || 0,
+        clicked: item.clicked || 0,
+        totalRecipients: item.total_recipients || 0,
+        scheduledDate: item.scheduled_date,
+        sentDate: item.sent_date
       }));
 
       setCampaigns(formattedCampaigns);
+      return formattedCampaigns;
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
+      console.error("Error fetching email campaigns:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load campaigns',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load email campaigns",
+        variant: "destructive",
       });
+      return [];
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  };
 
+  // Load campaigns on initial mount
   useEffect(() => {
     fetchCampaigns();
-  }, [fetchCampaigns]);
+  }, []);
 
   return { campaigns, loading, fetchCampaigns };
-}
+};

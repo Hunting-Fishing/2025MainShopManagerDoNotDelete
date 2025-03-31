@@ -1,43 +1,43 @@
 
 import { supabase } from '@/lib/supabase';
-import { EmailSequence, EmailSequenceStep, EmailSequenceEnrollment } from '@/types/email';
+import { EmailSequence } from '@/types/email';
 import { parseJsonField } from './utils';
 
 export const emailSequenceService = {
   /**
-   * Get all email sequences
-   * @returns Promise with array of sequences
+   * Retrieves all email sequences
+   * @returns Promise<EmailSequence[]> list of email sequences
    */
   async getSequences(): Promise<EmailSequence[]> {
     try {
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
       const { data, error } = await supabase
         .from('email_sequences')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      return data.map((sequence: any) => {
-        // @ts-ignore - Adding steps array to match interface
-        const sequenceWithSteps: EmailSequence = {
-          ...sequence,
-          steps: [],
-          // Add camelCase aliases for component compatibility
-          triggerType: sequence.trigger_type,
-          triggerEvent: sequence.trigger_event,
-          isActive: sequence.is_active,
-          createdAt: sequence.created_at,
-          updatedAt: sequence.updated_at,
-          // Add fields that may not be in the database
-          last_run: sequence.last_run || null,
-          next_run: sequence.next_run || null,
-          run_frequency: sequence.run_frequency || null
-        };
-        return sequenceWithSteps;
-      });
+      
+      if (error) throw error;
+      
+      // Transform the database records to match the EmailSequence type
+      return (data || []).map(sequence => ({
+        id: sequence.id,
+        name: sequence.name,
+        description: sequence.description || '',
+        steps: [], // Initialize with empty steps array, they'll be fetched separately if needed
+        created_at: sequence.created_at,
+        updated_at: sequence.updated_at,
+        shop_id: sequence.shop_id,
+        created_by: sequence.created_by,
+        trigger_type: (sequence.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
+        trigger_event: sequence.trigger_event,
+        is_active: sequence.is_active,
+        
+        // UI component support
+        triggerType: (sequence.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
+        triggerEvent: sequence.trigger_event,
+        isActive: sequence.is_active,
+        createdAt: sequence.created_at,
+        updatedAt: sequence.updated_at
+      }));
     } catch (error) {
       console.error('Error fetching email sequences:', error);
       return [];
@@ -45,51 +45,70 @@ export const emailSequenceService = {
   },
 
   /**
-   * Get a specific email sequence by ID
-   * @param id The sequence ID
-   * @returns Promise with the sequence or null if not found
+   * Retrieves a specific email sequence by ID
+   * @param id The sequence ID to fetch
+   * @returns Promise<EmailSequence | null> the sequence or null if not found
    */
   async getSequenceById(id: string): Promise<EmailSequence | null> {
     try {
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-      const { data: sequence, error: sequenceError } = await supabase
+      const { data, error } = await supabase
         .from('email_sequences')
-        .select('*')
+        .select(`
+          *,
+          steps:email_sequence_steps(*)
+        `)
         .eq('id', id)
         .single();
-
-      if (sequenceError) {
-        throw sequenceError;
-      }
-
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-      const { data: steps, error: stepsError } = await supabase
-        .from('email_sequence_steps')
-        .select('*')
-        .eq('sequence_id', id)
-        .order('position', { ascending: true });
-
-      if (stepsError) {
-        throw stepsError;
-      }
-
-      // Transform sequence data to match the interface
-      const formattedSequence: EmailSequence = {
-        ...sequence,
-        steps: steps || [],
-        // Add camelCase aliases for component compatibility
-        triggerType: sequence.trigger_type,
-        triggerEvent: sequence.trigger_event,
-        isActive: sequence.is_active,
-        createdAt: sequence.created_at,
-        updatedAt: sequence.updated_at,
-        // Add fields that may not be in the database
-        last_run: sequence.last_run || null,
-        next_run: sequence.next_run || null,
-        run_frequency: sequence.run_frequency || null
+      
+      if (error) throw error;
+      
+      if (!data) return null;
+      
+      // Transform the sequence steps to match the EmailSequenceStep type
+      const steps = (data.steps || []).map(step => ({
+        id: step.id,
+        sequence_id: step.sequence_id,
+        type: step.delay_hours > 0 ? 'delay' : 'email' as 'delay' | 'email',
+        order: step.position,
+        delay_duration: step.delay_hours ? `${step.delay_hours}h` : undefined,
+        email_template_id: step.template_id,
+        created_at: step.created_at,
+        updated_at: step.updated_at,
+        
+        // UI component support
+        name: step.name,
+        templateId: step.template_id,
+        delayHours: step.delay_hours,
+        delayType: step.delay_type as 'fixed' | 'business_days',
+        position: step.position,
+        isActive: step.is_active,
+        condition: step.condition_type ? {
+          type: step.condition_type as 'event' | 'property',
+          value: step.condition_value,
+          operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+        } : undefined
+      }));
+      
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: steps,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: (data.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: (data.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
       };
-
-      return formattedSequence;
     } catch (error) {
       console.error('Error fetching email sequence:', error);
       return null;
@@ -97,81 +116,47 @@ export const emailSequenceService = {
   },
 
   /**
-   * Create a new email sequence
-   * @param sequence The sequence data
-   * @returns Promise with the created sequence or null on error
+   * Creates a new email sequence
+   * @param sequence The sequence data to create
+   * @returns Promise<EmailSequence | null> the created sequence or null if failed
    */
   async createSequence(sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
     try {
-      const sequenceData = {
-        name: sequence.name || 'New Sequence',
-        description: sequence.description || '',
-        trigger_type: sequence.trigger_type || sequence.triggerType || 'manual',
-        trigger_event: sequence.trigger_event || sequence.triggerEvent || '',
-        is_active: sequence.is_active !== undefined ? sequence.is_active : 
-                  (sequence.isActive !== undefined ? sequence.isActive : false),
-        shop_id: sequence.shop_id || null,
-        created_by: sequence.created_by || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
       const { data, error } = await supabase
         .from('email_sequences')
-        .insert(sequenceData)
+        .insert({
+          name: sequence.name,
+          description: sequence.description,
+          trigger_type: sequence.triggerType || 'manual',
+          trigger_event: sequence.triggerEvent,
+          is_active: sequence.isActive !== undefined ? sequence.isActive : true
+        })
         .select()
         .single();
-
-      if (error) {
-        throw error;
-      }
-
-      // If steps are provided, create them
-      let steps: EmailSequenceStep[] = [];
-      if (sequence.steps && sequence.steps.length > 0) {
-        const stepsData = sequence.steps.map((step, index) => ({
-          sequence_id: data.id,
-          template_id: step.template_id || step.templateId || '',
-          position: index,
-          name: step.name || `Step ${index + 1}`,
-          delay_hours: step.wait_days || step.delayHours || 0,
-          delay_type: step.delayType || 'fixed',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-        // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-        const { data: createdSteps, error: stepsError } = await supabase
-          .from('email_sequence_steps')
-          .insert(stepsData)
-          .select();
-
-        if (stepsError) {
-          throw stepsError;
-        }
-
-        steps = createdSteps;
-      }
-
-      // Transform sequence data to match the interface
-      const formattedSequence: EmailSequence = {
-        ...data,
-        steps: steps || [],
-        // Add camelCase aliases for component compatibility
-        triggerType: data.trigger_type,
+      
+      if (error) throw error;
+      
+      // Return the created sequence with empty steps array
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: [], // New sequence has no steps yet
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: (data.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: (data.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
         triggerEvent: data.trigger_event,
         isActive: data.is_active,
         createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        // Add fields that may not be in the database
-        last_run: data.last_run || null,
-        next_run: data.next_run || null,
-        run_frequency: data.run_frequency || null
+        updatedAt: data.updated_at
       };
-
-      return formattedSequence;
     } catch (error) {
       console.error('Error creating email sequence:', error);
       return null;
@@ -179,106 +164,49 @@ export const emailSequenceService = {
   },
 
   /**
-   * Update an existing email sequence
-   * @param id The sequence ID
+   * Updates an existing email sequence
+   * @param id The sequence ID to update
    * @param sequence The updated sequence data
-   * @returns Promise with the updated sequence or null on error
+   * @returns Promise<EmailSequence | null> the updated sequence or null if failed
    */
   async updateSequence(id: string, sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
     try {
-      const sequenceData = {
-        name: sequence.name,
-        description: sequence.description,
-        trigger_type: sequence.trigger_type || sequence.triggerType,
-        trigger_event: sequence.trigger_event || sequence.triggerEvent,
-        is_active: sequence.is_active !== undefined ? sequence.is_active : 
-                  (sequence.isActive !== undefined ? sequence.isActive : undefined),
-        updated_at: new Date().toISOString()
-      };
-
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
       const { data, error } = await supabase
         .from('email_sequences')
-        .update(sequenceData)
+        .update({
+          name: sequence.name,
+          description: sequence.description,
+          trigger_type: sequence.triggerType || sequence.trigger_type || 'manual',
+          trigger_event: sequence.triggerEvent || sequence.trigger_event,
+          is_active: sequence.isActive !== undefined ? sequence.isActive : sequence.is_active
+        })
         .eq('id', id)
         .select()
         .single();
-
-      if (error) {
-        throw error;
-      }
-
-      // If steps are provided, update them
-      let steps: EmailSequenceStep[] = [];
-      if (sequence.steps && sequence.steps.length > 0) {
-        // First delete existing steps
-        // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-        const { error: deleteError } = await supabase
-          .from('email_sequence_steps')
-          .delete()
-          .eq('sequence_id', id);
-
-        if (deleteError) {
-          throw deleteError;
-        }
-
-        // Then create new steps
-        const stepsData = sequence.steps.map((step, index) => ({
-          sequence_id: id,
-          template_id: step.template_id || step.templateId || '',
-          position: index,
-          name: step.name || `Step ${index + 1}`,
-          delay_hours: step.wait_days || step.delayHours || 0,
-          delay_type: step.delayType || 'fixed',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-        // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-        const { data: createdSteps, error: stepsError } = await supabase
-          .from('email_sequence_steps')
-          .insert(stepsData)
-          .select();
-
-        if (stepsError) {
-          throw stepsError;
-        }
-
-        steps = createdSteps;
-      } else {
-        // Fetch existing steps
-        // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-        const { data: existingSteps, error: stepsError } = await supabase
-          .from('email_sequence_steps')
-          .select('*')
-          .eq('sequence_id', id)
-          .order('position', { ascending: true });
-
-        if (stepsError) {
-          throw stepsError;
-        }
-
-        steps = existingSteps || [];
-      }
-
-      // Transform sequence data to match the interface
-      const formattedSequence: EmailSequence = {
-        ...data,
-        steps: steps,
-        // Add camelCase aliases for component compatibility
-        triggerType: data.trigger_type,
+      
+      if (error) throw error;
+      
+      // Return the updated sequence with empty steps array (steps would be fetched separately if needed)
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        steps: sequence.steps || [], // Preserve steps if provided, otherwise empty array
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: (data.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: (data.trigger_type as 'manual' | 'event' | 'schedule') || 'manual',
         triggerEvent: data.trigger_event,
         isActive: data.is_active,
         createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        // Add fields that may not be in the database
-        last_run: data.last_run || null,
-        next_run: data.next_run || null,
-        run_frequency: data.run_frequency || null
+        updatedAt: data.updated_at
       };
-
-      return formattedSequence;
     } catch (error) {
       console.error('Error updating email sequence:', error);
       return null;
@@ -286,69 +214,22 @@ export const emailSequenceService = {
   },
 
   /**
-   * Delete an email sequence
-   * @param id The sequence ID
-   * @returns Promise indicating success
+   * Deletes an email sequence
+   * @param id The sequence ID to delete
+   * @returns Promise<boolean> indicating success or failure
    */
   async deleteSequence(id: string): Promise<boolean> {
     try {
-      // First delete related steps
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-      const { error: stepsError } = await supabase
-        .from('email_sequence_steps')
-        .delete()
-        .eq('sequence_id', id);
-
-      if (stepsError) {
-        throw stepsError;
-      }
-
-      // Then delete the sequence
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
       const { error } = await supabase
         .from('email_sequences')
         .delete()
         .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
+      
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting email sequence:', error);
       return false;
-    }
-  },
-
-  /**
-   * Get enrollments for a sequence
-   * @param sequenceId The sequence ID
-   * @returns Promise with array of enrollments
-   */
-  async getSequenceEnrollments(sequenceId: string): Promise<EmailSequenceEnrollment[]> {
-    try {
-      // @ts-ignore - Table exists in Supabase but not in TypeScript definitions
-      const { data, error } = await supabase
-        .from('email_sequence_enrollments')
-        .select('*, customers(*)')
-        .eq('sequence_id', sequenceId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      return data.map((enrollment: any) => ({
-        ...enrollment,
-        customer_name: enrollment.customers ? 
-          `${enrollment.customers.first_name} ${enrollment.customers.last_name}` : '',
-        customer_email: enrollment.customers?.email || '',
-        nextSendTime: enrollment.next_send_time
-      }));
-    } catch (error) {
-      console.error('Error fetching sequence enrollments:', error);
-      return [];
     }
   }
 };

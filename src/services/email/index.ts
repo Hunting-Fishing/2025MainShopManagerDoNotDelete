@@ -1,16 +1,19 @@
 
-import { emailTemplateService } from './emailTemplateService';
 import { emailSequenceService } from './emailSequenceService';
+import { emailTemplateService } from './emailTemplateService';
 import { emailProcessingService } from './emailProcessingService';
 
-// Export combined service
+// Export a combined emailService that maintains the same API structure
 export const emailService = {
-  // Email template service methods
-  ...emailTemplateService,
+  // Email sequence processing methods
+  ...emailProcessingService,
   
-  // Email sequence service methods
+  // Email sequence methods
   ...emailSequenceService,
   
-  // Email processing service methods
-  ...emailProcessingService
+  // Email template methods
+  ...emailTemplateService
 };
+
+// Also export individual services for more granular usage
+export { emailSequenceService, emailTemplateService, emailProcessingService };
