@@ -20,9 +20,13 @@ export function ManageSequenceProcessingButton() {
     const fetchSchedule = async () => {
       setIsLoading(true);
       try {
-        const schedule = await emailService.getSequenceProcessingSchedule();
-        setIsEnabled(schedule.enabled);
-        setCronExpression(schedule.cron || '*/30 * * * *');
+        const { data, error } = await emailService.getSequenceProcessingSchedule();
+        if (error) throw error;
+        
+        if (data) {
+          setIsEnabled(data.enabled);
+          setCronExpression(data.cron || '*/30 * * * *');
+        }
       } catch (error) {
         console.error('Error fetching sequence processing schedule:', error);
         toast({
@@ -43,20 +47,18 @@ export function ManageSequenceProcessingButton() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const success = await emailService.updateSequenceProcessingSchedule({
+      const { data, error } = await emailService.updateSequenceProcessingSchedule({
         enabled: isEnabled,
         cron: cronExpression
       });
 
-      if (success) {
-        toast({
-          title: 'Success',
-          description: `Sequence processing ${isEnabled ? 'enabled' : 'disabled'} successfully`,
-        });
-        setIsDialogOpen(false);
-      } else {
-        throw new Error('Failed to update sequence processing schedule');
-      }
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: `Sequence processing ${isEnabled ? 'enabled' : 'disabled'} successfully`,
+      });
+      setIsDialogOpen(false);
     } catch (error) {
       console.error('Error updating sequence processing schedule:', error);
       toast({

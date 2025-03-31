@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { emailService } from '@/services/email';
 import { EmailSequence, EmailSequenceStep } from '@/types/email';
@@ -13,14 +14,19 @@ export const useSequenceCRUD = () => {
   const fetchSequences = async () => {
     setLoading(true);
     try {
-      const data = await emailService.getSequences();
+      const { data, error } = await emailService.getSequences();
+      if (error) throw error;
+      
       if (Array.isArray(data)) {
         const formattedSequences: EmailSequence[] = data.map(seq => ({
           ...seq,
           steps: seq.steps || [],
-          trigger_type: seq.triggerType || seq.trigger_type || 'manual',
+          trigger_type: ensureTriggerType(seq.triggerType || seq.trigger_type || 'manual'),
+          triggerType: ensureTriggerType(seq.triggerType || seq.trigger_type || 'manual'),
           trigger_event: seq.triggerEvent || seq.trigger_event || '',
-          is_active: seq.isActive || seq.is_active || false
+          triggerEvent: seq.triggerEvent || seq.trigger_event || '',
+          is_active: seq.isActive || seq.is_active || false,
+          isActive: seq.isActive || seq.is_active || false
         }));
         
         setSequences(formattedSequences);
@@ -43,14 +49,19 @@ export const useSequenceCRUD = () => {
   const fetchSequenceById = async (id: string) => {
     setSequenceLoading(true);
     try {
-      const sequence = await emailService.getSequenceById(id);
-      if (sequence) {
+      const { data, error } = await emailService.getSequenceById(id);
+      if (error) throw error;
+      
+      if (data) {
         const formattedSequence: EmailSequence = {
-          ...sequence,
-          steps: sequence.steps || [],
-          trigger_type: sequence.triggerType || sequence.trigger_type || 'manual',
-          trigger_event: sequence.triggerEvent || sequence.trigger_event || '',
-          is_active: sequence.isActive || sequence.is_active || false
+          ...data,
+          steps: data.steps || [],
+          trigger_type: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
+          triggerType: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
+          trigger_event: data.triggerEvent || data.trigger_event || '',
+          triggerEvent: data.triggerEvent || data.trigger_event || '',
+          is_active: data.isActive || data.is_active || false,
+          isActive: data.isActive || data.is_active || false
         };
         
         setCurrentSequence(formattedSequence);
@@ -79,19 +90,27 @@ export const useSequenceCRUD = () => {
         steps: sequence.steps || [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        trigger_type: sequence.triggerType || sequence.trigger_type || 'manual',
+        trigger_type: ensureTriggerType(sequence.triggerType || sequence.trigger_type || 'manual'),
+        triggerType: ensureTriggerType(sequence.triggerType || sequence.trigger_type || 'manual'),
         trigger_event: sequence.triggerEvent || sequence.trigger_event || '',
-        is_active: sequence.isActive || sequence.is_active || false
+        triggerEvent: sequence.triggerEvent || sequence.trigger_event || '',
+        is_active: sequence.isActive || sequence.is_active || false,
+        isActive: sequence.isActive || sequence.is_active || false
       } as EmailSequence;
       
-      const newSequence = await emailService.createSequence(tempSequence);
-      if (newSequence) {
+      const { data, error } = await emailService.createSequence(tempSequence);
+      if (error) throw error;
+      
+      if (data) {
         const formattedSequence: EmailSequence = {
-          ...newSequence,
-          steps: newSequence.steps || [],
-          trigger_type: newSequence.triggerType || newSequence.trigger_type || 'manual',
-          trigger_event: newSequence.triggerEvent || newSequence.trigger_event || '',
-          is_active: newSequence.isActive || newSequence.is_active || false
+          ...data,
+          steps: data.steps || [],
+          trigger_type: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
+          triggerType: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
+          trigger_event: data.triggerEvent || data.trigger_event || '',
+          triggerEvent: data.triggerEvent || data.trigger_event || '',
+          is_active: data.isActive || data.is_active || false,
+          isActive: data.isActive || data.is_active || false
         };
         
         setSequences((prev) => [formattedSequence, ...prev]);
@@ -100,7 +119,7 @@ export const useSequenceCRUD = () => {
           description: "Email sequence created successfully",
         });
       }
-      return newSequence;
+      return data;
     } catch (error) {
       console.error("Error creating email sequence:", error);
       toast({
@@ -114,14 +133,19 @@ export const useSequenceCRUD = () => {
 
   const updateSequence = async (id: string, sequence: Partial<EmailSequence>) => {
     try {
-      const updatedSequence = await emailService.updateSequence(id, sequence);
-      if (updatedSequence) {
+      const { data, error } = await emailService.updateSequence(id, sequence);
+      if (error) throw error;
+      
+      if (data) {
         const formattedSequence: EmailSequence = {
-          ...updatedSequence,
-          steps: updatedSequence.steps || [],
-          trigger_type: updatedSequence.triggerType || updatedSequence.trigger_type || 'manual',
-          trigger_event: updatedSequence.triggerEvent || updatedSequence.trigger_event || '',
-          is_active: updatedSequence.isActive || updatedSequence.is_active || false
+          ...data,
+          steps: data.steps || [],
+          trigger_type: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
+          triggerType: ensureTriggerType(data.triggerType || data.trigger_type || 'manual'),
+          trigger_event: data.triggerEvent || data.trigger_event || '',
+          triggerEvent: data.triggerEvent || data.trigger_event || '',
+          is_active: data.isActive || data.is_active || false,
+          isActive: data.isActive || data.is_active || false
         };
         
         setSequences((prev) => 
@@ -135,7 +159,7 @@ export const useSequenceCRUD = () => {
           description: "Email sequence updated successfully",
         });
       }
-      return updatedSequence;
+      return data;
     } catch (error) {
       console.error("Error updating email sequence:", error);
       toast({
@@ -149,7 +173,9 @@ export const useSequenceCRUD = () => {
 
   const deleteSequence = async (id: string) => {
     try {
-      await emailService.deleteSequence(id);
+      const { error } = await emailService.deleteSequence(id);
+      if (error) throw error;
+      
       setSequences((prev) => prev.filter((s) => s.id !== id));
       if (currentSequence && currentSequence.id === id) {
         setCurrentSequence(null);
@@ -168,6 +194,12 @@ export const useSequenceCRUD = () => {
       });
       return false;
     }
+  };
+
+  // Helper function to ensure trigger_type is one of the valid values
+  const ensureTriggerType = (type: string): 'manual' | 'event' | 'schedule' => {
+    const validTypes: Array<'manual' | 'event' | 'schedule'> = ['manual', 'event', 'schedule'];
+    return validTypes.includes(type as any) ? (type as 'manual' | 'event' | 'schedule') : 'manual';
   };
 
   return {

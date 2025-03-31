@@ -229,15 +229,15 @@ export const useEmailCampaignDetails = () => {
         throw new Error("A/B testing is not enabled for this campaign");
       }
 
-      const result = await emailService.selectABTestWinner(campaignId, forceWinnerId);
+      const { data, error } = await emailService.selectABTestWinner(campaignId, forceWinnerId);
       
-      if (!result || result.error) {
-        throw new Error(result?.error || "Failed to determine a winner");
+      if (error || !data) {
+        throw new Error(error || "Failed to determine a winner");
       }
 
-      const winnerId = result.winnerId;
-      const winnerSelectionDate = result.winnerSelectionDate;
-      const confidenceLevel = result.confidenceLevel;
+      const winnerId = data.winnerId;
+      const winnerSelectionDate = data.winnerSelectionDate;
+      const confidenceLevel = data.confidenceLevel;
 
       if (!winnerId) {
         throw new Error("Failed to determine a winner");
