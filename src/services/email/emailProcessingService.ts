@@ -3,67 +3,87 @@ import { supabase } from '@/lib/supabase';
 
 export const emailProcessingService = {
   /**
-   * Triggers the processing of email sequences
-   * @param sequenceId Optional ID of a specific sequence to process
-   * @returns Promise<boolean> indicating success or failure
+   * Triggers processing for email sequences
+   * @param sequenceId Optional specific sequence ID to process
+   * @returns Promise<boolean> indicating success
    */
   async triggerSequenceProcessing(sequenceId?: string): Promise<boolean> {
     try {
-      // In a real implementation, this would call a Supabase Edge Function
-      // For now, we'll simulate a successful response
-      console.log("Triggering sequence processing", { sequenceId });
+      // If we have a specific sequence ID, add it to the request
+      const payload = sequenceId ? { sequence_id: sequenceId } : {};
       
-      // Mock successful API call
+      // Call the serverless function
+      const { error } = await supabase.functions.invoke('process-email-sequences', {
+        body: payload
+      });
+      
+      if (error) throw error;
+      
       return true;
     } catch (error) {
-      console.error("Error triggering sequence processing:", error);
+      console.error('Error triggering sequence processing:', error);
       return false;
     }
   },
   
   /**
-   * Creates a schedule for processing email sequences
-   * @param interval The interval for processing ('hourly', 'daily', etc)
-   * @returns Promise<boolean> indicating success or failure
+   * Creates or updates a processing schedule for email sequences
+   * @param schedule Schedule configuration
+   * @returns Promise<boolean> indicating success
    */
-  async createProcessingSchedule(interval: 'hourly' | 'daily' | 'every_6_hours'): Promise<boolean> {
+  async createProcessingSchedule(schedule: {
+    cron?: string;
+    enabled: boolean;
+    sequenceIds?: string[];
+  }): Promise<boolean> {
     try {
-      // In a real implementation, this would create a scheduled task in Supabase
-      console.log("Creating processing schedule", { interval });
+      // Create or update the schedule configuration
+      const { error } = await supabase
+        .from('system_schedules')
+        .upsert({
+          type: 'email_sequence_processing',
+          configuration: schedule,
+          enabled: schedule.enabled,
+          last_run: null,
+          next_run: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
       
-      // Mock successful API call
+      if (error) throw error;
+      
       return true;
     } catch (error) {
-      console.error("Error creating processing schedule:", error);
+      console.error('Error creating processing schedule:', error);
       return false;
     }
   },
   
   /**
    * Selects a winner for an A/B test
-   * @param campaignId The ID of the campaign
-   * @param forceWinnerId Optional ID to force as the winner
-   * @returns Promise with the winner information or null
+   * @param testId The A/B test ID
+   * @param variantId The winning variant ID
+   * @returns Promise<boolean> indicating success
    */
-  async selectABTestWinner(campaignId: string, forceWinnerId?: string): Promise<{
-    winnerId: string;
-    winnerSelectionDate: string;
-    confidenceLevel?: number;
-    error?: string;
-  } | null> {
+  async selectABTestWinner(testId: string, variantId: string): Promise<boolean> {
     try {
-      // In a real implementation, this would call a Supabase Edge Function
-      console.log("Selecting A/B test winner", { campaignId, forceWinnerId });
+      // Update the A/B test with the winning variant
+      const { error } = await supabase
+        .from('email_ab_tests')
+        .update({
+          winner_id: variantId,
+          winner_selected_at: new Date().toISOString(),
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', testId);
       
-      // Mock successful response
-      return {
-        winnerId: forceWinnerId || 'variant-1',
-        winnerSelectionDate: new Date().toISOString(),
-        confidenceLevel: 95
-      };
+      if (error) throw error;
+      
+      return true;
     } catch (error) {
-      console.error("Error selecting A/B test winner:", error);
-      return null;
+      console.error('Error selecting A/B test winner:', error);
+      return false;
     }
   }
 };

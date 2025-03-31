@@ -1,3 +1,4 @@
+
 /**
  * Parses a JSON field from a database record
  * @param field The field to parse
@@ -17,4 +18,30 @@ export const parseJsonField = <T>(field: any, defaultValue: T): T => {
     console.error('Error parsing JSON field:', error);
     return defaultValue;
   }
+};
+
+/**
+ * Safely converts an object to a JSON string
+ * @param obj The object to stringify
+ * @returns JSON string or undefined if stringification fails
+ */
+export const safeStringify = (obj: any): string | undefined => {
+  if (!obj) return undefined;
+  
+  try {
+    return JSON.stringify(obj);
+  } catch (error) {
+    console.error('Error stringifying object:', error);
+    return undefined;
+  }
+};
+
+/**
+ * Validates an email address
+ * @param email Email to validate
+ * @returns Boolean indicating if email is valid
+ */
+export const validateEmail = (email: string): boolean => {
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return re.test(email);
 };
