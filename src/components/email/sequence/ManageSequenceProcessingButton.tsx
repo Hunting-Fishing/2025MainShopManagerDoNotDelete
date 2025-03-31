@@ -68,7 +68,7 @@ export function ManageSequenceProcessingButton({ className }: ManageSequenceProc
     setIsProcessing(true);
     try {
       // Prepare parameters for the function call
-      const params = {
+      const params: { action: string; sequenceId?: string } = {
         action: 'process',
       };
       

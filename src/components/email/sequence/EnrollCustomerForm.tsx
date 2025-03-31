@@ -341,7 +341,7 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
                       <PlusCircle className="mr-2 h-4 w-4" /> Add Variable
                     </Button>
                     <FormDescription>
-                      Add personalization variables to use in your email templates with {{variable_name}} syntax.
+                      Add personalization variables to use in your email templates with {"{{"}}variable_name{"}}"} syntax.
                     </FormDescription>
                   </div>
                 </AccordionContent>

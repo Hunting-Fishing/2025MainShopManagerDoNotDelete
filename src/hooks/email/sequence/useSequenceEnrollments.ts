@@ -36,7 +36,7 @@ export const useSequenceEnrollments = () => {
         startedAt: enrollment.created_at,
         completedAt: enrollment.completed_at,
         nextSendTime: enrollment.next_send_time,
-        metadata: enrollment.metadata,
+        metadata: enrollment.metadata ? enrollment.metadata as Record<string, any> : {},
         // Include sequence name from the join
         sequenceName: enrollment.sequence?.name
       }));
