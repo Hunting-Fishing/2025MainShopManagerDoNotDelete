@@ -3,7 +3,8 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   EmailCampaignAnalytics, 
-  EmailCampaign
+  EmailCampaign,
+  EmailCampaignTimelinePoint
 } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
 
@@ -58,7 +59,14 @@ export const useEmailCampaignAnalytics = () => {
         .single();
       
       if (campaignError) throw campaignError;
-      setCampaignDetails(campaignData);
+      
+      // Add the missing 'body' property to make it compatible with EmailCampaign
+      const campaignWithBody: EmailCampaign = {
+        ...campaignData,
+        body: campaignData.content || '' // Using content as body or empty string if not available
+      };
+      
+      setCampaignDetails(campaignWithBody);
       
       // Fetch analytics data
       const { data: analyticsData, error: analyticsError } = await supabase
@@ -68,6 +76,11 @@ export const useEmailCampaignAnalytics = () => {
         .single();
       
       if (analyticsError) throw analyticsError;
+      
+      // Ensure timeline is an array of EmailCampaignTimelinePoint
+      const timelineData: EmailCampaignTimelinePoint[] = Array.isArray(analyticsData.timeline) 
+        ? analyticsData.timeline as EmailCampaignTimelinePoint[]
+        : [];
       
       // Format the analytics data
       const formattedAnalytics: EmailCampaignAnalytics = {
@@ -86,63 +99,46 @@ export const useEmailCampaignAnalytics = () => {
         click_to_open_rate: analyticsData.click_to_open_rate,
         bounced_rate: analyticsData.bounced_rate,
         unsubscribe_rate: analyticsData.unsubscribe_rate,
-        timeline: analyticsData.timeline || [],
+        timeline: timelineData,
         created_at: analyticsData.created_at,
         updated_at: analyticsData.updated_at
       };
       
       setAnalytics(formattedAnalytics);
       
-      // Fetch geographic data
-      const { data: geoDataResult, error: geoError } = await supabase
-        .from('email_campaign_geo_data')
-        .select('*')
-        .eq('campaign_id', campaignId)
-        .single();
+      // Instead of trying to fetch from non-existent tables, use synthetic data
+      // Create synthetic geo data based on analytics
+      const syntheticGeoData: GeoData = {
+        'United States': Math.floor(analyticsData.opened * 0.4),
+        'United Kingdom': Math.floor(analyticsData.opened * 0.15),
+        'Canada': Math.floor(analyticsData.opened * 0.12),
+        'Australia': Math.floor(analyticsData.opened * 0.08),
+        'Germany': Math.floor(analyticsData.opened * 0.06),
+        'France': Math.floor(analyticsData.opened * 0.05),
+        'India': Math.floor(analyticsData.opened * 0.04),
+        'Brazil': Math.floor(analyticsData.opened * 0.03),
+        'Japan': Math.floor(analyticsData.opened * 0.02),
+        'Other': Math.floor(analyticsData.opened * 0.05),
+      };
       
-      if (!geoError && geoDataResult) {
-        setGeoData(geoDataResult.countries || {});
-      } else {
-        // Fallback to synthetic data based on analytics if geo data doesn't exist
-        setGeoData({
-          'United States': Math.floor(analyticsData.opened * 0.4),
-          'United Kingdom': Math.floor(analyticsData.opened * 0.15),
-          'Canada': Math.floor(analyticsData.opened * 0.12),
-          'Australia': Math.floor(analyticsData.opened * 0.08),
-          'Germany': Math.floor(analyticsData.opened * 0.06),
-          'France': Math.floor(analyticsData.opened * 0.05),
-          'India': Math.floor(analyticsData.opened * 0.04),
-          'Brazil': Math.floor(analyticsData.opened * 0.03),
-          'Japan': Math.floor(analyticsData.opened * 0.02),
-          'Other': Math.floor(analyticsData.opened * 0.05),
-        });
-      }
+      setGeoData(syntheticGeoData);
       
-      // Fetch device data
-      const { data: deviceDataResult, error: deviceError } = await supabase
-        .from('email_campaign_device_data')
-        .select('*')
-        .eq('campaign_id', campaignId)
-        .single();
+      // Create synthetic device data based on analytics
+      const syntheticDeviceData: DeviceData = {
+        desktop: Math.floor(analyticsData.opened * 0.45),
+        mobile: Math.floor(analyticsData.opened * 0.4),
+        tablet: Math.floor(analyticsData.opened * 0.1),
+        other: Math.floor(analyticsData.opened * 0.05),
+        emailClients: {
+          gmail: Math.floor(analyticsData.opened * 0.35),
+          outlook: Math.floor(analyticsData.opened * 0.25),
+          apple: Math.floor(analyticsData.opened * 0.2),
+          yahoo: Math.floor(analyticsData.opened * 0.1),
+          other: Math.floor(analyticsData.opened * 0.1)
+        }
+      };
       
-      if (!deviceError && deviceDataResult) {
-        setDeviceData(deviceDataResult.devices || {});
-      } else {
-        // Fallback to synthetic data based on analytics if device data doesn't exist
-        setDeviceData({
-          desktop: Math.floor(analyticsData.opened * 0.45),
-          mobile: Math.floor(analyticsData.opened * 0.4),
-          tablet: Math.floor(analyticsData.opened * 0.1),
-          other: Math.floor(analyticsData.opened * 0.05),
-          emailClients: {
-            gmail: Math.floor(analyticsData.opened * 0.35),
-            outlook: Math.floor(analyticsData.opened * 0.25),
-            apple: Math.floor(analyticsData.opened * 0.2),
-            yahoo: Math.floor(analyticsData.opened * 0.1),
-            other: Math.floor(analyticsData.opened * 0.1)
-          }
-        });
-      }
+      setDeviceData(syntheticDeviceData);
       
     } catch (err) {
       console.error('Error fetching campaign analytics:', err);
@@ -189,12 +185,12 @@ export const useEmailCampaignAnalytics = () => {
       if (analyticsError) throw analyticsError;
       
       // Format for chart display
-      const comparisonDataPoints = analyticsData.map(item => ({
+      const comparisonDataPoints: ComparisonDataPoint[] = analyticsData.map(item => ({
         id: item.campaign_id,
         name: item.name,
-        openRate: parseFloat(item.open_rate),
-        clickRate: parseFloat(item.click_rate),
-        ctoRate: parseFloat(item.click_to_open_rate)
+        openRate: parseFloat(String(item.open_rate)),
+        clickRate: parseFloat(String(item.click_rate)),
+        ctoRate: parseFloat(String(item.click_to_open_rate))
       }));
       
       setComparisonData(comparisonDataPoints);
