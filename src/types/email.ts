@@ -1,4 +1,3 @@
-
 export interface Email {
   id: string;
   subject: string;
@@ -18,13 +17,14 @@ export interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
-  body: string;
   description?: string;
   category?: EmailCategory;
   content?: string;
   variables?: EmailTemplateVariable[];
   created_at: string;
   updated_at: string;
+  body?: string;
+  is_archived?: boolean;
 }
 
 export type EmailCategory = 'marketing' | 'transactional' | 'reminder' | 'welcome' | 'follow_up' | 'survey' | 'custom';
@@ -34,6 +34,7 @@ export interface EmailTemplateVariable {
   name: string;
   description?: string;
   default_value?: string;
+  defaultValue?: string; // Support for UI components
 }
 
 export interface EmailTemplatePreview {
@@ -81,9 +82,12 @@ export interface EmailCampaignPreview {
   scheduled_at?: string;
   sent_at?: string;
   created_at: string;
-  totalRecipients: number;
+  total_recipients: number;
   opened: number;
   clicked: number;
+  totalRecipients?: number;
+  scheduledDate?: string;
+  sentDate?: string;
 }
 
 export interface EmailSequence {
@@ -93,11 +97,15 @@ export interface EmailSequence {
   steps: EmailSequenceStep[];
   created_at: string;
   updated_at: string;
+  shop_id?: string;
+  created_by?: string;
+  trigger_type?: 'manual' | 'event' | 'schedule';
+  trigger_event?: string;
+  is_active?: boolean;
+  
   triggerType?: 'manual' | 'event' | 'schedule';
   triggerEvent?: string;
   isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface EmailSequenceStep {
@@ -109,6 +117,7 @@ export interface EmailSequenceStep {
   email_template_id?: string;
   created_at: string;
   updated_at: string;
+  
   name?: string;
   templateId?: string;
   delayHours?: number;
@@ -205,6 +214,13 @@ export interface EmailABTestVariant {
   recipients: number;
   opened: number;
   clicked: number;
+  metrics?: {
+    openRate: number;
+    clickRate: number;
+    clickToOpenRate: number;
+    conversionRate?: number;
+  };
+  improvement?: number;
 }
 
 export interface EmailABTestResult {
@@ -215,6 +231,8 @@ export interface EmailABTestResult {
   winnerSelectedAt: string | null;
   winnerCriteria: 'open_rate' | 'click_rate';
   isComplete: boolean;
+  winningVariantId?: string;
+  confidenceLevel?: number;
 }
 
 export interface EmailSequenceAnalytics {

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -38,7 +37,7 @@ export default function EmailTemplates() {
 
   const filteredTemplates = templates.filter(template => 
     template.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    template.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    (template.description && template.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleCreateTemplate = async (template: Partial<EmailTemplate>) => {
@@ -234,7 +233,7 @@ export default function EmailTemplates() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {format(new Date(template.createdAt), 'MMM d, yyyy')}
+                            {format(new Date(template.created_at), 'MMM d, yyyy')}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">

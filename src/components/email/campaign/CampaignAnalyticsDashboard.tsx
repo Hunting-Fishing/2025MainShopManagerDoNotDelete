@@ -785,115 +785,186 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
               <CardHeader>
                 <CardTitle>A/B Test Results</CardTitle>
                 <CardDescription>
-                  Performance comparison of different variants
+                  Performance comparison of your email variants
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Winner Banner */}
-                  {abTestResults.winningVariantId && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center">
-                      <Trophy className="h-8 w-8 text-yellow-500 mr-4" />
-                      <div>
-                        <h3 className="font-medium text-yellow-800">
-                          Winning Variant: {
-                            abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.name
-                          }
-                        </h3>
-                        <p className="text-sm text-yellow-600 mt-1">
-                          This variant performed best with a {
-                            typeof abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.improvement === 'number' ? 
-                            abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.improvement?.toFixed(2) : 
-                            abTestResults.variants.find(v => v.id === abTestResults.winningVariantId)?.improvement
-                          }% improvement over the control.
-                          {abTestResults.confidenceLevel && ` Confidence level: ${abTestResults.confidenceLevel}%`}
-                        </p>
+                  {abTestResults.isComplete ? (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-6">
+                      <div className="flex items-center">
+                        <Trophy className="h-6 w-6 text-green-600 mr-3" />
+                        <div>
+                          <h3 className="text-lg font-medium text-green-800">Test Complete</h3>
+                          <p className="text-green-700">
+                            {abTestResults.winner ? 
+                              `Variant "${abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.name}" was the winner based on ${abTestResults.winnerCriteria.replace('_', ' ')}` : 
+                              'No significant winner was found'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
+                      <div className="flex items-center">
+                        <LineChart className="h-6 w-6 text-blue-600 mr-3" />
+                        <div>
+                          <h3 className="text-lg font-medium text-blue-800">Test In Progress</h3>
+                          <p className="text-blue-700">
+                            Performance data is being collected. A winner will be selected based on {abTestResults.winnerCriteria.replace('_', ' ')}.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Variants Comparison */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="text-left p-3 border">Variant</th>
-                          <th className="text-center p-3 border">Open Rate</th>
-                          <th className="text-center p-3 border">Click Rate</th>
-                          <th className="text-center p-3 border">Click-to-Open</th>
-                          {abTestResults.variants[0].metrics.conversionRate !== undefined && (
-                            <th className="text-center p-3 border">Conversion</th>
+                  {abTestResults.winner && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+                        <CardContent className="p-6">
+                          <h3 className="font-medium text-amber-800 mb-1">Winning Variant</h3>
+                          <p className="text-2xl font-bold text-amber-900">{
+                            abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.name
+                          }</p>
+                          
+                          {abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.improvement && (
+                            <p className="text-amber-700 mt-2 flex items-center">
+                              <ArrowUpRight className="h-4 w-4 mr-1" />
+                              {abTestResults.variants.find(v => v.id === abTestResults.winner?.id)?.improvement}% improvement
+                            </p>
                           )}
-                          <th className="text-center p-3 border">Improvement</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {abTestResults.variants.map((variant, index) => (
-                          <tr key={variant.id} className={variant.id === abTestResults.winningVariantId ? "bg-yellow-50" : ""}>
-                            <td className="p-3 border font-medium">
-                              {variant.name}
-                              {index === 0 && <span className="text-xs text-muted-foreground ml-2">(control)</span>}
-                              {variant.id === abTestResults.winningVariantId && (
-                                <Badge className="ml-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Winner</Badge>
-                              )}
-                            </td>
-                            <td className="text-center p-3 border">
-                              {(variant.metrics.openRate * 100).toFixed(2)}%
-                            </td>
-                            <td className="text-center p-3 border">
-                              {(variant.metrics.clickRate * 100).toFixed(2)}%
-                            </td>
-                            <td className="text-center p-3 border">
-                              {(variant.metrics.clickToOpenRate * 100).toFixed(2)}%
-                            </td>
-                            {variant.metrics.conversionRate !== undefined && (
-                              <td className="text-center p-3 border">
-                                {(variant.metrics.conversionRate * 100).toFixed(2)}%
-                              </td>
-                            )}
-                            <td className="text-center p-3 border">
-                              {index === 0 ? (
-                                <span className="text-muted-foreground">-</span>
-                              ) : (
-                                <span className={variant.improvement && variant.improvement > 0 ? "text-green-600" : "text-red-600"}>
-                                  {variant.improvement ? (variant.improvement > 0 ? "+" : "") + variant.improvement.toFixed(2) + "%" : "-"}
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="col-span-2">
+                        <CardContent className="p-6">
+                          <h3 className="font-medium mb-2">Confidence Level</h3>
+                          <div className="flex items-center">
+                            <Progress value={abTestResults.confidenceLevel || 0} className="flex-1 h-2" />
+                            <span className="ml-2 font-medium">{abTestResults.confidenceLevel || 0}%</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {abTestResults.confidenceLevel && abTestResults.confidenceLevel >= 95 
+                              ? "Statistical significance achieved" 
+                              : "Results may not be statistically significant"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Variant Performance</h3>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Variant</TableHead>
+                            <TableHead>Recipients</TableHead>
+                            <TableHead>Open Rate</TableHead>
+                            <TableHead>Click Rate</TableHead>
+                            <TableHead>Conversion</TableHead>
+                            <TableHead className="text-right">Improvement</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {abTestResults.variants.map((variant) => {
+                            const isWinner = abTestResults.winner && abTestResults.winner.id === variant.id;
+                            
+                            return (
+                              <TableRow key={variant.id} className={isWinner ? "bg-amber-50" : ""}>
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center">
+                                    {isWinner && <Trophy className="h-4 w-4 text-amber-500 mr-2" />}
+                                    {variant.name}
+                                  </div>
+                                </TableCell>
+                                <TableCell>{variant.recipients}</TableCell>
+                                <TableCell>
+                                  {variant.metrics ? `${(variant.metrics.openRate * 100).toFixed(1)}%` : 
+                                   `${variant.opened > 0 && variant.recipients > 0 ? 
+                                    ((variant.opened / variant.recipients) * 100).toFixed(1) : 0}%`}
+                                </TableCell>
+                                <TableCell>
+                                  {variant.metrics ? `${(variant.metrics.clickRate * 100).toFixed(1)}%` :
+                                   `${variant.clicked > 0 && variant.recipients > 0 ? 
+                                    ((variant.clicked / variant.recipients) * 100).toFixed(1) : 0}%`}
+                                </TableCell>
+                                <TableCell>
+                                  {variant.metrics && variant.metrics.conversionRate ? 
+                                   `${(variant.metrics.conversionRate * 100).toFixed(1)}%` : 'N/A'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isWinner ? (
+                                    <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                                      Winner
+                                    </Badge>
+                                  ) : (
+                                    <div className={variant.improvement && variant.improvement > 0 ? 
+                                      "text-green-600" : variant.improvement && variant.improvement < 0 ? 
+                                      "text-red-600" : "text-gray-500"}>
+                                      {variant.improvement ? `${variant.improvement > 0 ? '+' : ''}${variant.improvement}%` : '--'}
+                                    </div>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
 
-                  {/* Comparison Chart */}
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={abTestResults.variants.map(v => ({
-                          name: v.name,
-                          openRate: v.metrics.openRate * 100,
-                          clickRate: v.metrics.clickRate * 100,
-                          clickToOpen: v.metrics.clickToOpenRate * 100,
-                          conversion: v.metrics.conversionRate ? v.metrics.conversionRate * 100 : undefined
-                        }))}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
-                        <Tooltip formatter={(value) => {
-                          return typeof value === 'number' ? value.toFixed(2) + '%' : value;
-                        }} />
-                        <Legend />
-                        <Bar dataKey="openRate" name="Open Rate" fill={COLORS.opens} />
-                        <Bar dataKey="clickRate" name="Click Rate" fill={COLORS.clicks} />
-                        <Bar dataKey="clickToOpen" name="Click-to-Open" fill={COLORS.primary} />
-                        {abTestResults.variants[0].metrics.conversionRate !== undefined && (
-                          <Bar dataKey="conversion" name="Conversion Rate" fill={COLORS.success} />
-                        )}
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Open Rates</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={abTestResults.variants.map(v => ({
+                                name: v.name,
+                                value: v.metrics ? v.metrics.openRate * 100 : (v.opened / v.recipients) * 100
+                              }))}
+                              margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
+                              <Tooltip formatter={(value) => [`${value.toFixed(1)}%`, 'Open Rate']} />
+                              <Bar dataKey="value" fill={COLORS.opens} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Click Rates</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={abTestResults.variants.map(v => ({
+                                name: v.name,
+                                value: v.metrics ? v.metrics.clickRate * 100 : (v.clicked / v.recipients) * 100
+                              }))}
+                              margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
+                              <Tooltip formatter={(value) => [`${value.toFixed(1)}%`, 'Click Rate']} />
+                              <Bar dataKey="value" fill={COLORS.clicks} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
               </CardContent>

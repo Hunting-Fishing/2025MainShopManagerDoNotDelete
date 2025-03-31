@@ -16,20 +16,20 @@ export function useSequenceEnrollments() {
       // Map the data to match the EmailSequenceEnrollment interface
       const mappedEnrollments: EmailSequenceEnrollment[] = data.map((item: any) => ({
         id: item.id,
-        sequence_id: item.sequenceId,
-        customer_id: item.customerId,
+        sequence_id: item.sequence_id,
+        customer_id: item.customer_id,
         status: item.status as "active" | "paused" | "completed" | "cancelled",
-        current_step_id: item.currentStepId,
-        created_at: item.startedAt || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        completed_at: item.completedAt,
+        current_step_id: item.current_step_id,
+        created_at: item.created_at || new Date().toISOString(),
+        updated_at: item.updated_at || new Date().toISOString(),
+        completed_at: item.completed_at,
         // Keep additional properties
-        sequenceId: item.sequenceId,
-        customerId: item.customerId,
-        currentStepId: item.currentStepId,
-        startedAt: item.startedAt,
-        completedAt: item.completedAt,
-        nextSendTime: item.nextSendTime,
+        sequenceId: item.sequence_id,
+        customerId: item.customer_id,
+        currentStepId: item.current_step_id,
+        startedAt: item.started_at,
+        completedAt: item.completed_at,
+        nextSendTime: item.next_send_time,
         metadata: item.metadata
       }));
       

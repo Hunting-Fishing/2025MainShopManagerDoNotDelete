@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,9 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("editor");
   const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
-  const [newVariable, setNewVariable] = useState({ name: '', defaultValue: '', description: '' });
+  const [newVariableName, setNewVariableName] = useState('');
+  const [newVariableDefault, setNewVariableDefault] = useState('');
+  const [newVariableDescription, setNewVariableDescription] = useState('');
   const [previewEmail, setPreviewEmail] = useState('');
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
@@ -80,11 +81,20 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     }
   }, [template]);
 
-  const addVariable = () => {
-    if (newVariable.name) {
-      setVariables([...variables, { ...newVariable }]);
-      setNewVariable({ name: '', defaultValue: '', description: '' });
-    }
+  const handleAddVariable = () => {
+    if (!newVariableName) return;
+    
+    const newVariable: EmailTemplateVariable = {
+      id: Date.now().toString(),
+      name: newVariableName,
+      default_value: newVariableDefault,
+      description: newVariableDescription
+    };
+    
+    setVariables([...variables, newVariable]);
+    setNewVariableName('');
+    setNewVariableDefault('');
+    setNewVariableDescription('');
   };
 
   const removeVariable = (index: number) => {
@@ -127,10 +137,9 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
   const renderPreview = () => {
     let previewContent = form.getValues('content');
     
-    // Replace variables with their default values for preview
     variables.forEach((variable) => {
       const regex = new RegExp(`{{${variable.name}}}`, 'g');
-      previewContent = previewContent.replace(regex, variable.defaultValue);
+      previewContent = previewContent.replace(regex, variable.default_value || `[${variable.name}]`);
     });
     
     return (
@@ -316,7 +325,9 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                           <div>
                             <p className="font-medium">&#123;&#123;{variable.name}&#125;&#125;</p>
                             <p className="text-sm text-muted-foreground">{variable.description}</p>
-                            <p className="text-xs text-muted-foreground">Default: {variable.defaultValue}</p>
+                            <div className="text-sm text-muted-foreground mb-2">
+                              Default: {variable.default_value || 'None'}
+                            </div>
                           </div>
                           <Button 
                             variant="ghost" 
@@ -341,8 +352,8 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                       <Input
                         id="varName"
                         placeholder="name"
-                        value={newVariable.name}
-                        onChange={(e) => setNewVariable({...newVariable, name: e.target.value})}
+                        value={newVariableName}
+                        onChange={(e) => setNewVariableName(e.target.value)}
                       />
                     </div>
                     <div>
@@ -350,8 +361,8 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                       <Input
                         id="varDefault"
                         placeholder="John"
-                        value={newVariable.defaultValue}
-                        onChange={(e) => setNewVariable({...newVariable, defaultValue: e.target.value})}
+                        value={newVariableDefault}
+                        onChange={(e) => setNewVariableDefault(e.target.value)}
                       />
                     </div>
                     <div>
@@ -359,15 +370,15 @@ export const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                       <Input
                         id="varDesc"
                         placeholder="Recipient's first name"
-                        value={newVariable.description}
-                        onChange={(e) => setNewVariable({...newVariable, description: e.target.value})}
+                        value={newVariableDescription}
+                        onChange={(e) => setNewVariableDescription(e.target.value)}
                       />
                     </div>
                   </div>
                   <Button 
                     type="button" 
-                    onClick={addVariable} 
-                    disabled={!newVariable.name}
+                    onClick={handleAddVariable} 
+                    disabled={!newVariableName}
                     variant="outline"
                   >
                     <Plus className="mr-2 h-4 w-4" />

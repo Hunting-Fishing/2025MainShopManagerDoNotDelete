@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -319,15 +318,15 @@ export default function EmailCampaigns() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {campaign.status === 'sent' && campaign.sentDate ? (
+                        {campaign.status === 'sent' && campaign.sent_at ? (
                           <div className="flex items-center text-sm">
                             <Calendar className="mr-1 h-3 w-3" />
-                            {format(new Date(campaign.sentDate), 'MMM d, yyyy')}
+                            {format(new Date(campaign.sent_at), 'MMM d, yyyy')}
                           </div>
-                        ) : campaign.status === 'scheduled' && campaign.scheduledDate ? (
+                        ) : campaign.status === 'scheduled' && campaign.scheduled_at ? (
                           <div className="flex items-center text-sm">
                             <Clock className="mr-1 h-3 w-3" />
-                            {format(new Date(campaign.scheduledDate), 'MMM d, yyyy h:mm a')}
+                            {format(new Date(campaign.scheduled_at), 'MMM d, yyyy h:mm a')}
                           </div>
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>

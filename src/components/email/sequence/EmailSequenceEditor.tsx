@@ -1,637 +1,286 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  DragDropContext, 
-  Droppable, 
-  Draggable,
-  DropResult
-} from '@hello-pangea/dnd';
+import { Separator } from "@/components/ui/separator";
+import { Plus, Trash2, Move } from "lucide-react";
 import { useEmailTemplates } from "@/hooks/email/useEmailTemplates";
-import { EmailSequence, EmailSequenceStep, EmailTemplate } from "@/types/email";
-import { 
-  Plus, 
-  Trash2, 
-  GripVertical, 
-  Clock, 
-  Mail,
-  Save,
-  X,
-  ArrowRight,
-  Edit
-} from "lucide-react";
+import { EmailSequence, EmailSequenceStep, EmailTemplate, EmailTemplatePreview } from "@/types/email";
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface EmailSequenceEditorProps {
   sequence?: EmailSequence;
-  onSave: (sequence: Partial<EmailSequence>) => Promise<EmailSequence | null>;
+  onSave: (sequence: Partial<EmailSequence>) => Promise<any>;
   onCancel?: () => void;
 }
 
-export function EmailSequenceEditor({ 
-  sequence, 
-  onSave,
-  onCancel 
-}: EmailSequenceEditorProps) {
+const reorder = (list: any[], startIndex: number, endIndex: number) => {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+  return result;
+};
+
+export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequence, onSave, onCancel }) => {
   const [name, setName] = useState(sequence?.name || "");
   const [description, setDescription] = useState(sequence?.description || "");
-  const [triggerType, setTriggerType] = useState<"manual" | "event" | "schedule">(
-    (sequence?.triggerType as "manual" | "event" | "schedule") || "manual"
-  );
-  const [triggerEvent, setTriggerEvent] = useState(sequence?.triggerEvent || "");
+  const [triggerType, setTriggerType] = useState(sequence?.triggerType || 'manual');
+  const [triggerEvent, setTriggerEvent] = useState(sequence?.triggerEvent || '');
   const [isActive, setIsActive] = useState(sequence?.isActive || false);
   const [steps, setSteps] = useState<EmailSequenceStep[]>(sequence?.steps || []);
-  const [activeTab, setActiveTab] = useState("details");
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleteStepDialogOpen, setIsDeleteStepDialogOpen] = useState(false);
-  const [stepToDelete, setStepToDelete] = useState<string | null>(null);
-  const [editingStep, setEditingStep] = useState<EmailSequenceStep | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | undefined>(undefined);
+  const { templates } = useEmailTemplates();
 
-  const { templates, loading: templatesLoading } = useEmailTemplates();
-  
-  // Set up form when sequence changes
   useEffect(() => {
     if (sequence) {
       setName(sequence.name);
-      setDescription(sequence.description || "");
-      setTriggerType(sequence.triggerType);
-      setTriggerEvent(sequence.triggerEvent || "");
-      setIsActive(sequence.isActive);
+      setDescription(sequence.description || '');
+      setTriggerType(sequence.triggerType || 'manual');
+      setTriggerEvent(sequence.triggerEvent || '');
+      setIsActive(sequence.isActive || false);
       setSteps(sequence.steps || []);
     }
   }, [sequence]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      // Ensure steps have proper position values
-      const updatedSteps = steps.map((step, index) => ({
-        ...step,
-        position: index + 1
-      }));
-
-      const sequenceData: Partial<EmailSequence> = {
-        name,
-        description,
-        triggerType,
-        triggerEvent: triggerType === 'event' ? triggerEvent : undefined,
-        isActive,
-        steps: updatedSteps
-      };
-
-      await onSave(sequenceData);
-    } finally {
-      setIsSaving(false);
-    }
+  const addStep = (type: 'delay' | 'email') => {
+  const newStep: Partial<EmailSequenceStep> = {
+    id: `temp-${Date.now()}`,
+    sequence_id: sequence?.id || '',
+    type: type,
+    order: steps.length,
+    name: type === 'delay' ? 'Wait' : 'Send Email',
+    templateId: '',
+    delayHours: type === 'delay' ? 24 : 0,
+    delayType: 'fixed',
+    position: steps.length,
+    isActive: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
+  
+  setSteps([...steps, newStep as EmailSequenceStep]);
+};
 
-  const handleAddStep = () => {
-    // Create a new step with default values
-    const newStep: EmailSequenceStep = {
-      id: `temp-${Date.now()}`, // Temporary ID, will be replaced on save
-      name: "New Step",
-      templateId: templates.length > 0 ? templates[0].id : "",
-      delayHours: 24,
-      delayType: "fixed",
-      position: steps.length + 1,
-      isActive: true
-    };
-    
-    setSteps([...steps, newStep]);
-    setEditingStep(newStep);
-  };
-
-  const handleDeleteStep = (stepId: string) => {
-    setStepToDelete(stepId);
-    setIsDeleteStepDialogOpen(true);
-  };
-
-  const confirmDeleteStep = () => {
-    if (stepToDelete) {
-      setSteps(steps.filter(step => step.id !== stepToDelete));
-      if (editingStep && editingStep.id === stepToDelete) {
-        setEditingStep(null);
-      }
-    }
-    setIsDeleteStepDialogOpen(false);
-    setStepToDelete(null);
-  };
-
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    
-    const itemsCopy = Array.from(steps);
-    const [reorderedItem] = itemsCopy.splice(result.source.index, 1);
-    itemsCopy.splice(result.destination.index, 0, reorderedItem);
-
-    // Update positions
-    setSteps(itemsCopy);
-  };
-
-  const updateStepField = (stepId: string, field: string, value: any) => {
-    setSteps(prevSteps => 
-      prevSteps.map(step => 
-        step.id === stepId ? { ...step, [field]: value } : step
+  const updateStep = (id: string, updates: Partial<EmailSequenceStep>) => {
+    setSteps(prev =>
+      prev.map(step =>
+        step.id === id ? { ...step, ...updates } : step
       )
     );
-    
-    if (editingStep && editingStep.id === stepId) {
-      setEditingStep(prev => prev ? { ...prev, [field]: value } : null);
-    }
   };
 
-  const getTemplateById = (id: string): EmailTemplate | undefined => {
-    const template = templates.find(t => t.id === id);
-    // Create a full EmailTemplate from a preview if needed
-    if (template) {
-      return {
-        ...template,
-        content: '',
-        variables: [],
-        isArchived: false
-      };
+  const deleteStep = (id: string) => {
+    setSteps(prev => prev.filter(step => step.id !== id));
+  };
+
+  const handleSave = async () => {
+    const sequenceData: Partial<EmailSequence> = {
+      id: sequence?.id,
+      name,
+      description,
+      triggerType,
+      triggerEvent,
+      isActive,
+      steps
+    };
+    await onSave(sequenceData);
+  };
+
+  const onDragEnd = (result: any) => {
+    if (!result.destination) {
+      return;
     }
-    return undefined;
+
+    if (result.destination.index === result.source.index) {
+      return;
+    }
+
+    const newSteps = reorder(steps, result.source.index, result.destination.index);
+    setSteps(newSteps);
   };
 
   return (
-    <div className="space-y-6 pb-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="details">Sequence Details</TabsTrigger>
-          <TabsTrigger value="steps">Email Steps {steps.length > 0 && `(${steps.length})`}</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="details" className="space-y-4 mt-4">
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sequence-name">Sequence Name</Label>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Sequence Details</CardTitle>
+          <CardDescription>Basic information about the email sequence</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              placeholder="Sequence Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              placeholder="Sequence Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="triggerType">Trigger Type</Label>
+              <Select value={triggerType} onValueChange={setTriggerType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Trigger Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manual">Manual</SelectItem>
+                  <SelectItem value="event">Event</SelectItem>
+                  <SelectItem value="schedule">Schedule</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="triggerEvent">Trigger Event</Label>
               <Input
-                id="sequence-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter sequence name"
+                id="triggerEvent"
+                placeholder="Event Name"
+                value={triggerEvent}
+                onChange={(e) => setTriggerEvent(e.target.value)}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="sequence-description">Description</Label>
-              <Textarea
-                id="sequence-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the purpose of this sequence"
-                rows={3}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="trigger-type">Trigger Type</Label>
-                <Select 
-                  value={triggerType} 
-                  onValueChange={(value: "manual" | "event" | "schedule") => setTriggerType(value)}
-                >
-                  <SelectTrigger id="trigger-type">
-                    <SelectValue placeholder="Select trigger type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual Enrollment</SelectItem>
-                    <SelectItem value="event">Event Based</SelectItem>
-                    <SelectItem value="schedule">Scheduled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {triggerType === 'event' && (
-                <div className="space-y-2">
-                  <Label htmlFor="trigger-event">Trigger Event</Label>
-                  <Select 
-                    value={triggerEvent} 
-                    onValueChange={setTriggerEvent}
-                  >
-                    <SelectTrigger id="trigger-event">
-                      <SelectValue placeholder="Select trigger event" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new_customer">New Customer</SelectItem>
-                      <SelectItem value="service_complete">Service Complete</SelectItem>
-                      <SelectItem value="invoice_paid">Invoice Paid</SelectItem>
-                      <SelectItem value="appointment_scheduled">Appointment Scheduled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-2 pt-2">
-              <Switch 
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="isActive">Active</Label>
+              <Switch
                 id="isActive"
                 checked={isActive}
                 onCheckedChange={setIsActive}
               />
-              <Label htmlFor="isActive">Sequence Active</Label>
             </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="steps" className="space-y-4 mt-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Sequence Steps</h3>
-            <Button onClick={handleAddStep} size="sm">
-              <Plus className="mr-2 h-4 w-4" /> Add Step
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-1 space-y-4">
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="steps">
-                  {(provided) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="space-y-2"
-                    >
-                      {steps.length === 0 ? (
-                        <div className="text-center p-6 border border-dashed rounded-md">
-                          <p className="text-muted-foreground">No steps added yet</p>
-                          <Button 
-                            variant="outline" 
-                            onClick={handleAddStep} 
-                            className="mt-2"
-                          >
-                            <Plus className="mr-2 h-4 w-4" /> Add First Step
-                          </Button>
-                        </div>
-                      ) : (
-                        steps.map((step, index) => (
-                          <Draggable 
-                            key={step.id} 
-                            draggableId={step.id} 
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={`flex items-center space-x-2 p-3 border rounded-md ${
-                                  editingStep?.id === step.id 
-                                  ? 'border-primary bg-primary/5' 
-                                  : 'border-border'
-                                }`}
-                              >
-                                <div 
-                                  {...provided.dragHandleProps}
-                                  className="cursor-grab"
-                                >
-                                  <GripVertical className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate">{step.name}</div>
-                                  <div className="text-xs text-muted-foreground flex items-center">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    {step.delayHours} hours
-                                  </div>
-                                </div>
-                                <div className="flex items-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setEditingStep(step)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDeleteStep(step.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))
-                      )}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
-            </div>
-            
-            <div className="md:col-span-3">
-              {editingStep ? (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Edit Step</h3>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => setEditingStep(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="step-name">Step Name</Label>
-                        <Input
-                          id="step-name"
-                          value={editingStep.name}
-                          onChange={(e) => updateStepField(editingStep.id, 'name', e.target.value)}
-                          placeholder="Enter step name"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="email-template">Email Template</Label>
-                        <Select 
-                          value={editingStep.templateId} 
-                          onValueChange={(value) => updateStepField(editingStep.id, 'templateId', value)}
-                          disabled={templatesLoading}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sequence Steps</CardTitle>
+          <CardDescription>Define the steps in the email sequence</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="steps">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                  {steps.map((step, index) => (
+                    <Draggable key={step.id} draggableId={step.id} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="border rounded-md p-4 bg-gray-50"
                         >
-                          <SelectTrigger id="email-template">
-                            <SelectValue placeholder="Select email template" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {templates.map((template) => (
-                              <SelectItem key={template.id} value={template.id}>
-                                {template.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        {editingStep.templateId && getTemplateById(editingStep.templateId) && (
-                          <div className="mt-2 text-sm text-muted-foreground">
-                            Subject: {getTemplateById(editingStep.templateId)?.subject}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="delay-hours">Delay (hours)</Label>
-                          <Input
-                            id="delay-hours"
-                            type="number"
-                            min="0"
-                            value={editingStep.delayHours}
-                            onChange={(e) => updateStepField(
-                              editingStep.id, 
-                              'delayHours', 
-                              parseInt(e.target.value) || 0
-                            )}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="delay-type">Delay Type</Label>
-                          <Select 
-                            value={editingStep.delayType} 
-                            onValueChange={(value: "fixed" | "business_days") => updateStepField(
-                              editingStep.id, 
-                              'delayType', 
-                              value
-                            )}
-                          >
-                            <SelectTrigger id="delay-type">
-                              <SelectValue placeholder="Select delay type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="fixed">Fixed Hours</SelectItem>
-                              <SelectItem value="business_days">Business Days</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2 pt-2">
-                        <Accordion type="single" collapsible>
-                          <AccordionItem value="conditions">
-                            <AccordionTrigger>Conditions</AccordionTrigger>
-                            <AccordionContent>
-                              <div className="pt-2 pb-4 space-y-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="condition-type">Condition Type</Label>
-                                  <Select 
-                                    value={editingStep.condition?.type || ""} 
-                                    onValueChange={(value) => {
-                                      if (!value) {
-                                        // Remove condition
-                                        const newStep = { ...editingStep };
-                                        delete newStep.condition;
-                                        setEditingStep(newStep);
-                                        updateStepField(editingStep.id, 'condition', undefined);
-                                      } else {
-                                        updateStepField(editingStep.id, 'condition', {
-                                          type: value as 'event' | 'property',
-                                          value: editingStep.condition?.value || "",
-                                          operator: editingStep.condition?.operator || "="
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <SelectTrigger id="condition-type">
-                                      <SelectValue placeholder="No condition (optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="">No condition</SelectItem>
-                                      <SelectItem value="event">Event Occurred</SelectItem>
-                                      <SelectItem value="property">Customer Property</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                
-                                {editingStep.condition && (
-                                  <>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      {editingStep.condition.type === 'event' && (
-                                        <div className="col-span-2 space-y-2">
-                                          <Label htmlFor="event-name">Event Name</Label>
-                                          <Select 
-                                            value={editingStep.condition.value} 
-                                            onValueChange={(value) => {
-                                              updateStepField(editingStep.id, 'condition', {
-                                                ...editingStep.condition,
-                                                value
-                                              });
-                                            }}
-                                          >
-                                            <SelectTrigger id="event-name">
-                                              <SelectValue placeholder="Select event" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="email_opened">Email Opened</SelectItem>
-                                              <SelectItem value="link_clicked">Link Clicked</SelectItem>
-                                              <SelectItem value="appointment_confirmed">Appointment Confirmed</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                      )}
-                                      
-                                      {editingStep.condition.type === 'property' && (
-                                        <>
-                                          <div className="space-y-2">
-                                            <Label htmlFor="property-name">Property</Label>
-                                            <Select 
-                                              value={editingStep.condition.value} 
-                                              onValueChange={(value) => {
-                                                updateStepField(editingStep.id, 'condition', {
-                                                  ...editingStep.condition,
-                                                  value
-                                                });
-                                              }}
-                                            >
-                                              <SelectTrigger id="property-name">
-                                                <SelectValue placeholder="Select property" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="customer_type">Customer Type</SelectItem>
-                                                <SelectItem value="lifetime_value">Lifetime Value</SelectItem>
-                                                <SelectItem value="last_service_date">Last Service Date</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                          
-                                          <div className="space-y-2">
-                                            <Label htmlFor="condition-operator">Operator</Label>
-                                            <Select 
-                                              value={editingStep.condition.operator} 
-                                              onValueChange={(value) => {
-                                                updateStepField(editingStep.id, 'condition', {
-                                                  ...editingStep.condition,
-                                                  operator: value as '=' | '!=' | '>' | '<' | '>=' | '<='
-                                                });
-                                              }}
-                                            >
-                                              <SelectTrigger id="condition-operator">
-                                                <SelectValue />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="=">Equals (=)</SelectItem>
-                                                <SelectItem value="!=">Not Equals (!=)</SelectItem>
-                                                <SelectItem value=">">Greater Than (&gt;)</SelectItem>
-                                                <SelectItem value="<">Less Than (&lt;)</SelectItem>
-                                                <SelectItem value=">=">Greater Than or Equal (&gt;=)</SelectItem>
-                                                <SelectItem value="<=">Less Than or Equal (&lt;=)</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  </>
-                                )}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div {...provided.dragHandleProps}>
+                                <Move className="mr-2 h-4 w-4 text-gray-500 cursor-move" />
                               </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 pt-2">
-                        <Switch 
-                          id="step-active"
-                          checked={editingStep.isActive}
-                          onCheckedChange={(checked) => updateStepField(editingStep.id, 'isActive', checked)}
-                        />
-                        <Label htmlFor="step-active">Step Active</Label>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="flex items-center justify-center h-full min-h-[200px] border border-dashed rounded-md">
-                  <div className="text-center p-6">
-                    <Mail className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                    <h3 className="text-lg font-medium mb-1">Step Details</h3>
-                    <p className="text-muted-foreground mb-4">Select a step from the list to edit</p>
-                    {steps.length === 0 && (
-                      <Button onClick={handleAddStep}>
-                        <Plus className="mr-2 h-4 w-4" /> Add First Step
-                      </Button>
-                    )}
-                  </div>
+                              <h3 className="text-sm font-medium">{step.name || `Step ${index + 1}`}</h3>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => deleteStep(step.id)}>
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
+                          <Separator className="my-2" />
+                          {step.type === 'delay' ? (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor={`delayHours-${step.id}`}>Delay Hours</Label>
+                                <Input
+                                  id={`delayHours-${step.id}`}
+                                  type="number"
+                                  placeholder="Delay Hours"
+                                  value={step.delayHours || ''}
+                                  onChange={(e) => updateStep(step.id, { delayHours: parseInt(e.target.value) })}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`delayType-${step.id}`}>Delay Type</Label>
+                                <Select
+                                  value={step.delayType || 'fixed'}
+                                  onValueChange={(value) => updateStep(step.id, { delayType: value })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Delay Type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="fixed">Fixed</SelectItem>
+                                    <SelectItem value="business_days">Business Days</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <Label htmlFor={`template-${step.id}`}>Email Template</Label>
+                              {templates && (
+                                <Select
+                                  value={selectedTemplate}
+                                  onValueChange={(value) => {
+                                    const template = templates.find(t => t.id === value);
+                                    if (template && !template.is_archived) {
+                                      setSelectedTemplate(value);
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a template" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {templates.map(template => (
+                                      <SelectItem 
+                                        key={template.id} 
+                                        value={template.id}
+                                        disabled={template.is_archived}
+                                      >
+                                        {template.name} {template.is_archived && "(Archived)"}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
                 </div>
               )}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      <div className="flex justify-end space-x-2 pt-4">
+            </Droppable>
+          </DragDropContext>
+        </CardContent>
+        <CardFooter className="flex justify-end">
+          <Button variant="outline" onClick={() => addStep('delay')}>
+            <Plus className="mr-2 h-4 w-4" /> Add Delay
+          </Button>
+          <Button variant="outline" onClick={() => addStep('email')}>
+            <Plus className="mr-2 h-4 w-4" /> Add Email
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <div className="flex justify-end space-x-2">
         {onCancel && (
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
         )}
-        <Button 
-          onClick={handleSave} 
-          disabled={isSaving || !name || steps.length === 0}
-        >
-          {isSaving ? (
-            <span>Saving...</span>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              Save Sequence
-            </>
-          )}
-        </Button>
+        <Button onClick={handleSave}>Save</Button>
       </div>
-      
-      <AlertDialog 
-        open={isDeleteStepDialogOpen} 
-        onOpenChange={setIsDeleteStepDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Step</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this step? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteStep}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
-}
+};

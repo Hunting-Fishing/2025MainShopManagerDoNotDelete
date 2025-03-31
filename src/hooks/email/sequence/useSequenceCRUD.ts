@@ -15,7 +15,12 @@ export const useSequenceCRUD = () => {
     setLoading(true);
     try {
       const data = await emailService.getSequences();
-      setSequences(data);
+      if (Array.isArray(data)) {
+        setSequences(data);
+      } else {
+        console.error("Expected an array of sequences");
+        setSequences([]);
+      }
     } catch (error) {
       console.error("Error fetching email sequences:", error);
       toast({
@@ -49,7 +54,16 @@ export const useSequenceCRUD = () => {
 
   const createSequence = async (sequence: Partial<EmailSequence>) => {
     try {
-      const newSequence = await emailService.createSequence(sequence);
+      // Generate a temp ID for the sequence
+      const tempSequence = {
+        id: Date.now().toString(),
+        ...sequence,
+        steps: sequence.steps || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as EmailSequence;
+      
+      const newSequence = await emailService.createSequence(tempSequence);
       if (newSequence) {
         setSequences((prev) => [newSequence, ...prev]);
         toast({
