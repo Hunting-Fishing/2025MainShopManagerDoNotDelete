@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEmailSequences } from "@/hooks/email/useEmailSequences";
-import EmailSequenceDetails from "@/components/email/sequence/EmailSequenceDetails";
+import { EmailSequenceDetails } from "@/components/email/sequence/EmailSequenceDetails";
 import { useToast } from "@/hooks/use-toast";
 
 export default function EmailSequenceDetailsPage() {
@@ -77,7 +77,7 @@ export default function EmailSequenceDetailsPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <EmailSequenceDetails />
+      <EmailSequenceDetails sequenceId={id as string} />
     </div>
   );
 }
