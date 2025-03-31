@@ -23,23 +23,36 @@ export const useFetchEnrollments = (
       if (error) throw error;
       
       // Transform the data to match the EmailSequenceEnrollment type
-      const transformedData = data?.map(item => ({
-        id: item.id,
-        sequence_id: item.sequence_id,
-        customer_id: item.customer_id,
-        status: item.status as 'active' | 'paused' | 'completed' | 'cancelled',
-        current_step_id: item.current_step_id,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        completed_at: item.completed_at,
-        sequence: item.sequence,
-        current_step: item.current_step,
-        nextSendTime: item.next_send_time,
-        // Convert JSON metadata to a proper Record type or default to empty object
-        metadata: typeof item.metadata === 'string' 
-          ? JSON.parse(item.metadata) 
-          : (item.metadata as Record<string, any> || {})
-      })) || [];
+      const transformedData = data?.map(item => {
+        // Process the metadata field - if it's a string, parse it, otherwise use as is
+        let metadata: Record<string, any> = {};
+        if (item.metadata) {
+          try {
+            if (typeof item.metadata === 'string') {
+              metadata = JSON.parse(item.metadata);
+            } else if (typeof item.metadata === 'object') {
+              metadata = item.metadata;
+            }
+          } catch (e) {
+            console.error('Error parsing enrollment metadata:', e);
+          }
+        }
+        
+        return {
+          id: item.id,
+          sequence_id: item.sequence_id,
+          customer_id: item.customer_id,
+          status: item.status as 'active' | 'paused' | 'completed' | 'cancelled',
+          current_step_id: item.current_step_id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          completed_at: item.completed_at,
+          sequence: item.sequence,
+          current_step: item.current_step,
+          nextSendTime: item.next_send_time,
+          metadata
+        };
+      }) || [];
       
       setEnrollments(transformedData);
       return transformedData;

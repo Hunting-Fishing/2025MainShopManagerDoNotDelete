@@ -78,7 +78,7 @@ export const emailService = {
         updated_at: sequence.updated_at,
         shop_id: sequence.shop_id,
         created_by: sequence.created_by,
-        trigger_type: sequence.trigger_type,
+        trigger_type: sequence.trigger_type as 'manual' | 'event' | 'schedule',
         trigger_event: sequence.trigger_event,
         is_active: sequence.is_active,
         
@@ -149,7 +149,7 @@ export const emailService = {
         updated_at: data.updated_at,
         shop_id: data.shop_id,
         created_by: data.created_by,
-        trigger_type: data.trigger_type,
+        trigger_type: data.trigger_type as 'manual' | 'event' | 'schedule',
         trigger_event: data.trigger_event,
         is_active: data.is_active,
         
@@ -197,7 +197,7 @@ export const emailService = {
         updated_at: data.updated_at,
         shop_id: data.shop_id,
         created_by: data.created_by,
-        trigger_type: data.trigger_type,
+        trigger_type: data.trigger_type as 'manual' | 'event' | 'schedule',
         trigger_event: data.trigger_event,
         is_active: data.is_active,
         
@@ -247,7 +247,7 @@ export const emailService = {
         updated_at: data.updated_at,
         shop_id: data.shop_id,
         created_by: data.created_by,
-        trigger_type: data.trigger_type,
+        trigger_type: data.trigger_type as 'manual' | 'event' | 'schedule',
         trigger_event: data.trigger_event,
         is_active: data.is_active,
         
@@ -305,19 +305,44 @@ export const emailService = {
       if (error) throw error;
       
       // Map the database records to the EmailTemplate type
-      return (data || []).map(template => ({
-        id: template.id,
-        name: template.name,
-        subject: template.subject,
-        description: template.description || '',
-        category: template.category as EmailCategory,
-        content: template.content,
-        variables: template.variables as EmailTemplateVariable[] || [],
-        created_at: template.created_at,
-        updated_at: template.updated_at,
-        body: template.content, // For backward compatibility
-        is_archived: template.is_archived || false
-      }));
+      return (data || []).map(template => {
+        // Safely convert variables from Json type to EmailTemplateVariable[]
+        let variables: EmailTemplateVariable[] = [];
+        if (template.variables) {
+          try {
+            // Handle both string and array formats
+            const varsData = typeof template.variables === 'string' 
+              ? JSON.parse(template.variables) 
+              : template.variables;
+            
+            if (Array.isArray(varsData)) {
+              variables = varsData.map((v: any) => ({
+                id: v.id || String(Math.random()),
+                name: v.name || '',
+                description: v.description || '',
+                default_value: v.default_value || v.defaultValue || '',
+                defaultValue: v.defaultValue || v.default_value || ''
+              }));
+            }
+          } catch (e) {
+            console.error('Error parsing template variables:', e);
+          }
+        }
+        
+        return {
+          id: template.id,
+          name: template.name,
+          subject: template.subject,
+          description: template.description || '',
+          category: template.category as EmailCategory,
+          content: template.content,
+          variables: variables,
+          created_at: template.created_at,
+          updated_at: template.updated_at,
+          body: template.content, // For backward compatibility
+          is_archived: template.is_archived || false
+        };
+      });
     } catch (error) {
       console.error('Error fetching email templates:', error);
       return [];
@@ -341,6 +366,29 @@ export const emailService = {
       
       if (!data) return null;
       
+      // Safely convert variables from Json type to EmailTemplateVariable[]
+      let variables: EmailTemplateVariable[] = [];
+      if (data.variables) {
+        try {
+          // Handle both string and array formats
+          const varsData = typeof data.variables === 'string' 
+            ? JSON.parse(data.variables) 
+            : data.variables;
+          
+          if (Array.isArray(varsData)) {
+            variables = varsData.map((v: any) => ({
+              id: v.id || String(Math.random()),
+              name: v.name || '',
+              description: v.description || '',
+              default_value: v.default_value || v.defaultValue || '',
+              defaultValue: v.defaultValue || v.default_value || ''
+            }));
+          }
+        } catch (e) {
+          console.error('Error parsing template variables:', e);
+        }
+      }
+      
       // Map the database record to the EmailTemplate type
       return {
         id: data.id,
@@ -349,7 +397,7 @@ export const emailService = {
         description: data.description || '',
         category: data.category as EmailCategory,
         content: data.content,
-        variables: data.variables as EmailTemplateVariable[] || [],
+        variables: variables,
         created_at: data.created_at,
         updated_at: data.updated_at,
         body: data.content, // For backward compatibility
@@ -382,6 +430,29 @@ export const emailService = {
       
       if (error) throw error;
       
+      // Safely convert variables from Json type to EmailTemplateVariable[]
+      let variables: EmailTemplateVariable[] = [];
+      if (data.variables) {
+        try {
+          // Handle both string and array formats
+          const varsData = typeof data.variables === 'string' 
+            ? JSON.parse(data.variables) 
+            : data.variables;
+          
+          if (Array.isArray(varsData)) {
+            variables = varsData.map((v: any) => ({
+              id: v.id || String(Math.random()),
+              name: v.name || '',
+              description: v.description || '',
+              default_value: v.default_value || v.defaultValue || '',
+              defaultValue: v.defaultValue || v.default_value || ''
+            }));
+          }
+        } catch (e) {
+          console.error('Error parsing template variables:', e);
+        }
+      }
+      
       // Map the database record to the EmailTemplate type
       return {
         id: data.id,
@@ -390,7 +461,7 @@ export const emailService = {
         description: data.description || '',
         category: data.category as EmailCategory,
         content: data.content,
-        variables: data.variables as EmailTemplateVariable[] || [],
+        variables: variables,
         created_at: data.created_at,
         updated_at: data.updated_at,
         body: data.content, // For backward compatibility
@@ -425,6 +496,29 @@ export const emailService = {
       
       if (error) throw error;
       
+      // Safely convert variables from Json type to EmailTemplateVariable[]
+      let variables: EmailTemplateVariable[] = [];
+      if (data.variables) {
+        try {
+          // Handle both string and array formats
+          const varsData = typeof data.variables === 'string' 
+            ? JSON.parse(data.variables) 
+            : data.variables;
+          
+          if (Array.isArray(varsData)) {
+            variables = varsData.map((v: any) => ({
+              id: v.id || String(Math.random()),
+              name: v.name || '',
+              description: v.description || '',
+              default_value: v.default_value || v.defaultValue || '',
+              defaultValue: v.defaultValue || v.default_value || ''
+            }));
+          }
+        } catch (e) {
+          console.error('Error parsing template variables:', e);
+        }
+      }
+      
       // Map the database record to the EmailTemplate type
       return {
         id: data.id,
@@ -433,7 +527,7 @@ export const emailService = {
         description: data.description || '',
         category: data.category as EmailCategory,
         content: data.content,
-        variables: data.variables as EmailTemplateVariable[] || [],
+        variables: variables,
         created_at: data.created_at,
         updated_at: data.updated_at,
         body: data.content, // For backward compatibility
