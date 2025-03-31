@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
@@ -13,26 +14,26 @@ import {
 } from 'lucide-react';
 import { useEmailSequences } from '@/hooks/email/useEmailSequences';
 import { EmailSequence, EmailSequenceEnrollment } from '@/types/email';
-import EmailSequenceFlow from './EmailSequenceFlow';
-import EmailSequenceAnalytics from './EmailSequenceAnalytics';
+import { EmailSequenceFlow } from './EmailSequenceFlow';
+import { EmailSequenceAnalytics } from './EmailSequenceAnalytics';
 import { 
   Tabs, TabsContent, TabsList, TabsTrigger 
 } from '@/components/ui/tabs';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
-import EnrollCustomerForm from './EnrollCustomerForm';
+import { EnrollCustomerForm } from './EnrollCustomerForm';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
   DialogHeader, DialogTitle, DialogTrigger 
 } from '@/components/ui/dialog';
 
-interface Params {
+type SequenceParams = {
   id: string;
 }
 
 const EmailSequenceDetails = () => {
-  const { id } = useParams<Params>();
+  const { id } = useParams<SequenceParams>();
   const navigate = useNavigate();
   const { 
     currentSequence, 
@@ -112,7 +113,7 @@ const EmailSequenceDetails = () => {
               <Edit className="mr-2 h-4 w-4" />
               Edit Sequence
             </Button>
-            <Button variant="primary" size="sm" onClick={handleEnrollCustomer}>
+            <Button variant="secondary" size="sm" onClick={handleEnrollCustomer}>
               <Play className="mr-2 h-4 w-4" />
               Enroll Customer
             </Button>

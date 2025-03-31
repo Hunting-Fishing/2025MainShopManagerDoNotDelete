@@ -1,123 +1,128 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { EmailSequenceAnalytics } from "@/types/email";
-import { Users, Clock, CheckCircle, BarChart2 } from "lucide-react";
+import React, { useEffect } from 'react';
+import { useEmailSequences } from '@/hooks/email/useEmailSequences';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Clock, Users, CheckCircle, BarChart3 } from 'lucide-react';
 
-interface EmailSequenceAnalyticsCardProps {
-  analytics: EmailSequenceAnalytics | null;
-  loading?: boolean;
+interface EmailSequenceAnalyticsProps {
+  sequenceId: string;
 }
 
-export function EmailSequenceAnalyticsCard({ analytics, loading = false }: EmailSequenceAnalyticsCardProps) {
-  if (loading) {
+export const EmailSequenceAnalytics: React.FC<EmailSequenceAnalyticsProps> = ({ sequenceId }) => {
+  const { analytics, analyticsLoading, fetchSequenceAnalytics } = useEmailSequences();
+
+  useEffect(() => {
+    if (sequenceId) {
+      fetchSequenceAnalytics(sequenceId);
+    }
+  }, [sequenceId, fetchSequenceAnalytics]);
+
+  if (analyticsLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Sequence Performance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="h-20 animate-pulse bg-gray-200 rounded-md" />
-            <div className="h-20 animate-pulse bg-gray-200 rounded-md" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((index) => (
+          <Card key={index} className="animate-pulse">
+            <CardHeader className="p-4">
+              <div className="h-5 w-24 bg-gray-200 rounded" />
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="h-8 w-16 bg-gray-200 rounded mb-2" />
+              <div className="h-2 w-full bg-gray-200 rounded" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
   }
-  
+
   if (!analytics) {
     return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No analytics data available for this sequence.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <AnalyticCard
+          title="Total Enrollments"
+          value={analytics.totalEnrollments}
+          icon={<Users className="h-4 w-4 text-blue-500" />}
+          color="blue"
+        />
+        <AnalyticCard
+          title="Active Enrollments"
+          value={analytics.activeEnrollments}
+          icon={<BarChart3 className="h-4 w-4 text-green-500" />}
+          color="green"
+        />
+        <AnalyticCard
+          title="Completed"
+          value={analytics.completedEnrollments}
+          icon={<CheckCircle className="h-4 w-4 text-purple-500" />}
+          color="purple"
+        />
+        <AnalyticCard
+          title="Conversion Rate"
+          value={`${(analytics.conversionRate * 100).toFixed(1)}%`}
+          icon={<BarChart3 className="h-4 w-4 text-amber-500" />}
+          color="amber"
+        />
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Sequence Performance</CardTitle>
+          <CardTitle>Completion Time</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <BarChart2 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p>No analytics data available yet</p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Average Time to Complete</span>
+              <span className="font-medium">
+                {analytics.averageTimeToComplete ? `${(analytics.averageTimeToComplete / 24).toFixed(1)} days` : 'N/A'}
+              </span>
+            </div>
+            <Progress value={Math.min((analytics.averageTimeToComplete / 168) * 100, 100)} className="h-2" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>0 days</span>
+              <span>7 days</span>
+            </div>
           </div>
         </CardContent>
       </Card>
-    );
-  }
-  
-  const completionRate = analytics.totalEnrollments > 0 
-    ? (analytics.completedEnrollments / analytics.totalEnrollments) * 100 
-    : 0;
-  
+    </div>
+  );
+};
+
+interface AnalyticCardProps {
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+  color: 'blue' | 'green' | 'purple' | 'amber';
+}
+
+const AnalyticCard: React.FC<AnalyticCardProps> = ({ title, value, icon, color }) => {
+  const colorClasses = {
+    blue: 'bg-blue-50 text-blue-800 border-blue-200',
+    green: 'bg-green-50 text-green-800 border-green-200',
+    purple: 'bg-purple-50 text-purple-800 border-purple-200',
+    amber: 'bg-amber-50 text-amber-800 border-amber-200',
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Sequence Performance</CardTitle>
+    <Card className={`border ${colorClasses[color]}`}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center text-sm font-medium">
+          {icon}
+          <span className="ml-2">{title}</span>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <Users className="h-5 w-5 text-blue-700" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Enrollments</p>
-                <p className="text-2xl font-bold">{analytics.totalEnrollments}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="bg-green-100 p-3 rounded-full">
-                <CheckCircle className="h-5 w-5 text-green-700" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{analytics.completedEnrollments}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <span>Completion Rate</span>
-                <span className="font-medium">{completionRate.toFixed(1)}%</span>
-              </div>
-              <Progress value={completionRate} className="h-2" />
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="bg-amber-100 p-3 rounded-full">
-                <Clock className="h-5 w-5 text-amber-700" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Time to Complete</p>
-                <p className="text-2xl font-bold">
-                  {analytics.averageTimeToComplete 
-                    ? `${Math.round(analytics.averageTimeToComplete)} hours` 
-                    : 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="mt-6 pt-6 border-t">
-          <div className="flex justify-between text-sm mb-2">
-            <span>Active Enrollments</span>
-            <span className="font-medium">{analytics.activeEnrollments}</span>
-          </div>
-          <Progress 
-            value={analytics.totalEnrollments > 0 
-              ? (analytics.activeEnrollments / analytics.totalEnrollments) * 100 
-              : 0} 
-            className="h-2" 
-          />
-        </div>
-        
-        <div className="text-xs text-muted-foreground mt-4 text-right">
-          Last updated: {new Date(analytics.updatedAt).toLocaleString()}
-        </div>
+        <div className="text-2xl font-bold">{value}</div>
       </CardContent>
     </Card>
   );
-}
+};

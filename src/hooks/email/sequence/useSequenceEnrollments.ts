@@ -1,46 +1,50 @@
+
 import { useState } from 'react';
-import { EmailSequenceEnrollment } from '@/types/email';
 import { emailService } from '@/services/email/emailService';
+import { EmailSequenceEnrollment } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
 
-export function useSequenceEnrollments() {
+export const useSequenceEnrollments = () => {
   const [enrollments, setEnrollments] = useState<EmailSequenceEnrollment[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchCustomerEnrollments = async (customerId: string): Promise<EmailSequenceEnrollment[]> => {
+  const fetchCustomerEnrollments = async (sequenceId: string) => {
     setLoading(true);
     try {
-      const data = await emailService.getCustomerSequenceEnrollments(customerId);
-      
-      // Map the data to match the EmailSequenceEnrollment interface
-      const mappedEnrollments: EmailSequenceEnrollment[] = data.map((item: any) => ({
-        id: item.id,
-        sequence_id: item.sequence_id,
-        customer_id: item.customer_id,
-        status: item.status as "active" | "paused" | "completed" | "cancelled",
-        current_step_id: item.current_step_id,
-        created_at: item.created_at || new Date().toISOString(),
-        updated_at: item.updated_at || new Date().toISOString(),
-        completed_at: item.completed_at,
-        // Keep additional properties
-        sequenceId: item.sequence_id,
-        customerId: item.customer_id,
-        currentStepId: item.current_step_id,
-        startedAt: item.started_at,
-        completedAt: item.completed_at,
-        nextSendTime: item.next_send_time,
-        metadata: item.metadata
+      const { data, error } = await emailService.supabase
+        .from('email_sequence_enrollments')
+        .select('*')
+        .eq('sequence_id', sequenceId);
+
+      if (error) throw error;
+
+      // Transform data to match our type
+      const formattedEnrollments: EmailSequenceEnrollment[] = data.map(enrollment => ({
+        id: enrollment.id,
+        sequence_id: enrollment.sequence_id,
+        sequenceId: enrollment.sequence_id,
+        customer_id: enrollment.customer_id,
+        customerId: enrollment.customer_id,
+        status: enrollment.status,
+        current_step_id: enrollment.current_step_id,
+        currentStepId: enrollment.current_step_id,
+        created_at: enrollment.created_at,
+        updated_at: enrollment.updated_at,
+        completed_at: enrollment.completed_at,
+        completedAt: enrollment.completed_at,
+        startedAt: enrollment.created_at,
+        nextSendTime: enrollment.next_send_time
       }));
-      
-      setEnrollments(mappedEnrollments);
-      return mappedEnrollments;
+
+      setEnrollments(formattedEnrollments);
+      return formattedEnrollments;
     } catch (error) {
-      console.error("Error fetching customer enrollments:", error);
+      console.error('Error fetching enrollments:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch customer enrollments",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to fetch enrollments',
+        variant: 'destructive',
       });
       return [];
     } finally {
@@ -48,13 +52,11 @@ export function useSequenceEnrollments() {
     }
   };
 
-  const pauseEnrollment = async (enrollmentId: string): Promise<boolean> => {
-    setLoading(true);
+  const pauseEnrollment = async (enrollmentId: string) => {
     try {
       const success = await emailService.pauseSequenceEnrollment(enrollmentId);
-      
       if (success) {
-        // Update local state
+        // Update enrollment status in local state
         setEnrollments(prev => 
           prev.map(enrollment => 
             enrollment.id === enrollmentId 
@@ -64,32 +66,34 @@ export function useSequenceEnrollments() {
         );
         
         toast({
-          title: "Enrollment Paused",
-          description: "The sequence enrollment has been paused successfully",
+          title: 'Success',
+          description: 'Enrollment paused',
         });
+        return true;
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to pause enrollment',
+          variant: 'destructive',
+        });
+        return false;
       }
-      
-      return success;
     } catch (error) {
-      console.error("Error pausing enrollment:", error);
+      console.error('Error pausing enrollment:', error);
       toast({
-        title: "Error",
-        description: "Failed to pause the enrollment",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to pause enrollment',
+        variant: 'destructive',
       });
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
-  const resumeEnrollment = async (enrollmentId: string): Promise<boolean> => {
-    setLoading(true);
+  const resumeEnrollment = async (enrollmentId: string) => {
     try {
       const success = await emailService.resumeSequenceEnrollment(enrollmentId);
-      
       if (success) {
-        // Update local state
+        // Update enrollment status in local state
         setEnrollments(prev => 
           prev.map(enrollment => 
             enrollment.id === enrollmentId 
@@ -99,32 +103,34 @@ export function useSequenceEnrollments() {
         );
         
         toast({
-          title: "Enrollment Resumed",
-          description: "The sequence enrollment has been resumed successfully",
+          title: 'Success',
+          description: 'Enrollment resumed',
         });
+        return true;
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to resume enrollment',
+          variant: 'destructive',
+        });
+        return false;
       }
-      
-      return success;
     } catch (error) {
-      console.error("Error resuming enrollment:", error);
+      console.error('Error resuming enrollment:', error);
       toast({
-        title: "Error",
-        description: "Failed to resume the enrollment",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to resume enrollment',
+        variant: 'destructive',
       });
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
-  const cancelEnrollment = async (enrollmentId: string): Promise<boolean> => {
-    setLoading(true);
+  const cancelEnrollment = async (enrollmentId: string) => {
     try {
       const success = await emailService.cancelSequenceEnrollment(enrollmentId);
-      
       if (success) {
-        // Update local state
+        // Update enrollment status in local state
         setEnrollments(prev => 
           prev.map(enrollment => 
             enrollment.id === enrollmentId 
@@ -134,22 +140,77 @@ export function useSequenceEnrollments() {
         );
         
         toast({
-          title: "Enrollment Cancelled",
-          description: "The sequence enrollment has been cancelled successfully",
+          title: 'Success',
+          description: 'Enrollment cancelled',
         });
+        return true;
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to cancel enrollment',
+          variant: 'destructive',
+        });
+        return false;
       }
-      
-      return success;
     } catch (error) {
-      console.error("Error cancelling enrollment:", error);
+      console.error('Error cancelling enrollment:', error);
       toast({
-        title: "Error",
-        description: "Failed to cancel the enrollment",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to cancel enrollment',
+        variant: 'destructive',
       });
       return false;
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const enrollCustomer = async (sequenceId: string, customerId: string) => {
+    try {
+      const { data, error } = await emailService.supabase
+        .from('email_sequence_enrollments')
+        .insert({
+          sequence_id: sequenceId,
+          customer_id: customerId,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newEnrollment: EmailSequenceEnrollment = {
+        id: data.id,
+        sequence_id: data.sequence_id,
+        sequenceId: data.sequence_id,
+        customer_id: data.customer_id,
+        customerId: data.customer_id,
+        status: data.status,
+        current_step_id: data.current_step_id,
+        currentStepId: data.current_step_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        completed_at: data.completed_at,
+        completedAt: data.completed_at,
+        startedAt: data.created_at
+      };
+
+      setEnrollments(prev => [...prev, newEnrollment]);
+      
+      toast({
+        title: 'Success',
+        description: 'Customer enrolled successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error enrolling customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to enroll customer',
+        variant: 'destructive',
+      });
+      return false;
     }
   };
 
@@ -160,5 +221,6 @@ export function useSequenceEnrollments() {
     pauseEnrollment,
     resumeEnrollment,
     cancelEnrollment,
+    enrollCustomer
   };
-}
+};

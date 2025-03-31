@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -36,8 +37,9 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { 
   Plus, XCircle, ArrowRight, Clock, Mail, ChevronDown, ChevronUp, 
-  GripVertical, Settings, Save, ArrowLeft 
+  GripVertical, Settings, Save, ArrowLeft, Trash2 
 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 interface EmailSequenceEditorProps {
   sequence?: EmailSequence;
@@ -55,9 +57,11 @@ const reorder = (list: any[], startIndex: number, endIndex: number) => {
 export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequence, onSave, onCancel }) => {
   const [name, setName] = useState(sequence?.name || "");
   const [description, setDescription] = useState(sequence?.description || "");
-  const [triggerType, setTriggerType] = useState(sequence?.triggerType || 'manual');
-  const [triggerEvent, setTriggerEvent] = useState(sequence?.triggerEvent || '');
-  const [isActive, setIsActive] = useState(sequence?.isActive || false);
+  const [triggerType, setTriggerType] = useState<"manual" | "event" | "schedule">(
+    (sequence?.triggerType || sequence?.trigger_type || 'manual') as "manual" | "event" | "schedule"
+  );
+  const [triggerEvent, setTriggerEvent] = useState(sequence?.triggerEvent || sequence?.trigger_event || '');
+  const [isActive, setIsActive] = useState(sequence?.isActive || sequence?.is_active || false);
   const [steps, setSteps] = useState<EmailSequenceStep[]>(sequence?.steps || []);
   const [selectedTemplate, setSelectedTemplate] = useState<string | undefined>(undefined);
   const { templates } = useEmailTemplates();
@@ -66,9 +70,9 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
     if (sequence) {
       setName(sequence.name);
       setDescription(sequence.description || '');
-      setTriggerType(sequence.triggerType || 'manual');
-      setTriggerEvent(sequence.triggerEvent || '');
-      setIsActive(sequence.isActive || false);
+      setTriggerType((sequence.triggerType || sequence.trigger_type || 'manual') as "manual" | "event" | "schedule");
+      setTriggerEvent(sequence.triggerEvent || sequence.trigger_event || '');
+      setIsActive(sequence.isActive || sequence.is_active || false);
       setSteps(sequence.steps || []);
     }
   }, [sequence]);
@@ -81,6 +85,7 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
       order: steps.length,
       name: type === 'delay' ? 'Wait' : 'Send Email',
       templateId: '',
+      email_template_id: '',
       delayHours: type === 'delay' ? 24 : 0,
       delayType: 'fixed',
       position: steps.length,
@@ -110,8 +115,11 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
       name,
       description,
       triggerType,
+      trigger_type: triggerType,
       triggerEvent,
+      trigger_event: triggerEvent,
       isActive,
+      is_active: isActive,
       steps
     };
     await onSave(sequenceData);
@@ -159,7 +167,10 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="triggerType">Trigger Type</Label>
-              <Select value={triggerType} onValueChange={setTriggerType}>
+              <Select 
+                value={triggerType} 
+                onValueChange={(value: "manual" | "event" | "schedule") => setTriggerType(value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Trigger Type" />
                 </SelectTrigger>
@@ -212,7 +223,7 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
                               <div {...provided.dragHandleProps}>
-                                <Move className="mr-2 h-4 w-4 text-gray-500 cursor-move" />
+                                <GripVertical className="mr-2 h-4 w-4 text-gray-500 cursor-move" />
                               </div>
                               <h3 className="text-sm font-medium">{step.name || `Step ${index + 1}`}</h3>
                             </div>
@@ -238,7 +249,7 @@ export const EmailSequenceEditor: React.FC<EmailSequenceEditorProps> = ({ sequen
                                 <Label htmlFor={`delayType-${step.id}`}>Delay Type</Label>
                                 <Select
                                   value={step.delayType || 'fixed'}
-                                  onValueChange={(value) => updateStep(step.id, { delayType: value })}
+                                  onValueChange={(value: "fixed" | "business_days") => updateStep(step.id, { delayType: value })}
                                 >
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select Delay Type" />

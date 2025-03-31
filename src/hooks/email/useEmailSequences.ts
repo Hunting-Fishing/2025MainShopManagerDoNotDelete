@@ -31,14 +31,9 @@ export const useEmailSequences = () => {
     fetchCustomerEnrollments,
     pauseEnrollment,
     resumeEnrollment,
-    cancelEnrollment
+    cancelEnrollment,
+    enrollCustomer
   } = useSequenceEnrollments();
-
-  // Custom function to enroll customer - would be implemented in a real application
-  const enrollCustomer = async (sequenceId: string, customerId: string) => {
-    // This would be implemented in a real application
-    return false;
-  };
 
   return {
     // Sequence CRUD operations

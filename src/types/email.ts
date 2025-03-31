@@ -1,4 +1,3 @@
-
 export interface Email {
   id: string;
   subject: string;
@@ -232,13 +231,13 @@ export interface EmailABTestVariant {
   recipients: number;
   opened: number;
   clicked: number;
+  improvement?: number;
   metrics?: {
     openRate: number;
     clickRate: number;
     clickToOpenRate: number;
     conversionRate?: number;
   };
-  improvement?: number;
 }
 
 export interface EmailABTestResult {
@@ -256,19 +255,19 @@ export interface EmailABTestResult {
 export interface EmailSequenceAnalytics {
   id: string;
   sequenceId: string;
+  sequence_id: string;
   totalEnrollments: number;
+  total_enrollments: number;
   activeEnrollments: number;
+  active_enrollments: number;
   completedEnrollments: number;
+  completed_enrollments: number;
   conversionRate: number;
+  conversion_rate: number;
   averageTimeToComplete: number;
+  average_time_to_complete: number;
   updatedAt: string;
-  sequence_id?: string;
-  total_enrollments?: number;
-  active_enrollments?: number;
-  completed_enrollments?: number;
-  conversion_rate?: number;
-  average_time_to_complete?: number;
-  updated_at?: string;
+  updated_at: string;
 }
 
 export interface CustomerValuePrediction {

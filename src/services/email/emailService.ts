@@ -811,7 +811,7 @@ class EmailService {
 
   async getSequenceAnalytics(sequenceId: string): Promise<any> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from('email_sequence_analytics')
         .select('*')
         .eq('sequence_id', sequenceId)
