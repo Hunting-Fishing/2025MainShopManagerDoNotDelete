@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { Resend } from "npm:resend@1.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +26,10 @@ serve(async (req) => {
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const supabase = createClient(supabaseUrl, supabaseKey);
 
+  // Initialize Resend for email sending
+  const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
+  const resend = new Resend(resendApiKey);
+
   try {
     const { sequenceId, action, customerId } = await req.json() as EnrollmentProcessRequest;
 
@@ -32,7 +37,7 @@ serve(async (req) => {
     if (action === 'updateAnalytics') {
       return await updateSequenceAnalytics(supabase, sequenceId);
     } else {
-      return await processSequenceEnrollments(supabase);
+      return await processSequenceEnrollments(supabase, resend);
     }
   } catch (error) {
     console.error("Error processing request:", error);
@@ -48,7 +53,7 @@ serve(async (req) => {
   }
 });
 
-async function processSequenceEnrollments(supabase) {
+async function processSequenceEnrollments(supabase, resend) {
   console.log("Processing sequence enrollments...");
   
   // Get all active enrollments that are due for processing
@@ -96,7 +101,7 @@ async function processSequenceEnrollments(supabase) {
       }
       
       // Process the enrollment
-      const result = await processEnrollment(supabase, enrollment, steps);
+      const result = await processEnrollment(supabase, resend, enrollment, steps);
       processedResults.push(result);
     } catch (error) {
       console.error(`Error processing enrollment ${enrollment.id}:`, error);
@@ -126,7 +131,7 @@ async function processSequenceEnrollments(supabase) {
   );
 }
 
-async function processEnrollment(supabase, enrollment, steps) {
+async function processEnrollment(supabase, resend, enrollment, steps) {
   console.log(`Processing enrollment ${enrollment.id} for sequence ${enrollment.sequence_id}`);
   
   // Sort steps by position
@@ -227,12 +232,12 @@ async function processEnrollment(supabase, enrollment, steps) {
   }
   
   // For email steps, get the template and send the email
-  if (currentStep.delay_hours === 0 || currentStep.delay_hours === null) {
+  if (currentStep.type === 'email') {
     // Get email template
     const { data: template, error: templateError } = await supabase
       .from('email_templates')
       .select('*')
-      .eq('id', currentStep.template_id)
+      .eq('id', currentStep.email_template_id || currentStep.templateId)
       .single();
     
     if (templateError) {
@@ -242,32 +247,91 @@ async function processEnrollment(supabase, enrollment, steps) {
     // Send the email
     console.log(`Sending email to ${customer.email} using template ${template.name}`);
     
-    // Record that the email was sent
-    const { data: communicationData, error: communicationError } = await supabase
-      .from('customer_communications')
-      .insert({
-        customer_id: customer.id,
-        type: 'email',
-        direction: 'outbound',
-        subject: template.subject,
-        content: template.content,
-        template_id: template.id,
-        template_name: template.name,
-        staff_member_id: 'system',
-        staff_member_name: 'Email Sequence System',
-        status: 'sent',
-        sequence_id: enrollment.sequence_id,
-        sequence_step_id: currentStep.id,
-      })
-      .select()
-      .single();
-    
-    if (communicationError) {
-      throw new Error(`Error recording communication: ${communicationError.message}`);
+    try {
+      // Personalize the email content
+      const personalizedSubject = personalizeText(template.subject, customer);
+      const personalizedContent = personalizeText(template.content, customer);
+      
+      // Generate tracking ID
+      const trackingId = crypto.randomUUID();
+      
+      // Add tracking pixel and link tracking
+      const trackingPixel = `<img src="${Deno.env.get("SUPABASE_URL")}/functions/track-email-open?t=${trackingId}&s=${enrollment.sequence_id}&r=${customer.id}" width="1" height="1" alt="" style="display:block">`;
+      
+      let htmlContent = personalizedContent;
+      
+      // Add tracking pixel
+      if (htmlContent.includes('</body>')) {
+        htmlContent = htmlContent.replace('</body>', `${trackingPixel}</body>`);
+      } else {
+        htmlContent = `${htmlContent}${trackingPixel}`;
+      }
+      
+      // Process links for click tracking
+      const linkRegex = /<a\s+(?:[^>]*?\s+)?href=(["'])(https?:\/\/[^"']+)\1/gi;
+      let match;
+      while ((match = linkRegex.exec(htmlContent)) !== null) {
+        const originalUrl = match[2];
+        const trackingUrl = `${Deno.env.get("SUPABASE_URL")}/functions/track-email-click?t=${trackingId}&s=${enrollment.sequence_id}&r=${customer.id}&u=${encodeURIComponent(originalUrl)}`;
+        htmlContent = htmlContent.replace(`href="${originalUrl}"`, `href="${trackingUrl}"`);
+      }
+      
+      // Get sender information
+      const { data: shopData } = await supabase
+        .from('shops')
+        .select('name, email')
+        .eq('id', enrollment.sequence.shop_id)
+        .single();
+      
+      const senderName = shopData?.name || 'Your Company';
+      const senderEmail = shopData?.email || 'noreply@example.com';
+      
+      // Send the email using Resend
+      const emailResult = await resend.emails.send({
+        from: `${senderName} <${senderEmail}>`,
+        to: customer.email,
+        subject: personalizedSubject,
+        html: htmlContent,
+        tags: [
+          { name: 'sequence_id', value: enrollment.sequence_id },
+          { name: 'step_id', value: currentStep.id },
+          { name: 'customer_id', value: customer.id }
+        ]
+      });
+      
+      console.log('Email sent:', emailResult);
+      
+      // Record that the email was sent
+      const { data: communicationData, error: communicationError } = await supabase
+        .from('customer_communications')
+        .insert({
+          customer_id: customer.id,
+          type: 'email',
+          direction: 'outbound',
+          subject: personalizedSubject,
+          content: htmlContent,
+          template_id: template.id,
+          template_name: template.name,
+          staff_member_id: 'system',
+          staff_member_name: 'Email Sequence System',
+          status: 'sent',
+          sequence_id: enrollment.sequence_id,
+          sequence_step_id: currentStep.id,
+          tracking_id: trackingId
+        })
+        .select()
+        .single();
+      
+      if (communicationError) {
+        throw new Error(`Error recording communication: ${communicationError.message}`);
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error(`Failed to send email: ${error.message}`);
     }
-  } else {
+  } else if (currentStep.type === 'delay') {
     // This is a delay step, just log it
-    console.log(`Processed delay step of ${currentStep.delay_hours} hours (${currentStep.delay_type}) for enrollment ${enrollment.id}`);
+    console.log(`Processed delay step of ${currentStep.delayHours || currentStep.delay_duration} hours for enrollment ${enrollment.id}`);
   }
   
   // If there's a next step, update the enrollment
@@ -290,8 +354,8 @@ async function processEnrollment(supabase, enrollment, steps) {
     return {
       enrollment_id: enrollment.id,
       status: 'processed',
-      email_sent: currentStep.delay_hours === 0 || currentStep.delay_hours === null,
-      delay_processed: currentStep.delay_hours > 0,
+      email_sent: currentStep.type === 'email',
+      delay_processed: currentStep.type === 'delay',
       next_step_id: nextStep.id,
       next_send_time: nextSendTime,
     };
@@ -314,11 +378,22 @@ async function processEnrollment(supabase, enrollment, steps) {
     return {
       enrollment_id: enrollment.id,
       status: 'completed',
-      email_sent: currentStep.delay_hours === 0 || currentStep.delay_hours === null,
-      delay_processed: currentStep.delay_hours > 0,
+      email_sent: currentStep.type === 'email',
+      delay_processed: currentStep.type === 'delay',
       message: 'Sequence completed',
     };
   }
+}
+
+function personalizeText(text, customer) {
+  if (!text) return '';
+  
+  // Basic personalization tags
+  return text
+    .replace(/{{first_name}}/g, customer.first_name || '')
+    .replace(/{{last_name}}/g, customer.last_name || '')
+    .replace(/{{email}}/g, customer.email || '')
+    .replace(/{{full_name}}/g, `${customer.first_name || ''} ${customer.last_name || ''}`.trim());
 }
 
 function updateStepHistory(enrollment, stepId, status, note = null) {
@@ -365,7 +440,7 @@ async function checkCondition(supabase, conditionType, conditionValue, condition
       .eq('customer_id', customerId)
       .eq('type', 'email')
       .eq('status', conditionValue === 'email_opened' ? 'opened' : 'clicked')
-      .gte('date', enrollment.started_at); // Only check events after sequence started
+      .gte('created_at', enrollment.started_at || enrollment.created_at); // Only check events after sequence started
     
     if (error) {
       console.error('Error checking event condition:', error);
@@ -461,17 +536,26 @@ async function checkCondition(supabase, conditionType, conditionValue, condition
 function calculateNextSendTime(step) {
   const now = new Date();
   
-  if (step.delay_hours <= 0) {
+  // For email steps with no delay, send immediately
+  if (step.type === 'email' && !step.delayHours && !step.delay_duration) {
+    return now.toISOString();
+  }
+  
+  // For delay steps, calculate the next send time
+  const delayHours = step.delayHours || parseInt(step.delay_duration) || 0;
+  if (delayHours <= 0) {
     return now.toISOString(); // Send immediately
   }
   
-  if (step.delay_type === 'fixed') {
+  const delayType = step.delayType || 'fixed';
+  
+  if (delayType === 'fixed') {
     // Simple delay in hours
-    const nextTime = new Date(now.getTime() + step.delay_hours * 60 * 60 * 1000);
+    const nextTime = new Date(now.getTime() + delayHours * 60 * 60 * 1000);
     return nextTime.toISOString();
-  } else if (step.delay_type === 'business_days') {
+  } else if (delayType === 'business_days') {
     // Business days logic (more sophisticated implementation)
-    let hoursRemaining = step.delay_hours;
+    let hoursRemaining = delayHours;
     let currentTime = now.getTime();
     
     while (hoursRemaining > 0) {
@@ -489,10 +573,10 @@ function calculateNextSendTime(step) {
     }
     
     return new Date(currentTime).toISOString();
-  } else if (step.delay_type === 'smart_timing') {
+  } else if (delayType === 'smart_timing') {
     // Smart timing tries to send at optimal times based on recipient's timezone
     // (basic implementation - would be more sophisticated in production)
-    const baseTime = new Date(now.getTime() + step.delay_hours * 60 * 60 * 1000);
+    const baseTime = new Date(now.getTime() + delayHours * 60 * 60 * 1000);
     const hour = baseTime.getHours();
     
     // If outside 9 AM to 8 PM, adjust to next day at 10 AM
@@ -505,7 +589,7 @@ function calculateNextSendTime(step) {
   }
   
   // Default fallback
-  return new Date(now.getTime() + step.delay_hours * 60 * 60 * 1000).toISOString();
+  return new Date(now.getTime() + delayHours * 60 * 60 * 1000).toISOString();
 }
 
 async function updateSequenceAnalytics(supabase, sequenceId) {
@@ -537,7 +621,7 @@ async function updateSequenceAnalytics(supabase, sequenceId) {
   if (completedEnrollments > 0) {
     const { data: completedData, error: completedError } = await supabase
       .from('email_sequence_enrollments')
-      .select('started_at, completed_at')
+      .select('created_at, completed_at')
       .eq('sequence_id', sequenceId)
       .eq('status', 'completed')
       .not('completed_at', 'is', null);
@@ -548,7 +632,7 @@ async function updateSequenceAnalytics(supabase, sequenceId) {
     
     if (completedData && completedData.length > 0) {
       const totalHours = completedData.reduce((sum, enrollment) => {
-        const startTime = new Date(enrollment.started_at).getTime();
+        const startTime = new Date(enrollment.created_at).getTime();
         const endTime = new Date(enrollment.completed_at).getTime();
         const hours = (endTime - startTime) / (1000 * 60 * 60);
         return sum + hours;

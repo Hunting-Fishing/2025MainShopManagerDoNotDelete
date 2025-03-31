@@ -1,13 +1,9 @@
 
 import React, { useEffect } from 'react';
-import { 
-  Card, CardContent, CardDescription, CardHeader, CardTitle 
-} from '@/components/ui/card';
-import { EmailSequenceAnalytics as SequenceAnalyticsType } from '@/types/email';
 import { useEmailSequences } from '@/hooks/email/useEmailSequences';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line } from 'recharts';
-import { Loader2, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { CalendarClock, Users, TrendingUp } from 'lucide-react';
 
 interface EmailSequenceAnalyticsProps {
   sequenceId: string;
@@ -17,130 +13,124 @@ export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsPro
   const { 
     analytics, 
     analyticsLoading, 
-    fetchSequenceAnalytics,
-    setAnalytics 
+    fetchSequenceAnalytics 
   } = useEmailSequences();
-
+  
   useEffect(() => {
     if (sequenceId) {
       fetchSequenceAnalytics(sequenceId);
     }
   }, [sequenceId, fetchSequenceAnalytics]);
-
-  const handleRefresh = () => {
-    fetchSequenceAnalytics(sequenceId);
-  };
-
-  const barColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042'];
-
+  
   if (analyticsLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Sequence Analytics</CardTitle>
+          <CardTitle>
+            <Skeleton className="h-6 w-48" />
+          </CardTitle>
           <CardDescription>
-            Loading analytics data...
+            <Skeleton className="h-4 w-64" />
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>
         </CardContent>
       </Card>
     );
   }
-
+  
   if (!analytics) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Sequence Analytics</CardTitle>
           <CardDescription>
-            No analytics data available yet
+            No analytics data available for this sequence yet
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-center py-8 text-muted-foreground">
-          <p>There's no analytics data for this sequence yet.</p>
-          <p className="mt-2">Try processing the sequence or refreshing the data.</p>
-          <Button onClick={handleRefresh} className="mt-4" variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh Analytics
-          </Button>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <TrendingUp className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+            <p>Start enrolling customers to generate analytics</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
-
-  const enrollmentData = [
-    {
-      name: 'Active',
-      value: analytics.activeEnrollments || analytics.active_enrollments || 0
-    },
-    {
-      name: 'Completed',
-      value: analytics.completedEnrollments || analytics.completed_enrollments || 0
+  
+  // Format number with percentage
+  const formatPercent = (value: number) => {
+    return `${(value * 100).toFixed(1)}%`;
+  };
+  
+  // Format time in hours to readable format
+  const formatTime = (hours: number) => {
+    if (!hours && hours !== 0) return 'N/A';
+    
+    if (hours < 24) {
+      return `${hours.toFixed(1)} hours`;
+    } else {
+      const days = hours / 24;
+      return `${days.toFixed(1)} days`;
     }
-  ];
-
-  const conversionRate = (analytics.conversionRate || analytics.conversion_rate || 0) * 100;
-  const formattedAvgTime = analytics.averageTimeToComplete || analytics.average_time_to_complete || 0;
-
+  };
+  
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Sequence Analytics</CardTitle>
-            <CardDescription>
-              Performance metrics for this email sequence
-            </CardDescription>
-          </div>
-          <Button onClick={handleRefresh} size="sm" variant="ghost">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+        <CardTitle>Sequence Analytics</CardTitle>
+        <CardDescription>
+          Performance metrics for this email sequence
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-50 p-4 rounded-md">
-            <div className="text-sm text-gray-500">Total Enrollments</div>
-            <div className="text-2xl font-bold mt-1">
-              {analytics.totalEnrollments || analytics.total_enrollments || 0}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 border rounded-md bg-gray-50">
+            <div className="flex items-center mb-2">
+              <Users className="mr-2 h-5 w-5 text-primary" />
+              <h3 className="font-medium">Enrollments</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold">{analytics.totalEnrollments || analytics.total_enrollments || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold">{analytics.activeEnrollments || analytics.active_enrollments || 0}</p>
+              </div>
             </div>
           </div>
-          <div className="bg-gray-50 p-4 rounded-md">
-            <div className="text-sm text-gray-500">Conversion Rate</div>
-            <div className="text-2xl font-bold mt-1">
-              {conversionRate.toFixed(1)}%
+          
+          <div className="p-4 border rounded-md bg-gray-50">
+            <div className="flex items-center mb-2">
+              <TrendingUp className="mr-2 h-5 w-5 text-primary" />
+              <h3 className="font-medium">Conversion Rate</h3>
             </div>
+            <p className="text-3xl font-bold">
+              {formatPercent(analytics.conversionRate || analytics.conversion_rate || 0)}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {analytics.completedEnrollments || analytics.completed_enrollments || 0} completed
+            </p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-md">
-            <div className="text-sm text-gray-500">Avg. Time to Complete</div>
-            <div className="text-2xl font-bold mt-1">
-              {formattedAvgTime.toFixed(1)} hours
+          
+          <div className="p-4 border rounded-md bg-gray-50">
+            <div className="flex items-center mb-2">
+              <CalendarClock className="mr-2 h-5 w-5 text-primary" />
+              <h3 className="font-medium">Time to Complete</h3>
             </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <h3 className="text-sm font-medium mb-2">Enrollment Status</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={enrollmentData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#8884d8">
-                  {enrollmentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={barColors[index % barColors.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <p className="text-3xl font-bold">
+              {formatTime(analytics.averageTimeToComplete || analytics.average_time_to_complete || 0)}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Average duration
+            </p>
           </div>
         </div>
       </CardContent>
