@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EmailSequenceStep } from '@/types/email';
+import { EmailSequence, EmailSequenceStep } from '@/types/email';
 import { EmailSequenceFlow } from './EmailSequenceFlow';
 
 interface EmailSequenceStepsProps {
@@ -26,21 +26,28 @@ export function EmailSequenceSteps({ sequenceId, steps }: EmailSequenceStepsProp
     );
   }
 
+  // Create a minimal EmailSequence object with required properties
+  const sequenceData: EmailSequence = { 
+    id: sequenceId, 
+    steps, 
+    name: '',
+    description: '',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    shop_id: '',
+    created_by: '',
+    trigger_type: 'manual',
+    trigger_event: '',
+    is_active: false
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Sequence Steps</CardTitle>
       </CardHeader>
       <CardContent>
-        <EmailSequenceFlow 
-          sequence={{ 
-            id: sequenceId, 
-            steps, 
-            name: '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }} 
-        />
+        <EmailSequenceFlow sequence={sequenceData} />
       </CardContent>
     </Card>
   );

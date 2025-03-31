@@ -38,6 +38,7 @@ export const emailProcessingService = {
   }): Promise<boolean> {
     try {
       // Create or update the schedule configuration
+      // @ts-ignore - We know these tables exist but TypeScript doesn't recognize them
       const { error } = await supabase
         .from('system_schedules')
         .upsert({
@@ -68,6 +69,7 @@ export const emailProcessingService = {
   async selectABTestWinner(testId: string, variantId: string): Promise<boolean> {
     try {
       // Update the A/B test with the winning variant
+      // @ts-ignore - We know these tables exist but TypeScript doesn't recognize them
       const { error } = await supabase
         .from('email_ab_tests')
         .update({

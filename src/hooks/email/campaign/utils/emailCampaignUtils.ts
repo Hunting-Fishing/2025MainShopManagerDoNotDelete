@@ -107,3 +107,6 @@ export const standardizeTimelineData = (timelineData: any): any[] => {
   
   return [];
 };
+
+// Re-export the parseJsonField utility
+export { parseJsonField };

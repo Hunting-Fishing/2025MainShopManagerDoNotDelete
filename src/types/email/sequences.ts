@@ -14,6 +14,11 @@ export interface EmailSequence {
   last_run?: string;
   next_run?: string;
   run_frequency?: string;
+  
+  // Aliased properties for component compatibility
+  triggerType?: "manual" | "event" | "schedule";
+  triggerEvent?: string;
+  isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -27,12 +32,24 @@ export interface EmailSequenceStep {
   conditions?: EmailSequenceStepCondition[];
   created_at?: string;
   updated_at?: string;
+  
+  // Additional properties needed by components
+  name?: string;
+  type?: 'email' | 'delay';
+  templateId?: string;
+  email_template_id?: string;
+  condition?: EmailSequenceStepCondition;
+  delayHours?: number;
+  delayType?: 'fixed' | 'business_days';
+  position?: number;
+  isActive?: boolean;
 }
 
 export interface EmailSequenceStepCondition {
   field: string;
   operator: string;
   value: any;
+  type?: 'event' | 'property';
 }
 
 export interface EmailSequenceEnrollment {
@@ -48,6 +65,13 @@ export interface EmailSequenceEnrollment {
   updated_at: string;
   customer_email?: string;
   customer_name?: string;
+  completed_at?: string;
+  current_step_id?: string;
+  
+  // Additional properties needed by components
+  nextSendTime?: string;
+  sequence?: any;
+  current_step?: any;
 }
 
 export interface EmailSequenceProgress {
@@ -68,6 +92,15 @@ export interface EmailSequenceAnalytics {
   open_rate: number;
   click_rate: number;
   conversion_rate?: number;
+  average_time_to_complete?: number;
   created_at: string;
   updated_at: string;
+  
+  // Aliased properties for component compatibility
+  totalEnrollments?: number;
+  activeEnrollments?: number;
+  completedEnrollments?: number;
+  averageTimeToComplete?: number;
+  conversionRate?: number;
+  sequenceId?: string;
 }

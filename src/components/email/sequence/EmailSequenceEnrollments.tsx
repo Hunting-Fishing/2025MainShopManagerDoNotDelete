@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
@@ -88,6 +89,11 @@ export function EmailSequenceEnrollments({ sequenceId }: EmailSequenceEnrollment
   const getSequenceName = (enrollment: EmailSequenceEnrollment): string => {
     return enrollment.metadata?.sequenceName || 'Unknown Sequence';
   };
+
+  // Helper to get the next send time safely from various possible properties
+  const getNextSendTime = (enrollment: EmailSequenceEnrollment): string | null => {
+    return enrollment.nextSendTime || enrollment.next_send_date || enrollment.metadata?.nextSendTime || null;
+  };
   
   return (
     <Card>
@@ -122,8 +128,8 @@ export function EmailSequenceEnrollments({ sequenceId }: EmailSequenceEnrollment
                     <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
                     <TableCell>{format(new Date(enrollment.created_at), 'MMM d, yyyy')}</TableCell>
                     <TableCell>
-                      {enrollment.nextSendTime 
-                        ? format(new Date(enrollment.nextSendTime), 'MMM d, yyyy h:mm a')
+                      {getNextSendTime(enrollment)
+                        ? format(new Date(getNextSendTime(enrollment)!), 'MMM d, yyyy h:mm a')
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">

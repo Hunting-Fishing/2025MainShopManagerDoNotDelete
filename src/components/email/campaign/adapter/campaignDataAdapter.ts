@@ -34,11 +34,10 @@ export function adaptCampaignData(campaignData: any): EmailCampaign {
     template_id: campaignData.template_id,
     segment_ids: segmentIds,
     segment_id: undefined, // Not in the database schema
-    recipient_ids: recipientIds,
     recipientIds: recipientIds, // For compatibility
+    recipient_ids: recipientIds,
     personalizations: personalizations,
     metadata: metadata,
-    abTest: abTest,
     ab_test: abTest,
     scheduled_at: campaignData.scheduled_date,
     scheduled_for: campaignData.scheduled_date,

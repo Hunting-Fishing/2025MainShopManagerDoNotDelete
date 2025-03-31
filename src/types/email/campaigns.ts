@@ -7,7 +7,8 @@ export interface EmailCampaign {
   subject: string;
   content: string;
   body?: string; // Added for backward compatibility
-  recipients?: string[];
+  recipientIds?: string[];
+  recipient_ids?: string[];
   recipient_segment?: string;
   sent_at?: string;
   scheduled_at?: string; // Added for compatibility
@@ -28,7 +29,6 @@ export interface EmailCampaign {
   clicked?: number;
   scheduledDate?: string; // For compatibility
   sentDate?: string; // For compatibility
-  recipientIds?: string[];
   segment_ids?: string[];
   segment_id?: string;
   personalizations?: Record<string, any>;
