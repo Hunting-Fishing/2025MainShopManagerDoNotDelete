@@ -40,6 +40,15 @@ interface ComparisonDataPoint {
   ctoRate: number;
 }
 
+interface AnalyticsAggregate {
+  id: string;
+  campaign_id: string;
+  dimension: string;
+  value: string;
+  count: number;
+  created_at: string;
+}
+
 export const useEmailCampaignAnalytics = () => {
   const [analytics, setAnalytics] = useState<EmailCampaignAnalytics | null>(null);
   const [campaignDetails, setCampaignDetails] = useState<EmailCampaign | null>(null);
@@ -54,15 +63,33 @@ export const useEmailCampaignAnalytics = () => {
   const { toast } = useToast();
 
   // Function to fetch aggregated analytics data
-  const fetchAggregatedData = async (campaignId: string, dimension: string) => {
+  const fetchAggregatedData = async (campaignId: string, dimension: string): Promise<AnalyticsAggregate[]> => {
     try {
+      // Direct query
       const { data, error } = await supabase
-        .from('email_analytics_aggregates')
-        .select('*')
-        .eq('campaign_id', campaignId)
-        .eq('dimension', dimension);
+        .rpc('get_campaign_analytics_by_dimension', {
+          campaign_id_param: campaignId,
+          dimension_param: dimension
+        });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`Error fetching ${dimension} data:`, error);
+        // Try alternative direct query as fallback
+        try {
+          const { data: directData, error: directError } = await supabase
+            .from('email_analytics_aggregates')
+            .select('*')
+            .eq('campaign_id', campaignId)
+            .eq('dimension', dimension);
+            
+          if (directError) throw directError;
+          return directData as AnalyticsAggregate[];
+        } catch (fallbackError) {
+          console.error('Fallback query failed:', fallbackError);
+          return [];
+        }
+      }
+      
       return data || [];
     } catch (err) {
       console.error(`Error fetching ${dimension} data:`, err);
@@ -280,7 +307,7 @@ export const useEmailCampaignAnalytics = () => {
       const geoAggregates = await fetchAggregatedData(campaignId, 'country');
       if (geoAggregates.length > 0) {
         const geoMap: GeoData = {};
-        geoAggregates.forEach(item => {
+        geoAggregates.forEach((item: AnalyticsAggregate) => {
           geoMap[item.value] = item.count;
         });
         setGeoData(geoMap);
@@ -306,9 +333,9 @@ export const useEmailCampaignAnalytics = () => {
           }
         };
         
-        deviceAggregates.forEach(item => {
+        deviceAggregates.forEach((item: AnalyticsAggregate) => {
           if (['desktop', 'mobile', 'tablet'].includes(item.value)) {
-            deviceMap[item.value as keyof typeof deviceMap] = item.count;
+            deviceMap[item.value as keyof Pick<DeviceData, 'desktop' | 'mobile' | 'tablet' | 'other'>] = item.count;
           } else {
             deviceMap.other += item.count;
           }
@@ -317,7 +344,7 @@ export const useEmailCampaignAnalytics = () => {
         // Fetch email client data
         const clientAggregates = await fetchAggregatedData(campaignId, 'email_client');
         if (clientAggregates.length > 0 && deviceMap.emailClients) {
-          clientAggregates.forEach(item => {
+          clientAggregates.forEach((item: AnalyticsAggregate) => {
             if (['gmail', 'outlook', 'apple', 'yahoo'].includes(item.value)) {
               deviceMap.emailClients![item.value as keyof typeof deviceMap.emailClients] = item.count;
             } else {
@@ -348,7 +375,7 @@ export const useEmailCampaignAnalytics = () => {
       const linkAggregates = await fetchAggregatedData(campaignId, 'link');
       if (linkAggregates.length > 0) {
         const linkMap: LinkData = {};
-        linkAggregates.forEach(item => {
+        linkAggregates.forEach((item: AnalyticsAggregate) => {
           linkMap[item.value] = item.count;
         });
         setLinkData(linkMap);

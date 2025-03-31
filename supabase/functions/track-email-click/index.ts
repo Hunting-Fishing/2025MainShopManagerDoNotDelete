@@ -109,6 +109,8 @@ serve(async (req) => {
       if (geoData.country) {
         await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'country', geoData.country);
       }
+      // Add tracking for email client
+      await updateAnalyticsAggregates(req.supabaseClient, campaignId, 'email_client', emailClient);
     }
   } catch (error) {
     console.error("Error in email click tracking:", error);
@@ -127,7 +129,7 @@ serve(async (req) => {
 async function updateAnalyticsAggregates(supabase, campaignId, dimension, value) {
   try {
     // Check if the aggregate record exists
-    const { data: existing } = await supabase
+    const { data, error } = await supabase
       .from("email_analytics_aggregates")
       .select("*")
       .eq("campaign_id", campaignId)
@@ -135,12 +137,17 @@ async function updateAnalyticsAggregates(supabase, campaignId, dimension, value)
       .eq("value", value)
       .single();
     
-    if (existing) {
+    if (error && error.code !== 'PGRST116') {
+      console.error(`Error checking analytics aggregates for ${dimension}:`, error);
+      return;
+    }
+    
+    if (data) {
       // Update existing record
       await supabase
         .from("email_analytics_aggregates")
-        .update({ count: existing.count + 1 })
-        .eq("id", existing.id);
+        .update({ count: data.count + 1 })
+        .eq("id", data.id);
     } else {
       // Create new record
       await supabase

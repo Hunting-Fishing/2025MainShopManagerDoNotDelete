@@ -28,12 +28,25 @@ interface DeviceData {
   };
 }
 
+interface LinkData {
+  [url: string]: number;
+}
+
 interface ComparisonDataPoint {
   id: string;
   name: string;
   openRate: number;
   clickRate: number;
   ctoRate: number;
+}
+
+interface AnalyticsAggregate {
+  id: string;
+  campaign_id: string;
+  dimension: string;
+  value: string;
+  count: number;
+  created_at: string;
 }
 
 // Helper function to parse campaign details
@@ -104,39 +117,6 @@ const parseTimelineData = (analyticsData: any): EmailCampaignTimelinePoint[] => 
   return [];
 };
 
-// Helper to create synthetic geo data
-const createSyntheticGeoData = (openedCount: number): GeoData => {
-  return {
-    'United States': Math.floor(openedCount * 0.4),
-    'United Kingdom': Math.floor(openedCount * 0.15),
-    'Canada': Math.floor(openedCount * 0.12),
-    'Australia': Math.floor(openedCount * 0.08),
-    'Germany': Math.floor(openedCount * 0.06),
-    'France': Math.floor(openedCount * 0.05),
-    'India': Math.floor(openedCount * 0.04),
-    'Brazil': Math.floor(openedCount * 0.03),
-    'Japan': Math.floor(openedCount * 0.02),
-    'Other': Math.floor(openedCount * 0.05),
-  };
-};
-
-// Helper to create synthetic device data
-const createSyntheticDeviceData = (openedCount: number): DeviceData => {
-  return {
-    desktop: Math.floor(openedCount * 0.45),
-    mobile: Math.floor(openedCount * 0.4),
-    tablet: Math.floor(openedCount * 0.1),
-    other: Math.floor(openedCount * 0.05),
-    emailClients: {
-      gmail: Math.floor(openedCount * 0.35),
-      outlook: Math.floor(openedCount * 0.25),
-      apple: Math.floor(openedCount * 0.2),
-      yahoo: Math.floor(openedCount * 0.1),
-      other: Math.floor(openedCount * 0.1)
-    }
-  };
-};
-
 // Main hook
 export const useEmailCampaignAnalytics = () => {
   const [analytics, setAnalytics] = useState<EmailCampaignAnalytics | null>(null);
@@ -145,10 +125,46 @@ export const useEmailCampaignAnalytics = () => {
   const [error, setError] = useState<Error | null>(null);
   const [geoData, setGeoData] = useState<GeoData | null>(null);
   const [deviceData, setDeviceData] = useState<DeviceData | null>(null);
+  const [linkData, setLinkData] = useState<LinkData | null>(null);
   const [comparisonData, setComparisonData] = useState<ComparisonDataPoint[] | null>(null);
   const [selectedCampaignsForComparison, setSelectedCampaignsForComparison] = useState<string[]>([]);
   
   const { toast } = useToast();
+
+  // Function to fetch aggregated analytics data
+  const fetchAggregatedData = async (campaignId: string, dimension: string): Promise<AnalyticsAggregate[]> => {
+    try {
+      // We have to use RPC because the table may not be in the TypeScript definitions yet
+      const { data, error } = await supabase
+        .rpc('get_campaign_analytics_by_dimension', {
+          campaign_id_param: campaignId,
+          dimension_param: dimension
+        });
+      
+      if (error) {
+        console.error(`Error fetching ${dimension} data:`, error);
+        // Try alternative direct query as fallback
+        try {
+          const { data: directData, error: directError } = await supabase
+            .from('email_analytics_aggregates')
+            .select('*')
+            .eq('campaign_id', campaignId)
+            .eq('dimension', dimension);
+            
+          if (directError) throw directError;
+          return directData as AnalyticsAggregate[];
+        } catch (fallbackError) {
+          console.error('Fallback query failed:', fallbackError);
+          return [];
+        }
+      }
+      
+      return data || [];
+    } catch (err) {
+      console.error(`Error fetching ${dimension} data:`, err);
+      return [];
+    }
+  };
 
   // Fetch campaign analytics data
   const fetchCampaignAnalytics = useCallback(async (campaignId: string) => {
@@ -205,9 +221,85 @@ export const useEmailCampaignAnalytics = () => {
       
       setAnalytics(formattedAnalytics);
       
-      // Create synthetic data based on analytics
-      setGeoData(createSyntheticGeoData(analyticsData.opened));
-      setDeviceData(createSyntheticDeviceData(analyticsData.opened));
+      // Fetch real geo data
+      const geoAggregates = await fetchAggregatedData(campaignId, 'country');
+      if (geoAggregates.length > 0) {
+        const geoMap: GeoData = {};
+        geoAggregates.forEach((item: AnalyticsAggregate) => {
+          geoMap[item.value] = item.count;
+        });
+        setGeoData(geoMap);
+      } else {
+        // Fallback for backward compatibility
+        setGeoData({});
+      }
+      
+      // Fetch real device data
+      const deviceAggregates = await fetchAggregatedData(campaignId, 'device');
+      if (deviceAggregates.length > 0) {
+        const deviceMap: DeviceData = {
+          desktop: 0,
+          mobile: 0,
+          tablet: 0,
+          other: 0,
+          emailClients: {
+            gmail: 0,
+            outlook: 0,
+            apple: 0,
+            yahoo: 0,
+            other: 0
+          }
+        };
+        
+        deviceAggregates.forEach((item: AnalyticsAggregate) => {
+          if (['desktop', 'mobile', 'tablet'].includes(item.value)) {
+            deviceMap[item.value as keyof Pick<DeviceData, 'desktop' | 'mobile' | 'tablet' | 'other'>] = item.count;
+          } else {
+            deviceMap.other += item.count;
+          }
+        });
+        
+        // Fetch email client data
+        const clientAggregates = await fetchAggregatedData(campaignId, 'email_client');
+        if (clientAggregates.length > 0 && deviceMap.emailClients) {
+          clientAggregates.forEach((item: AnalyticsAggregate) => {
+            if (['gmail', 'outlook', 'apple', 'yahoo'].includes(item.value)) {
+              deviceMap.emailClients![item.value as keyof typeof deviceMap.emailClients] = item.count;
+            } else {
+              deviceMap.emailClients!.other += item.count;
+            }
+          });
+        }
+        
+        setDeviceData(deviceMap);
+      } else {
+        // Fallback empty data
+        setDeviceData({
+          desktop: 0,
+          mobile: 0,
+          tablet: 0,
+          other: 0,
+          emailClients: {
+            gmail: 0,
+            outlook: 0,
+            apple: 0,
+            yahoo: 0,
+            other: 0
+          }
+        });
+      }
+      
+      // Fetch link click data
+      const linkAggregates = await fetchAggregatedData(campaignId, 'link');
+      if (linkAggregates.length > 0) {
+        const linkMap: LinkData = {};
+        linkAggregates.forEach((item: AnalyticsAggregate) => {
+          linkMap[item.value] = item.count;
+        });
+        setLinkData(linkMap);
+      } else {
+        setLinkData({});
+      }
       
     } catch (err) {
       console.error('Error fetching campaign analytics:', err);
@@ -255,7 +347,7 @@ export const useEmailCampaignAnalytics = () => {
       if (analyticsError) throw analyticsError;
       
       // Format for chart display
-      const comparisonDataPoints: ComparisonDataPoint[] = analyticsData.map(item => ({
+      const comparisonDataPoints: ComparisonDataPoint[] = analyticsData.map((item: any) => ({
         id: item.campaign_id,
         name: item.name,
         openRate: parseFloat(String(item.open_rate)),
@@ -284,6 +376,7 @@ export const useEmailCampaignAnalytics = () => {
     error,
     geoData,
     deviceData,
+    linkData,
     fetchCampaignAnalytics,
     compareCampaigns,
     comparisonData,
