@@ -17,3 +17,5 @@ export * from './repairPlan';
 export * from './loyalty';
 export * from './document';
 export * from './feedback';
+export * from './email';
+
