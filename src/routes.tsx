@@ -5,19 +5,19 @@ import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import CustomerDetails from './pages/CustomerDetails';
-import CustomerForm from './pages/CustomerForm';
+import CreateCustomer from './pages/CreateCustomer';
 import NotFound from './pages/NotFound';
 import WorkOrders from './pages/WorkOrders';
 import WorkOrderDetails from './pages/WorkOrderDetails';
-import WorkOrderForm from './pages/WorkOrderForm';
-import WorkOrderEdit from './pages/WorkOrderEdit';
+import CreateWorkOrder from './pages/CreateWorkOrder';
+import WorkOrderCreate from './pages/WorkOrderCreate';
 import Invoices from './pages/Invoices';
 import InvoiceDetails from './pages/InvoiceDetails';
 import InvoiceCreate from './pages/InvoiceCreate';
 import Calendar from './pages/Calendar';
 import Team from './pages/Team';
-import TeamCreate from './pages/TeamCreate';
-import TeamMember from './pages/TeamMember';
+import TeamMemberCreate from './pages/TeamMemberCreate';
+import TeamMemberProfile from './pages/TeamMemberProfile';
 import TeamRoles from './pages/TeamRoles';
 import Inventory from './pages/Inventory';
 import Equipment from './pages/Equipment';
@@ -27,13 +27,13 @@ import Settings from './pages/Settings';
 import Maintenance from './pages/Maintenance';
 import ServiceReminders from './pages/ServiceReminders';
 import Analytics from './pages/Analytics';
-import ChatPage from './pages/ChatPage';
-import FeedbackPage from './pages/FeedbackPage';
-import FeedbackForm from './pages/FeedbackForm';
-import FeedbackFormEditor from './pages/FeedbackFormEditor';
+import Chat from './pages/Chat';
+import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
+import FeedbackFormEditorPage from './pages/feedback/FeedbackFormEditorPage';
+import FeedbackAnalyticsPage from './pages/feedback/FeedbackAnalyticsPage';
 import RepairPlans from './pages/RepairPlans';
 import RepairPlanDetails from './pages/RepairPlanDetails';
-import RepairPlanCreate from './pages/RepairPlanCreate';
+import CreateRepairPlan from './pages/CreateRepairPlan';
 import EmailTemplates from './pages/EmailTemplates';
 import EmailTemplateEditorPage from './pages/EmailTemplateEditorPage';
 
@@ -53,11 +53,11 @@ const router = createBrowserRouter([
       },
       {
         path: '/customers/new',
-        element: <CustomerForm />,
+        element: <CreateCustomer />,
       },
       {
         path: '/customers/edit/:id',
-        element: <CustomerForm />,
+        element: <CreateCustomer />,
       },
       {
         path: '/customers/:id',
@@ -69,7 +69,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/work-orders/new',
-        element: <WorkOrderForm />,
+        element: <CreateWorkOrder />,
       },
       {
         path: '/work-orders/:id',
@@ -77,7 +77,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/work-orders/:id/edit',
-        element: <WorkOrderEdit />,
+        element: <WorkOrderCreate />,
       },
       {
         path: '/invoices',
@@ -105,7 +105,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/team/create',
-        element: <TeamCreate />,
+        element: <TeamMemberCreate />,
       },
       {
         path: '/team/roles',
@@ -113,7 +113,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/team/:id',
-        element: <TeamMember />,
+        element: <TeamMemberProfile />,
       },
       {
         path: '/inventory',
@@ -149,19 +149,19 @@ const router = createBrowserRouter([
       },
       {
         path: '/chat/:id?',
-        element: <ChatPage />,
+        element: <Chat />,
       },
       {
         path: '/feedback',
-        element: <FeedbackPage />,
+        element: <FeedbackFormsPage />,
       },
       {
         path: '/feedback/form/:id',
-        element: <FeedbackForm />,
+        element: <FeedbackAnalyticsPage />,
       },
       {
         path: '/feedback/editor/:id?',
-        element: <FeedbackFormEditor />,
+        element: <FeedbackFormEditorPage />,
       },
       {
         path: '/repair-plans',
@@ -169,7 +169,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/repair-plans/new',
-        element: <RepairPlanCreate />,
+        element: <CreateRepairPlan />,
       },
       {
         path: '/repair-plans/:id',
