@@ -1,7 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { EmailABTest } from '@/types/email';
-import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
+import { GenericResponse, parseJsonField, prepareForSupabase } from '../utils/supabaseHelper';
 
 /**
  * Service for managing email A/B testing functionality
@@ -63,6 +63,7 @@ export const abTestingService = {
         if (typeof winnerData === 'string') {
           winnerId = winnerData;
         } else if (winnerData && typeof winnerData === 'object') {
+          // Use optional chaining for accessing potentially undefined properties
           winnerId = winnerData.winner_id || null;
           confidenceLevel = winnerData.confidence_level || 0;
         }
@@ -83,11 +84,14 @@ export const abTestingService = {
         confidenceLevel: confidenceLevel
       };
       
+      // Convert to a format suitable for Supabase
+      const supabaseAbTest = prepareForSupabase(updatedAbTest);
+      
       // Update the campaign with the winner information
       const { error: updateError } = await supabase
         .from('email_campaigns')
         .update({
-          ab_test: updatedAbTest
+          ab_test: supabaseAbTest
         })
         .eq('id', campaignId);
       

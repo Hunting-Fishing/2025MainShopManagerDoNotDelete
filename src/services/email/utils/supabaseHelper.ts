@@ -1,3 +1,4 @@
+
 /**
  * Generic response interface for service methods
  */
@@ -60,4 +61,11 @@ export const parseJsonField = <T>(field: any, defaultValue: T): T => {
  */
 export const safelyParseEnum = <T extends string>(value: string, fallback: T): T => {
   return value as T || fallback;
+};
+
+/**
+ * Helper function to convert complex objects to JSON for storage
+ */
+export const prepareForSupabase = (object: any): any => {
+  return JSON.parse(JSON.stringify(object));
 };

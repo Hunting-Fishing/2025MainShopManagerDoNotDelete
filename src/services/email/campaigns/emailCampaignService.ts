@@ -1,6 +1,7 @@
+
 import { supabase } from '@/lib/supabase';
 import { EmailCampaign, EmailABTest, EmailCampaignStatus } from '@/types/email';
-import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
+import { GenericResponse, parseJsonField, prepareForSupabase } from '../utils/supabaseHelper';
 
 // Helper function to convert database campaign to typed EmailCampaign
 const mapDbCampaignToEmailCampaign = (campaign: any): EmailCampaign => {
@@ -97,6 +98,7 @@ export const emailCampaignService = {
     try {
       // Convert the AB test object to a serializable format
       const abTestData = campaign.abTest || campaign.ab_test;
+      const supabaseAbTest = abTestData ? prepareForSupabase(abTestData) : undefined;
 
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -110,7 +112,7 @@ export const emailCampaignService = {
           recipient_ids: campaign.recipient_ids || campaign.recipientIds || [],
           personalizations: campaign.personalizations || {},
           metadata: campaign.metadata || {},
-          ab_test: abTestData
+          ab_test: supabaseAbTest
         })
         .select()
         .single();
@@ -137,6 +139,7 @@ export const emailCampaignService = {
     try {
       // Prepare ab_test data
       const abTestData = campaign.abTest || campaign.ab_test;
+      const supabaseAbTest = abTestData ? prepareForSupabase(abTestData) : undefined;
 
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -150,7 +153,7 @@ export const emailCampaignService = {
           recipient_ids: campaign.recipient_ids || campaign.recipientIds,
           personalizations: campaign.personalizations,
           metadata: campaign.metadata,
-          ab_test: abTestData
+          ab_test: supabaseAbTest
         })
         .eq('id', campaignId)
         .select()
@@ -199,7 +202,7 @@ export const emailCampaignService = {
   ): Promise<GenericResponse<{ success: boolean }>> {
     try {
       // Convert EmailABTest to raw JSON before storing
-      const abTestJson = JSON.parse(JSON.stringify(abTest));
+      const abTestJson = prepareForSupabase(abTest);
       
       const { error } = await supabase
         .from('email_campaigns')

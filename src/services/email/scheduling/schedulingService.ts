@@ -1,6 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
-import { GenericResponse } from '../utils/supabaseHelper';
+import { GenericResponse, parseJsonField, prepareForSupabase } from '../utils/supabaseHelper';
 
 export interface SequenceProcessingSchedule {
   enabled: boolean;
@@ -18,7 +18,7 @@ export const schedulingService = {
    */
   async getSequenceProcessingSchedule(): Promise<GenericResponse<SequenceProcessingSchedule>> {
     try {
-      // Query the email_system_settings table for the processing schedule
+      // Use a direct query to the email_system_settings table
       const { data, error } = await supabase
         .from('email_system_settings')
         .select('*')
@@ -40,8 +40,8 @@ export const schedulingService = {
         };
       }
       
-      // Cast the value from JSONB to our expected type
-      const settings = data.value as Record<string, any>;
+      // Parse the settings from the value field
+      const settings = parseJsonField<Record<string, any>>(data.value, {});
       
       return {
         data: {
@@ -82,18 +82,24 @@ export const schedulingService = {
         throw fetchError;
       }
       
+      // Get existing values or defaults
+      const existingSettings = existingData ? parseJsonField<Record<string, any>>(existingData.value, {}) : {};
+      
       // Prepare the value to store
       const valueToStore = {
         enabled: config.enabled,
-        cron: config.cron || (existingData?.value?.cron || '0 * * * *'),
-        sequence_ids: config.sequence_ids || (existingData?.value?.sequence_ids || [])
+        cron: config.cron || existingSettings.cron || '0 * * * *',
+        sequence_ids: config.sequence_ids || existingSettings.sequence_ids || []
       };
+      
+      // Convert to Supabase-compatible format
+      const jsonValue = prepareForSupabase(valueToStore);
       
       if (existingData) {
         // Update existing record
         const { data, error } = await supabase
           .from('email_system_settings')
-          .update({ value: valueToStore })
+          .update({ value: jsonValue })
           .eq('key', 'processing_schedule')
           .select()
           .single();
@@ -110,7 +116,7 @@ export const schedulingService = {
           .from('email_system_settings')
           .insert({
             key: 'processing_schedule',
-            value: valueToStore
+            value: jsonValue
           })
           .select()
           .single();
