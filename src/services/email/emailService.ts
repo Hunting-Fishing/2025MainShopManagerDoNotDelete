@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import {
   Email,
@@ -44,6 +43,23 @@ class EmailService {
 
         if (error) throw error;
         
+        // Parse the variables array from JSON
+        let parsedVariables: EmailTemplateVariable[] = [];
+        try {
+          if (data.variables) {
+            // First convert unknown type to string if needed
+            const variablesStr = typeof data.variables === 'string' 
+              ? data.variables 
+              : JSON.stringify(data.variables);
+            
+            // Then parse safely
+            parsedVariables = JSON.parse(variablesStr) as EmailTemplateVariable[];
+          }
+        } catch (e) {
+          console.error("Error parsing variables:", e);
+          parsedVariables = [];
+        }
+        
         const template: EmailTemplate = {
           id: data.id,
           name: data.name,
@@ -53,7 +69,7 @@ class EmailService {
           content: data.content,
           created_at: data.created_at,
           updated_at: data.updated_at,
-          variables: (data.variables || []) as EmailTemplateVariable[],
+          variables: parsedVariables,
           is_archived: data.is_archived || false
         };
         
@@ -97,6 +113,9 @@ class EmailService {
 
   async createTemplate(template: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
     try {
+      // Convert variables array to JSON string for storage
+      const variablesJson = template.variables ? JSON.stringify(template.variables) : '[]';
+
       const { data, error } = await supabase
         .from('email_templates')
         .insert({
@@ -105,12 +124,20 @@ class EmailService {
           description: template.description,
           category: template.category as string,
           content: template.content,
-          variables: JSON.stringify(template.variables || [])
+          variables: variablesJson
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Parse the variables JSON back to an array for the returned object
+      let parsedVariables: EmailTemplateVariable[] = [];
+      try {
+        parsedVariables = JSON.parse(data.variables as string) as EmailTemplateVariable[];
+      } catch (e) {
+        console.error("Error parsing variables:", e);
+      }
 
       const newTemplate: EmailTemplate = {
         id: data.id,
@@ -121,7 +148,7 @@ class EmailService {
         content: data.content,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        variables: (data.variables || []) as EmailTemplateVariable[]
+        variables: parsedVariables
       };
       
       return newTemplate;
@@ -133,6 +160,9 @@ class EmailService {
 
   async updateTemplate(id: string, template: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
     try {
+      // Convert variables array to JSON string for storage
+      const variablesJson = template.variables ? JSON.stringify(template.variables) : '[]';
+
       const { data, error } = await supabase
         .from('email_templates')
         .update({
@@ -141,13 +171,21 @@ class EmailService {
           description: template.description,
           category: template.category as string,
           content: template.content,
-          variables: JSON.stringify(template.variables || [])
+          variables: variablesJson
         })
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
+
+      // Parse the variables JSON back to an array for the returned object
+      let parsedVariables: EmailTemplateVariable[] = [];
+      try {
+        parsedVariables = JSON.parse(data.variables as string) as EmailTemplateVariable[];
+      } catch (e) {
+        console.error("Error parsing variables:", e);
+      }
 
       const updatedTemplate: EmailTemplate = {
         id: data.id,
@@ -158,7 +196,7 @@ class EmailService {
         content: data.content,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        variables: (data.variables || []) as EmailTemplateVariable[]
+        variables: parsedVariables
       };
       
       return updatedTemplate;
@@ -187,6 +225,57 @@ class EmailService {
 
         if (error) throw error;
         
+        // Parse JSON fields
+        let segment_ids: string[] = [];
+        let recipient_ids: string[] = [];
+        let personalizations: Record<string, any> = {};
+        let metadata: Record<string, any> = {};
+        let ab_test: EmailABTest | undefined;
+
+        try {
+          // Parse segment_ids
+          if (data.segment_ids) {
+            const segmentIdsStr = typeof data.segment_ids === 'string' 
+              ? data.segment_ids 
+              : JSON.stringify(data.segment_ids);
+            segment_ids = JSON.parse(segmentIdsStr) as string[];
+          }
+          
+          // Parse recipient_ids
+          if (data.recipient_ids) {
+            const recipientIdsStr = typeof data.recipient_ids === 'string' 
+              ? data.recipient_ids 
+              : JSON.stringify(data.recipient_ids);
+            recipient_ids = JSON.parse(recipientIdsStr) as string[];
+          }
+          
+          // Parse personalizations
+          if (data.personalizations) {
+            const personalizationsStr = typeof data.personalizations === 'string' 
+              ? data.personalizations 
+              : JSON.stringify(data.personalizations);
+            personalizations = JSON.parse(personalizationsStr);
+          }
+          
+          // Parse metadata
+          if (data.metadata) {
+            const metadataStr = typeof data.metadata === 'string' 
+              ? data.metadata 
+              : JSON.stringify(data.metadata);
+            metadata = JSON.parse(metadataStr);
+          }
+          
+          // Parse AB test
+          if (data.ab_test) {
+            const abTestStr = typeof data.ab_test === 'string' 
+              ? data.ab_test 
+              : JSON.stringify(data.ab_test);
+            ab_test = JSON.parse(abTestStr) as EmailABTest;
+          }
+        } catch (e) {
+          console.error("Error parsing campaign JSON fields:", e);
+        }
+        
         const campaign: EmailCampaign = {
           id: data.id,
           name: data.name,
@@ -195,11 +284,11 @@ class EmailService {
           content: data.content,
           status: data.status as EmailCampaignStatus,
           template_id: data.template_id,
-          segment_ids: Array.isArray(data.segment_ids) ? data.segment_ids : [],
-          recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
-          personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
-          metadata: typeof data.metadata === 'object' ? data.metadata : {},
-          abTest: data.ab_test as EmailABTest || undefined,
+          segment_ids: segment_ids,
+          recipientIds: recipient_ids,
+          personalizations: personalizations,
+          metadata: metadata,
+          abTest: ab_test,
           scheduled_at: data.scheduled_date,
           sent_at: data.sent_date,
           created_at: data.created_at,
@@ -246,6 +335,13 @@ class EmailService {
 
   async createCampaign(campaign: Partial<EmailCampaign>): Promise<EmailCampaign | null> {
     try {
+      // Convert complex objects to JSON strings
+      const segmentIdsJson = JSON.stringify(campaign.segment_ids || campaign.segmentIds || []);
+      const recipientIdsJson = JSON.stringify(campaign.recipientIds || []);
+      const personalizationsJson = JSON.stringify(campaign.personalizations || {});
+      const metadataJson = JSON.stringify(campaign.metadata || {});
+      const abTestJson = campaign.abTest ? JSON.stringify(campaign.abTest) : null;
+
       const { data, error } = await supabase
         .from('email_campaigns')
         .insert({
@@ -255,11 +351,11 @@ class EmailService {
           status: (campaign.status || 'draft') as string,
           scheduled_date: campaign.scheduled_at || campaign.scheduledDate,
           template_id: campaign.template_id || campaign.templateId,
-          segment_ids: JSON.stringify(campaign.segment_ids || campaign.segmentIds || []),
-          recipient_ids: JSON.stringify(campaign.recipientIds || []),
-          personalizations: JSON.stringify(campaign.personalizations || {}),
-          metadata: JSON.stringify(campaign.metadata || {}),
-          ab_test: JSON.stringify(campaign.abTest || null)
+          segment_ids: segmentIdsJson,
+          recipient_ids: recipientIdsJson,
+          personalizations: personalizationsJson,
+          metadata: metadataJson,
+          ab_test: abTestJson
         })
         .select()
         .single();
@@ -443,27 +539,35 @@ class EmailService {
 
         if (stepsError) throw stepsError;
 
-        const steps: EmailSequenceStep[] = stepsData.map(step => ({
-          id: step.id,
-          sequence_id: step.sequence_id,
-          type: step.delay_hours > 0 ? 'delay' : 'email',
-          order: step.position,
-          delay_duration: step.delay_hours ? `${step.delay_hours} hours` : undefined,
-          email_template_id: step.template_id,
-          created_at: step.created_at,
-          updated_at: step.updated_at,
-          name: step.name,
-          templateId: step.template_id,
-          delayHours: step.delay_hours,
-          delayType: (step.delay_type || 'fixed') as 'fixed' | 'business_days',
-          position: step.position,
-          isActive: step.is_active,
-          condition: step.condition_type ? {
-            type: step.condition_type as 'event' | 'property',
-            value: step.condition_value,
-            operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
-          } : undefined
-        }));
+        const steps: EmailSequenceStep[] = stepsData.map(step => {
+          // Parse condition object if it exists
+          let condition = undefined;
+          if (step.condition_type) {
+            condition = {
+              type: step.condition_type as 'event' | 'property',
+              value: step.condition_value,
+              operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+            };
+          }
+
+          return {
+            id: step.id,
+            sequence_id: step.sequence_id,
+            type: step.delay_hours > 0 ? 'delay' : 'email',
+            order: step.position,
+            delay_duration: step.delay_hours ? `${step.delay_hours} hours` : undefined,
+            email_template_id: step.template_id,
+            created_at: step.created_at,
+            updated_at: step.updated_at,
+            name: step.name,
+            templateId: step.template_id,
+            delayHours: step.delay_hours,
+            delayType: (step.delay_type === 'business_days' ? 'business_days' : 'fixed') as 'fixed' | 'business_days',
+            position: step.position,
+            isActive: step.is_active,
+            condition: condition
+          };
+        });
 
         sequences.push({
           id: seq.id,
@@ -503,27 +607,35 @@ class EmailService {
 
       if (stepsError) throw stepsError;
 
-      const steps: EmailSequenceStep[] = stepsData.map(step => ({
-        id: step.id,
-        sequence_id: step.sequence_id,
-        type: step.delay_hours > 0 ? 'delay' : 'email',
-        order: step.position,
-        delay_duration: step.delay_hours ? `${step.delay_hours} hours` : undefined,
-        email_template_id: step.template_id,
-        created_at: step.created_at,
-        updated_at: step.updated_at,
-        name: step.name,
-        templateId: step.template_id,
-        delayHours: step.delay_hours,
-        delayType: (step.delay_type || 'fixed') as 'fixed' | 'business_days',
-        position: step.position,
-        isActive: step.is_active,
-        condition: step.condition_type ? {
-          type: step.condition_type as 'event' | 'property',
-          value: step.condition_value,
-          operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
-        } : undefined
-      }));
+      const steps: EmailSequenceStep[] = stepsData.map(step => {
+        // Parse condition object if it exists
+        let condition = undefined;
+        if (step.condition_type) {
+          condition = {
+            type: step.condition_type as 'event' | 'property',
+            value: step.condition_value,
+            operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+          };
+        }
+
+        return {
+          id: step.id,
+          sequence_id: step.sequence_id,
+          type: step.delay_hours > 0 ? 'delay' : 'email',
+          order: step.position,
+          delay_duration: step.delay_hours ? `${step.delay_hours} hours` : undefined,
+          email_template_id: step.template_id,
+          created_at: step.created_at,
+          updated_at: step.updated_at,
+          name: step.name,
+          templateId: step.template_id,
+          delayHours: step.delay_hours,
+          delayType: (step.delay_type === 'business_days' ? 'business_days' : 'fixed') as 'fixed' | 'business_days',
+          position: step.position,
+          isActive: step.is_active,
+          condition: condition
+        };
+      });
 
       return {
         id: sequence.id,
@@ -824,7 +936,7 @@ class EmailService {
       return null;
     }
   }
-
+  
   async getSequenceAnalytics(sequenceId: string): Promise<any> {
     try {
       const { data, error } = await supabase
@@ -865,10 +977,4 @@ class EmailService {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error sending test email:", error);
-      return false;
-    }
-  }
-}
-
-export const emailService = new EmailService();
+      console.error("Error sending

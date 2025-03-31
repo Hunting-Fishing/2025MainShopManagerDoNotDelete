@@ -20,23 +20,33 @@ export const useSequenceEnrollments = () => {
 
       if (error) throw error;
 
-      // Transform data to match our type
-      const formattedEnrollments: EmailSequenceEnrollment[] = data.map(enrollment => ({
-        id: enrollment.id,
-        sequence_id: enrollment.sequence_id,
-        sequenceId: enrollment.sequence_id,
-        customer_id: enrollment.customer_id,
-        customerId: enrollment.customer_id,
-        status: enrollment.status as 'active' | 'paused' | 'completed' | 'cancelled',
-        current_step_id: enrollment.current_step_id,
-        currentStepId: enrollment.current_step_id,
-        created_at: enrollment.created_at,
-        updated_at: enrollment.updated_at,
-        completed_at: enrollment.completed_at,
-        completedAt: enrollment.completed_at,
-        startedAt: enrollment.created_at,
-        nextSendTime: enrollment.next_send_time
-      }));
+      // Transform data to match our type and ensure status is correctly typed
+      const formattedEnrollments: EmailSequenceEnrollment[] = data.map(enrollment => {
+        // Validate that status is one of the allowed values
+        let status: 'active' | 'paused' | 'completed' | 'cancelled' = 'active';
+        if (enrollment.status === 'paused' || 
+            enrollment.status === 'completed' || 
+            enrollment.status === 'cancelled') {
+          status = enrollment.status;
+        }
+
+        return {
+          id: enrollment.id,
+          sequence_id: enrollment.sequence_id,
+          sequenceId: enrollment.sequence_id,
+          customer_id: enrollment.customer_id,
+          customerId: enrollment.customer_id,
+          status: status,
+          current_step_id: enrollment.current_step_id,
+          currentStepId: enrollment.current_step_id,
+          created_at: enrollment.created_at,
+          updated_at: enrollment.updated_at,
+          completed_at: enrollment.completed_at,
+          completedAt: enrollment.completed_at,
+          startedAt: enrollment.created_at,
+          nextSendTime: enrollment.next_send_time
+        };
+      });
 
       setEnrollments(formattedEnrollments);
       return formattedEnrollments;
@@ -186,7 +196,7 @@ export const useSequenceEnrollments = () => {
         sequenceId: data.sequence_id,
         customer_id: data.customer_id,
         customerId: data.customer_id,
-        status: data.status as 'active' | 'paused' | 'completed' | 'cancelled',
+        status: 'active',
         current_step_id: data.current_step_id,
         currentStepId: data.current_step_id,
         created_at: data.created_at,
