@@ -370,7 +370,7 @@ export function CampaignAnalyticsDashboard({
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value) => [`${value.toFixed(1)}%`, 'Rate']} />
+                    <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, 'Rate']} />
                     <Bar
                       dataKey="value"
                       name="Rate"

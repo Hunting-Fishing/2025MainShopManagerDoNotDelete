@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailTemplate, EmailTemplatePreview, EmailCategory } from "@/types/email";
@@ -18,14 +17,13 @@ export const useEmailTemplates = (categoryFilter?: EmailCategory) => {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      let data;
-      if (categoryFilter) {
-        // Use getTemplates with category filter since getTemplatesByCategory doesn't exist
-        data = await emailService.getTemplates(categoryFilter);
-      } else {
-        data = await emailService.getTemplates();
-      }
-      setTemplates(data);
+      const data = await emailService.getTemplates();
+      
+      const filteredData = categoryFilter 
+        ? data.filter(template => template.category === categoryFilter)
+        : data;
+        
+      setTemplates(filteredData);
     } catch (error) {
       console.error("Error fetching email templates:", error);
       toast({
@@ -127,7 +125,6 @@ export const useEmailTemplates = (categoryFilter?: EmailCategory) => {
 
   const sendTestEmail = async (templateId: string, recipientEmail: string) => {
     try {
-      // Fix: Remove the third parameter that's causing the error
       await emailService.sendTestEmail(templateId, recipientEmail);
       toast({
         title: "Success",

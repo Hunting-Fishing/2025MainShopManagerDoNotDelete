@@ -10,7 +10,7 @@ import {
   EmailSequenceEnrollment
 } from '@/types/email';
 
-// Mock data for development
+// Mock data for development - keeping as reference
 const mockTemplates = [
   {
     id: '1',
@@ -73,7 +73,6 @@ const mockCampaigns = [
 // Email Templates
 export const emailService = {
   getTemplates: async (): Promise<EmailTemplatePreview[]> => {
-    // return mockTemplates;
     try {
       const { data, error } = await supabase
         .from('email_templates')
@@ -81,7 +80,17 @@ export const emailService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform snake_case to camelCase to match the interface
+      return data?.map(template => ({
+        id: template.id,
+        name: template.name,
+        subject: template.subject,
+        description: template.description,
+        category: template.category as EmailCategory,
+        createdAt: template.created_at,
+        updatedAt: template.updated_at
+      })) || [];
     } catch (error) {
       console.error('Error fetching email templates:', error);
       return [];
@@ -89,8 +98,6 @@ export const emailService = {
   },
 
   getTemplateById: async (id: string): Promise<EmailTemplate | null> => {
-    // const template = mockTemplates.find((t) => t.id === id);
-    // return template || null;
     try {
       const { data, error } = await supabase
         .from('email_templates')
@@ -99,7 +106,22 @@ export const emailService = {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Transform to match EmailTemplate interface
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        description: data.description,
+        category: data.category as EmailCategory,
+        content: data.content,
+        variables: data.variables || [],
+        isArchived: data.is_archived || false,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error fetching email template:', error);
       return null;
@@ -107,20 +129,6 @@ export const emailService = {
   },
 
   createTemplate: async (template: Partial<EmailTemplate>): Promise<EmailTemplate | null> => {
-    // const newTemplate: EmailTemplate = {
-    //   id: Date.now().toString(),
-    //   name: template.name || 'New Template',
-    //   subject: template.subject || '',
-    //   description: template.description || '',
-    //   category: (template.category || 'marketing') as EmailCategory,
-    //   content: template.content || '',
-    //   variables: template.variables || [],
-    //   isArchived: false,
-    //   createdAt: new Date().toISOString(),
-    //   updatedAt: new Date().toISOString(),
-    // };
-    // mockTemplates.push(newTemplate);
-    // return newTemplate;
     try {
       const { data, error } = await supabase
         .from('email_templates')
@@ -137,7 +145,22 @@ export const emailService = {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Transform to match EmailTemplate interface
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        description: data.description,
+        category: data.category as EmailCategory,
+        content: data.content,
+        variables: data.variables || [],
+        isArchived: data.is_archived || false,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error creating email template:', error);
       return null;
@@ -145,10 +168,6 @@ export const emailService = {
   },
 
   updateTemplate: async (id: string, template: Partial<EmailTemplate>): Promise<EmailTemplate | null> => {
-    // const templateIndex = mockTemplates.findIndex((t) => t.id === id);
-    // if (templateIndex === -1) return null;
-    // mockTemplates[templateIndex] = { ...mockTemplates[templateIndex], ...template, updatedAt: new Date().toISOString() };
-    // return mockTemplates[templateIndex];
     try {
       const { data, error } = await supabase
         .from('email_templates')
@@ -165,7 +184,22 @@ export const emailService = {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Transform to match EmailTemplate interface
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        description: data.description,
+        category: data.category as EmailCategory,
+        content: data.content,
+        variables: data.variables || [],
+        isArchived: data.is_archived || false,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error updating email template:', error);
       return null;
@@ -173,10 +207,6 @@ export const emailService = {
   },
 
   deleteTemplate: async (id: string): Promise<boolean> => {
-    // const templateIndex = mockTemplates.findIndex((t) => t.id === id);
-    // if (templateIndex === -1) return false;
-    // mockTemplates.splice(templateIndex, 1);
-    // return true;
     try {
       const { error } = await supabase
         .from('email_templates')
@@ -193,11 +223,6 @@ export const emailService = {
 
   // Email Campaigns
   getCampaigns: async (id?: string): Promise<EmailCampaignPreview[] | EmailCampaign | null> => {
-    // if (id) {
-    //   const campaign = mockCampaigns.find((c) => c.id === id);
-    //   return campaign || null;
-    // }
-    // return mockCampaigns;
     try {
       if (id) {
         const { data, error } = await supabase
@@ -207,7 +232,30 @@ export const emailService = {
           .single();
 
         if (error) throw error;
-        return data;
+        
+        if (!data) return null;
+        
+        // Transform to match EmailCampaign interface
+        return {
+          id: data.id,
+          name: data.name,
+          subject: data.subject,
+          status: data.status as any,
+          scheduledDate: data.scheduled_date,
+          sentDate: data.sent_date,
+          totalRecipients: data.total_recipients,
+          opened: data.opened,
+          clicked: data.clicked,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+          templateId: data.template_id,
+          content: data.content,
+          segmentIds: data.segment_ids || [],
+          recipientIds: data.recipient_ids || [],
+          personalizations: data.personalizations || [],
+          metadata: data.metadata || {},
+          abTest: data.ab_test || null,
+        };
       } else {
         const { data, error } = await supabase
           .from('email_campaigns')
@@ -215,7 +263,21 @@ export const emailService = {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data || [];
+        
+        // Transform to match EmailCampaignPreview interface
+        return data?.map(campaign => ({
+          id: campaign.id,
+          name: campaign.name,
+          subject: campaign.subject,
+          status: campaign.status as any,
+          scheduledDate: campaign.scheduled_date,
+          sentDate: campaign.sent_date,
+          totalRecipients: campaign.total_recipients,
+          opened: campaign.opened,
+          clicked: campaign.clicked,
+          createdAt: campaign.created_at,
+          updatedAt: campaign.updated_at
+        })) || [];
       }
     } catch (error) {
       console.error('Error fetching email campaigns:', error);
@@ -224,28 +286,6 @@ export const emailService = {
   },
 
   createCampaign: async (campaign: Partial<EmailCampaign>): Promise<EmailCampaign | null> => {
-    // const newCampaign: EmailCampaign = {
-    //   id: Date.now().toString(),
-    //   name: campaign.name || 'New Campaign',
-    //   subject: campaign.subject || '',
-    //   status: 'draft',
-    //   scheduledDate: campaign.scheduledDate || null,
-    //   sentDate: null,
-    //   totalRecipients: 0,
-    //   opened: 0,
-    //   clicked: 0,
-    //   createdAt: new Date().toISOString(),
-    //   updatedAt: new Date().toISOString(),
-    //   templateId: campaign.templateId || '',
-    //   content: campaign.content || '',
-    //   segmentIds: campaign.segmentIds || [],
-    //   recipientIds: campaign.recipientIds || [],
-    //   personalizations: campaign.personalizations || [],
-    //   metadata: campaign.metadata || {},
-    //   abTest: campaign.abTest || null,
-    // };
-    // mockCampaigns.push(newCampaign);
-    // return newCampaign;
     try {
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -266,7 +306,30 @@ export const emailService = {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Transform to match EmailCampaign interface
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        status: data.status as any,
+        scheduledDate: data.scheduled_date,
+        sentDate: data.sent_date,
+        totalRecipients: data.total_recipients,
+        opened: data.opened,
+        clicked: data.clicked,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        templateId: data.template_id,
+        content: data.content,
+        segmentIds: data.segment_ids || [],
+        recipientIds: data.recipient_ids || [],
+        personalizations: data.personalizations || [],
+        metadata: data.metadata || {},
+        abTest: data.ab_test || null,
+      };
     } catch (error) {
       console.error('Error creating email campaign:', error);
       return null;
@@ -274,10 +337,6 @@ export const emailService = {
   },
 
   updateCampaign: async (id: string, campaign: Partial<EmailCampaign>): Promise<EmailCampaign | null> => {
-    // const campaignIndex = mockCampaigns.findIndex((c) => c.id === id);
-    // if (campaignIndex === -1) return null;
-    // mockCampaigns[campaignIndex] = { ...mockCampaigns[campaignIndex], ...campaign, updatedAt: new Date().toISOString() };
-    // return mockCampaigns[campaignIndex];
     try {
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -299,7 +358,30 @@ export const emailService = {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Transform to match EmailCampaign interface
+      return {
+        id: data.id,
+        name: data.name,
+        subject: data.subject,
+        status: data.status as any,
+        scheduledDate: data.scheduled_date,
+        sentDate: data.sent_date,
+        totalRecipients: data.total_recipients,
+        opened: data.opened,
+        clicked: data.clicked,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        templateId: data.template_id,
+        content: data.content,
+        segmentIds: data.segment_ids || [],
+        recipientIds: data.recipient_ids || [],
+        personalizations: data.personalizations || [],
+        metadata: data.metadata || {},
+        abTest: data.ab_test || null,
+      };
     } catch (error) {
       console.error('Error updating email campaign:', error);
       return null;
@@ -307,10 +389,6 @@ export const emailService = {
   },
 
   deleteCampaign: async (id: string): Promise<boolean> => {
-    // const campaignIndex = mockCampaigns.findIndex((c) => c.id === id);
-    // if (campaignIndex === -1) return false;
-    // mockCampaigns.splice(campaignIndex, 1);
-    // return true;
     try {
       const { error } = await supabase
         .from('email_campaigns')
@@ -414,7 +492,33 @@ export const emailService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform to match EmailSequence interface
+      return data?.map(sequence => ({
+        id: sequence.id,
+        name: sequence.name,
+        description: sequence.description,
+        triggerType: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: sequence.trigger_event,
+        steps: (sequence.steps || []).map((step: any) => ({
+          id: step.id,
+          name: step.name,
+          templateId: step.template_id,
+          delayHours: step.delay_hours,
+          delayType: step.delay_type as 'fixed' | 'business_days',
+          position: step.position,
+          isActive: step.is_active,
+          condition: step.condition_type ? {
+            type: step.condition_type as 'event' | 'property',
+            value: step.condition_value,
+            operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+          } : undefined
+        })),
+        isActive: sequence.is_active,
+        createdBy: sequence.created_by,
+        createdAt: sequence.created_at,
+        updatedAt: sequence.updated_at
+      })) || [];
     } catch (error) {
       console.error('Error fetching email sequences:', error);
       return [];
@@ -433,7 +537,35 @@ export const emailService = {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      // Transform to match EmailSequence interface
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        triggerType: data.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: data.trigger_event,
+        steps: (data.steps || []).map((step: any) => ({
+          id: step.id,
+          name: step.name,
+          templateId: step.template_id,
+          delayHours: step.delay_hours,
+          delayType: step.delay_type as 'fixed' | 'business_days',
+          position: step.position,
+          isActive: step.is_active,
+          condition: step.condition_type ? {
+            type: step.condition_type as 'event' | 'property',
+            value: step.condition_value,
+            operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+          } : undefined
+        })),
+        isActive: data.is_active,
+        createdBy: data.created_by,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error fetching email sequence:', error);
       return null;
@@ -758,7 +890,19 @@ export const emailService = {
         .eq('customer_id', customerId);
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform to match EmailSequenceEnrollment interface
+      return data?.map(enrollment => ({
+        id: enrollment.id,
+        sequenceId: enrollment.sequence_id,
+        customerId: enrollment.customer_id,
+        currentStepId: enrollment.current_step_id,
+        status: enrollment.status as 'active' | 'completed' | 'paused' | 'cancelled',
+        startedAt: enrollment.started_at,
+        completedAt: enrollment.completed_at,
+        nextSendTime: enrollment.next_send_time,
+        metadata: enrollment.metadata
+      })) || [];
     } catch (error) {
       console.error('Error fetching customer enrollments:', error);
       return [];
@@ -816,8 +960,6 @@ export const emailService = {
   },
 
   // Mock methods for testing purposes
-  // You should replace these with actual implementations
-  // when you connect to a real email service.
   sendTestEmail: async (templateId: string, recipientEmail: string): Promise<boolean> => {
     console.log(`Sending test email using template ${templateId} to ${recipientEmail}`);
     return true;

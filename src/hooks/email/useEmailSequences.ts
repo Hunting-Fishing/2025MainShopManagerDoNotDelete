@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailSequence, EmailSequenceStep, EmailSequenceEnrollment, EmailSequenceAnalytics } from "@/types/email";
@@ -65,8 +64,21 @@ export const useEmailSequences = () => {
     setAnalyticsLoading(true);
     try {
       const data = await emailService.getSequenceAnalytics(sequenceId);
-      setAnalytics(data);
-      return data;
+      if (data) {
+        const transformedData: EmailSequenceAnalytics = {
+          id: data.id,
+          sequenceId: data.sequence_id,
+          totalEnrollments: data.total_enrollments,
+          activeEnrollments: data.active_enrollments,
+          completedEnrollments: data.completed_enrollments,
+          conversionRate: data.conversion_rate,
+          averageTimeToComplete: data.average_time_to_complete,
+          updatedAt: data.updated_at
+        };
+        setAnalytics(transformedData);
+        return transformedData;
+      }
+      return null;
     } catch (error) {
       console.error("Error fetching sequence analytics:", error);
       toast({
@@ -84,8 +96,19 @@ export const useEmailSequences = () => {
     setEnrollmentsLoading(true);
     try {
       const data = await emailService.getCustomerEnrollments(customerId);
-      setEnrollments(data);
-      return data;
+      const transformedEnrollments: EmailSequenceEnrollment[] = data.map(enrollment => ({
+        id: enrollment.id,
+        sequenceId: enrollment.sequence_id,
+        customerId: enrollment.customer_id,
+        currentStepId: enrollment.current_step_id,
+        status: enrollment.status as 'active' | 'completed' | 'paused' | 'cancelled',
+        startedAt: enrollment.started_at,
+        completedAt: enrollment.completed_at,
+        nextSendTime: enrollment.next_send_time,
+        metadata: enrollment.metadata
+      }));
+      setEnrollments(transformedEnrollments);
+      return transformedEnrollments;
     } catch (error) {
       console.error("Error fetching customer enrollments:", error);
       toast({
@@ -179,7 +202,6 @@ export const useEmailSequences = () => {
           title: "Success",
           description: "Customer enrolled in sequence successfully",
         });
-        // Refresh sequence analytics
         if (currentSequence && currentSequence.id === sequenceId) {
           fetchSequenceAnalytics(sequenceId);
         }
@@ -204,7 +226,6 @@ export const useEmailSequences = () => {
           title: "Success",
           description: "Enrollment paused successfully",
         });
-        // Update enrollments list
         setEnrollments(prev => 
           prev.map(e => e.id === enrollmentId ? { ...e, status: 'paused' } : e)
         );
@@ -229,7 +250,6 @@ export const useEmailSequences = () => {
           title: "Success",
           description: "Enrollment resumed successfully",
         });
-        // Update enrollments list
         setEnrollments(prev => 
           prev.map(e => e.id === enrollmentId ? { ...e, status: 'active' } : e)
         );
@@ -254,7 +274,6 @@ export const useEmailSequences = () => {
           title: "Success",
           description: "Enrollment cancelled successfully",
         });
-        // Update enrollments list
         setEnrollments(prev => 
           prev.map(e => e.id === enrollmentId ? { ...e, status: 'cancelled' } : e)
         );
