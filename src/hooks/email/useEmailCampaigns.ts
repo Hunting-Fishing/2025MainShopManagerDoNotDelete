@@ -1,11 +1,14 @@
+
 import { useState } from "react";
 import { EmailCampaign } from "@/types/email";
 import { useEmailCampaignList } from "./campaign/useEmailCampaignList";
 import { useEmailCampaignDetails } from "./campaign/useEmailCampaignDetails";
 import { useEmailCampaignActions } from "./campaign/useEmailCampaignActions";
+import { useToast } from "@/hooks/use-toast";
 
 export const useEmailCampaigns = () => {
   const [currentCampaign, setCurrentCampaign] = useState<EmailCampaign | null>(null);
+  const { toast } = useToast();
   
   // Use our specialized hooks
   const { campaigns, loading, fetchCampaigns } = useEmailCampaignList();
@@ -26,36 +29,63 @@ export const useEmailCampaigns = () => {
     return campaign;
   };
 
-  const createCampaign = async (campaign: Partial<EmailCampaign>) => {
+  const createCampaign = async (campaignData: Partial<EmailCampaign>) => {
     try {
-      const newCampaign = await emailService.scheduleCampaign(campaign.id || "", campaign.scheduled_at || "");
-      if (newCampaign) {
-        fetchCampaigns();
+      // Use scheduleCampaign from useEmailCampaignActions
+      let success = false;
+      if (campaignData.id && campaignData.scheduled_at) {
+        success = await scheduleCampaign(campaignData.id, campaignData.scheduled_at);
+      } else {
+        toast({
+          title: "Error",
+          description: "Missing campaign ID or scheduled date",
+          variant: "destructive",
+        });
+        return null;
       }
-      return newCampaign;
+      
+      if (success) {
+        await fetchCampaigns();
+        return campaignData;
+      }
+      return null;
     } catch (error) {
       console.error("Error creating email campaign:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create email campaign",
+        variant: "destructive",
+      });
       return null;
     }
   };
 
-  const updateCampaign = async (id: string, campaign: Partial<EmailCampaign>) => {
+  const updateCampaign = async (id: string, campaignData: Partial<EmailCampaign>) => {
     try {
-      const updated = await emailService.pauseCampaign(id);
-      if (updated) {
-        setCampaigns((prev) => 
-          prev.map((c) => c.id === id ? { ...c, ...campaign } : c)
-        );
+      // Use pauseCampaign from useEmailCampaignActions
+      const success = await pauseCampaign(id);
+      
+      if (success) {
+        // Refetch the campaigns list to get the updated data
+        await fetchCampaigns();
         
+        // If we have the current campaign loaded and it's the one being updated, update it
         if (currentCampaign && currentCampaign.id === id) {
-          setCurrentCampaign({...currentCampaign, ...campaign});
+          setCurrentCampaign({...currentCampaign, ...campaignData});
         }
+        
+        return true;
       }
       
-      return updated;
+      return false;
     } catch (error) {
       console.error("Error updating email campaign:", error);
-      return null;
+      toast({
+        title: "Error",
+        description: "Failed to update email campaign",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -63,7 +93,7 @@ export const useEmailCampaigns = () => {
     try {
       const success = await cancelCampaign(id);
       if (success) {
-        fetchCampaigns();
+        await fetchCampaigns();
         if (currentCampaign && currentCampaign.id === id) {
           setCurrentCampaign(null);
         }
@@ -71,6 +101,11 @@ export const useEmailCampaigns = () => {
       return success;
     } catch (error) {
       console.error("Error deleting email campaign:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete email campaign",
+        variant: "destructive",
+      });
       return false;
     }
   };

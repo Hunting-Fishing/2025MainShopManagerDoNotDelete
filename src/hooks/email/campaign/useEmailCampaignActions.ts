@@ -3,15 +3,22 @@ import { useState } from 'react';
 import { EmailCampaignStatus } from '@/types/email';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { validateCampaignStatus } from './utils/emailCampaignUtils';
 
+/**
+ * Hook for handling email campaign actions like scheduling, sending, pausing, and cancelling
+ */
 export const useEmailCampaignActions = () => {
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
+  /**
+   * Schedule a campaign for future delivery
+   */
   const scheduleCampaign = async (id: string, date: string) => {
     setProcessing(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('email_campaigns')
         .update({ 
           status: 'scheduled' as EmailCampaignStatus,
@@ -39,6 +46,9 @@ export const useEmailCampaignActions = () => {
     }
   };
 
+  /**
+   * Send a campaign immediately
+   */
   const sendCampaignNow = async (id: string) => {
     setProcessing(true);
     try {
@@ -67,10 +77,13 @@ export const useEmailCampaignActions = () => {
     }
   };
 
+  /**
+   * Pause an in-progress campaign
+   */
   const pauseCampaign = async (id: string) => {
     setProcessing(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('email_campaigns')
         .update({ 
           status: 'paused' as EmailCampaignStatus 
@@ -97,10 +110,13 @@ export const useEmailCampaignActions = () => {
     }
   };
 
+  /**
+   * Cancel a campaign
+   */
   const cancelCampaign = async (id: string) => {
     setProcessing(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('email_campaigns')
         .update({ 
           status: 'cancelled' as EmailCampaignStatus 

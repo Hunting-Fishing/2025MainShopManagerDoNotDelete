@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { EmailCampaign } from '@/types/email';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { validateCampaignStatus, parseJsonField, parseABTest } from './utils/emailCampaignUtils';
 
 export const useEmailCampaignDetails = () => {
   const [campaign, setCampaign] = useState<EmailCampaign | null>(null);
@@ -21,40 +22,11 @@ export const useEmailCampaignDetails = () => {
       if (error) throw error;
 
       // Parse JSON fields
-      let segment_ids: string[] = [];
-      let recipient_ids: string[] = [];
-      let personalizations: Record<string, any> = {};
-      let metadata: Record<string, any> = {};
-      let ab_test = null;
-
-      try {
-        // Parse segment_ids
-        if (data.segment_ids) {
-          segment_ids = parseJsonField(data.segment_ids, []);
-        }
-        
-        // Parse recipient_ids
-        if (data.recipient_ids) {
-          recipient_ids = parseJsonField(data.recipient_ids, []);
-        }
-        
-        // Parse personalizations
-        if (data.personalizations) {
-          personalizations = parseJsonField(data.personalizations, {});
-        }
-        
-        // Parse metadata
-        if (data.metadata) {
-          metadata = parseJsonField(data.metadata, {});
-        }
-        
-        // Parse AB test
-        if (data.ab_test) {
-          ab_test = parseJsonField(data.ab_test, null);
-        }
-      } catch (e) {
-        console.error("Error parsing campaign JSON fields:", e);
-      }
+      const segment_ids = parseJsonField(data.segment_ids, []);
+      const recipient_ids = parseJsonField(data.recipient_ids, []);
+      const personalizations = parseJsonField(data.personalizations, {});
+      const metadata = parseJsonField(data.metadata, {});
+      const ab_test = parseABTest(data.ab_test);
       
       const formattedCampaign: EmailCampaign = {
         id: data.id,
@@ -62,10 +34,10 @@ export const useEmailCampaignDetails = () => {
         subject: data.subject,
         body: data.content || '',
         content: data.content,
-        status: data.status,
+        status: validateCampaignStatus(data.status),
         template_id: data.template_id,
         segment_ids: segment_ids,
-        segment_id: data.segment_id,
+        segment_id: undefined, // This field isn't in the database schema
         recipient_ids: recipient_ids,
         recipientIds: recipient_ids,
         personalizations: personalizations,
@@ -96,18 +68,6 @@ export const useEmailCampaignDetails = () => {
       return null;
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Helper function to parse JSON fields
-  const parseJsonField = (field: any, defaultValue: any) => {
-    try {
-      const fieldStr = typeof field === 'string' ? field : JSON.stringify(field);
-      const parsed = JSON.parse(fieldStr);
-      return parsed;
-    } catch (e) {
-      console.error("Error parsing JSON field:", e);
-      return defaultValue;
     }
   };
 

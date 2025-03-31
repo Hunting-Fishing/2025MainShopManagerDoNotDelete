@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react';
 import { EmailCampaignPreview } from '@/types/email';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { validateCampaignStatus } from './utils/emailCampaignUtils';
 
 export const useEmailCampaignList = () => {
   const [campaigns, setCampaigns] = useState<EmailCampaignPreview[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  /**
+   * Fetch all email campaigns
+   */
   const fetchCampaigns = async () => {
     setLoading(true);
     try {
@@ -23,7 +27,7 @@ export const useEmailCampaignList = () => {
         id: item.id,
         name: item.name,
         subject: item.subject,
-        status: item.status,
+        status: validateCampaignStatus(item.status),
         scheduled_at: item.scheduled_date,
         sent_at: item.sent_date,
         created_at: item.created_at,
