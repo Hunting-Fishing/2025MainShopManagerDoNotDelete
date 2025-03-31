@@ -1,4 +1,6 @@
 
+import { EmailABTest } from './ab-testing';
+
 export type EmailCampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'completed' | 'cancelled';
 
 export interface EmailCampaign {

@@ -1,64 +1,29 @@
-import { useState, useEffect } from "react";
-import { emailService } from "@/services/email/emailService";
-import { EmailCampaign, EmailCampaignPreview } from "@/types/email";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { EmailCampaign } from "@/types/email";
+import { useEmailCampaignList } from "./campaign/useEmailCampaignList";
+import { useEmailCampaignDetails } from "./campaign/useEmailCampaignDetails";
+import { useEmailCampaignActions } from "./campaign/useEmailCampaignActions";
 
 export const useEmailCampaigns = () => {
-  const [campaigns, setCampaigns] = useState<EmailCampaignPreview[]>([]);
   const [currentCampaign, setCurrentCampaign] = useState<EmailCampaign | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [campaignLoading, setCampaignLoading] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
-  const fetchCampaigns = async () => {
-    setLoading(true);
-    try {
-      const data = await emailService.getCampaigns();
-      if (Array.isArray(data)) {
-        setCampaigns(data);
-      } else {
-        console.error("Expected an array of campaigns but received a single campaign");
-        setCampaigns([]);
-      }
-    } catch (error) {
-      console.error("Error fetching email campaigns:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load email campaigns",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  // Use our specialized hooks
+  const { campaigns, loading, fetchCampaigns } = useEmailCampaignList();
+  const { campaign, loading: campaignLoading, fetchCampaignDetails } = useEmailCampaignDetails();
+  const { 
+    processing,
+    scheduleCampaign,
+    sendCampaignNow,
+    pauseCampaign,
+    cancelCampaign
+  } = useEmailCampaignActions();
 
   const fetchCampaignById = async (id: string) => {
-    setCampaignLoading(true);
-    try {
-      const campaign = await emailService.getCampaigns(id);
-      if (!Array.isArray(campaign)) {
-        setCurrentCampaign(campaign as EmailCampaign);
-        return campaign;
-      } else {
-        console.error("Expected a single campaign but received an array");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error fetching email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load email campaign",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setCampaignLoading(false);
+    const campaign = await fetchCampaignDetails(id);
+    if (campaign) {
+      setCurrentCampaign(campaign);
     }
+    return campaign;
   };
 
   const createCampaign = async (campaign: Partial<EmailCampaign>) => {
@@ -66,19 +31,10 @@ export const useEmailCampaigns = () => {
       const newCampaign = await emailService.scheduleCampaign(campaign.id || "", campaign.scheduled_at || "");
       if (newCampaign) {
         fetchCampaigns();
-        toast({
-          title: "Success",
-          description: "Email campaign created successfully",
-        });
       }
       return newCampaign;
     } catch (error) {
       console.error("Error creating email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create email campaign",
-        variant: "destructive",
-      });
       return null;
     }
   };
@@ -94,140 +50,27 @@ export const useEmailCampaigns = () => {
         if (currentCampaign && currentCampaign.id === id) {
           setCurrentCampaign({...currentCampaign, ...campaign});
         }
-        
-        toast({
-          title: "Success",
-          description: "Email campaign updated successfully",
-        });
       }
       
       return updated;
     } catch (error) {
       console.error("Error updating email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update email campaign",
-        variant: "destructive",
-      });
       return null;
     }
   };
 
   const deleteCampaign = async (id: string) => {
     try {
-      await emailService.cancelCampaign(id);
-      setCampaigns((prev) => prev.filter((c) => c.id !== id));
-      if (currentCampaign && currentCampaign.id === id) {
-        setCurrentCampaign(null);
+      const success = await cancelCampaign(id);
+      if (success) {
+        fetchCampaigns();
+        if (currentCampaign && currentCampaign.id === id) {
+          setCurrentCampaign(null);
+        }
       }
-      toast({
-        title: "Success",
-        description: "Email campaign deleted successfully",
-      });
-      return true;
+      return success;
     } catch (error) {
       console.error("Error deleting email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete email campaign",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  // Update this method to use real data
-  const scheduleCampaign = async (id: string, date: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('email_campaigns')
-        .update({ 
-          status: 'scheduled',
-          scheduled_at: date 
-        })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      fetchCampaigns();
-      toast({
-        title: "Success",
-        description: "Email campaign scheduled successfully",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error scheduling email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to schedule email campaign",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const sendCampaignNow = async (id: string) => {
-    try {
-      // Call Supabase Edge Function to trigger the campaign
-      const { data, error } = await supabase.functions.invoke('trigger-email-campaign', {
-        body: { campaignId: id }
-      });
-      
-      if (error) throw error;
-      
-      fetchCampaigns();
-      toast({
-        title: "Success",
-        description: "Email campaign started successfully",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error sending email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send email campaign",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const pauseCampaign = async (id: string) => {
-    try {
-      await emailService.pauseCampaign(id);
-      fetchCampaigns();
-      toast({
-        title: "Success",
-        description: "Email campaign paused successfully",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error pausing email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to pause email campaign",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const cancelCampaign = async (id: string) => {
-    try {
-      await emailService.cancelCampaign(id);
-      fetchCampaigns();
-      toast({
-        title: "Success",
-        description: "Email campaign cancelled successfully",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error cancelling email campaign:", error);
-      toast({
-        title: "Error",
-        description: "Failed to cancel email campaign",
-        variant: "destructive",
-      });
       return false;
     }
   };
@@ -236,7 +79,7 @@ export const useEmailCampaigns = () => {
     campaigns,
     currentCampaign,
     loading,
-    campaignLoading,
+    campaignLoading: campaignLoading || processing,
     fetchCampaigns,
     fetchCampaignById,
     createCampaign,

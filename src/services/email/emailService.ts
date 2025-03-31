@@ -216,7 +216,7 @@ class EmailService {
         let recipient_ids: string[] = [];
         let personalizations: Record<string, any> = {};
         let metadata: Record<string, any> = {};
-        let ab_test: EmailABTest | undefined;
+        let ab_test: EmailABTest | null = null;
 
         try {
           // Parse segment_ids
@@ -256,7 +256,11 @@ class EmailService {
             const abTestStr = typeof data.ab_test === 'string' 
               ? data.ab_test 
               : JSON.stringify(data.ab_test);
-            ab_test = JSON.parse(abTestStr) as EmailABTest;
+            const parsedAbTest = JSON.parse(abTestStr);
+            // Ensure it's a valid object
+            if (parsedAbTest && typeof parsedAbTest === 'object') {
+              ab_test = parsedAbTest as EmailABTest;
+            }
           }
         } catch (e) {
           console.error("Error parsing campaign JSON fields:", e);
@@ -271,15 +275,19 @@ class EmailService {
           status: data.status as EmailCampaignStatus,
           template_id: data.template_id,
           segment_ids: segment_ids,
+          segment_id: data.segment_id,
+          recipient_ids: recipient_ids,
           recipientIds: recipient_ids,
           personalizations: personalizations,
           metadata: metadata,
           abTest: ab_test,
+          ab_test: ab_test,
           scheduled_at: data.scheduled_date,
           sent_at: data.sent_date,
           created_at: data.created_at,
           updated_at: data.updated_at,
           totalRecipients: data.total_recipients,
+          total_recipients: data.total_recipients,
           opened: data.opened,
           clicked: data.clicked,
           scheduledDate: data.scheduled_date,
@@ -323,10 +331,10 @@ class EmailService {
     try {
       // Convert complex objects to JSON strings
       const segmentIdsJson = JSON.stringify(campaign.segment_ids || campaign.segmentIds || []);
-      const recipientIdsJson = JSON.stringify(campaign.recipientIds || []);
+      const recipientIdsJson = JSON.stringify(campaign.recipientIds || campaign.recipient_ids || []);
       const personalizationsJson = JSON.stringify(campaign.personalizations || {});
       const metadataJson = JSON.stringify(campaign.metadata || {});
-      const abTestJson = campaign.abTest ? JSON.stringify(campaign.abTest) : null;
+      const abTestJson = campaign.abTest || campaign.ab_test ? JSON.stringify(campaign.abTest || campaign.ab_test) : null;
 
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -348,23 +356,62 @@ class EmailService {
 
       if (error) throw error;
 
+      // Convert the string JSON back to objects
+      let parsedRecipientIds: string[] = [];
+      let parsedSegmentIds: string[] = [];
+      let parsedPersonalizations: Record<string, any> = {};
+      let parsedMetadata: Record<string, any> = {};
+      let parsedAbTest: EmailABTest | null = null;
+
+      try {
+        if (data.recipient_ids) {
+          parsedRecipientIds = JSON.parse(typeof data.recipient_ids === 'string' ? data.recipient_ids : JSON.stringify(data.recipient_ids));
+        }
+        if (data.segment_ids) {
+          parsedSegmentIds = JSON.parse(typeof data.segment_ids === 'string' ? data.segment_ids : JSON.stringify(data.segment_ids));
+        }
+        if (data.personalizations) {
+          parsedPersonalizations = JSON.parse(typeof data.personalizations === 'string' ? data.personalizations : JSON.stringify(data.personalizations));
+        }
+        if (data.metadata) {
+          parsedMetadata = JSON.parse(typeof data.metadata === 'string' ? data.metadata : JSON.stringify(data.metadata));
+        }
+        if (data.ab_test) {
+          const abTestParsed = JSON.parse(typeof data.ab_test === 'string' ? data.ab_test : JSON.stringify(data.ab_test));
+          if (abTestParsed && typeof abTestParsed === 'object') {
+            parsedAbTest = abTestParsed as EmailABTest;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing returned JSON data:", e);
+      }
+
       const newCampaign: EmailCampaign = {
         id: data.id,
         name: data.name,
         subject: data.subject,
-        body: data.content,
+        body: data.content || '',
         content: data.content,
         status: data.status as EmailCampaignStatus,
         template_id: data.template_id,
+        recipient_ids: parsedRecipientIds,
+        recipientIds: parsedRecipientIds,
+        segment_ids: parsedSegmentIds,
+        segmentIds: parsedSegmentIds,
+        personalizations: parsedPersonalizations,
+        metadata: parsedMetadata,
+        ab_test: parsedAbTest,
+        abTest: parsedAbTest,
         scheduled_at: data.scheduled_date,
         scheduledDate: data.scheduled_date,
         sent_at: data.sent_date,
         sentDate: data.sent_date,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        totalRecipients: data.total_recipients,
-        opened: data.opened,
-        clicked: data.clicked
+        total_recipients: data.total_recipients || 0,
+        totalRecipients: data.total_recipients || 0,
+        opened: data.opened || 0,
+        clicked: data.clicked || 0
       };
       
       return newCampaign;
@@ -376,61 +423,90 @@ class EmailService {
 
   async updateCampaign(id: string, campaign: Partial<EmailCampaign>): Promise<EmailCampaign | null> {
     try {
-      const updateData: any = {
-        name: campaign.name,
-        subject: campaign.subject,
-        content: campaign.body || campaign.content,
-        status: campaign.status as string,
-        scheduled_date: campaign.scheduled_at || campaign.scheduledDate,
-        template_id: campaign.template_id || campaign.templateId
-      };
-      
-      if (campaign.segment_ids || campaign.segmentIds) {
-        updateData.segment_ids = JSON.stringify(campaign.segment_ids || campaign.segmentIds);
-      }
-      
-      if (campaign.recipientIds) {
-        updateData.recipient_ids = JSON.stringify(campaign.recipientIds);
-      }
-      
-      if (campaign.personalizations) {
-        updateData.personalizations = JSON.stringify(campaign.personalizations);
-      }
-      
-      if (campaign.metadata) {
-        updateData.metadata = JSON.stringify(campaign.metadata);
-      }
-      
-      if (campaign.abTest) {
-        updateData.ab_test = JSON.stringify(campaign.abTest);
-      }
+      // Convert complex objects to JSON strings
+      const segmentIdsJson = JSON.stringify(campaign.segment_ids || campaign.segmentIds || []);
+      const recipientIdsJson = JSON.stringify(campaign.recipientIds || campaign.recipient_ids || []);
+      const personalizationsJson = JSON.stringify(campaign.personalizations || {});
+      const metadataJson = JSON.stringify(campaign.metadata || {});
+      const abTestJson = campaign.abTest || campaign.ab_test ? JSON.stringify(campaign.abTest || campaign.ab_test) : null;
 
       const { data, error } = await supabase
         .from('email_campaigns')
-        .update(updateData)
+        .update({
+          name: campaign.name,
+          subject: campaign.subject,
+          content: campaign.body || campaign.content,
+          status: campaign.status as string,
+          scheduled_date: campaign.scheduled_at || campaign.scheduledDate,
+          template_id: campaign.template_id || campaign.templateId,
+          segment_ids: segmentIdsJson,
+          recipient_ids: recipientIdsJson,
+          personalizations: personalizationsJson,
+          metadata: metadataJson,
+          ab_test: abTestJson
+        })
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
+      // Convert the string JSON back to objects
+      let parsedRecipientIds: string[] = [];
+      let parsedSegmentIds: string[] = [];
+      let parsedPersonalizations: Record<string, any> = {};
+      let parsedMetadata: Record<string, any> = {};
+      let parsedAbTest: EmailABTest | null = null;
+
+      try {
+        if (data.recipient_ids) {
+          parsedRecipientIds = JSON.parse(typeof data.recipient_ids === 'string' ? data.recipient_ids : JSON.stringify(data.recipient_ids));
+        }
+        if (data.segment_ids) {
+          parsedSegmentIds = JSON.parse(typeof data.segment_ids === 'string' ? data.segment_ids : JSON.stringify(data.segment_ids));
+        }
+        if (data.personalizations) {
+          parsedPersonalizations = JSON.parse(typeof data.personalizations === 'string' ? data.personalizations : JSON.stringify(data.personalizations));
+        }
+        if (data.metadata) {
+          parsedMetadata = JSON.parse(typeof data.metadata === 'string' ? data.metadata : JSON.stringify(data.metadata));
+        }
+        if (data.ab_test) {
+          const abTestParsed = JSON.parse(typeof data.ab_test === 'string' ? data.ab_test : JSON.stringify(data.ab_test));
+          if (abTestParsed && typeof abTestParsed === 'object') {
+            parsedAbTest = abTestParsed as EmailABTest;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing returned JSON data:", e);
+      }
+
       const updatedCampaign: EmailCampaign = {
         id: data.id,
         name: data.name,
         subject: data.subject,
-        body: data.content,
+        body: data.content || '',
         content: data.content,
         status: data.status as EmailCampaignStatus,
         template_id: data.template_id,
+        recipient_ids: parsedRecipientIds,
+        recipientIds: parsedRecipientIds,
+        segment_ids: parsedSegmentIds,
+        segmentIds: parsedSegmentIds,
+        personalizations: parsedPersonalizations,
+        metadata: parsedMetadata,
+        ab_test: parsedAbTest,
+        abTest: parsedAbTest,
         scheduled_at: data.scheduled_date,
         scheduledDate: data.scheduled_date,
         sent_at: data.sent_date,
         sentDate: data.sent_date,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        totalRecipients: data.total_recipients,
-        opened: data.opened,
-        clicked: data.clicked
+        total_recipients: data.total_recipients || 0,
+        totalRecipients: data.total_recipients || 0,
+        opened: data.opened || 0,
+        clicked: data.clicked || 0
       };
       
       return updatedCampaign;
@@ -454,15 +530,20 @@ class EmailService {
       
       if (error) throw error;
       
+      // Create minimal valid EmailCampaign object
       return { 
         id: data.id, 
         scheduled_at: data.scheduled_date,
         name: data.name,
         subject: data.subject,
-        body: data.content,
+        body: data.content || '',
         status: data.status as EmailCampaignStatus,
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        recipient_ids: [],
+        segment_ids: [],
+        personalizations: {},
+        metadata: {}
       };
     } catch (error) {
       console.error("Error scheduling campaign:", error);
@@ -484,14 +565,19 @@ class EmailService {
       
       if (error) throw error;
       
+      // Create minimal valid EmailCampaign object
       return { 
         id: data.id, 
         status: data.status as EmailCampaignStatus,
         name: data.name,
         subject: data.subject,
-        body: data.content,
+        body: data.content || '',
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        recipient_ids: [],
+        segment_ids: [],
+        personalizations: {},
+        metadata: {}
       };
     } catch (error) {
       console.error("Error sending campaign now:", error);
@@ -512,14 +598,19 @@ class EmailService {
       
       if (error) throw error;
       
+      // Create minimal valid EmailCampaign object
       return { 
         id: data.id, 
         status: data.status as EmailCampaignStatus,
         name: data.name,
         subject: data.subject,
-        body: data.content,
+        body: data.content || '',
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        recipient_ids: [],
+        segment_ids: [],
+        personalizations: {},
+        metadata: {}
       };
     } catch (error) {
       console.error("Error pausing campaign:", error);
@@ -540,14 +631,19 @@ class EmailService {
       
       if (error) throw error;
       
+      // Create minimal valid EmailCampaign object
       return { 
         id: data.id, 
         status: data.status as EmailCampaignStatus,
         name: data.name,
         subject: data.subject,
-        body: data.content,
+        body: data.content || '',
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        recipient_ids: [],
+        segment_ids: [],
+        personalizations: {},
+        metadata: {}
       };
     } catch (error) {
       console.error("Error cancelling campaign:", error);
