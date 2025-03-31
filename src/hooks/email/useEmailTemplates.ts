@@ -16,6 +16,7 @@ export const useEmailTemplates = (category?: EmailCategory) => {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
+      // Remove the category parameter if undefined to fetch all templates
       const data = await emailService.getTemplates(category);
       if (Array.isArray(data)) {
         setTemplates(data);

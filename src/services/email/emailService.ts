@@ -1,5 +1,7 @@
+
 import { supabase } from '@/lib/supabase';
 import { EmailSequence, EmailTemplate, EmailTemplateVariable } from '@/types/email';
+import { Json } from '@/integrations/supabase/types';
 
 class EmailService {
   async getTemplates(category?: string): Promise<EmailTemplate[]> {
@@ -60,13 +62,14 @@ class EmailService {
   }
 
   async createTemplate(template: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
+    // Convert EmailTemplateVariable[] to a JSON-compatible format
     const templateData = {
       name: template.name || '',
       subject: template.subject || '',
       content: template.content || '',
       description: template.description,
-      category: template.category,
-      variables: template.variables || []
+      category: template.category || 'marketing',
+      variables: template.variables ? JSON.parse(JSON.stringify(template.variables)) : []
     };
 
     const { data, error } = await supabase
@@ -95,10 +98,20 @@ class EmailService {
   }
 
   async updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
-    const updateData: any = { 
-      ...updates,
-      variables: updates.variables ? updates.variables : undefined
+    // Convert EmailTemplateVariable[] to a JSON-compatible format for Supabase
+    const updateData: any = {
+      ...(updates.name !== undefined && { name: updates.name }),
+      ...(updates.subject !== undefined && { subject: updates.subject }),
+      ...(updates.content !== undefined && { content: updates.content }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.category !== undefined && { category: updates.category }),
+      ...(updates.is_archived !== undefined && { is_archived: updates.is_archived })
     };
+    
+    // Handle variables separately to ensure proper JSON conversion
+    if (updates.variables) {
+      updateData.variables = JSON.parse(JSON.stringify(updates.variables));
+    }
     
     const { data, error } = await supabase
       .from('email_templates')
