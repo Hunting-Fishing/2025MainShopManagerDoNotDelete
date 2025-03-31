@@ -69,7 +69,15 @@ export const useEmailCampaignAnalytics = () => {
         // Convert recipient_ids from Json to string[]
         recipient_ids: Array.isArray(campaignData.recipient_ids) 
           ? campaignData.recipient_ids as string[] 
-          : []
+          : [],
+        // Convert personalizations from Json to Record<string, any>
+        personalizations: typeof campaignData.personalizations === 'object' 
+          ? campaignData.personalizations as Record<string, any> 
+          : {},
+        // Convert metadata from Json to Record<string, any>
+        metadata: typeof campaignData.metadata === 'object' 
+          ? campaignData.metadata as Record<string, any> 
+          : {}
       };
       
       setCampaignDetails(campaignWithBody);
