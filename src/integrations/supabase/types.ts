@@ -595,6 +595,41 @@ export type Database = {
           },
         ]
       }
+      email_events: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          recipient_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          recipient_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          recipient_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_sequence_analytics: {
         Row: {
           active_enrollments: number
@@ -826,6 +861,50 @@ export type Database = {
           variables?: Json | null
         }
         Relationships: []
+      }
+      email_tracking: {
+        Row: {
+          campaign_id: string | null
+          clicked_at: string | null
+          clicked_url: string | null
+          created_at: string
+          id: string
+          opened_at: string | null
+          recipient_id: string | null
+          sent_at: string | null
+          tracking_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          clicked_at?: string | null
+          clicked_url?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          recipient_id?: string | null
+          sent_at?: string | null
+          tracking_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          clicked_at?: string | null
+          clicked_url?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          recipient_id?: string | null
+          sent_at?: string | null
+          tracking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback_forms: {
         Row: {
@@ -2335,6 +2414,18 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      increment_campaign_clicks: {
+        Args: {
+          campaign_id: string
+        }
+        Returns: undefined
+      }
+      increment_campaign_opens: {
+        Args: {
+          campaign_id: string
+        }
+        Returns: undefined
       }
       insert_work_order_inventory_item: {
         Args: {

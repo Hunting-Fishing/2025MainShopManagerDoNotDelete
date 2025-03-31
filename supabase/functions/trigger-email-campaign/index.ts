@@ -164,7 +164,6 @@ serve(async (req) => {
               tracking_id: trackingId,
               campaign_id: campaignId,
               recipient_id: customer.id,
-              email: customer.email,
               sent_at: new Date().toISOString()
             });
             

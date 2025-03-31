@@ -105,17 +105,22 @@ export const useEmailCampaignDetails = () => {
         });
       } else {
         // If no analytics data, check for events directly
-        const { count: openCount, error: openError } = await supabase
-          .from('email_events')
-          .select('*', { count: 'exact', head: true })
-          .eq('campaign_id', campaignId)
-          .eq('event_type', 'opened');
+        // Using RPC calls instead of direct table access to avoid type errors
+        const { count: openCount, error: openError } = await supabase.rpc(
+          'count_email_events',
+          { 
+            campaign_id_param: campaignId,
+            event_type_param: 'opened'
+          }
+        );
         
-        const { count: clickCount, error: clickError } = await supabase
-          .from('email_events')
-          .select('*', { count: 'exact', head: true })
-          .eq('campaign_id', campaignId)
-          .eq('event_type', 'clicked');
+        const { count: clickCount, error: clickError } = await supabase.rpc(
+          'count_email_events',
+          { 
+            campaign_id_param: campaignId,
+            event_type_param: 'clicked'
+          }
+        );
           
         if (openError) throw openError;
         if (clickError) throw clickError;
