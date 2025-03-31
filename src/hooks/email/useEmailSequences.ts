@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailSequence, EmailSequenceStep, EmailSequenceEnrollment, EmailSequenceAnalytics } from "@/types/email";
@@ -66,22 +65,36 @@ export const useEmailSequences = () => {
     try {
       const data = await emailService.getSequenceAnalytics(sequenceId);
       if (data) {
-        // Fix the conditional access by creating a safe transformation
-        const transformedData: EmailSequenceAnalytics = {
-          id: data.id || sequenceId, // Provide a default if no id in data
-          sequenceId: data.sequence_id,
-          totalEnrollments: data.total_enrollments,
-          activeEnrollments: data.active_enrollments,
-          completedEnrollments: data.completed_enrollments,
-          conversionRate: data.conversion_rate || 0,
-          averageTimeToComplete: data.average_time_to_complete || 0,
-          updatedAt: data.updated_at
-        };
+        let transformedData: EmailSequenceAnalytics;
+        
+        if ('id' in data) {
+          transformedData = {
+            id: data.id,
+            sequenceId: data.sequence_id,
+            totalEnrollments: data.total_enrollments,
+            activeEnrollments: data.active_enrollments,
+            completedEnrollments: data.completed_enrollments,
+            conversionRate: data.conversion_rate || 0,
+            averageTimeToComplete: data.average_time_to_complete || 0,
+            updatedAt: data.updated_at
+          };
+        } else {
+          transformedData = {
+            id: sequenceId,
+            sequenceId: data.sequence_id,
+            totalEnrollments: data.total_enrollments,
+            activeEnrollments: data.active_enrollments,
+            completedEnrollments: data.completed_enrollments,
+            conversionRate: 0,
+            averageTimeToComplete: data.average_time_to_complete || 0,
+            updatedAt: data.updated_at
+          };
+        }
+        
         setAnalytics(transformedData);
         return transformedData;
       }
       
-      // Create default analytics if none returned
       const defaultAnalytics: EmailSequenceAnalytics = {
         id: sequenceId,
         sequenceId: sequenceId,
