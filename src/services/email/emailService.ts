@@ -1071,18 +1071,38 @@ class EmailService {
     }
   }
 
-  async triggerSequenceProcessing(): Promise<boolean> {
+  async triggerSequenceProcessing(sequenceId?: string): Promise<boolean> {
     try {
-      // Call an edge function or trigger a background job to process sequences
+      // Call the Supabase Edge Function to process sequences
       const { error } = await supabase.functions.invoke('process-email-sequences', {
-        body: { action: 'process' }
+        body: { 
+          sequenceId,
+          action: 'process' 
+        }
       });
       
       if (error) throw error;
-      
       return true;
     } catch (error) {
       console.error("Error triggering sequence processing:", error);
+      return false;
+    }
+  }
+
+  async updateSequenceAnalytics(sequenceId: string): Promise<boolean> {
+    try {
+      // Call the Supabase Edge Function to update analytics
+      const { error } = await supabase.functions.invoke('process-email-sequences', {
+        body: { 
+          sequenceId,
+          action: 'updateAnalytics' 
+        }
+      });
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error updating sequence analytics:", error);
       return false;
     }
   }

@@ -1,234 +1,203 @@
 
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import React, { useEffect } from 'react';
+import { 
+  Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@/components/ui/card';
 import { useEmailSequences } from '@/hooks/email/useEmailSequences';
 import { EmailSequenceSteps } from './EmailSequenceSteps';
-import { EmailSequenceAnalytics } from './EmailSequenceAnalytics';
 import { EmailSequenceEnrollments } from './EmailSequenceEnrollments';
+import { EmailSequenceAnalytics } from './EmailSequenceAnalytics';
 import { EmailSequenceProcessButton } from './EmailSequenceProcessButton';
 import { 
-  ArrowLeft, 
-  PenLine, 
-  Trash2, 
-  Play, 
-  Pause, 
-  BarChart, 
-  ListChecks, 
-  Users 
-} from 'lucide-react';
+  Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useToast } from '@/hooks/use-toast';
+  ArrowLeft, Edit, Trash2, Play, Users, Activity, ListChecks 
+} from 'lucide-react';
 
-export default function EmailSequenceDetails() {
-  const { id } = useParams<{ id: string }>();
+interface EmailSequenceDetailsProps {
+  sequenceId: string;
+}
+
+export function EmailSequenceDetails({ sequenceId }: EmailSequenceDetailsProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('steps');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
   const { 
     currentSequence, 
-    updateSequence,
-    deleteSequence
+    sequenceLoading, 
+    fetchSequenceById, 
+    deleteSequence 
   } = useEmailSequences();
-  
-  if (!currentSequence || !id) {
-    return <div>Loading...</div>;
-  }
-  
-  const handleToggleActive = async () => {
-    try {
-      await updateSequence(id, { 
-        isActive: !currentSequence.isActive 
-      });
-      
-      toast({
-        title: `Sequence ${currentSequence.isActive ? 'deactivated' : 'activated'}`,
-        description: `The sequence has been ${currentSequence.isActive ? 'deactivated' : 'activated'} successfully`
-      });
-    } catch (error) {
-      console.error('Error toggling sequence activation:', error);
-      toast({
-        title: 'Error',
-        description: 'Could not update sequence status',
-        variant: 'destructive'
-      });
+
+  useEffect(() => {
+    if (sequenceId) {
+      fetchSequenceById(sequenceId);
+    }
+  }, [sequenceId, fetchSequenceById]);
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this sequence?')) {
+      const success = await deleteSequence(sequenceId);
+      if (success) {
+        navigate('/email-sequences');
+      }
     }
   };
-  
-  const handleDeleteSequence = async () => {
-    try {
-      await deleteSequence(id);
-      toast({
-        title: 'Sequence deleted',
-        description: 'The sequence has been deleted successfully'
-      });
-      navigate('/email-sequences');
-    } catch (error) {
-      console.error('Error deleting sequence:', error);
-      toast({
-        title: 'Error',
-        description: 'Could not delete sequence',
-        variant: 'destructive'
-      });
-    }
+
+  const handleBack = () => {
+    navigate('/email-sequences');
   };
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/email-sequences')}
-          >
+
+  if (sequenceLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="mr-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold">{currentSequence.name}</h1>
-          <Badge variant={currentSequence.isActive ? "success" : "secondary"}>
-            {currentSequence.isActive ? "Active" : "Inactive"}
-          </Badge>
+          <h1 className="text-2xl font-bold">Loading Sequence...</h1>
         </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <EmailSequenceProcessButton className="mr-2" />
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleToggleActive}
-          >
-            {currentSequence.isActive ? (
-              <>
-                <Pause className="mr-2 h-4 w-4" />
-                Deactivate
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4" />
-                Activate
-              </>
-            )}
+        <div className="grid grid-cols-1 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Loading...</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentSequence) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="mr-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
           </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate(`/email-sequence-edit/${id}`)}
-          >
-            <PenLine className="mr-2 h-4 w-4" />
+          <h1 className="text-2xl font-bold">Sequence Not Found</h1>
+        </div>
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center">
+              <p className="text-lg text-muted-foreground mb-4">
+                The requested sequence could not be found.
+              </p>
+              <Button onClick={handleBack}>
+                Return to Sequences
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="mr-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center">
+              {currentSequence.name}
+              {currentSequence.isActive ? (
+                <Badge className="ml-2 bg-green-500">Active</Badge>
+              ) : (
+                <Badge className="ml-2" variant="outline">Inactive</Badge>
+              )}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {currentSequence.description || 'No description provided'}
+            </p>
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          <EmailSequenceProcessButton sequenceId={sequenceId} />
+          <Button variant="outline" onClick={() => navigate(`/email-sequence-editor/${sequenceId}`)}>
+            <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>
-          
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            onClick={() => setDeleteDialogOpen(true)}
-          >
+          <Button variant="destructive" onClick={handleDelete}>
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </Button>
         </div>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Sequence Details</CardTitle>
-          <CardDescription>{currentSequence.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm font-medium">Trigger Type</p>
-              <p className="text-sm text-muted-foreground">
-                {currentSequence.triggerType === 'manual' 
-                  ? 'Manual Enrollment' 
-                  : currentSequence.triggerType === 'event' 
-                    ? 'Event Based' 
-                    : 'Scheduled'}
-              </p>
-            </div>
-            
-            {currentSequence.triggerType === 'event' && (
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sequence Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm font-medium">Trigger Event</p>
-                <p className="text-sm text-muted-foreground">
-                  {currentSequence.triggerEvent || 'None'}
-                </p>
+                <dt className="text-sm font-medium text-muted-foreground">Trigger Type</dt>
+                <dd className="text-base">{currentSequence.triggerType || 'Manual'}</dd>
               </div>
-            )}
-            
-            <div>
-              <p className="text-sm font-medium">Steps</p>
-              <p className="text-sm text-muted-foreground">
-                {currentSequence.steps.length} {currentSequence.steps.length === 1 ? 'step' : 'steps'}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="steps">
-            <ListChecks className="h-4 w-4 mr-2" />
-            Steps
-          </TabsTrigger>
-          <TabsTrigger value="enrollments">
-            <Users className="h-4 w-4 mr-2" />
-            Enrollments
-          </TabsTrigger>
-          <TabsTrigger value="analytics">
-            <BarChart className="h-4 w-4 mr-2" />
-            Analytics
-          </TabsTrigger>
-        </TabsList>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Trigger Event</dt>
+                <dd className="text-base">{currentSequence.triggerEvent || 'None'}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Created</dt>
+                <dd className="text-base">{new Date(currentSequence.created_at).toLocaleDateString()}</dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="steps">
-          <EmailSequenceSteps sequenceId={id} steps={currentSequence.steps} />
-        </TabsContent>
-        
-        <TabsContent value="enrollments">
-          <EmailSequenceEnrollments sequenceId={id} />
-        </TabsContent>
-        
-        <TabsContent value="analytics">
-          <EmailSequenceAnalytics sequenceId={id} />
-        </TabsContent>
-      </Tabs>
-      
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the sequence
-              and all associated steps and enrollments.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSequence} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <Tabs defaultValue="steps" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="steps" className="flex items-center">
+              <ListChecks className="mr-2 h-4 w-4" />
+              Steps
+            </TabsTrigger>
+            <TabsTrigger value="enrollments" className="flex items-center">
+              <Users className="mr-2 h-4 w-4" />
+              Enrollments
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center">
+              <Activity className="mr-2 h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="steps" className="space-y-4">
+            <EmailSequenceSteps 
+              sequenceId={sequenceId} 
+              steps={currentSequence.steps} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="enrollments" className="space-y-4">
+            <EmailSequenceEnrollments 
+              sequenceId={sequenceId} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="analytics" className="space-y-4">
+            <EmailSequenceAnalytics 
+              sequenceId={sequenceId} 
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

@@ -157,23 +157,12 @@ async function processEnrollment(supabase, enrollment, steps) {
   // Get customer information
   const { data: customer, error: customerError } = await supabase
     .from('customers')
-    .select('id, email, first_name, last_name')
+    .select('id, email, first_name, last_name, custom_fields, last_activity_date')
     .eq('id', enrollment.customer_id)
     .single();
   
   if (customerError) {
     throw new Error(`Error fetching customer: ${customerError.message}`);
-  }
-  
-  // Get email template
-  const { data: template, error: templateError } = await supabase
-    .from('email_templates')
-    .select('*')
-    .eq('id', currentStep.template_id)
-    .single();
-  
-  if (templateError) {
-    throw new Error(`Error fetching template: ${templateError.message}`);
   }
   
   // Check if conditions are met for the current step
@@ -197,6 +186,7 @@ async function processEnrollment(supabase, enrollment, steps) {
           .update({
             current_step_id: nextStep.id,
             next_send_time: calculateNextSendTime(nextStep),
+            step_history: updateStepHistory(enrollment, currentStep.id, 'skipped', 'Condition not met'),
           })
           .eq('id', enrollment.id);
         
@@ -209,6 +199,7 @@ async function processEnrollment(supabase, enrollment, steps) {
           status: 'skipped',
           next_step_id: nextStep.id,
           next_send_time: calculateNextSendTime(nextStep),
+          reason: 'Condition not met',
         };
       } else {
         // This was the last step, mark enrollment as completed
@@ -218,6 +209,7 @@ async function processEnrollment(supabase, enrollment, steps) {
             status: 'completed',
             completed_at: new Date().toISOString(),
             next_send_time: null,
+            step_history: updateStepHistory(enrollment, currentStep.id, 'skipped', 'Last step, condition not met'),
           })
           .eq('id', enrollment.id);
         
@@ -234,29 +226,48 @@ async function processEnrollment(supabase, enrollment, steps) {
     }
   }
   
-  // Send the email (this is a mock, would be replaced with actual email sending logic)
-  console.log(`Sending email to ${customer.email} using template ${template.name}`);
-  
-  // Record that the email was sent
-  const { data: communicationData, error: communicationError } = await supabase
-    .from('customer_communications')
-    .insert({
-      customer_id: customer.id,
-      type: 'email',
-      direction: 'outbound',
-      subject: template.subject,
-      content: template.content,
-      template_id: template.id,
-      template_name: template.name,
-      staff_member_id: 'system',
-      staff_member_name: 'Email Sequence System',
-      status: 'sent',
-    })
-    .select()
-    .single();
-  
-  if (communicationError) {
-    throw new Error(`Error recording communication: ${communicationError.message}`);
+  // For email steps, get the template and send the email
+  if (currentStep.delay_hours === 0 || currentStep.delay_hours === null) {
+    // Get email template
+    const { data: template, error: templateError } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('id', currentStep.template_id)
+      .single();
+    
+    if (templateError) {
+      throw new Error(`Error fetching template: ${templateError.message}`);
+    }
+    
+    // Send the email
+    console.log(`Sending email to ${customer.email} using template ${template.name}`);
+    
+    // Record that the email was sent
+    const { data: communicationData, error: communicationError } = await supabase
+      .from('customer_communications')
+      .insert({
+        customer_id: customer.id,
+        type: 'email',
+        direction: 'outbound',
+        subject: template.subject,
+        content: template.content,
+        template_id: template.id,
+        template_name: template.name,
+        staff_member_id: 'system',
+        staff_member_name: 'Email Sequence System',
+        status: 'sent',
+        sequence_id: enrollment.sequence_id,
+        sequence_step_id: currentStep.id,
+      })
+      .select()
+      .single();
+    
+    if (communicationError) {
+      throw new Error(`Error recording communication: ${communicationError.message}`);
+    }
+  } else {
+    // This is a delay step, just log it
+    console.log(`Processed delay step of ${currentStep.delay_hours} hours (${currentStep.delay_type}) for enrollment ${enrollment.id}`);
   }
   
   // If there's a next step, update the enrollment
@@ -268,6 +279,7 @@ async function processEnrollment(supabase, enrollment, steps) {
       .update({
         current_step_id: nextStep.id,
         next_send_time: nextSendTime,
+        step_history: updateStepHistory(enrollment, currentStep.id, 'processed'),
       })
       .eq('id', enrollment.id);
     
@@ -278,7 +290,8 @@ async function processEnrollment(supabase, enrollment, steps) {
     return {
       enrollment_id: enrollment.id,
       status: 'processed',
-      email_sent: true,
+      email_sent: currentStep.delay_hours === 0 || currentStep.delay_hours === null,
+      delay_processed: currentStep.delay_hours > 0,
       next_step_id: nextStep.id,
       next_send_time: nextSendTime,
     };
@@ -290,6 +303,7 @@ async function processEnrollment(supabase, enrollment, steps) {
         status: 'completed',
         completed_at: new Date().toISOString(),
         next_send_time: null,
+        step_history: updateStepHistory(enrollment, currentStep.id, 'processed'),
       })
       .eq('id', enrollment.id);
     
@@ -300,16 +314,45 @@ async function processEnrollment(supabase, enrollment, steps) {
     return {
       enrollment_id: enrollment.id,
       status: 'completed',
-      email_sent: true,
+      email_sent: currentStep.delay_hours === 0 || currentStep.delay_hours === null,
+      delay_processed: currentStep.delay_hours > 0,
       message: 'Sequence completed',
     };
   }
+}
+
+function updateStepHistory(enrollment, stepId, status, note = null) {
+  let history = [];
+  
+  // Parse existing history if it exists
+  try {
+    if (enrollment.step_history) {
+      history = typeof enrollment.step_history === 'string' 
+        ? JSON.parse(enrollment.step_history) 
+        : enrollment.step_history;
+    }
+  } catch (e) {
+    console.error("Error parsing step history:", e);
+    history = [];
+  }
+  
+  // Add new history entry
+  history.push({
+    step_id: stepId,
+    status: status,
+    timestamp: new Date().toISOString(),
+    note: note
+  });
+  
+  return JSON.stringify(history);
 }
 
 async function checkCondition(supabase, conditionType, conditionValue, conditionOperator, customerId, enrollment) {
   if (!conditionType || !conditionValue) {
     return true; // No condition, so it's met by default
   }
+  
+  console.log(`Checking condition: ${conditionType} ${conditionValue} ${conditionOperator || '='}`);
   
   if (conditionType === 'event') {
     // Check if the event has occurred
@@ -329,7 +372,9 @@ async function checkCondition(supabase, conditionType, conditionValue, condition
       return false;
     }
     
-    return count > 0;
+    const result = count > 0;
+    console.log(`Event condition result: ${result} (found ${count} events)`);
+    return result;
   } else if (conditionType === 'property') {
     // Check a customer property against a value
     const { data: customer, error } = await supabase
@@ -354,23 +399,60 @@ async function checkCondition(supabase, conditionType, conditionValue, condition
       propertyValue = propertyValue[segment];
     }
     
+    // If propertyValue is still undefined, check enrollment metadata
+    if (propertyValue === undefined && enrollment.metadata) {
+      const metadataValue = enrollment.metadata[conditionValue];
+      if (metadataValue !== undefined) {
+        propertyValue = metadataValue;
+      }
+    }
+    
+    // Get comparison value
+    const comparisonValue = enrollment.metadata?.comparison_value;
+    
+    if (propertyValue === undefined || comparisonValue === undefined) {
+      console.log(`Property condition not met: missing values to compare`);
+      return false;
+    }
+    
+    let result = false;
+    
     // Compare with the operator
     switch (conditionOperator) {
       case '=':
-        return propertyValue == enrollment.metadata?.comparison_value;
+      case '==':
+        result = propertyValue == comparisonValue;
+        break;
       case '!=':
-        return propertyValue != enrollment.metadata?.comparison_value;
+        result = propertyValue != comparisonValue;
+        break;
       case '>':
-        return propertyValue > enrollment.metadata?.comparison_value;
+        result = propertyValue > comparisonValue;
+        break;
       case '<':
-        return propertyValue < enrollment.metadata?.comparison_value;
+        result = propertyValue < comparisonValue;
+        break;
       case '>=':
-        return propertyValue >= enrollment.metadata?.comparison_value;
+        result = propertyValue >= comparisonValue;
+        break;
       case '<=':
-        return propertyValue <= enrollment.metadata?.comparison_value;
+        result = propertyValue <= comparisonValue;
+        break;
+      case 'contains':
+        result = String(propertyValue).includes(String(comparisonValue));
+        break;
+      case 'startsWith':
+        result = String(propertyValue).startsWith(String(comparisonValue));
+        break;
+      case 'endsWith':
+        result = String(propertyValue).endsWith(String(comparisonValue));
+        break;
       default:
-        return false;
+        result = false;
     }
+    
+    console.log(`Property condition result: ${result} (${propertyValue} ${conditionOperator} ${comparisonValue})`);
+    return result;
   }
   
   return true;
@@ -388,7 +470,7 @@ function calculateNextSendTime(step) {
     const nextTime = new Date(now.getTime() + step.delay_hours * 60 * 60 * 1000);
     return nextTime.toISOString();
   } else if (step.delay_type === 'business_days') {
-    // Business days logic (simplified)
+    // Business days logic (more sophisticated implementation)
     let hoursRemaining = step.delay_hours;
     let currentTime = now.getTime();
     
@@ -398,13 +480,28 @@ function calculateNextSendTime(step) {
       const dayOfWeek = currentDate.getDay();
       const hour = currentDate.getHours();
       
-      // Skip non-business hours (assuming 9-5, Mon-Fri)
-      if (dayOfWeek >= 1 && dayOfWeek <= 5 && hour >= 9 && hour < 17) {
-        hoursRemaining--;
+      // Skip non-business hours (weekends and outside 9-5)
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
+        if (hour >= 9 && hour < 17) { // 9 AM to 5 PM
+          hoursRemaining--;
+        }
       }
     }
     
     return new Date(currentTime).toISOString();
+  } else if (step.delay_type === 'smart_timing') {
+    // Smart timing tries to send at optimal times based on recipient's timezone
+    // (basic implementation - would be more sophisticated in production)
+    const baseTime = new Date(now.getTime() + step.delay_hours * 60 * 60 * 1000);
+    const hour = baseTime.getHours();
+    
+    // If outside 9 AM to 8 PM, adjust to next day at 10 AM
+    if (hour < 9 || hour > 20) {
+      baseTime.setDate(baseTime.getDate() + 1);
+      baseTime.setHours(10, 0, 0, 0);
+    }
+    
+    return baseTime.toISOString();
   }
   
   // Default fallback

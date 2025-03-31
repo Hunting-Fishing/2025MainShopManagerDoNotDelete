@@ -7,21 +7,24 @@ import { emailService } from '@/services/email/emailService';
 
 interface EmailSequenceProcessButtonProps {
   className?: string;
+  sequenceId?: string;
 }
 
-export function EmailSequenceProcessButton({ className }: EmailSequenceProcessButtonProps) {
+export function EmailSequenceProcessButton({ className, sequenceId }: EmailSequenceProcessButtonProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
   const handleProcess = async () => {
     setIsProcessing(true);
     try {
-      const success = await emailService.triggerSequenceProcessing();
+      const success = await emailService.triggerSequenceProcessing(sequenceId);
       
       if (success) {
         toast({
           title: "Processing triggered",
-          description: "Email sequences are now being processed",
+          description: sequenceId 
+            ? "This email sequence is now being processed" 
+            : "All email sequences are now being processed",
         });
       } else {
         toast({
@@ -51,7 +54,7 @@ export function EmailSequenceProcessButton({ className }: EmailSequenceProcessBu
       disabled={isProcessing}
     >
       <Play className="h-4 w-4 mr-2" />
-      Process Sequences Now
+      {sequenceId ? "Process This Sequence" : "Process All Sequences"}
     </Button>
   );
 }

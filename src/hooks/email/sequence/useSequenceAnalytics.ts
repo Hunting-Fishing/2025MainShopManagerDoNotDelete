@@ -1,8 +1,9 @@
 
-import { useState } from "react";
-import { EmailSequenceAnalytics } from "@/types/email";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { EmailSequenceAnalytics } from '@/types/email';
+import { useToast } from '@/hooks/use-toast';
+import { emailService } from '@/services/email/emailService';
 
 export const useSequenceAnalytics = () => {
   const [analytics, setAnalytics] = useState<EmailSequenceAnalytics | null>(null);
@@ -12,65 +13,84 @@ export const useSequenceAnalytics = () => {
   const fetchSequenceAnalytics = async (sequenceId: string) => {
     setAnalyticsLoading(true);
     try {
-      // Query the sequence analytics directly from Supabase
+      // First, try to get the existing analytics
       const { data, error } = await supabase
         .from('email_sequence_analytics')
         .select('*')
         .eq('sequence_id', sequenceId)
-        .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      if (data) {
-        const transformedData: EmailSequenceAnalytics = {
-          id: data.id,
-          sequenceId: data.sequence_id,
-          sequence_id: data.sequence_id,
-          totalEnrollments: data.total_enrollments || 0,
-          total_enrollments: data.total_enrollments || 0,
-          activeEnrollments: data.active_enrollments || 0,
-          active_enrollments: data.active_enrollments || 0,
-          completedEnrollments: data.completed_enrollments || 0,
-          completed_enrollments: data.completed_enrollments || 0,
-          conversionRate: data.conversion_rate || 0,
-          conversion_rate: data.conversion_rate || 0,
-          averageTimeToComplete: data.average_time_to_complete || 0,
-          average_time_to_complete: data.average_time_to_complete || 0,
-          updatedAt: data.updated_at || new Date().toISOString(),
-          updated_at: data.updated_at || new Date().toISOString()
+        .single();
+
+      if (error) {
+        if (error.code !== 'PGRST116') { // Not found error
+          throw error;
+        }
+        
+        // If not found, trigger analytics update
+        await emailService.updateSequenceAnalytics(sequenceId);
+        
+        // Now try to fetch the data again
+        const { data: updatedData, error: updatedError } = await supabase
+          .from('email_sequence_analytics')
+          .select('*')
+          .eq('sequence_id', sequenceId)
+          .single();
+          
+        if (updatedError) {
+          // Still no data, set analytics to null
+          setAnalytics(null);
+          return null;
+        }
+        
+        const formattedAnalytics: EmailSequenceAnalytics = {
+          id: updatedData.id,
+          sequenceId: updatedData.sequence_id,
+          sequence_id: updatedData.sequence_id,
+          totalEnrollments: updatedData.total_enrollments,
+          total_enrollments: updatedData.total_enrollments,
+          activeEnrollments: updatedData.active_enrollments,
+          active_enrollments: updatedData.active_enrollments,
+          completedEnrollments: updatedData.completed_enrollments,
+          completed_enrollments: updatedData.completed_enrollments,
+          conversionRate: updatedData.conversion_rate,
+          conversion_rate: updatedData.conversion_rate,
+          averageTimeToComplete: updatedData.average_time_to_complete,
+          average_time_to_complete: updatedData.average_time_to_complete,
+          updatedAt: updatedData.updated_at,
+          updated_at: updatedData.updated_at
         };
         
-        setAnalytics(transformedData);
-        return transformedData;
+        setAnalytics(formattedAnalytics);
+        return formattedAnalytics;
       }
-      
-      // Create default analytics if none exist
-      const defaultAnalytics: EmailSequenceAnalytics = {
-        id: sequenceId,
-        sequenceId: sequenceId,
-        sequence_id: sequenceId,
-        totalEnrollments: 0,
-        total_enrollments: 0,
-        activeEnrollments: 0,
-        active_enrollments: 0,
-        completedEnrollments: 0,
-        completed_enrollments: 0,
-        conversionRate: 0,
-        conversion_rate: 0,
-        averageTimeToComplete: 0,
-        average_time_to_complete: 0,
-        updatedAt: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+
+      const formattedAnalytics: EmailSequenceAnalytics = {
+        id: data.id,
+        sequenceId: data.sequence_id,
+        sequence_id: data.sequence_id,
+        totalEnrollments: data.total_enrollments,
+        total_enrollments: data.total_enrollments,
+        activeEnrollments: data.active_enrollments,
+        active_enrollments: data.active_enrollments,
+        completedEnrollments: data.completed_enrollments,
+        completed_enrollments: data.completed_enrollments,
+        conversionRate: data.conversion_rate,
+        conversion_rate: data.conversion_rate,
+        averageTimeToComplete: data.average_time_to_complete,
+        average_time_to_complete: data.average_time_to_complete,
+        updatedAt: data.updated_at,
+        updated_at: data.updated_at
       };
-      setAnalytics(defaultAnalytics);
-      return defaultAnalytics;
+      
+      setAnalytics(formattedAnalytics);
+      return formattedAnalytics;
     } catch (error) {
-      console.error("Error fetching sequence analytics:", error);
+      console.error('Error fetching sequence analytics:', error);
       toast({
-        title: "Error",
-        description: "Failed to load sequence analytics",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load sequence analytics',
+        variant: 'destructive',
       });
+      setAnalytics(null);
       return null;
     } finally {
       setAnalyticsLoading(false);
