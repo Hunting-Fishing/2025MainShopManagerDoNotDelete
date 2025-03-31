@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import {
   EmailTemplate,
@@ -8,7 +9,8 @@ import {
   EmailSequence,
   EmailSequenceStep,
   EmailSequenceEnrollment,
-  EmailTemplateVariable
+  EmailTemplateVariable,
+  EmailABTest
 } from '@/types/email';
 
 // Mock data for development - keeping as reference
@@ -110,7 +112,7 @@ export const emailService = {
       
       if (!data) return null;
       
-      // Transform to match EmailTemplate interface
+      // Transform to match EmailTemplate interface with proper type handling
       return {
         id: data.id,
         name: data.name,
@@ -118,7 +120,7 @@ export const emailService = {
         description: data.description,
         category: data.category as EmailCategory,
         content: data.content,
-        variables: Array.isArray(data.variables) ? data.variables : [],
+        variables: Array.isArray(data.variables) ? data.variables as EmailTemplateVariable[] : [],
         isArchived: data.is_archived || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -149,7 +151,7 @@ export const emailService = {
       
       if (!data) return null;
       
-      // Transform to match EmailTemplate interface
+      // Transform to match EmailTemplate interface with proper type handling
       return {
         id: data.id,
         name: data.name,
@@ -157,7 +159,7 @@ export const emailService = {
         description: data.description,
         category: data.category as EmailCategory,
         content: data.content,
-        variables: Array.isArray(data.variables) ? data.variables : [],
+        variables: Array.isArray(data.variables) ? data.variables as EmailTemplateVariable[] : [],
         isArchived: data.is_archived || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -188,7 +190,7 @@ export const emailService = {
       
       if (!data) return null;
       
-      // Transform to match EmailTemplate interface
+      // Transform to match EmailTemplate interface with proper type handling
       return {
         id: data.id,
         name: data.name,
@@ -196,7 +198,7 @@ export const emailService = {
         description: data.description,
         category: data.category as EmailCategory,
         content: data.content,
-        variables: Array.isArray(data.variables) ? data.variables : [],
+        variables: Array.isArray(data.variables) ? data.variables as EmailTemplateVariable[] : [],
         isArchived: data.is_archived || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -236,7 +238,7 @@ export const emailService = {
         
         if (!data) return null;
         
-        // Transform to match EmailCampaign interface
+        // Transform to match EmailCampaign interface with proper type handling
         return {
           id: data.id,
           name: data.name,
@@ -251,11 +253,11 @@ export const emailService = {
           updatedAt: data.updated_at,
           templateId: data.template_id,
           content: data.content,
-          segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids : [],
-          recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
-          personalizations: Array.isArray(data.personalizations) ? data.personalizations : [],
-          metadata: typeof data.metadata === 'object' ? data.metadata : {},
-          abTest: data.ab_test || null,
+          segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids as string[] : [],
+          recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids as string[] : [],
+          personalizations: Array.isArray(data.personalizations) ? data.personalizations as Record<string, string>[] : [],
+          metadata: typeof data.metadata === 'object' ? data.metadata as Record<string, any> : {},
+          abTest: data.ab_test as EmailABTest || null,
         };
       } else {
         const { data, error } = await supabase
@@ -310,7 +312,7 @@ export const emailService = {
       
       if (!data) return null;
       
-      // Transform to match EmailCampaign interface
+      // Transform to match EmailCampaign interface with proper type handling
       return {
         id: data.id,
         name: data.name,
@@ -325,11 +327,11 @@ export const emailService = {
         updatedAt: data.updated_at,
         templateId: data.template_id,
         content: data.content,
-        segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids : [],
-        recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
-        personalizations: Array.isArray(data.personalizations) ? data.personalizations : [],
-        metadata: typeof data.metadata === 'object' ? data.metadata : {},
-        abTest: data.ab_test || null,
+        segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids as string[] : [],
+        recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids as string[] : [],
+        personalizations: Array.isArray(data.personalizations) ? data.personalizations as Record<string, string>[] : [],
+        metadata: typeof data.metadata === 'object' ? data.metadata as Record<string, any> : {},
+        abTest: data.ab_test as EmailABTest || null,
       };
     } catch (error) {
       console.error('Error creating email campaign:', error);
@@ -362,7 +364,7 @@ export const emailService = {
       
       if (!data) return null;
       
-      // Transform to match EmailCampaign interface
+      // Transform to match EmailCampaign interface with proper type handling
       return {
         id: data.id,
         name: data.name,
@@ -377,11 +379,11 @@ export const emailService = {
         updatedAt: data.updated_at,
         templateId: data.template_id,
         content: data.content,
-        segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids : [],
-        recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids : [],
-        personalizations: Array.isArray(data.personalizations) ? data.personalizations : [],
-        metadata: typeof data.metadata === 'object' ? data.metadata : {},
-        abTest: data.ab_test || null,
+        segmentIds: Array.isArray(data.segment_ids) ? data.segment_ids as string[] : [],
+        recipientIds: Array.isArray(data.recipient_ids) ? data.recipient_ids as string[] : [],
+        personalizations: Array.isArray(data.personalizations) ? data.personalizations as Record<string, string>[] : [],
+        metadata: typeof data.metadata === 'object' ? data.metadata as Record<string, any> : {},
+        abTest: data.ab_test as EmailABTest || null,
       };
     } catch (error) {
       console.error('Error updating email campaign:', error);
@@ -674,7 +676,7 @@ export const emailService = {
           const newSteps = stepsToInsert.map(step => ({
             sequence_id: id,
             name: step.name,
-            template_id: step.template_id,
+            template_id: step.templateId,
             delay_hours: step.delayHours,
             delay_type: step.delayType,
             position: step.position,
@@ -697,7 +699,7 @@ export const emailService = {
           const newTempSteps = tempSteps.map(step => ({
             sequence_id: id,
             name: step.name,
-            template_id: step.template_id,
+            template_id: step.templateId,
             delay_hours: step.delayHours,
             delay_type: step.delayType,
             position: step.position,

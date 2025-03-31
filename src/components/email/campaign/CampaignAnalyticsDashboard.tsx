@@ -20,7 +20,6 @@ import {
   Trophy
 } from 'lucide-react';
 
-// Colors for charts
 const COLORS = {
   primary: '#0ea5e9',
   secondary: '#8b5cf6',
@@ -39,7 +38,6 @@ const COLORS = {
   delivered: '#3b82f6',
 };
 
-// Pie chart colors
 const PIE_COLORS = [COLORS.primary, COLORS.secondary, COLORS.success, COLORS.warning, COLORS.danger];
 
 type CampaignAnalyticsDashboardProps = {
@@ -67,7 +65,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
     );
   }
 
-  // Format timeline data for charts
   const timelineData = analytics.timeline.map(point => ({
     date: format(parseISO(point.date), 'MMM d'),
     opens: point.opens,
@@ -76,7 +73,6 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
     complaints: point.complaints || 0,
   }));
 
-  // Calculate percentage changes for KPIs (mock data for now)
   const percentageChanges = {
     openRate: 5.2,
     clickRate: -2.1,
@@ -84,20 +80,17 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
     bounceRate: 1.2,
   };
 
-  // Data for engagement breakdown pie chart
   const engagementData = [
     { name: 'Opened', value: analytics.opened },
     { name: 'Clicked', value: analytics.clicked },
     { name: 'No Engagement', value: analytics.delivered - analytics.opened },
   ];
 
-  // Data for delivery status pie chart
   const deliveryData = [
     { name: 'Delivered', value: analytics.delivered },
     { name: 'Bounced', value: analytics.bounced },
   ];
 
-  // Data for bar chart comparison
   const comparisonData = [
     { name: 'Open Rate', value: analytics.openRate * 100, avg: 22.5 },
     { name: 'Click Rate', value: analytics.clickRate * 100, avg: 3.2 },

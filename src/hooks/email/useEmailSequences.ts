@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailSequence, EmailSequenceStep, EmailSequenceEnrollment, EmailSequenceAnalytics } from "@/types/email";
@@ -65,8 +66,9 @@ export const useEmailSequences = () => {
     try {
       const data = await emailService.getSequenceAnalytics(sequenceId);
       if (data) {
+        // Fix the conditional access by creating a safe transformation
         const transformedData: EmailSequenceAnalytics = {
-          id: data.id || "",
+          id: data.id || sequenceId, // Provide a default if no id in data
           sequenceId: data.sequence_id,
           totalEnrollments: data.total_enrollments,
           activeEnrollments: data.active_enrollments,
@@ -78,7 +80,20 @@ export const useEmailSequences = () => {
         setAnalytics(transformedData);
         return transformedData;
       }
-      return null;
+      
+      // Create default analytics if none returned
+      const defaultAnalytics: EmailSequenceAnalytics = {
+        id: sequenceId,
+        sequenceId: sequenceId,
+        totalEnrollments: 0,
+        activeEnrollments: 0,
+        completedEnrollments: 0,
+        conversionRate: 0,
+        averageTimeToComplete: 0,
+        updatedAt: new Date().toISOString()
+      };
+      setAnalytics(defaultAnalytics);
+      return defaultAnalytics;
     } catch (error) {
       console.error("Error fetching sequence analytics:", error);
       toast({
@@ -105,7 +120,7 @@ export const useEmailSequences = () => {
         startedAt: enrollment.started_at,
         completedAt: enrollment.completed_at || undefined,
         nextSendTime: enrollment.next_send_time || undefined,
-        metadata: enrollment.metadata as Record<string, any> || {}
+        metadata: (enrollment.metadata as Record<string, any>) || {}
       }));
       setEnrollments(transformedEnrollments);
       return transformedEnrollments;

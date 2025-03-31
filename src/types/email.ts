@@ -1,4 +1,3 @@
-
 export type EmailTemplateVariable = {
   name: string;
   defaultValue: string;
@@ -132,41 +131,6 @@ export type EmailSequenceAnalytics = {
   updatedAt: string;
 };
 
-export type EmailCampaignAnalytics = {
-  campaignId: string;
-  name: string;
-  sent: number;
-  delivered: number;
-  bounced: number;
-  opened: number;
-  clicked: number;
-  unsubscribed: number;
-  complained: number;
-  openRate: number;
-  clickRate: number;
-  clickToOpenRate: number;
-  unsubscribeRate: number;
-  bouncedRate: number;
-  timeline: {
-    date: string;
-    opens: number;
-    clicks: number;
-  }[];
-};
-
-export type EmailRecipient = {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  customFields: Record<string, any>;
-  segmentIds: string[];
-  isUnsubscribed: boolean;
-  bounceStatus: 'none' | 'soft' | 'hard';
-  lastEngagement: string | null;
-};
-
-// New enhanced types for campaign analytics
 export type EmailCampaignTimelinePoint = {
   date: string;
   opens: number;
@@ -194,4 +158,34 @@ export type EmailABTestResult = {
   }[];
   winningVariantId?: string;
   confidenceLevel?: number; // Statistical confidence in the result
+};
+
+export type EmailCampaignAnalytics = {
+  campaignId: string;
+  name: string;
+  sent: number;
+  delivered: number;
+  bounced: number;
+  opened: number;
+  clicked: number;
+  unsubscribed: number;
+  complained: number;
+  openRate: number;
+  clickRate: number;
+  clickToOpenRate: number;
+  unsubscribeRate: number;
+  bouncedRate: number;
+  timeline: EmailCampaignTimelinePoint[];
+};
+
+export type EmailRecipient = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  customFields: Record<string, any>;
+  segmentIds: string[];
+  isUnsubscribed: boolean;
+  bounceStatus: 'none' | 'soft' | 'hard';
+  lastEngagement: string | null;
 };
