@@ -5,6 +5,7 @@ import { GenericResponse } from '../utils/supabaseHelper';
 export interface SequenceProcessingSchedule {
   enabled: boolean;
   cron: string;
+  sequence_ids?: string[];
 }
 
 /**
@@ -17,43 +18,43 @@ export const schedulingService = {
    */
   async getSequenceProcessingSchedule(): Promise<GenericResponse<SequenceProcessingSchedule>> {
     try {
+      // Query the email_system_settings table for the processing schedule
       const { data, error } = await supabase
         .from('email_system_settings')
         .select('*')
         .eq('key', 'processing_schedule')
         .single();
-
-      if (error) throw error;
+        
+      if (error) {
+        console.error('Error fetching sequence processing schedule:', error);
+        return {
+          data: { enabled: false, cron: '0 * * * *' },
+          error
+        };
+      }
       
       if (!data) {
-        return { 
-          data: { enabled: false, cron: '*/30 * * * *' },
+        return {
+          data: { enabled: false, cron: '0 * * * *' },
           error: null
         };
       }
       
-      const scheduleData = data.value;
-      if (!scheduleData || typeof scheduleData !== 'object') {
-        return { 
-          data: { enabled: false, cron: '*/30 * * * *' },
-          error: null
-        };
-      }
-      
-      // Cast to get proper type access
-      const typedData = scheduleData as Record<string, any>;
+      // Cast the value from JSONB to our expected type
+      const settings = data.value as Record<string, any>;
       
       return {
         data: {
-          enabled: typedData.enabled === true,
-          cron: typedData.cron || '*/30 * * * *'
+          enabled: settings.enabled === true,
+          cron: settings.cron || '0 * * * *',
+          sequence_ids: settings.sequence_ids || []
         },
         error: null
       };
     } catch (error) {
       console.error('Error getting sequence processing schedule:', error);
-      return { 
-        data: { enabled: false, cron: '*/30 * * * *' },
+      return {
+        data: { enabled: false, cron: '0 * * * *' },
         error
       };
     }
@@ -61,74 +62,72 @@ export const schedulingService = {
 
   /**
    * Update the sequence processing schedule
-   * @param schedule New schedule settings
+   * @param config Schedule configuration
    * @returns Success status
    */
-  async updateSequenceProcessingSchedule(
-    schedule: SequenceProcessingSchedule
-  ): Promise<GenericResponse<SequenceProcessingSchedule>> {
+  async updateSequenceProcessingSchedule(config: { 
+    cron?: string; 
+    enabled: boolean;
+    sequence_ids?: string[];
+  }): Promise<GenericResponse<SequenceProcessingSchedule>> {
     try {
-      // First check if settings already exist
-      const { data: existingData, error: existingError } = await supabase
+      // Check for existing schedule
+      const { data: existingData, error: fetchError } = await supabase
         .from('email_system_settings')
         .select('*')
         .eq('key', 'processing_schedule')
         .single();
-
-      if (existingError && existingError.code !== 'PGRST116') {
-        throw existingError;
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
       
-      let result;
+      // Prepare the value to store
+      const valueToStore = {
+        enabled: config.enabled,
+        cron: config.cron || (existingData?.value?.cron || '0 * * * *'),
+        sequence_ids: config.sequence_ids || (existingData?.value?.sequence_ids || [])
+      };
       
       if (existingData) {
         // Update existing record
         const { data, error } = await supabase
           .from('email_system_settings')
-          .update({
-            value: {
-              enabled: schedule.enabled,
-              cron: schedule.cron
-            }
-          })
+          .update({ value: valueToStore })
           .eq('key', 'processing_schedule')
           .select()
           .single();
         
         if (error) throw error;
-        result = data;
+        
+        return {
+          data: valueToStore,
+          error: null
+        };
       } else {
-        // Insert new record
+        // Create new record
         const { data, error } = await supabase
           .from('email_system_settings')
           .insert({
             key: 'processing_schedule',
-            value: {
-              enabled: schedule.enabled,
-              cron: schedule.cron
-            }
+            value: valueToStore
           })
           .select()
           .single();
         
         if (error) throw error;
-        result = data;
+        
+        return {
+          data: valueToStore,
+          error: null
+        };
       }
-      
-      // Safely extract the settings
-      const resultValue = result?.value;
-      const typedData = resultValue as Record<string, any>;
-      
-      return {
-        data: {
-          enabled: typedData?.enabled === true,
-          cron: typedData?.cron || '*/30 * * * *'
-        },
-        error: null
-      };
     } catch (error) {
       console.error('Error updating sequence processing schedule:', error);
-      return { data: null, error };
+      return { 
+        data: null, 
+        error 
+      };
     }
   }
 };

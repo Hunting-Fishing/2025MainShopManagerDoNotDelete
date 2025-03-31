@@ -1,6 +1,37 @@
 import { supabase } from '@/lib/supabase';
-import { EmailTemplate, EmailCategory } from '@/types/email';
-import { GenericResponse } from '../utils/supabaseHelper';
+import { EmailTemplate, EmailTemplateVariable, EmailCategory } from '@/types/email';
+import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
+
+// Helper function to convert database template to typed EmailTemplate
+const mapDbTemplateToEmailTemplate = (template: any): EmailTemplate => {
+  // Parse variables from JSON
+  let variables: EmailTemplateVariable[] = [];
+  try {
+    if (template.variables) {
+      variables = Array.isArray(template.variables) 
+        ? template.variables
+        : typeof template.variables === 'object'
+          ? Object.values(template.variables)
+          : [];
+    }
+  } catch (e) {
+    console.error('Error parsing template variables:', e);
+  }
+
+  return {
+    id: template.id,
+    name: template.name,
+    subject: template.subject,
+    description: template.description || '',
+    category: template.category as EmailCategory,
+    content: template.content,
+    body: template.content, // For compatibility
+    variables: variables,
+    created_at: template.created_at,
+    updated_at: template.updated_at,
+    is_archived: template.is_archived || false
+  };
+};
 
 /**
  * Service for managing email templates
@@ -8,222 +39,183 @@ import { GenericResponse } from '../utils/supabaseHelper';
 export const emailTemplateService = {
   /**
    * Get all email templates
+   * @returns List of templates
    */
-  async getEmailTemplates(): Promise<GenericResponse<EmailTemplate[]>> {
+  async getAllTemplates(): Promise<GenericResponse<EmailTemplate[]>> {
     try {
       const { data, error } = await supabase
         .from('email_templates')
         .select('*')
-        .order('created_at', { ascending: false });
-
+        .order('name');
+      
       if (error) throw error;
-
-      // Convert to EmailTemplate array with proper typing
-      const templates: EmailTemplate[] = data.map(template => ({
-        id: template.id,
-        name: template.name,
-        subject: template.subject,
-        description: template.description || '',
-        category: template.category as EmailCategory,
-        content: template.content,
-        variables: template.variables || [],
-        created_at: template.created_at,
-        updated_at: template.updated_at,
-        body: template.content, // alias for content
-        is_archived: template.is_archived || false
-      }));
-
+      
+      const templates = data.map(template => mapDbTemplateToEmailTemplate(template));
+      
       return { data: templates, error: null };
     } catch (error) {
-      console.error('Error fetching email templates:', error);
-      return { data: null, error };
+      console.error('Error getting all templates:', error);
+      return { data: [], error };
     }
   },
 
   /**
-   * Get a template by ID
+   * Create a new email template
+   * @param template Template data
+   * @returns Created template
    */
-  async getEmailTemplateById(templateId: string): Promise<GenericResponse<EmailTemplate>> {
+  async createTemplate(template: Partial<EmailTemplate>): Promise<GenericResponse<EmailTemplate>> {
     try {
-      const { data, error } = await supabase
-        .from('email_templates')
-        .select('*')
-        .eq('id', templateId)
-        .single();
-
-      if (error) throw error;
-
-      // Convert to EmailTemplate with proper typing
-      const template: EmailTemplate = {
-        id: data.id,
-        name: data.name,
-        subject: data.subject,
-        description: data.description || '',
-        category: data.category as EmailCategory,
-        content: data.content,
-        variables: data.variables || [],
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        body: data.content, // alias for content
-        is_archived: data.is_archived || false
-      };
-
-      return { data: template, error: null };
-    } catch (error) {
-      console.error(`Error fetching email template ${templateId}:`, error);
-      return { data: null, error };
-    }
-  },
-
-  /**
-   * Create a new template
-   */
-  async createEmailTemplate(template: Partial<EmailTemplate>): Promise<GenericResponse<EmailTemplate>> {
-    try {
+      // Convert variables to JSON compatible format
+      const variablesJson = template.variables ? JSON.parse(JSON.stringify(template.variables)) : [];
+      
       const { data, error } = await supabase
         .from('email_templates')
         .insert({
           name: template.name,
           subject: template.subject,
+          content: template.content || template.body,
           description: template.description,
           category: template.category,
-          content: template.content || template.body,
-          variables: template.variables,
-          is_archived: template.is_archived
+          variables: variablesJson,
+          is_archived: template.is_archived || false
         })
         .select()
         .single();
-
+      
       if (error) throw error;
-
-      // Convert to EmailTemplate with proper typing
-      const newTemplate: EmailTemplate = {
-        id: data.id,
-        name: data.name,
-        subject: data.subject,
-        description: data.description || '',
-        category: data.category as EmailCategory,
-        content: data.content,
-        variables: data.variables || [],
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        body: data.content, // alias for content
-        is_archived: data.is_archived || false
+      
+      return { 
+        data: mapDbTemplateToEmailTemplate(data),
+        error: null 
       };
-
-      return { data: newTemplate, error: null };
     } catch (error) {
-      console.error('Error creating email template:', error);
+      console.error('Error creating template:', error);
       return { data: null, error };
     }
   },
 
   /**
-   * Update an existing template
+   * Get a single email template by ID
+   * @param id Template ID
+   * @returns Template data
    */
-  async updateEmailTemplate(
-    templateId: string, 
+  async getTemplateById(id: string): Promise<GenericResponse<EmailTemplate>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      
+      return { 
+        data: mapDbTemplateToEmailTemplate(data), 
+        error: null 
+      };
+    } catch (error) {
+      console.error('Error getting template by ID:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Update an existing email template
+   * @param id Template ID
+   * @param template Template data to update
+   * @returns Updated template
+   */
+  async updateTemplate(
+    id: string, 
     template: Partial<EmailTemplate>
   ): Promise<GenericResponse<EmailTemplate>> {
     try {
+      // Convert variables to JSON compatible format
+      const variablesJson = template.variables ? JSON.parse(JSON.stringify(template.variables)) : [];
+      
       const { data, error } = await supabase
         .from('email_templates')
         .update({
           name: template.name,
           subject: template.subject,
+          content: template.content || template.body,
           description: template.description,
           category: template.category,
-          content: template.content || template.body,
-          variables: template.variables,
-          is_archived: template.is_archived,
-          updated_at: new Date().toISOString()
+          variables: variablesJson,
+          is_archived: template.is_archived
         })
-        .eq('id', templateId)
+        .eq('id', id)
         .select()
         .single();
-
+      
       if (error) throw error;
-
-      // Convert to EmailTemplate with proper typing
-      const updatedTemplate: EmailTemplate = {
-        id: data.id,
-        name: data.name,
-        subject: data.subject,
-        description: template.description || '',
-        category: data.category as EmailCategory,
-        content: data.content,
-        variables: data.variables || [],
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        body: data.content, // alias for content
-        is_archived: data.is_archived || false
+      
+      return { 
+        data: mapDbTemplateToEmailTemplate(data), 
+        error: null 
       };
-
-      return { data: updatedTemplate, error: null };
     } catch (error) {
-      console.error(`Error updating email template ${templateId}:`, error);
+      console.error('Error updating template:', error);
       return { data: null, error };
     }
   },
 
   /**
-   * Delete a template
+   * Delete an email template
+   * @param id Template ID
+   * @returns Success status
    */
-  async deleteEmailTemplate(templateId: string): Promise<GenericResponse<boolean>> {
+  async deleteTemplate(id: string): Promise<GenericResponse<{ success: boolean }>> {
     try {
       const { error } = await supabase
         .from('email_templates')
         .delete()
-        .eq('id', templateId);
-
+        .eq('id', id);
+      
       if (error) throw error;
-
-      return { data: true, error: null };
+      
+      return { 
+        data: { success: true }, 
+        error: null 
+      };
     } catch (error) {
-      console.error(`Error deleting email template ${templateId}:`, error);
-      return { data: false, error };
+      console.error('Error deleting template:', error);
+      return { 
+        data: { success: false }, 
+        error 
+      };
     }
   },
 
   /**
-   * Archive a template
+   * Archive an email template
+   * @param id Template ID
+   * @param isArchived Archive status
+   * @returns Success status
    */
-  async archiveEmailTemplate(
-    templateId: string, 
-    archive: boolean = true
-  ): Promise<GenericResponse<EmailTemplate>> {
+  async archiveTemplate(
+    id: string, 
+    isArchived: boolean
+  ): Promise<GenericResponse<{ success: boolean }>> {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('email_templates')
-        .update({
-          is_archived: archive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', templateId)
-        .select()
-        .single();
-
+        .update({ is_archived: isArchived })
+        .eq('id', id);
+      
       if (error) throw error;
-
-      // Convert to EmailTemplate with proper typing
-      const updatedTemplate: EmailTemplate = {
-        id: data.id,
-        name: data.name,
-        subject: data.subject,
-        description: data.description || '',
-        category: data.category as EmailCategory,
-        content: data.content,
-        variables: data.variables || [],
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        body: data.content, // alias for content
-        is_archived: data.is_archived || false
+      
+      return { 
+        data: { success: true }, 
+        error: null 
       };
-
-      return { data: updatedTemplate, error: null };
     } catch (error) {
-      console.error(`Error ${archive ? 'archiving' : 'unarchiving'} email template ${templateId}:`, error);
-      return { data: null, error };
+      console.error('Error archiving template:', error);
+      return { 
+        data: { success: false }, 
+        error 
+      };
     }
   }
 };

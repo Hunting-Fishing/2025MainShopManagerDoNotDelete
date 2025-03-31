@@ -1,4 +1,3 @@
-
 /**
  * Generic response interface for service methods
  */
@@ -41,8 +40,11 @@ export const parseJsonField = <T>(field: any, defaultValue: T): T => {
   try {
     if (field === null || field === undefined) return defaultValue;
     
-    // If it's already an object, return it
+    // If it's already an object and not an array, return it
     if (typeof field === 'object' && !Array.isArray(field)) return field as T;
+    
+    // If it's already an array and we expect an array, return it
+    if (Array.isArray(field) && Array.isArray(defaultValue)) return field as T;
     
     // Otherwise, try to parse it as JSON
     const fieldStr = typeof field === 'string' ? field : JSON.stringify(field);
@@ -51,4 +53,11 @@ export const parseJsonField = <T>(field: any, defaultValue: T): T => {
     console.error("Error parsing JSON field:", e);
     return defaultValue;
   }
+};
+
+/**
+ * Helper function to safely convert database types to application types
+ */
+export const safelyParseEnum = <T extends string>(value: string, fallback: T): T => {
+  return value as T || fallback;
 };

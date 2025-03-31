@@ -1,7 +1,45 @@
-
 import { supabase } from '@/lib/supabase';
 import { EmailCampaign, EmailABTest, EmailCampaignStatus } from '@/types/email';
 import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
+
+// Helper function to convert database campaign to typed EmailCampaign
+const mapDbCampaignToEmailCampaign = (campaign: any): EmailCampaign => {
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    subject: campaign.subject,
+    body: campaign.content || '',  // Use content as body
+    content: campaign.content,
+    status: campaign.status as EmailCampaignStatus,
+    template_id: campaign.template_id,
+    templateId: campaign.template_id,
+    segment_id: campaign.segment_id,
+    segmentId: campaign.segment_id,
+    segment_ids: parseJsonField<string[]>(campaign.segment_ids, []),
+    segmentIds: parseJsonField<string[]>(campaign.segment_ids, []),
+    recipient_ids: parseJsonField<string[]>(campaign.recipient_ids, []),
+    recipientIds: parseJsonField<string[]>(campaign.recipient_ids, []),
+    scheduled_at: campaign.scheduled_at,
+    scheduledAt: campaign.scheduled_at,
+    sent_at: campaign.sent_at,
+    sentAt: campaign.sent_at,
+    created_at: campaign.created_at,
+    createdAt: campaign.created_at,
+    updated_at: campaign.updated_at,
+    updatedAt: campaign.updated_at,
+    personalizations: parseJsonField(campaign.personalizations, {}),
+    metadata: parseJsonField(campaign.metadata, {}),
+    ab_test: parseJsonField(campaign.ab_test, null),
+    abTest: parseJsonField(campaign.ab_test, null),
+    totalRecipients: campaign.total_recipients || 0,
+    total_recipients: campaign.total_recipients || 0,
+    opened: campaign.opened || 0,
+    clicked: campaign.clicked || 0,
+    bounced: campaign.bounced || 0,
+    complained: campaign.complained || 0,
+    unsubscribed: campaign.unsubscribed || 0
+  };
+};
 
 /**
  * Service for managing email campaigns
@@ -20,35 +58,7 @@ export const emailCampaignService = {
       if (error) throw error;
 
       // Map data to EmailCampaign type, ensuring all required fields are present
-      const campaigns: EmailCampaign[] = data.map(campaign => ({
-        id: campaign.id,
-        name: campaign.name,
-        subject: campaign.subject,
-        body: campaign.content || '',
-        content: campaign.content,
-        status: campaign.status as EmailCampaignStatus,
-        template_id: campaign.template_id,
-        segment_ids: Array.isArray(campaign.segment_ids) ? 
-          campaign.segment_ids.map(id => String(id)) : [],
-        recipient_ids: Array.isArray(campaign.recipient_ids) ? 
-          campaign.recipient_ids.map(id => String(id)) : [],
-        personalizations: typeof campaign.personalizations === 'object' ? campaign.personalizations : {},
-        metadata: typeof campaign.metadata === 'object' ? campaign.metadata : {},
-        ab_test: parseJsonField<EmailABTest | null>(campaign.ab_test, null),
-        abTest: parseJsonField<EmailABTest | null>(campaign.ab_test, null),
-        scheduled_at: campaign.scheduled_date,
-        scheduledAt: campaign.scheduled_date,
-        sent_at: campaign.sent_date,
-        sentAt: campaign.sent_date,
-        created_at: campaign.created_at,
-        createdAt: campaign.created_at,
-        updated_at: campaign.updated_at,
-        updatedAt: campaign.updated_at,
-        totalRecipients: campaign.total_recipients,
-        total_recipients: campaign.total_recipients,
-        opened: campaign.opened,
-        clicked: campaign.clicked
-      }));
+      const campaigns: EmailCampaign[] = data.map(campaign => mapDbCampaignToEmailCampaign(campaign));
 
       return { data: campaigns, error: null };
     } catch (error) {
@@ -71,35 +81,7 @@ export const emailCampaignService = {
       if (error) throw error;
 
       // Convert to EmailCampaign type
-      const campaign: EmailCampaign = {
-        id: data.id,
-        name: data.name,
-        subject: data.subject,
-        body: data.content || '',
-        content: data.content,
-        status: data.status as EmailCampaignStatus,
-        template_id: data.template_id,
-        segment_ids: Array.isArray(data.segment_ids) ? 
-          data.segment_ids.map(id => String(id)) : [],
-        recipient_ids: Array.isArray(data.recipient_ids) ? 
-          data.recipient_ids.map(id => String(id)) : [],
-        personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
-        metadata: typeof data.metadata === 'object' ? data.metadata : {},
-        ab_test: parseJsonField<EmailABTest | null>(data.ab_test, null),
-        abTest: parseJsonField<EmailABTest | null>(data.ab_test, null),
-        scheduled_at: data.scheduled_date,
-        scheduledAt: data.scheduled_date,
-        sent_at: data.sent_date,
-        sentAt: data.sent_date,
-        created_at: data.created_at,
-        createdAt: data.created_at,
-        updated_at: data.updated_at,
-        updatedAt: data.updated_at,
-        totalRecipients: data.total_recipients,
-        total_recipients: data.total_recipients,
-        opened: data.opened,
-        clicked: data.clicked
-      };
+      const campaign: EmailCampaign = mapDbCampaignToEmailCampaign(data);
 
       return { data: campaign, error: null };
     } catch (error) {
@@ -136,35 +118,7 @@ export const emailCampaignService = {
       if (error) throw error;
 
       // Convert to EmailCampaign type
-      const newCampaign: EmailCampaign = {
-        id: data.id,
-        name: data.name,
-        subject: data.subject,
-        body: data.content || '',
-        content: data.content,
-        status: data.status as EmailCampaignStatus,
-        template_id: data.template_id,
-        segment_ids: Array.isArray(data.segment_ids) ? 
-          data.segment_ids.map(id => String(id)) : [],
-        recipient_ids: Array.isArray(data.recipient_ids) ? 
-          data.recipient_ids.map(id => String(id)) : [],
-        personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
-        metadata: typeof data.metadata === 'object' ? data.metadata : {},
-        ab_test: parseJsonField<EmailABTest | null>(data.ab_test, null),
-        abTest: parseJsonField<EmailABTest | null>(data.ab_test, null),
-        scheduled_at: data.scheduled_date,
-        scheduledAt: data.scheduled_date,
-        sent_at: data.sent_date,
-        sentAt: data.sent_date,
-        created_at: data.created_at,
-        createdAt: data.created_at,
-        updated_at: data.updated_at,
-        updatedAt: data.updated_at,
-        totalRecipients: data.total_recipients,
-        total_recipients: data.total_recipients,
-        opened: data.opened,
-        clicked: data.clicked
-      };
+      const newCampaign: EmailCampaign = mapDbCampaignToEmailCampaign(data);
 
       return { data: newCampaign, error: null };
     } catch (error) {
@@ -205,35 +159,7 @@ export const emailCampaignService = {
       if (error) throw error;
 
       // Convert to EmailCampaign type
-      const updatedCampaign: EmailCampaign = {
-        id: data.id,
-        name: data.name,
-        subject: data.subject,
-        body: data.content || '',
-        content: data.content,
-        status: data.status as EmailCampaignStatus,
-        template_id: data.template_id,
-        segment_ids: Array.isArray(data.segment_ids) ? 
-          data.segment_ids.map(id => String(id)) : [],
-        recipient_ids: Array.isArray(data.recipient_ids) ? 
-          data.recipient_ids.map(id => String(id)) : [],
-        personalizations: typeof data.personalizations === 'object' ? data.personalizations : {},
-        metadata: typeof data.metadata === 'object' ? data.metadata : {},
-        ab_test: parseJsonField<EmailABTest | null>(data.ab_test, null),
-        abTest: parseJsonField<EmailABTest | null>(data.ab_test, null),
-        scheduled_at: data.scheduled_date,
-        scheduledAt: data.scheduled_date,
-        sent_at: data.sent_date,
-        sentAt: data.sent_date,
-        created_at: data.created_at,
-        createdAt: data.created_at,
-        updated_at: data.updated_at,
-        updatedAt: data.updated_at,
-        totalRecipients: data.total_recipients,
-        total_recipients: data.total_recipients,
-        opened: data.opened,
-        clicked: data.clicked
-      };
+      const updatedCampaign: EmailCampaign = mapDbCampaignToEmailCampaign(data);
 
       return { data: updatedCampaign, error: null };
     } catch (error) {
@@ -258,6 +184,42 @@ export const emailCampaignService = {
     } catch (error) {
       console.error(`Error deleting email campaign ${campaignId}:`, error);
       return { data: false, error };
+    }
+  },
+
+  /**
+   * Create a new A/B testing campaign variant
+   * @param campaignId Campaign ID
+   * @param abTest A/B testing configuration
+   * @returns Success status
+   */
+  async createABTestVariant(
+    campaignId: string, 
+    abTest: EmailABTest
+  ): Promise<GenericResponse<{ success: boolean }>> {
+    try {
+      // Convert EmailABTest to raw JSON before storing
+      const abTestJson = JSON.parse(JSON.stringify(abTest));
+      
+      const { error } = await supabase
+        .from('email_campaigns')
+        .update({
+          ab_test: abTestJson
+        })
+        .eq('id', campaignId);
+      
+      if (error) throw error;
+      
+      return { 
+        data: { success: true }, 
+        error: null 
+      };
+    } catch (error) {
+      console.error('Error creating A/B test variant:', error);
+      return { 
+        data: { success: false }, 
+        error 
+      };
     }
   }
 };

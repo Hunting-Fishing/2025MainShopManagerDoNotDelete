@@ -1,7 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { EmailABTest } from '@/types/email';
-import { GenericResponse } from '../utils/supabaseHelper';
+import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
 
 /**
  * Service for managing email A/B testing functionality
@@ -23,17 +23,24 @@ export const abTestingService = {
   }>> {
     try {
       // Get the A/B test data
-      const { data: abTestData, error: abTestError } = await supabase
+      const { data: campaignData, error: campaignError } = await supabase
         .from('email_campaigns')
         .select('ab_test')
         .eq('id', campaignId)
         .single();
       
-      if (abTestError) throw abTestError;
+      if (campaignError) throw campaignError;
       
       // Parse the abTest data
-      const abTest = abTestData?.ab_test;
-      if (!abTest || typeof abTest !== 'object') {
+      const abTest = parseJsonField<EmailABTest>(campaignData?.ab_test, { 
+        enabled: false, 
+        variants: [],
+        winnerCriteria: 'open_rate',
+        winnerSelectionDate: null,
+        winnerId: null
+      });
+      
+      if (!abTest || !abTest.enabled) {
         throw new Error("A/B testing is not enabled for this campaign");
       }
       
@@ -43,22 +50,21 @@ export const abTestingService = {
       // If no winner ID is forced, calculate the winner based on metrics
       if (!winnerId) {
         // Call the calculate_ab_test_winner function
-        const { data: winnerData, error: calcError } = await supabase
-          .rpc('calculate_ab_test_winner', {
+        const { data: winnerData, error: calcError } = await supabase.rpc(
+          'calculate_ab_test_winner',
+          { 
             campaign_id: campaignId,
-            criteria: abTest.winnerCriteria || abTest.winner_criteria || 'open_rate'
-          });
+            criteria: abTest.winnerCriteria || 'open_rate' 
+          }
+        );
         
         if (calcError) throw calcError;
         
-        // Extract the winner information from the response
-        if (winnerData && typeof winnerData === 'object') {
-          // Access the winner data properties safely
-          winnerId = typeof winnerData === 'string' ? winnerData : 
-                    'winner_id' in winnerData ? String(winnerData.winner_id) : null;
-          
-          confidenceLevel = typeof winnerData === 'string' ? 0 : 
-                          'confidence_level' in winnerData ? Number(winnerData.confidence_level) : 0;
+        if (typeof winnerData === 'string') {
+          winnerId = winnerData;
+        } else if (winnerData && typeof winnerData === 'object') {
+          winnerId = winnerData.winner_id || null;
+          confidenceLevel = winnerData.confidence_level || 0;
         }
         
         if (!winnerId) {
@@ -69,22 +75,19 @@ export const abTestingService = {
       // Create a timestamp for the winner selection
       const winnerSelectionDate = new Date().toISOString();
       
-      // Create a properly typed object for the update
-      const updatedAbTestData = {
+      // Create a properly typed update for the AB test
+      const updatedAbTest: EmailABTest = {
         ...abTest,
         winnerId: winnerId,
-        winner_id: winnerId,
         winnerSelectionDate: winnerSelectionDate,
-        winner_selection_date: winnerSelectionDate,
-        confidenceLevel: confidenceLevel,
-        confidence_level: confidenceLevel
+        confidenceLevel: confidenceLevel
       };
       
       // Update the campaign with the winner information
       const { error: updateError } = await supabase
         .from('email_campaigns')
         .update({
-          ab_test: updatedAbTestData
+          ab_test: updatedAbTest
         })
         .eq('id', campaignId);
       

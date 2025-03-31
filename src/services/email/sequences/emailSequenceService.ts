@@ -2,31 +2,30 @@ import { supabase } from '@/lib/supabase';
 import { 
   EmailSequence, 
   EmailSequenceStep, 
-  EmailSequenceEnrollment,
-  EmailSequenceAnalytics
+  EmailSequenceEnrollment, 
+  EmailSequenceAnalytics 
 } from '@/types/email';
-import { GenericResponse } from '../utils/supabaseHelper';
+import { GenericResponse, parseJsonField } from '../utils/supabaseHelper';
 
-// Update the sequence step mapping function to better handle properties
-const mapSequenceStep = (step: any): EmailSequenceStep => {
+// Helper function to parse and validate sequence step data
+const mapDbStepToSequenceStep = (step: any): EmailSequenceStep => {
   return {
     id: step.id,
     sequence_id: step.sequence_id,
+    sequenceId: step.sequence_id,
     order: step.position,
-    delay_hours: step.delay_hours || 0,
-    delay_type: step.delay_type || 'fixed',
-    template_id: step.template_id,
+    position: step.position,
+    delay_hours: step.delay_hours,
+    delayHours: step.delay_hours,
+    delay_type: step.delay_type,
+    delayType: step.delay_type,
     email_template_id: step.template_id,
+    template_id: step.template_id,
+    templateId: step.template_id,
     created_at: step.created_at,
     updated_at: step.updated_at,
-    
-    // UI component support
-    name: step.name || '',
+    name: step.name,
     type: 'email',
-    templateId: step.template_id,
-    delayHours: step.delay_hours || 0,
-    delayType: step.delay_type || 'fixed',
-    position: step.position || 0,
     isActive: step.is_active === true,
     condition: step.condition_type ? {
       type: step.condition_type as 'event' | 'property',
@@ -36,8 +35,81 @@ const mapSequenceStep = (step: any): EmailSequenceStep => {
   };
 };
 
+// Helper function to parse and validate sequence data
+const mapDbSequenceToEmailSequence = (sequence: any, steps: EmailSequenceStep[] = []): EmailSequence => {
+  return {
+    id: sequence.id,
+    name: sequence.name,
+    description: sequence.description || '',
+    steps: steps,
+    created_at: sequence.created_at,
+    createdAt: sequence.created_at,
+    updated_at: sequence.updated_at,
+    updatedAt: sequence.updated_at,
+    shop_id: sequence.shop_id,
+    created_by: sequence.created_by,
+    trigger_type: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+    triggerType: sequence.trigger_type as 'manual' | 'event' | 'schedule',
+    trigger_event: sequence.trigger_event,
+    triggerEvent: sequence.trigger_event,
+    is_active: sequence.is_active === true,
+    isActive: sequence.is_active === true
+  };
+};
+
+// Helper function to parse enrollments
+const mapDbEnrollmentToSequenceEnrollment = (enrollment: any): EmailSequenceEnrollment => {
+  return {
+    id: enrollment.id,
+    sequence_id: enrollment.sequence_id,
+    sequenceId: enrollment.sequence_id,
+    customer_id: enrollment.customer_id,
+    customerId: enrollment.customer_id,
+    status: enrollment.status as 'active' | 'paused' | 'completed' | 'cancelled',
+    current_step_id: enrollment.current_step_id,
+    currentStepId: enrollment.current_step_id,
+    created_at: enrollment.created_at,
+    updated_at: enrollment.updated_at,
+    completed_at: enrollment.completed_at,
+    completedAt: enrollment.completed_at,
+    startedAt: enrollment.started_at,
+    nextSendTime: enrollment.next_send_time,
+    metadata: parseJsonField(enrollment.metadata, {})
+  };
+};
+
+// Helper function to parse analytics
+const mapDbAnalyticsToSequenceAnalytics = (analytics: any): EmailSequenceAnalytics => {
+  return {
+    id: analytics.id,
+    sequence_id: analytics.sequence_id,
+    sequenceId: analytics.sequence_id,
+    total_enrollments: analytics.total_enrollments,
+    totalEnrollments: analytics.total_enrollments,
+    active_enrollments: analytics.active_enrollments,
+    activeEnrollments: analytics.active_enrollments,
+    completed_enrollments: analytics.completed_enrollments,
+    completedEnrollments: analytics.completed_enrollments,
+    cancelled_enrollments: analytics.cancelled_enrollments || 0,
+    total_emails_sent: analytics.total_emails_sent || 0,
+    totalEmailsSent: analytics.total_emails_sent || 0,
+    open_rate: analytics.open_rate || 0,
+    openRate: analytics.open_rate || 0,
+    click_rate: analytics.click_rate || 0,
+    clickRate: analytics.click_rate || 0,
+    conversion_rate: analytics.conversion_rate,
+    conversionRate: analytics.conversion_rate,
+    average_time_to_complete: analytics.average_time_to_complete,
+    averageTimeToComplete: analytics.average_time_to_complete,
+    updated_at: analytics.updated_at,
+    updatedAt: analytics.updated_at,
+    created_at: analytics.created_at || analytics.updated_at,
+    createdAt: analytics.created_at || analytics.updated_at
+  };
+};
+
 /**
- * Service for email sequence operations
+ * Service for managing email sequences
  */
 export const emailSequenceService = {
   /**
@@ -109,7 +181,7 @@ export const emailSequenceService = {
         id: sequence.id,
         name: sequence.name,
         description: sequence.description || '',
-        steps: steps ? steps.map(mapSequenceStep) : [],
+        steps: steps ? steps.map(mapDbStepToSequenceStep) : [],
         created_at: sequence.created_at,
         updated_at: sequence.updated_at,
         shop_id: sequence.shop_id,
@@ -264,7 +336,7 @@ export const emailSequenceService = {
       if (error) throw error;
       
       // Map the steps to the expected format
-      const mappedSteps: EmailSequenceStep[] = data.map(mapSequenceStep);
+      const mappedSteps: EmailSequenceStep[] = data.map(mapDbStepToSequenceStep);
       
       return { data: mappedSteps, error: null };
     } catch (error) {
@@ -275,36 +347,50 @@ export const emailSequenceService = {
 
   /**
    * Update a sequence step
+   * @param stepId Step ID
+   * @param stepData Step data to update
+   * @returns Updated step
    */
   async updateSequenceStep(
     stepId: string, 
     stepData: Partial<EmailSequenceStep>
   ): Promise<GenericResponse<EmailSequenceStep>> {
     try {
-      const updateData = {
+      // Convert from EmailSequenceStep properties to database column names
+      const dbData: Record<string, any> = {
         name: stepData.name,
-        position: stepData.position || stepData.order,
-        delay_hours: stepData.delay_hours || stepData.delayHours,
-        delay_type: stepData.delay_type || stepData.delayType,
-        template_id: stepData.template_id || stepData.templateId || stepData.email_template_id,
-        is_active: stepData.isActive !== undefined ? stepData.isActive : true,
+        template_id: stepData.templateId || stepData.template_id,
+        position: stepData.position,
+        delay_hours: stepData.delayHours || stepData.delay_hours,
+        delay_type: stepData.delayType || stepData.delay_type,
+        is_active: stepData.isActive ?? true,
         condition_type: stepData.condition?.type,
         condition_value: stepData.condition?.value,
         condition_operator: stepData.condition?.operator
       };
       
+      // Clean undefined values
+      Object.keys(dbData).forEach(key => {
+        if (dbData[key] === undefined) {
+          delete dbData[key];
+        }
+      });
+      
       const { data, error } = await supabase
         .from('email_sequence_steps')
-        .update(updateData)
+        .update(dbData)
         .eq('id', stepId)
-        .select()
+        .select('*')
         .single();
       
       if (error) throw error;
       
-      return { data: mapSequenceStep(data), error: null };
+      return { 
+        data: mapDbStepToSequenceStep(data), 
+        error: null 
+      };
     } catch (error) {
-      console.error(`Error updating sequence step ${stepId}:`, error);
+      console.error('Error updating sequence step:', error);
       return { data: null, error };
     }
   },
@@ -354,7 +440,7 @@ export const emailSequenceService = {
       
       if (error) throw error;
       
-      return { data: mapSequenceStep(data), error: null };
+      return { data: mapDbStepToSequenceStep(data), error: null };
     } catch (error) {
       console.error('Error creating sequence step:', error);
       return { data: null, error };
@@ -568,6 +654,32 @@ export const emailSequenceService = {
     } catch (error) {
       console.error(`Error cancelling enrollment ${enrollmentId}:`, error);
       return { data: false, error };
+    }
+  },
+
+  /**
+   * Get customer enrollments for a sequence
+   * @param customerId Customer ID
+   * @returns List of sequence enrollments
+   */
+  async getCustomerEnrollments(
+    customerId: string
+  ): Promise<GenericResponse<EmailSequenceEnrollment[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const enrollments = data.map(enrollment => mapDbEnrollmentToSequenceEnrollment(enrollment));
+      
+      return { data: enrollments, error: null };
+    } catch (error) {
+      console.error('Error getting customer enrollments:', error);
+      return { data: [], error };
     }
   }
 };
