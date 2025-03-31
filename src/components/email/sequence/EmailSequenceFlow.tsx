@@ -41,7 +41,7 @@ interface StepItemProps {
 const StepItem: React.FC<StepItemProps> = ({ step, stepNumber }) => {
   return (
     <Card>
-      <CardHeader className={`flex flex-row items-center space-y-0 p-4 bg-gray-50 border-b ${
+      <CardHeader className={`flex flex-row items-center space-y-0 p-4 ${
         step.type === 'email' ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'
       }`}>
         <div className="flex items-center">
