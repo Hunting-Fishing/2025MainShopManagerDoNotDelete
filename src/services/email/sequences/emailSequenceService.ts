@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { 
   EmailSequence, 
@@ -69,7 +70,7 @@ export const emailSequenceService = {
           position: step.position || step.order || 0,
           delay_hours: step.delay_hours || step.delayHours || 0,
           delay_type: step.delay_type || step.delayType || 'fixed',
-          is_active: step.is_active !== undefined ? step.is_active : true,
+          is_active: step.isActive !== undefined ? step.isActive : true,
           condition_type: step.condition?.type,
           condition_value: step.condition?.value,
           condition_operator: step.condition?.operator
@@ -91,7 +92,6 @@ export const emailSequenceService = {
           delayHours: data.delay_hours,
           delay_type: data.delay_type,
           delayType: data.delay_type,
-          is_active: data.is_active,
           isActive: data.is_active,
           created_at: data.created_at,
           updated_at: data.updated_at,
@@ -121,7 +121,33 @@ export const emailSequenceService = {
 
       if (error) throw error;
 
-      return { data: data || [], error: null };
+      const formattedSequences = (data || []).map(seq => ({
+        id: seq.id,
+        name: seq.name,
+        description: seq.description,
+        steps: [],  // Initialize with empty steps array
+        created_at: seq.created_at,
+        updated_at: seq.updated_at,
+        shop_id: seq.shop_id,
+        created_by: seq.created_by,
+        trigger_type: seq.trigger_type,
+        trigger_event: seq.trigger_event,
+        is_active: seq.is_active,
+        
+        // UI component support
+        triggerType: seq.trigger_type,
+        triggerEvent: seq.trigger_event,
+        isActive: seq.is_active,
+        createdAt: seq.created_at,
+        updatedAt: seq.updated_at,
+        
+        // Additional fields for system schedules
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      })) as EmailSequence[];
+
+      return { data: formattedSequences, error: null };
     } catch (error) {
       console.error('Error getting email sequences:', error);
       return { data: null, error };
@@ -141,7 +167,33 @@ export const emailSequenceService = {
 
       if (error) throw error;
 
-      return { data: data || null, error: null };
+      const formattedSequence = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        steps: [],  // Initialize with empty steps array
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type,
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type,
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        
+        // Additional fields for system schedules
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      } as EmailSequence;
+
+      return { data: formattedSequence, error: null };
     } catch (error) {
       console.error(`Error getting email sequence ${sequenceId}:`, error);
       return { data: null, error };
@@ -160,14 +212,40 @@ export const emailSequenceService = {
           description: sequence.description,
           trigger_type: sequence.trigger_type || sequence.triggerType || 'manual',
           trigger_event: sequence.trigger_event || sequence.triggerEvent,
-          is_active: sequence.is_active !== undefined ? sequence.is_active : true
+          is_active: sequence.is_active !== undefined ? sequence.is_active : (sequence.isActive || false)
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      return { data: data || null, error: null };
+      const formattedSequence = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        steps: [], // Initialize with empty steps array
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type,
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type,
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        
+        // Additional fields for system schedules
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      } as EmailSequence;
+
+      return { data: formattedSequence, error: null };
     } catch (error) {
       console.error('Error creating email sequence:', error);
       return { data: null, error };
@@ -189,7 +267,7 @@ export const emailSequenceService = {
           description: sequence.description,
           trigger_type: sequence.trigger_type || sequence.triggerType,
           trigger_event: sequence.trigger_event || sequence.triggerEvent,
-          is_active: sequence.is_active
+          is_active: sequence.is_active !== undefined ? sequence.is_active : sequence.isActive
         })
         .eq('id', sequenceId)
         .select()
@@ -197,7 +275,33 @@ export const emailSequenceService = {
 
       if (error) throw error;
 
-      return { data: data || null, error: null };
+      const formattedSequence = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        steps: [], // Initialize with empty steps array
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        shop_id: data.shop_id,
+        created_by: data.created_by,
+        trigger_type: data.trigger_type,
+        trigger_event: data.trigger_event,
+        is_active: data.is_active,
+        
+        // UI component support
+        triggerType: data.trigger_type,
+        triggerEvent: data.trigger_event,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        
+        // Additional fields for system schedules
+        last_run: null,
+        next_run: null,
+        run_frequency: null
+      } as EmailSequence;
+
+      return { data: formattedSequence, error: null };
     } catch (error) {
       console.error(`Error updating email sequence ${sequenceId}:`, error);
       return { data: null, error };
@@ -248,7 +352,6 @@ export const emailSequenceService = {
           delayHours: step.delay_hours,
           delay_type: step.delay_type,
           delayType: step.delay_type,
-          is_active: step.is_active,
           isActive: step.is_active,
           created_at: step.created_at,
           updated_at: step.updated_at,
@@ -282,7 +385,7 @@ export const emailSequenceService = {
           position: step.position || step.order,
           delay_hours: step.delay_hours || step.delayHours,
           delay_type: step.delay_type || step.delayType,
-          is_active: step.is_active,
+          is_active: step.isActive,
           condition_type: step.condition?.type,
           condition_value: step.condition?.value,
           condition_operator: step.condition?.operator
@@ -305,7 +408,6 @@ export const emailSequenceService = {
           delayHours: data.delay_hours,
           delay_type: data.delay_type,
           delayType: data.delay_type,
-          is_active: data.is_active,
           isActive: data.is_active,
           created_at: data.created_at,
           updated_at: data.updated_at,

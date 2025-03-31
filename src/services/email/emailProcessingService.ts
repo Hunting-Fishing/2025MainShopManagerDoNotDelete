@@ -1,7 +1,7 @@
 
-import { schedulingService } from './schedulingService';
-import { abTestingService } from './abTestingService';
-import { sequenceProcessingService } from './sequenceProcessingService';
+import { schedulingService } from './scheduling/schedulingService';
+import { abTestingService } from './ab-testing/abTestingService';
+import { sequenceProcessingService } from './sequences/sequenceProcessingService';
 
 /**
  * Combined service for email processing functionality

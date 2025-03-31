@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-// Fix import path
+// Use the correct import for sequence processing
 import { sequenceProcessingService } from '@/services/email';
 
 interface EmailSequenceProcessButtonProps {

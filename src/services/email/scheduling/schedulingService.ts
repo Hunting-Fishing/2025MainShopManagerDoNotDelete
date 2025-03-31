@@ -21,9 +21,9 @@ export const schedulingService = {
       // Use a direct query to the email_system_settings table
       const { data, error } = await supabase
         .from('email_system_settings')
-        .select('*')
+        .select('value')
         .eq('key', 'processing_schedule')
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error('Error fetching sequence processing schedule:', error);
@@ -74,9 +74,9 @@ export const schedulingService = {
       // Check for existing schedule
       const { data: existingData, error: fetchError } = await supabase
         .from('email_system_settings')
-        .select('*')
+        .select('value')
         .eq('key', 'processing_schedule')
-        .single();
+        .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
