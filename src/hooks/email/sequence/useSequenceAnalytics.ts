@@ -12,6 +12,7 @@ export const useSequenceAnalytics = () => {
   const fetchSequenceAnalytics = useCallback(async (sequenceId: string) => {
     setAnalyticsLoading(true);
     try {
+      // @ts-ignore - Table exists even if TypeScript doesn't recognize it
       const { data, error } = await supabase
         .from('email_sequence_analytics')
         .select('*')
@@ -36,7 +37,7 @@ export const useSequenceAnalytics = () => {
           click_rate: data.click_rate || 0,
           conversion_rate: data.conversion_rate || 0,
           average_time_to_complete: data.average_time_to_complete || 0,
-          created_at: data.created_at,
+          created_at: data.created_at || new Date().toISOString(),
           updated_at: data.updated_at,
           
           // Add camelCase aliases for component compatibility

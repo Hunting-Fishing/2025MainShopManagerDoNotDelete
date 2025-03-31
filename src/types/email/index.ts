@@ -5,14 +5,14 @@ export * from './templates';
 export * from './campaigns';
 export * from './sequences';
 
-// Explicitly re-export ab-testing types without causing conflicts
+// Explicitly re-export specific types to avoid conflicts
 import { 
-  EmailABTest as EmailABTestFromABTesting, 
-  EmailABTestVariant as EmailABTestVariantFromABTesting, 
-  EmailABTestResult as EmailABTestResultFromABTesting 
+  EmailABTest as EmailABTestFromCampaigns,
+  EmailABTestVariant as EmailABTestVariantFromCampaigns, 
+  EmailABTestResult as EmailABTestResultFromCampaigns 
 } from './campaigns';
 
-// Create type aliases that combine both definitions
-export type { EmailABTestFromABTesting as EmailABTestExtended };
-export type { EmailABTestVariantFromABTesting as EmailABTestVariantExtended };
-export type { EmailABTestResultFromABTesting as EmailABTestResultExtended };
+// Export with different names to avoid conflicts
+export type { EmailABTestFromCampaigns as EmailABTestExtended };
+export type { EmailABTestVariantFromCampaigns as EmailABTestVariantExtended };
+export type { EmailABTestResultFromCampaigns as EmailABTestResultExtended };

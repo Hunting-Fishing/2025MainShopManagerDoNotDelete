@@ -17,6 +17,7 @@ export interface EmailCampaign {
   updated_at: string;
   status: EmailCampaignStatus;
   ab_test?: EmailABTest;
+  abTest?: EmailABTest; // For compatibility
   created_by?: string;
   total_recipients?: number;
   totalRecipients?: number; // For compatibility

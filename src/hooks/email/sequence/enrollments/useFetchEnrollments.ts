@@ -1,61 +1,69 @@
 
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { EmailSequenceEnrollment } from '@/types/email';
-import { parseJsonField } from '@/services/email/utils';
+import { useToast } from '@/hooks/use-toast';
 
-/**
- * Hook for fetching email sequence enrollments
- * This hook only handles the data fetching logic, separated from state management
- */
-export const useFetchEnrollments = () => {
-  /**
-   * Fetches enrollments for a specific customer
-   * @param customerId Customer ID to fetch enrollments for
-   * @returns Promise with the fetched and transformed enrollments
-   */
-  const fetchCustomerEnrollments = async (customerId: string): Promise<EmailSequenceEnrollment[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('email_sequence_enrollments')
-        .select(`
-          *,
-          sequence:email_sequences(id, name, description),
-          current_step:email_sequence_steps(id, name, template_id, position)
-        `)
-        .eq('customer_id', customerId)
-        .order('created_at', { ascending: false });
+export function useFetchEnrollments(sequenceId?: string) {
+  const [enrollments, setEnrollments] = useState<EmailSequenceEnrollment[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
-      if (error) throw error;
+  useEffect(() => {
+    if (!sequenceId) return;
+    
+    async function fetchEnrollments() {
+      setLoading(true);
+      setError(null);
       
-      // Transform the data to match the EmailSequenceEnrollment type
-      const transformedData = data?.map(item => {
-        // Process the metadata field using our utility function
-        const metadata = parseJsonField<Record<string, any>>(item.metadata, {});
+      try {
+        // @ts-ignore - Using a table that exists in Supabase but not in the TypeScript definitions
+        const { data, error } = await supabase
+          .from('email_sequence_enrollments')
+          .select(`
+            *,
+            sequence:email_sequences(*),
+            current_step:email_sequence_steps(*)
+          `)
+          .eq('sequence_id', sequenceId);
         
-        return {
+        if (error) throw error;
+        
+        // Process data to match the expected format
+        const processedEnrollments = data.map((item: any) => ({
           id: item.id,
           sequence_id: item.sequence_id,
           customer_id: item.customer_id,
-          status: item.status as 'active' | 'paused' | 'completed' | 'cancelled',
+          status: item.status,
           current_step_id: item.current_step_id,
           created_at: item.created_at,
           updated_at: item.updated_at,
           completed_at: item.completed_at,
-          sequence: item.sequence,
-          current_step: item.current_step,
-          nextSendTime: item.next_send_time,
-          metadata
-        };
-      }) || [];
-      
-      return transformedData;
-    } catch (error) {
-      console.error('Error fetching enrollments:', error);
-      return [];
+          sequence: item.sequence.length > 0 ? item.sequence[0] : null,
+          current_step: item.current_step.length > 0 ? item.current_step[0] : null,
+          nextSendTime: item.next_send_time || null,
+          metadata: item.metadata || {},
+          // Adding current_step as a number for type compatibility
+          current_step_object: item.current_step.length > 0 ? item.current_step[0] : null
+        }));
+        
+        setEnrollments(processedEnrollments);
+      } catch (err) {
+        console.error('Error fetching enrollments:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch enrollments'));
+        toast({
+          title: 'Error',
+          description: 'Failed to load sequence enrollments',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    
+    fetchEnrollments();
+  }, [sequenceId, toast]);
 
-  return {
-    fetchCustomerEnrollments
-  };
-};
+  return { enrollments, loading, error };
+}

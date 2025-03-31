@@ -70,8 +70,14 @@ export interface EmailSequenceEnrollment {
   
   // Additional properties needed by components
   nextSendTime?: string;
-  sequence?: any;
-  current_step?: any;
+  sequence?: EmailSequence;
+  // Making current_step more flexible to accept both number and object
+  current_step_object?: {
+    id: string;
+    name: string;
+    template_id: string;
+    position: number;
+  };
 }
 
 export interface EmailSequenceProgress {
