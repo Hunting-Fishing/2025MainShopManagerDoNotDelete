@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { EmailTemplate, EmailCategory, EmailTemplateVariable } from '@/types/email';
+import { parseJsonField } from './utils';
 
 export const emailTemplateService = {
   /**
@@ -26,8 +27,7 @@ export const emailTemplateService = {
       // Map the database records to the EmailTemplate type
       return (data || []).map(template => {
         // Parse variables from JSON
-        const variables = template.variables ? 
-          (Array.isArray(template.variables) ? template.variables : []) : [];
+        const variables = parseJsonField<EmailTemplateVariable[]>(template.variables, []);
         
         return {
           id: template.id,
@@ -66,8 +66,7 @@ export const emailTemplateService = {
       if (!data) return null;
       
       // Parse variables from JSON
-      const variables = data.variables ? 
-        (Array.isArray(data.variables) ? data.variables : []) : [];
+      const variables = parseJsonField<EmailTemplateVariable[]>(data.variables, []);
       
       // Map the database record to the EmailTemplate type
       return {
@@ -95,6 +94,7 @@ export const emailTemplateService = {
    */
   async createTemplate(template: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
     try {
+      // Convert any complex objects to JSON strings for database storage
       const { data, error } = await supabase
         .from('email_templates')
         .insert({
@@ -103,7 +103,7 @@ export const emailTemplateService = {
           description: template.description,
           category: template.category,
           content: template.content,
-          variables: template.variables
+          variables: JSON.stringify(template.variables || [])
         })
         .select()
         .single();
@@ -111,8 +111,7 @@ export const emailTemplateService = {
       if (error) throw error;
       
       // Parse variables from JSON
-      const variables = data.variables ? 
-        (Array.isArray(data.variables) ? data.variables : []) : [];
+      const variables = parseJsonField<EmailTemplateVariable[]>(data.variables, []);
       
       // Map the database record to the EmailTemplate type
       return {
@@ -149,7 +148,7 @@ export const emailTemplateService = {
           description: template.description,
           category: template.category,
           content: template.content,
-          variables: template.variables
+          variables: JSON.stringify(template.variables || [])
         })
         .eq('id', id)
         .select()
@@ -158,8 +157,7 @@ export const emailTemplateService = {
       if (error) throw error;
       
       // Parse variables from JSON
-      const variables = data.variables ? 
-        (Array.isArray(data.variables) ? data.variables : []) : [];
+      const variables = parseJsonField<EmailTemplateVariable[]>(data.variables, []);
       
       // Map the database record to the EmailTemplate type
       return {

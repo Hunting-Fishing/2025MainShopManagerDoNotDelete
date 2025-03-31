@@ -1,87 +1,70 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { EmailSequenceEnrollment } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
-import { emailService } from '@/services/email/emailService';
+import { emailService } from '@/services/email';
 
-export interface EnrollCustomerParams {
-  customerId: string;
-  sequenceId: string;
-  personalizations?: Record<string, string>;
-  segmentData?: Record<string, string>;
-  metadata?: Record<string, any>;
-}
-
-export const useEnrollCustomer = (onEnrollmentComplete?: (customerId: string) => void) => {
-  const [loading, setLoading] = useState(false);
+/**
+ * Hook for enrolling customers in email sequences
+ */
+export const useEnrollCustomer = (
+  refreshEnrollments: (customerId: string) => Promise<EmailSequenceEnrollment[]>
+) => {
+  const [enrolling, setEnrolling] = useState(false);
   const { toast } = useToast();
-
-  const enrollCustomer = async ({
-    customerId,
-    sequenceId,
-    personalizations = {},
-    segmentData = {},
-    metadata = {}
-  }: EnrollCustomerParams) => {
-    setLoading(true);
+  
+  /**
+   * Enrolls a customer in a sequence
+   * @param sequenceId The sequence ID to enroll in
+   * @param customerId The customer ID to enroll
+   * @returns Promise<boolean> indicating success or failure
+   */
+  const enrollCustomer = async (sequenceId: string, customerId: string): Promise<boolean> => {
+    setEnrolling(true);
     
     try {
-      // Create the enrollment record
+      // Create enrollment record in the database
       const { data, error } = await supabase
         .from('email_sequence_enrollments')
         .insert({
           sequence_id: sequenceId,
           customer_id: customerId,
           status: 'active',
-          next_send_time: new Date().toISOString(),
-          metadata: {
-            personalizations,
-            segmentData,
-            ...metadata
-          }
+          created_at: new Date().toISOString()
         })
         .select()
         .single();
-        
-      if (error) {
-        throw error;
-      }
       
-      // Show success message
+      if (error) throw error;
+      
+      // Refresh the enrollments list
+      await refreshEnrollments(customerId);
+      
+      // Trigger the sequence processing to start sending emails
+      await emailService.triggerSequenceProcessing(sequenceId);
+      
       toast({
-        title: 'Customer Enrolled',
-        description: 'The customer has been enrolled in the sequence successfully.',
+        title: "Success",
+        description: "Customer successfully enrolled in the sequence",
       });
       
-      // Trigger immediate processing of the sequence
-      try {
-        await emailService.triggerSequenceProcessing(sequenceId);
-      } catch (processError) {
-        console.error('Error triggering sequence processing:', processError);
-        // Non-critical error, don't throw
-      }
-      
-      // Call the success callback if provided
-      if (onEnrollmentComplete) {
-        onEnrollmentComplete(customerId);
-      }
-      
-      return data;
+      return true;
     } catch (error) {
-      console.error('Error enrolling customer:', error);
+      console.error("Error enrolling customer:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to enroll customer in sequence',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to enroll customer in sequence",
+        variant: "destructive",
       });
-      return null;
+      return false;
     } finally {
-      setLoading(false);
+      setEnrolling(false);
     }
   };
-
+  
   return {
     enrollCustomer,
-    loading
+    enrolling
   };
 };
