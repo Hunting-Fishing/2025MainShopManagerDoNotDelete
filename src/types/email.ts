@@ -1,3 +1,4 @@
+
 export interface Email {
   id: string;
   subject: string;
@@ -18,8 +19,29 @@ export interface EmailTemplate {
   name: string;
   subject: string;
   body: string;
+  description?: string;
+  category?: EmailCategory;
+  content?: string;
+  variables?: EmailTemplateVariable[];
   created_at: string;
   updated_at: string;
+}
+
+export type EmailCategory = 'marketing' | 'transactional' | 'reminder' | 'welcome' | 'follow_up' | 'survey' | 'custom';
+
+export interface EmailTemplateVariable {
+  id: string;
+  name: string;
+  description?: string;
+  default_value?: string;
+}
+
+export interface EmailTemplatePreview {
+  id: string;
+  name: string;
+  subject: string;
+  category?: EmailCategory;
+  created_at: string;
 }
 
 export interface EmailCampaign {
@@ -29,11 +51,39 @@ export interface EmailCampaign {
   body: string;
   segment_id?: string;
   template_id?: string;
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'completed' | 'cancelled';
+  status: EmailCampaignStatus;
   scheduled_at?: string;
   sent_at?: string;
   created_at: string;
   updated_at: string;
+  content?: string;
+  recipientIds?: string[];
+  personalizations?: Record<string, any>;
+  metadata?: Record<string, any>;
+  abTest?: EmailABTest;
+  totalRecipients?: number;
+  opened?: number;
+  clicked?: number;
+  bounced?: number;
+  complained?: number;
+  unsubscribed?: number;
+  sentDate?: string;
+  scheduledDate?: string;
+}
+
+export type EmailCampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'completed' | 'cancelled';
+
+export interface EmailCampaignPreview {
+  id: string;
+  name: string;
+  subject: string;
+  status: EmailCampaignStatus;
+  scheduled_at?: string;
+  sent_at?: string;
+  created_at: string;
+  totalRecipients: number;
+  opened: number;
+  clicked: number;
 }
 
 export interface EmailSequence {
@@ -43,6 +93,11 @@ export interface EmailSequence {
   steps: EmailSequenceStep[];
   created_at: string;
   updated_at: string;
+  triggerType?: 'manual' | 'event' | 'schedule';
+  triggerEvent?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface EmailSequenceStep {
@@ -54,6 +109,17 @@ export interface EmailSequenceStep {
   email_template_id?: string;
   created_at: string;
   updated_at: string;
+  name?: string;
+  templateId?: string;
+  delayHours?: number;
+  delayType?: 'fixed' | 'business_days';
+  position?: number;
+  isActive?: boolean;
+  condition?: {
+    type: 'event' | 'property';
+    value: any;
+    operator: '=' | '!=' | '>' | '<' | '>=' | '<=';
+  };
 }
 
 export interface EmailSequenceEnrollment {
@@ -65,6 +131,13 @@ export interface EmailSequenceEnrollment {
   created_at: string;
   updated_at: string;
   completed_at?: string;
+  sequenceId?: string;
+  customerId?: string;
+  currentStepId?: string;
+  startedAt?: string;
+  completedAt?: string;
+  nextSendTime?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface EmailSegment {
@@ -115,6 +188,35 @@ export interface EmailCampaignAnalytics {
   updated_at: string;
 }
 
+export interface EmailABTest {
+  enabled: boolean;
+  variants: EmailABTestVariant[];
+  winnerCriteria: 'open_rate' | 'click_rate';
+  winnerSelectionDate: string | null;
+  winnerId: string | null;
+}
+
+export interface EmailABTestVariant {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  recipientPercentage: number;
+  recipients: number;
+  opened: number;
+  clicked: number;
+}
+
+export interface EmailABTestResult {
+  testId: string;
+  campaignId: string;
+  variants: EmailABTestVariant[];
+  winner: EmailABTestVariant | null;
+  winnerSelectedAt: string | null;
+  winnerCriteria: 'open_rate' | 'click_rate';
+  isComplete: boolean;
+}
+
 export interface EmailSequenceAnalytics {
   id: string;
   sequenceId: string;
@@ -124,6 +226,13 @@ export interface EmailSequenceAnalytics {
   conversionRate: number;
   averageTimeToComplete: number;
   updatedAt: string;
+  sequence_id?: string;
+  total_enrollments?: number;
+  active_enrollments?: number;
+  completed_enrollments?: number;
+  conversion_rate?: number;
+  average_time_to_complete?: number;
+  updated_at?: string;
 }
 
 export interface CustomerValuePrediction {

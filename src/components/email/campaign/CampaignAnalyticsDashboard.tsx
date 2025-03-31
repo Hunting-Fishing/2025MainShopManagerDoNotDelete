@@ -92,10 +92,10 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
   ];
 
   const comparisonData = [
-    { name: 'Open Rate', value: analytics.openRate * 100, avg: 22.5 },
-    { name: 'Click Rate', value: analytics.clickRate * 100, avg: 3.2 },
-    { name: 'Click-to-Open', value: analytics.clickToOpenRate * 100, avg: 14.8 },
-    { name: 'Unsubscribe', value: analytics.unsubscribeRate * 100, avg: 0.2 },
+    { name: 'Open Rate', value: analytics.open_rate * 100, avg: 22.5 },
+    { name: 'Click Rate', value: analytics.click_rate * 100, avg: 3.2 },
+    { name: 'Click-to-Open', value: analytics.click_to_open_rate * 100, avg: 14.8 },
+    { name: 'Unsubscribe', value: analytics.unsubscribe_rate * 100, avg: 0.2 },
   ];
 
   const renderPercentageChange = (value: number) => {
@@ -169,7 +169,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Open Rate</p>
-                    <p className="text-2xl font-bold">{(analytics.openRate * 100).toFixed(1)}%</p>
+                    <p className="text-2xl font-bold">{(analytics.open_rate * 100).toFixed(1)}%</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
                     <Mail className="h-6 w-6 text-blue-600" />
@@ -187,7 +187,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Click Rate</p>
-                    <p className="text-2xl font-bold">{(analytics.clickRate * 100).toFixed(1)}%</p>
+                    <p className="text-2xl font-bold">{(analytics.click_rate * 100).toFixed(1)}%</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
                     <MousePointerClick className="h-6 w-6 text-purple-600" />
@@ -205,7 +205,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Bounce Rate</p>
-                    <p className="text-2xl font-bold">{(analytics.bouncedRate * 100).toFixed(1)}%</p>
+                    <p className="text-2xl font-bold">{(analytics.bounced_rate * 100).toFixed(1)}%</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
                     <AlertTriangle className="h-6 w-6 text-red-600" />
@@ -223,7 +223,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Unsubscribe Rate</p>
-                    <p className="text-2xl font-bold">{(analytics.unsubscribeRate * 100).toFixed(1)}%</p>
+                    <p className="text-2xl font-bold">{(analytics.unsubscribe_rate * 100).toFixed(1)}%</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
                     <UserX className="h-6 w-6 text-amber-600" />
@@ -262,7 +262,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                       <span className="text-sm text-muted-foreground">Bounced</span>
                       <div className="flex items-center">
                         <span className="font-medium mr-2">{analytics.bounced.toLocaleString()}</span>
-                        <Badge variant="outline">{(analytics.bouncedRate * 100).toFixed(1)}%</Badge>
+                        <Badge variant="outline">{(analytics.bounced_rate * 100).toFixed(1)}%</Badge>
                       </div>
                     </div>
                   </div>
@@ -275,19 +275,19 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                       <span className="text-sm text-muted-foreground">Opens</span>
                       <div className="flex items-center">
                         <span className="font-medium mr-2">{analytics.opened.toLocaleString()}</span>
-                        <Badge variant="outline">{(analytics.openRate * 100).toFixed(1)}%</Badge>
+                        <Badge variant="outline">{(analytics.open_rate * 100).toFixed(1)}%</Badge>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Clicks</span>
                       <div className="flex items-center">
                         <span className="font-medium mr-2">{analytics.clicked.toLocaleString()}</span>
-                        <Badge variant="outline">{(analytics.clickRate * 100).toFixed(1)}%</Badge>
+                        <Badge variant="outline">{(analytics.click_rate * 100).toFixed(1)}%</Badge>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Click-to-Open</span>
-                      <Badge variant="outline">{(analytics.clickToOpenRate * 100).toFixed(1)}%</Badge>
+                      <Badge variant="outline">{(analytics.click_to_open_rate * 100).toFixed(1)}%</Badge>
                     </div>
                   </div>
                 </div>
@@ -299,7 +299,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                       <span className="text-sm text-muted-foreground">Unsubscribes</span>
                       <div className="flex items-center">
                         <span className="font-medium mr-2">{analytics.unsubscribed.toLocaleString()}</span>
-                        <Badge variant="outline">{(analytics.unsubscribeRate * 100).toFixed(1)}%</Badge>
+                        <Badge variant="outline">{(analytics.unsubscribe_rate * 100).toFixed(1)}%</Badge>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
@@ -307,7 +307,9 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                       <div className="flex items-center">
                         <span className="font-medium mr-2">{analytics.complained.toLocaleString()}</span>
                         <Badge variant="outline">
-                          {analytics.sent > 0 ? ((analytics.complained / analytics.sent) * 100).toFixed(2) : '0.00'}%
+                          {analytics.complained > 0 && analytics.sent > 0
+                            ? ((analytics.complained / analytics.sent) * 100).toFixed(1)
+                            : "0.0"}%
                         </Badge>
                       </div>
                     </div>
@@ -438,7 +440,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                 <div className="relative h-40 w-40">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-4xl font-bold">{(analytics.clickToOpenRate * 100).toFixed(1)}%</p>
+                      <p className="text-4xl font-bold">{(analytics.click_to_open_rate * 100).toFixed(1)}%</p>
                       <p className="text-sm text-muted-foreground">Click-to-Open Rate</p>
                     </div>
                   </div>
@@ -458,7 +460,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                       fill="none"
                       stroke={COLORS.primary}
                       strokeWidth="10"
-                      strokeDasharray={`${analytics.clickToOpenRate * 283} 283`}
+                      strokeDasharray={`${analytics.click_to_open_rate * 283} 283`}
                       strokeLinecap="round"
                       transform="rotate(-90 50 50)"
                     />
@@ -469,7 +471,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                     {analytics.clicked} clicks from {analytics.opened} opens
                   </p>
                   <p className="text-sm font-medium mt-2">
-                    {analytics.clickToOpenRate > 0.15 ? (
+                    {analytics.click_to_open_rate > 0.15 ? (
                       <span className="text-green-600 flex items-center justify-center">
                         <CheckCircle2 className="h-4 w-4 mr-1" />
                         Good engagement rate
@@ -502,13 +504,13 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                     <div className="flex items-end gap-2">
                       <p className="text-3xl font-bold">{analytics.opened.toLocaleString()}</p>
                       <p className="text-sm text-muted-foreground mb-1">
-                        ({(analytics.openRate * 100).toFixed(1)}%)
+                        ({(analytics.open_rate * 100).toFixed(1)}%)
                       </p>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
                         className="bg-blue-600 h-2.5 rounded-full" 
-                        style={{ width: `${analytics.openRate * 100}%` }}
+                        style={{ width: `${analytics.open_rate * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -518,13 +520,13 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                     <div className="flex items-end gap-2">
                       <p className="text-3xl font-bold">{analytics.clicked.toLocaleString()}</p>
                       <p className="text-sm text-muted-foreground mb-1">
-                        ({(analytics.clickRate * 100).toFixed(1)}%)
+                        ({(analytics.click_rate * 100).toFixed(1)}%)
                       </p>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
                         className="bg-purple-600 h-2.5 rounded-full" 
-                        style={{ width: `${analytics.clickRate * 100}%` }}
+                        style={{ width: `${analytics.click_rate * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -645,7 +647,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <p className="text-sm text-muted-foreground mb-1">Bounce Rate</p>
-                    <p className="text-2xl font-bold">{(analytics.bouncedRate * 100).toFixed(1)}%</p>
+                    <p className="text-2xl font-bold">{(analytics.bounced_rate * 100).toFixed(1)}%</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {analytics.bounced} of {analytics.sent} emails
                     </p>
@@ -660,7 +662,7 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                 </div>
 
                 <div className="flex-1 flex items-center justify-center">
-                  {analytics.bouncedRate > 0.05 ? (
+                  {analytics.bounced_rate > 0.05 ? (
                     <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200 max-w-md">
                       <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
                       <h3 className="font-medium text-red-800">High Bounce Rate Detected</h3>
@@ -722,13 +724,13 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                     <div className="flex items-end gap-2">
                       <p className="text-3xl font-bold">{analytics.bounced.toLocaleString()}</p>
                       <p className="text-sm text-muted-foreground mb-1">
-                        ({(analytics.bouncedRate * 100).toFixed(1)}%)
+                        ({(analytics.bounced_rate * 100).toFixed(1)}%)
                       </p>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
                         className="bg-red-600 h-2.5 rounded-full" 
-                        style={{ width: `${analytics.bouncedRate * 100}%` }}
+                        style={{ width: `${analytics.bounced_rate * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -744,13 +746,13 @@ const CampaignAnalyticsDashboard: React.FC<CampaignAnalyticsDashboardProps> = ({
                       <div className="flex items-end gap-2">
                         <p className="text-3xl font-bold">{analytics.unsubscribed.toLocaleString()}</p>
                         <p className="text-sm text-muted-foreground mb-1">
-                          ({(analytics.unsubscribeRate * 100).toFixed(2)}%)
+                          ({(analytics.unsubscribe_rate * 100).toFixed(2)}%)
                         </p>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
                         <div 
                           className="bg-amber-600 h-2.5 rounded-full" 
-                          style={{ width: `${analytics.unsubscribeRate * 100}%` }}
+                          style={{ width: `${analytics.unsubscribe_rate * 100}%` }}
                         ></div>
                       </div>
                     </div>

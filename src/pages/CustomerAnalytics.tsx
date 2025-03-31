@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +17,7 @@ import {
 import { getCustomersWithSegments } from '@/utils/analytics/customerSegmentation';
 import { getAverageCustomerLifetimeValue } from '@/utils/analytics/customerLifetimeValue';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Cell, Legend, ResponsiveContainer } from 'recharts';
+import { Tooltip } from 'recharts';
 
 // Define chart data interface
 interface CLVPredictionData {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { emailService } from "@/services/email/emailService";
 import { EmailCampaign, EmailCampaignPreview } from "@/types/email";
@@ -19,12 +18,11 @@ export const useEmailCampaigns = () => {
     setLoading(true);
     try {
       const data = await emailService.getCampaigns();
-      // Fix the type error by checking if data is an array
       if (Array.isArray(data)) {
         setCampaigns(data);
       } else {
         console.error("Expected an array of campaigns but received a single campaign");
-        setCampaigns([]); // Set to empty array as fallback
+        setCampaigns([]);
       }
     } catch (error) {
       console.error("Error fetching email campaigns:", error);
@@ -41,9 +39,7 @@ export const useEmailCampaigns = () => {
   const fetchCampaignById = async (id: string) => {
     setCampaignLoading(true);
     try {
-      const campaign = await emailService.getCampaigns(id); // Use getCampaigns with ID parameter
-      
-      // Need to check if the result is a single campaign and not an array
+      const campaign = await emailService.getCampaigns(id);
       if (!Array.isArray(campaign)) {
         setCurrentCampaign(campaign as EmailCampaign);
         return campaign;
@@ -66,10 +62,8 @@ export const useEmailCampaigns = () => {
 
   const createCampaign = async (campaign: Partial<EmailCampaign>) => {
     try {
-      // Using a more generic method since createCampaign doesn't exist
-      const newCampaign = await emailService.scheduleCampaign(campaign.id || "", campaign.scheduledDate || "");
+      const newCampaign = await emailService.scheduleCampaign(campaign.id || "", campaign.scheduled_at || "");
       if (newCampaign) {
-        // Refresh campaigns after creation
         fetchCampaigns();
         toast({
           title: "Success",
@@ -90,10 +84,7 @@ export const useEmailCampaigns = () => {
 
   const updateCampaign = async (id: string, campaign: Partial<EmailCampaign>) => {
     try {
-      // Using pauseCampaign since updateCampaign doesn't exist
-      // This is a workaround - in a real app, you'd implement a proper update method
       const updated = await emailService.pauseCampaign(id);
-      
       if (updated) {
         setCampaigns((prev) => 
           prev.map((c) => c.id === id ? { ...c, ...campaign } : c)
@@ -123,7 +114,6 @@ export const useEmailCampaigns = () => {
 
   const deleteCampaign = async (id: string) => {
     try {
-      // Using cancelCampaign since deleteCampaign doesn't exist
       await emailService.cancelCampaign(id);
       setCampaigns((prev) => prev.filter((c) => c.id !== id));
       if (currentCampaign && currentCampaign.id === id) {
@@ -148,7 +138,7 @@ export const useEmailCampaigns = () => {
   const scheduleCampaign = async (id: string, date: string) => {
     try {
       await emailService.scheduleCampaign(id, date);
-      fetchCampaigns(); // Refresh list to get updated status
+      fetchCampaigns();
       toast({
         title: "Success",
         description: "Email campaign scheduled successfully",
@@ -168,7 +158,7 @@ export const useEmailCampaigns = () => {
   const sendCampaignNow = async (id: string) => {
     try {
       await emailService.sendCampaignNow(id);
-      fetchCampaigns(); // Refresh list to get updated status
+      fetchCampaigns();
       toast({
         title: "Success",
         description: "Email campaign started successfully",
@@ -188,7 +178,7 @@ export const useEmailCampaigns = () => {
   const pauseCampaign = async (id: string) => {
     try {
       await emailService.pauseCampaign(id);
-      fetchCampaigns(); // Refresh list to get updated status
+      fetchCampaigns();
       toast({
         title: "Success",
         description: "Email campaign paused successfully",
@@ -208,7 +198,7 @@ export const useEmailCampaigns = () => {
   const cancelCampaign = async (id: string) => {
     try {
       await emailService.cancelCampaign(id);
-      fetchCampaigns(); // Refresh list to get updated status
+      fetchCampaigns();
       toast({
         title: "Success",
         description: "Email campaign cancelled successfully",
