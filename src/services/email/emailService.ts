@@ -977,4 +977,10 @@ class EmailService {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error sending
+      console.error("Error sending test email:", error);
+      return false;
+    }
+  }
+}
+
+export const emailService = new EmailService();
