@@ -1,192 +1,159 @@
+export interface Email {
+  id: string;
+  subject: string;
+  body: string;
+  from: string;
+  to: string;
+  cc?: string;
+  bcc?: string;
+  sent_at?: string;
+  status: 'sent' | 'draft' | 'failed';
+  attachments?: string[];
+  created_at: string;
+  updated_at: string;
+}
 
-export type EmailTemplateVariable = {
-  name: string;
-  defaultValue: string;
-  description: string;
-};
-
-export type EmailTemplatePreview = {
+export interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
-  description: string;
-  category: EmailCategory;
-  createdAt: string;
-  updatedAt: string;
-};
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
 
-export type EmailTemplate = EmailTemplatePreview & {
-  content: string;
-  variables: EmailTemplateVariable[];
-  isArchived: boolean;
-};
-
-export type EmailCategory = 
-  | 'transactional' 
-  | 'marketing' 
-  | 'reminder' 
-  | 'welcome' 
-  | 'follow_up' 
-  | 'survey' 
-  | 'custom';
-
-export type EmailCampaignStatus = 
-  | 'draft'
-  | 'scheduled' 
-  | 'sending' 
-  | 'sent' 
-  | 'paused' 
-  | 'cancelled';
-
-export type EmailCampaignPreview = {
+export interface EmailCampaign {
   id: string;
   name: string;
   subject: string;
-  status: EmailCampaignStatus;
-  scheduledDate: string | null;
-  sentDate: string | null;
-  totalRecipients: number;
-  opened: number;
-  clicked: number;
-  createdAt: string;
-  updatedAt: string;
-};
+  body: string;
+  segment_id?: string;
+  template_id?: string;
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'completed' | 'cancelled';
+  scheduled_at?: string;
+  sent_at?: string;
+  created_at: string;
+  updated_at: string;
+}
 
-export type EmailCampaign = EmailCampaignPreview & {
-  templateId: string;
-  content: string;
-  segmentIds: string[];
-  recipientIds: string[];
-  personalizations: Record<string, string>[];
-  metadata: Record<string, any>;
-  abTest: EmailABTest | null;
-};
-
-export type EmailABTest = {
-  enabled: boolean;
-  variants: EmailABTestVariant[];
-  winnerCriteria: 'open_rate' | 'click_rate';
-  winnerSelectionDate: string | null;
-  winnerId: string | null;
-};
-
-export type EmailABTestVariant = {
+export interface EmailSequence {
   id: string;
   name: string;
-  subject: string;
-  content: string;
-  recipientPercentage: number;
-  recipients: number;
-  opened: number;
-  clicked: number;
-};
-
-export type EmailSequence = {
-  id: string;
-  name: string;
-  description: string;
-  triggerType: 'manual' | 'event' | 'schedule';
-  triggerEvent?: string;
+  description?: string;
   steps: EmailSequenceStep[];
-  isActive: boolean;
-  createdBy?: string;
-  createdAt: string;
-  updatedAt: string;
-};
+  created_at: string;
+  updated_at: string;
+}
 
-export type EmailSequenceStep = {
+export interface EmailSequenceStep {
+  id: string;
+  sequence_id: string;
+  type: 'delay' | 'email';
+  order: number;
+  delay_duration?: string;
+  email_template_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailSequenceEnrollment {
+  id: string;
+  sequence_id: string;
+  customer_id: string;
+  status: 'active' | 'paused' | 'completed' | 'cancelled';
+  current_step_id?: string;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+}
+
+export interface EmailSegment {
   id: string;
   name: string;
-  templateId: string;
-  delayHours: number;
-  delayType: 'fixed' | 'business_days';
-  position: number;
-  isActive: boolean;
-  condition?: {
-    type: 'event' | 'property';
-    value: string;
-    operator: '=' | '!=' | '>' | '<' | '>=' | '<=';
-  };
-};
+  description?: string;
+  criteria: EmailSegmentCriteria[];
+  created_at: string;
+  updated_at: string;
+}
 
-export type EmailSequenceEnrollment = {
+export interface EmailSegmentCriteria {
   id: string;
-  sequenceId: string;
-  customerId: string;
-  currentStepId?: string;
-  status: 'active' | 'completed' | 'paused' | 'cancelled';
-  startedAt: string;
-  completedAt?: string;
-  nextSendTime?: string;
-  metadata?: Record<string, any>;
-};
+  segment_id: string;
+  field: string;
+  operator: string;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}
 
-export type EmailSequenceAnalytics = {
-  id: string;
-  sequenceId: string;
-  totalEnrollments: number;
-  activeEnrollments: number;
-  completedEnrollments: number;
-  conversionRate?: number;
-  averageTimeToComplete?: number;
-  updatedAt: string;
-};
-
-export type EmailCampaignTimelinePoint = {
+export interface EmailCampaignTimelinePoint {
   date: string;
   opens: number;
   clicks: number;
   unsubscribes?: number;
   complaints?: number;
-};
+}
 
-export type EmailCampaignPerformanceMetrics = {
-  openRate: number;
-  clickRate: number;
-  clickToOpenRate: number;
-  conversionRate?: number;
-  revenuePerEmail?: number;
-};
-
-export type EmailABTestResult = {
-  testId: string;
-  campaignId: string;
-  variants: {
-    id: string;
-    name: string;
-    metrics: EmailCampaignPerformanceMetrics;
-    improvement?: number; // Percentage improvement over control
-  }[];
-  winningVariantId?: string;
-  confidenceLevel?: number; // Statistical confidence in the result
-};
-
-export type EmailCampaignAnalytics = {
-  campaignId: string;
+export interface EmailCampaignAnalytics {
+  id: string;
   name: string;
+  campaign_id: string;
   sent: number;
   delivered: number;
-  bounced: number;
   opened: number;
   clicked: number;
-  unsubscribed: number;
+  bounced: number;
   complained: number;
-  openRate: number;
-  clickRate: number;
-  clickToOpenRate: number;
-  unsubscribeRate: number;
-  bouncedRate: number;
+  unsubscribed: number;
+  open_rate: number;
+  click_rate: number;
+  click_to_open_rate: number;
+  bounced_rate: number;
+  unsubscribe_rate: number;
   timeline: EmailCampaignTimelinePoint[];
-};
+  created_at: string;
+  updated_at: string;
+}
 
-export type EmailRecipient = {
+export interface EmailSequenceAnalytics {
   id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  customFields: Record<string, any>;
-  segmentIds: string[];
-  isUnsubscribed: boolean;
-  bounceStatus: 'none' | 'soft' | 'hard';
-  lastEngagement: string | null;
-};
+  sequenceId: string;
+  totalEnrollments: number;
+  activeEnrollments: number;
+  completedEnrollments: number;
+  conversionRate: number;
+  averageTimeToComplete: number;
+  updatedAt: string;
+}
+
+export interface CustomerValuePrediction {
+  currentValue: number;
+  predictedValue: number;
+  growthRate: number;
+  timeframe: number; // months
+  recommendedServices: string[];
+  nextContactTime: string;
+}
+
+export interface CustomerSegmentAnalytics {
+  segmentId: string;
+  segmentName: string;
+  customerCount: number;
+  averageValue: number;
+  retentionRate: number;
+  growthRate: number;
+  serviceFrequency: number;
+}
+
+export interface RetentionAnalytics {
+  overallRate: number;
+  bySegment: Record<string, number>;
+  byTimeframe: {
+    month: string;
+    rate: number;
+  }[];
+  riskFactors: {
+    factor: string;
+    impact: number;
+  }[];
+}
