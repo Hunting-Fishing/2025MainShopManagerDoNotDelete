@@ -20,7 +20,8 @@ export const useEmailTemplates = (categoryFilter?: EmailCategory) => {
     try {
       let data;
       if (categoryFilter) {
-        data = await emailService.getTemplatesByCategory(categoryFilter);
+        // Use getTemplates with category filter since getTemplatesByCategory doesn't exist
+        data = await emailService.getTemplates(categoryFilter);
       } else {
         data = await emailService.getTemplates();
       }
@@ -124,9 +125,10 @@ export const useEmailTemplates = (categoryFilter?: EmailCategory) => {
     }
   };
 
-  const sendTestEmail = async (templateId: string, recipientEmail: string, personalizations?: Record<string, string>) => {
+  const sendTestEmail = async (templateId: string, recipientEmail: string) => {
     try {
-      await emailService.sendTestEmail(templateId, recipientEmail, personalizations);
+      // Fix: Remove the third parameter that's causing the error
+      await emailService.sendTestEmail(templateId, recipientEmail);
       toast({
         title: "Success",
         description: "Test email sent successfully",

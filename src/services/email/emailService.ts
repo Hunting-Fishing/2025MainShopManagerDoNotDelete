@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import {
   EmailTemplate,
@@ -337,16 +336,37 @@ export const emailService = {
   },
   
   // Campaigns
-  getCampaigns: async (status?: EmailCampaignStatus): Promise<EmailCampaignPreview[]> => {
+  getCampaigns: async (campaignId?: string): Promise<EmailCampaignPreview[] | EmailCampaign> => {
     try {
       console.log("Fetching email campaigns...");
       
-      // In a real app, this would make a request to your backend
-      let campaigns = [...mockCampaigns];
-      
-      if (status) {
-        campaigns = campaigns.filter(campaign => campaign.status === status);
+      // If ID provided, return a single campaign
+      if (campaignId) {
+        const campaign = mockCampaigns.find(c => c.id === campaignId);
+        
+        if (!campaign) {
+          throw new Error(`Campaign with ID ${campaignId} not found`);
+        }
+        
+        // In a real app, we'd return the full campaign details
+        // Here we just mock it by adding the minimal fields needed for EmailCampaign type
+        const fullCampaign: EmailCampaign = {
+          ...campaign,
+          templateId: '1', // Mock template ID
+          content: '<p>Campaign content</p>',
+          segmentIds: [],
+          recipientIds: [],
+          personalizations: [],
+          metadata: {},
+          abTest: null
+        };
+        
+        console.log(`Found campaign: ${campaign.name}`);
+        return fullCampaign;
       }
+      
+      // Otherwise return all campaigns
+      let campaigns = [...mockCampaigns];
       
       console.log(`Found ${campaigns.length} campaigns`);
       return campaigns;
@@ -558,13 +578,19 @@ export const emailService = {
       console.log("Creating new email sequence");
       
       // In a real app, this would make a request to your backend
+      const steps = sequence.steps || [];
+      const typedSteps: EmailSequenceStep[] = steps.map(step => ({
+        ...step,
+        delayType: (step.delayType as "fixed" | "business_days") || "fixed"
+      }));
+
       const newSequence: EmailSequence = {
         id: `sequence_${Date.now()}`,
         name: sequence.name || 'Untitled Sequence',
         description: sequence.description || '',
         triggerType: sequence.triggerType || 'manual',
         triggerEvent: sequence.triggerType === 'event' ? sequence.triggerEvent : undefined,
-        steps: sequence.steps || [],
+        steps: typedSteps,
         isActive: sequence.isActive || false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -592,11 +618,15 @@ export const emailService = {
         throw new Error(`Sequence with ID ${id} not found`);
       }
       
-      // Update sequence
+      // Update sequence ensuring correct types
       const updatedSequence: EmailSequence = {
         ...mockSequences[index],
         ...sequence,
-        triggerType: sequence.triggerType || mockSequences[index].triggerType,
+        triggerType: (sequence.triggerType as "manual" | "event" | "schedule") || mockSequences[index].triggerType,
+        steps: sequence.steps ? sequence.steps.map(step => ({
+          ...step,
+          delayType: (step.delayType as "fixed" | "business_days") || "fixed"
+        })) : mockSequences[index].steps,
         updatedAt: new Date().toISOString()
       };
       
@@ -666,37 +696,7 @@ export const emailService = {
   enrollCustomerInSequence: async (sequenceId: string, customerId: string): Promise<boolean> => {
     try {
       console.log(`Enrolling customer ${customerId} in sequence ${sequenceId}`);
-      
-      // In a real app, this would make a request to your backend or directly use Supabase
-      // Here we would:
-      // 1. Verify the sequence exists
-      // 2. Verify the customer exists
-      // 3. Create an enrollment record
-      // 4. Possibly trigger the first email if delay is 0
-      
-      // For now, just simulate success
-      // We'd use rpc for real logic in Supabase
-      /*
-      await supabase.rpc('increment_sequence_enrollments', {
-        sequence_id: sequenceId
-      });
-      
-      const { data, error } = await supabase
-        .from('email_sequence_enrollments')
-        .insert({
-          sequence_id: sequenceId,
-          customer_id: customerId,
-          status: 'active',
-          started_at: new Date().toISOString(),
-          metadata: {}, // Any additional data
-        });
-      
-      if (error) {
-        throw error;
-      }
-      */
-      
-      console.log(`Successfully enrolled customer in sequence`);
+      // Mock implementation
       return true;
     } catch (error) {
       console.error("Error enrolling customer in sequence:", error);
@@ -707,36 +707,7 @@ export const emailService = {
   pauseCustomerEnrollment: async (enrollmentId: string): Promise<boolean> => {
     try {
       console.log(`Pausing enrollment ${enrollmentId}`);
-      
-      // In a real app, this would update the enrollment status
-      /*
-      await supabase.rpc('decrement_active_enrollments', {
-        sequence_id: sequenceId
-      });
-      
-      await supabase.rpc('decrement_completed_enrollments', {
-        sequence_id: sequenceId
-      });
-      
-      const { data, error } = await supabase
-        .from('email_sequence_enrollments')
-        .update({ status: 'paused' })
-        .eq('id', enrollmentId);
-      
-      await supabase.rpc('increment_active_enrollments', {
-        sequence_id: sequenceId
-      });
-      
-      await supabase.rpc('increment_completed_enrollments', {
-        sequence_id: sequenceId
-      });
-      
-      if (error) {
-        throw error;
-      }
-      */
-      
-      console.log(`Successfully paused enrollment`);
+      // Mock implementation
       return true;
     } catch (error) {
       console.error("Error pausing enrollment:", error);
@@ -747,23 +718,7 @@ export const emailService = {
   resumeCustomerEnrollment: async (enrollmentId: string): Promise<boolean> => {
     try {
       console.log(`Resuming enrollment ${enrollmentId}`);
-      
-      // In a real app, this would update the enrollment status
-      /*
-      const { data, error } = await supabase
-        .from('email_sequence_enrollments')
-        .update({ 
-          status: 'active',
-          next_send_time: new Date(Date.now() + 3600000).toISOString() // 1 hour from now
-        })
-        .eq('id', enrollmentId);
-      
-      if (error) {
-        throw error;
-      }
-      */
-      
-      console.log(`Successfully resumed enrollment`);
+      // Mock implementation
       return true;
     } catch (error) {
       console.error("Error resuming enrollment:", error);
@@ -774,20 +729,7 @@ export const emailService = {
   cancelCustomerEnrollment: async (enrollmentId: string): Promise<boolean> => {
     try {
       console.log(`Cancelling enrollment ${enrollmentId}`);
-      
-      // In a real app, this would update the enrollment status
-      /*
-      const { data, error } = await supabase
-        .from('email_sequence_enrollments')
-        .update({ status: 'cancelled' })
-        .eq('id', enrollmentId);
-      
-      if (error) {
-        throw error;
-      }
-      */
-      
-      console.log(`Successfully cancelled enrollment`);
+      // Mock implementation
       return true;
     } catch (error) {
       console.error("Error cancelling enrollment:", error);
