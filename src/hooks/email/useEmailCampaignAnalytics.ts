@@ -10,6 +10,33 @@ import {
 } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
 
+// Interface for email event data structure
+interface EmailEventData {
+  tracking_id?: string;
+  user_agent?: string;
+  ip?: string;
+  device_type?: string;
+  email_client?: string;
+  geo?: {
+    country?: string;
+    city?: string;
+    continent?: string;
+    latitude?: number;
+    longitude?: number;
+    region?: string;
+    timezone?: string;
+  };
+  link_data?: {
+    full_url?: string;
+    domain?: string;
+    path?: string;
+  };
+  timestamp?: string;
+  target_url?: string;
+  recipient?: string;
+  email_id?: string;
+}
+
 interface GeoData {
   [country: string]: number;
 }
@@ -65,7 +92,7 @@ export const useEmailCampaignAnalytics = () => {
   // Function to fetch aggregated analytics data
   const fetchAggregatedData = async (campaignId: string, dimension: string): Promise<AnalyticsAggregate[]> => {
     try {
-      // Instead of RPC (which doesn't exist), query the email_events table directly
+      // Query the email_events table directly
       const { data, error } = await supabase
         .from('email_events')
         .select('event_data')
@@ -83,9 +110,12 @@ export const useEmailCampaignAnalytics = () => {
       // Process events to extract dimension data
       if (data && data.length > 0) {
         data.forEach(event => {
-          const eventData = event.event_data || {};
+          // Safely parse the event_data as EmailEventData
+          const eventData = (typeof event.event_data === 'object' && event.event_data !== null) 
+            ? event.event_data as EmailEventData 
+            : {};
           
-          let dimensionValue = '';
+          let dimensionValue: string | undefined = '';
           
           if (dimension === 'country' && eventData.geo && eventData.geo.country) {
             dimensionValue = eventData.geo.country;

@@ -9,6 +9,30 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { validateCampaignStatus, parseJsonField, parseABTest } from './utils/emailCampaignUtils';
 
+// Interface for email event data structure
+interface EmailEventData {
+  tracking_id?: string;
+  user_agent?: string;
+  ip?: string;
+  device_type?: string;
+  email_client?: string;
+  geo?: {
+    country?: string;
+    city?: string;
+    continent?: string;
+    latitude?: number;
+    longitude?: number;
+    region?: string;
+    timezone?: string;
+  };
+  link_data?: {
+    full_url?: string;
+    domain?: string;
+    path?: string;
+  };
+  timestamp?: string;
+}
+
 // Interfaces for different data types
 interface GeoData {
   [country: string]: number;
@@ -117,6 +141,70 @@ const parseTimelineData = (analyticsData: any): EmailCampaignTimelinePoint[] => 
   return [];
 };
 
+// Function to fetch aggregated analytics data
+const fetchAggregatedData = async (campaignId: string, dimension: string): Promise<AnalyticsAggregate[]> => {
+  try {
+    // Query the email_events table directly
+    const { data, error } = await supabase
+      .from('email_events')
+      .select('event_data')
+      .eq('campaign_id', campaignId)
+      .eq('event_type', 'opened');
+    
+    if (error) {
+      console.error(`Error fetching ${dimension} data:`, error);
+      return [];
+    }
+    
+    // Process the data to extract dimension values
+    const aggregateMap = new Map<string, number>();
+    
+    // Process events to extract dimension data
+    if (data && data.length > 0) {
+      data.forEach(event => {
+        // Safely parse the event_data as EmailEventData
+        const eventData = (typeof event.event_data === 'object' && event.event_data !== null) 
+          ? event.event_data as EmailEventData 
+          : {};
+        
+        let dimensionValue: string | undefined = '';
+        
+        if (dimension === 'country' && eventData.geo && eventData.geo.country) {
+          dimensionValue = eventData.geo.country;
+        } else if (dimension === 'device' && eventData.device_type) {
+          dimensionValue = eventData.device_type;
+        } else if (dimension === 'email_client' && eventData.email_client) {
+          dimensionValue = eventData.email_client;
+        } else if (dimension === 'link' && eventData.link_data && eventData.link_data.domain) {
+          dimensionValue = eventData.link_data.domain;
+        }
+        
+        if (dimensionValue) {
+          aggregateMap.set(
+            dimensionValue, 
+            (aggregateMap.get(dimensionValue) || 0) + 1
+          );
+        }
+      });
+    }
+    
+    // Convert the map to the expected format
+    const result: AnalyticsAggregate[] = Array.from(aggregateMap.entries()).map(([value, count], index) => ({
+      id: `${campaignId}-${dimension}-${index}`,
+      campaign_id: campaignId,
+      dimension: dimension,
+      value: value,
+      count: count,
+      created_at: new Date().toISOString()
+    }));
+    
+    return result;
+  } catch (err) {
+    console.error(`Error in fetchAggregatedData for ${dimension}:`, err);
+    return [];
+  }
+};
+
 // Main hook
 export const useEmailCampaignAnalytics = () => {
   const [analytics, setAnalytics] = useState<EmailCampaignAnalytics | null>(null);
@@ -130,67 +218,6 @@ export const useEmailCampaignAnalytics = () => {
   const [selectedCampaignsForComparison, setSelectedCampaignsForComparison] = useState<string[]>([]);
   
   const { toast } = useToast();
-
-  // Function to fetch aggregated analytics data
-  const fetchAggregatedData = async (campaignId: string, dimension: string): Promise<AnalyticsAggregate[]> => {
-    try {
-      // Instead of RPC (which doesn't exist), query the email_events table directly
-      const { data, error } = await supabase
-        .from('email_events')
-        .select('event_data')
-        .eq('campaign_id', campaignId)
-        .eq('event_type', 'opened');
-      
-      if (error) {
-        console.error(`Error fetching ${dimension} data:`, error);
-        return [];
-      }
-      
-      // Process the data to extract dimension values
-      const aggregateMap = new Map<string, number>();
-      
-      // Process events to extract dimension data
-      if (data && data.length > 0) {
-        data.forEach(event => {
-          const eventData = event.event_data || {};
-          
-          let dimensionValue = '';
-          
-          if (dimension === 'country' && eventData.geo && eventData.geo.country) {
-            dimensionValue = eventData.geo.country;
-          } else if (dimension === 'device' && eventData.device_type) {
-            dimensionValue = eventData.device_type;
-          } else if (dimension === 'email_client' && eventData.email_client) {
-            dimensionValue = eventData.email_client;
-          } else if (dimension === 'link' && eventData.link_data && eventData.link_data.domain) {
-            dimensionValue = eventData.link_data.domain;
-          }
-          
-          if (dimensionValue) {
-            aggregateMap.set(
-              dimensionValue, 
-              (aggregateMap.get(dimensionValue) || 0) + 1
-            );
-          }
-        });
-      }
-      
-      // Convert the map to the expected format
-      const result: AnalyticsAggregate[] = Array.from(aggregateMap.entries()).map(([value, count], index) => ({
-        id: `${campaignId}-${dimension}-${index}`,
-        campaign_id: campaignId,
-        dimension: dimension,
-        value: value,
-        count: count,
-        created_at: new Date().toISOString()
-      }));
-      
-      return result;
-    } catch (err) {
-      console.error(`Error in fetchAggregatedData for ${dimension}:`, err);
-      return [];
-    }
-  };
 
   // Fetch campaign analytics data
   const fetchCampaignAnalytics = useCallback(async (campaignId: string) => {
