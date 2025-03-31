@@ -22,8 +22,24 @@ export const useFetchEnrollments = (
 
       if (error) throw error;
       
-      setEnrollments(data || []);
-      return data;
+      // Transform the data to match the EmailSequenceEnrollment type
+      const transformedData = data?.map(item => ({
+        id: item.id,
+        sequence_id: item.sequence_id,
+        customer_id: item.customer_id,
+        status: item.status as 'active' | 'paused' | 'completed' | 'cancelled',
+        current_step_id: item.current_step_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        completed_at: item.completed_at,
+        sequence: item.sequence,
+        current_step: item.current_step,
+        nextSendTime: item.next_send_time,
+        metadata: item.metadata
+      })) || [];
+      
+      setEnrollments(transformedData);
+      return transformedData;
     } catch (error) {
       console.error('Error fetching enrollments:', error);
       setEnrollments([]);

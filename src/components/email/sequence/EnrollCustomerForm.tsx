@@ -80,9 +80,10 @@ export const EnrollCustomerForm: React.FC<EnrollCustomerFormProps> = ({
             <FormField
               control={form.control}
               name="sequenceId"
-              render={() => (
+              render={({ field }) => (
                 <SequenceSelector 
-                  form={form}
+                  value={field.value}
+                  onChange={field.onChange}
                   sequences={sequences}
                   loading={loading}
                 />
