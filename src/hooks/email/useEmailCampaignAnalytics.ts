@@ -62,27 +62,120 @@ export const useEmailCampaignAnalytics = () => {
       
       if (campaignError) throw campaignError;
       
+      // Process recipient_ids to ensure it's an array
+      let recipientIds: string[] = [];
+      if (Array.isArray(campaignData.recipient_ids)) {
+        recipientIds = campaignData.recipient_ids as string[];
+      } else if (campaignData.recipient_ids) {
+        try {
+          const parsed = JSON.parse(campaignData.recipient_ids as string);
+          if (Array.isArray(parsed)) {
+            recipientIds = parsed;
+          }
+        } catch {
+          // If parsing fails, use empty array
+          recipientIds = [];
+        }
+      }
+      
+      // Process segment_ids to ensure it's an array
+      let segmentIds: string[] = [];
+      if (Array.isArray(campaignData.segment_ids)) {
+        segmentIds = campaignData.segment_ids as string[];
+      } else if (campaignData.segment_ids) {
+        try {
+          const parsed = JSON.parse(campaignData.segment_ids as string);
+          if (Array.isArray(parsed)) {
+            segmentIds = parsed;
+          }
+        } catch {
+          // If parsing fails, use empty array
+          segmentIds = [];
+        }
+      }
+      
+      // Process personalizations to ensure it's a Record<string, any>
+      let personalizations: Record<string, any> = {};
+      if (typeof campaignData.personalizations === 'object' && campaignData.personalizations !== null) {
+        personalizations = campaignData.personalizations as Record<string, any>;
+      } else if (campaignData.personalizations) {
+        try {
+          const parsed = JSON.parse(campaignData.personalizations as string);
+          if (typeof parsed === 'object') {
+            personalizations = parsed;
+          }
+        } catch {
+          // If parsing fails, use empty object
+          personalizations = {};
+        }
+      }
+      
+      // Process metadata to ensure it's a Record<string, any>
+      let metadata: Record<string, any> = {};
+      if (typeof campaignData.metadata === 'object' && campaignData.metadata !== null) {
+        metadata = campaignData.metadata as Record<string, any>;
+      } else if (campaignData.metadata) {
+        try {
+          const parsed = JSON.parse(campaignData.metadata as string);
+          if (typeof parsed === 'object') {
+            metadata = parsed;
+          }
+        } catch {
+          // If parsing fails, use empty object
+          metadata = {};
+        }
+      }
+      
+      // Process ab_test to ensure it's an EmailABTest or null
+      let abTest: EmailABTest | null = null;
+      if (typeof campaignData.ab_test === 'object' && campaignData.ab_test !== null) {
+        // Validate the structure matches EmailABTest
+        const testData = campaignData.ab_test as any;
+        if (
+          typeof testData.enabled === 'boolean' &&
+          Array.isArray(testData.variants) &&
+          typeof testData.winnerCriteria === 'string'
+        ) {
+          abTest = {
+            enabled: testData.enabled,
+            variants: testData.variants,
+            winnerCriteria: testData.winnerCriteria as 'open_rate' | 'click_rate',
+            winnerSelectionDate: testData.winnerSelectionDate,
+            winnerId: testData.winnerId
+          };
+        }
+      } else if (campaignData.ab_test) {
+        try {
+          const parsed = JSON.parse(campaignData.ab_test as string);
+          if (
+            typeof parsed === 'object' && 
+            typeof parsed.enabled === 'boolean' && 
+            Array.isArray(parsed.variants) && 
+            typeof parsed.winnerCriteria === 'string'
+          ) {
+            abTest = {
+              enabled: parsed.enabled,
+              variants: parsed.variants,
+              winnerCriteria: parsed.winnerCriteria as 'open_rate' | 'click_rate',
+              winnerSelectionDate: parsed.winnerSelectionDate,
+              winnerId: parsed.winnerId
+            };
+          }
+        } catch {
+          // If parsing fails, abTest remains null
+        }
+      }
+      
       // Add the missing 'body' property to make it compatible with EmailCampaign
       const campaignWithBody: EmailCampaign = {
         ...campaignData,
         body: campaignData.content || '', // Using content as body or empty string if not available
         status: campaignData.status as EmailCampaignStatus, // Explicitly cast to EmailCampaignStatus
-        // Convert recipient_ids from Json to string[]
-        recipient_ids: Array.isArray(campaignData.recipient_ids) 
-          ? campaignData.recipient_ids as string[] 
-          : [],
-        // Convert personalizations from Json to Record<string, any>
-        personalizations: typeof campaignData.personalizations === 'object' 
-          ? campaignData.personalizations as Record<string, any> 
-          : {},
-        // Convert metadata from Json to Record<string, any>
-        metadata: typeof campaignData.metadata === 'object' 
-          ? campaignData.metadata as Record<string, any> 
-          : {},
-        // Convert ab_test from Json to EmailABTest or null
-        ab_test: typeof campaignData.ab_test === 'object' && campaignData.ab_test !== null
-          ? campaignData.ab_test as EmailABTest
-          : null
+        recipient_ids: recipientIds,
+        segment_ids: segmentIds,
+        personalizations,
+        metadata,
+        ab_test: abTest
       };
       
       setCampaignDetails(campaignWithBody);
