@@ -30,10 +30,10 @@ export const emailSequenceService = {
           updated_at: sequence.updated_at,
           shop_id: sequence.shop_id,
           created_by: sequence.created_by,
-          trigger_type: sequence.trigger_type,
+          trigger_type: (sequence.trigger_type as "manual" | "event" | "schedule") || "manual",
           trigger_event: sequence.trigger_event,
           is_active: sequence.is_active,
-          triggerType: sequence.trigger_type,
+          triggerType: (sequence.trigger_type as "manual" | "event" | "schedule") || "manual",
           triggerEvent: sequence.trigger_event,
           isActive: sequence.is_active,
           createdAt: sequence.created_at,
@@ -75,10 +75,10 @@ export const emailSequenceService = {
         updated_at: data.updated_at,
         shop_id: data.shop_id,
         created_by: data.created_by,
-        trigger_type: data.trigger_type,
+        trigger_type: (data.trigger_type as "manual" | "event" | "schedule") || "manual",
         trigger_event: data.trigger_event,
         is_active: data.is_active,
-        triggerType: data.trigger_type,
+        triggerType: (data.trigger_type as "manual" | "event" | "schedule") || "manual",
         triggerEvent: data.trigger_event,
         isActive: data.is_active,
         createdAt: data.created_at,
@@ -97,15 +97,17 @@ export const emailSequenceService = {
    */
   async createSequence(sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
     try {
+      const triggerType = sequence.trigger_type || sequence.triggerType || "manual";
+      
       const { data, error } = await supabase
         .from('email_sequences')
         .insert({
           name: sequence.name,
           description: sequence.description,
           steps: sequence.steps || [],
-          trigger_type: sequence.trigger_type || 'manual',
-          trigger_event: sequence.trigger_event,
-          is_active: sequence.is_active || false
+          trigger_type: triggerType,
+          trigger_event: sequence.trigger_event || sequence.triggerEvent,
+          is_active: sequence.is_active || sequence.isActive || false
         })
         .select()
         .single();
@@ -124,10 +126,10 @@ export const emailSequenceService = {
         updated_at: data.updated_at,
         shop_id: data.shop_id,
         created_by: data.created_by,
-        trigger_type: data.trigger_type,
+        trigger_type: (data.trigger_type as "manual" | "event" | "schedule"),
         trigger_event: data.trigger_event,
         is_active: data.is_active,
-        triggerType: data.trigger_type,
+        triggerType: (data.trigger_type as "manual" | "event" | "schedule"),
         triggerEvent: data.trigger_event,
         isActive: data.is_active,
         createdAt: data.created_at,
@@ -147,13 +149,15 @@ export const emailSequenceService = {
    */
   async updateSequence(id: string, sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
     try {
+      const triggerType = sequence.trigger_type || sequence.triggerType || "manual";
+      
       const { data, error } = await supabase
         .from('email_sequences')
         .update({
           name: sequence.name,
           description: sequence.description,
           steps: sequence.steps,
-          trigger_type: sequence.trigger_type || sequence.triggerType,
+          trigger_type: triggerType,
           trigger_event: sequence.trigger_event || sequence.triggerEvent,
           is_active: sequence.is_active || sequence.isActive
         })
@@ -175,10 +179,10 @@ export const emailSequenceService = {
         updated_at: data.updated_at,
         shop_id: data.shop_id,
         created_by: data.created_by,
-        trigger_type: data.trigger_type,
+        trigger_type: (data.trigger_type as "manual" | "event" | "schedule"),
         trigger_event: data.trigger_event,
         is_active: data.is_active,
-        triggerType: data.trigger_type,
+        triggerType: (data.trigger_type as "manual" | "event" | "schedule"),
         triggerEvent: data.trigger_event,
         isActive: data.is_active,
         createdAt: data.created_at,
