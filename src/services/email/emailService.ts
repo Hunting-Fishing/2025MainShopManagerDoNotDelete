@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import {
   Email,
@@ -1044,23 +1043,43 @@ class EmailService {
       
       if (error) throw error;
       
-      return data.map(item => ({
-        id: item.id,
-        sequence_id: item.sequence_id,
-        sequenceId: item.sequence_id,
-        customer_id: item.customer_id,
-        customerId: item.customer_id,
-        status: item.status as 'active' | 'paused' | 'completed' | 'cancelled',
-        current_step_id: item.current_step_id,
-        currentStepId: item.current_step_id,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        completed_at: item.completed_at,
-        completedAt: item.completed_at,
-        startedAt: item.started_at,
-        nextSendTime: item.next_send_time,
-        metadata: item.metadata
-      }));
+      return data.map(item => {
+        // Parse metadata if it exists
+        let parsedMetadata: Record<string, any> = {};
+        if (item.metadata) {
+          try {
+            parsedMetadata = typeof item.metadata === 'string'
+              ? JSON.parse(item.metadata)
+              : item.metadata as Record<string, any>;
+          } catch (e) {
+            console.error("Error parsing metadata:", e);
+          }
+        }
+
+        // Ensure status is one of the allowed values
+        let status: 'active' | 'paused' | 'completed' | 'cancelled' = 'active';
+        if (item.status === 'paused' || item.status === 'completed' || item.status === 'cancelled') {
+          status = item.status;
+        }
+
+        return {
+          id: item.id,
+          sequence_id: item.sequence_id,
+          sequenceId: item.sequence_id,
+          customer_id: item.customer_id,
+          customerId: item.customer_id,
+          status: status,
+          current_step_id: item.current_step_id,
+          currentStepId: item.current_step_id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          completed_at: item.completed_at,
+          completedAt: item.completed_at,
+          startedAt: item.created_at,
+          nextSendTime: item.next_send_time,
+          metadata: parsedMetadata
+        };
+      });
     } catch (error) {
       console.error("Error getting sequence enrollments:", error);
       return [];
@@ -1082,13 +1101,25 @@ class EmailService {
       
       if (error) throw error;
       
+      // Parse metadata if it exists
+      let parsedMetadata: Record<string, any> = {};
+      if (data.metadata) {
+        try {
+          parsedMetadata = typeof data.metadata === 'string'
+            ? JSON.parse(data.metadata)
+            : data.metadata as Record<string, any>;
+        } catch (e) {
+          console.error("Error parsing metadata:", e);
+        }
+      }
+
       return {
         id: data.id,
         sequence_id: data.sequence_id,
         sequenceId: data.sequence_id,
         customer_id: data.customer_id,
         customerId: data.customer_id,
-        status: data.status as 'active' | 'paused' | 'completed' | 'cancelled',
+        status: 'active',
         current_step_id: data.current_step_id,
         currentStepId: data.current_step_id,
         created_at: data.created_at,
@@ -1097,11 +1128,169 @@ class EmailService {
         completedAt: data.completed_at,
         startedAt: data.started_at,
         nextSendTime: data.next_send_time,
-        metadata: data.metadata
+        metadata: parsedMetadata
       };
     } catch (error) {
       console.error("Error enrolling customer in sequence:", error);
       return null;
+    }
+  }
+
+  async pauseSequenceEnrollment(enrollmentId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ status: 'paused' })
+        .eq('id', enrollmentId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error pausing enrollment:", error);
+      return false;
+    }
+  }
+
+  async resumeSequenceEnrollment(enrollmentId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ status: 'active' })
+        .eq('id', enrollmentId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error resuming enrollment:", error);
+      return false;
+    }
+  }
+
+  async cancelSequenceEnrollment(enrollmentId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ status: 'cancelled' })
+        .eq('id', enrollmentId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error cancelling enrollment:", error);
+      return false;
+    }
+  }
+
+  async updateSequenceAnalytics(sequenceId: string): Promise<boolean> {
+    try {
+      // Calculate analytics data for the sequence
+      const { data: enrollments, error: enrollmentsError } = await supabase
+        .from('email_sequence_enrollments')
+        .select('*')
+        .eq('sequence_id', sequenceId);
+        
+      if (enrollmentsError) throw enrollmentsError;
+      
+      // Calculate analytics metrics
+      const totalEnrollments = enrollments.length;
+      const activeEnrollments = enrollments.filter(e => e.status === 'active').length;
+      const completedEnrollments = enrollments.filter(e => e.status === 'completed').length;
+      const conversionRate = totalEnrollments > 0 ? completedEnrollments / totalEnrollments : 0;
+
+      // Calculate average time to complete
+      let averageTimeToComplete = 0;
+      const completedWithTimes = enrollments.filter(e => e.status === 'completed' && e.completed_at && e.started_at);
+      
+      if (completedWithTimes.length > 0) {
+        const totalHours = completedWithTimes.reduce((sum, enrollment) => {
+          const startDate = new Date(enrollment.started_at || enrollment.created_at);
+          const endDate = new Date(enrollment.completed_at);
+          const diffInMs = endDate.getTime() - startDate.getTime();
+          const diffInHours = diffInMs / (1000 * 60 * 60);
+          return sum + diffInHours;
+        }, 0);
+        
+        averageTimeToComplete = totalHours / completedWithTimes.length;
+      }
+      
+      // Check if analytics record exists
+      const { data: existingAnalytics, error: analyticsError } = await supabase
+        .from('email_sequence_analytics')
+        .select('*')
+        .eq('sequence_id', sequenceId)
+        .maybeSingle();
+        
+      if (analyticsError) throw analyticsError;
+      
+      if (existingAnalytics) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('email_sequence_analytics')
+          .update({
+            total_enrollments: totalEnrollments,
+            active_enrollments: activeEnrollments,
+            completed_enrollments: completedEnrollments,
+            conversion_rate: conversionRate,
+            average_time_to_complete: averageTimeToComplete,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingAnalytics.id);
+          
+        if (updateError) throw updateError;
+      } else {
+        // Create new record
+        const { error: insertError } = await supabase
+          .from('email_sequence_analytics')
+          .insert({
+            sequence_id: sequenceId,
+            total_enrollments: totalEnrollments,
+            active_enrollments: activeEnrollments,
+            completed_enrollments: completedEnrollments,
+            conversion_rate: conversionRate,
+            average_time_to_complete: averageTimeToComplete
+          });
+          
+        if (insertError) throw insertError;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating sequence analytics:", error);
+      return false;
+    }
+  }
+
+  async triggerSequenceProcessing(sequenceId?: string): Promise<boolean> {
+    try {
+      // In a real implementation, this would trigger an edge function
+      // or backend job to process the sequence
+      
+      // For now, we'll just return success
+      console.log(`Processing ${sequenceId ? `sequence ${sequenceId}` : 'all sequences'}...`);
+
+      // If we have a specific sequence ID, update its analytics
+      if (sequenceId) {
+        await this.updateSequenceAnalytics(sequenceId);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error triggering sequence processing:", error);
+      return false;
+    }
+  }
+
+  async sendTestEmail(templateId: string, recipientEmail: string, personalizations?: Record<string, string>): Promise<boolean> {
+    try {
+      // In a real implementation, this would call an API to send the email
+      console.log(`Sending test email using template ${templateId} to ${recipientEmail}`);
+      console.log('Personalizations:', personalizations);
+      
+      // Mock successful email sending
+      return true;
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      return false;
     }
   }
 }
