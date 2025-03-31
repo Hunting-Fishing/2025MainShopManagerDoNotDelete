@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { EmailSequence, EmailSequenceStep, EmailSequenceAnalytics } from '@/types/email';
 import { parseJsonField } from './utils';
@@ -186,7 +185,7 @@ export const emailSequenceService = {
   /**
    * Get sequence steps
    */
-  getSequenceSteps: async (sequenceId: string) => {
+  getSequenceSteps: async (sequenceId: string): Promise<EmailSequenceStep[]> => {
     try {
       const { data, error } = await supabase
         .from('email_sequence_steps')
@@ -196,20 +195,37 @@ export const emailSequenceService = {
       
       if (error) throw error;
       
-      return data?.map(step => ({
-        ...step,
-        email_template_id: step.template_id,
+      // Map the database records to the EmailSequenceStep type
+      return (data || []).map(step => ({
+        id: step.id,
+        sequence_id: step.sequence_id,
+        // Use position instead of order since the DB field is named position
+        position: step.position,
+        order: step.position, // Add order as an alias of position for backward compatibility
+        delay_hours: step.delay_hours,
+        delayHours: step.delay_hours,
+        delay_type: step.delay_type,
+        delayType: step.delay_type,
+        template_id: step.template_id,
         templateId: step.template_id,
-        position: step.position || step.order || 0,
-        order: step.position || 0,
-        type: 'email',
-        delayHours: step.delay_hours || 0,
-        delayType: step.delay_type || 'fixed',
-        // Default empty values for scheduling properties
+        email_template_id: step.template_id, // Add for backward compatibility
+        created_at: step.created_at,
+        updated_at: step.updated_at,
+        name: step.name,
+        // Derive type based on the presence of a template ID
+        type: step.template_id ? 'email' : 'delay',
+        isActive: step.is_active,
+        condition: step.condition_type ? {
+          type: step.condition_type as 'event' | 'property',
+          value: step.condition_value,
+          operator: step.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+        } : undefined,
+        
+        // Add missing properties
         last_run: null,
         next_run: null,
         run_frequency: null
-      })) as EmailSequenceStep[] || [];
+      }));
     } catch (error) {
       console.error('Error fetching sequence steps:', error);
       return [];
@@ -219,37 +235,43 @@ export const emailSequenceService = {
   /**
    * Create or update a sequence step
    */
-  upsertSequenceStep: async (sequenceId: string, stepData: Partial<EmailSequenceStep>) => {
+  upsertSequenceStep: async (sequenceId: string, step: Partial<EmailSequenceStep>): Promise<EmailSequenceStep | null> => {
     try {
-      const stepToSave = {
-        sequence_id: sequenceId,
-        position: stepData.position || stepData.order || 0,
-        template_id: stepData.templateId || stepData.email_template_id,
-        delay_hours: stepData.delayHours || 0,
-        delay_type: stepData.delayType || 'fixed',
-        name: stepData.name || '',
-        condition_type: stepData.condition?.type,
-        condition_value: stepData.condition?.value,
-        condition_operator: stepData.condition?.operator
-      };
-      
-      if (stepData.id) {
-        // Update existing step
+      // If the step has an ID, update existing step
+      if (step.id) {
+        const updateData = {
+          name: step.name,
+          position: step.position || step.order,
+          template_id: step.templateId || step.template_id,
+          delay_hours: step.delayHours || step.delay_hours,
+          delay_type: step.delayType || step.delay_type,
+          condition_type: step.condition?.type,
+          condition_value: step.condition?.value,
+          condition_operator: step.condition?.operator
+        };
+
         const { error } = await supabase
           .from('email_sequence_steps')
-          .update(stepToSave)
-          .eq('id', stepData.id);
+          .update(updateData)
+          .eq('id', step.id);
         
         if (error) throw error;
         
-        return { ...stepData, ...stepToSave } as EmailSequenceStep;
+        return { ...step, ...updateData } as EmailSequenceStep;
       } else {
-        // Create new step
+        // Creating a new step
         const { data, error } = await supabase
           .from('email_sequence_steps')
           .insert({
-            ...stepToSave,
-            template_id: stepToSave.template_id
+            sequence_id: sequenceId,
+            position: step.position || step.order,
+            template_id: step.templateId || step.template_id || step.email_template_id,
+            delay_hours: step.delayHours || step.delay_hours,
+            delay_type: step.delayType || step.delay_type,
+            name: step.name || 'New Step',
+            condition_type: step.condition?.type,
+            condition_value: step.condition?.value,
+            condition_operator: step.condition?.operator
           })
           .select()
           .single();

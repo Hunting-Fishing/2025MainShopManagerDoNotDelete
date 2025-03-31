@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -43,7 +42,7 @@ import {
   Mail,
   Link as LinkIcon
 } from "lucide-react";
-import { useEmailCampaignAnalytics } from "@/hooks/email/useEmailCampaignAnalytics";
+import { useEmailCampaignAnalytics } from "@/hooks/email/campaign/useEmailCampaignAnalytics";
 import { ReportExportMenu } from "@/components/reports/ReportExportMenu";
 import { 
   ChartContainer, 
@@ -148,18 +147,17 @@ export default function EmailCampaignAnalytics() {
     if (!deviceData?.emailClients) return [];
     
     return [
-      { name: 'Gmail', value: deviceData.emailClients.gmail || 0 },
-      { name: 'Outlook', value: deviceData.emailClients.outlook || 0 },
-      { name: 'Apple Mail', value: deviceData.emailClients.apple || 0 },
-      { name: 'Yahoo', value: deviceData.emailClients.yahoo || 0 },
-      { name: 'Other', value: deviceData.emailClients.other || 0 }
+      { name: 'Gmail', value: Number(deviceData.emailClients.gmail) || 0 },
+      { name: 'Outlook', value: Number(deviceData.emailClients.outlook) || 0 },
+      { name: 'Apple Mail', value: Number(deviceData.emailClients.apple) || 0 },
+      { name: 'Yahoo', value: Number(deviceData.emailClients.yahoo) || 0 },
+      { name: 'Other', value: Number(deviceData.emailClients.other) || 0 }
     ].filter(item => item.value > 0);
   };
 
   const getGeoData = () => {
     if (!geoData) return [];
     
-    // Convert the object to an array sorted by value
     return Object.entries(geoData)
       .map(([country, count]) => ({ name: country, value: count }))
       .sort((a, b) => b.value - a.value)
@@ -185,8 +183,13 @@ export default function EmailCampaignAnalytics() {
   ];
 
   const hasGeoData = geoData && Object.keys(geoData).length > 0;
-  const hasDeviceData = deviceData && (deviceData.desktop > 0 || deviceData.mobile > 0 || deviceData.tablet > 0 || deviceData.other > 0);
-  const hasEmailClientData = deviceData?.emailClients && Object.values(deviceData.emailClients).some(v => v > 0);
+  const hasDeviceData = deviceData && 
+    (Number(deviceData.desktop) > 0 || 
+    Number(deviceData.mobile) > 0 || 
+    Number(deviceData.tablet) > 0 || 
+    Number(deviceData.other) > 0);
+  const hasEmailClientData = deviceData?.emailClients && 
+    Object.values(deviceData.emailClients).some(v => Number(v) > 0);
   const hasLinkData = linkData && Object.keys(linkData).length > 0;
 
   return (
@@ -223,7 +226,6 @@ export default function EmailCampaignAnalytics() {
         </div>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="p-4 pb-2">
@@ -368,7 +370,6 @@ export default function EmailCampaignAnalytics() {
           </Card>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Device Distribution */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -414,7 +415,6 @@ export default function EmailCampaignAnalytics() {
               </CardContent>
             </Card>
             
-            {/* Email Client Distribution */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

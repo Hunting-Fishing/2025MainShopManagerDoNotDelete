@@ -5,221 +5,234 @@ import { EmailSequence } from '@/types/email';
 export const emailProcessingService = {
   /**
    * Get the current sequence processing schedule
+   * @returns Processing schedule configuration
    */
-  getSequenceProcessingSchedule: async () => {
+  async getSequenceProcessingSchedule() {
     try {
-      // @ts-ignore - system_schedules is a custom table that's not in the TypeScript definition
+      // @ts-ignore - system_schedules is a custom table not in the generated types
       const { data, error } = await supabase
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
-        .single();
-      
-      if (error) {
-        console.error("Error fetching sequence processing schedule:", error);
-        return {
-          enabled: false,
-          cron: "0 */6 * * *", // Default: every 6 hours
-          lastRun: null,
-          nextRun: null,
-          sequenceIds: []
-        };
-      }
-      
-      // If we have data, return it
-      if (data) {
-        return {
-          enabled: data.is_active || false,
-          cron: data.cron_expression || "0 */6 * * *",
-          lastRun: data.last_run || null,
-          nextRun: data.next_run || null,
-          sequenceIds: Array.isArray(data.sequence_ids) ? data.sequence_ids : []
-        };
-      }
-      
-      // If no schedule exists yet, return defaults
-      return {
-        enabled: false,
-        cron: "0 */6 * * *",
-        lastRun: null,
-        nextRun: null,
-        sequenceIds: []
-      };
-    } catch (error) {
-      console.error("Error getting sequence processing schedule:", error);
-      return {
-        enabled: false,
-        cron: "0 */6 * * *",
-        lastRun: null,
-        nextRun: null,
-        sequenceIds: []
-      };
-    }
-  },
-  
-  /**
-   * Update the sequence processing schedule
-   */
-  updateSequenceProcessingSchedule: async (config: { cron?: string; enabled: boolean; sequenceIds?: string[] }) => {
-    try {
-      // @ts-ignore - system_schedules is a custom table that's not in the TypeScript definition
-      const { data: existingSchedule, error: fetchError } = await supabase
-        .from('system_schedules')
-        .select('*')
-        .eq('type', 'email_sequence_processing')
-        .single();
-      
-      const scheduleData = {
-        type: 'email_sequence_processing',
-        is_active: config.enabled,
-        cron_expression: config.cron || "0 */6 * * *",
-        sequence_ids: config.sequenceIds || (existingSchedule ? existingSchedule.sequence_ids || [] : [])
-      };
-      
-      if (existingSchedule) {
-        // Update existing schedule
-        // @ts-ignore - system_schedules is a custom table that's not in the TypeScript definition
-        const { data, error } = await supabase
-          .from('system_schedules')
-          .update(scheduleData)
-          .eq('id', existingSchedule.id)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        return { success: true, data };
-      } else {
-        // Create new schedule
-        // @ts-ignore - system_schedules is a custom table that's not in the TypeScript definition
-        const { data, error } = await supabase
-          .from('system_schedules')
-          .insert(scheduleData)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        return { success: true, data };
-      }
-    } catch (error) {
-      console.error("Error updating sequence processing schedule:", error);
-      return { success: false, error };
-    }
-  },
-  
-  /**
-   * Trigger processing of a specific sequence or all active sequences
-   */
-  triggerSequenceProcessing: async (sequenceId?: string) => {
-    try {
-      let sequences: EmailSequence[] = [];
-      
-      if (sequenceId) {
-        // Process single sequence
-        const { data, error } = await supabase
-          .from('email_sequences')
-          .select('*')
-          .eq('id', sequenceId)
-          .eq('is_active', true);
-        
-        if (error) throw error;
-        sequences = data || [];
-      } else {
-        // Process all active sequences
-        const { data, error } = await supabase
-          .from('email_sequences')
-          .select('*')
-          .eq('is_active', true);
-        
-        if (error) throw error;
-        sequences = data || [];
-      }
-      
-      // No sequences to process
-      if (sequences.length === 0) {
-        return { 
-          success: true, 
-          processed: 0,
-          message: sequenceId ? "Specified sequence not found or not active" : "No active sequences found" 
-        };
-      }
-      
-      // Map database sequences to EmailSequence type
-      const emailSequences = sequences.map(seq => ({
-        ...seq,
-        steps: [],  // Will be populated when needed
-        triggerType: seq.trigger_type,
-        triggerEvent: seq.trigger_event,
-        isActive: seq.is_active
-      })) as EmailSequence[];
-      
-      // Call the edge function to process these sequences
-      const { data, error } = await supabase.functions.invoke('process-email-sequences', {
-        body: { 
-          sequenceIds: emailSequences.map(seq => seq.id),
-          action: 'process' 
-        }
-      });
+        .maybeSingle();
       
       if (error) throw error;
       
       return {
-        success: true,
-        processed: sequences.length,
-        data
+        enabled: data?.is_active || false,
+        cron: data?.cron_expression || '0 * * * *', // Default to hourly
+        lastRun: data?.last_run || null,
+        nextRun: data?.next_run || null,
+        sequenceIds: data?.sequence_ids ? 
+          (Array.isArray(data.sequence_ids) ? data.sequence_ids : JSON.parse(data.sequence_ids)) 
+          : []
       };
     } catch (error) {
-      console.error("Error triggering sequence processing:", error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
+      console.error('Error getting sequence processing schedule:', error);
+      return {
+        enabled: false,
+        cron: '0 * * * *',
+        lastRun: null,
+        nextRun: null,
+        sequenceIds: []
       };
     }
   },
-  
+
   /**
-   * Select a winner for an A/B test
+   * Update the sequence processing schedule
+   * @param config Schedule configuration
+   * @returns Success status
    */
-  selectABTestWinner: async (campaignId: string, forceWinnerId?: string) => {
+  async updateSequenceProcessingSchedule(config: { 
+    cron?: string; 
+    enabled: boolean;
+    sequenceIds?: string[];
+  }) {
     try {
-      // @ts-ignore - email_ab_tests is a custom table not in the type definition
+      // @ts-ignore - system_schedules is a custom table not in the generated types
+      const { data: existing, error: fetchError } = await supabase
+        .from('system_schedules')
+        .select('*')
+        .eq('type', 'email_sequence_processing')
+        .maybeSingle();
+      
+      if (fetchError) throw fetchError;
+      
+      if (existing) {
+        // @ts-ignore - system_schedules is a custom table not in the generated types
+        const { data, error } = await supabase
+          .from('system_schedules')
+          .update({
+            is_active: config.enabled,
+            cron_expression: config.cron || existing.cron_expression,
+            sequence_ids: config.sequenceIds || existing.sequence_ids,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return { success: true, data };
+      } else {
+        // @ts-ignore - system_schedules is a custom table not in the generated types
+        const { data, error } = await supabase
+          .from('system_schedules')
+          .insert({
+            type: 'email_sequence_processing',
+            is_active: config.enabled,
+            cron_expression: config.cron || '0 * * * *',
+            sequence_ids: config.sequenceIds || []
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return { success: true, data };
+      }
+    } catch (error) {
+      console.error('Error updating sequence processing schedule:', error);
+      return { success: false, error };
+    }
+  },
+
+  /**
+   * Trigger the processing of email sequences
+   * @param options Processing options
+   * @returns Success status
+   */
+  async triggerSequenceProcessing(options?: { 
+    sequenceId?: string; 
+    force?: boolean;
+  }) {
+    try {
+      // Get active sequences that need processing
+      const { data: sequences, error: sequencesError } = await supabase
+        .from('email_sequences')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (sequencesError) throw sequencesError;
+      
+      // If a specific sequence ID is provided, filter to just that one
+      const sequencesToProcess = options?.sequenceId 
+        ? sequences.filter(seq => seq.id === options.sequenceId) 
+        : sequences;
+      
+      // Map to proper EmailSequence type, with a default empty steps array
+      const typedSequences: EmailSequence[] = sequencesToProcess.map(seq => ({
+        ...seq,
+        steps: [], // Default empty steps array; we'll fetch steps separately if needed
+        trigger_type: seq.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerType: seq.trigger_type as 'manual' | 'event' | 'schedule',
+        triggerEvent: seq.trigger_event,
+        isActive: seq.is_active,
+        createdAt: seq.created_at,
+        updatedAt: seq.updated_at
+      }));
+      
+      // Invoke the edge function to process the sequences
+      const { data, error } = await supabase.functions.invoke('process-email-sequences', {
+        body: { 
+          sequenceIds: typedSequences.map(seq => seq.id),
+          force: options?.force || false 
+        }
+      });
+      
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error triggering sequence processing:', error);
+      return { success: false, error };
+    }
+  },
+
+  /**
+   * Select a winner for an A/B test in a campaign
+   * @param campaignId Campaign ID
+   * @param forceWinnerId Optional ID to force a specific variant to win
+   * @returns The winner ID and related data
+   */
+  async selectABTestWinner(campaignId: string, forceWinnerId?: string) {
+    try {
+      // @ts-ignore - email_ab_tests is a custom table not in the generated types
       const { data: abTest, error: abTestError } = await supabase
         .from('email_ab_tests')
         .select('*')
         .eq('campaign_id', campaignId)
         .single();
       
-      if (abTestError) {
-        console.error("Error fetching A/B test:", abTestError);
-        return { 
-          success: false, 
-          error: "A/B test not found for this campaign" 
+      if (abTestError) throw abTestError;
+      
+      let winnerId = forceWinnerId;
+      let confidenceLevel = 0;
+      
+      // If no winner ID is forced, calculate the winner based on metrics
+      if (!winnerId && abTest) {
+        // Implement winner selection logic based on metrics
+        // This is a simplified example; you'd typically use statistical methods
+        
+        // For now, just choose the variant with the highest metric value
+        const variants = Array.isArray(abTest.variants) ? abTest.variants : [];
+        const criterion = abTest.winner_criteria || 'open_rate';
+        
+        if (variants.length > 0) {
+          let highestMetric = -1;
+          let winner = null;
+          
+          for (const variant of variants) {
+            const metricValue = variant.metrics ? 
+              (criterion === 'open_rate' ? variant.metrics.openRate : variant.metrics.clickRate) : 0;
+            
+            if (metricValue > highestMetric) {
+              highestMetric = metricValue;
+              winner = variant;
+              // Simulate a confidence level based on the margin of difference
+              // In real applications, this would use a statistical significance test
+              confidenceLevel = Math.min(99, Math.round((metricValue || 0) * 100));
+            }
+          }
+          
+          if (winner) {
+            winnerId = winner.id;
+          }
+        }
+      }
+      
+      // If we have a winner, update the campaign
+      if (winnerId) {
+        const { data: updatedCampaign, error: updateError } = await supabase
+          .from('email_campaigns')
+          .update({
+            ab_test: {
+              ...abTest,
+              winnerId: winnerId,
+              winner_id: winnerId,
+              winnerSelectionDate: new Date().toISOString(),
+              winner_selection_date: new Date().toISOString(),
+              confidenceLevel: confidenceLevel,
+              confidence_level: confidenceLevel
+            }
+          })
+          .eq('id', campaignId)
+          .select()
+          .single();
+        
+        if (updateError) throw updateError;
+        
+        return {
+          success: true,
+          winnerId,
+          winnerSelectionDate: new Date().toISOString(),
+          confidenceLevel
         };
       }
       
-      // Call the edge function to select the winner
-      const { data, error } = await supabase.functions.invoke('process-ab-test', {
-        body: { 
-          campaignId,
-          testId: abTest.id,
-          action: 'select_winner',
-          forceWinnerId
-        }
-      });
-      
-      if (error) throw error;
-      
-      return {
-        success: true,
-        winnerId: data.winnerId,
-        winnerSelectionDate: data.winnerSelectionDate,
-        confidenceLevel: data.confidenceLevel
-      };
+      throw new Error('Could not determine a winner');
     } catch (error) {
-      console.error("Error selecting A/B test winner:", error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
-      };
+      console.error('Error selecting A/B test winner:', error);
+      return { success: false, error };
     }
   }
 };

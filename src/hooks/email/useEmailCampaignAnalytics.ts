@@ -1,12 +1,18 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { EmailCampaignAnalytics } from '@/types/email';
+import { EmailCampaignAnalytics, EmailCampaignTimelinePoint } from '@/types/email';
 
 export const useEmailCampaignAnalytics = () => {
   const [analytics, setAnalytics] = useState<EmailCampaignAnalytics | null>(null);
+  const [campaignDetails, setCampaignDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [geoData, setGeoData] = useState<Record<string, number> | null>(null);
+  const [deviceData, setDeviceData] = useState<any | null>(null);
+  const [linkData, setLinkData] = useState<Record<string, number> | null>(null);
+  const [comparisonData, setComparisonData] = useState<any[] | null>(null);
+  const [selectedCampaignsForComparison, setSelectedCampaignsForComparison] = useState<string[]>([]);
   const { toast } = useToast();
 
   /**
@@ -24,6 +30,41 @@ export const useEmailCampaignAnalytics = () => {
       
       // If we have analytics data
       if (analyticsData && !analyticsError) {
+        // Parse timeline data
+        let timelineData: EmailCampaignTimelinePoint[] = [];
+        if (analyticsData.timeline) {
+          try {
+            // If it's already an array of objects, use it directly
+            if (Array.isArray(analyticsData.timeline)) {
+              timelineData = analyticsData.timeline.map((point: any) => ({
+                date: point.date || '',
+                opens: Number(point.opens) || 0,
+                clicks: Number(point.clicks) || 0,
+                unsubscribes: Number(point.unsubscribes) || 0,
+                complaints: Number(point.complaints) || 0
+              }));
+            } else {
+              // Otherwise try to parse as JSON
+              const parsed = typeof analyticsData.timeline === 'string' 
+                ? JSON.parse(analyticsData.timeline) 
+                : analyticsData.timeline;
+              
+              if (Array.isArray(parsed)) {
+                timelineData = parsed.map(point => ({
+                  date: point.date || '',
+                  opens: Number(point.opens) || 0,
+                  clicks: Number(point.clicks) || 0,
+                  unsubscribes: Number(point.unsubscribes) || 0,
+                  complaints: Number(point.complaints) || 0
+                }));
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing timeline data:", e);
+            timelineData = [];
+          }
+        }
+        
         // Format the analytics data
         const formattedAnalytics: EmailCampaignAnalytics = {
           id: analyticsData.id,
@@ -48,7 +89,7 @@ export const useEmailCampaignAnalytics = () => {
           click_to_open_rate: analyticsData.click_to_open_rate,
           bounced_rate: analyticsData.bounced_rate,
           unsubscribe_rate: analyticsData.unsubscribe_rate,
-          timeline: Array.isArray(analyticsData.timeline) ? analyticsData.timeline : [],
+          timeline: timelineData,
           created_at: analyticsData.created_at,
           updated_at: analyticsData.updated_at
         };
@@ -213,9 +254,23 @@ export const useEmailCampaignAnalytics = () => {
     }
   };
 
+  // For basic implementation to fix errors
+  const compareCampaigns = async (campaignId: string, campaignIds?: string[]) => {
+    // Implementation goes here
+    console.log("Comparing campaigns", campaignId, campaignIds);
+  };
+
   return {
     analytics,
+    campaignDetails,
     loading,
-    fetchCampaignAnalytics
+    error,
+    geoData,
+    deviceData,
+    linkData,
+    fetchCampaignAnalytics,
+    compareCampaigns,
+    comparisonData,
+    selectedCampaignsForComparison
   };
 };
