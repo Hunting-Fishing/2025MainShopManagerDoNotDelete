@@ -1086,6 +1086,80 @@ class EmailService {
       return false;
     }
   }
+
+  async pauseSequenceEnrollment(enrollmentId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ 
+          status: 'paused',
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', enrollmentId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error pausing sequence enrollment:", error);
+      return false;
+    }
+  }
+
+  async resumeSequenceEnrollment(enrollmentId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ 
+          status: 'active',
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', enrollmentId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error resuming sequence enrollment:", error);
+      return false;
+    }
+  }
+
+  async cancelSequenceEnrollment(enrollmentId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_enrollments')
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString(),
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', enrollmentId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error cancelling sequence enrollment:", error);
+      return false;
+    }
+  }
+
+  async sendTestEmail(templateId: string, recipientEmail: string, personalizations?: Record<string, string>): Promise<boolean> {
+    try {
+      // Call an edge function to send the test email
+      const { error } = await supabase.functions.invoke('send-test-email', {
+        body: { 
+          templateId,
+          recipientEmail,
+          personalizations: personalizations || {}
+        }
+      });
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      return false;
+    }
+  }
 }
 
 export const emailService = new EmailService();

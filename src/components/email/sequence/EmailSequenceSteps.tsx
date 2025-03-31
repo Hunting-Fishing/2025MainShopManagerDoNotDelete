@@ -32,7 +32,15 @@ export function EmailSequenceSteps({ sequenceId, steps }: EmailSequenceStepsProp
         <CardTitle>Sequence Steps</CardTitle>
       </CardHeader>
       <CardContent>
-        <EmailSequenceFlow sequence={{ id: sequenceId, steps, name: '' }} />
+        <EmailSequenceFlow 
+          sequence={{ 
+            id: sequenceId, 
+            steps, 
+            name: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }} 
+        />
       </CardContent>
     </Card>
   );
