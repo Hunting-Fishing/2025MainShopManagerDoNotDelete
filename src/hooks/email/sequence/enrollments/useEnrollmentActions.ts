@@ -1,131 +1,131 @@
 
-import { useCallback } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { EmailSequenceEnrollment } from '@/types/email';
 
 export const useEnrollmentActions = (
-  setEnrollments: (updater: (prev: EmailSequenceEnrollment[]) => EmailSequenceEnrollment[]) => void
+  setEnrollments: React.Dispatch<React.SetStateAction<EmailSequenceEnrollment[]>>
 ) => {
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Pause an enrollment
-  const pauseEnrollment = useCallback(async (enrollmentId: string) => {
+  const pauseEnrollment = async (enrollmentId: string) => {
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('email_sequence_enrollments')
-        .update({ status: 'paused' })
+        .update({
+          status: 'paused',
+          updated_at: new Date().toISOString()
+        })
         .eq('id', enrollmentId);
 
       if (error) throw error;
 
-      // Update local state
-      setEnrollments(prev => 
-        prev.map(enrollment => 
-          enrollment.id === enrollmentId 
-            ? { ...enrollment, status: 'paused' } 
+      setEnrollments(prev =>
+        prev.map(enrollment =>
+          enrollment.id === enrollmentId
+            ? { ...enrollment, status: 'paused' }
             : enrollment
         )
       );
 
       toast({
-        title: 'Enrollment paused',
-        description: 'The email sequence has been paused.',
+        title: 'Enrollment Paused',
+        description: 'The sequence enrollment has been paused.',
       });
-
-      return true;
     } catch (error) {
       console.error('Error pausing enrollment:', error);
       toast({
-        title: 'Error pausing enrollment',
-        description: error.message,
+        title: 'Error',
+        description: 'Could not pause the enrollment',
         variant: 'destructive',
       });
-      return false;
+    } finally {
+      setLoading(false);
     }
-  }, [setEnrollments, toast]);
+  };
 
-  // Resume an enrollment
-  const resumeEnrollment = useCallback(async (enrollmentId: string) => {
+  const resumeEnrollment = async (enrollmentId: string) => {
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('email_sequence_enrollments')
-        .update({ 
+        .update({
           status: 'active',
-          next_send_time: new Date().toISOString()
+          next_send_time: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('id', enrollmentId);
 
       if (error) throw error;
 
-      // Update local state
-      setEnrollments(prev => 
-        prev.map(enrollment => 
-          enrollment.id === enrollmentId 
-            ? { ...enrollment, status: 'active', nextSendTime: new Date().toISOString() } 
+      setEnrollments(prev =>
+        prev.map(enrollment =>
+          enrollment.id === enrollmentId
+            ? { ...enrollment, status: 'active' }
             : enrollment
         )
       );
 
       toast({
-        title: 'Enrollment resumed',
-        description: 'The email sequence has been resumed.',
+        title: 'Enrollment Resumed',
+        description: 'The sequence enrollment has been resumed.',
       });
-
-      return true;
     } catch (error) {
       console.error('Error resuming enrollment:', error);
       toast({
-        title: 'Error resuming enrollment',
-        description: error.message,
+        title: 'Error',
+        description: 'Could not resume the enrollment',
         variant: 'destructive',
       });
-      return false;
+    } finally {
+      setLoading(false);
     }
-  }, [setEnrollments, toast]);
+  };
 
-  // Cancel an enrollment
-  const cancelEnrollment = useCallback(async (enrollmentId: string) => {
+  const cancelEnrollment = async (enrollmentId: string) => {
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('email_sequence_enrollments')
-        .update({ 
+        .update({
           status: 'cancelled',
-          next_send_time: null
+          updated_at: new Date().toISOString()
         })
         .eq('id', enrollmentId);
 
       if (error) throw error;
 
-      // Update local state
-      setEnrollments(prev => 
-        prev.map(enrollment => 
-          enrollment.id === enrollmentId 
-            ? { ...enrollment, status: 'cancelled', nextSendTime: null } 
+      setEnrollments(prev =>
+        prev.map(enrollment =>
+          enrollment.id === enrollmentId
+            ? { ...enrollment, status: 'cancelled' }
             : enrollment
         )
       );
 
       toast({
-        title: 'Enrollment cancelled',
-        description: 'The email sequence has been cancelled.',
+        title: 'Enrollment Cancelled',
+        description: 'The sequence enrollment has been cancelled.',
       });
-
-      return true;
     } catch (error) {
       console.error('Error cancelling enrollment:', error);
       toast({
-        title: 'Error cancelling enrollment',
-        description: error.message,
+        title: 'Error',
+        description: 'Could not cancel the enrollment',
         variant: 'destructive',
       });
-      return false;
+    } finally {
+      setLoading(false);
     }
-  }, [setEnrollments, toast]);
+  };
 
   return {
     pauseEnrollment,
     resumeEnrollment,
-    cancelEnrollment
+    cancelEnrollment,
+    loading
   };
 };

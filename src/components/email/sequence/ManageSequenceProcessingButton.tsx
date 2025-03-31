@@ -1,103 +1,72 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Clock, Loader2 } from 'lucide-react';
+import { Play, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { emailService } from '@/services/email/emailService';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
-interface ManageSequenceProcessingButtonProps {
-  className?: string;
-}
-
-export function ManageSequenceProcessingButton({ className }: ManageSequenceProcessingButtonProps) {
+export function ManageSequenceProcessingButton() {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [sequences, setSequences] = useState<any[]>([]);
-  const [selectedSequence, setSelectedSequence] = useState<string>('all');
-  const [loadingSequences, setLoadingSequences] = useState(false);
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (isOpen) {
-      fetchSequences();
-    }
-  };
-
-  const fetchSequences = async () => {
-    setLoadingSequences(true);
-    try {
-      const { data, error } = await supabase
-        .from('email_sequences')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-        
-      if (error) throw error;
-      setSequences(data || []);
-    } catch (error) {
-      console.error('Error fetching sequences:', error);
-      toast({
-        title: 'Error',
-        description: 'Could not load email sequences',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingSequences(false);
-    }
-  };
 
   const handleProcess = async () => {
     setIsProcessing(true);
     try {
-      // Prepare parameters for the function call
-      const params: { action: string; sequenceId?: string } = {
-        action: 'process',
-      };
+      const success = await emailService.triggerSequenceProcessing();
       
-      // If a specific sequence is selected, add it to the parameters
-      if (selectedSequence !== 'all') {
-        params.sequenceId = selectedSequence;
+      if (success) {
+        toast({
+          title: "Processing triggered",
+          description: "All email sequences are now being processed",
+        });
+      } else {
+        toast({
+          title: "Processing failed",
+          description: "Could not trigger email sequence processing",
+          variant: "destructive",
+        });
       }
-      
-      const { data, error } = await supabase.functions.invoke('process-email-sequences', {
-        body: params
-      });
-      
-      if (error) throw error;
-      
-      // Display success message with results
-      const processed = data?.processed || 0;
-      const completed = data?.completed || 0;
-      
-      toast({
-        title: "Processing succeeded",
-        description: `Processed ${processed} emails, completed ${completed} sequences.`,
-      });
-      
-      setOpen(false);
     } catch (error) {
-      console.error("Error processing sequences:", error);
+      console.error("Error triggering sequence processing:", error);
       toast({
-        title: "Processing failed",
-        description: "Could not process email sequences",
+        title: "Processing error",
+        description: "An error occurred while processing sequences",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCreateSchedule = async (interval: 'hourly' | 'daily' | 'every_6_hours') => {
+    setIsProcessing(true);
+    try {
+      const success = await emailService.createProcessingSchedule(interval);
+      
+      if (success) {
+        toast({
+          title: "Schedule created",
+          description: `Email sequences will now be processed ${interval.replace('_', ' ')}`,
+        });
+      } else {
+        toast({
+          title: "Scheduling failed",
+          description: "Could not create processing schedule",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating schedule:", error);
+      toast({
+        title: "Scheduling error",
+        description: "An error occurred while creating the schedule",
         variant: "destructive",
       });
     } finally {
@@ -106,65 +75,33 @@ export function ManageSequenceProcessingButton({ className }: ManageSequenceProc
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button 
-          variant="secondary" 
+          variant="outline" 
           size="sm" 
-          className={className}
+          disabled={isProcessing}
         >
-          <Clock className="h-4 w-4 mr-2" />
-          Process Sequences
+          <Clock className="mr-2 h-4 w-4" />
+          Manage Processing
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Process Email Sequences</DialogTitle>
-          <DialogDescription>
-            Process scheduled email sequences now. This will send any due emails and update sequence enrollments.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="py-4 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="sequence-select">Select Sequence</Label>
-            <Select
-              disabled={loadingSequences}
-              value={selectedSequence}
-              onValueChange={setSelectedSequence}
-            >
-              <SelectTrigger id="sequence-select">
-                <SelectValue placeholder="Select a sequence" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Active Sequences</SelectItem>
-                {sequences.map((sequence) => (
-                  <SelectItem key={sequence.id} value={sequence.id}>
-                    {sequence.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button
-            onClick={handleProcess}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 mr-2" /> Process Now
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={handleProcess} disabled={isProcessing}>
+          <Play className="mr-2 h-4 w-4" />
+          Process Now
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleCreateSchedule('hourly')} disabled={isProcessing}>
+          Schedule Hourly
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCreateSchedule('every_6_hours')} disabled={isProcessing}>
+          Schedule Every 6 Hours
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCreateSchedule('daily')} disabled={isProcessing}>
+          Schedule Daily
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

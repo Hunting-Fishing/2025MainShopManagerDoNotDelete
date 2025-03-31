@@ -1,30 +1,30 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FormDescription } from '@/components/ui/form';
+import { FormDescription, FormMessage } from '@/components/ui/form';
 
 interface MetadataEditorProps {
   value: string;
   onChange: (value: string) => void;
+  error?: string;
 }
 
 export const MetadataEditor: React.FC<MetadataEditorProps> = ({
   value,
   onChange,
+  error
 }) => {
   return (
-    <div className="space-y-4">
-      <Label htmlFor="metadata">Custom JSON Metadata</Label>
+    <div className="space-y-2">
       <Textarea
-        id="metadata"
-        placeholder='{"custom_field": "value", "tracking": {"source": "website"}}'
+        placeholder="Enter JSON metadata"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        rows={5}
+        className="font-mono text-sm h-32"
       />
+      {error && <FormMessage>{error}</FormMessage>}
       <FormDescription>
-        Add any additional metadata as valid JSON for advanced tracking and personalization.
+        Advanced: Add custom JSON metadata to use with this enrollment
       </FormDescription>
     </div>
   );
