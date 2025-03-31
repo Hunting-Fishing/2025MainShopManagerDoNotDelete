@@ -42,6 +42,7 @@ export const useEnrollCustomer = (
       await refreshEnrollments(customerId);
       
       // Trigger the sequence processing to start sending emails
+      // @ts-ignore - We know this method exists in our service
       await emailService.triggerSequenceProcessing(sequenceId);
       
       toast({

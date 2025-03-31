@@ -18,7 +18,7 @@ export const emailSequenceService = {
       if (error) throw error;
       
       return (data || []).map(sequence => {
-        // Parse steps from JSON
+        // Parse steps from JSON stored in the database
         const steps = parseJsonField(sequence.steps, []);
         
         return {
