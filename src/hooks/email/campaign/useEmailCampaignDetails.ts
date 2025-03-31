@@ -37,7 +37,7 @@ export const useEmailCampaignDetails = () => {
         status: validateCampaignStatus(data.status),
         template_id: data.template_id,
         segment_ids: segment_ids,
-        segment_id: undefined, // This field isn't in the database schema
+        segment_id: undefined, // This isn't in the database, but included in the interface
         recipient_ids: recipient_ids,
         recipientIds: recipient_ids,
         personalizations: personalizations,
