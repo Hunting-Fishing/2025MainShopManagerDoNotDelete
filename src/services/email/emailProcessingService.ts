@@ -13,8 +13,8 @@ export const emailProcessingService = {
    */
   async getSequenceProcessingSchedule() {
     try {
-      // Use a direct cast to avoid type inference errors
-      const response = await supabase
+      // Force any type to bypass type checking entirely
+      const response = await (supabase as any)
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
@@ -58,7 +58,7 @@ export const emailProcessingService = {
   }) {
     try {
       // Check for existing schedule using direct casting
-      const existingResponse = await supabase
+      const existingResponse = await (supabase as any)
         .from('system_schedules')
         .select('*')
         .eq('type', 'email_sequence_processing')
@@ -71,7 +71,7 @@ export const emailProcessingService = {
       
       if (existing) {
         // Update existing schedule with direct casting
-        const updateResponse = await supabase
+        const updateResponse = await (supabase as any)
           .from('system_schedules')
           .update({
             is_active: config.enabled,
@@ -88,7 +88,7 @@ export const emailProcessingService = {
         return { success: true, data };
       } else {
         // Create new schedule with direct casting
-        const insertResponse = await supabase
+        const insertResponse = await (supabase as any)
           .from('system_schedules')
           .insert({
             type: 'email_sequence_processing',
@@ -169,7 +169,7 @@ export const emailProcessingService = {
   async selectABTestWinner(campaignId: string, forceWinnerId?: string) {
     try {
       // Use direct casting for the custom table
-      const abTestResponse = await supabase
+      const abTestResponse = await (supabase as any)
         .from('email_ab_tests')
         .select('*')
         .eq('campaign_id', campaignId)
