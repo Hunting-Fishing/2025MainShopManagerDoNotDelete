@@ -980,4 +980,112 @@ class EmailService {
         sequence_id: data.sequence_id,
         type: data.delay_hours > 0 ? 'delay' : 'email',
         order: data.position,
-        delay_duration: data
+        delay_duration: data.delay_hours ? `${data.delay_hours} hours` : undefined,
+        email_template_id: data.template_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        name: data.name,
+        templateId: data.template_id,
+        delayHours: data.delay_hours,
+        delayType: (data.delay_type || 'fixed') as 'fixed' | 'business_days',
+        position: data.position,
+        isActive: data.is_active,
+        condition: data.condition_type ? {
+          type: data.condition_type as 'event' | 'property',
+          value: data.condition_value,
+          operator: data.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+        } : undefined
+      };
+    } catch (error) {
+      console.error("Error creating sequence step:", error);
+      throw error;
+    }
+  }
+
+  async updateSequenceStep(stepId: string, updates: Partial<EmailSequenceStep>): Promise<EmailSequenceStep> {
+    try {
+      const updateData: any = {};
+      
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.templateId || updates.email_template_id) updateData.template_id = updates.templateId || updates.email_template_id;
+      if (updates.delayHours !== undefined) updateData.delay_hours = updates.delayHours;
+      if (updates.delayType) updateData.delay_type = updates.delayType;
+      if (updates.position !== undefined) updateData.position = updates.position;
+      if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+      
+      if (updates.condition) {
+        updateData.condition_type = updates.condition.type;
+        updateData.condition_value = updates.condition.value;
+        updateData.condition_operator = updates.condition.operator;
+      }
+      
+      const { data, error } = await supabase
+        .from('email_sequence_steps')
+        .update(updateData)
+        .eq('id', stepId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        sequence_id: data.sequence_id,
+        type: data.delay_hours > 0 ? 'delay' : 'email',
+        order: data.position,
+        delay_duration: data.delay_hours ? `${data.delay_hours} hours` : undefined,
+        email_template_id: data.template_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        name: data.name,
+        templateId: data.template_id,
+        delayHours: data.delay_hours,
+        delayType: (data.delay_type || 'fixed') as 'fixed' | 'business_days',
+        position: data.position,
+        isActive: data.is_active,
+        condition: data.condition_type ? {
+          type: data.condition_type as 'event' | 'property',
+          value: data.condition_value,
+          operator: data.condition_operator as '=' | '!=' | '>' | '<' | '>=' | '<='
+        } : undefined
+      };
+    } catch (error) {
+      console.error("Error updating sequence step:", error);
+      throw error;
+    }
+  }
+
+  async deleteSequenceStep(stepId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('email_sequence_steps')
+        .delete()
+        .eq('id', stepId);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting sequence step:", error);
+      return false;
+    }
+  }
+
+  async triggerSequenceProcessing(): Promise<boolean> {
+    try {
+      // Call an edge function or trigger a background job to process sequences
+      const { error } = await supabase.functions.invoke('process-email-sequences', {
+        body: { action: 'process' }
+      });
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error("Error triggering sequence processing:", error);
+      return false;
+    }
+  }
+}
+
+export const emailService = new EmailService();
