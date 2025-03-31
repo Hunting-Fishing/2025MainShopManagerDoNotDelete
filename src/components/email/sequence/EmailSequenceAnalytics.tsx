@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useEmailSequences } from '@/hooks/email/useEmailSequences';
+import { useSequenceAnalytics } from '@/hooks/email/sequence/useSequenceAnalytics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarClock, Users, TrendingUp } from 'lucide-react';
@@ -14,7 +14,7 @@ export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsPro
     analytics, 
     analyticsLoading, 
     fetchSequenceAnalytics 
-  } = useEmailSequences();
+  } = useSequenceAnalytics();
   
   useEffect(() => {
     if (sequenceId) {

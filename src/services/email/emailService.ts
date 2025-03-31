@@ -1,24 +1,45 @@
 import { supabase } from '@/lib/supabase';
-import { EmailSequence, EmailTemplate } from '@/types/email';
+import { EmailSequence, EmailTemplate, EmailTemplateVariable } from '@/types/email';
 
-interface EmailTemplateResponse {
-  data: EmailTemplate[] | null;
+type PostgrestResult<T> = {
+  data: T | null;
   error: any;
 }
 
 class EmailService {
-  async getTemplates(): Promise<EmailTemplate[]> {
-    const { data, error }: EmailTemplateResponse = await supabase
+  async getTemplates(limit?: number, category?: string): Promise<EmailTemplate[]> {
+    let query = supabase
       .from('email_templates')
       .select('*')
       .order('created_at', { ascending: false });
+    
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching templates:", error);
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(template => ({
+      id: template.id,
+      name: template.name,
+      subject: template.subject,
+      description: template.description || '',
+      category: template.category as any,
+      content: template.content,
+      variables: template.variables as EmailTemplateVariable[] || [],
+      created_at: template.created_at,
+      updated_at: template.updated_at,
+      is_archived: template.is_archived || false,
+    }));
   }
 
   async getTemplateById(id: string): Promise<EmailTemplate | null> {
@@ -33,19 +54,33 @@ class EmailService {
       return null;
     }
 
-    return data;
+    return {
+      id: data.id,
+      name: data.name,
+      subject: data.subject,
+      description: data.description || '',
+      category: data.category as any,
+      content: data.content,
+      variables: data.variables as EmailTemplateVariable[] || [],
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_archived: data.is_archived || false,
+    };
   }
 
   async createTemplate(template: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
+    const templateData = {
+      name: template.name || '',
+      subject: template.subject || '',
+      content: template.content || '',
+      description: template.description,
+      category: template.category,
+      variables: template.variables || []
+    };
+
     const { data, error } = await supabase
       .from('email_templates')
-      .insert([
-        {
-          name: template.name,
-          subject: template.subject,
-          content: template.content,
-        },
-      ])
+      .insert([templateData])
       .select()
       .single();
 
@@ -54,13 +89,26 @@ class EmailService {
       return null;
     }
 
-    return data;
+    return {
+      id: data.id,
+      name: data.name,
+      subject: data.subject,
+      description: data.description || '',
+      category: data.category as any,
+      content: data.content,
+      variables: data.variables as EmailTemplateVariable[] || [],
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_archived: data.is_archived || false,
+    };
   }
 
   async updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
+    const updateData: any = { ...updates };
+    
     const { data, error } = await supabase
       .from('email_templates')
-      .update(updates)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -70,7 +118,18 @@ class EmailService {
       return null;
     }
 
-    return data;
+    return {
+      id: data.id,
+      name: data.name,
+      subject: data.subject,
+      description: data.description || '',
+      category: data.category as any,
+      content: data.content,
+      variables: data.variables as EmailTemplateVariable[] || [],
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_archived: data.is_archived || false,
+    };
   }
 
   async deleteTemplate(id: string): Promise<boolean> {
@@ -115,7 +174,28 @@ class EmailService {
     return true;
   }
 
-  // Email sequence methods
+  async sendTestEmail(templateId: string, recipientEmail: string, personalizations?: Record<string, string>): Promise<boolean> {
+    try {
+      const response = await supabase.functions.invoke('send-test-email', {
+        body: { 
+          templateId, 
+          recipientEmail, 
+          personalizations 
+        }
+      });
+      
+      if (response.error) {
+        console.error("Error sending test email:", response.error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      return false;
+    }
+  }
+
   async getSequences(): Promise<EmailSequence[]> {
     const { data, error } = await supabase
       .from('email_sequences')
@@ -123,7 +203,33 @@ class EmailService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+
+    return (data || []).map(sequence => ({
+      id: sequence.id,
+      name: sequence.name,
+      description: sequence.description || '',
+      created_at: sequence.created_at,
+      updated_at: sequence.updated_at,
+      shop_id: sequence.shop_id,
+      created_by: sequence.created_by,
+      trigger_type: sequence.trigger_type,
+      trigger_event: sequence.trigger_event,
+      is_active: sequence.is_active,
+      steps: (sequence.steps || []).map((step: any) => ({
+        id: step.id,
+        sequence_id: step.sequence_id,
+        type: step.delay_hours > 0 ? 'delay' : 'email',
+        order: step.position,
+        position: step.position,
+        delay_hours: step.delay_hours,
+        delay_type: step.delay_type,
+        email_template_id: step.template_id,
+        created_at: step.created_at,
+        updated_at: step.updated_at,
+        isActive: step.is_active,
+        name: step.name
+      }))
+    }));
   }
 
   async getSequenceById(id: string): Promise<EmailSequence | null> {
@@ -138,20 +244,46 @@ class EmailService {
       return null;
     }
     
-    return data;
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      shop_id: data.shop_id,
+      created_by: data.created_by,
+      trigger_type: data.trigger_type,
+      trigger_event: data.trigger_event,
+      is_active: data.is_active,
+      steps: (data.steps || []).map((step: any) => ({
+        id: step.id,
+        sequence_id: step.sequence_id,
+        type: step.delay_hours > 0 ? 'delay' : 'email',
+        order: step.position,
+        position: step.position,
+        delay_hours: step.delay_hours,
+        delay_type: step.delay_type,
+        email_template_id: step.template_id,
+        created_at: step.created_at,
+        updated_at: step.updated_at,
+        isActive: step.is_active,
+        name: step.name
+      }))
+    };
   }
 
   async createSequence(sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
-    // Create sequence first
-    const { data: sequenceData, error: sequenceError } = await supabase
+    const sequenceData = {
+      name: sequence.name,
+      description: sequence.description,
+      trigger_type: sequence.triggerType || sequence.trigger_type,
+      trigger_event: sequence.triggerEvent || sequence.trigger_event,
+      is_active: sequence.isActive || sequence.is_active || false
+    };
+
+    const { data: sequenceResult, error: sequenceError } = await supabase
       .from('email_sequences')
-      .insert({
-        name: sequence.name,
-        description: sequence.description,
-        trigger_type: sequence.triggerType || sequence.trigger_type,
-        trigger_event: sequence.triggerEvent || sequence.trigger_event,
-        is_active: sequence.isActive || sequence.is_active || false
-      })
+      .insert(sequenceData)
       .select()
       .single();
 
@@ -160,45 +292,63 @@ class EmailService {
       return null;
     }
 
-    // Then add steps if they exist
     if (sequence.steps && sequence.steps.length > 0) {
-      const stepsWithSequenceId = sequence.steps.map((step, index) => ({
-        sequence_id: sequenceData.id,
-        type: step.type,
-        order: index,
+      const stepsData = sequence.steps.map((step, index) => ({
+        sequence_id: sequenceResult.id,
+        template_id: step.templateId || step.email_template_id,
         position: index,
-        email_template_id: step.templateId || step.email_template_id,
-        delay_hours: step.delayHours || 0,
-        delay_type: step.delayType || 'fixed'
+        delay_hours: step.delayHours || step.delay_hours || 0,
+        delay_type: step.delayType || step.delay_type || 'fixed',
+        name: step.name || `Step ${index + 1}`,
+        is_active: step.isActive !== undefined ? step.isActive : true
       }));
 
-      const { data: stepsData, error: stepsError } = await supabase
+      const { data: stepsResult, error: stepsError } = await supabase
         .from('email_sequence_steps')
-        .insert(stepsWithSequenceId)
+        .insert(stepsData)
         .select();
 
       if (stepsError) {
         console.error("Error creating sequence steps:", stepsError);
       }
 
-      // Return complete sequence with steps
-      return { ...sequenceData, steps: stepsData || [] };
+      return {
+        ...sequenceResult,
+        steps: (stepsResult || []).map((step: any) => ({
+          id: step.id,
+          sequence_id: step.sequence_id,
+          type: step.delay_hours > 0 ? 'delay' : 'email',
+          order: step.position,
+          position: step.position,
+          delay_hours: step.delay_hours,
+          delay_type: step.delay_type,
+          email_template_id: step.template_id,
+          created_at: step.created_at,
+          updated_at: step.updated_at,
+          isActive: step.is_active,
+          name: step.name
+        }))
+      };
     }
 
-    return sequenceData;
+    return {
+      ...sequenceResult,
+      steps: []
+    };
   }
 
   async updateSequence(id: string, sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
-    // Update sequence first
-    const { data: sequenceData, error: sequenceError } = await supabase
+    const sequenceData = {
+      name: sequence.name,
+      description: sequence.description,
+      trigger_type: sequence.triggerType || sequence.trigger_type,
+      trigger_event: sequence.triggerEvent || sequence.trigger_event,
+      is_active: sequence.isActive || sequence.is_active
+    };
+
+    const { data: sequenceResult, error: sequenceError } = await supabase
       .from('email_sequences')
-      .update({
-        name: sequence.name,
-        description: sequence.description,
-        trigger_type: sequence.triggerType || sequence.trigger_type,
-        trigger_event: sequence.triggerEvent || sequence.trigger_event,
-        is_active: sequence.isActive || sequence.is_active
-      })
+      .update(sequenceData)
       .eq('id', id)
       .select()
       .single();
@@ -208,43 +358,56 @@ class EmailService {
       return null;
     }
 
-    // Delete existing steps and re-insert if they exist
     if (sequence.steps) {
-      // Delete existing steps
       await supabase.from('email_sequence_steps').delete().eq('sequence_id', id);
 
-      // Insert new steps
-      const stepsWithSequenceId = sequence.steps.map((step, index) => ({
+      const stepsData = sequence.steps.map((step, index) => ({
         sequence_id: id,
-        type: step.type,
-        order: index,
+        template_id: step.templateId || step.email_template_id,
         position: index,
-        email_template_id: step.templateId || step.email_template_id,
-        delay_hours: step.delayHours || 0,
-        delay_type: step.delayType || 'fixed'
+        delay_hours: step.delayHours || step.delay_hours || 0,
+        delay_type: step.delayType || step.delay_type || 'fixed',
+        name: step.name || `Step ${index + 1}`,
+        is_active: step.isActive !== undefined ? step.isActive : true
       }));
 
-      const { data: stepsData, error: stepsError } = await supabase
+      const { data: stepsResult, error: stepsError } = await supabase
         .from('email_sequence_steps')
-        .insert(stepsWithSequenceId)
+        .insert(stepsData)
         .select();
 
       if (stepsError) {
         console.error("Error updating sequence steps:", stepsError);
       }
 
-      // Return complete sequence with steps
-      return { ...sequenceData, steps: stepsData || [] };
+      return {
+        ...sequenceResult,
+        steps: (stepsResult || []).map((step: any) => ({
+          id: step.id,
+          sequence_id: step.sequence_id,
+          type: step.delay_hours > 0 ? 'delay' : 'email',
+          order: step.position,
+          position: step.position,
+          delay_hours: step.delay_hours,
+          delay_type: step.delay_type,
+          email_template_id: step.template_id,
+          created_at: step.created_at,
+          updated_at: step.updated_at,
+          isActive: step.is_active,
+          name: step.name
+        }))
+      };
     }
 
-    return sequenceData;
+    return {
+      ...sequenceResult,
+      steps: []
+    };
   }
 
   async deleteSequence(id: string): Promise<boolean> {
-    // Delete steps first to avoid foreign key constraint issues
     await supabase.from('email_sequence_steps').delete().eq('sequence_id', id);
     
-    // Then delete the sequence
     const { error } = await supabase.from('email_sequences').delete().eq('id', id);
     
     if (error) {
@@ -254,7 +417,7 @@ class EmailService {
     
     return true;
   }
-  
+
   async triggerSequenceProcessing(sequenceId?: string): Promise<boolean> {
     try {
       const response = await supabase.functions.invoke('process-email-sequences', {
@@ -272,7 +435,7 @@ class EmailService {
       return false;
     }
   }
-  
+
   async pauseSequenceEnrollment(enrollmentId: string): Promise<boolean> {
     const { error } = await supabase
       .from('email_sequence_enrollments')
@@ -286,13 +449,13 @@ class EmailService {
     
     return true;
   }
-  
+
   async resumeSequenceEnrollment(enrollmentId: string): Promise<boolean> {
     const { error } = await supabase
       .from('email_sequence_enrollments')
       .update({ 
         status: 'active',
-        next_send_time: new Date().toISOString() // Resume immediately
+        next_send_time: new Date().toISOString()
       })
       .eq('id', enrollmentId);
       
@@ -303,7 +466,7 @@ class EmailService {
     
     return true;
   }
-  
+
   async cancelSequenceEnrollment(enrollmentId: string): Promise<boolean> {
     const { error } = await supabase
       .from('email_sequence_enrollments')

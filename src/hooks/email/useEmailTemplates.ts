@@ -15,7 +15,7 @@ export const useEmailTemplates = (category?: EmailCategory) => {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const data = await emailService.getTemplates(undefined, category);
+      const data = await emailService.getTemplates();
       if (Array.isArray(data)) {
         setTemplates(data);
       } else {
@@ -57,7 +57,6 @@ export const useEmailTemplates = (category?: EmailCategory) => {
 
   const createTemplate = async (template: Partial<EmailTemplate>) => {
     try {
-      // Generate a temp ID for the template
       const tempTemplate = {
         id: Date.now().toString(),
         ...template
