@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { EmailCampaign } from '@/types/email';
 import { supabase } from '@/lib/supabase';
@@ -23,7 +22,6 @@ export const useEmailCampaignDetails = () => {
 
       if (error) throw error;
 
-      // Parse JSON fields
       const segment_ids = parseJsonField(data.segment_ids, []);
       const recipient_ids = parseJsonField(data.recipient_ids, []);
       const personalizations = parseJsonField(data.personalizations, {});
@@ -39,7 +37,7 @@ export const useEmailCampaignDetails = () => {
         status: validateCampaignStatus(data.status),
         template_id: data.template_id,
         segment_ids: segment_ids,
-        segment_id: undefined, // This isn't in the database, but included in the interface
+        segment_id: undefined,
         recipient_ids: recipient_ids,
         recipientIds: recipient_ids,
         personalizations: personalizations,
@@ -58,7 +56,6 @@ export const useEmailCampaignDetails = () => {
         sentDate: data.sent_date
       };
       
-      // Fetch latest analytics data
       fetchCampaignAnalytics(campaignId).catch(console.error);
       
       setCampaign(formattedCampaign);
@@ -76,23 +73,20 @@ export const useEmailCampaignDetails = () => {
     }
   };
 
-  // Fetch the latest analytics data for a campaign
   const fetchCampaignAnalytics = async (campaignId: string) => {
     setAnalyticsLoading(true);
     try {
-      // First check for analytics in the dedicated analytics table
       const { data: analyticsData, error: analyticsError } = await supabase
         .from('email_campaign_analytics')
         .select('*')
         .eq('campaign_id', campaignId)
         .single();
       
-      if (analyticsError && analyticsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      if (analyticsError && analyticsError.code !== 'PGRST116') {
         throw analyticsError;
       }
       
       if (analyticsData) {
-        // Update the campaign with analytics data
         setCampaign(prevCampaign => {
           if (!prevCampaign) return null;
           
@@ -105,8 +99,6 @@ export const useEmailCampaignDetails = () => {
           };
         });
       } else {
-        // If no analytics data, check for events directly
-        // Using RPC calls instead of direct table access to avoid type errors
         const { data: openData, error: openError } = await supabase.rpc(
           'count_email_events',
           { 
@@ -142,18 +134,20 @@ export const useEmailCampaignDetails = () => {
         }
       }
 
-      // Update A/B test variant data if A/B testing is enabled
       updateABTestVariantMetrics(campaignId).catch(console.error);
       
     } catch (error) {
       console.error("Error fetching campaign analytics:", error);
-      // Don't show toast for analytics errors to avoid disrupting the UI
+      toast({
+        title: "Error",
+        description: "Failed to load campaign analytics",
+        variant: "destructive",
+      });
     } finally {
       setAnalyticsLoading(false);
     }
   };
 
-  // Update A/B test variant metrics based on current data
   const updateABTestVariantMetrics = async (campaignId: string) => {
     const currentCampaign = campaign || await fetchCampaignDetails(campaignId);
     if (!currentCampaign?.abTest?.enabled) return;
@@ -161,29 +155,30 @@ export const useEmailCampaignDetails = () => {
     try {
       const variants = currentCampaign.abTest.variants;
       const updatedVariants = await Promise.all(variants.map(async (variant) => {
-        // Get open and click counts for this variant
-        const { data: openData } = await supabase.rpc(
-          'count_email_events',
-          { 
-            campaign_id_param: campaignId,
-            event_type_param: 'opened',
-            variant_id_param: variant.id
-          }
-        );
+        const { data: events } = await supabase
+          .from('email_events')
+          .select('*')
+          .eq('campaign_id', campaignId)
+          .eq('event_type', 'opened');
         
-        const { data: clickData } = await supabase.rpc(
-          'count_email_events',
-          { 
-            campaign_id_param: campaignId,
-            event_type_param: 'clicked',
-            variant_id_param: variant.id
-          }
-        );
-
-        const openCount = openData || 0;
-        const clickCount = clickData || 0;
+        const variantEvents = events?.filter(event => 
+          event.event_data && event.event_data.variant_id === variant.id
+        ) || [];
         
-        // Calculate metrics
+        const openCount = variantEvents.length;
+        
+        const { data: clickEvents } = await supabase
+          .from('email_events')
+          .select('*')
+          .eq('campaign_id', campaignId)
+          .eq('event_type', 'clicked');
+        
+        const variantClickEvents = clickEvents?.filter(event => 
+          event.event_data && event.event_data.variant_id === variant.id
+        ) || [];
+        
+        const clickCount = variantClickEvents.length;
+        
         const openRate = variant.recipients > 0 ? openCount / variant.recipients : 0;
         const clickRate = variant.recipients > 0 ? clickCount / variant.recipients : 0;
         const clickToOpenRate = openCount > 0 ? clickCount / openCount : 0;
@@ -200,7 +195,6 @@ export const useEmailCampaignDetails = () => {
         };
       }));
 
-      // Update campaign state with new variant data
       setCampaign(prevCampaign => {
         if (!prevCampaign || !prevCampaign.abTest) return prevCampaign;
         
@@ -217,7 +211,6 @@ export const useEmailCampaignDetails = () => {
     }
   };
 
-  // Select a winner for an A/B test
   const selectABTestWinner = async (campaignId: string, forceWinnerId?: string) => {
     setAbTestLoading(true);
     try {
@@ -228,10 +221,8 @@ export const useEmailCampaignDetails = () => {
       let winnerId: string;
 
       if (forceWinnerId) {
-        // Manually select the specified variant as winner
         winnerId = forceWinnerId;
       } else {
-        // Use database function to calculate winner based on criteria
         const { data, error } = await supabase.rpc(
           'calculate_ab_test_winner',
           { 
@@ -248,7 +239,6 @@ export const useEmailCampaignDetails = () => {
         throw new Error("Failed to determine a winner");
       }
 
-      // Update local state
       setCampaign(prevCampaign => {
         if (!prevCampaign || !prevCampaign.abTest) return prevCampaign;
         
