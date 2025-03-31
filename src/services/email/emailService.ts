@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import {
   Email,
@@ -940,4 +941,169 @@ class EmailService {
         triggerEvent: newSequence.trigger_event,
         isActive: newSequence.is_active
       };
-    } catch (error)
+    } catch (error) {
+      console.error("Error creating email sequence:", error);
+      return null;
+    }
+  }
+
+  async updateSequence(id: string, sequence: Partial<EmailSequence>): Promise<EmailSequence | null> {
+    try {
+      const { data: updatedSequence, error: sequenceError } = await supabase
+        .from('email_sequences')
+        .update({
+          name: sequence.name,
+          description: sequence.description,
+          trigger_type: (sequence.triggerType || sequence.trigger_type) as string,
+          trigger_event: sequence.triggerEvent || sequence.trigger_event,
+          is_active: sequence.isActive || sequence.is_active
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (sequenceError) throw sequenceError;
+
+      // Handle steps if provided
+      if (sequence.steps && sequence.steps.length > 0) {
+        // Delete existing steps
+        const { error: deleteError } = await supabase
+          .from('email_sequence_steps')
+          .delete()
+          .eq('sequence_id', id);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new steps
+        for (const [index, step] of sequence.steps.entries()) {
+          const stepData = {
+            sequence_id: id,
+            name: step.name,
+            template_id: step.templateId || step.email_template_id,
+            delay_hours: step.delayHours || 0,
+            delay_type: (step.delayType || 'fixed') as 'fixed' | 'business_days',
+            position: step.position || index,
+            is_active: step.isActive !== undefined ? step.isActive : true,
+            condition_type: step.condition?.type,
+            condition_value: step.condition?.value,
+            condition_operator: step.condition?.operator
+          };
+
+          const { error: stepError } = await supabase
+            .from('email_sequence_steps')
+            .insert(stepData);
+
+          if (stepError) throw stepError;
+        }
+      }
+
+      // Fetch the updated sequence with steps
+      return await this.getSequenceById(id);
+    } catch (error) {
+      console.error("Error updating email sequence:", error);
+      return null;
+    }
+  }
+
+  async deleteSequence(id: string): Promise<boolean> {
+    try {
+      // First delete all steps
+      const { error: stepsError } = await supabase
+        .from('email_sequence_steps')
+        .delete()
+        .eq('sequence_id', id);
+
+      if (stepsError) throw stepsError;
+
+      // Then delete the sequence
+      const { error: sequenceError } = await supabase
+        .from('email_sequences')
+        .delete()
+        .eq('id', id);
+
+      if (sequenceError) throw sequenceError;
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting email sequence:", error);
+      return false;
+    }
+  }
+
+  async getSequenceEnrollments(sequenceId?: string): Promise<EmailSequenceEnrollment[]> {
+    try {
+      let query = supabase
+        .from('email_sequence_enrollments')
+        .select('*');
+      
+      if (sequenceId) {
+        query = query.eq('sequence_id', sequenceId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      return data.map(item => ({
+        id: item.id,
+        sequence_id: item.sequence_id,
+        sequenceId: item.sequence_id,
+        customer_id: item.customer_id,
+        customerId: item.customer_id,
+        status: item.status as 'active' | 'paused' | 'completed' | 'cancelled',
+        current_step_id: item.current_step_id,
+        currentStepId: item.current_step_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        completed_at: item.completed_at,
+        completedAt: item.completed_at,
+        startedAt: item.started_at,
+        nextSendTime: item.next_send_time,
+        metadata: item.metadata
+      }));
+    } catch (error) {
+      console.error("Error getting sequence enrollments:", error);
+      return [];
+    }
+  }
+
+  async enrollCustomerInSequence(sequenceId: string, customerId: string): Promise<EmailSequenceEnrollment | null> {
+    try {
+      const { data, error } = await supabase
+        .from('email_sequence_enrollments')
+        .insert({
+          sequence_id: sequenceId,
+          customer_id: customerId,
+          status: 'active',
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        sequence_id: data.sequence_id,
+        sequenceId: data.sequence_id,
+        customer_id: data.customer_id,
+        customerId: data.customer_id,
+        status: data.status as 'active' | 'paused' | 'completed' | 'cancelled',
+        current_step_id: data.current_step_id,
+        currentStepId: data.current_step_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        completed_at: data.completed_at,
+        completedAt: data.completed_at,
+        startedAt: data.started_at,
+        nextSendTime: data.next_send_time,
+        metadata: data.metadata
+      };
+    } catch (error) {
+      console.error("Error enrolling customer in sequence:", error);
+      return null;
+    }
+  }
+}
+
+export const emailService = new EmailService();
