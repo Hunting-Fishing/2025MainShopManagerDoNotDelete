@@ -4,7 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { 
   EmailCampaignAnalytics, 
   EmailCampaign,
-  EmailCampaignTimelinePoint
+  EmailCampaignTimelinePoint,
+  EmailCampaignStatus
 } from '@/types/email';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,7 +64,8 @@ export const useEmailCampaignAnalytics = () => {
       // Add the missing 'body' property to make it compatible with EmailCampaign
       const campaignWithBody: EmailCampaign = {
         ...campaignData,
-        body: campaignData.content || '' // Using content as body or empty string if not available
+        body: campaignData.content || '', // Using content as body or empty string if not available
+        status: campaignData.status as EmailCampaignStatus // Explicitly cast to EmailCampaignStatus
       };
       
       setCampaignDetails(campaignWithBody);
@@ -78,9 +80,18 @@ export const useEmailCampaignAnalytics = () => {
       if (analyticsError) throw analyticsError;
       
       // Ensure timeline is an array of EmailCampaignTimelinePoint
-      const timelineData: EmailCampaignTimelinePoint[] = Array.isArray(analyticsData.timeline) 
-        ? analyticsData.timeline as EmailCampaignTimelinePoint[]
-        : [];
+      let timelineData: EmailCampaignTimelinePoint[] = [];
+      
+      if (Array.isArray(analyticsData.timeline)) {
+        // Properly type cast the JSON data to EmailCampaignTimelinePoint[]
+        timelineData = (analyticsData.timeline as any[]).map(point => ({
+          date: point.date || '',
+          opens: point.opens || 0,
+          clicks: point.clicks || 0,
+          unsubscribes: point.unsubscribes || 0,
+          complaints: point.complaints || 0
+        }));
+      }
       
       // Format the analytics data
       const formattedAnalytics: EmailCampaignAnalytics = {
