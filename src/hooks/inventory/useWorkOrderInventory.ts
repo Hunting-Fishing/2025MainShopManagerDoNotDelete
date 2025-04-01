@@ -58,11 +58,11 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormFieldValu
           
           // Attempt to reserve the inventory
           reserveInventory(itemsToReserve).then(result => {
-            if (!result.success && result.unavailableItems) {
-              // Show warning about inventory availability issues without using the message property
+            if (!result.success) {
+              // Show warning about inventory availability issues
               toast({
                 title: "Inventory Warning",
-                description: "Some items have insufficient inventory. Please review inventory levels.",
+                description: result.message || "Some items have insufficient inventory. Please review inventory levels.",
                 variant: "warning"
               });
             }

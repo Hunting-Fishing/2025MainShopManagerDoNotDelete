@@ -9,6 +9,37 @@ import { InventoryItemExtended } from "@/types/inventory";
 
 export type { AutoReorderSettings } from "./useAutoReorder";
 
+// Define consistent return types for inventory functions
+export interface InventoryAvailabilityResult {
+  available: boolean;
+  message?: string;
+  availableQuantity?: number;
+}
+
+export interface ReserveInventoryResult {
+  success: boolean;
+  message?: string;
+  unavailableItems?: {
+    id: string;
+    name: string;
+    requestedQuantity: number;
+    availableQuantity: number;
+    message: string;
+  }[];
+}
+
+export interface ConsumeInventoryResult {
+  success: boolean;
+  message?: string;
+  unavailableItems?: {
+    id: string;
+    name: string;
+    requestedQuantity: number;
+    availableQuantity: number;
+    message: string;
+  }[];
+}
+
 export function useInventoryManager() {
   const { lowStockItems, outOfStockItems, checkInventoryAlerts } = useInventoryAlerts();
   const { autoReorderSettings, enableAutoReorder, disableAutoReorder, placeAutomaticOrder } = useAutoReorder();
@@ -30,7 +61,7 @@ export function useInventoryManager() {
   }, [checkInventoryAlerts, placeAutomaticOrder, autoReorderSettings]);
   
   // Function to check if an item can be used in a work order
-  const checkItemAvailability = useCallback(async (itemId: string, requestedQuantity: number) => {
+  const checkItemAvailability = useCallback(async (itemId: string, requestedQuantity: number): Promise<InventoryAvailabilityResult> => {
     try {
       const item = await getItem(itemId);
       if (!item) return { available: false, message: "Item not found in inventory" };
@@ -51,7 +82,7 @@ export function useInventoryManager() {
   }, [getItem]);
   
   // Function to reserve inventory for a work order
-  const reserveInventory = useCallback(async (items: {id: string, quantity: number}[]) => {
+  const reserveInventory = useCallback(async (items: {id: string, quantity: number}[]): Promise<ReserveInventoryResult> => {
     // In a real app, this would create reservations in the database
     // For now, we just validate availability
     
@@ -64,7 +95,7 @@ export function useInventoryManager() {
           name: inventoryItem?.name || "Unknown item",
           requestedQuantity: item.quantity,
           availableQuantity: availability.availableQuantity || 0,
-          message: availability.message
+          message: availability.message || "Insufficient inventory"
         };
       }
       return null;
@@ -80,19 +111,26 @@ export function useInventoryManager() {
         variant: "destructive"
       });
       
-      return { success: false, unavailableItems };
+      return { 
+        success: false, 
+        message: "Some items have insufficient inventory", 
+        unavailableItems: unavailableItems as any[]
+      };
     }
     
-    return { success: true };
+    return { success: true, message: "All items available" };
   }, [checkItemAvailability, getItem]);
 
   // Function to actually consume inventory when a work order is completed
-  const consumeWorkOrderInventory = useCallback(async (items: {id: string, quantity: number}[]) => {
+  const consumeWorkOrderInventory = useCallback(async (items: {id: string, quantity: number}[]): Promise<ConsumeInventoryResult> => {
     try {
       // First make sure all items are available
       const checkResult = await reserveInventory(items);
       if (!checkResult.success) {
-        return { ...checkResult, message: "Some items have insufficient inventory" };
+        return { 
+          ...checkResult, 
+          message: checkResult.message || "Some items have insufficient inventory" 
+        };
       }
 
       // If all items are available, update the inventory
@@ -105,7 +143,7 @@ export function useInventoryManager() {
           description: "Inventory quantities have been updated based on work order",
           variant: "success"
         });
-        return { success: true };
+        return { success: true, message: "Inventory successfully updated" };
       } else {
         return { 
           success: false, 
