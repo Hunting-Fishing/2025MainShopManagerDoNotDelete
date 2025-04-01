@@ -55,6 +55,10 @@ export const sequenceProcessingService = {
         updatedAt: seq.updated_at,
         lastRun: seq.last_run,  // Include the lastRun property
         last_run: seq.last_run, // Include the last_run property
+        nextRun: seq.next_run,
+        next_run: seq.next_run,
+        runFrequency: seq.run_frequency,
+        run_frequency: seq.run_frequency
       }));
       
       // Prepare the request body
