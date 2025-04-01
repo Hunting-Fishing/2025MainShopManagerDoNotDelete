@@ -1,20 +1,78 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Mock data for monthly revenue
-const data = [
-  { month: "Jan", revenue: 12000 },
-  { month: "Feb", revenue: 15000 },
-  { month: "Mar", revenue: 18000 },
-  { month: "Apr", revenue: 16000 },
-  { month: "May", revenue: 21000 },
-  { month: "Jun", revenue: 19000 },
-  { month: "Jul", revenue: 22000 },
-  { month: "Aug", revenue: 25000 },
-];
+import { useState, useEffect } from "react";
+import { getMonthlyRevenue } from "@/services/workOrderService";
 
 export const MonthlyRevenueChart = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMonthlyRevenue = async () => {
+      try {
+        setLoading(true);
+        const revenueData = await getMonthlyRevenue();
+        setData(revenueData);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching monthly revenue:", err);
+        setError("Failed to load revenue data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMonthlyRevenue();
+  }, []);
+
+  if (loading) {
+    return (
+      <Card className="col-span-2">
+        <CardHeader>
+          <CardTitle>Monthly Revenue</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-esm-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="col-span-2">
+        <CardHeader>
+          <CardTitle>Monthly Revenue</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex items-center justify-center flex-col">
+            <p className="text-red-500">{error}</p>
+            <p className="text-sm text-slate-500 mt-2">Please try again later</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <Card className="col-span-2">
+        <CardHeader>
+          <CardTitle>Monthly Revenue</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex items-center justify-center">
+            <p className="text-muted-foreground">No revenue data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="col-span-2">
       <CardHeader>

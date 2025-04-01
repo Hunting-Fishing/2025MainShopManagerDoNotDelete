@@ -1,6 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, Package, Clock, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getDashboardStats } from "@/services/workOrderService";
 
 // Stats card type
 interface StatCardProps {
@@ -12,37 +14,89 @@ interface StatCardProps {
 }
 
 export const StatsCards = () => {
-  // Mock data for dashboard stats
-  const stats: StatCardProps[] = [
-    {
-      title: "Active Work Orders",
-      value: "28",
-      icon: FileText,
-      change: "+5%",
-      up: true,
-    },
-    {
-      title: "Team Members",
-      value: "14",
-      icon: Users,
-      change: "No change",
-      up: null,
-    },
-    {
-      title: "Inventory Items",
-      value: "156",
-      icon: Package,
-      change: "+12%",
-      up: true,
-    },
-    {
-      title: "Avg. Completion Time",
-      value: "2.4 days",
-      icon: Clock,
-      change: "-8%",
-      up: false,
-    },
-  ];
+  const [stats, setStats] = useState<StatCardProps[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const data = await getDashboardStats();
+        
+        setStats([
+          {
+            title: "Active Work Orders",
+            value: data.activeWorkOrders,
+            icon: FileText,
+            change: data.workOrderChange,
+            up: data.workOrderChange.includes('+'),
+          },
+          {
+            title: "Team Members",
+            value: data.teamMembers,
+            icon: Users,
+            change: data.teamChange,
+            up: null,
+          },
+          {
+            title: "Inventory Items",
+            value: data.inventoryItems,
+            icon: Package,
+            change: data.inventoryChange,
+            up: true,
+          },
+          {
+            title: "Avg. Completion Time",
+            value: data.avgCompletionTime,
+            icon: Clock,
+            change: data.completionTimeChange,
+            up: false,
+          },
+        ]);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching dashboard stats:", err);
+        setError("Failed to load dashboard statistics");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="card-stats animate-pulse">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 w-24 bg-slate-200 rounded"></div>
+              <div className="h-4 w-4 bg-slate-200 rounded"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 w-16 bg-slate-200 rounded mb-2"></div>
+              <div className="h-3 w-32 bg-slate-200 rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="grid gap-4 md:grid-cols-1">
+        <Card className="card-stats">
+          <CardContent className="p-6">
+            <p className="text-red-500">{error}</p>
+            <p className="text-sm text-slate-500 mt-2">Please try again later</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
