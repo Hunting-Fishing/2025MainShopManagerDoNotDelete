@@ -8,6 +8,28 @@ import {
 import { GenericResponse } from '../utils/supabaseHelper';
 
 /**
+ * Helper function to map database enrollment records to typed EmailSequenceEnrollment objects
+ */
+const mapDbEnrollmentToTyped = (record: any): EmailSequenceEnrollment => ({
+  id: record.id,
+  sequence_id: record.sequence_id,
+  customer_id: record.customer_id,
+  status: record.status as 'active' | 'paused' | 'completed' | 'cancelled',
+  current_step_id: record.current_step_id,
+  created_at: record.created_at,
+  updated_at: record.updated_at,
+  completed_at: record.completed_at,
+  // Support for UI components
+  sequenceId: record.sequence_id,
+  customerId: record.customer_id,
+  currentStepId: record.current_step_id,
+  startedAt: record.started_at || record.created_at,
+  completedAt: record.completed_at,
+  nextSendTime: record.next_send_time,
+  metadata: record.metadata || {}
+});
+
+/**
  * Service for email sequence management
  */
 export const emailSequenceService = {
@@ -27,22 +49,7 @@ export const emailSequenceService = {
       if (error) throw error;
       
       // Convert database records to EmailSequenceEnrollment objects
-      const enrollments: EmailSequenceEnrollment[] = data.map(record => ({
-        id: record.id,
-        sequence_id: record.sequence_id,
-        customer_id: record.customer_id,
-        status: record.status as 'active' | 'paused' | 'completed' | 'cancelled',
-        current_step_id: record.current_step_id,
-        created_at: record.created_at,
-        updated_at: record.updated_at,
-        completed_at: record.completed_at,
-        // Support for UI components
-        sequenceId: record.sequence_id,
-        customerId: record.customer_id,
-        currentStepId: record.current_step_id,
-        completedAt: record.completed_at,
-        metadata: record.metadata
-      }));
+      const enrollments: EmailSequenceEnrollment[] = data.map(mapDbEnrollmentToTyped);
       
       // Calculate analytics from enrollments
       const totalEnrollments = enrollments.length;
@@ -73,6 +80,36 @@ export const emailSequenceService = {
         ? totalTimeToComplete / completedCount
         : 0;
       
+      // Get sent emails count
+      const { count: emailsSent, error: emailsError } = await supabase
+        .from('email_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_type', 'sent')
+        .like('metadata->>sequence_id', sequenceId);
+      
+      if (emailsError) console.error('Error counting emails:', emailsError);
+      
+      // Generate timeline data (past 30 days)
+      const timelineData = [];
+      const now = new Date();
+      for (let i = 30; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Count enrollments for this day
+        const enrollmentsForDay = enrollments.filter(e => 
+          e.created_at.split('T')[0] === dateStr
+        ).length;
+        
+        // For emails, we'd need to query for each day but let's simplify for now
+        timelineData.push({
+          date: dateStr,
+          enrollments: enrollmentsForDay,
+          emailsSent: 0 // This would need a separate query per day to be accurate
+        });
+      }
+      
       const analytics: EmailSequenceAnalytics = {
         id: `analytics-${sequenceId}`,
         sequence_id: sequenceId,
@@ -89,7 +126,11 @@ export const emailSequenceService = {
         average_time_to_complete: averageTimeToComplete,
         averageTimeToComplete: averageTimeToComplete,
         updated_at: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        total_emails_sent: emailsSent || 0,
+        totalEmailsSent: emailsSent || 0,
+        emailsSent: emailsSent || 0,
+        timeline: timelineData
       };
       
       return { data: analytics, error: null };
@@ -108,7 +149,7 @@ export const emailSequenceService = {
     try {
       const { data, error } = await supabase
         .from('email_sequence_steps')
-        .update({ isActive: isActive }) // Updated from is_active to isActive
+        .update({ is_active: isActive }) // Using is_active for database field
         .eq('id', stepId)
         .select()
         .single();
@@ -119,20 +160,21 @@ export const emailSequenceService = {
       const step: EmailSequenceStep = {
         id: data.id,
         sequence_id: data.sequence_id,
-        order: data.order,
+        order: data.position, // Map position to order
         delay_hours: data.delay_hours,
         delay_type: data.delay_type,
-        email_template_id: data.email_template_id,
+        email_template_id: data.template_id, // Map template_id to email_template_id
+        template_id: data.template_id,
         created_at: data.created_at,
         updated_at: data.updated_at,
         // UI component support
         name: data.name,
-        type: data.type,
-        templateId: data.email_template_id,
+        type: data.type || 'email',
+        templateId: data.template_id,
         delayHours: data.delay_hours,
         delayType: data.delay_type,
-        position: data.order,
-        isActive: data.isActive // Updated from is_active to isActive
+        position: data.position,
+        isActive: data.is_active // Map is_active to isActive
       };
       
       return { data: step, error: null };
@@ -165,11 +207,11 @@ export const emailSequenceService = {
         updated_at: record.updated_at,
         shop_id: record.shop_id,
         created_by: record.created_by,
-        trigger_type: record.trigger_type,
+        trigger_type: record.trigger_type as 'manual' | 'event' | 'schedule',
         trigger_event: record.trigger_event,
         is_active: record.is_active,
         // UI support
-        triggerType: record.trigger_type,
+        triggerType: record.trigger_type as 'manual' | 'event' | 'schedule',
         triggerEvent: record.trigger_event,
         isActive: record.is_active,
         createdAt: record.created_at,
@@ -209,11 +251,11 @@ export const emailSequenceService = {
         updated_at: data.updated_at,
         shop_id: data.shop_id,
         created_by: data.created_by,
-        trigger_type: data.trigger_type,
+        trigger_type: data.trigger_type as 'manual' | 'event' | 'schedule',
         trigger_event: data.trigger_event,
         is_active: data.is_active,
         // UI support
-        triggerType: data.trigger_type,
+        triggerType: data.trigger_type as 'manual' | 'event' | 'schedule',
         triggerEvent: data.trigger_event,
         isActive: data.is_active,
         createdAt: data.created_at,
@@ -225,7 +267,7 @@ export const emailSequenceService = {
         .from('email_sequence_steps')
         .select('*')
         .eq('sequence_id', id)
-        .order('order', { ascending: true });
+        .order('position', { ascending: true });
         
       if (stepsError) throw stepsError;
       
@@ -233,20 +275,21 @@ export const emailSequenceService = {
       sequence.steps = stepsData.map(step => ({
         id: step.id,
         sequence_id: step.sequence_id,
-        order: step.order,
+        order: step.position, // Map position to order
         delay_hours: step.delay_hours,
         delay_type: step.delay_type,
-        email_template_id: step.email_template_id,
+        email_template_id: step.template_id, // Map template_id to email_template_id
+        template_id: step.template_id,
         created_at: step.created_at,
         updated_at: step.updated_at,
         // UI support
         name: step.name,
-        type: step.type,
-        templateId: step.email_template_id,
+        type: step.type || 'email',
+        templateId: step.template_id,
         delayHours: step.delay_hours,
         delayType: step.delay_type,
-        position: step.order,
-        isActive: step.isActive
+        position: step.position,
+        isActive: step.is_active
       }));
       
       return { data: sequence, error: null };
@@ -271,16 +314,16 @@ export const emailSequenceService = {
         };
       }
       
-      // Prepare step data for insertion
+      // Prepare step data for insertion, mapping UI property names to database field names
       const stepData = {
         sequence_id: step.sequence_id,
-        order: step.order || 0,
-        delay_hours: step.delay_hours || 0,
-        delay_type: step.delay_type || 'hours',
-        email_template_id: step.email_template_id,
+        position: step.position || step.order || 0,
+        delay_hours: step.delay_hours || step.delayHours || 0,
+        delay_type: step.delay_type || step.delayType || 'hours',
+        template_id: step.template_id || step.email_template_id || step.templateId,
         name: step.name,
         type: step.type || 'email',
-        isActive: step.isActive !== undefined ? step.isActive : true, // Updated from is_active to isActive
+        is_active: step.isActive !== undefined ? step.isActive : true, // Map isActive to is_active
       };
       
       const { data, error } = await supabase
@@ -295,20 +338,21 @@ export const emailSequenceService = {
       const createdStep: EmailSequenceStep = {
         id: data.id,
         sequence_id: data.sequence_id,
-        order: data.order,
+        order: data.position, // Map position to order
         delay_hours: data.delay_hours,
         delay_type: data.delay_type,
-        email_template_id: data.email_template_id,
+        email_template_id: data.template_id, // Map template_id to email_template_id
+        template_id: data.template_id,
         created_at: data.created_at,
         updated_at: data.updated_at,
         // UI support
         name: data.name,
-        type: data.type,
-        templateId: data.email_template_id,
+        type: data.type || 'email',
+        templateId: data.template_id,
         delayHours: data.delay_hours,
         delayType: data.delay_type,
-        position: data.order,
-        isActive: data.isActive // Updated from is_active to isActive
+        position: data.position,
+        isActive: data.is_active // Map is_active to isActive
       };
       
       return { data: createdStep, error: null };

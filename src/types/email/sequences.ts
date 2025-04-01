@@ -103,8 +103,10 @@ export interface EmailSequenceAnalytics {
   // Additional analytics properties
   total_emails_sent?: number;
   totalEmailsSent?: number;
+  emailsSent?: number; // Adding this for component compatibility
   open_rate?: number;
   openRate?: number;
   click_rate?: number;
   clickRate?: number;
+  timeline?: Array<{date: string, enrollments: number, emailsSent: number}>;
 }

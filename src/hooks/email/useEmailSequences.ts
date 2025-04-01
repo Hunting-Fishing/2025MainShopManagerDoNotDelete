@@ -20,8 +20,8 @@ export const useEmailSequences = () => {
 
   const {
     analytics,
-    analyticsLoading,
-    fetchSequenceAnalytics,
+    loading: analyticsLoading,
+    fetchAnalytics: fetchSequenceAnalytics,
     setAnalytics
   } = useSequenceAnalytics();
 

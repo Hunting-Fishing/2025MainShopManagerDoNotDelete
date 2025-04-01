@@ -71,19 +71,19 @@ export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsPro
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-100 p-4 rounded-lg">
             <h3 className="text-sm font-medium">Total Enrollments</h3>
-            <p className="text-2xl font-bold">{analytics.totalEnrollments}</p>
+            <p className="text-2xl font-bold">{analytics.totalEnrollments || analytics.total_enrollments}</p>
           </div>
           <div className="bg-gray-100 p-4 rounded-lg">
             <h3 className="text-sm font-medium">Active Enrollments</h3>
-            <p className="text-2xl font-bold">{analytics.activeEnrollments}</p>
+            <p className="text-2xl font-bold">{analytics.activeEnrollments || analytics.active_enrollments}</p>
           </div>
           <div className="bg-gray-100 p-4 rounded-lg">
             <h3 className="text-sm font-medium">Completed</h3>
-            <p className="text-2xl font-bold">{analytics.completedEnrollments}</p>
+            <p className="text-2xl font-bold">{analytics.completedEnrollments || analytics.completed_enrollments}</p>
           </div>
           <div className="bg-gray-100 p-4 rounded-lg">
             <h3 className="text-sm font-medium">Emails Sent</h3>
-            <p className="text-2xl font-bold">{analytics.emailsSent}</p>
+            <p className="text-2xl font-bold">{analytics.emailsSent || analytics.totalEmailsSent || analytics.total_emails_sent || 0}</p>
           </div>
         </div>
         

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { EmailSequenceAnalytics } from '@/types/email';
 import { emailSequenceService } from '@/services/email';
 
-export const useSequenceAnalytics = (sequenceId: string) => {
+export const useSequenceAnalytics = (sequenceId?: string) => {
   const [analytics, setAnalytics] = useState<EmailSequenceAnalytics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -19,10 +19,19 @@ export const useSequenceAnalytics = (sequenceId: string) => {
       
       if (error) throw error;
       
-      setAnalytics(data);
+      // Add timeline data if it doesn't exist
+      const enhancedData = {
+        ...data,
+        emailsSent: data?.total_emails_sent || data?.totalEmailsSent || 0,
+        timeline: data?.timeline || []
+      };
+      
+      setAnalytics(enhancedData);
+      return enhancedData;
     } catch (err) {
       console.error('Error fetching sequence analytics:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch analytics'));
+      return null;
     } finally {
       setLoading(false);
     }
@@ -32,6 +41,7 @@ export const useSequenceAnalytics = (sequenceId: string) => {
     analytics,
     loading,
     error,
-    fetchAnalytics
+    fetchAnalytics,
+    setAnalytics
   };
 };

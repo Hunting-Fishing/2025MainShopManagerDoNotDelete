@@ -68,7 +68,7 @@ export const abTestingService = {
       if (error) throw error;
 
       // Store the winner in the campaign
-      const updatedTest: EmailABTest = {
+      const updatedTest = {
         ...abTest,
         winnerId: result.winnerId,
         winnerSelectionDate: new Date().toISOString(),
