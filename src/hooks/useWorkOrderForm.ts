@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrderUtils";
 import { format } from "date-fns";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
-import { recordWorkOrderActivity } from "@/utils/activityTracker";
+import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
 import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 
 // Mock current user - in a real app, this would come from auth context
