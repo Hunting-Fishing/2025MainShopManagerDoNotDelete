@@ -2,60 +2,85 @@
 import { useState, useEffect } from 'react';
 import { Invoice } from '@/types/invoice';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export function useInvoiceData() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(false);
+
+  const fetchInvoices = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          invoice_items(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        // Format the data to match our Invoice type
+        const formattedInvoices = data.map(invoice => {
+          return {
+            id: invoice.id,
+            customer: invoice.customer,
+            customerAddress: invoice.customer_address,
+            customerEmail: invoice.customer_email,
+            description: invoice.description,
+            notes: invoice.notes,
+            status: invoice.status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
+            date: invoice.date,
+            dueDate: invoice.due_date,
+            total: invoice.total,
+            subtotal: invoice.subtotal,
+            tax: invoice.tax,
+            workOrderId: invoice.work_order_id,
+            createdBy: invoice.created_by,
+            items: invoice.invoice_items || []
+          } as Invoice;
+        });
+
+        setInvoices(formattedInvoices);
+      }
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch invoices'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchInvoices() {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('invoices')
-          .select(`
-            *,
-            invoice_items(*)
-          `)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (data) {
-          // Format the data to match our Invoice type
-          const formattedInvoices = data.map(invoice => {
-            return {
-              id: invoice.id,
-              customer: invoice.customer,
-              customerAddress: invoice.customer_address,
-              customerEmail: invoice.customer_email,
-              description: invoice.description,
-              notes: invoice.notes,
-              status: invoice.status,
-              date: invoice.date,
-              dueDate: invoice.due_date,
-              total: invoice.total,
-              subtotal: invoice.subtotal,
-              tax: invoice.tax,
-              workOrderId: invoice.work_order_id,
-              createdBy: invoice.created_by,
-              items: invoice.invoice_items || []
-            } as Invoice;
-          });
-
-          setInvoices(formattedInvoices);
-        }
-      } catch (err) {
-        console.error('Error fetching invoices:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch invoices'));
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     fetchInvoices();
-  }, []);
+
+    // Setup real-time subscription if enabled
+    if (isRealTimeEnabled) {
+      const channel = supabase
+        .channel('invoice_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'invoices'
+          },
+          (payload) => {
+            console.log('Invoice change received:', payload);
+            fetchInvoices();
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isRealTimeEnabled]);
 
   const saveInvoice = async ({ invoice, items }: { invoice: Invoice, items: any[] }) => {
     try {
@@ -101,19 +126,7 @@ export function useInvoiceData() {
       }
 
       // Refresh invoices
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          invoice_items(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data) {
-        setInvoices(data as unknown as Invoice[]);
-      }
+      await fetchInvoices();
 
       return { success: true };
     } catch (error) {
@@ -122,10 +135,21 @@ export function useInvoiceData() {
     }
   };
 
+  // Function to manually refetch invoices
+  const refetch = async () => {
+    await fetchInvoices();
+  };
+
+  const isError = error !== null;
+
   return {
     invoices,
     isLoading,
     error,
-    saveInvoice
+    isError,
+    saveInvoice,
+    refetch,
+    isRealTimeEnabled,
+    setIsRealTimeEnabled
   };
 }

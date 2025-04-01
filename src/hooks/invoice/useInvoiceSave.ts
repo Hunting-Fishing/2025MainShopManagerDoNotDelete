@@ -10,7 +10,7 @@ export function useInvoiceSave() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { userId, userProfile } = useAuthUser();
+  const { userId } = useAuthUser();
 
   // Handle saving invoice
   const handleSaveInvoice = async (

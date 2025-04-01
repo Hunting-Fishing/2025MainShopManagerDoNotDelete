@@ -53,7 +53,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   const { handleSelectWorkOrder } = useInvoiceWorkOrder();
 
   // Wrap the save invoice function to include all required data
-  const saveInvoice = (status: string) => {
+  const saveInvoice = (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => {
     handleSaveInvoice(
       invoice,
       items,

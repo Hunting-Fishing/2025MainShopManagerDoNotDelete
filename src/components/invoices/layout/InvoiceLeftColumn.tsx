@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -243,9 +244,9 @@ export function InvoiceLeftColumn({
               <InvoiceItemsTable 
                 items={invoice.items}
                 onRemoveItem={handleRemoveItem}
-                onUpdateQuantity={handleUpdateItemQuantity}
-                onUpdateDescription={handleUpdateItemDescription}
-                onUpdatePrice={handleUpdateItemPrice}
+                onUpdateItemQuantity={handleUpdateItemQuantity}
+                onUpdateItemDescription={handleUpdateItemDescription}
+                onUpdateItemPrice={handleUpdateItemPrice}
               />
               
               <div className="flex justify-between">
@@ -296,9 +297,9 @@ export function InvoiceLeftColumn({
               <InvoiceItemsTable 
                 items={invoice.items.filter(item => item.hours)}
                 onRemoveItem={handleRemoveItem}
-                onUpdateQuantity={handleUpdateItemQuantity}
-                onUpdateDescription={handleUpdateItemDescription}
-                onUpdatePrice={handleUpdateItemPrice}
+                onUpdateItemQuantity={handleUpdateItemQuantity}
+                onUpdateItemDescription={handleUpdateItemDescription}
+                onUpdateItemPrice={handleUpdateItemPrice}
               />
               
               <Button 
