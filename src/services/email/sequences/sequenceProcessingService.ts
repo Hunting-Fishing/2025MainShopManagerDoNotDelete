@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { EmailSequence } from '@/types/email';
 import { GenericResponse } from '../utils/supabaseHelper';
@@ -52,7 +51,9 @@ export const sequenceProcessingService = {
         triggerEvent: seq.trigger_event,
         isActive: seq.is_active,
         createdAt: seq.created_at,
-        updatedAt: seq.updated_at
+        updatedAt: seq.updated_at,
+        lastRun: seq.last_run,  // Include the lastRun property
+        last_run: seq.last_run, // Include the last_run property
       }));
       
       // Prepare the request body

@@ -19,7 +19,7 @@ export const useFetchEnrollments = () => {
         .from('email_sequence_enrollments')
         .select(`
           *,
-          sequence:email_sequences(id, name, description),
+          sequence:email_sequences(id, name, description, created_at, updated_at),
           current_step:email_sequence_steps(id, name, template_id, position)
         `)
         .eq('customer_id', customerId)
@@ -35,15 +35,32 @@ export const useFetchEnrollments = () => {
         return {
           id: item.id,
           sequence_id: item.sequence_id,
+          sequenceId: item.sequence_id,
           customer_id: item.customer_id,
+          customerId: item.customer_id,
           status: item.status as 'active' | 'paused' | 'completed' | 'cancelled',
           current_step_id: item.current_step_id,
+          currentStepId: item.current_step_id,
           created_at: item.created_at,
+          createdAt: item.created_at,
           updated_at: item.updated_at,
+          updatedAt: item.updated_at,
           completed_at: item.completed_at,
-          sequence: item.sequence,
+          completedAt: item.completed_at,
+          sequence: {
+            ...item.sequence,
+            steps: [], // Add empty steps array required by EmailSequence type
+            createdAt: item.sequence?.created_at,
+            updatedAt: item.sequence?.updated_at,
+            isActive: false, // Set default values for required properties
+            triggerType: 'manual' as 'manual' | 'event' | 'schedule'
+          },
           current_step: item.current_step,
+          currentStep: item.current_step,
           nextSendTime: item.next_send_time,
+          next_send_time: item.next_send_time,
+          startedAt: item.started_at,
+          started_at: item.started_at,
           metadata
         };
       }) || [];
