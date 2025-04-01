@@ -3,7 +3,9 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { inventoryItems } from "@/data/mockInventoryData";
+import { getInventoryItemById } from "@/services/inventoryService";
+import { useEffect, useState } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface InventoryQuantityManagerProps {
   itemId: string;
@@ -18,9 +20,32 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
   onUpdateQuantity,
   maxAllowed
 }) => {
-  // Find the current inventory item to check available stock
-  const inventoryItem = React.useMemo(() => 
-    inventoryItems.find(item => item.id === itemId), [itemId]);
+  const [inventoryItem, setInventoryItem] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch the inventory item from the database
+  useEffect(() => {
+    const fetchItem = async () => {
+      try {
+        setLoading(true);
+        const item = await getInventoryItemById(itemId);
+        setInventoryItem(item);
+      } catch (error) {
+        console.error("Failed to fetch inventory item:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch inventory information",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (itemId) {
+      fetchItem();
+    }
+  }, [itemId]);
   
   // Determine if quantity is valid
   const isInvalidQuantity = React.useMemo(() => {
@@ -47,6 +72,10 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
     
     onUpdateQuantity(itemId, newQuantity);
   };
+
+  if (loading) {
+    return <LoadingSpinner size="sm" className="mx-auto" />;
+  }
 
   return (
     <div className="flex items-center justify-center">

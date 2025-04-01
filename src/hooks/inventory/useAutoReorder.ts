@@ -8,7 +8,12 @@ import {
 import { getInventoryItemById } from "@/services/inventoryService";
 import { useNotifications } from "@/context/NotificationsContext";
 import { toast } from "@/hooks/use-toast";
-import { AutoReorderSettings } from "@/types/inventory";
+
+export interface AutoReorderSettings {
+  enabled: boolean;
+  threshold: number;
+  quantity: number;
+}
 
 export function useAutoReorder() {
   const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
