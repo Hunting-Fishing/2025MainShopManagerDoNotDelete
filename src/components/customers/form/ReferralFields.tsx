@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
   FormField,
@@ -9,7 +9,6 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { CustomerFormValues, referralSources } from "./CustomerFormSchema";
 import { HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -28,9 +29,14 @@ interface ReferralFieldsProps {
 
 export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [showOtherField, setShowOtherField] = useState(false);
+  
+  // Watch for changes to referral source to show/hide the "Other" field
   const referralSource = form.watch("referral_source");
-  const isFriendReferral = referralSource === "Friend Referral" || referralSource === "Existing Customer";
-  const isOtherReferral = referralSource === "Other";
+  
+  useEffect(() => {
+    setShowOtherField(referralSource === "Other");
+  }, [referralSource]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
@@ -57,7 +63,7 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                         <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="right">
-                        <p>How the customer found out about your business</p>
+                        <p>How did the customer hear about us?</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -68,11 +74,11 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="How did they find us?" />
+                      <SelectValue placeholder="Select referral source" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="_none">Unknown</SelectItem>
+                    <SelectItem value="_none">Not specified</SelectItem>
                     {referralSources.map((source) => (
                       <SelectItem key={source} value={source}>
                         {source}
@@ -80,75 +86,50 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                     ))}
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  Tracks how customers discover your business
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-
-          {isOtherReferral && (
+          
+          {showOtherField && (
             <FormField
               control={form.control}
               name="other_referral_details"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormLabel>Other Referral Details</FormLabel>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Please specify how they found your business</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
+                  <FormLabel>Other Referral Details</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Please specify referral source" 
+                    <Textarea 
+                      placeholder="Please specify how the customer was referred" 
+                      className="resize-none" 
                       {...field} 
                     />
                   </FormControl>
+                  <FormDescription>
+                    Please provide details about this referral source
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           )}
-
-          {isFriendReferral && (
-            <FormField
-              control={form.control}
-              name="referral_person_id"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormLabel>Referred By</FormLabel>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Name of person who referred this customer to you</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <FormControl>
-                    <Input 
-                      placeholder="Name of person who referred them" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          
+          <FormField
+            control={form.control}
+            name="referral_person_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Referred By Customer</FormLabel>
+                <FormControl>
+                  <Input placeholder="Customer ID (if applicable)" {...field} />
+                </FormControl>
+                <FormDescription>
+                  If referred by another customer, enter their ID
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </CollapsibleContent>
     </Collapsible>

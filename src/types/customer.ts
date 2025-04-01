@@ -1,3 +1,4 @@
+
 // Define the customer interface based on Supabase table structure
 export interface Customer {
   id: string;

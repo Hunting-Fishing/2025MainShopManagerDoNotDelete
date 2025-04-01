@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
   FormField,
@@ -28,12 +28,25 @@ interface PreferencesFieldsProps {
 
 export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [inactiveTechSelected, setInactiveTechSelected] = useState(false);
 
   // This would come from your API in a real implementation
-  // For now, we'll simulate that one technician is inactive
-  const technicianStatuses = {
-    "TECH-3": "inactive"  // Emily Chen is inactive
-  };
+  // For now, we'll use the status field from our technician data
+  const technicianStatuses = {};
+  technicians.forEach(tech => {
+    technicianStatuses[tech.id] = tech.status.toLowerCase();
+  });
+
+  // Check if the selected technician is inactive when component loads or selection changes
+  useEffect(() => {
+    const currentTechId = form.watch("preferred_technician_id");
+    if (currentTechId && currentTechId !== "_none") {
+      const techStatus = technicianStatuses[currentTechId];
+      setInactiveTechSelected(techStatus === "inactive");
+    } else {
+      setInactiveTechSelected(false);
+    }
+  }, [form.watch("preferred_technician_id")]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
@@ -77,7 +90,11 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
                   <SelectContent>
                     <SelectItem value="_none">No preference</SelectItem>
                     {technicians.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id} disabled={technicianStatuses[tech.id] === "inactive"}>
+                      <SelectItem 
+                        key={tech.id} 
+                        value={tech.id} 
+                        disabled={technicianStatuses[tech.id] === "inactive"}
+                      >
                         <div className="flex items-center justify-between w-full">
                           <span>{tech.name}</span>
                           {technicianStatuses[tech.id] === "inactive" && (
@@ -93,7 +110,7 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
                 <FormDescription>
                   Will be assigned to this customer when possible
                 </FormDescription>
-                {field.value && technicianStatuses[field.value] === "inactive" && (
+                {inactiveTechSelected && (
                   <div className="mt-2 flex items-center text-xs text-amber-600">
                     <AlertCircle className="h-3 w-3 mr-1" />
                     <span>This technician is no longer active. Consider updating the preference.</span>
