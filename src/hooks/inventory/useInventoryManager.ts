@@ -92,7 +92,7 @@ export function useInventoryManager() {
       // First make sure all items are available
       const checkResult = await reserveInventory(items);
       if (!checkResult.success) {
-        return checkResult;
+        return { ...checkResult, message: "Some items have insufficient inventory" };
       }
 
       // If all items are available, update the inventory
