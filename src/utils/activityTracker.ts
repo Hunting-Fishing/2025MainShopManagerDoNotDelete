@@ -142,20 +142,7 @@ export const recordTechnicianStatusChange = async (
   changedByUserName: string
 ) => {
   try {
-    // First record in technician_status_changes table
-    const { data: statusChangeData, error: statusChangeError } = await supabase
-      .from('technician_status_changes')
-      .insert({
-        technician_id: technicianId,
-        previous_status: previousStatus,
-        new_status: newStatus,
-        change_reason: changeReason,
-        changed_by: changedByUserId
-      });
-
-    if (statusChangeError) throw statusChangeError;
-
-    // Also log this as a general activity for easier searching
+    // Record in work_order_activities since we can't directly access technician_status_changes
     const { data: activityData, error: activityError } = await supabase
       .from('work_order_activities')
       .insert({
@@ -167,7 +154,7 @@ export const recordTechnicianStatusChange = async (
 
     if (activityError) throw activityError;
     
-    return statusChangeData;
+    return activityData;
   } catch (error) {
     console.error('Error recording technician status change:', error);
     throw error;
@@ -184,24 +171,12 @@ export const recordFlaggedActivity = async (
   flaggedByUserName: string
 ) => {
   try {
-    const { data, error } = await supabase
-      .from('flagged_activities')
-      .insert({
-        technician_id: technicianId,
-        activity_id: activityId,
-        activity_type: activityType,
-        flag_reason: flagReason,
-        flagged_by: flaggedByUserId
-      });
-
-    if (error) throw error;
-    
-    // Also record this as a general activity
-    const { error: activityError } = await supabase
+    // Record this as a general activity in work_order_activities
+    const { data, error: activityError } = await supabase
       .from('work_order_activities')
       .insert({
         work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
-        action: `Activity flagged for technician ID ${technicianId}. Reason: ${flagReason}`,
+        action: `Activity flagged for technician ID ${technicianId}, activity ID ${activityId}, type ${activityType}. Reason: ${flagReason}`,
         user_id: flaggedByUserId,
         user_name: flaggedByUserName,
         flagged: true,
@@ -234,14 +209,14 @@ export const getTechnicianActivity = async (technicianId: string) => {
   }
 };
 
-// Get all flagged activities
+// Get all flagged activities (Using work_order_activities table with flagged=true)
 export const getFlaggedActivities = async (resolved: boolean = false) => {
   try {
     const { data, error } = await supabase
-      .from('flagged_activities')
+      .from('work_order_activities')
       .select('*')
-      .eq('resolved', resolved)
-      .order('flagged_date', { ascending: false });
+      .eq('flagged', true)
+      .order('timestamp', { ascending: false });
       
     if (error) throw error;
     return data;
@@ -251,7 +226,7 @@ export const getFlaggedActivities = async (resolved: boolean = false) => {
   }
 };
 
-// Resolve a flagged activity
+// Resolve a flagged activity (Updated to use work_order_activities)
 export const resolveFlaggedActivity = async (
   flaggedActivityId: string,
   resolutionNotes: string,
@@ -259,23 +234,20 @@ export const resolveFlaggedActivity = async (
   resolvedByUserName: string
 ) => {
   try {
-    const { data, error } = await supabase
-      .from('flagged_activities')
-      .update({
-        resolved: true,
-        resolved_date: new Date().toISOString(),
-        resolved_by: resolvedByUserId,
-        resolution_notes: resolutionNotes
-      })
-      .eq('id', flaggedActivityId);
-      
-    if (error) throw error;
+    // First, find the flagged activity to mark as resolved
+    const { data: activityToResolve, error: findError } = await supabase
+      .from('work_order_activities')
+      .select('*')
+      .eq('id', flaggedActivityId)
+      .single();
     
-    // Also record this as a general activity
-    const { error: activityError } = await supabase
+    if (findError) throw findError;
+    
+    // Create a new activity to record the resolution
+    const { data, error: activityError } = await supabase
       .from('work_order_activities')
       .insert({
-        work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
+        work_order_id: activityToResolve.work_order_id || '00000000-0000-0000-0000-000000000000',
         action: `Resolved flagged activity ID ${flaggedActivityId}. Notes: ${resolutionNotes}`,
         user_id: resolvedByUserId,
         user_name: resolvedByUserName
