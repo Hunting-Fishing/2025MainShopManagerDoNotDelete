@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/hooks/use-toast";
@@ -95,10 +96,10 @@ export default function CreateInvoice() {
       const woItems = workOrder.inventoryItems.map(item => ({
         id: uuidv4(),
         name: item.name,
-        description: item.description || "",
+        description: item.sku || "", // Use SKU as description since there's no description property
         quantity: item.quantity,
-        price: item.price,
-        total: item.quantity * item.price
+        price: item.unitPrice, // Use unitPrice instead of price
+        total: item.quantity * item.unitPrice // Use unitPrice here too
       }));
       
       setItems(woItems);
