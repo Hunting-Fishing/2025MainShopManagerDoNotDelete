@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { InventoryItemExtended, AutoReorderSettings } from "@/types/inventory";
 
 // Fetch all inventory items
@@ -23,7 +23,7 @@ export async function getAllInventoryItems(): Promise<InventoryItemExtended[]> {
     supplier: item.supplier,
     quantity: item.quantity,
     reorderPoint: item.reorder_point,
-    unitPrice: parseFloat(item.unit_price),
+    unitPrice: parseFloat(item.unit_price.toString()),
     location: item.location || "",
     status: item.status,
     description: item.description || ""
@@ -53,7 +53,7 @@ export async function getInventoryItemById(id: string): Promise<InventoryItemExt
     supplier: data.supplier,
     quantity: data.quantity,
     reorderPoint: data.reorder_point,
-    unitPrice: parseFloat(data.unit_price),
+    unitPrice: parseFloat(data.unit_price.toString()),
     location: data.location || "",
     status: data.status,
     description: data.description || ""
@@ -74,7 +74,7 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, "id"
       supplier: item.supplier,
       quantity: item.quantity,
       reorder_point: item.reorderPoint,
-      unit_price: item.unitPrice,
+      unit_price: item.unitPrice.toString(),
       location: item.location,
       status,
       description: item.description
@@ -95,7 +95,7 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, "id"
     supplier: data.supplier,
     quantity: data.quantity,
     reorderPoint: data.reorder_point,
-    unitPrice: parseFloat(data.unit_price),
+    unitPrice: parseFloat(data.unit_price.toString()),
     location: data.location || "",
     status: data.status,
     description: data.description || ""
@@ -125,7 +125,7 @@ export async function updateInventoryItem(id: string, updates: Partial<Inventory
     }
   }
   if (updates.reorderPoint !== undefined) dbUpdates.reorder_point = updates.reorderPoint;
-  if (updates.unitPrice !== undefined) dbUpdates.unit_price = updates.unitPrice;
+  if (updates.unitPrice !== undefined) dbUpdates.unit_price = updates.unitPrice.toString();
   if (updates.location !== undefined) dbUpdates.location = updates.location;
   if (updates.description !== undefined) dbUpdates.description = updates.description;
 
@@ -149,7 +149,7 @@ export async function updateInventoryItem(id: string, updates: Partial<Inventory
     supplier: data.supplier,
     quantity: data.quantity,
     reorderPoint: data.reorder_point,
-    unitPrice: parseFloat(data.unit_price),
+    unitPrice: parseFloat(data.unit_price.toString()),
     location: data.location || "",
     status: data.status,
     description: data.description || ""
@@ -253,7 +253,7 @@ export async function getLowStockItems(): Promise<InventoryItemExtended[]> {
     supplier: item.supplier,
     quantity: item.quantity,
     reorderPoint: item.reorder_point,
-    unitPrice: parseFloat(item.unit_price),
+    unitPrice: parseFloat(item.unit_price.toString()),
     location: item.location || "",
     status: item.status,
     description: item.description || ""
@@ -280,7 +280,7 @@ export async function getOutOfStockItems(): Promise<InventoryItemExtended[]> {
     supplier: item.supplier,
     quantity: item.quantity,
     reorderPoint: item.reorder_point,
-    unitPrice: parseFloat(item.unit_price),
+    unitPrice: parseFloat(item.unit_price.toString()),
     location: item.location || "",
     status: item.status,
     description: item.description || ""
