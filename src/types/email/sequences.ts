@@ -5,45 +5,53 @@ export interface EmailSequence {
   description?: string;
   steps: EmailSequenceStep[];
   created_at: string;
-  updated_at: string;
-  shop_id?: string;
-  created_by?: string;
-  trigger_type?: 'manual' | 'event' | 'schedule';
-  trigger_event?: string;
-  is_active?: boolean;
-  
-  // UI component support
-  triggerType?: 'manual' | 'event' | 'schedule';
-  triggerEvent?: string;
-  isActive?: boolean;
   createdAt?: string;
+  updated_at: string;
   updatedAt?: string;
+  shop_id?: string;
+  shopId?: string;
+  created_by?: string;
+  createdBy?: string;
+  trigger_type?: 'manual' | 'event' | 'schedule';
+  triggerType?: 'manual' | 'event' | 'schedule';
+  trigger_event?: string;
+  triggerEvent?: string;
+  is_active?: boolean;
+  isActive?: boolean;
   
   // Additional fields for system schedules
   last_run?: string | null;
+  lastRun?: string | null;
   next_run?: string | null;
+  nextRun?: string | null;
   run_frequency?: string | null;
+  runFrequency?: string | null;
 }
 
 export interface EmailSequenceStep {
   id: string;
   sequence_id: string;
+  sequenceId?: string;
   order?: number;
+  position?: number;
   delay_hours?: number;
+  delayHours?: number;
   delay_type?: string;
+  delayType?: string;
   email_template_id?: string;
+  emailTemplateId?: string;
   template_id?: string;
+  templateId?: string;
   created_at: string;
+  createdAt?: string;
   updated_at: string;
+  updatedAt?: string;
   
   // UI component support
   name?: string;
   type?: 'delay' | 'email';
-  templateId?: string;
-  delayHours?: number;
-  delayType?: string;
-  position?: number;
   isActive?: boolean;
+  is_active?: boolean;
   condition?: {
     type: 'event' | 'property';
     value: any;
@@ -52,32 +60,39 @@ export interface EmailSequenceStep {
   
   // Additional fields for system schedules
   last_run?: string | null;
+  lastRun?: string | null;
   next_run?: string | null;
+  nextRun?: string | null;
   run_frequency?: string | null;
+  runFrequency?: string | null;
 }
 
 export interface EmailSequenceEnrollment {
   id: string;
   sequence_id: string;
+  sequenceId?: string;
   customer_id: string;
+  customerId?: string;
   status: 'active' | 'paused' | 'completed' | 'cancelled';
   current_step_id?: string;
+  currentStepId?: string;
   created_at: string;
+  createdAt?: string;
   updated_at: string;
+  updatedAt?: string;
   completed_at?: string;
+  completedAt?: string;
   
   // UI component support
-  sequenceId?: string;
-  customerId?: string;
-  currentStepId?: string;
   startedAt?: string;
-  completedAt?: string;
+  started_at?: string;
   nextSendTime?: string;
+  next_send_time?: string;
   metadata?: Record<string, any>;
   
   // Additional properties from joins
   sequence?: any;
-  current_step?: any; // Changed from number to any
+  current_step?: any;
 }
 
 export interface EmailSequenceAnalytics {
@@ -91,6 +106,7 @@ export interface EmailSequenceAnalytics {
   completed_enrollments: number;
   completedEnrollments?: number;
   cancelled_enrollments?: number;
+  cancelledEnrollments?: number;
   conversion_rate: number;
   conversionRate?: number;
   average_time_to_complete: number;
