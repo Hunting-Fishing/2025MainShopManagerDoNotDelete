@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { getLowStockItems, getOutOfStockItems } from "@/services/inventoryService";
+import { getLowStockItems, getOutOfStockItems } from "@/services/inventory/filterService";
 import { useNotifications } from "@/context/NotificationsContext";
 
 export function useInventoryAlerts() {

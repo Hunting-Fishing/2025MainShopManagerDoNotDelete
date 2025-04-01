@@ -2,7 +2,7 @@
 import { useInventoryAlerts } from "./useInventoryAlerts";
 import { useAutoReorder, type AutoReorderSettings } from "./useAutoReorder";
 import { useManualReorder } from "./useManualReorder";
-import { getInventoryItemById } from "@/services/inventoryService";
+import { getInventoryItemById } from "@/services/inventory/crudService";
 import { useEffect, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 

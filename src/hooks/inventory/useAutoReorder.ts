@@ -4,8 +4,8 @@ import {
   getAutoReorderSettings, 
   enableAutoReorder as enableAutoReorderService,
   disableAutoReorder as disableAutoReorderService
-} from "@/services/inventoryService";
-import { getInventoryItemById } from "@/services/inventoryService";
+} from "@/services/inventory/autoReorderService";
+import { getInventoryItemById } from "@/services/inventory/crudService";
 import { useNotifications } from "@/context/NotificationsContext";
 import { toast } from "@/hooks/use-toast";
 
