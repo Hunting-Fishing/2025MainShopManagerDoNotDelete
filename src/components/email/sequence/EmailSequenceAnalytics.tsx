@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useSequenceAnalytics } from '@/hooks/email/sequence/useSequenceAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +12,9 @@ export function EmailSequenceAnalytics({ sequenceId }: EmailSequenceAnalyticsPro
 
   useEffect(() => {
     if (sequenceId) {
-      fetchAnalytics();
+      fetchAnalytics(sequenceId);
     }
-  }, [sequenceId]);
+  }, [sequenceId, fetchAnalytics]);
 
   if (loading) {
     return (
