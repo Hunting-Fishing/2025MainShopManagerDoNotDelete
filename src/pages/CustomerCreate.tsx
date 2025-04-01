@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCustomer, clearDraftCustomer } from "@/services/customerService";
-import type { CustomerCreate as CustomerCreateType } from "@/services/customerService";
+import type { CustomerCreate as CustomerCreateType } from "@/types/customer";
 import { useToast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
 import { CustomerForm } from "@/components/customers/form/CustomerForm";
@@ -13,13 +13,11 @@ import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeade
 import { ImportCustomersDialog } from "@/components/customers/form/import/ImportCustomersDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CustomerCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("personal");
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -44,7 +42,7 @@ export default function CustomerCreate() {
     segments: [],
     create_new_household: false,
     new_household_name: "",
-    household_id: "_none", // Changed from empty string to "_none"
+    household_id: "", 
     household_relationship: "primary",
   };
 
@@ -83,7 +81,7 @@ export default function CustomerCreate() {
       const customerData: CustomerCreateType = {
         first_name: data.first_name,
         last_name: data.last_name,
-        email: data.email,
+        email: data.email || "",
         phone: data.phone || "",
         address: data.address || "",
         shop_id: data.shop_id,

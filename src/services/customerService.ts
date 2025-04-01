@@ -76,6 +76,28 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
 
 // Create a new customer
 export const createCustomer = async (customer: CustomerCreate): Promise<Customer> => {
+  // Remove any undefined values to prevent Supabase errors
+  Object.keys(customer).forEach(key => {
+    if (customer[key as keyof CustomerCreate] === undefined) {
+      delete customer[key as keyof CustomerCreate];
+    }
+  });
+
+  // Handle households
+  if (customer.household_id === '' || customer.household_id === '_none') {
+    customer.household_id = undefined;
+  }
+
+  // Handle preferred technician
+  if (customer.preferred_technician_id === '' || customer.preferred_technician_id === '_none') {
+    customer.preferred_technician_id = undefined;
+  }
+
+  // Handle referral source
+  if (customer.referral_source === '' || customer.referral_source === '_none') {
+    customer.referral_source = undefined;
+  }
+
   const { data, error } = await supabase
     .from("customers")
     .insert(customer)
@@ -146,21 +168,23 @@ export const checkDuplicateCustomers = async (
   email?: string, 
   phone?: string
 ): Promise<Customer[]> => {
-  // First check by name (more liberal search)
+  if (!firstName || !lastName) return [];
+  
   let query = supabase
     .from("customers")
     .select("*")
-    .or(`first_name.ilike.${firstName},last_name.ilike.${lastName}`);
+    .or(`first_name.ilike.%${firstName}%,last_name.ilike.%${lastName}%`);
 
-  // If we have email or phone, make the search more specific
+  // If we have email, make the search more specific
   if (email && email.length > 0) {
     query = query.or(`email.eq.${email}`);
   }
   
+  // If we have phone, make the search more specific
   if (phone && phone.length > 0) {
     const formattedPhone = phone.replace(/\D/g, ''); // Strip non-digits
-    if (formattedPhone.length >= 10) {
-      query = query.or(`phone.like.%${formattedPhone.slice(-10)}%`); // Match last 10 digits
+    if (formattedPhone.length >= 7) {
+      query = query.or(`phone.like.%${formattedPhone.slice(-7)}%`); // Match last 7 digits
     }
   }
 
