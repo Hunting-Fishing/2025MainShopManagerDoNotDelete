@@ -91,8 +91,9 @@ export interface EmailSequenceEnrollment {
   metadata?: Record<string, any>;
   
   // Additional properties from joins
-  sequence?: any;
-  current_step?: any;
+  sequence?: EmailSequence;
+  current_step?: EmailSequenceStep;
+  customer?: any;
 }
 
 export interface EmailSequenceAnalytics {

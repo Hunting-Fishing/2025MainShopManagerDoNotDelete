@@ -1,148 +1,196 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ClockIcon, Settings } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { sequenceProcessingService } from '@/services/email/sequences/sequenceProcessingService';
 import { useToast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { schedulingService } from '@/services/email';
-import type { SequenceProcessingSchedule } from '@/services/email/scheduling/schedulingService';
+import { Play, Loader2, Settings2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-interface ManageSequenceProcessingButtonProps {
-  className?: string;
-}
-
-export function ManageSequenceProcessingButton({ className }: ManageSequenceProcessingButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [schedule, setSchedule] = useState<SequenceProcessingSchedule>({
-    enabled: false,
-    cron: '0 * * * *',
-    sequence_ids: []
-  });
+export function ManageSequenceProcessingButton() {
+  const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [healthStatus, setHealthStatus] = useState<{
+    healthy?: boolean;
+    timestamp?: string;
+    error?: string;
+  }>({});
   const { toast } = useToast();
 
-  const fetchSchedule = async () => {
+  const checkHealth = async () => {
     setLoading(true);
     try {
-      const { data, error } = await schedulingService.getSequenceProcessingSchedule();
+      const { data, error } = await sequenceProcessingService.checkProcessingHealth();
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
-      setSchedule(data || { enabled: false, cron: '0 * * * *', sequence_ids: [] });
-    } catch (error) {
-      console.error("Error loading processing schedule:", error);
+      setHealthStatus(data);
+      
       toast({
-        title: "Loading error",
-        description: "Failed to load sequence processing schedule",
-        variant: "destructive",
+        title: data.healthy ? 'System Healthy' : 'System Unhealthy',
+        description: data.healthy 
+          ? `Last check: ${new Date(data.timestamp).toLocaleString()}` 
+          : `Error: ${data.error || 'Unknown issue'}`,
+        variant: data.healthy ? 'default' : 'destructive',
+      });
+    } catch (error) {
+      console.error('Error checking health:', error);
+      setHealthStatus({ healthy: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      toast({
+        title: 'Error Checking Health',
+        description: error instanceof Error ? error.message : 'Failed to check system health',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const saveSchedule = async () => {
+  const triggerProcessing = async () => {
     setLoading(true);
+    setConfirmOpen(false);
+    
     try {
-      const { error } = await schedulingService.updateSequenceProcessingSchedule(schedule);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Schedule updated",
-        description: schedule.enabled 
-          ? "Automatic sequence processing has been enabled" 
-          : "Automatic sequence processing has been disabled",
+      const { data, error } = await sequenceProcessingService.triggerSequenceProcessing({ 
+        force: true 
       });
       
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Error saving processing schedule:", error);
+      if (error) {
+        throw error;
+      }
+      
+      const { processed = 0, completed = 0 } = data || {};
+      
       toast({
-        title: "Save error",
-        description: "Failed to update sequence processing schedule",
-        variant: "destructive",
+        title: 'Processing Triggered',
+        description: `Successfully processed ${processed} enrollments (${completed} completed)`,
+      });
+    } catch (error) {
+      console.error('Error triggering processing:', error);
+      
+      toast({
+        title: 'Processing Failed',
+        description: error instanceof Error ? error.message : 'Failed to trigger email sequence processing',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchSchedule();
-    }
-  }, [isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className={className}>
-          <ClockIcon className="h-4 w-4 mr-2" />
-          Schedule Processing
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Sequence Processing Schedule
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="auto-processing">Automatic Processing</Label>
-              <div className="text-sm text-muted-foreground">
-                Enable automatic processing of email sequences
-              </div>
-            </div>
-            <Switch
-              id="auto-processing"
-              checked={schedule.enabled}
-              onCheckedChange={(checked) => setSchedule({ ...schedule, enabled: checked })}
-              disabled={loading}
-            />
-          </div>
-          
-          {schedule.enabled && (
+    <>
+      <Button 
+        variant="outline" 
+        onClick={() => setOpen(true)}
+        disabled={loading}
+      >
+        {loading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Settings2 className="mr-2 h-4 w-4" />
+        )}
+        Manage Processing
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Email Sequence Processing</DialogTitle>
+            <DialogDescription>
+              Manage and trigger the email sequence processing system.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="cron-schedule">Processing Schedule (Cron)</Label>
-              <Input
-                id="cron-schedule"
-                value={schedule.cron}
-                onChange={(e) => setSchedule({ ...schedule, cron: e.target.value })}
-                placeholder="0 * * * *"
-                disabled={loading}
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter a cron expression to define when sequences should be processed.
-                Default: Every hour (0 * * * *)
+              <h3 className="text-sm font-medium">System Status</h3>
+              <div className="flex items-center space-x-2">
+                {healthStatus.healthy !== undefined ? (
+                  <Badge variant={healthStatus.healthy ? "success" : "destructive"} className={healthStatus.healthy ? "bg-green-500" : ""}>
+                    {healthStatus.healthy ? 'Healthy' : 'Unhealthy'}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">Unknown</Badge>
+                )}
+                {healthStatus.timestamp && (
+                  <span className="text-xs text-muted-foreground">
+                    Last checked: {new Date(healthStatus.timestamp).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              {healthStatus.error && (
+                <p className="text-xs text-red-500">{healthStatus.error}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">System Actions</h3>
+              <p className="text-sm text-muted-foreground">
+                These actions affect all active email sequences.
               </p>
             </div>
-          )}
-          
-          <div className="pt-4 flex justify-end space-x-2">
+          </div>
+
+          <DialogFooter className="flex space-x-2">
             <Button
               variant="outline"
-              onClick={() => setIsOpen(false)}
+              onClick={checkHealth}
               disabled={loading}
             >
-              Cancel
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Check Health
             </Button>
-            <Button 
-              onClick={saveSchedule}
+            <Button
+              onClick={() => setConfirmOpen(true)}
               disabled={loading}
             >
-              Save Schedule
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+              Trigger Processing
             </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Process All Sequences</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will immediately process all active email sequences, potentially sending emails to enrolled customers.
+              Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={triggerProcessing}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
