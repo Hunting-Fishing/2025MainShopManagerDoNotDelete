@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import Layout from '@/components/layout/Layout';
@@ -12,6 +13,7 @@ import Invoices from '@/pages/Invoices';
 import InvoiceDetails from '@/pages/InvoiceDetails';
 import InvoiceCreate from '@/pages/InvoiceCreate';
 import Inventory from '@/pages/Inventory';
+import InventoryAdd from '@/pages/InventoryAdd';
 import RepairPlans from '@/pages/RepairPlans';
 import CreateRepairPlan from '@/pages/CreateRepairPlan';
 import RepairPlanDetails from '@/pages/RepairPlanDetails';
@@ -69,6 +71,7 @@ function App() {
           <Route path="invoices/new" element={<CreateInvoice />} />
           <Route path="invoices/:id" element={<InvoiceDetails />} />
           <Route path="inventory" element={<Inventory />} />
+          <Route path="inventory/add" element={<InventoryAdd />} />
           <Route path="repair-plans" element={<RepairPlans />} />
           <Route path="repair-plans/create" element={<CreateRepairPlan />} />
           <Route path="repair-plans/:id" element={<RepairPlanDetails />} />
