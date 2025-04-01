@@ -8,7 +8,7 @@ import { ReportExportMenu } from '@/components/reports/ReportExportMenu';
 import { SavedReportsDialog } from '@/components/reports/dialogs/SavedReportsDialog';
 import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
 import { SavedReport, ReportConfig } from '@/types/reports';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { SummaryTabContent } from '@/components/reports/tabs/SummaryTabContent';
 import { FinancialsTabContent } from '@/components/reports/tabs/FinancialsTabContent';
 import { PerformanceTabContent } from '@/components/reports/tabs/PerformanceTabContent';
@@ -26,12 +26,14 @@ const Reports = () => {
     to: new Date()
   });
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
-  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [filters, setFilters] = useState<Record<string, any>>({
+    showComparison: false
+  });
   const [showComparison, setShowComparison] = useState(false);
   const [customReportConfig, setCustomReportConfig] = useState<ReportConfig | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
   
-  // Use our custom hook to fetch and manage report data
+  // Use our custom hook to fetch and manage report data with showComparison in filters
   const { 
     data: reportData, 
     isLoading, 
@@ -41,12 +43,18 @@ const Reports = () => {
   } = useReportData({
     timeframe,
     dateRange,
-    filters,
+    filters: {
+      ...filters,
+      showComparison // Include showComparison in the filters
+    },
     refreshInterval: autoRefresh ? 30000 : null // Auto refresh every 30 seconds if enabled
   });
   
   const handleFilterChange = (newFilters: Record<string, any>) => {
-    setFilters(newFilters);
+    setFilters({
+      ...newFilters,
+      showComparison // Make sure to preserve showComparison
+    });
     console.log("Filters applied:", newFilters);
   };
   
@@ -62,7 +70,10 @@ const Reports = () => {
     const report = savedReports.find(r => r.id === reportId);
     if (report) {
       setTimeframe(report.type);
-      setFilters(report.filters);
+      setFilters({
+        ...report.filters,
+        showComparison // Preserve showComparison when loading a report
+      });
       toast({
         title: "Report loaded",
         description: `"${report.name}" has been loaded successfully`
@@ -97,6 +108,17 @@ const Reports = () => {
         ? "Reports will no longer refresh automatically" 
         : "Reports will refresh automatically every 30 seconds"
     });
+  };
+
+  const toggleComparison = () => {
+    const newShowComparison = !showComparison;
+    setShowComparison(newShowComparison);
+    
+    // Update filters to include the new comparison state
+    setFilters(currentFilters => ({
+      ...currentFilters,
+      showComparison: newShowComparison
+    }));
   };
 
   const topSellingColumns = [
@@ -156,7 +178,7 @@ const Reports = () => {
           <div className="flex items-center gap-4">
             <button 
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
-              onClick={() => setShowComparison(!showComparison)}
+              onClick={toggleComparison}
             >
               {showComparison ? "Hide Comparison" : "Show Comparison"}
             </button>

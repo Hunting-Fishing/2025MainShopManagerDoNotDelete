@@ -2,6 +2,7 @@
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { configurePdf, addFooter } from "./pdfConfig";
+import { generateFallbackChart } from './chartGenerator';
 
 /**
  * Generate a report PDF with better formatting and charts
@@ -42,7 +43,24 @@ export const generateReportPdf = (
       startY += 90;
     } catch (err) {
       console.error('Failed to add chart image to PDF:', err);
-      // Continue without the chart
+      
+      // If the provided chartUrl fails, try to generate a fallback chart
+      try {
+        // Create a simple fallback chart using the data
+        const chartData = data.slice(0, 5).map(row => ({
+          name: row[columns[0].dataKey] || 'Unknown',
+          value: typeof row[columns[1].dataKey] === 'number' ? 
+            row[columns[1].dataKey] : 
+            Number(row[columns[1].dataKey]) || 0
+        }));
+        
+        const fallbackChartUrl = generateFallbackChart(chartData, 'bar');
+        doc.addImage(fallbackChartUrl, 'PNG', 14, startY, 180, 80);
+        startY += 90;
+      } catch (fallbackErr) {
+        console.error('Failed to generate fallback chart:', fallbackErr);
+        // Continue without chart if fallback also fails
+      }
     }
   }
   
