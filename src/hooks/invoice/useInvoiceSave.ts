@@ -55,7 +55,7 @@ export function useInvoiceSave() {
         ...invoice,
         items,
         assignedStaff,
-        status,
+        status: status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
         subtotal,
         tax,
         total,

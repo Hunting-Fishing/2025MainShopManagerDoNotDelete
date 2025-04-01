@@ -17,6 +17,10 @@ export interface Invoice {
   createdBy?: string;
   assignedStaff?: string[];
   items: InvoiceItem[];
+  // Additional fields needed by components
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
+  createdAt?: string;
 }
 
 export interface InvoiceItem {
@@ -29,6 +33,20 @@ export interface InvoiceItem {
   hours?: boolean;
 }
 
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  lastUsed?: string;
+  usageCount: number;
+  defaultTaxRate: number;
+  defaultDueDateDays: number;
+  defaultNotes?: string;
+  defaultItems: InvoiceItem[];
+}
+
+// Define a type for WorkOrder to prevent conflicts with other exports
 export interface WorkOrder {
   id: string;
   customer: string;
@@ -71,11 +89,12 @@ export interface StaffMember {
   role: string;
 }
 
-export interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  price: number;
-  description?: string;
+export type InvoiceUpdater = (prev: Invoice) => Invoice;
+
+// Helper function to create an invoice updater function
+export function createInvoiceUpdater(updates: Partial<Invoice>): InvoiceUpdater {
+  return (prev: Invoice) => ({
+    ...prev,
+    ...updates
+  });
 }

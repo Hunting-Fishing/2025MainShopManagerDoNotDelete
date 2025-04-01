@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/hooks/use-toast";
@@ -14,37 +13,14 @@ import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthUser } from '@/hooks/useAuthUser';
-
-interface InvoiceItem {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
-
-interface WorkOrder {
-  id: string;
-  customer: string;
-  description: string;
-}
-
-interface WorkOrderInventoryItem {
-  id: string;
-  name: string;
-  sku?: string;
-  category?: string;
-  quantity: number;
-  unitPrice: number;
-}
+import { WorkOrderInventoryItem, InvoiceItem } from '@/types/invoice';
 
 export default function CreateInvoice() {
   const navigate = useNavigate();
   const { userId } = useAuthUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<string>("");
   const [workOrderInventoryItems, setWorkOrderInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [items, setItems] = useState<InvoiceItem[]>([]);
@@ -163,17 +139,28 @@ export default function CreateInvoice() {
     setSelectedWorkOrder(workOrderId);
     
     if (workOrderId) {
-      const items = await fetchWorkOrderInventoryItems(workOrderId);
-      setWorkOrderInventoryItems(items);
+      const inventoryItems = await fetchWorkOrderInventoryItems(workOrderId);
+      
+      // Map DB field names to our type fields
+      const mappedItems: WorkOrderInventoryItem[] = inventoryItems.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku || "",
+        category: item.category,
+        quantity: item.quantity,
+        unitPrice: item.unit_price
+      }));
+      
+      setWorkOrderInventoryItems(mappedItems);
       
       // Convert work order inventory items to invoice items
-      const woItems = items.map(item => ({
+      const woItems = mappedItems.map(item => ({
         id: uuidv4(),
         name: item.name,
-        description: item.sku || "", // Use SKU as description since there's no description property
+        description: item.sku || "", 
         quantity: item.quantity,
-        price: item.unitPrice, // Use unitPrice instead of price
-        total: item.quantity * item.unitPrice // Use unitPrice here too
+        price: item.unitPrice,
+        total: item.quantity * item.unitPrice
       }));
       
       setItems(woItems);

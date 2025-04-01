@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   fetchInvoices, 
@@ -32,14 +31,13 @@ export function useInvoiceData() {
         notes: invoice.notes || '',
         date: invoice.date,
         dueDate: invoice.due_date,
-        status: invoice.status,
+        status: invoice.status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
         workOrderId: invoice.work_order_id || '',
         createdBy: invoice.created_by || '',
         subtotal: invoice.subtotal,
         tax: invoice.tax,
         total: invoice.total,
         paymentMethod: invoice.payment_method || '',
-        createdAt: invoice.created_at,
         lastUpdatedBy: invoice.last_updated_by || '',
         lastUpdatedAt: invoice.last_updated_at,
         assignedStaff: [], // Will be populated if needed
@@ -119,14 +117,13 @@ export function useInvoiceData() {
           notes: data.notes || '',
           date: data.date,
           dueDate: data.due_date,
-          status: data.status,
+          status: data.status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
           workOrderId: data.work_order_id || '',
           createdBy: data.created_by || '',
           subtotal: data.subtotal,
           tax: data.tax,
           total: data.total,
           paymentMethod: data.payment_method || '',
-          createdAt: data.created_at,
           lastUpdatedBy: data.last_updated_by || '',
           lastUpdatedAt: data.last_updated_at,
           // Fix: Get assigned staff from invoice_staff table if it exists

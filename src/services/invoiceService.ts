@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Invoice, InvoiceItem } from "@/types/invoice";
 import { toast } from "@/components/ui/use-toast";
@@ -86,8 +85,8 @@ export async function saveInvoice(invoice: Invoice, items: InvoiceItem[]) {
         tax: invoice.tax,
         total: invoice.total,
         payment_method: invoice.paymentMethod,
-        last_updated_by: invoice.lastUpdatedBy,
-        last_updated_at: invoice.lastUpdatedAt,
+        last_updated_by: invoice.lastUpdatedBy || null,
+        last_updated_at: invoice.lastUpdatedAt || new Date().toISOString(),
       })
       .select()
       .single();
