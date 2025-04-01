@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCustomer, clearDraftCustomer } from "@/services/customerService";
@@ -13,7 +12,7 @@ import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeade
 import { ImportCustomersDialog } from "@/components/customers/form/import/ImportCustomersDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { recordWorkOrderActivity } from "@/utils/activityTracker";
+import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
 
 export default function CustomerCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,14 +128,12 @@ export default function CustomerCreate() {
       
       if (preferredTechnicianId) {
         try {
-          // Find the technician name for the selected technician
           const selectedTechnician = technicians.find(tech => tech.id === preferredTechnicianId);
           const technicianName = selectedTechnician ? selectedTechnician.name : "Unknown";
           
-          // Record the activity in work_order_activities
           await recordWorkOrderActivity(
             `Preferred technician set to ${technicianName} (${preferredTechnicianId}) during customer creation`,
-            "00000000-0000-0000-0000-000000000000", // No specific work order
+            "00000000-0000-0000-0000-000000000000",
             "system", 
             "System"
           );
@@ -204,5 +201,4 @@ export default function CustomerCreate() {
   );
 };
 
-// Import the technicians array from the schema
 import { technicians } from "@/components/customers/form/CustomerFormSchema";

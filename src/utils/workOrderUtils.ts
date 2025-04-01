@@ -1,9 +1,9 @@
-
 import { WorkOrder, statusMap, priorityMap } from "@/data/workOrdersData";
 import { toast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
+import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
 
 // Maps our application WorkOrder type to Supabase database format
 const mapToDbWorkOrder = (workOrder: Partial<WorkOrder>) => {
@@ -336,37 +336,5 @@ export const calculateTotalPages = (totalItems: number, itemsPerPage: number): n
   } catch (error) {
     console.error("Error calculating total pages:", error);
     return 1; // Return minimum 1 page as fallback
-  }
-};
-
-// Function to record work order activity in Supabase
-export const recordWorkOrderActivity = async (
-  action: string,
-  workOrderId: string,
-  userId: string,
-  userName: string,
-  showToast: boolean = true
-): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('work_order_activities')
-      .insert({
-        action,
-        work_order_id: workOrderId,
-        user_id: userId,
-        user_name: userName
-      });
-      
-    if (error) throw error;
-    
-    if (showToast) {
-      toast({
-        title: "Activity Recorded",
-        description: `${action} work order ${workOrderId}`,
-        variant: "success",
-      });
-    }
-  } catch (error) {
-    console.error("Error recording activity:", error);
   }
 };
