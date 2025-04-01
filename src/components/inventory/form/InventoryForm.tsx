@@ -13,6 +13,7 @@ import {
 import { useInventoryFormValidation } from "@/hooks/inventory/useInventoryFormValidation";
 import { getInventoryStatus } from "@/services/inventory/utils";
 import { getInventoryCategories } from "@/services/inventory/categoryService";
+import { getInventorySuppliers } from "@/services/inventory/supplierService";
 
 interface InventoryFormProps {
   onSubmit: (data: Omit<InventoryItemExtended, "id">) => Promise<void>;
@@ -35,20 +36,26 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
   });
   
   const [categories, setCategories] = useState<string[]>([]);
+  const [suppliers, setSuppliers] = useState<string[]>([]);
   const { formErrors, validateForm, clearError } = useInventoryFormValidation();
 
-  // Load categories on component mount
+  // Load categories and suppliers on component mount
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
+        // Load categories from the service
         const categories = await getInventoryCategories();
         setCategories(categories);
+        
+        // Load suppliers from the service
+        const suppliers = await getInventorySuppliers();
+        setSuppliers(suppliers);
       } catch (error) {
-        console.error("Error loading categories:", error);
+        console.error("Error loading form data:", error);
       }
     };
     
-    loadCategories();
+    loadData();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +92,7 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
     clearError(name);
   };
   
-  // Handle select change for the category dropdown
+  // Handle select change for dropdown fields
   const handleSelectChange = (name: string, value: string) => {
     setFormData({
       ...formData,
@@ -155,15 +162,30 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
           )}
         </div>
         
-        <FormField
-          label="Supplier"
-          name="supplier"
-          value={formData.supplier}
-          onChange={handleChange}
-          required
-          placeholder="Enter supplier"
-          error={formErrors.supplier}
-        />
+        {/* Supplier dropdown field */}
+        <div className="flex flex-col space-y-2">
+          <label htmlFor="supplier" className="flex items-center text-sm font-medium">
+            Supplier<span className="text-destructive ml-1">*</span>
+          </label>
+          <Select
+            value={formData.supplier}
+            onValueChange={(value) => handleSelectChange("supplier", value)}
+          >
+            <SelectTrigger id="supplier" className={formErrors.supplier ? "border-destructive" : ""}>
+              <SelectValue placeholder="Select a supplier" />
+            </SelectTrigger>
+            <SelectContent>
+              {suppliers.map((supplier) => (
+                <SelectItem key={supplier} value={supplier}>
+                  {supplier}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {formErrors.supplier && (
+            <p className="text-xs font-medium text-destructive">{formErrors.supplier}</p>
+          )}
+        </div>
         
         <FormField
           label="Quantity"
