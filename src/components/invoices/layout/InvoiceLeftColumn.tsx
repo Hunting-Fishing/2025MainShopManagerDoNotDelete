@@ -229,7 +229,7 @@ export function InvoiceLeftColumn({
               onSelectTemplate={handleApplyTemplate}
             />
             <SaveTemplateDialog 
-              items={invoice.items}
+              invoice={invoice}
               onSaveTemplate={handleSaveTemplate}
             />
           </div>

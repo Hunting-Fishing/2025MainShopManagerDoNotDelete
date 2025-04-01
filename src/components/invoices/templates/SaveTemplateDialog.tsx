@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface SaveTemplateDialogProps {
   invoice: any;
-  onSaveTemplate: (template: InvoiceTemplate) => void;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
 }
 
 export function SaveTemplateDialog({ invoice, onSaveTemplate }: SaveTemplateDialogProps) {
@@ -22,17 +22,13 @@ export function SaveTemplateDialog({ invoice, onSaveTemplate }: SaveTemplateDial
   const handleSave = () => {
     if (!name) return;
 
-    const template: InvoiceTemplate = {
-      id: uuidv4(),
+    const template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'> = {
       name,
       description,
-      date: new Date().toISOString(),
-      items: invoice.items || [],
-      customer: invoice.customer,
-      customerEmail: invoice.customerEmail,
-      customerAddress: invoice.customerAddress,
-      notes: invoice.notes,
-      description: invoice.description,
+      defaultTaxRate: 0.08, // Default tax rate
+      defaultDueDateDays: 30, // Default due date (30 days)
+      defaultNotes: invoice.notes,
+      defaultItems: invoice.items || [],
     };
 
     onSaveTemplate(template);
