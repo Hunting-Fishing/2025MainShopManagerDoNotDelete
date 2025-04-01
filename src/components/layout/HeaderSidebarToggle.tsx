@@ -6,7 +6,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function HeaderSidebarToggle() {
-  const { toggle } = useSidebar();
+  const { toggleCollapsed } = useSidebar();
   const isMobile = useIsMobile();
 
   return (
@@ -14,7 +14,7 @@ export function HeaderSidebarToggle() {
       variant="ghost"
       size={isMobile ? "sm" : "icon"}
       className="md:hover:bg-accent"
-      onClick={toggle}
+      onClick={toggleCollapsed}
       aria-label="Toggle sidebar"
     >
       <Menu className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
