@@ -13,5 +13,7 @@ export {
   disableAutoReorder,
   getLowStockItems,
   getOutOfStockItems,
-  getInventoryStatus
+  getInventoryStatus,
+  clearAllInventoryItems
 } from './inventory/index';
+
