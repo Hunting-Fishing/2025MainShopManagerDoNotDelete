@@ -1,3 +1,4 @@
+
 // Define the inventory item interface for work orders
 export interface WorkOrderInventoryItem {
   id: string;
@@ -6,6 +7,11 @@ export interface WorkOrderInventoryItem {
   category: string;
   quantity: number;
   unitPrice: number;
+  itemStatus?: 'in-stock' | 'ordered' | 'special-order' | 'used-part' | 'misc';
+  estimatedArrivalDate?: string;
+  supplierName?: string;
+  supplierOrderRef?: string;
+  notes?: string;
 }
 
 // Define the time entry interface for work order time tracking

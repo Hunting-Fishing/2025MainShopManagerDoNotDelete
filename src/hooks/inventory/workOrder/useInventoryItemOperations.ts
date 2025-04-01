@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
 import { InventoryItemExtended } from "@/types/inventory";
@@ -24,8 +24,11 @@ export const useInventoryItemOperations = (
     // Skip if no items or not mounted yet
     if (!selectedItems.length) return;
     
-    // Check each item's availability
+    // Check each item's availability but only for regular inventory items
     selectedItems.forEach(item => {
+      // Skip special order items and other non-inventory items
+      if (item.itemStatus && item.itemStatus !== "in-stock") return;
+      
       checkItemAvailability(item.id, item.quantity).then(availability => {
         if (!availability.available) {
           toast({
@@ -71,7 +74,8 @@ export const useInventoryItemOperations = (
         
         updatedItems[existingItemIndex] = {
           ...updatedItems[existingItemIndex],
-          quantity: newQuantity
+          quantity: newQuantity,
+          itemStatus: "in-stock" // Ensure correct status
         };
         form.setValue("inventoryItems", updatedItems);
         setShowInventoryDialog(false);
@@ -96,7 +100,8 @@ export const useInventoryItemOperations = (
           sku: item.sku,
           category: item.category,
           quantity: 1,
-          unitPrice: item.unitPrice
+          unitPrice: item.unitPrice,
+          itemStatus: "in-stock" // Set default status for inventory items
         };
         
         form.setValue("inventoryItems", [...currentItems, newItem]);
@@ -115,30 +120,46 @@ export const useInventoryItemOperations = (
   const handleUpdateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) return;
     
-    // Check if the new quantity is available in inventory
-    checkItemAvailability(id, quantity).then(availability => {
-      if (!availability.available) {
-        toast({
-          title: "Insufficient Inventory",
-          description: availability.message,
-          variant: "warning"
-        });
-        
-        // If there's some available, use that quantity
-        if (availability.availableQuantity !== undefined) {
-          quantity = availability.availableQuantity;
-        } else {
-          return; // Don't update if no inventory is available
+    const currentItems = form.getValues("inventoryItems") || [];
+    const itemIndex = currentItems.findIndex(item => item.id === id);
+    
+    if (itemIndex === -1) return;
+    
+    const item = currentItems[itemIndex];
+    
+    // Only check availability for regular inventory items
+    if (!item.itemStatus || item.itemStatus === "in-stock") {
+      // Check if the new quantity is available in inventory
+      checkItemAvailability(id, quantity).then(availability => {
+        if (!availability.available) {
+          toast({
+            title: "Insufficient Inventory",
+            description: availability.message,
+            variant: "warning"
+          });
+          
+          // If there's some available, use that quantity
+          if (availability.availableQuantity !== undefined) {
+            quantity = availability.availableQuantity;
+          } else {
+            return; // Don't update if no inventory is available
+          }
         }
-      }
-      
-      const currentItems = form.getValues("inventoryItems") || [];
+        
+        const updatedItems = currentItems.map(item => 
+          item.id === id ? { ...item, quantity } : item
+        );
+        
+        form.setValue("inventoryItems", updatedItems);
+      });
+    } else {
+      // For special order items and others, no need to check availability
       const updatedItems = currentItems.map(item => 
         item.id === id ? { ...item, quantity } : item
       );
       
       form.setValue("inventoryItems", updatedItems);
-    });
+    }
   };
 
   return {
@@ -150,5 +171,3 @@ export const useInventoryItemOperations = (
     handleUpdateQuantity
   };
 };
-
-import { useEffect } from "react";

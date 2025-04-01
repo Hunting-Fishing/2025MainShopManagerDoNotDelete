@@ -16,6 +16,7 @@ interface InventoryFormSelectProps {
   options: string[];
   error?: string;
   required?: boolean;
+  description?: string;
 }
 
 export function InventoryFormSelect({
@@ -26,6 +27,7 @@ export function InventoryFormSelect({
   options,
   error,
   required = false,
+  description,
 }: InventoryFormSelectProps) {
   return (
     <div className="flex flex-col space-y-2">
@@ -45,6 +47,9 @@ export function InventoryFormSelect({
           ))}
         </SelectContent>
       </Select>
+      {description && (
+        <p className="text-xs text-gray-500">{description}</p>
+      )}
       {error && (
         <p className="text-xs font-medium text-destructive">{error}</p>
       )}

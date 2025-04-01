@@ -1,73 +1,46 @@
-
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { toast } from "@/hooks/use-toast";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**
- * Hook to manage inventory status effects when work order status changes
+ * Hook to handle inventory status changes based on work order status
  */
 export const useInventoryStatusEffects = (
   form: UseFormReturn<WorkOrderFormFieldValues>,
-  consumeWorkOrderInventory: (items: {id: string, quantity: number}[]) => Promise<any>,
-  reserveInventory: (items: {id: string, quantity: number}[]) => Promise<any>
+  consumeWorkOrderInventory: Function,
+  reserveInventory: Function
 ) => {
-  // Handle inventory when work order status changes
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      // When work order status changes to completed, consume inventory
-      if (name === "status" && value.status === "completed") {
-        const items = value.inventoryItems || [];
-        
-        if (items.length > 0) {
-          // Prepare items for consumption
-          const itemsToConsume = items.map(item => ({
-            id: item.id,
-            quantity: item.quantity
-          }));
-          
-          // Actually update the inventory quantities
-          consumeWorkOrderInventory(itemsToConsume).then(result => {
-            if (!result.success) {
-              // Show warning about inventory issues
-              toast({
-                title: "Inventory Warning",
-                description: result.message || "Some items could not be consumed. Check inventory levels.",
-                variant: "warning"
-              });
-            }
-          });
-        }
-      }
-      // When work order is just started (in-progress), reserve but don't consume inventory
-      else if (name === "status" && value.status === "in-progress") {
-        const items = value.inventoryItems || [];
-        
-        if (items.length > 0) {
-          // Prepare items for reservation
-          const itemsToReserve = items.map(item => ({
-            id: item.id,
-            quantity: item.quantity
-          }));
-          
-          // Attempt to reserve the inventory
-          reserveInventory(itemsToReserve).then(result => {
-            if (!result.success) {
-              // Show warning about inventory availability issues
-              toast({
-                title: "Inventory Warning",
-                description: result.message || "Some items have insufficient inventory. Please review inventory levels.",
-                variant: "warning"
-              });
-            }
-          });
-        }
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form, reserveInventory, consumeWorkOrderInventory]);
+  // Get current values
+  const status = form.watch("status");
+  const inventoryItems = form.watch("inventoryItems") || [];
   
-  return {};
+  // Effect to handle work order status changes that affect inventory
+  useEffect(() => {
+    // When work order is completed, consume in-stock inventory
+    if (status === "completed") {
+      // Only consume in-stock items, not special orders or other types
+      const inStockItems = inventoryItems
+        .filter(item => !item.itemStatus || item.itemStatus === "in-stock")
+        .map(item => ({ id: item.id, quantity: item.quantity }));
+      
+      if (inStockItems.length > 0) {
+        consumeWorkOrderInventory(inStockItems);
+      }
+    }
+    // When work order is in progress, reserve inventory
+    else if (status === "in-progress") {
+      // Only reserve in-stock items
+      const inStockItems = inventoryItems
+        .filter(item => !item.itemStatus || item.itemStatus === "in-stock")
+        .map(item => ({ id: item.id, quantity: item.quantity }));
+      
+      if (inStockItems.length > 0) {
+        reserveInventory(inStockItems);
+      }
+    }
+    // Other statuses don't affect inventory directly
+  }, [status, consumeWorkOrderInventory, reserveInventory]);
+  
+  return null;
 };
