@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   ChevronDown, 
   Download, 
@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { inventoryItems } from "@/data/mockInventoryData";
+import { getAllInventoryItems } from "@/services/inventoryService";
 
 interface InventoryFiltersProps {
   searchQuery: string;
@@ -48,10 +48,18 @@ export function InventoryFilters({
   supplierFilter,
   setSupplierFilter
 }: InventoryFiltersProps) {
-  // Get unique categories and suppliers for filters
-  const categories = Array.from(new Set(inventoryItems.map(item => item.category))).sort();
-  const suppliers = Array.from(new Set(inventoryItems.map(item => item.supplier))).sort();
-  const statuses = Array.from(new Set(inventoryItems.map(item => item.status))).sort();
+  const [categories, setCategories] = useState<string[]>([]);
+  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
+
+  // Fetch unique categories, suppliers, and statuses
+  useEffect(() => {
+    getAllInventoryItems().then(items => {
+      setCategories(Array.from(new Set(items.map(item => item.category))).sort());
+      setSuppliers(Array.from(new Set(items.map(item => item.supplier))).sort());
+      setStatuses(Array.from(new Set(items.map(item => item.status))).sort());
+    });
+  }, []);
 
   const resetFilters = () => {
     setSearchQuery("");

@@ -19,7 +19,13 @@ export interface InventoryItemExtended {
   unitPrice: number;
   location: string;
   status: string;
-  description?: string; // Making description optional with ?
+  description?: string;
+}
+
+export interface AutoReorderSettings {
+  enabled: boolean;
+  threshold: number;
+  quantity: number;
 }
 
 export interface ReorderSettings {

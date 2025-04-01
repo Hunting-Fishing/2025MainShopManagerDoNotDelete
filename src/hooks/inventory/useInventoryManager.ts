@@ -2,8 +2,8 @@
 import { useInventoryAlerts } from "./useInventoryAlerts";
 import { useAutoReorder, type AutoReorderSettings } from "./useAutoReorder";
 import { useManualReorder } from "./useManualReorder";
+import { getInventoryItemById } from "@/services/inventoryService";
 import { useEffect, useCallback } from "react";
-import { inventoryItems } from "@/data/mockInventoryData";
 import { toast } from "@/hooks/use-toast";
 
 export type { AutoReorderSettings } from "./useAutoReorder";
@@ -27,39 +27,48 @@ export function useInventoryManager() {
   }, [checkInventoryAlerts, placeAutomaticOrder, autoReorderSettings]);
   
   // Function to check if an item can be used in a work order
-  const checkItemAvailability = useCallback((itemId: string, requestedQuantity: number) => {
-    const item = inventoryItems.find(i => i.id === itemId);
-    if (!item) return { available: false, message: "Item not found in inventory" };
-    
-    if (item.quantity < requestedQuantity) {
-      return { 
-        available: false, 
-        message: `Only ${item.quantity} units of ${item.name} available`,
-        availableQuantity: item.quantity
-      };
+  const checkItemAvailability = useCallback(async (itemId: string, requestedQuantity: number) => {
+    try {
+      const item = await getInventoryItemById(itemId);
+      if (!item) return { available: false, message: "Item not found in inventory" };
+      
+      if (item.quantity < requestedQuantity) {
+        return { 
+          available: false, 
+          message: `Only ${item.quantity} units of ${item.name} available`,
+          availableQuantity: item.quantity
+        };
+      }
+      
+      return { available: true };
+    } catch (error) {
+      console.error("Error checking item availability:", error);
+      return { available: false, message: "Error checking inventory availability" };
     }
-    
-    return { available: true };
   }, []);
   
   // Function to reserve inventory for a work order
-  const reserveInventory = useCallback((items: {id: string, quantity: number}[]) => {
+  const reserveInventory = useCallback(async (items: {id: string, quantity: number}[]) => {
     // In a real app, this would update a database
     // For this demo, we just validate and show toast messages
     
-    const unavailableItems = items.map(item => {
-      const availability = checkItemAvailability(item.id, item.quantity);
+    const unavailableItemsPromises = items.map(async item => {
+      const availability = await checkItemAvailability(item.id, item.quantity);
       if (!availability.available) {
+        const inventoryItem = await getInventoryItemById(item.id);
         return {
           id: item.id,
-          name: inventoryItems.find(i => i.id === item.id)?.name || "Unknown item",
+          name: inventoryItem?.name || "Unknown item",
           requestedQuantity: item.quantity,
           availableQuantity: availability.availableQuantity || 0,
           message: availability.message
         };
       }
       return null;
-    }).filter(Boolean);
+    });
+    
+    const results = await Promise.all(unavailableItemsPromises);
+    const unavailableItems = results.filter(Boolean);
     
     if (unavailableItems.length > 0) {
       toast({

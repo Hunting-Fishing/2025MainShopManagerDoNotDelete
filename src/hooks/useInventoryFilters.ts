@@ -1,13 +1,39 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { inventoryItems } from "@/data/mockInventoryData";
+import { getAllInventoryItems } from "@/services/inventoryService";
+import { useToast } from "@/hooks/use-toast";
 
 export function useInventoryFilters() {
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
+  const { toast } = useToast();
+
+  // Fetch inventory items
+  useEffect(() => {
+    async function fetchInventory() {
+      setLoading(true);
+      try {
+        const items = await getAllInventoryItems();
+        setInventoryItems(items);
+      } catch (error) {
+        console.error("Error fetching inventory:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load inventory items",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchInventory();
+  }, [toast]);
 
   // Filter inventory items
   const filteredItems = useMemo(() => {
@@ -29,9 +55,11 @@ export function useInventoryFilters() {
       
       return matchesSearch && matchesCategory && matchesStatus && matchesSupplier;
     });
-  }, [searchQuery, categoryFilter, statusFilter, supplierFilter]);
+  }, [searchQuery, categoryFilter, statusFilter, supplierFilter, inventoryItems]);
 
   return {
+    inventoryItems,
+    loading,
     searchQuery,
     setSearchQuery,
     categoryFilter,

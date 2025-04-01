@@ -6,9 +6,11 @@ import { InventoryAlerts } from "@/components/inventory/InventoryAlerts";
 import { useInventoryFilters } from "@/hooks/useInventoryFilters";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { AutoReorderStatus } from "@/components/inventory/alerts/AutoReorderStatus";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function Inventory() {
   const {
+    loading,
     searchQuery,
     setSearchQuery,
     categoryFilter,
@@ -21,6 +23,14 @@ export default function Inventory() {
   } = useInventoryFilters();
   
   const { autoReorderSettings, lowStockItems, outOfStockItems } = useInventoryManager();
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-[500px]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
