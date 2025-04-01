@@ -21,7 +21,7 @@ export const sequenceProcessingService = {
       // Get active sequences that need processing
       const { data: sequences, error: sequencesError } = await supabase
         .from('email_sequences')
-        .select('*')
+        .select('*, last_run, next_run, run_frequency')
         .eq('is_active', true);
       
       if (sequencesError) throw sequencesError;
@@ -53,8 +53,8 @@ export const sequenceProcessingService = {
         isActive: seq.is_active,
         createdAt: seq.created_at,
         updatedAt: seq.updated_at,
-        lastRun: seq.last_run,  // Include the lastRun property
-        last_run: seq.last_run, // Include the last_run property
+        lastRun: seq.last_run,
+        last_run: seq.last_run,
         nextRun: seq.next_run,
         next_run: seq.next_run,
         runFrequency: seq.run_frequency,

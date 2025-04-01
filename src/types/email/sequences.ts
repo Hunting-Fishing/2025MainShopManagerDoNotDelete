@@ -1,3 +1,4 @@
+
 export interface EmailSequence {
   id: string;
   name: string;
