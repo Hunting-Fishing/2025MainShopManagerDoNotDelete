@@ -5,6 +5,8 @@ import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
 import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
+import { toast } from "@/hooks/use-toast";
+import { getInventoryStatus } from "@/services/inventory/utils";
 
 export default function InventoryAdd() {
   const navigate = useNavigate();
@@ -21,36 +23,91 @@ export default function InventoryAdd() {
     status: "In Stock",
     description: ""
   });
+  
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
     // Handle numeric fields differently
     if (name === "quantity" || name === "reorderPoint" || name === "unitPrice") {
-      setFormData({
-        ...formData,
-        [name]: value === "" ? 0 : Number(value)
-      });
+      const numValue = value === "" ? 0 : Number(value);
+      
+      // Update status if quantity or reorderPoint changes
+      if (name === "quantity" || name === "reorderPoint") {
+        const newQuantity = name === "quantity" ? numValue : formData.quantity;
+        const newReorderPoint = name === "reorderPoint" ? numValue : formData.reorderPoint;
+        
+        setFormData({
+          ...formData,
+          [name]: numValue,
+          status: getInventoryStatus(newQuantity, newReorderPoint)
+        });
+      } else {
+        setFormData({
+          ...formData,
+          [name]: numValue
+        });
+      }
     } else {
       setFormData({
         ...formData,
         [name]: value
       });
     }
+    
+    // Clear error for this field if it exists
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: ""
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.name.trim()) errors.name = "Name is required";
+    if (!formData.sku.trim()) errors.sku = "SKU is required";
+    if (!formData.category.trim()) errors.category = "Category is required";
+    if (!formData.supplier.trim()) errors.supplier = "Supplier is required";
+    
+    if (formData.unitPrice < 0) errors.unitPrice = "Price cannot be negative";
+    if (formData.quantity < 0) errors.quantity = "Quantity cannot be negative";
+    if (formData.reorderPoint < 0) errors.reorderPoint = "Reorder point cannot be negative";
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.name || !formData.sku || !formData.category || !formData.supplier) {
+    // Validate form
+    if (!validateForm()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please check the form for errors"
+      });
       return;
     }
 
     try {
       await createItem(formData);
+      toast({
+        variant: "success",
+        title: "Success",
+        description: `${formData.name} has been added to inventory`
+      });
       navigate("/inventory");
     } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add inventory item"
+      });
       console.error("Error creating inventory item:", error);
     }
   };
@@ -76,6 +133,7 @@ export default function InventoryAdd() {
             onChange={handleChange}
             required
             placeholder="Enter item name"
+            error={formErrors.name}
           />
           
           <FormField
@@ -85,6 +143,7 @@ export default function InventoryAdd() {
             onChange={handleChange}
             required
             placeholder="Enter SKU"
+            error={formErrors.sku}
           />
           
           <FormField
@@ -94,6 +153,7 @@ export default function InventoryAdd() {
             onChange={handleChange}
             required
             placeholder="Enter category"
+            error={formErrors.category}
           />
           
           <FormField
@@ -103,6 +163,7 @@ export default function InventoryAdd() {
             onChange={handleChange}
             required
             placeholder="Enter supplier"
+            error={formErrors.supplier}
           />
           
           <FormField
@@ -113,6 +174,7 @@ export default function InventoryAdd() {
             onChange={handleChange}
             required
             min="0"
+            error={formErrors.quantity}
           />
           
           <FormField
@@ -123,6 +185,8 @@ export default function InventoryAdd() {
             onChange={handleChange}
             required
             min="0"
+            error={formErrors.reorderPoint}
+            description="Inventory status will be set to 'Low Stock' when quantity falls below this value"
           />
           
           <FormField
@@ -134,6 +198,7 @@ export default function InventoryAdd() {
             required
             min="0"
             step="0.01"
+            error={formErrors.unitPrice}
           />
           
           <FormField
@@ -152,6 +217,11 @@ export default function InventoryAdd() {
           onChange={handleChange}
           placeholder="Enter item description"
         />
+        
+        <div className="mt-4 px-4 py-3 bg-gray-50 border border-gray-200 rounded-md">
+          <div className="text-sm font-medium text-gray-700">Item Status: <span className={`font-semibold ${formData.status === 'In Stock' ? 'text-green-600' : formData.status === 'Low Stock' ? 'text-amber-600' : 'text-red-600'}`}>{formData.status}</span></div>
+          <p className="text-xs text-gray-500 mt-1">Status is automatically calculated based on quantity and reorder point</p>
+        </div>
         
         <div className="flex justify-end space-x-4">
           <Button 
