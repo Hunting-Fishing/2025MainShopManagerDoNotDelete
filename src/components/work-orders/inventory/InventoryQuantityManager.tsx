@@ -22,16 +22,19 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
 }) => {
   const [inventoryItem, setInventoryItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Fetch the inventory item from the database
   useEffect(() => {
     const fetchItem = async () => {
       try {
         setLoading(true);
+        setError(null);
         const item = await getInventoryItemById(itemId);
         setInventoryItem(item);
       } catch (error) {
         console.error("Failed to fetch inventory item:", error);
+        setError("Failed to fetch inventory information");
         toast({
           title: "Error",
           description: "Failed to fetch inventory information",
@@ -75,6 +78,14 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
 
   if (loading) {
     return <LoadingSpinner size="sm" className="mx-auto" />;
+  }
+
+  if (error) {
+    return <div className="text-sm text-red-500">{error}</div>;
+  }
+
+  if (!inventoryItem) {
+    return <div className="text-sm text-amber-500">Item not found in inventory</div>;
   }
 
   return (

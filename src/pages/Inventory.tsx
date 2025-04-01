@@ -20,6 +20,7 @@ export default function Inventory() {
     supplierFilter,
     setSupplierFilter,
     filteredItems,
+    error,
   } = useInventoryFilters();
   
   const { autoReorderSettings, lowStockItems, outOfStockItems } = useInventoryManager();
@@ -28,6 +29,15 @@ export default function Inventory() {
     return (
       <div className="flex justify-center items-center h-[500px]">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[500px] space-y-4">
+        <div className="text-xl font-semibold text-red-500">Error loading inventory data</div>
+        <div className="text-gray-600">{error}</div>
       </div>
     );
   }
@@ -58,7 +68,13 @@ export default function Inventory() {
       />
 
       {/* Inventory Items table */}
-      <InventoryTable items={filteredItems} />
+      {filteredItems.length > 0 ? (
+        <InventoryTable items={filteredItems} />
+      ) : (
+        <div className="flex justify-center items-center h-48 border rounded-lg bg-gray-50">
+          <p className="text-gray-500">No inventory items found matching your criteria</p>
+        </div>
+      )}
     </div>
   );
 }

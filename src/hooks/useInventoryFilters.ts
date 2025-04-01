@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 export function useInventoryFilters() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -17,11 +18,13 @@ export function useInventoryFilters() {
   useEffect(() => {
     async function fetchInventory() {
       setLoading(true);
+      setError(null);
       try {
         const items = await getAllInventoryItems();
         setInventoryItems(items);
       } catch (error) {
         console.error("Error fetching inventory:", error);
+        setError("Failed to load inventory items. Please try again later.");
         toast({
           title: "Error",
           description: "Failed to load inventory items",
@@ -57,9 +60,26 @@ export function useInventoryFilters() {
     });
   }, [searchQuery, categoryFilter, statusFilter, supplierFilter, inventoryItems]);
 
+  // Get unique categories, statuses, and suppliers for filter options
+  const categories = useMemo(() => 
+    [...new Set(inventoryItems.map(item => item.category))].sort(),
+    [inventoryItems]
+  );
+
+  const statuses = useMemo(() => 
+    [...new Set(inventoryItems.map(item => item.status))].sort(),
+    [inventoryItems]
+  );
+
+  const suppliers = useMemo(() => 
+    [...new Set(inventoryItems.map(item => item.supplier))].sort(),
+    [inventoryItems]
+  );
+
   return {
     inventoryItems,
     loading,
+    error,
     searchQuery,
     setSearchQuery,
     categoryFilter,
@@ -69,5 +89,8 @@ export function useInventoryFilters() {
     supplierFilter,
     setSupplierFilter,
     filteredItems,
+    categories,
+    statuses,
+    suppliers
   };
 }

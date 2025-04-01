@@ -1,4 +1,3 @@
-
 // This file is being maintained for backward compatibility
 // but all actual data is now being retrieved from the Supabase database
 
