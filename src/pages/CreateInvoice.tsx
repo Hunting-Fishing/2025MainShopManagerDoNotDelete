@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/hooks/use-toast";
@@ -14,6 +15,29 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { WorkOrderInventoryItem, InvoiceItem } from '@/types/invoice';
+
+// Define a type for the work order data we get from the database
+interface WorkOrderData {
+  id: string;
+  customer_id: string;
+  description: string;
+  customers: {
+    first_name: string;
+    last_name: string;
+  };
+}
+
+// Define a type for the inventory item we get from the database
+interface DbInventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  unit_price: number;
+  work_order_id: string;
+  created_at: string;
+}
 
 export default function CreateInvoice() {
   const navigate = useNavigate();
@@ -48,7 +72,7 @@ export default function CreateInvoice() {
           throw error;
         }
 
-        const formattedWorkOrders = data.map(wo => ({
+        const formattedWorkOrders = (data as WorkOrderData[]).map(wo => ({
           id: wo.id,
           customer: wo.customers ? `${wo.customers.first_name} ${wo.customers.last_name}` : 'Unknown Customer',
           description: wo.description || 'No description'
@@ -139,10 +163,10 @@ export default function CreateInvoice() {
     setSelectedWorkOrder(workOrderId);
     
     if (workOrderId) {
-      const inventoryItems = await fetchWorkOrderInventoryItems(workOrderId);
+      const inventoryItems = await fetchWorkOrderInventoryItems(workOrderId) as DbInventoryItem[];
       
       // Map DB field names to our type fields
-      const mappedItems: WorkOrderInventoryItem[] = inventoryItems.map((item: any) => ({
+      const mappedItems: WorkOrderInventoryItem[] = inventoryItems.map((item: DbInventoryItem) => ({
         id: item.id,
         name: item.name,
         sku: item.sku || "",

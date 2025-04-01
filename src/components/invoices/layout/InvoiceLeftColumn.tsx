@@ -73,7 +73,7 @@ export function InvoiceLeftColumn({
         date={invoice.date}
         dueDate={invoice.dueDate}
         onInvoiceIdChange={(value) => setInvoice(createInvoiceUpdater({ id: value }))}
-        onStatusChange={(value) => setInvoice(createInvoiceUpdater({ status: value }))}
+        onStatusChange={(value) => setInvoice(createInvoiceUpdater({ status: value as "draft" | "pending" | "paid" | "overdue" | "cancelled" }))}
         onDateChange={(value) => setInvoice(createInvoiceUpdater({ date: value }))}
         onDueDateChange={(value) => setInvoice(createInvoiceUpdater({ dueDate: value }))}
         
