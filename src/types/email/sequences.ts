@@ -1,5 +1,3 @@
-
-
 export interface EmailSequence {
   id: string;
   name: string;
@@ -129,4 +127,3 @@ export interface EmailSequenceAnalytics {
   clickRate?: number;
   timeline?: Array<{date: string, enrollments: number, emailsSent: number}>;
 }
-
