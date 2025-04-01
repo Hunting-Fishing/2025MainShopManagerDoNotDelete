@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomerFormValues, referralSources } from "./CustomerFormSchema";
-import { HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { HelpCircle, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -36,7 +36,20 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
   
   useEffect(() => {
     setShowOtherField(referralSource === "Other");
-  }, [referralSource]);
+    
+    // If user selects "Other" but doesn't provide details, show validation error
+    if (referralSource === "Other") {
+      const otherDetails = form.getValues("other_referral_details");
+      if (!otherDetails) {
+        form.setError("other_referral_details", {
+          type: "required",
+          message: "Please specify the referral source"
+        });
+      } else {
+        form.clearErrors("other_referral_details");
+      }
+    }
+  }, [referralSource, form]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
@@ -69,7 +82,13 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                   </TooltipProvider>
                 </div>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    // Clear other referral details if not selecting "Other"
+                    if (value !== "Other") {
+                      form.setValue("other_referral_details", "");
+                    }
+                  }}
                   value={field.value || "_none"}
                 >
                   <FormControl>
@@ -86,6 +105,9 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                     ))}
                   </SelectContent>
                 </Select>
+                <FormDescription>
+                  Important for tracking marketing effectiveness
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -97,7 +119,22 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
               name="other_referral_details"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Other Referral Details</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <FormLabel className="flex items-center">
+                      Other Referral Details
+                      <span className="text-red-500 ml-1">*</span>
+                    </FormLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>This information is required when selecting "Other" as the referral source</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <FormControl>
                     <Textarea 
                       placeholder="Please specify how the customer was referred" 

@@ -6,7 +6,9 @@ export const recordWorkOrderActivity = async (
   action: string,
   workOrderId: string,
   userId: string,
-  userName: string
+  userName: string,
+  flagged: boolean = false,
+  flagReason?: string
 ) => {
   try {
     const { data, error } = await supabase
@@ -16,7 +18,9 @@ export const recordWorkOrderActivity = async (
           work_order_id: workOrderId,
           action: action,
           user_id: userId,
-          user_name: userName
+          user_name: userName,
+          flagged: flagged,
+          flag_reason: flagReason
         }
       ]);
 
@@ -34,7 +38,9 @@ export const recordSmsActivity = async (
   phoneNumber: string,
   message: string,
   userId: string,
-  userName: string
+  userName: string,
+  flagged: boolean = false,
+  flagReason?: string
 ) => {
   try {
     const { data, error } = await supabase
@@ -44,7 +50,9 @@ export const recordSmsActivity = async (
           work_order_id: workOrderId,
           action: `SMS sent to ${phoneNumber}`,
           user_id: userId,
-          user_name: userName
+          user_name: userName,
+          flagged: flagged,
+          flag_reason: flagReason
         }
       ]);
 
@@ -62,7 +70,9 @@ export const recordCallActivity = async (
   phoneNumber: string,
   callType: string,
   userId: string,
-  userName: string
+  userName: string,
+  flagged: boolean = false,
+  flagReason?: string
 ) => {
   try {
     const { data, error } = await supabase
@@ -72,7 +82,9 @@ export const recordCallActivity = async (
           work_order_id: workOrderId,
           action: `${callType} call initiated to ${phoneNumber}`,
           user_id: userId,
-          user_name: userName
+          user_name: userName,
+          flagged: flagged,
+          flag_reason: flagReason
         }
       ]);
 
@@ -89,7 +101,9 @@ export const recordInvoiceActivity = async (
   action: string,
   invoiceId: string,
   userId: string,
-  userName: string
+  userName: string,
+  flagged: boolean = false,
+  flagReason?: string
 ) => {
   try {
     // Check if the invoiceId is a work order ID format, if not, use a fallback empty ID
@@ -103,7 +117,9 @@ export const recordInvoiceActivity = async (
           work_order_id: workOrderId,
           action: `Invoice ${invoiceId}: ${action}`,
           user_id: userId,
-          user_name: userName
+          user_name: userName,
+          flagged: flagged,
+          flag_reason: flagReason
         }
       ]);
 
@@ -111,6 +127,179 @@ export const recordInvoiceActivity = async (
     return data;
   } catch (error) {
     console.error('Error recording invoice activity:', error);
+    throw error;
+  }
+};
+
+// Record technician status change
+export const recordTechnicianStatusChange = async (
+  technicianId: string,
+  technicianName: string,
+  previousStatus: string,
+  newStatus: string,
+  changeReason: string,
+  changedByUserId: string,
+  changedByUserName: string
+) => {
+  try {
+    // First record in technician_status_changes table
+    const { data: statusChangeData, error: statusChangeError } = await supabase
+      .from('technician_status_changes')
+      .insert([
+        {
+          technician_id: technicianId,
+          previous_status: previousStatus,
+          new_status: newStatus,
+          change_reason: changeReason,
+          changed_by: changedByUserId
+        }
+      ]);
+
+    if (statusChangeError) throw statusChangeError;
+
+    // Also log this as a general activity for easier searching
+    const { data: activityData, error: activityError } = await supabase
+      .from('work_order_activities')
+      .insert([
+        {
+          work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
+          action: `Technician status changed: ${technicianName} from ${previousStatus} to ${newStatus}. Reason: ${changeReason}`,
+          user_id: changedByUserId,
+          user_name: changedByUserName
+        }
+      ]);
+
+    if (activityError) throw activityError;
+    
+    return statusChangeData;
+  } catch (error) {
+    console.error('Error recording technician status change:', error);
+    throw error;
+  }
+};
+
+// Record flagged activity
+export const recordFlaggedActivity = async (
+  technicianId: string,
+  activityId: string,
+  activityType: string,
+  flagReason: string,
+  flaggedByUserId: string,
+  flaggedByUserName: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('flagged_activities')
+      .insert([
+        {
+          technician_id: technicianId,
+          activity_id: activityId,
+          activity_type: activityType,
+          flag_reason: flagReason,
+          flagged_by: flaggedByUserId
+        }
+      ]);
+
+    if (error) throw error;
+    
+    // Also record this as a general activity
+    const { error: activityError } = await supabase
+      .from('work_order_activities')
+      .insert([
+        {
+          work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
+          action: `Activity flagged for technician ID ${technicianId}. Reason: ${flagReason}`,
+          user_id: flaggedByUserId,
+          user_name: flaggedByUserName,
+          flagged: true,
+          flag_reason: flagReason
+        }
+      ]);
+
+    if (activityError) throw activityError;
+    
+    return data;
+  } catch (error) {
+    console.error('Error recording flagged activity:', error);
+    throw error;
+  }
+};
+
+// Get all activity for a specific technician
+export const getTechnicianActivity = async (technicianId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_activities')
+      .select('*')
+      .eq('user_id', technicianId)
+      .order('timestamp', { ascending: false });
+      
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching technician activity:', error);
+    throw error;
+  }
+};
+
+// Get all flagged activities
+export const getFlaggedActivities = async (resolved: boolean = false) => {
+  try {
+    const { data, error } = await supabase
+      .from('flagged_activities')
+      .select(`
+        *,
+        technicians:technician_id (name)
+      `)
+      .eq('resolved', resolved)
+      .order('flagged_date', { ascending: false });
+      
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching flagged activities:', error);
+    throw error;
+  }
+};
+
+// Resolve a flagged activity
+export const resolveFlaggedActivity = async (
+  flaggedActivityId: string,
+  resolutionNotes: string,
+  resolvedByUserId: string,
+  resolvedByUserName: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('flagged_activities')
+      .update({
+        resolved: true,
+        resolved_date: new Date().toISOString(),
+        resolved_by: resolvedByUserId,
+        resolution_notes: resolutionNotes
+      })
+      .eq('id', flaggedActivityId)
+      .select();
+      
+    if (error) throw error;
+    
+    // Also record this as a general activity
+    const { error: activityError } = await supabase
+      .from('work_order_activities')
+      .insert([
+        {
+          work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
+          action: `Resolved flagged activity ID ${flaggedActivityId}. Notes: ${resolutionNotes}`,
+          user_id: resolvedByUserId,
+          user_name: resolvedByUserName
+        }
+      ]);
+
+    if (activityError) throw activityError;
+    
+    return data;
+  } catch (error) {
+    console.error('Error resolving flagged activity:', error);
     throw error;
   }
 };

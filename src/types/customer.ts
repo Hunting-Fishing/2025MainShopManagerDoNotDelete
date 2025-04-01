@@ -1,4 +1,3 @@
-
 // Define the customer interface based on Supabase table structure
 export interface Customer {
   id: string;
@@ -37,6 +36,23 @@ export interface Customer {
   lastServiceDate?: string;
   name?: string;
   dateAdded?: string;
+  
+  // Added fields for keeping track of technician relationship history
+  preferred_technician_history?: PreferredTechnicianChange[];
+}
+
+// Define preferred technician change history
+export interface PreferredTechnicianChange {
+  id: string;
+  customer_id: string;
+  previous_technician_id?: string;
+  previous_technician_name?: string;
+  new_technician_id?: string;
+  new_technician_name?: string;
+  change_date: string;
+  change_reason?: string;
+  changed_by_id: string;
+  changed_by_name: string;
 }
 
 // Define vehicle information

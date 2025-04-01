@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCustomer, clearDraftCustomer } from "@/services/customerService";
@@ -21,7 +20,6 @@ export default function CustomerCreate() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Define default form values
   const defaultValues: CustomerFormValues = {
     first_name: "",
     last_name: "",
@@ -40,7 +38,6 @@ export default function CustomerCreate() {
     is_fleet: false,
     fleet_company: "",
     vehicles: [],
-    // New fields for Phase 3
     segments: [],
     create_new_household: false,
     new_household_name: "",
@@ -48,15 +45,12 @@ export default function CustomerCreate() {
     household_relationship: "primary",
   };
 
-  // Form submission handler
   const onSubmit = async (data: CustomerFormValues) => {
     setIsSubmitting(true);
     try {
-      // Handle household creation if needed
-      let householdId = data.household_id === "_none" ? "" : data.household_id; // Handle the placeholder value
+      let householdId = data.household_id === "_none" ? "" : data.household_id;
       
       if (data.create_new_household && data.new_household_name) {
-        // Create a new household
         const { data: newHousehold, error: householdError } = await supabase
           .from("households")
           .insert({
@@ -75,12 +69,10 @@ export default function CustomerCreate() {
         }
       }
       
-      // Convert placeholder values to empty strings/nulls where needed
       const preferredTechnicianId = data.preferred_technician_id === "_none" ? "" : data.preferred_technician_id;
       const referralSource = data.referral_source === "_none" ? "" : data.referral_source;
       const communicationPreference = data.communication_preference === "_none" ? "" : data.communication_preference;
       
-      // Prepare customer data
       const customerData: CustomerCreateType = {
         first_name: data.first_name,
         last_name: data.last_name,
@@ -92,19 +84,17 @@ export default function CustomerCreate() {
         communication_preference: communicationPreference,
         referral_source: referralSource,
         referral_person_id: data.referral_person_id,
-        other_referral_details: data.other_referral_details,
+        other_referral_details: referralSource === "Other" ? data.other_referral_details : "",
         is_fleet: data.is_fleet,
         fleet_company: data.fleet_company,
         notes: data.notes,
         tags: data.tags,
-        household_id: householdId || null,
+        household_id: data.household_id || null,
         segments: data.segments
       };
       
-      // Create customer
       const newCustomer = await createCustomer(customerData);
       
-      // Add customer to household if a household was selected or created
       if (householdId && data.household_relationship) {
         const { error: relationshipError } = await supabase
           .from("household_members")
@@ -116,11 +106,9 @@ export default function CustomerCreate() {
         
         if (relationshipError) {
           console.error("Failed to add customer to household:", relationshipError);
-          // Continue despite this error, we'll just log it
         }
       }
       
-      // Add customer to segments if any were selected
       if (data.segments && data.segments.length > 0) {
         const segmentAssignments = data.segments.map(segmentId => ({
           customer_id: newCustomer.id,
@@ -134,25 +122,40 @@ export default function CustomerCreate() {
         
         if (segmentError) {
           console.error("Failed to assign segments to customer:", segmentError);
-          // Continue despite this error, we'll just log it
         }
       }
       
-      // Clear any draft data
+      if (preferredTechnicianId) {
+        try {
+          const { error: historyError } = await supabase
+            .from("preferred_technician_history")
+            .insert({
+              customer_id: newCustomer.id,
+              new_technician_id: preferredTechnicianId,
+              change_reason: "Initial selection during customer creation",
+              changed_by_id: "system",
+              changed_by_name: "System"
+            });
+            
+          if (historyError) {
+            console.error("Failed to record technician preference history:", historyError);
+          }
+        } catch (historyError) {
+          console.error("Error recording technician preference:", historyError);
+        }
+      }
+      
       await clearDraftCustomer();
       
-      // Set success state
       setIsSuccess(true);
       setNewCustomerId(newCustomer.id);
       
-      // Show success message
       toast({
         title: "Customer Created Successfully",
         description: `${data.first_name} ${data.last_name} has been added to your customers.`,
         variant: "success",
       });
       
-      // Redirect after a short delay to allow the user to see the success message
       setTimeout(() => {
         navigate(`/customers/${newCustomer.id}`);
       }, 2000);

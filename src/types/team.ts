@@ -7,7 +7,9 @@ export interface TeamMember {
   phone: string;
   jobTitle: string;
   department: string;
-  status: "Active" | "Inactive";
+  status: "Active" | "Inactive" | "On Leave" | "Terminated";
+  statusChangeDate?: string;
+  statusChangeReason?: string;
   workOrders: {
     assigned: number;
     completed: number;
@@ -20,6 +22,14 @@ export interface TeamMember {
     type: string;
     date: string;
     description: string;
+    flagged?: boolean;
+    flagReason?: string;
+  }>;
+  previousAssignments?: Array<{
+    workOrderId: string;
+    assignedDate: string;
+    completedDate?: string;
+    status: string;
   }>;
 }
 
@@ -43,4 +53,30 @@ export interface RoleManagement {
   deleteRole: (id: string) => boolean;
   getRoleById: (id: string) => Role | null;
   getRoleByName: (name: string) => Role | null;
+}
+
+// Interface for tracking technician status changes
+export interface TechnicianStatusChange {
+  id: string;
+  technicianId: string;
+  previousStatus: string;
+  newStatus: string;
+  changeDate: string;
+  changeReason?: string;
+  changedBy: string;
+}
+
+// Interface for flagged activities
+export interface FlaggedActivity {
+  id: string;
+  technicianId: string;
+  activityId: string;
+  activityType: string;
+  flaggedDate: string;
+  flaggedBy: string;
+  flagReason: string;
+  resolved: boolean;
+  resolvedDate?: string;
+  resolvedBy?: string;
+  resolutionNotes?: string;
 }

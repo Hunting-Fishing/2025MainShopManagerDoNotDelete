@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 // Regex for phone validation
@@ -30,7 +29,15 @@ export const customerSchema = z.object({
   communication_preference: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_source: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_person_id: z.string().optional(),
-  other_referral_details: z.string().optional(),
+  other_referral_details: z.string().optional()
+    .refine((val, ctx) => {
+      if (ctx.parent.referral_source === "Other") {
+        return val && val.trim().length > 0;
+      }
+      return true;
+    }, {
+      message: "Please provide details about the referral source"
+    }),
   household_id: z.string().optional(),
   is_fleet: z.boolean().optional().default(false),
   fleet_company: z.string().optional(),
@@ -69,20 +76,24 @@ export const shops = [
 
 // Mock technician data
 export const technicians = [
-  { id: "TECH-1", name: "Sarah Johnson", status: "active" },
-  { id: "TECH-2", name: "Michael Brown", status: "active" },
-  { id: "TECH-3", name: "Emily Chen", status: "inactive" },
-  { id: "TECH-4", name: "David Lee", status: "active" },
+  { id: "tech1", name: "Sarah Johnson", status: "Active" },
+  { id: "tech2", name: "Michael Brown", status: "Active" },
+  { id: "tech3", name: "Emily Chen", status: "Active" },
+  { id: "tech4", name: "David Lee", status: "Inactive" },
+  { id: "tech5", name: "Robert Garcia", status: "On Leave" },
+  { id: "tech6", name: "James Wilson", status: "Terminated" },
 ];
 
 // Mock referral sources
 export const referralSources = [
-  "Web Search",
+  "Website",
+  "Google Search",
   "Social Media",
-  "Friend Referral",
-  "Advertisement",
+  "Friend/Family",
   "Existing Customer",
-  "Walk-in",
+  "Advertisement",
+  "Business Card",
+  "Local Event",
   "Other"
 ];
 

@@ -17,10 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CustomerFormValues, technicians } from "./CustomerFormSchema";
-import { HelpCircle, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { HelpCircle, ChevronDown, ChevronUp, AlertCircle, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PreferencesFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -29,6 +30,7 @@ interface PreferencesFieldsProps {
 export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [inactiveTechSelected, setInactiveTechSelected] = useState(false);
+  const [showInactiveWarning, setShowInactiveWarning] = useState(false);
 
   // This would come from your API in a real implementation
   // For now, we'll use the status field from our technician data
@@ -37,16 +39,28 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
     technicianStatuses[tech.id] = tech.status.toLowerCase();
   });
 
+  // Count how many inactive technicians are in the dataset
+  const inactiveTechCount = technicians.filter(tech => 
+    tech.status.toLowerCase() === "inactive" || 
+    tech.status.toLowerCase() === "on leave" || 
+    tech.status.toLowerCase() === "terminated"
+  ).length;
+
   // Check if the selected technician is inactive when component loads or selection changes
   useEffect(() => {
     const currentTechId = form.watch("preferred_technician_id");
     if (currentTechId && currentTechId !== "_none") {
       const techStatus = technicianStatuses[currentTechId];
-      setInactiveTechSelected(techStatus === "inactive");
+      setInactiveTechSelected(techStatus === "inactive" || techStatus === "on leave" || techStatus === "terminated");
     } else {
       setInactiveTechSelected(false);
     }
   }, [form.watch("preferred_technician_id")]);
+
+  // Show warning if there are inactive technicians that might need updating
+  useEffect(() => {
+    setShowInactiveWarning(inactiveTechCount > 0);
+  }, [inactiveTechCount]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
@@ -59,6 +73,15 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent className="mt-4">
+        {showInactiveWarning && (
+          <Alert variant="warning" className="mb-4 bg-amber-50 border-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-700">
+              {inactiveTechCount} technician(s) in the system are inactive, on leave, or terminated. Some customers may need their preferred technician updated.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -93,13 +116,27 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
                       <SelectItem 
                         key={tech.id} 
                         value={tech.id} 
-                        disabled={technicianStatuses[tech.id] === "inactive"}
+                        disabled={
+                          technicianStatuses[tech.id] === "inactive" || 
+                          technicianStatuses[tech.id] === "on leave" || 
+                          technicianStatuses[tech.id] === "terminated"
+                        }
                       >
                         <div className="flex items-center justify-between w-full">
                           <span>{tech.name}</span>
                           {technicianStatuses[tech.id] === "inactive" && (
                             <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 border-amber-200">
                               Inactive
+                            </Badge>
+                          )}
+                          {technicianStatuses[tech.id] === "on leave" && (
+                            <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 border-blue-200">
+                              On Leave
+                            </Badge>
+                          )}
+                          {technicianStatuses[tech.id] === "terminated" && (
+                            <Badge variant="outline" className="ml-2 bg-red-100 text-red-800 border-red-200">
+                              Terminated
                             </Badge>
                           )}
                         </div>
