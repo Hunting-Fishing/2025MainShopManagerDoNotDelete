@@ -1,28 +1,40 @@
 
-import { Link } from "react-router-dom";
-import { BarChart2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ClearInventoryButton } from "./ClearInventoryButton";
 
-export function InventoryHeader() {
+interface InventoryHeaderProps {
+  onInventoryCleared?: () => void;
+}
+
+export function InventoryHeader({ onInventoryCleared }: InventoryHeaderProps = {}) {
+  // Handle inventory cleared, default to refreshing the page if no callback provided
+  const handleInventoryCleared = () => {
+    if (onInventoryCleared) {
+      onInventoryCleared();
+    } else {
+      // Force a page refresh to show changes
+      window.location.reload();
+    }
+  };
+
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 mb-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Inventory Management</h1>
         <p className="text-muted-foreground">
-          Manage your parts, materials, and supplies.
+          Manage your parts and materials inventory
         </p>
       </div>
-      <div className="flex items-center gap-3">
-        <Button variant="outline" className="flex items-center gap-2">
-          <BarChart2 className="h-4 w-4" />
-          Inventory Report
-        </Button>
-        <Button asChild className="flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700">
-          <Link to="/inventory/new">
+      <div className="flex gap-2">
+        <ClearInventoryButton onSuccess={handleInventoryCleared} />
+        <Link to="/inventory/add">
+          <Button className="flex items-center gap-1">
             <Plus className="h-4 w-4" />
-            Add Item
-          </Link>
-        </Button>
+            Add Inventory Item
+          </Button>
+        </Link>
       </div>
     </div>
   );

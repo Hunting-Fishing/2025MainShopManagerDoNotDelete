@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { InventoryItemExtended } from "@/types/inventory";
 import { mapDbItemToInventoryItem, mapInventoryItemToDbFormat, getInventoryStatus } from "./utils";
@@ -170,6 +169,23 @@ export async function updateInventoryQuantity(itemId: string, quantityChange: nu
     });
   } catch (error) {
     handleApiError(error, `Failed to update inventory quantity for item ${itemId}`);
+    throw error;
+  }
+}
+
+// Clear all inventory items
+export async function clearAllInventoryItems(): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("inventory_items")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000"); // This is a safe way to delete all rows
+
+    if (error) throw error;
+    
+    console.log("All inventory items have been removed");
+  } catch (error) {
+    handleApiError(error, "Failed to clear inventory items");
     throw error;
   }
 }
