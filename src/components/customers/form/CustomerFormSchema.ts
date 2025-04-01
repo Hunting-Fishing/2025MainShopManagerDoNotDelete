@@ -43,7 +43,7 @@ export const customerSchema = z.object({
   create_new_household: z.boolean().optional().default(false),
   new_household_name: z.string().optional(),
   household_relationship: z.string().optional(),
-}).refine(data => {
+}).refine((data) => {
   // If referral source is "Other", other_referral_details must not be empty
   if (data.referral_source === "Other") {
     return !!data.other_referral_details;

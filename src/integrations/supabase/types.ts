@@ -2474,6 +2474,8 @@ export type Database = {
       work_order_activities: {
         Row: {
           action: string
+          flag_reason: string | null
+          flagged: boolean | null
           id: string
           timestamp: string | null
           user_id: string
@@ -2482,6 +2484,8 @@ export type Database = {
         }
         Insert: {
           action: string
+          flag_reason?: string | null
+          flagged?: boolean | null
           id?: string
           timestamp?: string | null
           user_id: string
@@ -2490,6 +2494,8 @@ export type Database = {
         }
         Update: {
           action?: string
+          flag_reason?: string | null
+          flagged?: boolean | null
           id?: string
           timestamp?: string | null
           user_id?: string

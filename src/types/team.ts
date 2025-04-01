@@ -55,7 +55,7 @@ export interface RoleManagement {
   getRoleByName: (name: string) => Role | null;
 }
 
-// Interface for tracking technician status changes
+// Interface for tracking status changes - stored as activities in work_order_activities
 export interface TechnicianStatusChange {
   id: string;
   technicianId: string;
@@ -66,7 +66,7 @@ export interface TechnicianStatusChange {
   changedBy: string;
 }
 
-// Interface for flagged activities
+// Interface for flagged activities - stored as activities in work_order_activities
 export interface FlaggedActivity {
   id: string;
   technicianId: string;

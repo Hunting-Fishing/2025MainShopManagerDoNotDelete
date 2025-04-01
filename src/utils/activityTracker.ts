@@ -142,19 +142,20 @@ export const recordTechnicianStatusChange = async (
   changedByUserName: string
 ) => {
   try {
-    // Record in work_order_activities since we can't directly access technician_status_changes
-    const { data: activityData, error: activityError } = await supabase
+    // Record in work_order_activities since we don't directly access technician_status_changes
+    const { data, error } = await supabase
       .from('work_order_activities')
       .insert({
         work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
         action: `Technician status changed: ${technicianName} from ${previousStatus} to ${newStatus}. Reason: ${changeReason}`,
         user_id: changedByUserId,
-        user_name: changedByUserName
+        user_name: changedByUserName,
+        flagged: false
       });
 
-    if (activityError) throw activityError;
+    if (error) throw error;
     
-    return activityData;
+    return data;
   } catch (error) {
     console.error('Error recording technician status change:', error);
     throw error;
@@ -172,18 +173,18 @@ export const recordFlaggedActivity = async (
 ) => {
   try {
     // Record this as a general activity in work_order_activities
-    const { data, error: activityError } = await supabase
+    const { data, error } = await supabase
       .from('work_order_activities')
       .insert({
         work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
-        action: `Activity flagged for technician ID ${technicianId}, activity ID ${activityId}, type ${activityType}. Reason: ${flagReason}`,
+        action: `Activity flagged for technician ID ${technicianId}, activity ID ${activityId}, type ${activityType}`,
         user_id: flaggedByUserId,
         user_name: flaggedByUserName,
         flagged: true,
         flag_reason: flagReason
       });
 
-    if (activityError) throw activityError;
+    if (error) throw error;
     
     return data;
   } catch (error) {
@@ -250,7 +251,8 @@ export const resolveFlaggedActivity = async (
         work_order_id: activityToResolve.work_order_id || '00000000-0000-0000-0000-000000000000',
         action: `Resolved flagged activity ID ${flaggedActivityId}. Notes: ${resolutionNotes}`,
         user_id: resolvedByUserId,
-        user_name: resolvedByUserName
+        user_name: resolvedByUserName,
+        flagged: false
       });
 
     if (activityError) throw activityError;
