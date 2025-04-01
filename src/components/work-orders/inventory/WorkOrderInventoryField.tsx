@@ -6,7 +6,7 @@ import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
 import { WorkOrderInventoryTable } from "./WorkOrderInventoryTable";
 import { InventorySelectionDialog } from "./InventorySelectionDialog";
 import { InventorySectionHeader } from "./InventorySectionHeader";
-import { useWorkOrderInventory } from "@/hooks/inventory/useWorkOrderInventory";
+import { useWorkOrderInventory } from "@/hooks/inventory/workOrder/useWorkOrderInventory";
 
 interface WorkOrderInventoryFieldProps {
   form: UseFormReturn<WorkOrderFormFieldValues>;
