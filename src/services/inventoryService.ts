@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { InventoryItemExtended, AutoReorderSettings } from "@/types/inventory";
 
@@ -73,7 +74,7 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, "id"
       supplier: item.supplier,
       quantity: item.quantity,
       reorder_point: item.reorderPoint,
-      unit_price: Number(item.unitPrice),
+      unit_price: item.unitPrice.toString(), // Convert number to string
       location: item.location,
       status,
       description: item.description
@@ -124,7 +125,7 @@ export async function updateInventoryItem(id: string, updates: Partial<Inventory
     }
   }
   if (updates.reorderPoint !== undefined) dbUpdates.reorder_point = updates.reorderPoint;
-  if (updates.unitPrice !== undefined) dbUpdates.unit_price = Number(updates.unitPrice);
+  if (updates.unitPrice !== undefined) dbUpdates.unit_price = updates.unitPrice.toString(); // Convert number to string
   if (updates.location !== undefined) dbUpdates.location = updates.location;
   if (updates.description !== undefined) dbUpdates.description = updates.description;
 
