@@ -8,14 +8,17 @@ export const useSequenceAnalytics = (sequenceId?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchAnalytics = async () => {
-    if (!sequenceId) return null;
+  const fetchAnalytics = async (targetSequenceId?: string) => {
+    // Use the provided targetSequenceId or fall back to the hook's sequenceId
+    const idToUse = targetSequenceId || sequenceId;
+    
+    if (!idToUse) return null;
     
     setLoading(true);
     setError(null);
     
     try {
-      const { data, error } = await emailSequenceService.getSequenceAnalytics(sequenceId);
+      const { data, error } = await emailSequenceService.getSequenceAnalytics(idToUse);
       
       if (error) throw error;
       

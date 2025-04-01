@@ -25,9 +25,9 @@ export const useEmailSequences = () => {
     fetchAnalytics
   } = useSequenceAnalytics();
 
-  // Create a compatible fetchSequenceAnalytics function that matches expected usage
+  // Create a compatible fetchSequenceAnalytics function that passes the sequenceId
   const fetchSequenceAnalytics = async (sequenceId?: string) => {
-    return await fetchAnalytics();
+    return await fetchAnalytics(sequenceId);
   };
 
   const {
