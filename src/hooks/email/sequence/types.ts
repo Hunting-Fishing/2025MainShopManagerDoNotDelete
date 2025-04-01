@@ -9,10 +9,11 @@ export interface UseSequencesReturn {
   loading: boolean;
   sequenceLoading: boolean;
   analyticsLoading: boolean;
+  analyticsError?: Error | null;
   enrollmentsLoading: boolean;
-  fetchSequences: () => Promise<void>;
+  fetchSequences: () => Promise<EmailSequence[]>;
   fetchSequenceById: (id: string) => Promise<EmailSequence | null>;
-  fetchSequenceAnalytics: (sequenceId: string) => Promise<EmailSequenceAnalytics | null>;
+  fetchSequenceAnalytics: (sequenceId?: string) => Promise<EmailSequenceAnalytics | null>;
   fetchCustomerEnrollments: (customerId: string) => Promise<EmailSequenceEnrollment[]>;
   createSequence: (sequence: Partial<EmailSequence>) => Promise<EmailSequence | null>;
   updateSequence: (id: string, sequence: Partial<EmailSequence>) => Promise<EmailSequence | null>;
@@ -21,4 +22,5 @@ export interface UseSequencesReturn {
   pauseEnrollment: (enrollmentId: string) => Promise<boolean>;
   resumeEnrollment: (enrollmentId: string) => Promise<boolean>;
   cancelEnrollment: (enrollmentId: string) => Promise<boolean>;
+  setCurrentSequence: React.Dispatch<React.SetStateAction<EmailSequence | null>>;
 }

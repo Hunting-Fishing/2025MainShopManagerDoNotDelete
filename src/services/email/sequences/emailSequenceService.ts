@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { 
   EmailSequence, 
@@ -169,7 +170,8 @@ export const emailSequenceService = {
         updated_at: data.updated_at,
         // UI component support
         name: data.name,
-        type: data.type || 'email',
+        // Add a default type since it doesn't exist in the database
+        type: 'email', // Default to email type
         templateId: data.template_id,
         delayHours: data.delay_hours,
         delayType: data.delay_type,
@@ -284,7 +286,8 @@ export const emailSequenceService = {
         updated_at: step.updated_at,
         // UI support
         name: step.name,
-        type: step.type || 'email',
+        // Add a default type since it doesn't exist in the database
+        type: 'email', // Default to email type
         templateId: step.template_id,
         delayHours: step.delay_hours,
         delayType: step.delay_type,
@@ -322,8 +325,7 @@ export const emailSequenceService = {
         delay_type: step.delay_type || step.delayType || 'hours',
         template_id: step.template_id || step.email_template_id || step.templateId,
         name: step.name,
-        type: step.type || 'email',
-        is_active: step.isActive !== undefined ? step.isActive : true, // Map isActive to is_active
+        is_active: step.isActive !== undefined ? step.isActive : true // Map isActive to is_active
       };
       
       const { data, error } = await supabase
@@ -347,7 +349,8 @@ export const emailSequenceService = {
         updated_at: data.updated_at,
         // UI support
         name: data.name,
-        type: data.type || 'email',
+        // Add a default type since it doesn't exist in the database
+        type: 'email', // Default to email type 
         templateId: data.template_id,
         delayHours: data.delay_hours,
         delayType: data.delay_type,
@@ -514,6 +517,10 @@ export const emailSequenceService = {
           isActive: step.is_active,
           created_at: step.created_at,
           updated_at: step.updated_at,
+          // Add a default type since it doesn't exist in the database
+          type: 'email', // Default to email type
+          email_template_id: step.template_id,
+          templateId: step.template_id,
           condition: step.condition_type ? {
             type: step.condition_type as 'event' | 'property',
             value: step.condition_value,
@@ -543,11 +550,11 @@ export const emailSequenceService = {
         .from('email_sequence_steps')
         .update({
           name: step.name,
-          template_id: step.template_id,
+          template_id: step.template_id || step.templateId || step.email_template_id,
           position: step.position || step.order,
           delay_hours: step.delay_hours || step.delayHours,
           delay_type: step.delay_type || step.delayType,
-          is_active: step.isActive,
+          is_active: step.isActive !== undefined ? step.isActive : step.is_active,
           condition_type: step.condition?.type,
           condition_value: step.condition?.value,
           condition_operator: step.condition?.operator
@@ -573,6 +580,10 @@ export const emailSequenceService = {
           isActive: data.is_active,
           created_at: data.created_at,
           updated_at: data.updated_at,
+          // Add a default type since it doesn't exist in the database
+          type: 'email', // Default to email type
+          email_template_id: data.template_id,
+          templateId: data.template_id,
           condition: data.condition_type ? {
             type: data.condition_type as 'event' | 'property',
             value: data.condition_value,

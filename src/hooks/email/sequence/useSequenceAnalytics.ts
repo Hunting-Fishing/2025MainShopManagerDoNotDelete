@@ -9,7 +9,7 @@ export const useSequenceAnalytics = (sequenceId?: string) => {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchAnalytics = async () => {
-    if (!sequenceId) return;
+    if (!sequenceId) return null;
     
     setLoading(true);
     setError(null);
@@ -30,7 +30,8 @@ export const useSequenceAnalytics = (sequenceId?: string) => {
       return enhancedData;
     } catch (err) {
       console.error('Error fetching sequence analytics:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch analytics'));
+      const errorObj = err instanceof Error ? err : new Error('Failed to fetch analytics');
+      setError(errorObj);
       return null;
     } finally {
       setLoading(false);

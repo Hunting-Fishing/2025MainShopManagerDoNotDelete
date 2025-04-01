@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { EmailSequence, EmailSequenceStep } from '@/types/email';
 import { emailSequenceService } from '@/services/email';
@@ -8,6 +7,7 @@ export const useSequenceCRUD = () => {
   const [sequences, setSequences] = useState<EmailSequence[]>([]);
   const [currentSequence, setCurrentSequence] = useState<EmailSequence | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sequenceLoading, setSequenceLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchSequences = async () => {
@@ -33,7 +33,7 @@ export const useSequenceCRUD = () => {
   };
 
   const fetchSequenceById = async (id: string) => {
-    setLoading(true);
+    setSequenceLoading(true);
     try {
       const { data, error } = await emailSequenceService.getSequenceById(id);
       
@@ -50,7 +50,7 @@ export const useSequenceCRUD = () => {
       });
       return null;
     } finally {
-      setLoading(false);
+      setSequenceLoading(false);
     }
   };
 
@@ -61,7 +61,6 @@ export const useSequenceCRUD = () => {
       
       if (error) throw error;
       
-      // Update the sequences list
       setSequences(prev => [...prev, data]);
       
       toast({
@@ -90,12 +89,10 @@ export const useSequenceCRUD = () => {
       
       if (error) throw error;
       
-      // Update the sequences list
       setSequences(prev => 
         prev.map(seq => seq.id === id ? { ...seq, ...data } : seq)
       );
       
-      // Update current sequence if it's the one being updated
       if (currentSequence?.id === id) {
         setCurrentSequence({ ...currentSequence, ...data });
       }
@@ -126,10 +123,8 @@ export const useSequenceCRUD = () => {
       
       if (error) throw error;
       
-      // Update the sequences list
       setSequences(prev => prev.filter(seq => seq.id !== id));
       
-      // Clear current sequence if it's the one being deleted
       if (currentSequence?.id === id) {
         setCurrentSequence(null);
       }
@@ -160,7 +155,6 @@ export const useSequenceCRUD = () => {
       
       if (error) throw error;
       
-      // Update current sequence if it's the one getting a new step
       if (currentSequence?.id === step.sequence_id) {
         setCurrentSequence({
           ...currentSequence,
@@ -194,7 +188,6 @@ export const useSequenceCRUD = () => {
       
       if (error) throw error;
       
-      // Update current sequence if it contains this step
       if (currentSequence && currentSequence.steps.some(step => step.id === stepId)) {
         setCurrentSequence({
           ...currentSequence,
@@ -230,7 +223,6 @@ export const useSequenceCRUD = () => {
       
       if (error) throw error;
       
-      // Update current sequence if it contains this step
       if (currentSequence && currentSequence.steps.some(step => step.id === stepId)) {
         setCurrentSequence({
           ...currentSequence,
@@ -261,6 +253,7 @@ export const useSequenceCRUD = () => {
     sequences,
     currentSequence,
     loading,
+    sequenceLoading,
     fetchSequences,
     fetchSequenceById,
     createSequence,
@@ -268,6 +261,7 @@ export const useSequenceCRUD = () => {
     deleteSequence,
     createSequenceStep,
     updateSequenceStep,
-    deleteSequenceStep
+    deleteSequenceStep,
+    setCurrentSequence
   };
 };

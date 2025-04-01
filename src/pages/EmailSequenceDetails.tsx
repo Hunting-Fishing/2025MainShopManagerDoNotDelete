@@ -29,7 +29,8 @@ export default function EmailSequenceDetailsPage() {
         try {
           const sequence = await fetchSequenceById(id);
           if (sequence) {
-            await fetchSequenceAnalytics(id);
+            // Call fetchSequenceAnalytics without arguments if it doesn't expect any
+            await fetchSequenceAnalytics();
           } else {
             toast({
               title: "Error",

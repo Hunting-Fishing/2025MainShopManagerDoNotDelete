@@ -21,9 +21,14 @@ export const useEmailSequences = () => {
   const {
     analytics,
     loading: analyticsLoading,
-    fetchAnalytics: fetchSequenceAnalytics,
-    setAnalytics
+    error: analyticsError,
+    fetchAnalytics
   } = useSequenceAnalytics();
+
+  // Create a compatible fetchSequenceAnalytics function that matches expected usage
+  const fetchSequenceAnalytics = async (sequenceId?: string) => {
+    return await fetchAnalytics();
+  };
 
   const {
     enrollments,
@@ -51,8 +56,8 @@ export const useEmailSequences = () => {
     // Analytics operations
     analytics,
     analyticsLoading,
+    analyticsError,
     fetchSequenceAnalytics,
-    setAnalytics,
     
     // Enrollment operations
     enrollments,
