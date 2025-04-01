@@ -65,6 +65,7 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, "id"
   // Determine the status based on quantity and reorder point
   const status = getInventoryStatus(item.quantity, item.reorderPoint);
 
+  // Convert unitPrice to string for Supabase
   const { data, error } = await supabase
     .from("inventory_items")
     .insert({
