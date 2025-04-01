@@ -28,11 +28,9 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   activeTab,
   setActiveTab
 }) => {
-  // State for customer notes and communications
-  const [notes, setNotes] = useState<CustomerNote[]>(customer.noteEntries || []);
-  const [communications, setCommunications] = useState<CustomerCommunication[]>(
-    customer.communications || []
-  );
+  // Initialize state with empty arrays instead of trying to use non-existent properties
+  const [notes, setNotes] = useState<CustomerNote[]>([]);
+  const [communications, setCommunications] = useState<CustomerCommunication[]>([]);
 
   // Handle adding a new note
   const handleNoteAdded = (newNote: CustomerNote) => {
