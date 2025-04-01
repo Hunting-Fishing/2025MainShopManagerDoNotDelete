@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,9 +12,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ClipboardList } from 'lucide-react';
-import { customers } from '@/data/customersData';
+import { ArrowLeft, ClipboardList, Loader2 } from 'lucide-react';
 import { priorityMap } from '@/data/workOrdersData';
+import { supabase } from '@/integrations/supabase/client';
+import { Customer } from '@/types/customer';
 
 // Form validation schema
 const workOrderFormSchema = z.object({
@@ -30,6 +31,8 @@ type WorkOrderFormValues = z.infer<typeof workOrderFormSchema>;
 export default function CreateWorkOrder() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderFormSchema),
@@ -41,6 +44,38 @@ export default function CreateWorkOrder() {
       notes: "",
     },
   });
+
+  // Fetch customers from Supabase
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .order('last_name', { ascending: true });
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setCustomers(data);
+        }
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load customers. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   const onSubmit = async (data: WorkOrderFormValues) => {
     setIsSubmitting(true);
@@ -104,17 +139,25 @@ export default function CreateWorkOrder() {
                     <FormLabel>Customer*</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value}
+                      disabled={isLoading}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a customer" />
+                          {isLoading ? (
+                            <div className="flex items-center">
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              <span>Loading customers...</span>
+                            </div>
+                          ) : (
+                            <SelectValue placeholder="Select a customer" />
+                          )}
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name}
+                            {customer.first_name} {customer.last_name}
                           </SelectItem>
                         ))}
                       </SelectContent>

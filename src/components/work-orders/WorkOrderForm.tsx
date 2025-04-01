@@ -8,6 +8,8 @@ import { AlertCircle } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { workOrderTemplates } from "@/data/workOrderTemplatesData";
+import { supabase } from "@/integrations/supabase/client";
+import { Customer } from "@/types/customer";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -32,6 +34,40 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   const navigate = useNavigate();
   const { form, onSubmit, isSubmitting, error, setTimeEntries, setFormValues } = useWorkOrderForm();
   const [timeEntries, setLocalTimeEntries] = useState<TimeEntry[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(true);
+
+  // Fetch real customers from Supabase
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      setLoadingCustomers(true);
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .order('last_name', { ascending: true });
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setCustomers(data);
+        }
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+        toast({
+          title: "Error",
+          description: "Failed to load customers. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingCustomers(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   // Apply template values when initialTemplate changes
   useEffect(() => {
@@ -82,7 +118,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Customer Information */}
-            <CustomerInfoSection form={form as any} />
+            <CustomerInfoSection form={form as any} customers={customers} isLoading={loadingCustomers} />
             
             {/* Status & Priority */}
             <WorkOrderStatusSection form={form as any} />

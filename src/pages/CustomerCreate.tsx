@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCustomer, clearDraftCustomer } from "@/services/customerService";
 import type { CustomerCreate as CustomerCreateType } from "@/services/customerService";
@@ -12,11 +12,14 @@ import { Check } from "lucide-react";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
 import { ImportCustomersDialog } from "@/components/customers/form/import/ImportCustomersDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CustomerCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("personal");
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -183,11 +186,13 @@ export default function CustomerCreate() {
           </AlertDescription>
         </Alert>
       ) : (
-        <CustomerForm 
-          defaultValues={defaultValues} 
-          onSubmit={onSubmit} 
-          isSubmitting={isSubmitting}
-        />
+        <Card className="p-6">
+          <CustomerForm 
+            defaultValues={defaultValues} 
+            onSubmit={onSubmit} 
+            isSubmitting={isSubmitting}
+          />
+        </Card>
       )}
     </div>
   );
