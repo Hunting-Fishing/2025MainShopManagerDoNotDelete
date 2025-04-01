@@ -24,7 +24,7 @@ interface WorkOrderData {
   customers: {
     first_name: string;
     last_name: string;
-  };
+  }; // Changed from array to object to match Supabase response
 }
 
 // Define a type for the inventory item we get from the database
@@ -72,7 +72,8 @@ export default function CreateInvoice() {
           throw error;
         }
 
-        const formattedWorkOrders = (data as WorkOrderData[]).map(wo => ({
+        // Cast to unknown first, then to WorkOrderData[] to handle the type conversion safely
+        const formattedWorkOrders = (data as unknown as WorkOrderData[]).map(wo => ({
           id: wo.id,
           customer: wo.customers ? `${wo.customers.first_name} ${wo.customers.last_name}` : 'Unknown Customer',
           description: wo.description || 'No description'
