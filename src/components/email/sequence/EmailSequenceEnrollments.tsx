@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
@@ -12,6 +13,7 @@ import { format } from 'date-fns';
 import { useEmailSequences } from '@/hooks/email/useEmailSequences';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmailSequenceEnrollment } from '@/types/email';
+import { ProcessEnrollmentStepButton } from './ProcessEnrollmentStepButton';
 
 interface EmailSequenceEnrollmentsProps {
   sequenceId: string;
@@ -85,8 +87,9 @@ export function EmailSequenceEnrollments({ sequenceId }: EmailSequenceEnrollment
     }
   };
   
-  const getSequenceName = (enrollment: EmailSequenceEnrollment): string => {
-    return enrollment.metadata?.sequenceName || 'Unknown Sequence';
+  const handleStepProcessed = () => {
+    // Refresh the enrollments after processing a step
+    fetchCustomerEnrollments(sequenceId);
   };
   
   return (
@@ -129,14 +132,20 @@ export function EmailSequenceEnrollments({ sequenceId }: EmailSequenceEnrollment
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         {enrollment.status === 'active' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePause(enrollment.id)}
-                          >
-                            <Pause className="h-4 w-4 mr-1" />
-                            Pause
-                          </Button>
+                          <>
+                            <ProcessEnrollmentStepButton 
+                              enrollmentId={enrollment.id}
+                              onSuccess={handleStepProcessed}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePause(enrollment.id)}
+                            >
+                              <Pause className="h-4 w-4 mr-1" />
+                              Pause
+                            </Button>
+                          </>
                         )}
                         
                         {enrollment.status === 'paused' && (

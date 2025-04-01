@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 // Use the correct import for sequence processing
-import { sequenceProcessingService } from '@/services/email';
+import { sequenceProcessingService } from '@/services/email/sequences/sequenceProcessingService';
 
 interface EmailSequenceProcessButtonProps {
   className?: string;

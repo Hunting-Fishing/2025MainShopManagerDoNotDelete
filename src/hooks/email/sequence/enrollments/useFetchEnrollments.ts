@@ -20,7 +20,7 @@ export const useFetchEnrollments = () => {
         .select(`
           *,
           sequence:email_sequences(id, name, description, created_at, updated_at),
-          current_step:email_sequence_steps(id, name, template_id, position)
+          current_step:email_sequence_steps(id, name, template_id, position, sequence_id, created_at, updated_at)
         `)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
@@ -55,8 +55,21 @@ export const useFetchEnrollments = () => {
             isActive: false, // Set default values for required properties
             triggerType: 'manual' as 'manual' | 'event' | 'schedule'
           },
-          current_step: item.current_step,
-          currentStep: item.current_step,
+          current_step: item.current_step ? {
+            ...item.current_step,
+            sequence_id: item.current_step?.sequence_id || item.sequence_id,
+            created_at: item.current_step?.created_at || item.created_at,
+            updated_at: item.current_step?.updated_at || item.updated_at
+          } : undefined,
+          currentStep: item.current_step ? {
+            ...item.current_step,
+            sequence_id: item.current_step?.sequence_id || item.sequence_id,
+            sequenceId: item.current_step?.sequence_id || item.sequence_id,
+            created_at: item.current_step?.created_at || item.created_at,
+            createdAt: item.current_step?.created_at || item.created_at,
+            updated_at: item.current_step?.updated_at || item.updated_at,
+            updatedAt: item.current_step?.updated_at || item.updated_at
+          } : undefined,
           nextSendTime: item.next_send_time,
           next_send_time: item.next_send_time,
           startedAt: item.started_at,

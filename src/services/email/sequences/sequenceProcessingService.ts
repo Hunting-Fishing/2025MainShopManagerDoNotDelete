@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { EmailSequence } from '@/types/email';
 import { GenericResponse } from '../utils/supabaseHelper';
