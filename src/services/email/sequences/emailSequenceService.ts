@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { 
   EmailSequence, 
@@ -553,7 +554,7 @@ export const emailSequenceService = {
           position: step.position || step.order,
           delay_hours: step.delay_hours || step.delayHours,
           delay_type: step.delay_type || step.delayType,
-          is_active: step.isActive !== undefined ? step.isActive : step.is_active, // Update to accept both properties for backward compatibility
+          is_active: step.isActive, // Only use isActive property
           condition_type: step.condition?.type,
           condition_value: step.condition?.value,
           condition_operator: step.condition?.operator
