@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAllInventoryItems } from "@/services/inventoryService";
+import { getInventoryCategories } from "@/services/inventory/categoryService";
 
 interface InventoryFiltersProps {
   searchQuery: string;
@@ -54,11 +55,22 @@ export function InventoryFilters({
 
   // Fetch unique categories, suppliers, and statuses
   useEffect(() => {
-    getAllInventoryItems().then(items => {
-      setCategories(Array.from(new Set(items.map(item => item.category))).sort());
-      setSuppliers(Array.from(new Set(items.map(item => item.supplier))).sort());
-      setStatuses(Array.from(new Set(items.map(item => item.status))).sort());
-    });
+    const loadFilters = async () => {
+      try {
+        // Load inventory items for suppliers and statuses
+        const items = await getAllInventoryItems();
+        setSuppliers(Array.from(new Set(items.map(item => item.supplier))).sort());
+        setStatuses(Array.from(new Set(items.map(item => item.status))).sort());
+        
+        // Load categories from the service
+        const categories = await getInventoryCategories();
+        setCategories(categories);
+      } catch (error) {
+        console.error("Error loading filters:", error);
+      }
+    };
+    
+    loadFilters();
   }, []);
 
   const resetFilters = () => {

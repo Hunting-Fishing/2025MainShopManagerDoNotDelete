@@ -9,6 +9,7 @@ import { BrandingTab } from "./BrandingTab";
 import DataExportTab from "./DataExportTab";
 import { LanguageTab } from "./LanguageTab";
 import { LoyaltyTab } from "./LoyaltyTab";
+import { InventorySettingsTab } from "./InventorySettingsTab";
 import { useTranslation } from 'react-i18next';
 
 export const SettingsLayout = () => {
@@ -17,13 +18,14 @@ export const SettingsLayout = () => {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-8 w-full">
+      <TabsList className="grid grid-cols-9 w-full">
         <TabsTrigger value="account">Account</TabsTrigger>
         <TabsTrigger value="company">Company</TabsTrigger>
         <TabsTrigger value="security">Security</TabsTrigger>
         <TabsTrigger value="notifications">Notifications</TabsTrigger>
         <TabsTrigger value="branding">Branding</TabsTrigger>
         <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
+        <TabsTrigger value="inventory">Inventory</TabsTrigger>
         <TabsTrigger value="export">Export</TabsTrigger>
         <TabsTrigger value="language">Language</TabsTrigger>
       </TabsList>
@@ -45,6 +47,9 @@ export const SettingsLayout = () => {
         </TabsContent>
         <TabsContent value="loyalty">
           <LoyaltyTab />
+        </TabsContent>
+        <TabsContent value="inventory">
+          <InventorySettingsTab />
         </TabsContent>
         <TabsContent value="export">
           <DataExportTab />

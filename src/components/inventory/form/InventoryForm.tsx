@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
 import { InventoryItemExtended } from "@/types/inventory";
@@ -10,9 +10,9 @@ import {
   SelectTrigger,
   SelectValue 
 } from "@/components/ui/select";
-import { INVENTORY_CATEGORIES } from "@/constants/inventoryCategories";
 import { useInventoryFormValidation } from "@/hooks/inventory/useInventoryFormValidation";
 import { getInventoryStatus } from "@/services/inventory/utils";
+import { getInventoryCategories } from "@/services/inventory/categoryService";
 
 interface InventoryFormProps {
   onSubmit: (data: Omit<InventoryItemExtended, "id">) => Promise<void>;
@@ -34,7 +34,22 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
     description: ""
   });
   
+  const [categories, setCategories] = useState<string[]>([]);
   const { formErrors, validateForm, clearError } = useInventoryFormValidation();
+
+  // Load categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await getInventoryCategories();
+        setCategories(categories);
+      } catch (error) {
+        console.error("Error loading categories:", error);
+      }
+    };
+    
+    loadCategories();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -128,7 +143,7 @@ export function InventoryForm({ onSubmit, loading, onCancel }: InventoryFormProp
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              {INVENTORY_CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>
