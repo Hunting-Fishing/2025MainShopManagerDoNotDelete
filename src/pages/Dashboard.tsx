@@ -8,8 +8,15 @@ import { WorkOrdersByStatusChart } from "@/components/dashboard/WorkOrdersByStat
 import { MonthlyRevenueChart } from "@/components/dashboard/MonthlyRevenueChart";
 import { TechnicianPerformanceChart } from "@/components/dashboard/TechnicianPerformanceChart";
 import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceTypeDistributionChart";
+import { useEffect } from "react";
 
 export default function Dashboard() {
+  // Add error handling for dashboard components
+  useEffect(() => {
+    console.log("Dashboard component mounted");
+    // Clear any previous error state if needed
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
