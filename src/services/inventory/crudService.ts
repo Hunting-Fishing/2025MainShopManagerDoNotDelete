@@ -48,9 +48,25 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, "id"
     status
   });
 
+  // Ensure required fields are present
+  if (!dbItem.name || !dbItem.sku || !dbItem.category || !dbItem.supplier || dbItem.unit_price === undefined) {
+    throw new Error("Missing required inventory item fields");
+  }
+
   const { data, error } = await supabase
     .from("inventory_items")
-    .insert(dbItem)
+    .insert({
+      name: dbItem.name,
+      sku: dbItem.sku,
+      category: dbItem.category,
+      supplier: dbItem.supplier,
+      unit_price: dbItem.unit_price,
+      quantity: dbItem.quantity,
+      reorder_point: dbItem.reorder_point,
+      location: dbItem.location,
+      status: dbItem.status,
+      description: dbItem.description
+    })
     .select()
     .single();
 
