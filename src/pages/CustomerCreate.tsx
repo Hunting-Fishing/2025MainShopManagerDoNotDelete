@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCustomer, clearDraftCustomer } from "@/services/customerService";
@@ -127,11 +128,16 @@ export default function CustomerCreate() {
       
       if (preferredTechnicianId) {
         try {
+          // Find the technician name for the selected technician
+          const selectedTechnician = technicians.find(tech => tech.id === preferredTechnicianId);
+          const technicianName = selectedTechnician ? selectedTechnician.name : "Unknown";
+          
           const { error: historyError } = await supabase
             .from("preferred_technician_history")
             .insert({
               customer_id: newCustomer.id,
               new_technician_id: preferredTechnicianId,
+              new_technician_name: technicianName,
               change_reason: "Initial selection during customer creation",
               changed_by_id: "system",
               changed_by_name: "System"
@@ -203,3 +209,6 @@ export default function CustomerCreate() {
     </div>
   );
 };
+
+// Import the technicians array from the schema
+import { technicians } from "@/components/customers/form/CustomerFormSchema";

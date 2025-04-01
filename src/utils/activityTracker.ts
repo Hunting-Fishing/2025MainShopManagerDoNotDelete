@@ -145,29 +145,25 @@ export const recordTechnicianStatusChange = async (
     // First record in technician_status_changes table
     const { data: statusChangeData, error: statusChangeError } = await supabase
       .from('technician_status_changes')
-      .insert([
-        {
-          technician_id: technicianId,
-          previous_status: previousStatus,
-          new_status: newStatus,
-          change_reason: changeReason,
-          changed_by: changedByUserId
-        }
-      ]);
+      .insert({
+        technician_id: technicianId,
+        previous_status: previousStatus,
+        new_status: newStatus,
+        change_reason: changeReason,
+        changed_by: changedByUserId
+      });
 
     if (statusChangeError) throw statusChangeError;
 
     // Also log this as a general activity for easier searching
     const { data: activityData, error: activityError } = await supabase
       .from('work_order_activities')
-      .insert([
-        {
-          work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
-          action: `Technician status changed: ${technicianName} from ${previousStatus} to ${newStatus}. Reason: ${changeReason}`,
-          user_id: changedByUserId,
-          user_name: changedByUserName
-        }
-      ]);
+      .insert({
+        work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
+        action: `Technician status changed: ${technicianName} from ${previousStatus} to ${newStatus}. Reason: ${changeReason}`,
+        user_id: changedByUserId,
+        user_name: changedByUserName
+      });
 
     if (activityError) throw activityError;
     
@@ -190,31 +186,27 @@ export const recordFlaggedActivity = async (
   try {
     const { data, error } = await supabase
       .from('flagged_activities')
-      .insert([
-        {
-          technician_id: technicianId,
-          activity_id: activityId,
-          activity_type: activityType,
-          flag_reason: flagReason,
-          flagged_by: flaggedByUserId
-        }
-      ]);
+      .insert({
+        technician_id: technicianId,
+        activity_id: activityId,
+        activity_type: activityType,
+        flag_reason: flagReason,
+        flagged_by: flaggedByUserId
+      });
 
     if (error) throw error;
     
     // Also record this as a general activity
     const { error: activityError } = await supabase
       .from('work_order_activities')
-      .insert([
-        {
-          work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
-          action: `Activity flagged for technician ID ${technicianId}. Reason: ${flagReason}`,
-          user_id: flaggedByUserId,
-          user_name: flaggedByUserName,
-          flagged: true,
-          flag_reason: flagReason
-        }
-      ]);
+      .insert({
+        work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
+        action: `Activity flagged for technician ID ${technicianId}. Reason: ${flagReason}`,
+        user_id: flaggedByUserId,
+        user_name: flaggedByUserName,
+        flagged: true,
+        flag_reason: flagReason
+      });
 
     if (activityError) throw activityError;
     
@@ -247,10 +239,7 @@ export const getFlaggedActivities = async (resolved: boolean = false) => {
   try {
     const { data, error } = await supabase
       .from('flagged_activities')
-      .select(`
-        *,
-        technicians:technician_id (name)
-      `)
+      .select('*')
       .eq('resolved', resolved)
       .order('flagged_date', { ascending: false });
       
@@ -278,22 +267,19 @@ export const resolveFlaggedActivity = async (
         resolved_by: resolvedByUserId,
         resolution_notes: resolutionNotes
       })
-      .eq('id', flaggedActivityId)
-      .select();
+      .eq('id', flaggedActivityId);
       
     if (error) throw error;
     
     // Also record this as a general activity
     const { error: activityError } = await supabase
       .from('work_order_activities')
-      .insert([
-        {
-          work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
-          action: `Resolved flagged activity ID ${flaggedActivityId}. Notes: ${resolutionNotes}`,
-          user_id: resolvedByUserId,
-          user_name: resolvedByUserName
-        }
-      ]);
+      .insert({
+        work_order_id: '00000000-0000-0000-0000-000000000000', // No specific work order
+        action: `Resolved flagged activity ID ${flaggedActivityId}. Notes: ${resolutionNotes}`,
+        user_id: resolvedByUserId,
+        user_name: resolvedByUserName
+      });
 
     if (activityError) throw activityError;
     

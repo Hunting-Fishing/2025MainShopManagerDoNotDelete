@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 // Regex for phone validation
@@ -29,15 +30,7 @@ export const customerSchema = z.object({
   communication_preference: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_source: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_person_id: z.string().optional(),
-  other_referral_details: z.string().optional()
-    .refine((val, ctx) => {
-      if (ctx.parent.referral_source === "Other") {
-        return val && val.trim().length > 0;
-      }
-      return true;
-    }, {
-      message: "Please provide details about the referral source"
-    }),
+  other_referral_details: z.string().optional(),
   household_id: z.string().optional(),
   is_fleet: z.boolean().optional().default(false),
   fleet_company: z.string().optional(),
@@ -50,19 +43,16 @@ export const customerSchema = z.object({
   create_new_household: z.boolean().optional().default(false),
   new_household_name: z.string().optional(),
   household_relationship: z.string().optional(),
-}).refine(
-  (data) => {
-    // If referral source is "Other", other_referral_details must not be empty
-    if (data.referral_source === "Other") {
-      return !!data.other_referral_details;
-    }
-    return true;
-  },
-  {
-    message: "Please specify referral details for 'Other' referral source",
-    path: ["other_referral_details"],
+}).refine((data) => {
+  // If referral source is "Other", other_referral_details must not be empty
+  if (data.referral_source === "Other") {
+    return !!data.other_referral_details;
   }
-);
+  return true;
+}, {
+  message: "Please specify referral details for 'Other' referral source",
+  path: ["other_referral_details"],
+});
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
 

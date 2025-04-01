@@ -1120,6 +1120,48 @@ export type Database = {
           },
         ]
       }
+      flagged_activities: {
+        Row: {
+          activity_id: string
+          activity_type: string
+          flag_reason: string
+          flagged_by: string
+          flagged_date: string
+          id: string
+          resolution_notes: string | null
+          resolved: boolean
+          resolved_by: string | null
+          resolved_date: string | null
+          technician_id: string
+        }
+        Insert: {
+          activity_id: string
+          activity_type: string
+          flag_reason: string
+          flagged_by: string
+          flagged_date?: string
+          id?: string
+          resolution_notes?: string | null
+          resolved?: boolean
+          resolved_by?: string | null
+          resolved_date?: string | null
+          technician_id: string
+        }
+        Update: {
+          activity_id?: string
+          activity_type?: string
+          flag_reason?: string
+          flagged_by?: string
+          flagged_date?: string
+          id?: string
+          resolution_notes?: string | null
+          resolved?: boolean
+          resolved_by?: string | null
+          resolved_date?: string | null
+          technician_id?: string
+        }
+        Relationships: []
+      }
       household_members: {
         Row: {
           created_at: string
@@ -1731,6 +1773,53 @@ export type Database = {
         }
         Relationships: []
       }
+      preferred_technician_history: {
+        Row: {
+          change_date: string
+          change_reason: string | null
+          changed_by_id: string
+          changed_by_name: string
+          customer_id: string
+          id: string
+          new_technician_id: string
+          new_technician_name: string
+          previous_technician_id: string | null
+          previous_technician_name: string | null
+        }
+        Insert: {
+          change_date?: string
+          change_reason?: string | null
+          changed_by_id: string
+          changed_by_name: string
+          customer_id: string
+          id?: string
+          new_technician_id: string
+          new_technician_name: string
+          previous_technician_id?: string | null
+          previous_technician_name?: string | null
+        }
+        Update: {
+          change_date?: string
+          change_reason?: string | null
+          changed_by_id?: string
+          changed_by_name?: string
+          customer_id?: string
+          id?: string
+          new_technician_id?: string
+          new_technician_name?: string
+          previous_technician_id?: string | null
+          previous_technician_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferred_technician_history_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -2267,6 +2356,36 @@ export type Database = {
           start_time?: string
           technician_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      technician_status_changes: {
+        Row: {
+          change_date: string
+          change_reason: string | null
+          changed_by: string
+          id: string
+          new_status: string
+          previous_status: string
+          technician_id: string
+        }
+        Insert: {
+          change_date?: string
+          change_reason?: string | null
+          changed_by: string
+          id?: string
+          new_status: string
+          previous_status: string
+          technician_id: string
+        }
+        Update: {
+          change_date?: string
+          change_reason?: string | null
+          changed_by?: string
+          id?: string
+          new_status?: string
+          previous_status?: string
+          technician_id?: string
         }
         Relationships: []
       }
