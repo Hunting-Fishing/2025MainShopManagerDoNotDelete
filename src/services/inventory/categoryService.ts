@@ -5,7 +5,8 @@ import { supabase } from "@/lib/supabase";
 export async function getInventoryCategories(): Promise<string[]> {
   try {
     // Try to get categories from the database
-    const { data, error } = await supabase
+    // Cast supabase to any to bypass TypeScript checking until Supabase types are updated
+    const { data, error } = await (supabase as any)
       .from("inventory_categories")
       .select("name")
       .order("name");
@@ -58,7 +59,7 @@ export async function deleteInventoryCategory(name: string): Promise<void> {
 
     if (error) throw error;
   } catch (error) {
-    console.error("Error deleting inventory category:", error);
+    console.error("Error deleting category:", error);
     throw error;
   }
 }
