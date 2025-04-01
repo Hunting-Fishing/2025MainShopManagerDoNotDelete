@@ -7,7 +7,7 @@ export type { InventoryItem } from './inventory';
 // Re-export from vehicle
 export * from './vehicle';
 // Re-export from workOrder but exclude items that would conflict with invoice exports
-export type { WorkOrderTemplate } from './workOrder'; // Changed from WorkOrder to WorkOrderTemplate which exists
+export type { WorkOrderTemplate } from './workOrder'; 
 export * from './calendar';
 export * from './interaction';
 export * from './equipment';

@@ -3,19 +3,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Invoice } from "@/types/invoice";
-import { createInvoiceFromWorkOrder } from "@/utils/workOrderUtils";
-import { recordInvoiceActivity } from "@/utils/activityTracker";
-import { useInvoiceData } from "@/hooks/useInvoiceData";
-import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
-
-// Mock current user - in a real app, this would come from auth context
-const currentUser = { id: "user-123", name: "Admin User" };
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 export function useInvoiceSave() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { saveInvoice } = useInvoiceData();
+  const { userId, userProfile } = useAuthUser();
 
   // Handle saving invoice
   const handleSaveInvoice = async (
@@ -25,7 +20,7 @@ export function useInvoiceSave() {
     subtotal: number, 
     tax: number, 
     total: number,
-    status: string
+    status: "draft" | "pending" | "paid" | "overdue" | "cancelled"
   ) => {
     // Reset error state
     setError(null);
@@ -50,42 +45,59 @@ export function useInvoiceSave() {
         throw new Error("Network offline");
       }
       
-      // Add activity tracking fields
-      const updatedInvoice = {
-        ...invoice,
-        items,
-        assignedStaff,
-        status: status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
-        subtotal,
-        tax,
-        total,
-        createdBy: invoice.createdBy || currentUser.name,
-        lastUpdatedBy: currentUser.name,
-        lastUpdatedAt: new Date().toISOString(),
-      };
-
-      // If this invoice is created from a work order, use that function
-      if (invoice.workOrderId) {
-        await createInvoiceFromWorkOrder(invoice.workOrderId, updatedInvoice);
+      // Create the invoice in Supabase
+      const { error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          id: invoice.id,
+          work_order_id: invoice.workOrderId || null,
+          customer: invoice.customer,
+          customer_email: invoice.customerEmail || null,
+          customer_address: invoice.customerAddress || null,
+          description: invoice.description || null,
+          notes: invoice.notes || null,
+          subtotal,
+          tax,
+          total,
+          status,
+          date: invoice.date,
+          due_date: invoice.dueDate,
+          created_by: userId || null,
+          created_at: new Date().toISOString()
+        });
+      
+      if (invoiceError) throw invoiceError;
+      
+      // Add invoice items
+      if (items && items.length > 0) {
+        const invoiceItems = items.map(item => ({
+          invoice_id: invoice.id,
+          name: item.name,
+          description: item.description || '',
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total
+        }));
         
-        // Record the activity for connecting work order to invoice
-        recordInvoiceActivity(
-          "Created from work order " + invoice.workOrderId, 
-          invoice.id, 
-          currentUser.id, 
-          currentUser.name
-        );
-      } else {
-        // Use our new service to save the invoice with proper error handling
-        await saveInvoice({ invoice: updatedInvoice, items });
+        const { error: itemsError } = await supabase
+          .from('invoice_items')
+          .insert(invoiceItems);
         
-        // Record the activity
-        recordInvoiceActivity(
-          "Created", 
-          invoice.id, 
-          currentUser.id, 
-          currentUser.name
-        );
+        if (itemsError) throw itemsError;
+      }
+      
+      // Add assigned staff
+      if (assignedStaff && assignedStaff.length > 0) {
+        const staffEntries = assignedStaff.map(staff => ({
+          invoice_id: invoice.id,
+          staff_name: staff
+        }));
+        
+        const { error: staffError } = await supabase
+          .from('invoice_staff')
+          .insert(staffEntries);
+        
+        if (staffError) throw staffError;
       }
       
       // Show success message
@@ -99,16 +111,12 @@ export function useInvoiceSave() {
       navigate("/invoices");
     } catch (error) {
       console.error("Error creating invoice:", error);
-      
-      // Handle specific network errors
-      if (isNetworkError(error)) {
-        handleNetworkError();
-        setError("Network connectivity issue. Please check your internet connection.");
-      } else {
-        // Handle other form errors
-        const errorResult = handleFormError(error, "Invoice");
-        setError(errorResult.message);
-      }
+      toast({
+        title: "Error",
+        description: "There was a problem creating the invoice. Please try again.",
+        variant: "destructive",
+      });
+      setError("Error creating invoice. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
