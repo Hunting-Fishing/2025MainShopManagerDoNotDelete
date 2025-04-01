@@ -7,6 +7,14 @@ import { useInventoryCrud } from "@/hooks/inventory/useInventoryCrud";
 import { InventoryItemExtended } from "@/types/inventory";
 import { toast } from "@/hooks/use-toast";
 import { getInventoryStatus } from "@/services/inventory/utils";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
+import { INVENTORY_CATEGORIES } from "@/constants/inventoryCategories";
 
 export default function InventoryAdd() {
   const navigate = useNavigate();
@@ -55,6 +63,22 @@ export default function InventoryAdd() {
         [name]: value
       });
     }
+    
+    // Clear error for this field if it exists
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: ""
+      });
+    }
+  };
+  
+  // Handle select change for the category dropdown
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData({
+      ...formData,
+      [name]: value
+    });
     
     // Clear error for this field if it exists
     if (formErrors[name]) {
@@ -146,15 +170,30 @@ export default function InventoryAdd() {
             error={formErrors.sku}
           />
           
-          <FormField
-            label="Category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-            placeholder="Enter category"
-            error={formErrors.category}
-          />
+          {/* Category dropdown field */}
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="category" className="flex items-center text-sm font-medium">
+              Category<span className="text-destructive ml-1">*</span>
+            </label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => handleSelectChange("category", value)}
+            >
+              <SelectTrigger id="category" className={formErrors.category ? "border-destructive" : ""}>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {INVENTORY_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {formErrors.category && (
+              <p className="text-xs font-medium text-destructive">{formErrors.category}</p>
+            )}
+          </div>
           
           <FormField
             label="Supplier"
