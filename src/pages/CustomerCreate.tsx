@@ -33,8 +33,10 @@ export default function CustomerCreate() {
     shop_id: "DEFAULT-SHOP-ID",
     tags: [],
     preferred_technician_id: "",
+    communication_preference: "",
     referral_source: "",
     referral_person_id: "",
+    other_referral_details: "",
     is_fleet: false,
     fleet_company: "",
     vehicles: [],
@@ -76,6 +78,7 @@ export default function CustomerCreate() {
       // Convert placeholder values to empty strings/nulls where needed
       const preferredTechnicianId = data.preferred_technician_id === "_none" ? "" : data.preferred_technician_id;
       const referralSource = data.referral_source === "_none" ? "" : data.referral_source;
+      const communicationPreference = data.communication_preference === "_none" ? "" : data.communication_preference;
       
       // Prepare customer data
       const customerData: CustomerCreateType = {
@@ -86,8 +89,10 @@ export default function CustomerCreate() {
         address: data.address || "",
         shop_id: data.shop_id,
         preferred_technician_id: preferredTechnicianId,
+        communication_preference: communicationPreference,
         referral_source: referralSource,
         referral_person_id: data.referral_person_id,
+        other_referral_details: data.other_referral_details,
         is_fleet: data.is_fleet,
         fleet_company: data.fleet_company,
         notes: data.notes,

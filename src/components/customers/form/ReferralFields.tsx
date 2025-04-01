@@ -30,6 +30,7 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
   const [isOpen, setIsOpen] = useState(true);
   const referralSource = form.watch("referral_source");
   const isFriendReferral = referralSource === "Friend Referral" || referralSource === "Existing Customer";
+  const isOtherReferral = referralSource === "Other";
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
@@ -86,6 +87,37 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
               </FormItem>
             )}
           />
+
+          {isOtherReferral && (
+            <FormField
+              control={form.control}
+              name="other_referral_details"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormLabel>Other Referral Details</FormLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>Please specify how they found your business</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <FormControl>
+                    <Input 
+                      placeholder="Please specify referral source" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {isFriendReferral && (
             <FormField

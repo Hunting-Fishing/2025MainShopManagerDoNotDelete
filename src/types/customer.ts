@@ -12,8 +12,10 @@ export interface Customer {
   
   // Added fields for enhanced customer management
   preferred_technician_id?: string;
+  communication_preference?: string;
   referral_source?: string;
   referral_person_id?: string;
+  other_referral_details?: string;
   household_id?: string;
   is_fleet?: boolean;
   fleet_company?: string;
@@ -34,10 +36,6 @@ export interface Customer {
   lastServiceDate?: string;
   name?: string;
   dateAdded?: string;
-  
-  // New fields for Phase 2
-  communications?: CustomerCommunication[];
-  noteEntries?: CustomerNote[];
 }
 
 // Define vehicle information

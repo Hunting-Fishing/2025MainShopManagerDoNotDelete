@@ -25,10 +25,12 @@ export const customerSchema = z.object({
   shop_id: z.string().min(1, "Shop is required"),
   tags: z.string().array().optional().default([]),
   
-  // New fields
+  // Enhanced fields
   preferred_technician_id: z.string().optional().transform(val => val === "_none" ? "" : val),
+  communication_preference: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_source: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_person_id: z.string().optional(),
+  other_referral_details: z.string().optional(),
   household_id: z.string().optional(),
   is_fleet: z.boolean().optional().default(false),
   fleet_company: z.string().optional(),
@@ -41,7 +43,19 @@ export const customerSchema = z.object({
   create_new_household: z.boolean().optional().default(false),
   new_household_name: z.string().optional(),
   household_relationship: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    // If referral source is "Other", other_referral_details must not be empty
+    if (data.referral_source === "Other") {
+      return !!data.other_referral_details;
+    }
+    return true;
+  },
+  {
+    message: "Please specify referral details for 'Other' referral source",
+    path: ["other_referral_details"],
+  }
+);
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
 
@@ -55,10 +69,10 @@ export const shops = [
 
 // Mock technician data
 export const technicians = [
-  { id: "TECH-1", name: "Sarah Johnson" },
-  { id: "TECH-2", name: "Michael Brown" },
-  { id: "TECH-3", name: "Emily Chen" },
-  { id: "TECH-4", name: "David Lee" },
+  { id: "TECH-1", name: "Sarah Johnson", status: "active" },
+  { id: "TECH-2", name: "Michael Brown", status: "active" },
+  { id: "TECH-3", name: "Emily Chen", status: "inactive" },
+  { id: "TECH-4", name: "David Lee", status: "active" },
 ];
 
 // Mock referral sources
