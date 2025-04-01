@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/hooks/use-toast";
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Receipt, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Receipt, Plus, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { workOrders } from '@/data/workOrdersData';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface InvoiceItem {
   id: string;
@@ -23,10 +24,29 @@ interface InvoiceItem {
   total: number;
 }
 
+interface WorkOrder {
+  id: string;
+  customer: string;
+  description: string;
+}
+
+interface WorkOrderInventoryItem {
+  id: string;
+  name: string;
+  sku?: string;
+  category?: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export default function CreateInvoice() {
   const navigate = useNavigate();
+  const { userId } = useAuthUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<string>("");
+  const [workOrderInventoryItems, setWorkOrderInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [newItem, setNewItem] = useState<InvoiceItem>({
     id: uuidv4(),
@@ -39,6 +59,58 @@ export default function CreateInvoice() {
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const dueDate = format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd');
+
+  useEffect(() => {
+    async function fetchWorkOrders() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('work_orders')
+          .select('id, customer_id, description, customers(first_name, last_name)');
+
+        if (error) {
+          throw error;
+        }
+
+        const formattedWorkOrders = data.map(wo => ({
+          id: wo.id,
+          customer: wo.customers ? `${wo.customers.first_name} ${wo.customers.last_name}` : 'Unknown Customer',
+          description: wo.description || 'No description'
+        }));
+
+        setWorkOrders(formattedWorkOrders);
+      } catch (error) {
+        console.error('Error fetching work orders:', error);
+        toast({
+          title: "Failed to load work orders",
+          description: "There was a problem loading work orders data.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchWorkOrders();
+  }, []);
+
+  const fetchWorkOrderInventoryItems = async (workOrderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('work_order_inventory_items')
+        .select('*')
+        .eq('work_order_id', workOrderId);
+
+      if (error) {
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching work order inventory items:', error);
+      return [];
+    }
+  };
 
   const calculateSubtotal = () => {
     return items.reduce((sum, item) => sum + item.total, 0);
@@ -87,13 +159,15 @@ export default function CreateInvoice() {
     setItems(items.filter(item => item.id !== id));
   };
 
-  const handleWorkOrderSelect = (workOrderId: string) => {
+  const handleWorkOrderSelect = async (workOrderId: string) => {
     setSelectedWorkOrder(workOrderId);
-    const workOrder = workOrders.find(wo => wo.id === workOrderId);
     
-    if (workOrder && workOrder.inventoryItems) {
+    if (workOrderId) {
+      const items = await fetchWorkOrderInventoryItems(workOrderId);
+      setWorkOrderInventoryItems(items);
+      
       // Convert work order inventory items to invoice items
-      const woItems = workOrder.inventoryItems.map(item => ({
+      const woItems = items.map(item => ({
         id: uuidv4(),
         name: item.name,
         description: item.sku || "", // Use SKU as description since there's no description property
@@ -103,6 +177,8 @@ export default function CreateInvoice() {
       }));
       
       setItems(woItems);
+    } else {
+      setItems([]);
     }
   };
 
@@ -113,25 +189,47 @@ export default function CreateInvoice() {
     try {
       // Collect form data
       const form = e.target as HTMLFormElement;
-      const invoiceData = {
-        workOrderId: selectedWorkOrder,
-        customer: form.customer.value,
-        customerEmail: form.customerEmail.value,
-        customerAddress: form.customerAddress.value,
-        date: form.invoiceDate.value,
-        dueDate: form.dueDate.value,
-        notes: form.notes.value,
-        items,
-        subtotal,
-        tax,
-        total
-      };
       
-      console.log("Invoice data:", invoiceData);
-      // In a real app, you would save this to your database
+      // Generate invoice ID (you might want a more sophisticated approach)
+      const invoiceId = `INV-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create the invoice
+      const { error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          id: invoiceId,
+          work_order_id: selectedWorkOrder || null,
+          customer: form.customer.value,
+          customer_email: form.customerEmail.value,
+          customer_address: form.customerAddress.value,
+          date: form.invoiceDate.value,
+          due_date: form.dueDate.value,
+          notes: form.notes.value,
+          subtotal,
+          tax,
+          total,
+          status: 'draft',
+          created_by: userId,
+          created_at: new Date().toISOString()
+        });
+      
+      if (invoiceError) throw invoiceError;
+      
+      // Add invoice items
+      const invoiceItems = items.map(item => ({
+        invoice_id: invoiceId,
+        name: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.total
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('invoice_items')
+        .insert(invoiceItems);
+      
+      if (itemsError) throw itemsError;
       
       toast({
         title: "Success",
@@ -183,22 +281,29 @@ export default function CreateInvoice() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="workOrder">Work Order (Optional)</Label>
-                    <Select 
-                      onValueChange={handleWorkOrderSelect} 
-                      value={selectedWorkOrder}
-                    >
-                      <SelectTrigger id="workOrder">
-                        <SelectValue placeholder="Select a work order" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">None</SelectItem>
-                        {workOrders.map((workOrder) => (
-                          <SelectItem key={workOrder.id} value={workOrder.id}>
-                            {workOrder.id} - {workOrder.customer}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {isLoading ? (
+                      <div className="flex items-center space-x-2 h-10 px-3 py-2 border rounded-md">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Loading work orders...</span>
+                      </div>
+                    ) : (
+                      <Select 
+                        onValueChange={handleWorkOrderSelect} 
+                        value={selectedWorkOrder}
+                      >
+                        <SelectTrigger id="workOrder">
+                          <SelectValue placeholder="Select a work order" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">None</SelectItem>
+                          {workOrders.map((workOrder) => (
+                            <SelectItem key={workOrder.id} value={workOrder.id}>
+                              {workOrder.id} - {workOrder.customer}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
 
@@ -386,7 +491,9 @@ export default function CreateInvoice() {
 
             <div className="flex flex-col gap-3">
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Invoice"}
+                {isSubmitting ? 
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 
+                  "Create Invoice"}
               </Button>
               <Button 
                 type="button" 
