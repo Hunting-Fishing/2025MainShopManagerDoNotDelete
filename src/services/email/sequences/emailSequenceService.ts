@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { 
   EmailSequence, 
@@ -150,7 +149,7 @@ export const emailSequenceService = {
     try {
       const { data, error } = await supabase
         .from('email_sequence_steps')
-        .update({ is_active: isActive }) // Using is_active for database field
+        .update({ is_active: isActive }) // Using is_active for database field name
         .eq('id', stepId)
         .select()
         .single();
@@ -325,7 +324,7 @@ export const emailSequenceService = {
         delay_type: step.delay_type || step.delayType || 'hours',
         template_id: step.template_id || step.email_template_id || step.templateId,
         name: step.name,
-        is_active: step.isActive !== undefined ? step.isActive : true // Map isActive to is_active
+        is_active: step.isActive !== undefined ? step.isActive : true // Change from is_active to isActive
       };
       
       const { data, error } = await supabase
@@ -554,7 +553,7 @@ export const emailSequenceService = {
           position: step.position || step.order,
           delay_hours: step.delay_hours || step.delayHours,
           delay_type: step.delay_type || step.delayType,
-          is_active: step.isActive !== undefined ? step.isActive : step.is_active,
+          is_active: step.isActive !== undefined ? step.isActive : step.is_active, // Update to accept both properties for backward compatibility
           condition_type: step.condition?.type,
           condition_value: step.condition?.value,
           condition_operator: step.condition?.operator
