@@ -9,8 +9,10 @@ export default function CreateCustomer() {
   const {
     isSubmitting,
     isSuccess,
+    isLoading,
     newCustomerId,
     defaultValues,
+    availableShops,
     onSubmit,
     handleImportComplete,
   } = useCustomerCreate();
@@ -29,6 +31,8 @@ export default function CreateCustomer() {
           defaultValues={defaultValues} 
           onSubmit={onSubmit} 
           isSubmitting={isSubmitting}
+          isLoading={isLoading}
+          availableShops={availableShops}
         />
       )}
     </div>

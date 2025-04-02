@@ -1,3 +1,4 @@
+
 import * as z from "zod";
 
 // Regex for phone validation
@@ -60,8 +61,7 @@ export const customerSchema = z.object({
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
 
-// Mock shop data for demonstration
-// In a real app, this would come from an API or context
+// This is now using valid UUID formats (these will be replaced with real data from Supabase)
 export const shops = [
   { id: "00000000-0000-0000-0000-000000000000", name: "Main Shop" },
   { id: "11111111-1111-1111-1111-111111111111", name: "Downtown Branch" },

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { createCustomer, clearDraftCustomer, addCustomerNote } from "@/services/customers";
@@ -17,16 +17,15 @@ import {
   showWarningNotification,
   showImportCompleteNotification
 } from "./utils/customerNotificationHandler";
+import { getAllShops, getDefaultShop } from "@/services/shops/shopService";
 
 export const useCustomerCreate = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  // Use a valid UUID format for shop_id instead of "DEFAULT-SHOP-ID"
-  const defaultValues: CustomerFormValues = {
+  const [isLoading, setIsLoading] = useState(true);
+  const [availableShops, setAvailableShops] = useState<Array<{id: string, name: string}>>([]);
+  const [defaultValues, setDefaultValues] = useState<CustomerFormValues>({
     first_name: "",
     last_name: "",
     email: "",
@@ -38,7 +37,7 @@ export const useCustomerCreate = () => {
     country: "",
     company: "",
     notes: "",
-    shop_id: "00000000-0000-0000-0000-000000000000", // Using a valid UUID format
+    shop_id: "",
     tags: [],
     preferred_technician_id: "",
     communication_preference: "",
@@ -53,7 +52,41 @@ export const useCustomerCreate = () => {
     new_household_name: "",
     household_id: "", 
     household_relationship: "primary",
-  };
+  });
+  
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    async function fetchShopData() {
+      try {
+        setIsLoading(true);
+        
+        // Get all shops for dropdown
+        const shops = await getAllShops();
+        setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
+        
+        // Get default shop for form initialization
+        const defaultShop = await getDefaultShop();
+        
+        setDefaultValues(prev => ({
+          ...prev,
+          shop_id: defaultShop.id
+        }));
+      } catch (error) {
+        console.error("Error fetching shop data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load shop data. Using default values.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchShopData();
+  }, [toast]);
 
   const onSubmit = async (data: CustomerFormValues) => {
     console.log("onSubmit called with data:", data);
@@ -148,8 +181,10 @@ export const useCustomerCreate = () => {
   return {
     isSubmitting,
     isSuccess,
+    isLoading,
     newCustomerId,
     defaultValues,
+    availableShops,
     onSubmit,
     handleImportComplete,
   };

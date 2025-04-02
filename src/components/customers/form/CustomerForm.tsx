@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { Card } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
-import { customerSchema, CustomerFormValues } from "./CustomerFormSchema";
+import { customerSchema, CustomerFormValues, shops as defaultShops } from "./CustomerFormSchema";
 import { NotificationsProvider } from "@/context/notifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DuplicateCustomerAlert } from "./DuplicateCustomerAlert";
@@ -25,12 +25,14 @@ interface CustomerFormProps {
   defaultValues: CustomerFormValues;
   onSubmit: (data: CustomerFormValues) => Promise<void>;
   isSubmitting: boolean;
+  availableShops?: Array<{id: string, name: string}>;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ 
   defaultValues, 
   onSubmit, 
-  isSubmitting 
+  isSubmitting,
+  availableShops = defaultShops
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
@@ -41,6 +43,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     defaultValues,
     mode: "onChange" // Enable real-time validation as the user types
   });
+  
+  useEffect(() => {
+    if (defaultValues.shop_id) {
+      form.setValue('shop_id', defaultValues.shop_id);
+    }
+  }, [defaultValues.shop_id, form]);
   
   const isMobile = useIsMobile();
   const { currentTab, setCurrentTab, handleNext, handlePrevious } = useFormNavigation();
@@ -100,6 +108,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     await onSubmit(data);
   });
 
+  // Make the available shops accessible to form fields
+  const formContext = {
+    availableShops
+  };
+
   return (
     <NotificationsProvider>
       <Card>
@@ -146,7 +159,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   isMobile={isMobile}
                 />
 
-                <FormContent form={form} currentTab={currentTab} />
+                <FormContent 
+                  form={form} 
+                  currentTab={currentTab} 
+                  formContext={formContext}
+                />
 
                 {/* Step Navigation */}
                 <FormNavigation 
