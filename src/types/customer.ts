@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   first_name: string;
@@ -5,6 +6,10 @@ export interface Customer {
   email: string;
   phone: string;
   address: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
   shop_id: string;
   created_at: string;
   updated_at: string;

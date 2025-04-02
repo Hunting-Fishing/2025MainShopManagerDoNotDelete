@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomerFormValues } from "./CustomerFormSchema";
 import { RequiredIndicator } from "@/components/ui/required-indicator";
-import { AddressAutocomplete } from "./AddressAutocomplete";
+import { AddressFields } from "./AddressFields";
 
 interface PersonalInfoFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -86,22 +86,10 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({ form }) 
         />
       </div>
       
-      <FormField
-        control={form.control}
-        name="address"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Address</FormLabel>
-            <FormControl>
-              <AddressAutocomplete 
-                form={form}
-                field={field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium">Address Information</h3>
+        <AddressFields form={form} />
+      </div>
 
       <FormField
         control={form.control}
