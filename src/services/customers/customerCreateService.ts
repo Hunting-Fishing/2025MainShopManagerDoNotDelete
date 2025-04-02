@@ -65,6 +65,11 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     delete customerData.referral_person_id;
   }
 
+  // Convert "DEFAULT-SHOP-ID" to a valid UUID if it's still using the default
+  if (customerData.shop_id === 'DEFAULT-SHOP-ID') {
+    customerData.shop_id = '00000000-0000-0000-0000-000000000000';
+  }
+
   console.log("Submitting customer data:", customerData);
 
   const { data, error } = await supabase

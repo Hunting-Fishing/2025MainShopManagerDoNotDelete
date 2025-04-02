@@ -1,4 +1,3 @@
-
 import * as z from "zod";
 
 // Regex for phone validation
@@ -64,9 +63,9 @@ export type CustomerFormValues = z.infer<typeof customerSchema>;
 // Mock shop data for demonstration
 // In a real app, this would come from an API or context
 export const shops = [
-  { id: "DEFAULT-SHOP-ID", name: "Main Shop" },
-  { id: "SHOP-2", name: "Downtown Branch" },
-  { id: "SHOP-3", name: "West Side Service" }
+  { id: "00000000-0000-0000-0000-000000000000", name: "Main Shop" },
+  { id: "11111111-1111-1111-1111-111111111111", name: "Downtown Branch" },
+  { id: "22222222-2222-2222-2222-222222222222", name: "West Side Service" }
 ];
 
 // Mock technician data

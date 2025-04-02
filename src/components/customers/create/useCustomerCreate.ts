@@ -25,6 +25,7 @@ export const useCustomerCreate = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // Use a valid UUID format for shop_id instead of "DEFAULT-SHOP-ID"
   const defaultValues: CustomerFormValues = {
     first_name: "",
     last_name: "",
@@ -37,7 +38,7 @@ export const useCustomerCreate = () => {
     country: "",
     company: "",
     notes: "",
-    shop_id: "DEFAULT-SHOP-ID",
+    shop_id: "00000000-0000-0000-0000-000000000000", // Using a valid UUID format
     tags: [],
     preferred_technician_id: "",
     communication_preference: "",
