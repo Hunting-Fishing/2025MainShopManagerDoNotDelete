@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Customer } from "@/types/customer";
+import { Customer, adaptCustomerForUI } from "@/types/customer";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -50,7 +49,8 @@ export const WorkOrderEditFormContent: React.FC<WorkOrderEditFormContentProps> =
         }
         
         if (data) {
-          setCustomers(data);
+          // Apply adaptCustomerForUI to normalize each customer record
+          setCustomers(data.map(customer => adaptCustomerForUI(customer)));
         }
       } catch (err) {
         console.error("Error fetching customers:", err);

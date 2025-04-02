@@ -15,7 +15,7 @@ export const searchCustomers = async (query: string): Promise<Customer[]> => {
     throw error;
   }
 
-  return (data || []).map(customer => adaptCustomerForUI(customer));
+  return (data || []).map(customer => adaptCustomerForUI(customer as Customer));
 };
 
 // Check for potential duplicate customers
@@ -52,7 +52,7 @@ export const checkDuplicateCustomers = async (
     throw error;
   }
 
-  return (data || []).map(customer => adaptCustomerForUI(customer));
+  return (data || []).map(customer => adaptCustomerForUI(customer as Customer));
 };
 
 // Get customers with their vehicles
@@ -69,7 +69,7 @@ export const getCustomersWithVehicles = async (): Promise<Customer[]> => {
       throw error;
     }
     
-    const customers = (data || []).map(customer => adaptCustomerForUI(customer));
+    const customers = (data || []).map(customer => adaptCustomerForUI(customer as Customer));
     
     // For each customer, get their vehicles
     const customersWithVehicles = await Promise.all(

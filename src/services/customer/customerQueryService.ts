@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
@@ -15,7 +16,7 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
   }
 
   // Adapt each customer for UI components
-  const customers = (data || []).map(customer => adaptCustomerForUI(customer));
+  const customers = (data || []).map(customer => adaptCustomerForUI(customer as Customer));
   
   // Fetch loyalty data for each customer
   // This is done separately to keep the initial customer query simple
@@ -52,7 +53,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
 
   if (!data) return null;
   
-  const customer = adaptCustomerForUI(data);
+  const customer = adaptCustomerForUI(data as Customer);
   
   // Fetch loyalty data
   try {

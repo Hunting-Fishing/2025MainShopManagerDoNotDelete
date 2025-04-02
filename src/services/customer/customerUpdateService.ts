@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -131,7 +130,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     }
   }
 
-  return adaptCustomerForUI(data);
+  return adaptCustomerForUI(data as Customer);
 };
 
 // Delete a customer

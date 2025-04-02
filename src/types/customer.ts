@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   first_name: string;
@@ -23,10 +22,9 @@ export interface Customer {
   is_fleet?: boolean;
   fleet_company?: string;
   notes?: string;
-  tags?: string[];
-  vehicles?: CustomerVehicle[];
+  tags?: string[] | any; // Allow any type that will be normalized in adaptCustomerForUI
   
-  segments?: string[] | any; 
+  segments?: string[] | any; // Allow any type that will be normalized in adaptCustomerForUI
   
   loyalty?: CustomerLoyalty;
   
@@ -134,8 +132,9 @@ export const getCustomerFullName = (customer: Customer): string => {
 };
 
 export const adaptCustomerForUI = (customer: Customer): Customer => {
+  // Handle segments - ensure it's properly converted from JSON to array
   let segments = customer.segments;
-  if (segments && typeof segments !== 'object') {
+  if (segments && typeof segments === 'string') {
     try {
       segments = JSON.parse(segments);
     } catch (e) {
@@ -145,10 +144,17 @@ export const adaptCustomerForUI = (customer: Customer): Customer => {
     segments = [];
   }
   
+  // Handle tags - ensure it's properly converted from JSON to array
   let tags = customer.tags;
-  if (tags && typeof tags !== 'object') {
+  if (tags && typeof tags === 'string') {
     try {
       tags = JSON.parse(tags);
+    } catch (e) {
+      tags = [];
+    }
+  } else if (tags && typeof tags !== 'object') {
+    try {
+      tags = JSON.parse(tags.toString());
     } catch (e) {
       tags = [];
     }

@@ -1,5 +1,4 @@
-
-import { Customer } from "@/types/customer";
+import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateCustomerLifetimeValue } from "./customerLifetimeValue";
 
@@ -90,51 +89,39 @@ export const getCustomersWithSegments = async (): Promise<CustomerWithSegments[]
       .select("*");
     
     if (customersError) {
-      console.error("Error fetching customers:", customersError);
-      return [];
+      throw customersError;
     }
     
-    if (!customers || customers.length === 0) return [];
+    // Convert raw database customers to UI-friendly format to handle JSON tags/segments
+    const uiCustomers = (customers || []).map(customer => adaptCustomerForUI(customer as Customer));
     
-    // Get all work orders for efficiency (to avoid N+1 queries)
-    const { data: allWorkOrders, error: workOrdersError } = await supabase
-      .from("work_orders")
-      .select("id, customer_id, created_at, total_cost, status");
+    // Process each customer to add segment information
+    const result = await Promise.all(uiCustomers.map(async (customer) => {
+      const clv = await calculateCustomerLifetimeValue(customer.id);
+      
+      // Get work order history for this customer
+      const { data: workOrders } = await supabase
+        .from("work_orders")
+        .select("created_at, total_cost, status")
+        .eq("customer_id", customer.id)
+        .order("created_at", { ascending: false });
+      
+      const orderCount = workOrders?.length || 0;
+      const lastOrderDate = orderCount > 0 ? workOrders[0].created_at : null;
+      
+      // Calculate segments for this customer
+      const segments = await analyzeCustomerSegments(customer.id);
+      
+      return {
+        ...customer,
+        segments,
+        clv: clv || 0,
+        lastOrderDate: lastOrderDate || '',
+        orderCount
+      } as CustomerWithSegments;
+    }));
     
-    if (workOrdersError) {
-      console.error("Error fetching work orders:", workOrdersError);
-      return [];
-    }
-    
-    // Process customers in parallel
-    const customersWithSegments = await Promise.all(
-      customers.map(async (customer) => {
-        // Filter work orders for this customer
-        const customerWorkOrders = allWorkOrders?.filter(wo => wo.customer_id === customer.id) || [];
-        const sortedOrders = customerWorkOrders.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        
-        const lastOrderDate = sortedOrders.length > 0 ? sortedOrders[0].created_at : undefined;
-        const orderCount = sortedOrders.length;
-        
-        // Calculate CLV
-        const clv = await calculateCustomerLifetimeValue(customer.id);
-        
-        // Calculate segments
-        const segments = await analyzeCustomerSegments(customer.id);
-        
-        return {
-          ...customer,
-          segments,
-          clv: clv || undefined,
-          lastOrderDate,
-          orderCount
-        };
-      })
-    );
-    
-    return customersWithSegments;
+    return result;
   } catch (error) {
     console.error("Error getting customers with segments:", error);
     return [];

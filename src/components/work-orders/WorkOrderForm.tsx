@@ -52,7 +52,8 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         }
         
         if (data) {
-          setCustomers(data);
+          // Apply adaptCustomerForUI to normalize each customer record
+          setCustomers(data.map(customer => adaptCustomerForUI(customer)));
         }
       } catch (err) {
         console.error("Error fetching customers:", err);

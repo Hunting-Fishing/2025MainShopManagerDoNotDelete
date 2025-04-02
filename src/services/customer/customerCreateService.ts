@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { addCustomerNote } from "./customerNotesService";
@@ -97,5 +96,5 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     }
   }
 
-  return adaptCustomerForUI(data);
+  return adaptCustomerForUI(data as Customer);
 };
