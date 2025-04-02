@@ -9,6 +9,7 @@ import { useFormNavigation } from "./useFormNavigation";
 import { FormContentWrapper } from "./FormContentWrapper";
 import { PreviewToggle } from "./preview/PreviewToggle";
 import { useDraftCustomer } from "./hooks/useDraftCustomer";
+import { FloatingActionButton } from "./FloatingActionButton";
 
 interface CustomerFormProps {
   defaultValues: CustomerFormValues;
@@ -52,6 +53,20 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     availableShops 
   });
 
+  // Handle floating action button click
+  const handleFloatingSubmit = () => {
+    form.handleSubmit(async (data) => {
+      console.log("Form submitted with data:", data);
+      
+      // If we're in single shop mode, ensure we use the current shop
+      if (singleShopMode && availableShops.length === 1) {
+        data.shop_id = availableShops[0].id;
+      }
+      
+      await onSubmit(data);
+    })();
+  };
+
   // Make the available shops and single shop mode accessible to form fields
   const formContext = {
     availableShops,
@@ -79,6 +94,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           />
         </div>
       </Card>
+      
+      {/* Only show floating action button in edit mode */}
+      {isEditMode && (
+        <FloatingActionButton 
+          isSubmitting={isSubmitting} 
+          isEditMode={isEditMode}
+          onClick={handleFloatingSubmit}
+        />
+      )}
     </NotificationsProvider>
   );
 };
