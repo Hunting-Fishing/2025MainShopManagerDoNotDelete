@@ -21,7 +21,7 @@ export const customerSchema = z.object({
   phone: z.string().regex(PHONE_REGEX, "Invalid phone format").or(z.string().length(0)),
   address: z.string().optional(),
   company: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().optional(), // Keep this in the form schema for UI, but it won't be stored in the customers table
   shop_id: z.string().min(1, "Shop is required"),
   tags: z.string().array().optional().default([]),
   

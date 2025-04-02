@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +96,11 @@ export const useCustomerCreate = () => {
         
         if (relationshipError) {
           console.error("Failed to add customer to household:", relationshipError);
+          toast({
+            title: "Household Assignment Warning",
+            description: "Customer created but could not be added to household. Please check household settings.",
+            variant: "warning",
+          });
         }
       }
       
@@ -111,6 +117,11 @@ export const useCustomerCreate = () => {
         
         if (segmentError) {
           console.error("Failed to assign segments to customer:", segmentError);
+          toast({
+            title: "Segment Assignment Warning",
+            description: "Customer created but segments could not be assigned. Please check segment settings.",
+            variant: "warning",
+          });
         }
       }
       
@@ -146,6 +157,7 @@ export const useCustomerCreate = () => {
       }, 2000);
     } catch (error) {
       handleApiError(error, "Failed to create customer");
+      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }
