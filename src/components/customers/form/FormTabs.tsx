@@ -9,7 +9,7 @@ interface FormTabsProps {
   hasPersonalErrors: boolean;
   hasBusinessErrors: boolean;
   hasPreferencesErrors: boolean;
-  hasReferralFleetErrors: boolean;
+  hasReferralErrors: boolean;
   hasVehicleErrors: boolean;
   hasHouseholdErrors?: boolean;
   hasSegmentErrors?: boolean;
@@ -22,7 +22,7 @@ export const FormTabs: React.FC<FormTabsProps> = ({
   hasPersonalErrors,
   hasBusinessErrors,
   hasPreferencesErrors,
-  hasReferralFleetErrors,
+  hasReferralErrors,
   hasVehicleErrors,
   hasHouseholdErrors = false,
   hasSegmentErrors = false,
@@ -50,7 +50,7 @@ export const FormTabs: React.FC<FormTabsProps> = ({
       </TabsTrigger>
       <TabsTrigger value="referral" onClick={() => setCurrentTab("referral")}>
         Referral
-        {hasReferralFleetErrors && (
+        {hasReferralErrors && (
           <AlertTriangle className="h-4 w-4 ml-1 text-destructive" />
         )}
       </TabsTrigger>

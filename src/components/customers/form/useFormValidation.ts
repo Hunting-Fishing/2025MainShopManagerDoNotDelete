@@ -7,7 +7,7 @@ export const useFormValidation = (form: UseFormReturn<CustomerFormValues>) => {
   const [hasPersonalErrors, setHasPersonalErrors] = useState(false);
   const [hasBusinessErrors, setHasBusinessErrors] = useState(false);
   const [hasPreferencesErrors, setHasPreferencesErrors] = useState(false);
-  const [hasReferralFleetErrors, setHasReferralFleetErrors] = useState(false);
+  const [hasReferralErrors, setHasReferralErrors] = useState(false);
   const [hasVehicleErrors, setHasVehicleErrors] = useState(false);
   const [hasHouseholdErrors, setHasHouseholdErrors] = useState(false);
   const [hasSegmentErrors, setHasSegmentErrors] = useState(false);
@@ -30,7 +30,7 @@ export const useFormValidation = (form: UseFormReturn<CustomerFormValues>) => {
 
     // Referral errors (no longer includes fleet fields)
     const referralFields = ['referral_source', 'referral_person_id'];
-    setHasReferralFleetErrors(referralFields.some(field => !!errors[field as keyof typeof errors]));
+    setHasReferralErrors(referralFields.some(field => !!errors[field as keyof typeof errors]));
 
     // Vehicle errors
     setHasVehicleErrors(!!errors.vehicles);
@@ -51,7 +51,7 @@ export const useFormValidation = (form: UseFormReturn<CustomerFormValues>) => {
     hasPersonalErrors,
     hasBusinessErrors,
     hasPreferencesErrors,
-    hasReferralFleetErrors,
+    hasReferralErrors,
     hasVehicleErrors,
     hasHouseholdErrors,
     hasSegmentErrors

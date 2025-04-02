@@ -7,7 +7,6 @@ import { PersonalInfoFields } from "./PersonalInfoFields";
 import { BusinessInfoFields } from "./BusinessInfoFields";
 import { PreferencesFields } from "./PreferencesFields";
 import { ReferralFields } from "./ReferralFields";
-import { FleetFields } from "./FleetFields";
 import { VehiclesFields } from "./VehiclesFields";
 import { SegmentFields } from "./SegmentFields";
 import { HouseholdFields } from "./HouseholdFields";
@@ -50,7 +49,6 @@ export const FormContent: React.FC<FormContentProps> = ({
       
       <TabsContent value="referral" className="mt-6">
         <ReferralFields form={form} />
-        <FleetFields form={form} />
       </TabsContent>
       
       <TabsContent value="segments" className="mt-6">

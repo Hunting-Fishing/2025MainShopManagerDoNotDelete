@@ -77,7 +77,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
 
 // Update a customer
 export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {
-  // Format the data for the database - only include fields that exist in the customer table
+  // Format the data for the database - only include fields that exist in the customers table
   const customerData = {
     // Personal information - these fields exist in the customers table
     first_name: updates.first_name,
@@ -99,6 +99,10 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     
     // Household information
     household_id: updates.household_id,
+    
+    // Fleet information
+    is_fleet: updates.is_fleet,
+    fleet_company: updates.fleet_company,
   };
 
   console.log("Updating customer with data:", customerData);

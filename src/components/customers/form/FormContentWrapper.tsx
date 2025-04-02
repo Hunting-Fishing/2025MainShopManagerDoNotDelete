@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
@@ -49,7 +48,7 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
     hasPersonalErrors, 
     hasBusinessErrors, 
     hasPreferencesErrors, 
-    hasReferralFleetErrors, 
+    hasReferralErrors, 
     hasVehicleErrors,
     hasHouseholdErrors,
     hasSegmentErrors
@@ -88,7 +87,7 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
             hasPersonalErrors={hasPersonalErrors}
             hasBusinessErrors={hasBusinessErrors}
             hasPreferencesErrors={hasPreferencesErrors}
-            hasReferralFleetErrors={hasReferralFleetErrors}
+            hasReferralErrors={hasReferralErrors}
             hasVehicleErrors={hasVehicleErrors}
             hasHouseholdErrors={hasHouseholdErrors}
             hasSegmentErrors={hasSegmentErrors}
