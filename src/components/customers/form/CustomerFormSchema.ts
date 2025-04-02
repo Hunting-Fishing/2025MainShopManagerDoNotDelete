@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 // Default shops array
@@ -41,7 +40,21 @@ export const customerSchema = z.object({
   company: z.string().optional().or(z.literal("")),
   business_type: z.string().optional().or(z.literal("")),
   business_industry: z.string().optional().or(z.literal("")),
-  other_business_industry: z.string().optional().or(z.literal("")),
+  other_business_industry: z.string().optional().or(z.literal(""))
+    .refine(
+      (val, ctx) => {
+        // If business_industry is 'other', then other_business_industry is required
+        const businessIndustry = ctx.path[0] === 'other_business_industry' 
+          ? (ctx.parent as any).business_industry 
+          : '';
+          
+        return businessIndustry !== 'other' || (businessIndustry === 'other' && val && val.trim() !== '');
+      },
+      {
+        message: "Please specify the industry when 'Other' is selected",
+        path: ['other_business_industry']
+      }
+    ),
   tax_id: z.string().optional().or(z.literal("")),
   business_email: z.string().email().optional().or(z.literal("")),
   business_phone: z.string().optional().or(z.literal("")),

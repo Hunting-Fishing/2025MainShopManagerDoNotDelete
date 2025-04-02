@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { 
   FormField, 
@@ -41,6 +42,16 @@ export const EssentialBusinessDetails: React.FC<EssentialBusinessDetailsProps> =
 }) => {
   const businessIndustryValue = form.watch("business_industry");
   const showOtherIndustryField = businessIndustryValue === "other";
+  
+  // Set validation errors when switching to "other" but not providing a value
+  useEffect(() => {
+    if (businessIndustryValue === "other") {
+      const otherIndustry = form.getValues("other_business_industry");
+      if (!otherIndustry || otherIndustry.trim() === "") {
+        form.trigger("other_business_industry");
+      }
+    }
+  }, [businessIndustryValue, form]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
@@ -143,7 +154,16 @@ export const EssentialBusinessDetails: React.FC<EssentialBusinessDetailsProps> =
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <Select value={field.value || ""} onValueChange={field.onChange}>
+              <Select 
+                value={field.value || ""} 
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  // Reset other_business_industry when not selecting "other"
+                  if (value !== "other") {
+                    form.setValue("other_business_industry", "");
+                  }
+                }}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select business industry" />
@@ -169,9 +189,9 @@ export const EssentialBusinessDetails: React.FC<EssentialBusinessDetailsProps> =
             name="other_business_industry"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Specify Industry</FormLabel>
+                <FormLabel>Specify Industry <RequiredIndicator /></FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter business industry" {...field} />
+                  <Input placeholder="Enter specific business industry" {...field} />
                 </FormControl>
                 <FormDescription>
                   Please specify the business industry

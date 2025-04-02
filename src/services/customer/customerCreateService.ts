@@ -17,6 +17,12 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     notes,    // Handle separately for detailed notes
     ...customerData
   } = customer;
+  
+  // Handle special case for business_industry and other_business_industry
+  if (customerData.business_industry === 'other' && customerData.other_business_industry) {
+    // We keep both fields to make reporting on "other" industries easier
+    console.log(`Other business industry specified: ${customerData.other_business_industry}`);
+  }
 
   // Handle shop_id fallback logic
   if (!customerData.shop_id) {
