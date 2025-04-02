@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCustomer, clearDraftCustomer } from "@/services/customerService";
@@ -86,12 +87,8 @@ export default function CustomerCreate() {
         referral_source: referralSource,
         referral_person_id: data.referral_person_id,
         other_referral_details: referralSource === "Other" ? data.other_referral_details : "",
-        is_fleet: data.is_fleet,
-        fleet_company: data.fleet_company,
         notes: data.notes,
-        tags: data.tags,
-        household_id: data.household_id || null,
-        segments: data.segments
+        household_id: householdId || null,
       };
       
       const newCustomer = await createCustomer(customerData);
@@ -172,7 +169,7 @@ export default function CustomerCreate() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto px-4 sm:px-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-center">
         <WorkOrderFormHeader
           title="Add New Customer"
           description="Create a new customer record in the system"

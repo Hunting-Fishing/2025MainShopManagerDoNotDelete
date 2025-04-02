@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI, createCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -83,24 +84,35 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     }
   });
 
+  // Remove fields that don't exist in the customers table
+  const { 
+    fleet_company, 
+    is_fleet,
+    tags,
+    segments,
+    ...customerData 
+  } = customer;
+
   // Handle households
-  if (customer.household_id === '' || customer.household_id === '_none') {
-    customer.household_id = undefined;
+  if (customerData.household_id === '' || customerData.household_id === '_none') {
+    customerData.household_id = undefined;
   }
 
   // Handle preferred technician
-  if (customer.preferred_technician_id === '' || customer.preferred_technician_id === '_none') {
-    customer.preferred_technician_id = undefined;
+  if (customerData.preferred_technician_id === '' || customerData.preferred_technician_id === '_none') {
+    customerData.preferred_technician_id = undefined;
   }
 
   // Handle referral source
-  if (customer.referral_source === '' || customer.referral_source === '_none') {
-    customer.referral_source = undefined;
+  if (customerData.referral_source === '' || customerData.referral_source === '_none') {
+    customerData.referral_source = undefined;
   }
+
+  console.log("Submitting customer data:", customerData);
 
   const { data, error } = await supabase
     .from("customers")
-    .insert(customer)
+    .insert(customerData)
     .select()
     .single();
 
