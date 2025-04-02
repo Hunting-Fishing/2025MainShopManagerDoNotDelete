@@ -8,44 +8,45 @@ export function useAuthUser() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (!user) {
-          // Redirect to login if no user
-          toast({
-            title: "Authentication required",
-            description: "Please sign in to use the chat feature",
-            variant: "destructive",
-          });
-          
-          navigate('/');
+        if (!session) {
+          // Redirect to login if no session
+          setIsLoading(false);
+          setIsAuthenticated(false);
+          navigate('/login');
           return;
         }
         
-        setUserId(user.id);
+        setIsAuthenticated(true);
+        setUserId(session.user.id);
         
         // Get user's name from metadata or use email as fallback
-        const userMeta = user.user_metadata;
+        const userMeta = session.user.user_metadata;
         const displayName = userMeta?.full_name || 
-                           (userMeta?.first_name && userMeta?.last_name 
-                             ? `${userMeta.first_name} ${userMeta.last_name}` 
-                             : user.email);
+                          (userMeta?.first_name && userMeta?.last_name 
+                            ? `${userMeta.first_name} ${userMeta.last_name}` 
+                            : session.user.email);
         
         setUserName(displayName || 'User');
         setIsLoading(false);
       } catch (error) {
         console.error('Failed to get user:', error);
         toast({
-          title: "Error",
+          title: "Authentication Error",
           description: "Failed to authenticate",
           variant: "destructive",
         });
-        navigate('/');
+        setIsLoading(false);
+        setIsAuthenticated(false);
+        navigate('/login');
       }
     };
     
@@ -55,14 +56,18 @@ export function useAuthUser() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_OUT') {
-          navigate('/');
+          setIsAuthenticated(false);
+          setUserId(null);
+          setUserName('');
+          navigate('/login');
         } else if (session?.user) {
+          setIsAuthenticated(true);
           setUserId(session.user.id);
           const userMeta = session.user.user_metadata;
           const displayName = userMeta?.full_name || 
-                             (userMeta?.first_name && userMeta?.last_name 
-                               ? `${userMeta.first_name} ${userMeta.last_name}` 
-                               : session.user.email);
+                            (userMeta?.first_name && userMeta?.last_name 
+                              ? `${userMeta.first_name} ${userMeta.last_name}` 
+                              : session.user.email);
           
           setUserName(displayName || 'User');
         }
@@ -74,5 +79,5 @@ export function useAuthUser() {
     };
   }, [navigate]);
 
-  return { userId, userName, isLoading };
+  return { userId, userName, isLoading, isAuthenticated };
 }

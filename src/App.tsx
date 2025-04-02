@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -47,14 +47,45 @@ import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
 import EmailCampaignAnalytics from "./pages/EmailCampaignAnalytics";
+import Login from './pages/Login';
+import Index from './pages/Index';
+import { useEffect, useState } from 'react';
+import { supabase } from './integrations/supabase/client';
 import './App.css';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check current auth status
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        setIsAuthenticated(!!session);
+      });
+
+      return () => subscription.unsubscribe();
+    };
+
+    checkAuth();
+  }, []);
+
+  // Show loading while checking authentication
+  if (isAuthenticated === null) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
+        
+        {/* Protected routes */}
+        <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customers/create" element={<CreateCustomer />} />

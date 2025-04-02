@@ -1,19 +1,23 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Clipboard, BarChart, Package, Users } from "lucide-react";
+import { Clipboard, BarChart, Package, Users, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
 
-  // Redirect to dashboard if user is already logged in
-  // In a real app, this would check authentication status
+  // Check if the user is already logged in
   useEffect(() => {
-    // This is where you would check if user is authenticated
-    // For now, we'll just allow manual navigation
-    // navigate("/"); // Uncomment this once authentication is implemented
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    
+    checkAuth();
   }, [navigate]);
 
   return (
@@ -89,12 +93,16 @@ const Index = () => {
           </Link>
         </div>
 
-        <div className="text-center mb-12">
-          <Link to="/">
-            <Button className="bg-esm-blue-600 hover:bg-esm-blue-700 text-white px-8 py-3 text-lg">
-              Go to Dashboard
+        <div className="text-center mb-12 flex flex-col gap-4 items-center justify-center">
+          <Link to="/login">
+            <Button className="bg-esm-blue-600 hover:bg-esm-blue-700 text-white px-8 py-3 text-lg flex items-center gap-2">
+              <LogIn className="h-5 w-5" />
+              Login / Register
             </Button>
           </Link>
+          <p className="text-slate-600">
+            Sign in to access the full dashboard and management features
+          </p>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 border border-slate-200 mb-12">
