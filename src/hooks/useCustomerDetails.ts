@@ -45,6 +45,12 @@ export const useCustomerDetails = (id?: string) => {
 
       // Custom interaction logic since the table might not exist yet
       try {
+        // Instead of querying a non-existent table, we'll generate mock data or handle differently
+        // For now, we'll just initialize with an empty array
+        setCustomerInteractions([]);
+        
+        // When the 'customer_interactions' table exists, uncomment this code:
+        /*
         const { data: interactions, error: interactionsError } = await supabase
           .from('customer_interactions')
           .select('*')
@@ -54,23 +60,25 @@ export const useCustomerDetails = (id?: string) => {
         if (interactionsError) throw interactionsError;
         
         // Type as CustomerInteraction
-        const typedInteractions = interactions?.map(interaction => ({
-          ...interaction,
-          id: interaction.id,
-          customerId: interaction.customer_id,
-          date: interaction.created_at,
-          staffMemberId: interaction.staff_member_id || '',
-          staffMemberName: interaction.staff_member_name || '',
-          description: interaction.description || '',
-          notes: interaction.notes || '',
-          type: interaction.type || 'general',
-          status: interaction.status || 'completed'
-        } as CustomerInteraction)) || [];
+        const typedInteractions = interactions?.map(interaction => {
+          return {
+            id: interaction.id,
+            customerId: interaction.customer_id,
+            customerName: `${customer?.first_name} ${customer?.last_name}`, // Add the required customerName field
+            date: interaction.created_at,
+            staffMemberId: interaction.staff_member_id || '',
+            staffMemberName: interaction.staff_member_name || '',
+            description: interaction.description || '',
+            notes: interaction.notes || '',
+            type: interaction.type as "work_order" | "communication" | "parts" | "service" | "follow_up",
+            status: interaction.status as "pending" | "in_progress" | "completed" | "cancelled"
+          } as CustomerInteraction;
+        }) || [];
         
         setCustomerInteractions(typedInteractions);
+        */
       } catch (error) {
-        console.error("Error fetching interactions:", error);
-        // If the table doesn't exist yet, we'll just use an empty array
+        console.error("Error handling interactions:", error);
         setCustomerInteractions([]);
       }
 
