@@ -76,16 +76,14 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ form, 
 
   return (
     <div className="relative" ref={autocompleteRef}>
-      <FormControl>
-        <Input
-          placeholder="Enter address"
-          {...field}
-          value={inputValue}
-          onChange={handleInputChange}
-          disabled={disabled}
-          className="w-full"
-        />
-      </FormControl>
+      <Input
+        placeholder="Enter address"
+        {...field}
+        value={inputValue}
+        onChange={handleInputChange}
+        disabled={disabled}
+        className="w-full"
+      />
 
       {showPredictions && predictions.length > 0 && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">

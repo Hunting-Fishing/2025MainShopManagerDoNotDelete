@@ -94,8 +94,8 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({ form }) 
             <FormLabel>Address</FormLabel>
             <FormControl>
               <AddressAutocomplete 
-                field={field} 
-                placeholder="Enter full address" 
+                form={form}
+                field={field}
               />
             </FormControl>
             <FormMessage />
