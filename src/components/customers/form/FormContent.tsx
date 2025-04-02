@@ -17,6 +17,7 @@ interface FormContentProps {
   currentTab: string;
   formContext?: {
     availableShops?: Array<{id: string, name: string}>;
+    singleShopMode?: boolean;
   };
 }
 
@@ -32,7 +33,11 @@ export const FormContent: React.FC<FormContentProps> = ({
       </TabsContent>
       
       <TabsContent value="business" className="mt-6">
-        <BusinessInfoFields form={form} availableShops={formContext?.availableShops} />
+        <BusinessInfoFields 
+          form={form} 
+          availableShops={formContext?.availableShops} 
+          singleShopMode={formContext?.singleShopMode}
+        />
       </TabsContent>
       
       <TabsContent value="preferences" className="mt-6">

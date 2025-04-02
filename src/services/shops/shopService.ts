@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Fetch all shops from the database
+ * Fetch all shops from the database that the user has access to
  */
 export const getAllShops = async () => {
   const { data, error } = await supabase
@@ -37,11 +37,29 @@ export const getShopById = async (shopId: string) => {
 };
 
 /**
- * Get the default shop for the system
- * Falls back to the first shop if no default is specified
+ * Get the default shop for the system based on the current user
  */
 export const getDefaultShop = async () => {
-  // First try to get the default shop from settings
+  // First try to get the user's shop from their profile
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profileError && profile?.shop_id) {
+        return await getShopById(profile.shop_id);
+      }
+    }
+  } catch (error) {
+    console.warn("Could not determine shop from user profile:", error);
+  }
+  
+  // Try to get the default shop from settings
   try {
     const { data: settings, error: settingsError } = await supabase
       .from("shop_settings")

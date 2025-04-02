@@ -33,6 +33,15 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
     );
   }
 
+  // If the user only has access to one shop, we'll pass that to the form
+  // but we won't show the shop selector in the UI
+  const singleShopMode = availableShops.length <= 1;
+  
+  // Ensure defaultValues has the shop_id set if there's only one shop
+  if (singleShopMode && availableShops.length === 1 && (!defaultValues.shop_id || defaultValues.shop_id === "")) {
+    defaultValues.shop_id = availableShops[0].id;
+  }
+
   return (
     <Card className="p-6">
       <CustomerForm 
@@ -40,6 +49,7 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
         onSubmit={onSubmit} 
         isSubmitting={isSubmitting}
         availableShops={availableShops}
+        singleShopMode={singleShopMode}
       />
       
       <div className="mt-6 flex justify-end">

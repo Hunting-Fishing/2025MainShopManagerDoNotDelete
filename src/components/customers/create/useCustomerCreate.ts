@@ -18,6 +18,7 @@ import {
   showImportCompleteNotification
 } from "./utils/customerNotificationHandler";
 import { getAllShops, getDefaultShop } from "@/services/shops/shopService";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useCustomerCreate = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,6 +26,7 @@ export const useCustomerCreate = () => {
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [availableShops, setAvailableShops] = useState<Array<{id: string, name: string}>>([]);
+  const [currentUserShopId, setCurrentUserShopId] = useState<string | null>(null);
   const [defaultValues, setDefaultValues] = useState<CustomerFormValues>({
     first_name: "",
     last_name: "",
@@ -58,20 +60,63 @@ export const useCustomerCreate = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    async function fetchShopData() {
+    async function fetchUserAndShopData() {
       try {
         setIsLoading(true);
         
-        // Get all shops for dropdown
+        // Get the current authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast({
+            title: "Authentication Error",
+            description: "You must be logged in to create customers.",
+            variant: "destructive"
+          });
+          navigate('/login');
+          return;
+        }
+        
+        // Get the user's profile to find their shop_id
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError) {
+          console.error("Error fetching user profile:", profileError);
+          toast({
+            title: "Error",
+            description: "Failed to load user profile. Using default shop.",
+            variant: "destructive"
+          });
+          
+          // Fall back to fetching all shops
+          const shops = await getAllShops();
+          setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
+          
+          // Get default shop for form initialization
+          const defaultShop = await getDefaultShop();
+          setDefaultValues(prev => ({
+            ...prev,
+            shop_id: defaultShop.id
+          }));
+          
+          return;
+        }
+        
+        // Set the current user's shop ID
+        setCurrentUserShopId(profile.shop_id);
+        
+        // Get all shops for dropdown (may be limited by RLS)
         const shops = await getAllShops();
         setAvailableShops(shops.map(shop => ({ id: shop.id, name: shop.name })));
         
-        // Get default shop for form initialization
-        const defaultShop = await getDefaultShop();
-        
+        // Set the shop_id to the user's shop in the form
         setDefaultValues(prev => ({
           ...prev,
-          shop_id: defaultShop.id
+          shop_id: profile.shop_id
         }));
       } catch (error) {
         console.error("Error fetching shop data:", error);
@@ -85,14 +130,19 @@ export const useCustomerCreate = () => {
       }
     }
     
-    fetchShopData();
-  }, [toast]);
+    fetchUserAndShopData();
+  }, [toast, navigate]);
 
   const onSubmit = async (data: CustomerFormValues) => {
     console.log("onSubmit called with data:", data);
     setIsSubmitting(true);
     
     try {
+      // Ensure the shop_id is set to the current user's shop
+      if (currentUserShopId && (!data.shop_id || data.shop_id === "")) {
+        data.shop_id = currentUserShopId;
+      }
+      
       // Process household logic
       const householdId = await processHouseholdData(data);
       

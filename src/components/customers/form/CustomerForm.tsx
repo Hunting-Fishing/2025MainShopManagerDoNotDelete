@@ -26,13 +26,15 @@ interface CustomerFormProps {
   onSubmit: (data: CustomerFormValues) => Promise<void>;
   isSubmitting: boolean;
   availableShops?: Array<{id: string, name: string}>;
+  singleShopMode?: boolean;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ 
   defaultValues, 
   onSubmit, 
   isSubmitting,
-  availableShops = defaultShops
+  availableShops = defaultShops,
+  singleShopMode = false
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
@@ -67,6 +69,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       try {
         const draft = await getDraftCustomer();
         if (draft) {
+          // If we're in single shop mode, ensure we use the current shop
+          if (singleShopMode && availableShops.length === 1) {
+            draft.shop_id = availableShops[0].id;
+          }
           form.reset(draft);
           toast({
             title: "Draft Loaded",
@@ -80,7 +86,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     };
     
     loadDraft();
-  }, [form, toast]);
+  }, [form, toast, singleShopMode, availableShops]);
 
   // Save draft function
   const handleSaveDraft = async () => {
@@ -105,12 +111,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   // Handle form submission
   const handleFormSubmit = form.handleSubmit(async (data) => {
     console.log("Form submitted with data:", data);
+    
+    // If we're in single shop mode, ensure we use the current shop
+    if (singleShopMode && availableShops.length === 1) {
+      data.shop_id = availableShops[0].id;
+    }
+    
     await onSubmit(data);
   });
 
-  // Make the available shops accessible to form fields
+  // Make the available shops and single shop mode accessible to form fields
   const formContext = {
-    availableShops
+    availableShops,
+    singleShopMode
   };
 
   return (

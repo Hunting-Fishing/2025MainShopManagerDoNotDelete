@@ -17,11 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface BusinessInfoFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
   availableShops?: Array<{id: string, name: string}>;
+  singleShopMode?: boolean;
 }
 
 export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({ 
   form,
-  availableShops = defaultShops
+  availableShops = defaultShops,
+  singleShopMode = false
 }) => {
   return (
     <Card>
@@ -44,37 +46,39 @@ export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({
           )}
         />
         
-        {/* Shop Selection */}
-        <FormField
-          control={form.control}
-          name="shop_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Shop {requiredFields.shop_id && <RequiredIndicator />}
-              </FormLabel>
-              <Select 
-                value={field.value} 
-                onValueChange={field.onChange}
-                disabled={availableShops.length <= 1}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select shop" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {availableShops.map((shop) => (
-                    <SelectItem key={shop.id} value={shop.id}>
-                      {shop.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Shop Selection - Only show if not in single shop mode */}
+        {!singleShopMode && (
+          <FormField
+            control={form.control}
+            name="shop_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Shop {requiredFields.shop_id && <RequiredIndicator />}
+                </FormLabel>
+                <Select 
+                  value={field.value} 
+                  onValueChange={field.onChange}
+                  disabled={availableShops.length <= 1}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select shop" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {availableShops.map((shop) => (
+                      <SelectItem key={shop.id} value={shop.id}>
+                        {shop.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
       </CardContent>
     </Card>
   );

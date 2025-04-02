@@ -65,6 +65,29 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     delete customerData.referral_person_id;
   }
 
+  // Ensure shop_id is set
+  if (!customerData.shop_id) {
+    // Fetch the shop_id from the current user's profile
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile && profile.shop_id) {
+        customerData.shop_id = profile.shop_id;
+      }
+    }
+    
+    // If still not set, use the default UUID as fallback
+    if (!customerData.shop_id) {
+      customerData.shop_id = '00000000-0000-0000-0000-000000000000';
+    }
+  }
+  
   // Convert "DEFAULT-SHOP-ID" to a valid UUID if it's still using the default
   if (customerData.shop_id === 'DEFAULT-SHOP-ID') {
     customerData.shop_id = '00000000-0000-0000-0000-000000000000';
