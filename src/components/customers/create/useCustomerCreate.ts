@@ -5,9 +5,18 @@ import { useToast } from "@/hooks/use-toast";
 import { createCustomer, clearDraftCustomer, addCustomerNote } from "@/services/customers";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 import { handleApiError } from "@/utils/errorHandling";
-import { supabase } from "@/integrations/supabase/client";
-import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
-import { technicians } from "@/components/customers/form/CustomerFormSchema";
+import { 
+  processHouseholdData, 
+  processSegmentAssignments, 
+  processHouseholdMembership,
+  recordTechnicianPreference,
+  prepareCustomerData
+} from "./utils/customerFormProcessor";
+import {
+  showSuccessNotification,
+  showWarningNotification,
+  showImportCompleteNotification
+} from "./utils/customerNotificationHandler";
 
 export const useCustomerCreate = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,155 +57,91 @@ export const useCustomerCreate = () => {
   const onSubmit = async (data: CustomerFormValues) => {
     console.log("onSubmit called with data:", data);
     setIsSubmitting(true);
+    
     try {
-      let householdId = data.household_id === "_none" ? "" : data.household_id;
+      // Process household logic
+      const householdId = await processHouseholdData(data);
       
-      if (data.create_new_household && data.new_household_name) {
-        const { data: newHousehold, error: householdError } = await supabase
-          .from("households")
-          .insert({
-            name: data.new_household_name,
-            address: data.address
-          })
-          .select("id")
-          .single();
-        
-        if (householdError) {
-          throw householdError;
-        }
-        
-        if (newHousehold) {
-          householdId = newHousehold.id;
-        }
-      }
+      // Prepare customer data for creation
+      const customerData = prepareCustomerData(data);
+      customerData.household_id = householdId;
       
-      const preferredTechnicianId = data.preferred_technician_id === "_none" ? "" : data.preferred_technician_id;
-      const referralSource = data.referral_source === "_none" ? "" : data.referral_source;
-      
-      const customerData = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email || "",
-        phone: data.phone || "",
-        address: data.address || "",
-        city: data.city || "",
-        state: data.state || "",
-        postal_code: data.postal_code || "",
-        country: data.country || "",
-        shop_id: data.shop_id,
-        preferred_technician_id: preferredTechnicianId,
-        referral_source: referralSource,
-        referral_person_id: data.referral_person_id,
-        other_referral_details: referralSource === "Other" ? data.other_referral_details : "",
-        household_id: householdId || null,
-        notes: data.notes || "",
-      };
-      
+      // Create the customer
       const newCustomer = await createCustomer(customerData);
       
-      // Save customer notes if they exist
-      if (data.notes && data.notes.trim()) {
-        try {
+      // Handle post-creation tasks, treating each one independently to avoid cascading failures
+      try {
+        // Save customer notes if they exist
+        if (data.notes && data.notes.trim()) {
           await addCustomerNote(
             newCustomer.id,
             data.notes,
             'general',
-            'System' // Replace with actual user name when available
+            'System'
           );
-        } catch (noteError) {
-          console.error("Failed to save customer note:", noteError);
-          toast({
-            title: "Note Saving Warning",
-            description: "Customer created but initial notes could not be saved. You can add them later.",
-            variant: "warning",
-          });
         }
+      } catch (noteError) {
+        console.error("Failed to save customer note:", noteError);
+        showWarningNotification(toast, "note");
       }
       
-      if (householdId && data.household_relationship) {
-        const { error: relationshipError } = await supabase
-          .from("household_members")
-          .insert({
-            household_id: householdId,
-            customer_id: newCustomer.id,
-            relationship_type: data.household_relationship
-          });
-        
-        if (relationshipError) {
-          console.error("Failed to add customer to household:", relationshipError);
-          toast({
-            title: "Household Assignment Warning",
-            description: "Customer created but could not be added to household. Please check household settings.",
-            variant: "warning",
-          });
-        }
-      }
-      
-      if (data.segments && data.segments.length > 0) {
-        const segmentAssignments = data.segments.map(segmentId => ({
-          customer_id: newCustomer.id,
-          segment_id: segmentId,
-          is_automatic: false
-        }));
-        
-        const { error: segmentError } = await supabase
-          .from("customer_segment_assignments")
-          .insert(segmentAssignments);
-        
-        if (segmentError) {
-          console.error("Failed to assign segments to customer:", segmentError);
-          toast({
-            title: "Segment Assignment Warning",
-            description: "Customer created but segments could not be assigned. Please check segment settings.",
-            variant: "warning",
-          });
-        }
-      }
-      
-      if (preferredTechnicianId) {
-        try {
-          const selectedTechnician = technicians.find(tech => tech.id === preferredTechnicianId);
-          const technicianName = selectedTechnician ? selectedTechnician.name : "Unknown";
-          
-          await recordWorkOrderActivity(
-            `Preferred technician set to ${technicianName} (${preferredTechnicianId}) during customer creation`,
-            "00000000-0000-0000-0000-000000000000",
-            "system", 
-            "System"
+      try {
+        // Add customer to household if relevant
+        if (householdId && data.household_relationship) {
+          await processHouseholdMembership(
+            newCustomer.id, 
+            householdId, 
+            data.household_relationship
           );
-        } catch (historyError) {
-          console.error("Error recording technician preference:", historyError);
         }
+      } catch (householdError) {
+        console.error("Failed to add customer to household:", householdError);
+        showWarningNotification(toast, "household");
       }
       
+      try {
+        // Assign customer segments if any were selected
+        if (data.segments && data.segments.length > 0) {
+          await processSegmentAssignments(newCustomer.id, data.segments);
+        }
+      } catch (segmentError) {
+        console.error("Failed to assign segments to customer:", segmentError);
+        showWarningNotification(toast, "segment");
+      }
+      
+      try {
+        // Record technician preference if selected
+        if (data.preferred_technician_id && data.preferred_technician_id !== "_none") {
+          await recordTechnicianPreference(data.preferred_technician_id);
+        }
+      } catch (techError) {
+        console.error("Error recording technician preference:", techError);
+        // Non-critical, no need for user notification
+      }
+      
+      // Clear any draft data
       await clearDraftCustomer();
       
+      // Update state
       setIsSuccess(true);
       setNewCustomerId(newCustomer.id);
       
-      toast({
-        title: "Customer Created Successfully",
-        description: `${data.first_name} ${data.last_name} has been added to your customers.`,
-        variant: "success",
-      });
+      // Show success notification
+      showSuccessNotification(toast, data.first_name, data.last_name);
       
+      // Navigate to customer details page after a short delay
       setTimeout(() => {
         navigate(`/customers/${newCustomer.id}`);
       }, 2000);
     } catch (error) {
       handleApiError(error, "Failed to create customer");
-      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleImportComplete = () => {
-    toast({
-      title: "Import Complete",
-      description: "Navigate to the Customers page to see imported customers.",
-      variant: "success",
-    });
+    showImportCompleteNotification(toast);
   };
 
   return {
