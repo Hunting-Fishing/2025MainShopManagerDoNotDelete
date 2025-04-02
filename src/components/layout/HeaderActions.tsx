@@ -45,7 +45,7 @@ export function HeaderActions({ onOpenCommandMenu }: HeaderActionsProps) {
   );
 }
 
-function UserMenu() {
+export function UserMenu() {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { userName, isAuthenticated } = useAuthUser();
