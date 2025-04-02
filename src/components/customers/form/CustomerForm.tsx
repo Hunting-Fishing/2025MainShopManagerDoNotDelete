@@ -9,7 +9,6 @@ import { useFormNavigation } from "./useFormNavigation";
 import { FormContentWrapper } from "./FormContentWrapper";
 import { PreviewToggle } from "./preview/PreviewToggle";
 import { useDraftCustomer } from "./hooks/useDraftCustomer";
-import { FloatingActionButton } from "./FloatingActionButton";
 
 interface CustomerFormProps {
   defaultValues: CustomerFormValues;
@@ -77,7 +76,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     <NotificationsProvider>
       <Card>
         <div className="p-4 sm:p-6">
-          <PreviewToggle formData={form.getValues()} />
+          <PreviewToggle 
+            formData={form.getValues()} 
+            isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
+            onSave={isEditMode ? handleFloatingSubmit : undefined}
+          />
 
           <FormContentWrapper 
             form={form}
@@ -94,15 +98,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           />
         </div>
       </Card>
-      
-      {/* Only show floating action button in edit mode */}
-      {isEditMode && (
-        <FloatingActionButton 
-          isSubmitting={isSubmitting} 
-          isEditMode={isEditMode}
-          onClick={handleFloatingSubmit}
-        />
-      )}
     </NotificationsProvider>
   );
 };
