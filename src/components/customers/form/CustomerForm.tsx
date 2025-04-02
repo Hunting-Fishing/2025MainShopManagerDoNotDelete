@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
@@ -17,7 +17,7 @@ import { FormErrorSummary } from "./FormErrorSummary";
 import { FormStatusAlert } from "./FormStatusAlert";
 import { useFormValidation } from "./useFormValidation";
 import { useFormNavigation } from "./useFormNavigation";
-import { saveDraftCustomer, getDraftCustomer } from "@/services/customerService";
+import { saveDraftCustomer, getDraftCustomer } from "@/services/customers/customerDraftService";
 import { useToast } from "@/hooks/use-toast";
 import { CustomerPreview } from "./preview/CustomerPreview";
 
@@ -25,12 +25,14 @@ interface CustomerFormProps {
   defaultValues: CustomerFormValues;
   onSubmit: (data: CustomerFormValues) => Promise<void>;
   isSubmitting: boolean;
+  formRef?: React.RefObject<{ submit: () => void }>;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ 
   defaultValues, 
   onSubmit, 
-  isSubmitting 
+  isSubmitting,
+  formRef
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
@@ -52,6 +54,17 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     hasReferralFleetErrors, 
     hasVehicleErrors 
   } = useFormValidation(form);
+
+  // Expose the submit method to the parent component via ref
+  useEffect(() => {
+    if (formRef) {
+      formRef.current = {
+        submit: () => {
+          form.handleSubmit(onSubmit)();
+        }
+      };
+    }
+  }, [form, onSubmit, formRef]);
 
   // Load draft data on component mount
   useEffect(() => {
