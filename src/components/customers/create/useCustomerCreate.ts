@@ -168,7 +168,7 @@ export const useCustomerCreate = () => {
       formRef.current.submit();
     } else {
       console.log("Form ref or submit method not available");
-      // If the form ref isn't available, find the form and submit it
+      // If the form ref isn't available, find the form and submit it directly
       const formElement = document.querySelector('form');
       if (formElement) {
         formElement.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
