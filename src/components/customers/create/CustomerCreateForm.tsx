@@ -8,12 +8,14 @@ interface CustomerCreateFormProps {
   defaultValues: CustomerFormValues;
   onSubmit: (data: CustomerFormValues) => Promise<void>;
   isSubmitting: boolean;
+  formRef?: React.RefObject<{ submit: () => void }>;
 }
 
 export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
   defaultValues,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  formRef
 }) => {
   return (
     <Card className="p-6">
@@ -21,6 +23,7 @@ export const CustomerCreateForm: React.FC<CustomerCreateFormProps> = ({
         defaultValues={defaultValues} 
         onSubmit={onSubmit} 
         isSubmitting={isSubmitting}
+        formRef={formRef}
       />
     </Card>
   );

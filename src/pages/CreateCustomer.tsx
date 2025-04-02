@@ -12,12 +12,17 @@ export default function CustomerCreate() {
     newCustomerId,
     defaultValues,
     onSubmit,
-    handleImportComplete
+    handleImportComplete,
+    handleSubmitForm
   } = useCustomerCreate();
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto px-4 sm:px-6">
-      <CreateCustomerHeader onImportComplete={handleImportComplete} />
+      <CreateCustomerHeader 
+        onImportComplete={handleImportComplete} 
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmitForm}
+      />
 
       {isSuccess && newCustomerId ? (
         <CreateCustomerSuccess customerId={newCustomerId} />

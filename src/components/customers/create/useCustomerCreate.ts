@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { createCustomer, clearDraftCustomer } from "@/services/customers";
@@ -15,6 +15,7 @@ export const useCustomerCreate = () => {
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const formRef = useRef<{ submit: () => void } | null>(null);
   
   const defaultValues: CustomerFormValues = {
     first_name: "",
@@ -161,12 +162,27 @@ export const useCustomerCreate = () => {
     });
   };
 
+  // Function to be called from the header button
+  const handleSubmitForm = () => {
+    if (formRef.current) {
+      formRef.current.submit();
+    } else {
+      // If the form ref isn't available, find the form and submit it
+      const formElement = document.querySelector('form');
+      if (formElement) {
+        formElement.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
+  };
+
   return {
     isSubmitting,
     isSuccess,
     newCustomerId,
     defaultValues,
     onSubmit,
-    handleImportComplete
+    handleImportComplete,
+    handleSubmitForm,
+    formRef
   };
 };
