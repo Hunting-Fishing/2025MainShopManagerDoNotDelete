@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CustomerFormValues } from '@/components/customers/form/CustomerFormSchema';
 import { useToast } from '@/hooks/use-toast';
-import { getCustomerById, updateCustomer } from '@/services/customerService';
+import { getCustomerById, updateCustomer } from '@/services/customer';
 import { getAllShops } from '@/services/shops/shopService';
 import { Customer } from '@/types/customer';
 import { handleApiError } from '@/utils/errorHandling';
