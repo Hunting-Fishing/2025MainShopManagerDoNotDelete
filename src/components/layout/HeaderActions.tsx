@@ -17,6 +17,7 @@ import { AddNotificationDemo } from '@/components/notifications/AddNotificationD
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface HeaderActionsProps {
   onOpenCommandMenu: () => void;
@@ -47,6 +48,20 @@ export function HeaderActions({ onOpenCommandMenu }: HeaderActionsProps) {
 function UserMenu() {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { userName, isAuthenticated } = useAuthUser();
+  
+  // Get initials from the user name
+  const getInitials = (name: string): string => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const userInitials = getInitials(userName);
 
   const handleLogout = async () => {
     try {
@@ -74,16 +89,16 @@ function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt="User" />
-            <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">JD</AvatarFallback>
+            <AvatarImage src="" alt={userName || "User"} />
+            <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">{userInitials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">John Doe</p>
-            <p className="text-xs text-slate-500">admin@easyshopmanager.com</p>
+            <p className="text-sm font-medium">{userName || "User"}</p>
+            <p className="text-xs text-slate-500">{isAuthenticated ? "Logged in" : "Not logged in"}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
