@@ -81,6 +81,8 @@ export default function EditCustomer() {
         isSubmitting={isSubmitting}
         availableShops={availableShops}
         singleShopMode={availableShops.length === 1}
+        isEditMode={true}
+        customerId={id}
       />
     </div>
   );

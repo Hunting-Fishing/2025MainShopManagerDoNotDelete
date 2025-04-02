@@ -26,6 +26,8 @@ interface FormContentWrapperProps {
     availableShops: Array<{id: string, name: string}>;
     singleShopMode: boolean;
   };
+  isEditMode?: boolean;
+  customerId?: string;
 }
 
 export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
@@ -37,7 +39,9 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
   handleSaveDraft,
   isSubmitting,
   onSubmit,
-  formContext
+  formContext,
+  isEditMode = false,
+  customerId
 }) => {
   const isMobile = useIsMobile();
   const { 
@@ -65,8 +69,8 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
   return (
     <Form {...form}>
       <form id="customer-create-form" onSubmit={handleFormSubmit} className="space-y-6">
-        {/* Check for duplicate customers */}
-        <DuplicateCustomerAlert form={form} />
+        {/* Only show duplicate alert for new customers, not when editing */}
+        {!isEditMode && <DuplicateCustomerAlert form={form} />}
         
         {/* Show error summary if there are validation errors and form is dirty */}
         {form.formState.isDirty && hasErrors && (
@@ -103,18 +107,21 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
             handlePrevious={handlePrevious}
             handleNext={handleNext}
             isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
           />
           
-          {/* Save Draft Button */}
-          <div className="mt-4 flex justify-start">
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              className="text-sm text-gray-600 hover:text-gray-800 flex items-center"
-            >
-              Save as Draft
-            </button>
-          </div>
+          {/* Save Draft Button - Only for new customers */}
+          {!isEditMode && (
+            <div className="mt-4 flex justify-start">
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="text-sm text-gray-600 hover:text-gray-800 flex items-center"
+              >
+                Save as Draft
+              </button>
+            </div>
+          )}
         </Tabs>
         
         {/* Form completion status */}

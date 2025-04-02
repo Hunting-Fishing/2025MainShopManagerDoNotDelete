@@ -8,6 +8,7 @@ interface FormNavigationProps {
   handlePrevious: () => void;
   handleNext: () => void;
   isSubmitting: boolean;
+  isEditMode?: boolean;
 }
 
 export const FormNavigation: React.FC<FormNavigationProps> = ({
@@ -15,6 +16,7 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
   handlePrevious,
   handleNext,
   isSubmitting,
+  isEditMode = false,
 }) => {
   return (
     <div className="flex justify-between mt-6">
@@ -43,7 +45,7 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
           disabled={isSubmitting}
           className="flex items-center gap-2"
         >
-          {isSubmitting ? "Creating..." : "Create Customer"}
+          {isSubmitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Customer" : "Create Customer")}
         </Button>
       )}
     </div>

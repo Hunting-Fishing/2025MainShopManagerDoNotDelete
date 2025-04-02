@@ -16,6 +16,8 @@ interface CustomerFormProps {
   isSubmitting: boolean;
   availableShops?: Array<{id: string, name: string}>;
   singleShopMode?: boolean;
+  isEditMode?: boolean;
+  customerId?: string;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ 
@@ -23,7 +25,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   onSubmit, 
   isSubmitting,
   availableShops = defaultShops,
-  singleShopMode = false
+  singleShopMode = false,
+  isEditMode = false,
+  customerId
 }) => {
   // Initialize form with validation
   const form = useForm<CustomerFormValues>({
@@ -70,6 +74,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             isSubmitting={isSubmitting}
             onSubmit={onSubmit}
             formContext={formContext}
+            isEditMode={isEditMode}
+            customerId={customerId}
           />
         </div>
       </Card>
