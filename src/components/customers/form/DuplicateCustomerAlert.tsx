@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "./CustomerFormSchema";
-import { checkDuplicateCustomers } from "@/services/customerService";
+import { checkDuplicateCustomers } from "@/services/customers";
 import { CustomerCreate } from "@/types/customer";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -23,14 +22,12 @@ export const DuplicateCustomerAlert: React.FC<DuplicateCustomerAlertProps> = ({ 
   const email = form.watch("email");
   const phone = form.watch("phone");
   
-  // Debounce values to avoid too many API calls
   const debouncedFirstName = useDebounce(firstName, 500);
   const debouncedLastName = useDebounce(lastName, 500);
   const debouncedEmail = useDebounce(email, 500);
   const debouncedPhone = useDebounce(phone, 500);
 
   useEffect(() => {
-    // Only check for duplicates if we have at least first name and last name
     if (debouncedFirstName && debouncedLastName) {
       checkForDuplicates();
     } else {

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { createCustomer, clearDraftCustomer } from "@/services/customerService";
+import { createCustomer, clearDraftCustomer } from "@/services/customers";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 import { handleApiError } from "@/utils/errorHandling";
 import { supabase } from "@/integrations/supabase/client";
