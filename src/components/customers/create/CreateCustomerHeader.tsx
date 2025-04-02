@@ -8,19 +8,12 @@ import { UserPlus } from "lucide-react";
 interface CreateCustomerHeaderProps {
   onImportComplete: () => void;
   isSubmitting: boolean;
-  onSubmit: () => void;
 }
 
 export const CreateCustomerHeader: React.FC<CreateCustomerHeaderProps> = ({ 
   onImportComplete,
-  isSubmitting,
-  onSubmit
+  isSubmitting
 }) => {
-  const handleSubmitClick = () => {
-    console.log("Create Customer button clicked");
-    onSubmit();
-  };
-
   return (
     <div className="flex items-center justify-between">
       <WorkOrderFormHeader
@@ -28,14 +21,6 @@ export const CreateCustomerHeader: React.FC<CreateCustomerHeaderProps> = ({
         description="Create a new customer record in the system"
       />
       <div className="flex items-center gap-3">
-        <Button 
-          onClick={handleSubmitClick} 
-          disabled={isSubmitting}
-          className="flex items-center gap-2"
-        >
-          <UserPlus className="h-4 w-4" />
-          {isSubmitting ? "Creating..." : "Create Customer"}
-        </Button>
         <ImportCustomersDialog onImportComplete={onImportComplete} />
       </div>
     </div>

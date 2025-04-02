@@ -5,7 +5,7 @@ import { CreateCustomerSuccess } from "@/components/customers/create/CreateCusto
 import { CustomerCreateForm } from "@/components/customers/create/CustomerCreateForm";
 import { useCustomerCreate } from "@/components/customers/create/useCustomerCreate";
 
-export default function CustomerCreate() {
+export default function CreateCustomer() {
   const {
     isSubmitting,
     isSuccess,
@@ -13,8 +13,6 @@ export default function CustomerCreate() {
     defaultValues,
     onSubmit,
     handleImportComplete,
-    handleSubmitForm,
-    formRef
   } = useCustomerCreate();
 
   return (
@@ -22,7 +20,6 @@ export default function CustomerCreate() {
       <CreateCustomerHeader 
         onImportComplete={handleImportComplete} 
         isSubmitting={isSubmitting}
-        onSubmit={handleSubmitForm}
       />
 
       {isSuccess && newCustomerId ? (
@@ -32,7 +29,6 @@ export default function CustomerCreate() {
           defaultValues={defaultValues} 
           onSubmit={onSubmit} 
           isSubmitting={isSubmitting}
-          formRef={formRef}
         />
       )}
     </div>

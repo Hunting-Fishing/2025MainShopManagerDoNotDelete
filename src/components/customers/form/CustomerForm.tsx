@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
@@ -25,15 +25,13 @@ interface CustomerFormProps {
   defaultValues: CustomerFormValues;
   onSubmit: (data: CustomerFormValues) => Promise<void>;
   isSubmitting: boolean;
-  formRef?: React.RefObject<{ submit: () => void }>;
 }
 
-export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps>(({ 
+export const CustomerForm: React.FC<CustomerFormProps> = ({ 
   defaultValues, 
   onSubmit, 
-  isSubmitting,
-  formRef
-}, ref) => {
+  isSubmitting 
+}) => {
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
   
@@ -54,14 +52,6 @@ export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps
     hasReferralFleetErrors, 
     hasVehicleErrors 
   } = useFormValidation(form);
-
-  // Expose the submit method to the parent component via useImperativeHandle
-  useImperativeHandle(ref, () => ({
-    submit: () => {
-      console.log("Form submit method called via ref");
-      form.handleSubmit(onSubmit)();
-    }
-  }), [form, onSubmit]);
 
   // Load draft data on component mount
   useEffect(() => {
@@ -104,6 +94,12 @@ export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps
     }
   };
 
+  // Handle form submission
+  const handleFormSubmit = form.handleSubmit(async (data) => {
+    console.log("Form submitted with data:", data);
+    await onSubmit(data);
+  });
+
   return (
     <NotificationsProvider>
       <Card>
@@ -125,7 +121,7 @@ export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps
           )}
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={handleFormSubmit} className="space-y-6">
               {/* Check for duplicate customers */}
               <DuplicateCustomerAlert form={form} />
               
@@ -182,6 +178,4 @@ export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps
       </Card>
     </NotificationsProvider>
   );
-});
-
-CustomerForm.displayName = "CustomerForm";
+};

@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { createCustomer, clearDraftCustomer } from "@/services/customers";
@@ -15,11 +15,6 @@ export const useCustomerCreate = () => {
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // Initialize formRef with a dummy submit function to avoid "undefined is not a function" errors
-  const formRef = useRef<{ submit: () => void }>({
-    submit: () => console.log("Default submit called")
-  });
   
   const defaultValues: CustomerFormValues = {
     first_name: "",
@@ -47,6 +42,7 @@ export const useCustomerCreate = () => {
   };
 
   const onSubmit = async (data: CustomerFormValues) => {
+    console.log("onSubmit called with data:", data);
     setIsSubmitting(true);
     try {
       let householdId = data.household_id === "_none" ? "" : data.household_id;
@@ -154,6 +150,7 @@ export const useCustomerCreate = () => {
       }, 2000);
     } catch (error) {
       handleApiError(error, "Failed to create customer");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -166,26 +163,6 @@ export const useCustomerCreate = () => {
     });
   };
 
-  // Improved form submission handler with better error handling
-  const handleSubmitForm = () => {
-    console.log("Submit button clicked, form ref:", formRef.current);
-    
-    if (formRef.current && typeof formRef.current.submit === 'function') {
-      console.log("Calling submit method through ref");
-      formRef.current.submit();
-    } else {
-      console.log("Form ref or submit method not available");
-      // If the form ref isn't available, find the form and submit it directly
-      const formElement = document.querySelector('form');
-      if (formElement) {
-        console.log("Submitting form via DOM event");
-        formElement.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-      } else {
-        console.log("No form element found in the DOM");
-      }
-    }
-  };
-
   return {
     isSubmitting,
     isSuccess,
@@ -193,7 +170,5 @@ export const useCustomerCreate = () => {
     defaultValues,
     onSubmit,
     handleImportComplete,
-    handleSubmitForm,
-    formRef
   };
 };

@@ -38,7 +38,13 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
           Next
         </Button>
       ) : (
-        <CustomerFormActions isSubmitting={isSubmitting} />
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="flex items-center gap-2"
+        >
+          {isSubmitting ? "Creating..." : "Create Customer"}
+        </Button>
       )}
     </div>
   );
