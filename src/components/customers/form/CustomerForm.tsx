@@ -28,12 +28,12 @@ interface CustomerFormProps {
   formRef?: React.RefObject<{ submit: () => void }>;
 }
 
-export const CustomerForm: React.FC<CustomerFormProps> = ({ 
+export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps>(({ 
   defaultValues, 
   onSubmit, 
   isSubmitting,
   formRef
-}) => {
+}, ref) => {
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
   
@@ -55,16 +55,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     hasVehicleErrors 
   } = useFormValidation(form);
 
-  // Expose the submit method to the parent component via ref
-  useEffect(() => {
-    if (formRef) {
-      formRef.current = {
-        submit: () => {
-          form.handleSubmit(onSubmit)();
-        }
-      };
+  // Expose the submit method to the parent component via useImperativeHandle
+  useImperativeHandle(ref, () => ({
+    submit: () => {
+      form.handleSubmit(onSubmit)();
     }
-  }, [form, onSubmit, formRef]);
+  }), [form, onSubmit]);
+
+  // If formRef is provided, sync it with our own ref
+  useEffect(() => {
+    if (formRef && ref) {
+      formRef.current = (ref as any).current;
+    }
+  }, [formRef, ref]);
 
   // Load draft data on component mount
   useEffect(() => {
@@ -185,4 +188,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       </Card>
     </NotificationsProvider>
   );
-};
+});
+
+CustomerForm.displayName = "CustomerForm";

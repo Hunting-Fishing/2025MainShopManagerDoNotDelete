@@ -15,7 +15,7 @@ export const useCustomerCreate = () => {
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const formRef = useRef<{ submit: () => void } | null>(null);
+  const formRef = useRef<{ submit: () => void }>(null);
   
   const defaultValues: CustomerFormValues = {
     first_name: "",

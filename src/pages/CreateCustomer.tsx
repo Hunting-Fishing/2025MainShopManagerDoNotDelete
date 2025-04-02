@@ -13,7 +13,8 @@ export default function CustomerCreate() {
     defaultValues,
     onSubmit,
     handleImportComplete,
-    handleSubmitForm
+    handleSubmitForm,
+    formRef
   } = useCustomerCreate();
 
   return (
@@ -31,6 +32,7 @@ export default function CustomerCreate() {
           defaultValues={defaultValues} 
           onSubmit={onSubmit} 
           isSubmitting={isSubmitting}
+          formRef={formRef}
         />
       )}
     </div>
