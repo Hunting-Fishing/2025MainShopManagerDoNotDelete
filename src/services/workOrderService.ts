@@ -3,17 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const getWorkOrderStatusCounts = async () => {
   try {
-    const { data, error } = await supabase
+    // We need to use a different approach since group() is not available
+    const { data: workOrders, error } = await supabase
       .from('work_orders')
-      .select('status, count(*)')
-      .group('status');
+      .select('status');
 
     if (error) {
       console.error("Error fetching work order status counts:", error);
       throw error;
     }
 
-    // Transform the data into the expected format
+    // Count statuses manually
     const counts = {
       pending: 0,
       inProgress: 0,
@@ -21,11 +21,11 @@ export const getWorkOrderStatusCounts = async () => {
       cancelled: 0
     };
 
-    data.forEach(item => {
-      if (item.status === 'pending') counts.pending = parseInt(item.count);
-      else if (item.status === 'in-progress') counts.inProgress = parseInt(item.count);
-      else if (item.status === 'completed') counts.completed = parseInt(item.count);
-      else if (item.status === 'cancelled') counts.cancelled = parseInt(item.count);
+    workOrders.forEach(order => {
+      if (order.status === 'pending') counts.pending++;
+      else if (order.status === 'in-progress') counts.inProgress++;
+      else if (order.status === 'completed') counts.completed++;
+      else if (order.status === 'cancelled') counts.cancelled++;
     });
 
     return counts;
@@ -37,6 +37,7 @@ export const getWorkOrderStatusCounts = async () => {
 
 export const getRecentWorkOrders = async (limit = 5) => {
   try {
+    // Select work orders with customer names
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
@@ -44,8 +45,8 @@ export const getRecentWorkOrders = async (limit = 5) => {
         description,
         status,
         created_at,
-        customers(first_name, last_name),
-        profiles(first_name, last_name)
+        customer_id,
+        technician_id
       `)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -55,15 +56,35 @@ export const getRecentWorkOrders = async (limit = 5) => {
       throw error;
     }
 
-    // Transform data into the expected format
-    return data.map(order => {
-      const customerName = order.customers ? 
-        `${order.customers.first_name} ${order.customers.last_name}` : 
-        'Unknown Customer';
+    // Format the data for display
+    const formattedData = await Promise.all(data.map(async (order) => {
+      // Get customer name
+      let customerName = 'Unknown Customer';
+      if (order.customer_id) {
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('first_name, last_name')
+          .eq('id', order.customer_id)
+          .single();
+        
+        if (customerData) {
+          customerName = `${customerData.first_name} ${customerData.last_name}`;
+        }
+      }
       
-      const technicianName = order.profiles ? 
-        `${order.profiles.first_name} ${order.profiles.last_name}` : 
-        'Unassigned';
+      // Get technician name
+      let technicianName = 'Unassigned';
+      if (order.technician_id) {
+        const { data: technicianData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', order.technician_id)
+          .single();
+        
+        if (technicianData) {
+          technicianName = `${technicianData.first_name} ${technicianData.last_name}`;
+        }
+      }
 
       return {
         id: order.id,
@@ -73,14 +94,16 @@ export const getRecentWorkOrders = async (limit = 5) => {
         date: new Date(order.created_at).toISOString().split('T')[0],
         priority: getPriorityFromOrder(order)
       };
-    });
+    }));
+
+    return formattedData;
   } catch (error) {
     console.error("Error fetching recent work orders:", error);
     throw error;
   }
 };
 
-// Helper function to determine priority (in a real app, this would be based on actual data)
+// Helper function to determine priority
 const getPriorityFromOrder = (order) => {
   // This is a placeholder logic - in a real application, you'd have actual priority data
   if (order.status === 'in-progress') return 'High';
@@ -116,7 +139,12 @@ export const getMonthlyRevenue = async () => {
       if (invoice.date && invoice.total) {
         const date = new Date(invoice.date);
         const month = date.getMonth();
-        monthlyData[month].revenue += parseFloat(invoice.total);
+        // Ensure numeric conversion
+        const totalAsNumber = typeof invoice.total === 'string' 
+          ? parseFloat(invoice.total) 
+          : invoice.total;
+          
+        monthlyData[month].revenue += totalAsNumber;
       }
     });
 
@@ -138,7 +166,7 @@ export const getTechnicianPerformance = async () => {
       .select(`
         created_at,
         status,
-        profiles(first_name, last_name)
+        technician_id
       `)
       .eq('status', 'completed')
       .gte('created_at', `${currentYear}-01-01`)
@@ -149,34 +177,60 @@ export const getTechnicianPerformance = async () => {
       throw error;
     }
 
+    // Get all technicians first
+    const { data: technicianProfiles, error: techError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .order('first_name', { ascending: true });
+      
+    if (techError) {
+      console.error("Error fetching technicians:", techError);
+      throw techError;
+    }
+
     // Group completed work orders by technician and month
     const techniciansByMonth = {};
     const months = Array(12).fill(0).map((_, i) => 
       new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' })
     );
 
-    // Initialize the data structure
-    data.forEach(order => {
-      if (order.profiles) {
-        const techName = `${order.profiles.first_name} ${order.profiles.last_name}`;
-        if (!techniciansByMonth[techName]) {
-          techniciansByMonth[techName] = {};
-          months.forEach(month => {
-            techniciansByMonth[techName][month] = 0;
-          });
-        }
+    // Initialize the data structure with all technicians
+    technicianProfiles.forEach(profile => {
+      const techName = `${profile.first_name} ${profile.last_name}`;
+      if (!techniciansByMonth[techName]) {
+        techniciansByMonth[techName] = {};
+        months.forEach(month => {
+          techniciansByMonth[techName][month] = 0;
+        });
       }
     });
 
     // Count completed work orders
-    data.forEach(order => {
-      if (order.profiles && order.created_at) {
-        const techName = `${order.profiles.first_name} ${order.profiles.last_name}`;
-        const date = new Date(order.created_at);
-        const month = date.toLocaleString('default', { month: 'short' });
-        techniciansByMonth[techName][month]++;
+    await Promise.all(data.map(async order => {
+      if (order.technician_id && order.created_at) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', order.technician_id)
+          .single();
+          
+        if (profileData) {
+          const techName = `${profileData.first_name} ${profileData.last_name}`;
+          const date = new Date(order.created_at);
+          const month = date.toLocaleString('default', { month: 'short' });
+          
+          // Initialize if not already done
+          if (!techniciansByMonth[techName]) {
+            techniciansByMonth[techName] = {};
+            months.forEach(m => {
+              techniciansByMonth[techName][m] = 0;
+            });
+          }
+          
+          techniciansByMonth[techName][month]++;
+        }
       }
-    });
+    }));
 
     // Format data for chart
     const chartData = months.map(month => {
@@ -257,17 +311,17 @@ export const getDashboardStats = async () => {
     // Get work order stats
     const workOrdersPromise = supabase
       .from('work_orders')
-      .select('id, status, created_at', { count: 'exact' });
+      .select('id, status, created_at');
     
     // Get team member count
     const teamMembersPromise = supabase
       .from('profiles')
-      .select('id', { count: 'exact' });
+      .select('id');
     
     // Get inventory stats
     const inventoryPromise = supabase
       .from('inventory_items')
-      .select('id', { count: 'exact' });
+      .select('id');
     
     // Get average completion time (days between creation and completion)
     const avgCompletionPromise = supabase
@@ -304,10 +358,11 @@ export const getDashboardStats = async () => {
     completedOrders.forEach(order => {
       const createdDate = new Date(order.created_at);
       const completedDate = new Date(order.updated_at);
-      const diffTime = Math.abs(completedDate - createdDate);
+      const diffTime = Math.abs(completedDate.getTime() - createdDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       totalCompletionDays += diffDays;
     });
+    
     const avgCompletionDays = completedOrders.length > 0 
       ? (totalCompletionDays / completedOrders.length).toFixed(1)
       : 'N/A';
@@ -328,14 +383,17 @@ export const getDashboardStats = async () => {
     ).length;
     
     // Calculate percentage changes
-    const workOrderChange = lastMonthActiveWorkOrders > 0 
-      ? `${Math.round((activeWorkOrders - lastMonthActiveWorkOrders) / lastMonthActiveWorkOrders * 100)}%`
-      : 'N/A';
+    let workOrderChange = 'N/A';
+    if (lastMonthActiveWorkOrders > 0) {
+      const change = activeWorkOrders - lastMonthActiveWorkOrders;
+      const percentChange = Math.round((change / lastMonthActiveWorkOrders) * 100);
+      workOrderChange = `${percentChange}%`;
+    }
 
     return {
       activeWorkOrders: activeWorkOrders.toString(),
-      teamMembers: teamMembersResult.count?.toString() || '0',
-      inventoryItems: inventoryResult.count?.toString() || '0',
+      teamMembers: teamMembersResult.data.length.toString(),
+      inventoryItems: inventoryResult.data.length.toString(),
       avgCompletionTime: `${avgCompletionDays} days`,
       workOrderChange,
       // For simplicity, using placeholder values for team and inventory change
