@@ -437,44 +437,83 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          city: string | null
+          communication_preference: string | null
+          company: string | null
+          country: string | null
           created_at: string
           email: string | null
           first_name: string
+          fleet_company: string | null
           household_id: string | null
           id: string
+          is_fleet: boolean | null
           last_name: string
+          notes: string | null
+          other_referral_details: string | null
           phone: string | null
+          postal_code: string | null
+          preferred_technician_id: string | null
           referral_person_id: string | null
+          referral_source: string | null
           segments: Json | null
           shop_id: string
+          state: string | null
+          tags: Json | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          city?: string | null
+          communication_preference?: string | null
+          company?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           first_name: string
+          fleet_company?: string | null
           household_id?: string | null
           id?: string
+          is_fleet?: boolean | null
           last_name: string
+          notes?: string | null
+          other_referral_details?: string | null
           phone?: string | null
+          postal_code?: string | null
+          preferred_technician_id?: string | null
           referral_person_id?: string | null
+          referral_source?: string | null
           segments?: Json | null
           shop_id: string
+          state?: string | null
+          tags?: Json | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          city?: string | null
+          communication_preference?: string | null
+          company?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           first_name?: string
+          fleet_company?: string | null
           household_id?: string | null
           id?: string
+          is_fleet?: boolean | null
           last_name?: string
+          notes?: string | null
+          other_referral_details?: string | null
           phone?: string | null
+          postal_code?: string | null
+          preferred_technician_id?: string | null
           referral_person_id?: string | null
+          referral_source?: string | null
           segments?: Json | null
           shop_id?: string
+          state?: string | null
+          tags?: Json | null
           updated_at?: string
         }
         Relationships: [

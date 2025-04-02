@@ -12,60 +12,14 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     }
   });
 
-  // Remove fields that don't exist in the customers table
-  const { 
-    fleet_company, 
-    is_fleet,
-    tags,
-    segments,
-    communication_preference,
-    other_referral_details,
-    notes, // We'll handle notes separately
-    city,
-    state,
-    postal_code,
-    country,
-    ...customerData 
+  // All fields should now be included in the customer object
+  const {
+    vehicles, // Handle separately
+    notes,    // Handle separately for detailed notes
+    ...customerData
   } = customer;
 
-  // Update the address field to include the full address if components are provided
-  let fullAddress = customer.address || '';
-  if (city || state || postal_code || country) {
-    // Only append components that exist
-    if (fullAddress && city) fullAddress += ', ';
-    if (city) fullAddress += city;
-    if ((fullAddress && state) || (city && state)) fullAddress += ', ';
-    if (state) fullAddress += state;
-    if ((fullAddress && postal_code) || (state && postal_code)) fullAddress += ' ';
-    if (postal_code) fullAddress += postal_code;
-    if ((fullAddress && country) || (postal_code && country) || (state && country)) fullAddress += ', ';
-    if (country) fullAddress += country;
-
-    // Update the address in customerData
-    customerData.address = fullAddress;
-  }
-
-  // Handle households
-  if (customerData.household_id === '' || customerData.household_id === '_none') {
-    customerData.household_id = undefined;
-  }
-
-  // Handle preferred technician
-  if (customerData.preferred_technician_id === '' || customerData.preferred_technician_id === '_none') {
-    customerData.preferred_technician_id = undefined;
-  }
-
-  // Handle referral source
-  if (customerData.referral_source === '' || customerData.referral_source === '_none') {
-    customerData.referral_source = undefined;
-  }
-
-  // Remove referral_person_id if it's empty
-  if (customerData.referral_person_id === '') {
-    delete customerData.referral_person_id;
-  }
-
-  // Ensure shop_id is set
+  // Handle shop_id fallback logic
   if (!customerData.shop_id) {
     // Fetch the shop_id from the current user's profile
     const { data: { user } } = await supabase.auth.getUser();
@@ -104,6 +58,31 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
   if (error) {
     console.error("Error creating customer:", error);
     throw error;
+  }
+
+  // If there are vehicles, add them to the vehicles table
+  if (vehicles && vehicles.length > 0) {
+    for (const vehicle of vehicles) {
+      if (vehicle.make && vehicle.model) { // Only add if minimal data is present
+        try {
+          const vehicleYear = vehicle.year ? parseInt(vehicle.year, 10) : null;
+          
+          await supabase
+            .from("vehicles")
+            .insert({
+              customer_id: data.id,
+              make: vehicle.make,
+              model: vehicle.model,
+              year: vehicleYear,
+              vin: vehicle.vin,
+              license_plate: vehicle.license_plate
+            });
+        } catch (vehicleError) {
+          console.error("Error adding vehicle:", vehicleError);
+          // Don't throw to allow customer creation to succeed
+        }
+      }
+    }
   }
 
   // If there's a note, add it to the customer_notes table

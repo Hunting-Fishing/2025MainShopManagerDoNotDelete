@@ -145,9 +145,21 @@ export const adaptCustomerForUI = (customer: Customer): Customer => {
     segments = [];
   }
   
+  let tags = customer.tags;
+  if (tags && typeof tags !== 'object') {
+    try {
+      tags = JSON.parse(tags);
+    } catch (e) {
+      tags = [];
+    }
+  } else if (!tags) {
+    tags = [];
+  }
+  
   return {
     ...customer,
     segments: Array.isArray(segments) ? segments : [],
+    tags: Array.isArray(tags) ? tags : [],
     status: 'active',
     lastServiceDate: undefined,
     name: getCustomerFullName(customer),

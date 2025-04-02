@@ -5,25 +5,34 @@ import { CustomerFormValues } from "@/components/customers/form/CustomerFormSche
 
 // Update a customer
 export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {
-  // Format the data for the database - only include fields that exist in the customers table
+  // Format the data for the database - include all fields that exist in the customers table
   const customerData = {
-    // Personal information - these fields exist in the customers table
+    // Personal information
     first_name: updates.first_name,
     last_name: updates.last_name,
     email: updates.email,
     phone: updates.phone,
     
-    // Address information - only include address field
+    // Address information
     address: updates.address,
+    city: updates.city,
+    state: updates.state,
+    postal_code: updates.postal_code,
+    country: updates.country,
     
     // Business information
+    company: updates.company,
     shop_id: updates.shop_id,
     
     // Tags and preferences
+    tags: updates.tags,
     preferred_technician_id: updates.preferred_technician_id,
+    communication_preference: updates.communication_preference,
     
     // Referral information
+    referral_source: updates.referral_source,
     referral_person_id: updates.referral_person_id,
+    other_referral_details: updates.other_referral_details,
     
     // Household information
     household_id: updates.household_id,
@@ -31,6 +40,9 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     // Fleet information
     is_fleet: updates.is_fleet,
     fleet_company: updates.fleet_company,
+    
+    // Additional information
+    notes: updates.notes
   };
 
   console.log("Updating customer with data:", customerData);
@@ -119,8 +131,6 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     }
   }
 
-  // Store additional information like city, state, etc. in separate tables or update related tables as needed
-  // For now, we'll adapt the customer data for UI
   return adaptCustomerForUI(data);
 };
 
