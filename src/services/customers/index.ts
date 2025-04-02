@@ -2,7 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerNote } from "@/types/customer";
 import { checkDuplicateCustomers, searchCustomers, getCustomersWithVehicles } from "./customerSearchService";
-import { createCustomer, clearDraftCustomer } from "./customerCreateService";
+import { createCustomer } from "./customerCreateService";
+import { clearDraftCustomer } from "./customerDraftService";
 
 export const getCustomerNotes = async (customerId: string): Promise<CustomerNote[]> => {
   const { data, error } = await supabase
@@ -53,4 +54,7 @@ export const addCustomerNote = async (
 export { checkDuplicateCustomers, searchCustomers, getCustomersWithVehicles };
 
 // Re-export functions from customerCreateService
-export { createCustomer, clearDraftCustomer };
+export { createCustomer };
+
+// Re-export functions from customerDraftService
+export { clearDraftCustomer };
