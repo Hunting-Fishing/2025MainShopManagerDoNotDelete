@@ -1,75 +1,35 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 
-// Key for storing draft customer data in localStorage
-const DRAFT_CUSTOMER_KEY = 'draftCustomer';
+// Local storage key for draft customer
+const DRAFT_CUSTOMER_KEY = 'draft_customer';
 
-// Save customer form draft to localStorage
-export const saveDraftCustomer = async (customerData: CustomerFormValues): Promise<void> => {
+// Save customer form data as a draft
+export const saveDraftCustomer = async (formData: CustomerFormValues): Promise<void> => {
   try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(DRAFT_CUSTOMER_KEY, JSON.stringify(customerData));
-    }
-    
-    // Could also save to Supabase if needed
-    // const { data: { user } } = await supabase.auth.getUser();
-    // if (user) {
-    //   const { error } = await supabase
-    //     .from('customer_drafts')
-    //     .upsert({
-    //       user_id: user.id,
-    //       draft_data: customerData
-    //     });
-    //   if (error) throw error;
-    // }
-    
-    return Promise.resolve();
+    localStorage.setItem(DRAFT_CUSTOMER_KEY, JSON.stringify(formData));
   } catch (error) {
     console.error("Error saving draft customer:", error);
-    return Promise.reject(error);
+    throw new Error("Failed to save draft customer");
   }
 };
 
-// Retrieve customer form draft from localStorage
+// Get draft customer data
 export const getDraftCustomer = async (): Promise<CustomerFormValues | null> => {
   try {
-    if (typeof window !== 'undefined') {
-      const draftData = localStorage.getItem(DRAFT_CUSTOMER_KEY);
-      if (!draftData) return null;
-      
-      return JSON.parse(draftData) as CustomerFormValues;
-    }
-    return null;
+    const draftData = localStorage.getItem(DRAFT_CUSTOMER_KEY);
+    return draftData ? JSON.parse(draftData) : null;
   } catch (error) {
-    console.error("Error retrieving draft customer:", error);
+    console.error("Error getting draft customer:", error);
     return null;
   }
 };
 
-// Clear the draft customer data from local storage or other temporary storage
+// Clear draft customer data
 export const clearDraftCustomer = async (): Promise<void> => {
-  // Remove draft data from localStorage if it exists
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(DRAFT_CUSTOMER_KEY);
-  }
-  
-  // If using Supabase to store drafts, you could clear it that way too
   try {
-    // Get the current authenticated user
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      // You could also delete any draft records from a drafts table if you have one
-      // const { error } = await supabase
-      //   .from('customer_drafts')
-      //   .delete()
-      //   .eq('user_id', user.id);
-      
-      // if (error) throw error;
-    }
+    localStorage.removeItem(DRAFT_CUSTOMER_KEY);
   } catch (error) {
     console.error("Error clearing draft customer:", error);
-    // Non-blocking error, so we don't throw
   }
 };
