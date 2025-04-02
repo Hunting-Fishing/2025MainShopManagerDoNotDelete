@@ -15,7 +15,7 @@ export const useCustomerCreate = () => {
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const formRef = useRef<{ submit: () => void }>(null);
+  const formRef = useRef<{ submit: () => void }>({ submit: () => {} });
   
   const defaultValues: CustomerFormValues = {
     first_name: "",
@@ -164,9 +164,10 @@ export const useCustomerCreate = () => {
 
   // Function to be called from the header button
   const handleSubmitForm = () => {
-    if (formRef.current) {
+    if (formRef.current && typeof formRef.current.submit === 'function') {
       formRef.current.submit();
     } else {
+      console.log("Form ref or submit method not available");
       // If the form ref isn't available, find the form and submit it
       const formElement = document.querySelector('form');
       if (formElement) {

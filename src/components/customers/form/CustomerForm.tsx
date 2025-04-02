@@ -64,8 +64,18 @@ export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps
 
   // If formRef is provided, sync it with our own ref
   useEffect(() => {
-    if (formRef && ref) {
-      formRef.current = (ref as any).current;
+    if (formRef && formRef.current && ref) {
+      // Create a temporary object with the submit method
+      const methods = {
+        submit: () => {
+          if (typeof (ref as any).current?.submit === 'function') {
+            (ref as any).current.submit();
+          }
+        }
+      };
+      
+      // Use Object.assign to update the formRef.current without directly reassigning it
+      Object.assign(formRef.current, methods);
     }
   }, [formRef, ref]);
 

@@ -1,5 +1,5 @@
 
-import React, { forwardRef } from "react";
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { CustomerForm } from "@/components/customers/form/CustomerForm";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
