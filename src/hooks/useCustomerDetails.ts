@@ -5,6 +5,7 @@ import { getCustomerById } from "@/services/customerService";
 import { CustomerInteraction } from "@/types/interaction";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getCustomerNotes } from "@/services/customers";
 
 export const useCustomerDetails = (id?: string) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -42,19 +43,35 @@ export const useCustomerDetails = (id?: string) => {
       if (workOrdersError) throw workOrdersError;
       setCustomerWorkOrders(workOrders || []);
 
-      // Load interactions from Supabase
-      const { data: interactions, error: interactionsError } = await supabase
-        .from('customer_interactions')
-        .select('*')
-        .eq('customer_id', customerId)
-        .order('created_at', { ascending: false });
+      // Custom interaction logic since the table might not exist yet
+      try {
+        const { data: interactions, error: interactionsError } = await supabase
+          .from('customer_interactions')
+          .select('*')
+          .eq('customer_id', customerId)
+          .order('created_at', { ascending: false });
 
-      if (interactionsError) {
-        console.error("Error fetching interactions:", interactionsError);
+        if (interactionsError) throw interactionsError;
+        
+        // Type as CustomerInteraction
+        const typedInteractions = interactions?.map(interaction => ({
+          ...interaction,
+          id: interaction.id,
+          customerId: interaction.customer_id,
+          date: interaction.created_at,
+          staffMemberId: interaction.staff_member_id || '',
+          staffMemberName: interaction.staff_member_name || '',
+          description: interaction.description || '',
+          notes: interaction.notes || '',
+          type: interaction.type || 'general',
+          status: interaction.status || 'completed'
+        } as CustomerInteraction)) || [];
+        
+        setCustomerInteractions(typedInteractions);
+      } catch (error) {
+        console.error("Error fetching interactions:", error);
         // If the table doesn't exist yet, we'll just use an empty array
         setCustomerInteractions([]);
-      } else {
-        setCustomerInteractions(interactions || []);
       }
 
       // Fetch communications from Supabase
@@ -101,14 +118,8 @@ export const useCustomerDetails = (id?: string) => {
 
   const fetchCustomerNotes = async (customerId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('customer_notes')
-        .select('*')
-        .eq('customer_id', customerId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setCustomerNotes(data || []);
+      const notes = await getCustomerNotes(customerId);
+      setCustomerNotes(notes);
     } catch (error) {
       console.error("Error fetching notes:", error);
     }
