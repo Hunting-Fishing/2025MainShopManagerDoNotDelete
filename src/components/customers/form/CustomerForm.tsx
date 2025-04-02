@@ -121,7 +121,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           )}
 
           <Form {...form}>
-            <form onSubmit={handleFormSubmit} className="space-y-6">
+            <form id="customer-create-form" onSubmit={handleFormSubmit} className="space-y-6">
               {/* Check for duplicate customers */}
               <DuplicateCustomerAlert form={form} />
               

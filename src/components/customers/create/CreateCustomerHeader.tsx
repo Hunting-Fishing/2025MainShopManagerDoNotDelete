@@ -21,6 +21,16 @@ export const CreateCustomerHeader: React.FC<CreateCustomerHeaderProps> = ({
         description="Create a new customer record in the system"
       />
       <div className="flex items-center gap-3">
+        <Button
+          type="submit"
+          form="customer-create-form"
+          disabled={isSubmitting}
+          variant="default"
+          className="flex items-center gap-2"
+        >
+          <UserPlus size={18} />
+          {isSubmitting ? "Creating..." : "Create Customer"}
+        </Button>
         <ImportCustomersDialog onImportComplete={onImportComplete} />
       </div>
     </div>
