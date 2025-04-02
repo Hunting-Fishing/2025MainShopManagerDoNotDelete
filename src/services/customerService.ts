@@ -1,14 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Customer, CustomerCreate, adaptCustomerForUI, createCustomerForUI } from "@/types/customer";
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "./loyalty/customerLoyaltyService";
+import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 
 // Export CustomerCreate type
 export type { CustomerCreate };
-
-// Local storage key for draft customer
-const DRAFT_CUSTOMER_KEY = 'draft_customer';
 
 // Fetch all customers
 export const getAllCustomers = async (): Promise<Customer[]> => {
@@ -75,63 +71,35 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
   return customer;
 };
 
-// Create a new customer
-export const createCustomer = async (customer: CustomerCreate): Promise<Customer> => {
-  // Remove any undefined values to prevent Supabase errors
-  Object.keys(customer).forEach(key => {
-    if (customer[key as keyof CustomerCreate] === undefined) {
-      delete customer[key as keyof CustomerCreate];
-    }
-  });
-
-  // Remove fields that don't exist in the customers table
-  const { 
-    fleet_company, 
-    is_fleet,
-    tags,
-    segments,
-    ...customerData 
-  } = customer;
-
-  // Handle households
-  if (customerData.household_id === '' || customerData.household_id === '_none') {
-    customerData.household_id = undefined;
-  }
-
-  // Handle preferred technician
-  if (customerData.preferred_technician_id === '' || customerData.preferred_technician_id === '_none') {
-    customerData.preferred_technician_id = undefined;
-  }
-
-  // Handle referral source
-  if (customerData.referral_source === '' || customerData.referral_source === '_none') {
-    customerData.referral_source = undefined;
-  }
-
-  console.log("Submitting customer data:", customerData);
-
-  const { data, error } = await supabase
-    .from("customers")
-    .insert(customerData)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error creating customer:", error);
-    throw error;
-  }
-
-  // Clear any draft after successful creation
-  localStorage.removeItem(DRAFT_CUSTOMER_KEY);
-
-  return adaptCustomerForUI(data);
-};
-
 // Update a customer
-export const updateCustomer = async (id: string, updates: Partial<Customer>): Promise<Customer> => {
+export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {
+  // Format the data for the database
+  const customerData = {
+    first_name: updates.first_name,
+    last_name: updates.last_name,
+    email: updates.email,
+    phone: updates.phone,
+    address: updates.address,
+    city: updates.city,
+    state: updates.state,
+    postal_code: updates.postal_code, 
+    country: updates.country,
+    company: updates.company,
+    notes: updates.notes,
+    shop_id: updates.shop_id,
+    tags: updates.tags,
+    communication_preference: updates.communication_preference,
+    referral_source: updates.referral_source,
+    referral_person_id: updates.referral_person_id,
+    other_referral_details: updates.other_referral_details,
+    is_fleet: updates.is_fleet,
+    fleet_company: updates.fleet_company,
+    household_id: updates.household_id
+  };
+
   const { data, error } = await supabase
     .from("customers")
-    .update(updates)
+    .update(customerData)
     .eq("id", id)
     .select()
     .single();
@@ -153,203 +121,6 @@ export const deleteCustomer = async (id: string): Promise<void> => {
 
   if (error) {
     console.error("Error deleting customer:", error);
-    throw error;
-  }
-};
-
-// Search customers
-export const searchCustomers = async (query: string): Promise<Customer[]> => {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("*")
-    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`)
-    .order("last_name", { ascending: true });
-
-  if (error) {
-    console.error("Error searching customers:", error);
-    throw error;
-  }
-
-  return (data || []).map(customer => adaptCustomerForUI(customer));
-};
-
-// Check for potential duplicate customers
-export const checkDuplicateCustomers = async (
-  firstName: string, 
-  lastName: string, 
-  email?: string, 
-  phone?: string
-): Promise<Customer[]> => {
-  if (!firstName || !lastName) return [];
-  
-  let query = supabase
-    .from("customers")
-    .select("*")
-    .or(`first_name.ilike.%${firstName}%,last_name.ilike.%${lastName}%`);
-
-  // If we have email, make the search more specific
-  if (email && email.length > 0) {
-    query = query.or(`email.eq.${email}`);
-  }
-  
-  // If we have phone, make the search more specific
-  if (phone && phone.length > 0) {
-    const formattedPhone = phone.replace(/\D/g, ''); // Strip non-digits
-    if (formattedPhone.length >= 7) {
-      query = query.or(`phone.like.%${formattedPhone.slice(-7)}%`); // Match last 7 digits
-    }
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("Error checking for duplicate customers:", error);
-    throw error;
-  }
-
-  return (data || []).map(customer => adaptCustomerForUI(customer));
-};
-
-// Save customer form data as a draft
-export const saveDraftCustomer = async (formData: CustomerFormValues): Promise<void> => {
-  try {
-    localStorage.setItem(DRAFT_CUSTOMER_KEY, JSON.stringify(formData));
-  } catch (error) {
-    console.error("Error saving draft customer:", error);
-    throw new Error("Failed to save draft customer");
-  }
-};
-
-// Get draft customer data
-export const getDraftCustomer = async (): Promise<CustomerFormValues | null> => {
-  try {
-    const draftData = localStorage.getItem(DRAFT_CUSTOMER_KEY);
-    return draftData ? JSON.parse(draftData) : null;
-  } catch (error) {
-    console.error("Error getting draft customer:", error);
-    return null;
-  }
-};
-
-// Clear draft customer data
-export const clearDraftCustomer = async (): Promise<void> => {
-  try {
-    localStorage.removeItem(DRAFT_CUSTOMER_KEY);
-  } catch (error) {
-    console.error("Error clearing draft customer:", error);
-  }
-};
-
-// Import customers from CSV file
-export const importCustomersFromCSV = async (file: File): Promise<{ imported: number, errors: string[] }> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    const errors: string[] = [];
-    let importCount = 0;
-    
-    reader.onload = async (event) => {
-      try {
-        const csvContent = event.target?.result as string;
-        const lines = csvContent.split('\n');
-        
-        // Extract headers (first line)
-        const headers = lines[0].split(',').map(header => header.trim().toLowerCase());
-        
-        // Validate required headers
-        const requiredFields = ['first_name', 'last_name'];
-        for (const field of requiredFields) {
-          if (!headers.includes(field)) {
-            reject(new Error(`CSV is missing required field: ${field}`));
-            return;
-          }
-        }
-        
-        // Process each customer row
-        const customers: CustomerCreate[] = [];
-        
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue; // Skip empty lines
-          
-          const values = lines[i].split(',').map(value => value.trim());
-          if (values.length !== headers.length) {
-            errors.push(`Row ${i} has incorrect number of fields`);
-            continue;
-          }
-          
-          // Create customer object from CSV row
-          const customer: Record<string, any> = {
-            shop_id: "DEFAULT-SHOP-ID", // Default shop ID
-          };
-          
-          headers.forEach((header, index) => {
-            if (header && values[index]) {
-              customer[header] = values[index];
-            }
-          });
-          
-          // Add to batch if required fields are present
-          if (customer.first_name && customer.last_name) {
-            customers.push(customer as CustomerCreate);
-          } else {
-            errors.push(`Row ${i} is missing required fields`);
-          }
-        }
-        
-        // Insert customers in batches
-        if (customers.length > 0) {
-          const { data, error } = await supabase
-            .from("customers")
-            .insert(customers);
-            
-          if (error) {
-            reject(new Error(`Failed to import customers: ${error.message}`));
-            return;
-          }
-          
-          importCount = customers.length;
-        }
-        
-        resolve({ imported: importCount, errors });
-      } catch (error) {
-        reject(error);
-      }
-    };
-    
-    reader.onerror = () => {
-      reject(new Error("Failed to read CSV file"));
-    };
-    
-    reader.readAsText(file);
-  });
-};
-
-// Get customers with their vehicles
-export const getCustomersWithVehicles = async (): Promise<Customer[]> => {
-  try {
-    // First get all customers
-    const customers = await getAllCustomers();
-    
-    // For each customer, get their vehicles
-    const customersWithVehicles = await Promise.all(
-      customers.map(async (customer) => {
-        try {
-          // In a real implementation, this would fetch from Supabase
-          // Here we'll set an empty array if no vehicles exist
-          if (!customer.vehicles) {
-            customer.vehicles = [];
-          }
-          
-          return customer;
-        } catch (error) {
-          console.error(`Error fetching vehicles for customer ${customer.id}:`, error);
-          return { ...customer, vehicles: [] };
-        }
-      })
-    );
-    
-    return customersWithVehicles;
-  } catch (error) {
-    console.error("Error fetching customers with vehicles:", error);
     throw error;
   }
 };

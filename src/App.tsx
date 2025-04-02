@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
 import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerDetails from '@/pages/CustomerDetails';
+import EditCustomer from '@/pages/EditCustomer';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import WorkOrderCreate from '@/pages/WorkOrderCreate';
@@ -91,6 +92,7 @@ function App() {
           <Route path="customers/create" element={<CreateCustomer />} />
           <Route path="customers/new" element={<CreateCustomer />} />
           <Route path="customers/:id" element={<CustomerDetails />} />
+          <Route path="customers/:id/edit" element={<EditCustomer />} />
           <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
           <Route path="customers/:id/follow-ups" element={<CustomerFollowUps />} />
           <Route path="work-orders" element={<WorkOrders />} />
