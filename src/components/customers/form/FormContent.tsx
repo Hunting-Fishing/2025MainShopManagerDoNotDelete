@@ -4,7 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 import { TabsContent } from "@/components/ui/tabs";
 import { CustomerFormValues } from "./CustomerFormSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
-import { BusinessInfoFields } from "./BusinessInfoFields";
+import { BusinessInfoFields } from "./business/BusinessInfoFields";
 import { PreferencesFields } from "./PreferencesFields";
 import { ReferralFields } from "./ReferralFields";
 import { VehiclesFields } from "./VehiclesFields";

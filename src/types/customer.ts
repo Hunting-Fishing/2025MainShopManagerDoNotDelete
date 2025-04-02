@@ -21,6 +21,9 @@ export interface Customer {
   household_id?: string;
   is_fleet?: boolean;
   fleet_company?: string;
+  fleet_manager?: string;
+  fleet_contact?: string;
+  preferred_service_type?: string;
   notes?: string;
   tags?: string[] | any; // Allow any type that will be normalized in adaptCustomerForUI
   
@@ -37,6 +40,19 @@ export interface Customer {
   preferred_technician_history?: PreferredTechnicianChange[];
   
   vehicles?: CustomerVehicle[];
+  
+  // Business info fields
+  business_type?: string;
+  business_industry?: string;
+  tax_id?: string;
+  business_email?: string;
+  business_phone?: string;
+  
+  // Payment & Billing fields
+  preferred_payment_method?: string;
+  auto_billing?: boolean;
+  credit_terms?: string;
+  terms_agreed?: boolean;
 }
 
 export interface PreferredTechnicianChange {
