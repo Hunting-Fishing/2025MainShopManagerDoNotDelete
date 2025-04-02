@@ -44,6 +44,7 @@ export interface Customer {
   // Business info fields
   business_type?: string;
   business_industry?: string;
+  other_business_industry?: string; // Added this field for "Other" business industry selection
   tax_id?: string;
   business_email?: string;
   business_phone?: string;
