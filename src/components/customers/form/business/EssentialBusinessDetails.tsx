@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { 
@@ -40,6 +39,9 @@ export const EssentialBusinessDetails: React.FC<EssentialBusinessDetailsProps> =
   availableShops = defaultShops,
   singleShopMode = false
 }) => {
+  const businessIndustryValue = form.watch("business_industry");
+  const showOtherIndustryField = businessIndustryValue === "other";
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full border rounded-md p-4 my-4 bg-white">
       <div className="flex justify-between items-center">
@@ -159,6 +161,26 @@ export const EssentialBusinessDetails: React.FC<EssentialBusinessDetailsProps> =
             </FormItem>
           )}
         />
+
+        {/* Other Business Industry Field - Only shown when "other" is selected */}
+        {showOtherIndustryField && (
+          <FormField
+            control={form.control}
+            name="other_business_industry"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Specify Industry</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter business industry" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Please specify the business industry
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Tax ID */}
         <FormField

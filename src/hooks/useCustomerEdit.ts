@@ -25,6 +25,7 @@ const customerToFormValues = (customer: Customer): CustomerFormValues => {
     // Business details
     business_type: customer.business_type || '',
     business_industry: customer.business_industry || '',
+    other_business_industry: customer.other_business_industry || '',
     tax_id: customer.tax_id || '',
     business_email: customer.business_email || '',
     business_phone: customer.business_phone || '',
