@@ -58,6 +58,7 @@ export const CustomerForm = forwardRef<{ submit: () => void }, CustomerFormProps
   // Expose the submit method to the parent component via useImperativeHandle
   useImperativeHandle(ref, () => ({
     submit: () => {
+      console.log("Form submit method called via ref");
       form.handleSubmit(onSubmit)();
     }
   }), [form, onSubmit]);

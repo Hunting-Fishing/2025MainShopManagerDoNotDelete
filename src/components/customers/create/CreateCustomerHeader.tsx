@@ -16,6 +16,11 @@ export const CreateCustomerHeader: React.FC<CreateCustomerHeaderProps> = ({
   isSubmitting,
   onSubmit
 }) => {
+  const handleSubmitClick = () => {
+    console.log("Create Customer button clicked");
+    onSubmit();
+  };
+
   return (
     <div className="flex items-center justify-between">
       <WorkOrderFormHeader
@@ -24,7 +29,7 @@ export const CreateCustomerHeader: React.FC<CreateCustomerHeaderProps> = ({
       />
       <div className="flex items-center gap-3">
         <Button 
-          onClick={onSubmit} 
+          onClick={handleSubmitClick} 
           disabled={isSubmitting}
           className="flex items-center gap-2"
         >

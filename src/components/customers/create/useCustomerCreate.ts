@@ -15,7 +15,11 @@ export const useCustomerCreate = () => {
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const formRef = useRef<{ submit: () => void }>({ submit: () => {} });
+  
+  // Initialize formRef with a dummy submit function to avoid "undefined is not a function" errors
+  const formRef = useRef<{ submit: () => void }>({
+    submit: () => console.log("Default submit called")
+  });
   
   const defaultValues: CustomerFormValues = {
     first_name: "",
@@ -162,16 +166,22 @@ export const useCustomerCreate = () => {
     });
   };
 
-  // Function to be called from the header button
+  // Improved form submission handler with better error handling
   const handleSubmitForm = () => {
+    console.log("Submit button clicked, form ref:", formRef.current);
+    
     if (formRef.current && typeof formRef.current.submit === 'function') {
+      console.log("Calling submit method through ref");
       formRef.current.submit();
     } else {
       console.log("Form ref or submit method not available");
       // If the form ref isn't available, find the form and submit it directly
       const formElement = document.querySelector('form');
       if (formElement) {
+        console.log("Submitting form via DOM event");
         formElement.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      } else {
+        console.log("No form element found in the DOM");
       }
     }
   };
