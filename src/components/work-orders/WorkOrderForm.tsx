@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +8,7 @@ import { TimeEntry } from "@/types/workOrder";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { workOrderTemplates } from "@/data/workOrderTemplatesData";
 import { supabase } from "@/integrations/supabase/client";
-import { Customer } from "@/types/customer";
+import { Customer, adaptCustomerForUI } from "@/types/customer";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";

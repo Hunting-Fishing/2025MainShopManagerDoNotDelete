@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,9 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ClipboardList, Loader2 } from 'lucide-react';
 import { priorityMap } from '@/data/workOrdersData';
 import { supabase } from '@/integrations/supabase/client';
-import { Customer } from '@/types/customer';
+import { Customer, adaptCustomerForUI } from '@/types/customer';
 
-// Form validation schema
 const workOrderFormSchema = z.object({
   customer: z.string().min(1, "Please select a customer"),
   description: z.string().min(10, "Description must be at least 10 characters"),
@@ -45,7 +43,6 @@ export default function CreateWorkOrder() {
     },
   });
 
-  // Fetch customers from Supabase
   useEffect(() => {
     const fetchCustomers = async () => {
       setIsLoading(true);
@@ -60,7 +57,7 @@ export default function CreateWorkOrder() {
         }
         
         if (data) {
-          setCustomers(data);
+          setCustomers(data.map(customer => adaptCustomerForUI(customer)));
         }
       } catch (error) {
         console.error("Error fetching customers:", error);

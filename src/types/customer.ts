@@ -35,6 +35,8 @@ export interface Customer {
   dateAdded?: string;
   
   preferred_technician_history?: PreferredTechnicianChange[];
+  
+  vehicles?: CustomerVehicle[];
 }
 
 export interface PreferredTechnicianChange {
