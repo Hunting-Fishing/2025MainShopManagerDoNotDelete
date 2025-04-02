@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -110,6 +109,11 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
   // Handle referral source
   if (customerData.referral_source === '' || customerData.referral_source === '_none') {
     customerData.referral_source = undefined;
+  }
+
+  // Remove referral_person_id if it's empty
+  if (customerData.referral_person_id === '') {
+    delete customerData.referral_person_id;
   }
 
   console.log("Submitting customer data:", customerData);
