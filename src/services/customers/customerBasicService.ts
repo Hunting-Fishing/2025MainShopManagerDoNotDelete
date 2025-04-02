@@ -88,6 +88,7 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     tags,
     segments,
     communication_preference, // Remove this field - it doesn't exist in the database
+    notes, // Remove the notes field - it doesn't exist in the database
     ...customerData 
   } = customer;
 

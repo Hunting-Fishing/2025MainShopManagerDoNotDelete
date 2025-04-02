@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -80,9 +79,7 @@ export const useCustomerCreate = () => {
         referral_source: referralSource,
         referral_person_id: data.referral_person_id,
         other_referral_details: referralSource === "Other" ? data.other_referral_details : "",
-        notes: data.notes,
         household_id: householdId || null,
-        // Don't include communication_preference here as it doesn't exist in the database
       };
       
       const newCustomer = await createCustomer(customerData);
