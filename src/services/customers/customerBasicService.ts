@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -118,6 +117,16 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
   if (error) {
     console.error("Error creating customer:", error);
     throw error;
+  }
+
+  // If there's a note, add it to the customer_notes table
+  if (notes && notes.trim()) {
+    try {
+      await addCustomerNote(data.id, notes, 'general', 'System');
+    } catch (noteError) {
+      console.error("Error adding initial customer note:", noteError);
+      // We don't throw here to avoid preventing customer creation
+    }
   }
 
   return adaptCustomerForUI(data);

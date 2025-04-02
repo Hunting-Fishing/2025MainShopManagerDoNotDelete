@@ -20,27 +20,31 @@ import { useToast } from "@/hooks/use-toast";
 interface CustomerNotesTimelineProps {
   customer: Customer;
   notes?: CustomerNote[];
+  isLoading?: boolean;
   onNoteAdded?: (note: CustomerNote) => void;
 }
 
 export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
   customer,
   notes: initialNotes,
+  isLoading: externalIsLoading,
   onNoteAdded
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
   const [notes, setNotes] = useState<CustomerNote[]>(initialNotes || []);
-  const [isLoading, setIsLoading] = useState(!initialNotes);
+  const [isLoading, setIsLoading] = useState(!initialNotes || externalIsLoading);
   const { toast } = useToast();
 
   useEffect(() => {
-    // If notes were not provided, load them from the database
-    if (!initialNotes) {
+    if (initialNotes) {
+      setNotes(initialNotes);
+      setIsLoading(externalIsLoading || false);
+    } else {
       loadNotes();
     }
-  }, [customer.id, initialNotes]);
+  }, [customer.id, initialNotes, externalIsLoading]);
 
   const loadNotes = async () => {
     try {

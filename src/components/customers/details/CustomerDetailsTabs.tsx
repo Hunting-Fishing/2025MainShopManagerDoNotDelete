@@ -104,6 +104,7 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
           customer={customer}
           notes={notes}
           onNoteAdded={handleNoteAdded}
+          isLoading={isLoadingNotes}
         />
       </TabsContent>
       

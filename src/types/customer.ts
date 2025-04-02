@@ -1,4 +1,3 @@
-// Define the customer interface based on Supabase table structure
 export interface Customer {
   id: string;
   first_name: string;
@@ -10,7 +9,6 @@ export interface Customer {
   created_at: string;
   updated_at: string;
   
-  // Added fields for enhanced customer management
   preferred_technician_id?: string;
   communication_preference?: string;
   referral_source?: string;
@@ -23,25 +21,19 @@ export interface Customer {
   tags?: string[];
   vehicles?: CustomerVehicle[];
   
-  // New fields for Phase 3 - updated to handle JSON data from Supabase
-  segments?: string[] | any; // This allows for both string[] and JSON from database
+  segments?: string[] | any; 
   
-  // New fields for Phase 4 - Loyalty
   loyalty?: CustomerLoyalty;
   
-  // We'll add these fields for compatibility with existing components
-  // They will be undefined on direct database objects, but we'll use getters
   company?: string;
   status?: string;
   lastServiceDate?: string;
   name?: string;
   dateAdded?: string;
   
-  // Added fields for keeping track of technician relationship history
   preferred_technician_history?: PreferredTechnicianChange[];
 }
 
-// Define preferred technician change history
 export interface PreferredTechnicianChange {
   id: string;
   customer_id: string;
@@ -55,7 +47,6 @@ export interface PreferredTechnicianChange {
   changed_by_name: string;
 }
 
-// Define vehicle information
 export interface CustomerVehicle {
   id: string;
   year?: number;
@@ -67,18 +58,16 @@ export interface CustomerVehicle {
   last_service_date?: string;
 }
 
-// Define customer note entry
 export interface CustomerNote {
   id: string;
   customer_id: string;
-  date: string;
-  category: 'service' | 'sales' | 'follow-up' | 'general';
   content: string;
+  category: 'service' | 'sales' | 'follow-up' | 'general';
   created_by: string;
   created_at: string;
+  updated_at: string;
 }
 
-// Define customer communication
 export interface CustomerCommunication {
   id: string;
   customer_id: string;
@@ -94,7 +83,6 @@ export interface CustomerCommunication {
   template_name?: string;
 }
 
-// Define household type
 export interface Household {
   id: string;
   name: string;
@@ -105,7 +93,6 @@ export interface Household {
   members?: HouseholdMember[];
 }
 
-// Define household member type
 export interface HouseholdMember {
   id: string;
   household_id: string;
@@ -114,7 +101,6 @@ export interface HouseholdMember {
   customer?: Customer;
 }
 
-// Define segment type
 export interface CustomerSegment {
   id: string;
   name: string;
@@ -126,7 +112,6 @@ export interface CustomerSegment {
   customer_count?: number;
 }
 
-// Define segment rule type
 export interface SegmentRule {
   id: string;
   segment_id: string;
@@ -137,17 +122,13 @@ export interface SegmentRule {
   updated_at: string;
 }
 
-// Helper type for creating a new customer
 export type CustomerCreate = Omit<Customer, 'id' | 'created_at' | 'updated_at'>;
 
-// Helper function to format customer display name
 export const getCustomerFullName = (customer: Customer): string => {
   return `${customer.first_name} ${customer.last_name}`;
 };
 
-// Helper function to adapt database customer objects to the format expected by UI components
 export const adaptCustomerForUI = (customer: Customer): Customer => {
-  // Convert segments from JSON to string array if needed
   let segments = customer.segments;
   if (segments && typeof segments !== 'object') {
     try {
@@ -161,17 +142,14 @@ export const adaptCustomerForUI = (customer: Customer): Customer => {
   
   return {
     ...customer,
-    // Ensure segments is a proper array
     segments: Array.isArray(segments) ? segments : [],
-    // Add UI-expected fields (these will be used by the components)
-    status: 'active', // Default status since we don't have this in the database yet
-    lastServiceDate: undefined, // This would need to come from work orders in a real implementation
+    status: 'active',
+    lastServiceDate: undefined,
     name: getCustomerFullName(customer),
     dateAdded: customer.created_at,
   };
 };
 
-// Helper function to create a UI-compatible customer object
 export const createCustomerForUI = (
   dbCustomer: Customer,
   additionalProps?: {
