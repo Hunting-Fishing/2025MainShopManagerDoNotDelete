@@ -17,7 +17,7 @@ import { FormErrorSummary } from "./FormErrorSummary";
 import { FormStatusAlert } from "./FormStatusAlert";
 import { useFormValidation } from "./useFormValidation";
 import { useFormNavigation } from "./useFormNavigation";
-import { saveDraftCustomer, getDraftCustomer } from "@/services/customers/customerDraftService";
+import { saveDraftCustomer, getDraftCustomer } from "@/services/customers";
 import { useToast } from "@/hooks/use-toast";
 import { CustomerPreview } from "./preview/CustomerPreview";
 
