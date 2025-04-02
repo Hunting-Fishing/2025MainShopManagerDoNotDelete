@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -87,7 +88,7 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     tags,
     segments,
     communication_preference,
-    other_referral_details, // Remove this field - it doesn't exist in the database
+    other_referral_details,
     notes, // We'll handle notes separately
     city,
     state,
@@ -95,6 +96,23 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     country,
     ...customerData 
   } = customer;
+
+  // Update the address field to include the full address if components are provided
+  let fullAddress = customer.address || '';
+  if (city || state || postal_code || country) {
+    // Only append components that exist
+    if (fullAddress && city) fullAddress += ', ';
+    if (city) fullAddress += city;
+    if ((fullAddress && state) || (city && state)) fullAddress += ', ';
+    if (state) fullAddress += state;
+    if ((fullAddress && postal_code) || (state && postal_code)) fullAddress += ' ';
+    if (postal_code) fullAddress += postal_code;
+    if ((fullAddress && country) || (postal_code && country) || (state && country)) fullAddress += ', ';
+    if (country) fullAddress += country;
+
+    // Update the address in customerData
+    customerData.address = fullAddress;
+  }
 
   // Handle households
   if (customerData.household_id === '' || customerData.household_id === '_none') {

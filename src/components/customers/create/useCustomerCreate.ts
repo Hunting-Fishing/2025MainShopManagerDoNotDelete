@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,10 @@ export const useCustomerCreate = () => {
     email: "",
     phone: "",
     address: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    country: "",
     company: "",
     notes: "",
     shop_id: "DEFAULT-SHOP-ID",
@@ -74,12 +79,17 @@ export const useCustomerCreate = () => {
         email: data.email || "",
         phone: data.phone || "",
         address: data.address || "",
+        city: data.city || "",
+        state: data.state || "",
+        postal_code: data.postal_code || "",
+        country: data.country || "",
         shop_id: data.shop_id,
         preferred_technician_id: preferredTechnicianId,
         referral_source: referralSource,
         referral_person_id: data.referral_person_id,
         other_referral_details: referralSource === "Other" ? data.other_referral_details : "",
         household_id: householdId || null,
+        notes: data.notes || "",
       };
       
       const newCustomer = await createCustomer(customerData);

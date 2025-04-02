@@ -444,6 +444,7 @@ export type Database = {
           id: string
           last_name: string
           phone: string | null
+          referral_person_id: string | null
           segments: Json | null
           shop_id: string
           updated_at: string
@@ -457,6 +458,7 @@ export type Database = {
           id?: string
           last_name: string
           phone?: string | null
+          referral_person_id?: string | null
           segments?: Json | null
           shop_id: string
           updated_at?: string
@@ -470,6 +472,7 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string | null
+          referral_person_id?: string | null
           segments?: Json | null
           shop_id?: string
           updated_at?: string
