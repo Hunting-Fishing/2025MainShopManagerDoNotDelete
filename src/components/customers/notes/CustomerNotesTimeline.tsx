@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,21 +14,50 @@ import { Customer, CustomerNote } from "@/types/customer";
 import { Plus, Search, File, Briefcase, Clock, MessageCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { AddNoteDialog } from "./AddNoteDialog";
+import { getCustomerNotes } from "@/services/customers";
+import { useToast } from "@/hooks/use-toast";
 
 interface CustomerNotesTimelineProps {
   customer: Customer;
-  notes: CustomerNote[];
-  onNoteAdded: (note: CustomerNote) => void;
+  notes?: CustomerNote[];
+  onNoteAdded?: (note: CustomerNote) => void;
 }
 
 export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
   customer,
-  notes,
+  notes: initialNotes,
   onNoteAdded
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
+  const [notes, setNotes] = useState<CustomerNote[]>(initialNotes || []);
+  const [isLoading, setIsLoading] = useState(!initialNotes);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // If notes were not provided, load them from the database
+    if (!initialNotes) {
+      loadNotes();
+    }
+  }, [customer.id, initialNotes]);
+
+  const loadNotes = async () => {
+    try {
+      setIsLoading(true);
+      const loadedNotes = await getCustomerNotes(customer.id);
+      setNotes(loadedNotes);
+    } catch (error) {
+      console.error("Failed to load notes:", error);
+      toast({
+        title: "Error Loading Notes",
+        description: "Could not load customer notes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter notes based on search query and category
   const filteredNotes = notes.filter(note => {
@@ -43,8 +72,15 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
 
   // Sort notes by date (newest first)
   const sortedNotes = [...filteredNotes].sort((a, b) => 
-    new Date(b.date).getTime() - new Date(a.date).getTime()
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
+
+  const handleNoteAdded = (newNote: CustomerNote) => {
+    setNotes([newNote, ...notes]);
+    if (onNoteAdded) {
+      onNoteAdded(newNote);
+    }
+  };
 
   const getCategoryIcon = (category: string) => {
     switch(category) {
@@ -106,7 +142,11 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
             </Select>
           </div>
 
-          {sortedNotes.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading notes...
+            </div>
+          ) : sortedNotes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {notes.length === 0 ? (
                 <>No notes recorded yet for this customer.</>
@@ -130,7 +170,7 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
                         <p className="font-medium mb-1 flex flex-wrap items-center gap-2">
                           <span className="capitalize">{note.category}</span>
                           <span className="text-muted-foreground text-xs">
-                            {format(parseISO(note.date), "PPP")}
+                            {format(parseISO(note.created_at), "PPP")}
                           </span>
                         </p>
                         <p className="text-sm text-slate-600 whitespace-pre-wrap">{note.content}</p>
@@ -150,7 +190,7 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
           customer={customer}
           open={isAddNoteOpen}
           onOpenChange={setIsAddNoteOpen}
-          onNoteAdded={onNoteAdded}
+          onNoteAdded={handleNoteAdded}
         />
       </CardContent>
     </Card>

@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, ChevronLeft } from "lucide-react";
-import { Customer } from "@/types/customer";
+import { Customer, CustomerNote } from "@/types/customer";
 import { CustomerInteraction } from "@/types/interaction";
+import { getCustomerNotes } from "@/services/customers";
 
 interface CustomerSummaryCardProps {
   customer: Customer & { name?: string, lastServiceDate?: string, notes?: string };
@@ -19,6 +20,31 @@ export const CustomerSummaryCard: React.FC<CustomerSummaryCardProps> = ({
   customerInteractions,
   setActiveTab
 }) => {
+  const [recentNote, setRecentNote] = useState<CustomerNote | null>(null);
+  const [isLoadingNote, setIsLoadingNote] = useState(true);
+
+  useEffect(() => {
+    loadRecentNote();
+  }, [customer.id]);
+
+  const loadRecentNote = async () => {
+    try {
+      setIsLoadingNote(true);
+      const notes = await getCustomerNotes(customer.id);
+      if (notes.length > 0) {
+        // Sort by created_at and get the most recent
+        const sorted = [...notes].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setRecentNote(sorted[0]);
+      }
+    } catch (error) {
+      console.error("Failed to load recent note:", error);
+    } finally {
+      setIsLoadingNote(false);
+    }
+  };
+
   return (
     <Card className="md:col-span-2">
       <CardHeader className="bg-slate-50 border-b">
@@ -48,11 +74,53 @@ export const CustomerSummaryCard: React.FC<CustomerSummaryCardProps> = ({
           </div>
         </div>
         
-        {customer.notes && (
+        {isLoadingNote ? (
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-slate-500 mb-2">Notes</h3>
+            <h3 className="text-sm font-medium text-slate-500 mb-2">Loading latest note...</h3>
+          </div>
+        ) : recentNote ? (
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium text-slate-500">Latest Note</h3>
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="h-auto p-0"
+                onClick={() => setActiveTab("notes")}
+              >
+                <History className="h-4 w-4 mr-1" /> View All Notes
+              </Button>
+            </div>
             <div className="bg-slate-50 p-4 rounded-lg">
-              <p className="text-sm whitespace-pre-wrap">{customer.notes}</p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-sm mb-1 flex items-center gap-2">
+                    <span className="capitalize">{recentNote.category}</span>
+                    <span className="text-xs text-slate-500">
+                      {new Date(recentNote.created_at).toLocaleDateString()}
+                    </span>
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap text-slate-600">{recentNote.content}</p>
+                  <p className="text-xs text-slate-500 mt-1">Added by {recentNote.created_by}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium text-slate-500">Notes</h3>
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="h-auto p-0"
+                onClick={() => setActiveTab("notes")}
+              >
+                <History className="h-4 w-4 mr-1" /> Add Note
+              </Button>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-lg text-center text-slate-500">
+              No notes recorded yet
             </div>
           </div>
         )}

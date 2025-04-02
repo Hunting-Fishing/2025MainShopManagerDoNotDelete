@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
+import { addCustomerNote } from "@/services/customers";
 
 interface AddNoteDialogProps {
   customer: Customer;
@@ -39,7 +39,7 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!content.trim()) {
       toast({
         title: "Error",
@@ -51,16 +51,13 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
 
     setIsSubmitting(true);
     try {
-      // In a real implementation, this would save to Supabase
-      const newNote: CustomerNote = {
-        id: uuidv4(),
-        customer_id: customer.id,
-        date: new Date().toISOString(),
-        category: category as 'service' | 'sales' | 'follow-up' | 'general',
+      // Save the note to the database
+      const newNote = await addCustomerNote(
+        customer.id,
         content,
-        created_by: "Current User", // In a real app, this would be the logged-in user's name
-        created_at: new Date().toISOString(),
-      };
+        category as 'service' | 'sales' | 'follow-up' | 'general',
+        "Current User" // In a real app, this would be the logged-in user's name
+      );
       
       // Call the callback to update the parent component's state
       onNoteAdded(newNote);

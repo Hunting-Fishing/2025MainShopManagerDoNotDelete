@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
@@ -10,6 +10,7 @@ import { CustomerInteractionsTab } from "../CustomerInteractionsTab";
 import { CustomerServiceTab } from "../CustomerServiceTab";
 import { CustomerNotesTimeline } from "../notes/CustomerNotesTimeline";
 import { CommunicationHistory } from "../communications/CommunicationHistory";
+import { getCustomerNotes } from "@/services/customers";
 
 interface CustomerDetailsTabsProps {
   customer: Customer & { name?: string, status?: string, lastServiceDate?: string };
@@ -28,9 +29,29 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   activeTab,
   setActiveTab
 }) => {
-  // Initialize state with empty arrays instead of trying to use non-existent properties
+  // Initialize state with empty arrays
   const [notes, setNotes] = useState<CustomerNote[]>([]);
   const [communications, setCommunications] = useState<CustomerCommunication[]>([]);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(true);
+
+  // Load notes when tab changes to notes or on initial load
+  useEffect(() => {
+    if (activeTab === 'notes' || activeTab === 'overview') {
+      loadNotes();
+    }
+  }, [activeTab, customer.id]);
+
+  const loadNotes = async () => {
+    try {
+      setIsLoadingNotes(true);
+      const loadedNotes = await getCustomerNotes(customer.id);
+      setNotes(loadedNotes);
+    } catch (error) {
+      console.error("Failed to load notes:", error);
+    } finally {
+      setIsLoadingNotes(false);
+    }
+  };
 
   // Handle adding a new note
   const handleNoteAdded = (newNote: CustomerNote) => {

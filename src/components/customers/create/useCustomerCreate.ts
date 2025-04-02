@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { createCustomer, clearDraftCustomer } from "@/services/customers";
+import { createCustomer, clearDraftCustomer, addCustomerNote } from "@/services/customers";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 import { handleApiError } from "@/utils/errorHandling";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +84,25 @@ export const useCustomerCreate = () => {
       };
       
       const newCustomer = await createCustomer(customerData);
+      
+      // Save customer notes if they exist
+      if (data.notes && data.notes.trim()) {
+        try {
+          await addCustomerNote(
+            newCustomer.id,
+            data.notes,
+            'general',
+            'System' // Replace with actual user name when available
+          );
+        } catch (noteError) {
+          console.error("Failed to save customer note:", noteError);
+          toast({
+            title: "Note Saving Warning",
+            description: "Customer created but initial notes could not be saved. You can add them later.",
+            variant: "warning",
+          });
+        }
+      }
       
       if (householdId && data.household_relationship) {
         const { error: relationshipError } = await supabase

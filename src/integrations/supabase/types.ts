@@ -330,6 +330,44 @@ export type Database = {
           },
         ]
       }
+      customer_notes: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_segment_assignments: {
         Row: {
           created_at: string
