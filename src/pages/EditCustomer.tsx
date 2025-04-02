@@ -2,7 +2,6 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CustomerForm } from "@/components/customers/form/CustomerForm";
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
@@ -14,7 +13,7 @@ export default function EditCustomer() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { 
-    customer, 
+    formValues, 
     isLoading, 
     isSubmitting, 
     availableShops, 
@@ -59,7 +58,7 @@ export default function EditCustomer() {
     );
   }
 
-  if (!customer) {
+  if (!formValues) {
     navigate(`/customers/${id}`);
     toast({
       title: "Customer not found",
@@ -77,7 +76,7 @@ export default function EditCustomer() {
       </Button>
       <h1 className="text-2xl font-bold tracking-tight">Edit Customer</h1>
       <CustomerForm 
-        defaultValues={customer as CustomerFormValues}
+        defaultValues={formValues}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         availableShops={availableShops}

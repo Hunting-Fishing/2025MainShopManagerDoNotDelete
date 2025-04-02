@@ -1,10 +1,15 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "./loyalty/customerLoyaltyService";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { importCustomersFromCSV } from "./customers/customerImportService";
 
 // Export CustomerCreate type
 export type { CustomerCreate };
+
+// Re-export importCustomersFromCSV
+export { importCustomersFromCSV };
 
 // Fetch all customers
 export const getAllCustomers = async (): Promise<Customer[]> => {
