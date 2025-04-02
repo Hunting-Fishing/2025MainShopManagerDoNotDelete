@@ -77,45 +77,28 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
 
 // Update a customer
 export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {
-  // Format the data for the database
+  // Format the data for the database - only include fields that exist in the customer table
   const customerData = {
-    // Personal information
+    // Personal information - these fields exist in the customers table
     first_name: updates.first_name,
     last_name: updates.last_name,
     email: updates.email,
     phone: updates.phone,
     
-    // Address information
+    // Address information - only include address field
     address: updates.address,
-    city: updates.city,
-    state: updates.state,
-    postal_code: updates.postal_code, 
-    country: updates.country,
     
     // Business information
-    company: updates.company,
-    notes: updates.notes,
     shop_id: updates.shop_id,
     
     // Tags and preferences
-    tags: updates.tags,
-    communication_preference: updates.communication_preference,
     preferred_technician_id: updates.preferred_technician_id,
     
     // Referral information
-    referral_source: updates.referral_source,
     referral_person_id: updates.referral_person_id,
-    other_referral_details: updates.other_referral_details,
-    
-    // Fleet information
-    is_fleet: updates.is_fleet,
-    fleet_company: updates.fleet_company,
     
     // Household information
     household_id: updates.household_id,
-    
-    // Segments
-    segments: updates.segments
   };
 
   console.log("Updating customer with data:", customerData);
@@ -204,6 +187,8 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     }
   }
 
+  // Store additional information like city, state, etc. in separate tables or update related tables as needed
+  // For now, we'll adapt the customer data for UI
   return adaptCustomerForUI(data);
 };
 
