@@ -65,7 +65,9 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     for (const vehicle of vehicles) {
       if (vehicle.make && vehicle.model) { // Only add if minimal data is present
         try {
-          const vehicleYear = vehicle.year ? parseInt(vehicle.year, 10) : null;
+          // Fix: Convert year to number or null, but store it correctly as a number
+          // The error was here - we need to make sure we're passing a number to the DB
+          const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
           
           await supabase
             .from("vehicles")
