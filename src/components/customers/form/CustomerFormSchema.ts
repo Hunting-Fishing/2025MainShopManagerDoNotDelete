@@ -27,6 +27,7 @@ export const customerSchema = z.object({
   
   // Enhanced fields
   preferred_technician_id: z.string().optional().transform(val => val === "_none" ? "" : val),
+  // NOTE: communication_preference doesn't exist in the database schema - UI only
   communication_preference: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_source: z.string().optional().transform(val => val === "_none" ? "" : val),
   referral_person_id: z.string().optional(),

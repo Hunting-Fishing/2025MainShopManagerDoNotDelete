@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -86,6 +87,7 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     is_fleet,
     tags,
     segments,
+    communication_preference, // Remove this field - it doesn't exist in the database
     ...customerData 
   } = customer;
 

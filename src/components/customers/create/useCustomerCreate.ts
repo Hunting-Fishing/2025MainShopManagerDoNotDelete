@@ -68,7 +68,6 @@ export const useCustomerCreate = () => {
       
       const preferredTechnicianId = data.preferred_technician_id === "_none" ? "" : data.preferred_technician_id;
       const referralSource = data.referral_source === "_none" ? "" : data.referral_source;
-      const communicationPreference = data.communication_preference === "_none" ? "" : data.communication_preference;
       
       const customerData = {
         first_name: data.first_name,
@@ -78,12 +77,12 @@ export const useCustomerCreate = () => {
         address: data.address || "",
         shop_id: data.shop_id,
         preferred_technician_id: preferredTechnicianId,
-        communication_preference: communicationPreference,
         referral_source: referralSource,
         referral_person_id: data.referral_person_id,
         other_referral_details: referralSource === "Other" ? data.other_referral_details : "",
         notes: data.notes,
         household_id: householdId || null,
+        // Don't include communication_preference here as it doesn't exist in the database
       };
       
       const newCustomer = await createCustomer(customerData);
