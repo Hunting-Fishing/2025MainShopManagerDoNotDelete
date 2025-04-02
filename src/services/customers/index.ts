@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerNote } from "@/types/customer";
 import { checkDuplicateCustomers, searchCustomers, getCustomersWithVehicles } from "./customerSearchService";
 import { createCustomer } from "./customerCreateService";
-import { clearDraftCustomer } from "./customerDraftService";
+import { clearDraftCustomer, saveDraftCustomer, getDraftCustomer } from "./customerDraftService";
 
 export const getCustomerNotes = async (customerId: string): Promise<CustomerNote[]> => {
   const { data, error } = await supabase
@@ -57,4 +57,4 @@ export { checkDuplicateCustomers, searchCustomers, getCustomersWithVehicles };
 export { createCustomer };
 
 // Re-export functions from customerDraftService
-export { clearDraftCustomer };
+export { clearDraftCustomer, saveDraftCustomer, getDraftCustomer };
