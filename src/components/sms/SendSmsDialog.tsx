@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Customer } from "@/types/customer";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useSmsTemplates } from "@/hooks/useSmsTemplates";
 
 interface SendSmsDialogProps {
   open: boolean;
@@ -29,17 +28,8 @@ export const SendSmsDialog: React.FC<SendSmsDialogProps> = ({
   // If customer phone is not available, we'll disable sending
   const isPhoneAvailable = customer && customer.phone && customer.phone.trim().length > 0;
 
-  // Fetch SMS templates
-  const { data: templates = [], isLoading: templatesLoading } = useQuery({
-    queryKey: ['smsTemplates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('sms_templates').select('*');
-      if (error) throw error;
-      return data || [];
-    },
-    // Only fetch when dialog is open to avoid unnecessary requests
-    enabled: open,
-  });
+  // Fetch SMS templates using the custom hook
+  const { data: templates = [], isLoading: templatesLoading } = useSmsTemplates(open);
 
   // Apply template content when a template is selected
   const handleTemplateChange = (templateId: string) => {
@@ -78,16 +68,14 @@ export const SendSmsDialog: React.FC<SendSmsDialogProps> = ({
       // that connects to Twilio or another SMS provider
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
-      // Log to SMS logs table
-      const { error } = await supabase.from('sms_logs').insert({
-        customer_id: customer.id,
-        phone_number: customer.phone,
-        message: message,
-        template_id: selectedTemplate || null,
-        status: 'sent' // In a real implementation, this would be set by the response from the SMS provider
-      });
+      const { sendSms } = await import('@/hooks/useSmsTemplates');
       
-      if (error) throw error;
+      await sendSms(
+        customer.id,
+        customer.phone,
+        message,
+        selectedTemplate || undefined
+      );
       
       toast({
         title: "SMS Sent",
@@ -132,7 +120,7 @@ export const SendSmsDialog: React.FC<SendSmsDialogProps> = ({
                     <SelectValue placeholder="Select a template" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="_none">None</SelectItem>
                     {templates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         {template.name}
