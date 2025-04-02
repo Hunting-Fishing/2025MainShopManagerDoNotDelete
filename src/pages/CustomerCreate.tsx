@@ -169,7 +169,7 @@ export default function CustomerCreate() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto px-4 sm:px-6">
-      <div className="flex flex-col md:flex-row justify-between items-center">
+      <div className="flex items-center justify-between">
         <WorkOrderFormHeader
           title="Add New Customer"
           description="Create a new customer record in the system"
