@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { getCustomerById } from "@/services/customerService";
 import { CustomerInteraction } from "@/types/interaction";
-import { getMockInteractions } from "@/data/interactionsData";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -33,19 +32,36 @@ export const useCustomerDetails = (id?: string) => {
         setCustomer(customerData);
       }
 
-      // Load work orders (would be fetched from Supabase in a real implementation)
-      setCustomerWorkOrders([]);
+      // Load work orders from Supabase
+      const { data: workOrders, error: workOrdersError } = await supabase
+        .from('work_orders')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
 
-      // Load interactions
-      const interactions = await getMockInteractions(customerId);
-      setCustomerInteractions(interactions);
+      if (workOrdersError) throw workOrdersError;
+      setCustomerWorkOrders(workOrders || []);
+
+      // Load interactions from Supabase
+      const { data: interactions, error: interactionsError } = await supabase
+        .from('customer_interactions')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      if (interactionsError) {
+        console.error("Error fetching interactions:", interactionsError);
+        // If the table doesn't exist yet, we'll just use an empty array
+        setCustomerInteractions([]);
+      } else {
+        setCustomerInteractions(interactions || []);
+      }
 
       // Fetch communications from Supabase
       fetchCustomerCommunications(customerId);
       
-      // Fetch notes from Supabase (would be implemented in a real app)
-      // We're not implementing this for now
-      setCustomerNotes([]);
+      // Fetch notes from Supabase
+      fetchCustomerNotes(customerId);
 
     } catch (error) {
       console.error("Error loading customer details:", error);
@@ -80,6 +96,21 @@ export const useCustomerDetails = (id?: string) => {
       setCustomerCommunications(typedCommunications);
     } catch (error) {
       console.error("Error fetching communications:", error);
+    }
+  };
+
+  const fetchCustomerNotes = async (customerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_notes')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCustomerNotes(data || []);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
     }
   };
 
