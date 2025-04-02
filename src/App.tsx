@@ -1,9 +1,10 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
-import CustomerCreate from '@/pages/CustomerCreate';
+import CreateCustomer from '@/pages/CreateCustomer';
 import CustomerDetails from '@/pages/CustomerDetails';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
@@ -38,7 +39,6 @@ import EmailCampaigns from '@/pages/EmailCampaigns';
 import EmailSequences from '@/pages/EmailSequences';
 import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
 import SmsManagement from '@/pages/SmsManagement';
-import CreateCustomer from '@/pages/CreateCustomer';
 import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import CreateInvoice from '@/pages/CreateInvoice';
 import Maintenance from '@/pages/Maintenance';
@@ -57,7 +57,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="customers" element={<Customers />} />
-          <Route path="customers/create" element={<CustomerCreate />} />
+          <Route path="customers/create" element={<CreateCustomer />} />
           <Route path="customers/new" element={<CreateCustomer />} />
           <Route path="customers/:id" element={<CustomerDetails />} />
           <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
