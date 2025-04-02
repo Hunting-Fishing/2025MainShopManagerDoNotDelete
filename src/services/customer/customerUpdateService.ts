@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -25,16 +26,16 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     
     // Tags and preferences
     tags: updates.tags,
-    preferred_technician_id: updates.preferred_technician_id,
+    preferred_technician_id: updates.preferred_technician_id || null,
     communication_preference: updates.communication_preference,
     
     // Referral information
     referral_source: updates.referral_source,
-    referral_person_id: updates.referral_person_id,
+    referral_person_id: updates.referral_person_id || null,
     other_referral_details: updates.other_referral_details,
     
     // Household information
-    household_id: updates.household_id,
+    household_id: updates.household_id || null,
     
     // Fleet information
     is_fleet: updates.is_fleet,

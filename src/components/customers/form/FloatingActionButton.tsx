@@ -20,7 +20,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         type="button"
         onClick={onClick}
         disabled={isSubmitting}
-        className="shadow-lg flex items-center gap-2 px-4 py-2"
+        className="shadow-lg flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90"
         size="lg"
       >
         <Save className="h-5 w-5" />
