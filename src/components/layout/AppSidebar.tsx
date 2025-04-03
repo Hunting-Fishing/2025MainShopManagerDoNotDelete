@@ -22,7 +22,7 @@ export function AppSidebar() {
     <>
       {isMobile ? (
         <Sheet open={collapsed} onOpenChange={toggleCollapsed}>
-          <SheetContent side="left" className="w-3/4 sm:w-2/3 md:w-1/2">
+          <SheetContent side="left" className="w-3/4 sm:w-2/3 md:w-1/2 overflow-y-auto">
             <SheetHeader>
               <SheetTitle>Menu</SheetTitle>
               <SheetDescription>
@@ -35,7 +35,7 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
       ) : (
-        <aside className="hidden md:flex md:w-64 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <aside className="hidden md:flex md:w-64 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-y-auto">
           <SidebarContent />
         </aside>
       )}

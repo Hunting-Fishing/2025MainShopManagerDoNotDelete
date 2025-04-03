@@ -83,28 +83,28 @@ const navigationItems: NavItem[] = [
   },
   {
     title: "Marketing",
-    href: "#",
+    href: "/marketing",
     icon: <Megaphone className="h-5 w-5" />,
     submenu: [
       {
         title: "Email Templates",
         href: "/email-templates",
-        icon: <MailOpen className="h-5 w-5" />
+        icon: <MailOpen className="h-4 w-4" />
       },
       {
         title: "Email Campaigns",
         href: "/email-campaigns",
-        icon: <Megaphone className="h-5 w-5" />
+        icon: <Megaphone className="h-4 w-4" />
       },
       {
         title: "Email Sequences",
         href: "/email-sequences",
-        icon: <MailOpen className="h-5 w-5" />
+        icon: <MailOpen className="h-4 w-4" />
       },
       {
         title: "SMS Templates",
         href: "/sms-templates",
-        icon: <MessageCircle className="h-5 w-5" />
+        icon: <MessageCircle className="h-4 w-4" />
       }
     ]
   },
