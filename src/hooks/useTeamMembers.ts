@@ -38,12 +38,17 @@ export function useTeamMembers() {
         const mappedMembers: TeamMember[] = profiles.map(profile => {
           // Extract role information - handling potential data structure issues
           let userRole = 'User'; // Default role
+          
           if (profile.user_roles && 
+              Array.isArray(profile.user_roles) && 
               profile.user_roles.length > 0 && 
-              profile.user_roles[0].roles && 
-              typeof profile.user_roles[0].roles === 'object' &&
-              profile.user_roles[0].roles !== null) {
-            userRole = profile.user_roles[0].roles.name || 'User';
+              profile.user_roles[0].roles) {
+            // Check if roles is an object with a name property
+            if (typeof profile.user_roles[0].roles === 'object' && 
+                profile.user_roles[0].roles !== null &&
+                'name' in profile.user_roles[0].roles) {
+              userRole = profile.user_roles[0].roles.name || 'User';
+            }
           }
           
           // Create a TeamMember object

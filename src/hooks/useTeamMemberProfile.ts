@@ -56,12 +56,17 @@ export function useTeamMemberProfile(id: string | undefined) {
 
         // Extract role information - handling potential data structure issues
         let userRole = 'User'; // Default role
+        
         if (profileData.user_roles && 
+            Array.isArray(profileData.user_roles) && 
             profileData.user_roles.length > 0 && 
-            profileData.user_roles[0].roles && 
-            typeof profileData.user_roles[0].roles === 'object' &&
-            profileData.user_roles[0].roles !== null) {
-          userRole = profileData.user_roles[0].roles.name || 'User';
+            profileData.user_roles[0].roles) {
+          // Check if roles is an object with a name property
+          if (typeof profileData.user_roles[0].roles === 'object' && 
+              profileData.user_roles[0].roles !== null &&
+              'name' in profileData.user_roles[0].roles) {
+            userRole = profileData.user_roles[0].roles.name || 'User';
+          }
         }
 
         // Create the member object with the fetched data
