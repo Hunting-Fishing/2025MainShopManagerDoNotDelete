@@ -16,13 +16,16 @@ export function useTeamMemberUpdate() {
     setError(null);
     
     try {
+      console.log("Updating team member with ID:", memberId);
+      console.log("Update values:", values);
+      
       // Parse the name into first and last components
       const nameParts = values.name.split(' ');
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
       // Update the profile record
-      const { error: profileError } = await supabase
+      const { error: profileError, data } = await supabase
         .from('profiles')
         .update({
           first_name: firstName,
@@ -30,9 +33,15 @@ export function useTeamMemberUpdate() {
           email: values.email,
           phone: values.phone || null,
         })
-        .eq('id', memberId);
+        .eq('id', memberId)
+        .select();
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        throw profileError;
+      }
+      
+      console.log("Profile update result:", data);
       
       // In a full implementation, additional database updates would happen here:
       // 1. Update role assignments in user_roles table if role changed

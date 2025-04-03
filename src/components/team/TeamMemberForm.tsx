@@ -17,12 +17,13 @@ import { useTeamMemberUpdate } from "@/hooks/useTeamMemberUpdate";
 interface TeamMemberFormProps {
   initialData?: any;
   mode: "create" | "edit";
+  onUpdateSuccess?: () => void;
 }
 
-export function TeamMemberForm({ initialData, mode }: TeamMemberFormProps) {
+export function TeamMemberForm({ initialData, mode, onUpdateSuccess }: TeamMemberFormProps) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { updateTeamMember } = useTeamMemberUpdate();
+  const { updateTeamMember, isLoading, error } = useTeamMemberUpdate();
 
   // Initialize form with default values
   const form = useForm<TeamMemberFormValues>({
@@ -42,12 +43,21 @@ export function TeamMemberForm({ initialData, mode }: TeamMemberFormProps) {
   // Form submission handler
   const onSubmit = async (values: TeamMemberFormValues) => {
     setIsSubmitting(true);
+    console.log("Form submission values:", values);
+    console.log("Mode:", mode);
+    console.log("Initial data:", initialData);
+    
     try {
       if (mode === "edit" && initialData?.id) {
+        console.log("Updating team member with ID:", initialData.id);
         // Update existing team member
         const success = await updateTeamMember(initialData.id, values);
         if (success) {
-          navigate("/team");
+          if (onUpdateSuccess) {
+            onUpdateSuccess();
+          } else {
+            navigate("/team");
+          }
         }
       } else {
         // Create new team member logic would go here
@@ -85,7 +95,7 @@ export function TeamMemberForm({ initialData, mode }: TeamMemberFormProps) {
 
         <StatusToggleField control={form.control} />
         <NotesField control={form.control} />
-        <FormActions isSubmitting={isSubmitting} mode={mode} />
+        <FormActions isSubmitting={isSubmitting || isLoading} mode={mode} />
       </form>
     </Form>
   );
