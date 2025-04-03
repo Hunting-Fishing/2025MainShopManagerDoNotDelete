@@ -4,7 +4,7 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
 
 interface EditProfileTabProps {
-  initialData: TeamMemberFormValues;
+  initialData: TeamMemberFormValues & { id: string };
 }
 
 export function EditProfileTab({ initialData }: EditProfileTabProps) {

@@ -12,6 +12,7 @@ import { JobInfoFields } from "./form/JobInfoFields";
 import { StatusToggleField } from "./form/StatusToggleField";
 import { NotesField } from "./form/NotesField";
 import { FormActions } from "./form/FormActions";
+import { useTeamMemberUpdate } from "@/hooks/useTeamMemberUpdate";
 
 interface TeamMemberFormProps {
   initialData?: any;
@@ -21,6 +22,7 @@ interface TeamMemberFormProps {
 export function TeamMemberForm({ initialData, mode }: TeamMemberFormProps) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { updateTeamMember } = useTeamMemberUpdate();
 
   // Initialize form with default values
   const form = useForm<TeamMemberFormValues>({
@@ -41,18 +43,22 @@ export function TeamMemberForm({ initialData, mode }: TeamMemberFormProps) {
   const onSubmit = async (values: TeamMemberFormValues) => {
     setIsSubmitting(true);
     try {
-      // In a real app, this would save to a backend
-      console.log("Form values:", values);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: mode === "create" ? "Team member created!" : "Team member updated!",
-        description: `Successfully ${mode === "create" ? "added" : "updated"} ${values.name}`,
-      });
-      
-      navigate("/team");
+      if (mode === "edit" && initialData?.id) {
+        // Update existing team member
+        const success = await updateTeamMember(initialData.id, values);
+        if (success) {
+          navigate("/team");
+        }
+      } else {
+        // Create new team member logic would go here
+        // For now just simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        toast({
+          title: "Team member created!",
+          description: `Successfully added ${values.name}`,
+        });
+        navigate("/team");
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
       toast({
