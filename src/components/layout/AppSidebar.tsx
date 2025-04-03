@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarContent } from './sidebar/SidebarContent';
+import { MessageSquare } from 'lucide-react';
 
 export function AppSidebar() {
   const { collapsed, toggleCollapsed } = useSidebar();
