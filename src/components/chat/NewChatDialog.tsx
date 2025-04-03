@@ -9,24 +9,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Users, 
-  UserPlus, 
+  Search,
+  X,
   MessageCircle, 
   Users2, 
-  Search,
-  X 
+  UserPlus 
 } from "lucide-react";
 import { getInitials } from "@/data/teamData";
 import { teamMembers } from "@/data/teamData";
@@ -43,10 +35,12 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
   onCreate
 }) => {
   const [chatName, setChatName] = useState("");
-  const [chatType, setChatType] = useState<"direct" | "group">("direct");
   const [searchQuery, setSearchQuery] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [filteredTeamMembers, setFilteredTeamMembers] = useState(teamMembers);
+  
+  // Determine chat type based on number of participants
+  const chatType = participants.length > 1 ? "group" : "direct";
   
   // Filter team members based on search query
   useEffect(() => {
@@ -62,18 +56,38 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
     }
   }, [searchQuery]);
 
+  // Generate chat name suggestions based on participants
+  useEffect(() => {
+    if (participants.length === 0) {
+      setChatName("");
+      return;
+    }
+    
+    if (participants.length === 1) {
+      // Direct chat - name based on the participant
+      const member = teamMembers.find(m => m.id === participants[0]);
+      if (member) {
+        setChatName(`Chat with ${member.name}`);
+      }
+    } else if (!chatName.trim() || chatName.startsWith('Chat with ')) {
+      // Group chat - if no custom name or it was auto-generated for direct chat
+      if (participants.length <= 3) {
+        // For small groups, use names
+        const names = participants
+          .map(id => teamMembers.find(m => m.id === id)?.name.split(' ')[0])
+          .filter(Boolean)
+          .join(', ');
+        setChatName(`Group: ${names}`);
+      } else {
+        // For larger groups, just use count
+        setChatName(`Group Chat (${participants.length} members)`);
+      }
+    }
+  }, [participants, chatName]);
+
   const handleAddParticipant = (userId: string) => {
     if (!participants.includes(userId)) {
       setParticipants([...participants, userId]);
-      
-      // If it's a direct chat and we just added the second participant, 
-      // auto-generate a chat name if none exists
-      if (chatType === "direct" && participants.length === 0 && !chatName.trim()) {
-        const member = teamMembers.find(m => m.id === userId);
-        if (member) {
-          setChatName(`Chat with ${member.name}`);
-        }
-      }
     }
   };
 
@@ -96,18 +110,8 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
     
     // Reset form
     setChatName("");
-    setChatType("direct");
     setSearchQuery("");
     setParticipants([]);
-  };
-
-  const handleChatTypeChange = (value: "direct" | "group") => {
-    setChatType(value);
-    
-    // If switching to direct chat and we have more than 1 participant, reset participants
-    if (value === "direct" && participants.length > 1) {
-      setParticipants([]);
-    }
   };
 
   // Get selected participants' details
@@ -121,52 +125,45 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-xl flex items-center gap-2">
             {chatType === "direct" ? <MessageCircle className="h-5 w-5" /> : <Users2 className="h-5 w-5" />}
-            Create a New Chat
+            {chatType === "direct" ? "New Direct Message" : "New Group Chat"}
           </DialogTitle>
           <DialogDescription>
-            Start a conversation with your team members
+            {chatType === "direct" 
+              ? "Start a conversation with a team member" 
+              : "Create a group chat with multiple team members"
+            }
           </DialogDescription>
         </DialogHeader>
         
         <div className="px-6 py-4 space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="chat-type" className="text-sm font-medium">Chat Type</Label>
-            <Select
-              value={chatType}
-              onValueChange={(value: "direct" | "group") => handleChatTypeChange(value)}
-            >
-              <SelectTrigger id="chat-type" className="w-full">
-                <SelectValue placeholder="Select chat type" />
-              </SelectTrigger>
-              <SelectContent position="popper" className="w-full">
-                <SelectItem value="direct" className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  <span>Direct Message</span>
-                </SelectItem>
-                <SelectItem value="group" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span>Group Chat</span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="chat-name" className="text-sm font-medium">Chat Name</Label>
+            <Label htmlFor="chat-name" className="text-sm font-medium flex items-center justify-between">
+              <span>Chat Name</span>
+              <span className="text-xs text-muted-foreground">
+                {chatType === "direct" ? "Automatically named based on participant" : 
+                 participants.length > 0 ? "You can customize the group name" : ""}
+              </span>
+            </Label>
             <Input
               id="chat-name"
               value={chatName}
               onChange={(e) => setChatName(e.target.value)}
               placeholder={chatType === "direct" ? "Direct Message" : "Enter a group name"}
               className="w-full"
+              disabled={chatType === "direct" && participants.length === 1}
             />
           </div>
           
           <div className="space-y-4">
-            <Label className="text-sm font-medium">Participants</Label>
+            <div className="flex justify-between items-center">
+              <Label className="text-sm font-medium">Participants</Label>
+              <Badge variant="outline" className="font-normal">
+                {participants.length} selected
+              </Badge>
+            </div>
             
             {selectedParticipantDetails.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex flex-wrap gap-2 mb-3 max-h-24 overflow-y-auto p-1">
                 {selectedParticipantDetails.map(member => member && (
                   <Badge 
                     key={member.id} 
@@ -183,11 +180,6 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
                     />
                   </Badge>
                 ))}
-                {chatType === "direct" && selectedParticipantDetails.length === 1 && (
-                  <p className="text-xs text-muted-foreground pl-2 pt-1">
-                    Direct message with {selectedParticipantDetails[0]?.name}
-                  </p>
-                )}
               </div>
             )}
             
@@ -208,45 +200,45 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
                 </div>
               ) : (
                 <ul className="divide-y">
-                  {filteredTeamMembers.map(member => (
-                    <li 
-                      key={member.id}
-                      className={`flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer ${
-                        participants.includes(member.id) ? 'bg-muted' : ''
-                      }`}
-                      onClick={() => {
-                        if (chatType === 'direct' && participants.length >= 1 && !participants.includes(member.id)) {
-                          setParticipants([member.id]);
-                        } else {
-                          participants.includes(member.id) 
-                            ? handleRemoveParticipant(member.id) 
-                            : handleAddParticipant(member.id);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.role}</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant={participants.includes(member.id) ? "default" : "outline"} 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          participants.includes(member.id) 
+                  {filteredTeamMembers.map(member => {
+                    const isSelected = participants.includes(member.id);
+                    return (
+                      <li 
+                        key={member.id}
+                        className={`flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer ${
+                          isSelected ? 'bg-muted' : ''
+                        }`}
+                        onClick={() => {
+                          isSelected 
                             ? handleRemoveParticipant(member.id) 
                             : handleAddParticipant(member.id);
                         }}
                       >
-                        {participants.includes(member.id) ? 'Selected' : 'Select'}
-                      </Button>
-                    </li>
-                  ))}
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.role}</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant={isSelected ? "default" : "outline"} 
+                          size="sm"
+                          className={isSelected ? "bg-primary" : ""}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            isSelected 
+                              ? handleRemoveParticipant(member.id) 
+                              : handleAddParticipant(member.id);
+                          }}
+                        >
+                          {isSelected ? 'Selected' : 'Select'}
+                        </Button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
@@ -263,7 +255,7 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
             className="gap-2"
           >
             <UserPlus className="h-4 w-4" />
-            Create Chat
+            {chatType === "direct" ? "Start Chat" : "Create Group"}
           </Button>
         </DialogFooter>
       </DialogContent>
