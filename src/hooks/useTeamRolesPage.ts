@@ -182,6 +182,7 @@ export function useTeamRolesPage() {
     newRoleDescription,
     setNewRoleDescription,
     currentRole,
+    setCurrentRole,  // This was missing in the return object
     rolePermissions,
     setRolePermissions,
     handleExportRoles,
