@@ -25,6 +25,7 @@ export default function TeamRoles() {
     newRoleDescription,
     setNewRoleDescription,
     currentRole,
+    setCurrentRole,
     rolePermissions,
     setRolePermissions,
     handleExportRoles,
@@ -73,7 +74,7 @@ export default function TeamRoles() {
         editDialogOpen={isEditDialogOpen}
         onEditDialogChange={setIsEditDialogOpen}
         currentRole={currentRole}
-        onCurrentRoleChange={role => setCurrentRole(role)}
+        onCurrentRoleChange={setCurrentRole}
         rolePermissions={rolePermissions}
         onEditRole={onEditRole}
         
