@@ -89,7 +89,7 @@ export default function Chat() {
       <NewChatDialog
         open={showNewChatDialog}
         onClose={() => setShowNewChatDialog(false)}
-        onCreate={handleCreateChat}
+        onCreate={(name, type, participants) => handleCreateChat(type, participants, name)}
       />
     </>
   );

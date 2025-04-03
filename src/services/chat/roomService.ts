@@ -60,7 +60,8 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
           last_message: lastMessage,
           unread_count: unreadCount,
           is_pinned: room.is_pinned || false,
-          is_archived: room.is_archived || false
+          is_archived: room.is_archived || false,
+          metadata: room.metadata
         };
       })
     );
@@ -88,7 +89,10 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
     
     return {
       ...data,
-      type: assertChatRoomType(data.type)
+      type: assertChatRoomType(data.type),
+      is_pinned: data.is_pinned || false,
+      is_archived: data.is_archived || false,
+      metadata: data.metadata
     };
   } catch (error) {
     console.error("Error fetching work order chat room:", error);
@@ -142,7 +146,10 @@ export const getDirectChatWithUser = async (currentUserId: string, otherUserId: 
     
     return {
       ...directRooms,
-      type: assertChatRoomType(directRooms.type)
+      type: assertChatRoomType(directRooms.type),
+      is_pinned: directRooms.is_pinned || false,
+      is_archived: directRooms.is_archived || false,
+      metadata: directRooms.metadata
     };
   } catch (error) {
     console.error("Error fetching direct chat:", error);
@@ -163,7 +170,10 @@ export const getChatRoomDetails = async (roomId: string): Promise<ChatRoom> => {
     
     return {
       ...data,
-      type: assertChatRoomType(data.type)
+      type: assertChatRoomType(data.type),
+      is_pinned: data.is_pinned || false,
+      is_archived: data.is_archived || false,
+      metadata: data.metadata
     };
   } catch (error) {
     console.error("Error fetching chat room details:", error);
@@ -210,7 +220,10 @@ export const createChatRoom = async (
     
     return {
       ...room,
-      type: assertChatRoomType(room.type)
+      type: assertChatRoomType(room.type),
+      is_pinned: room.is_pinned || false,
+      is_archived: room.is_archived || false,
+      metadata: room.metadata
     };
   } catch (error) {
     console.error("Error creating chat room:", error);
