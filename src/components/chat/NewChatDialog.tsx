@@ -1,195 +1,150 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Search } from 'lucide-react';
-import { TeamMember } from '@/types/team';
-import { teamMembers } from '@/data/teamData';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface NewChatDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (name: string, type: 'direct' | 'group', participants: string[]) => void;
+  onCreate: (name: string, type: "direct" | "group", participants: string[]) => void;
 }
 
-export const NewChatDialog: React.FC<NewChatDialogProps> = ({ 
-  open, 
+export const NewChatDialog: React.FC<NewChatDialogProps> = ({
+  open,
   onClose,
   onCreate
 }) => {
-  const [chatName, setChatName] = useState('');
-  const [chatType, setChatType] = useState<'direct' | 'group'>('direct');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [availableMembers, setAvailableMembers] = useState<TeamMember[]>([]);
-  const [filteredMembers, setFilteredMembers] = useState<TeamMember[]>([]);
+  const [chatName, setChatName] = useState("");
+  const [chatType, setChatType] = useState<"direct" | "group">("direct");
+  const [participant, setParticipant] = useState("");
+  const [participants, setParticipants] = useState<string[]>([]);
 
-  // Load team members
-  useEffect(() => {
-    // In a real app, this would be fetched from an API
-    setAvailableMembers(teamMembers.filter(member => member.status === 'Active'));
-  }, []);
-
-  // Filter members based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredMembers(availableMembers);
-      return;
-    }
-
-    const lowercaseQuery = searchQuery.toLowerCase();
-    const filtered = availableMembers.filter(
-      member =>
-        member.name.toLowerCase().includes(lowercaseQuery) ||
-        member.email.toLowerCase().includes(lowercaseQuery) ||
-        member.jobTitle.toLowerCase().includes(lowercaseQuery)
-    );
-    
-    setFilteredMembers(filtered);
-  }, [searchQuery, availableMembers]);
-
-  const handleUserToggle = (userId: string) => {
-    setSelectedUsers(prev => {
-      if (prev.includes(userId)) {
-        return prev.filter(id => id !== userId);
-      } else {
-        return chatType === 'direct' ? [userId] : [...prev, userId];
-      }
-    });
-
-    // If it's a direct chat, set the chat name to the user's name
-    if (chatType === 'direct') {
-      const user = availableMembers.find(member => member.id === userId);
-      if (user) {
-        setChatName(user.name);
-      }
+  const handleAddParticipant = () => {
+    if (participant && !participants.includes(participant)) {
+      setParticipants([...participants, participant]);
+      setParticipant("");
     }
   };
 
   const handleCreate = () => {
-    if (!chatName.trim() || selectedUsers.length === 0) return;
-    onCreate(chatName, chatType, selectedUsers);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setChatName('');
-    setChatType('direct');
-    setSearchQuery('');
-    setSelectedUsers([]);
-    onClose();
-  };
-
-  const handleTypeChange = (value: 'direct' | 'group') => {
-    setChatType(value);
-    setSelectedUsers([]);
-    if (value === 'group') {
-      setChatName('');
+    if (!chatName.trim()) {
+      alert("Please enter a chat name");
+      return;
     }
+
+    if (participants.length === 0) {
+      alert("Please add at least one participant");
+      return;
+    }
+
+    onCreate(chatName, chatType, participants);
+    
+    // Reset form
+    setChatName("");
+    setChatType("direct");
+    setParticipant("");
+    setParticipants([]);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>New Conversation</DialogTitle>
+          <DialogTitle>Create a New Chat</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label>Conversation Type</Label>
-            <RadioGroup
-              value={chatType}
-              onValueChange={(value) => handleTypeChange(value as 'direct' | 'group')}
-              className="flex space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="direct" id="direct" />
-                <Label htmlFor="direct" className="cursor-pointer">Direct Message</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="group" id="group" />
-                <Label htmlFor="group" className="cursor-pointer">Group Chat</Label>
-              </div>
-            </RadioGroup>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="chat-name" className="text-right">
+              Chat Name
+            </Label>
+            <Input
+              id="chat-name"
+              value={chatName}
+              onChange={(e) => setChatName(e.target.value)}
+              className="col-span-3"
+              placeholder="Enter chat name"
+            />
           </div>
-
-          {chatType === 'group' && (
-            <div className="space-y-2">
-              <Label htmlFor="chat-name">Group Name</Label>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="chat-type" className="text-right">
+              Chat Type
+            </Label>
+            <Select
+              value={chatType}
+              onValueChange={(value: "direct" | "group") => setChatType(value)}
+            >
+              <SelectTrigger id="chat-type" className="col-span-3">
+                <SelectValue placeholder="Select chat type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="direct">Direct</SelectItem>
+                <SelectItem value="group">Group</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="participant" className="text-right">
+              Add User
+            </Label>
+            <div className="col-span-3 flex gap-2">
               <Input
-                id="chat-name"
-                value={chatName}
-                onChange={(e) => setChatName(e.target.value)}
-                placeholder="Enter group name"
+                id="participant"
+                value={participant}
+                onChange={(e) => setParticipant(e.target.value)}
+                placeholder="Enter user ID"
+                className="flex-1"
               />
+              <Button type="button" variant="outline" onClick={handleAddParticipant}>
+                Add
+              </Button>
+            </div>
+          </div>
+          
+          {participants.length > 0 && (
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label className="text-right mt-2">Participants</Label>
+              <div className="col-span-3 flex flex-wrap gap-2">
+                {participants.map((p, i) => (
+                  <div key={i} className="bg-slate-100 px-2 py-1 rounded-md text-sm flex items-center">
+                    {p}
+                    <button
+                      type="button"
+                      className="ml-1 text-slate-500 hover:text-slate-700"
+                      onClick={() => setParticipants(participants.filter((_, idx) => idx !== i))}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label>Select Members</Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-              <Input
-                placeholder="Search team members..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <div className="border rounded-md max-h-[200px] overflow-y-auto">
-              {filteredMembers.length === 0 ? (
-                <div className="p-4 text-center text-slate-500">
-                  No members found
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {filteredMembers.map(member => (
-                    <div
-                      key={member.id}
-                      className="flex items-center space-x-3 p-3 hover:bg-slate-50"
-                    >
-                      <Checkbox
-                        id={`member-${member.id}`}
-                        checked={selectedUsers.includes(member.id)}
-                        onCheckedChange={() => handleUserToggle(member.id)}
-                      />
-                      <div className="flex-grow">
-                        <Label
-                          htmlFor={`member-${member.id}`}
-                          className="font-medium cursor-pointer"
-                        >
-                          {member.name}
-                        </Label>
-                        <p className="text-sm text-slate-500">{member.jobTitle}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
-
+        
         <DialogFooter>
-          <Button variant="outline" onClick={resetForm}>
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleCreate}
-            disabled={
-              !chatName.trim() || 
-              selectedUsers.length === 0 ||
-              (chatType === 'group' && !chatName.trim())
-            }
-          >
-            Create
+          <Button onClick={handleCreate}>
+            Create Chat
           </Button>
         </DialogFooter>
       </DialogContent>

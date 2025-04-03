@@ -61,7 +61,7 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
           unread_count: unreadCount,
           is_pinned: room.is_pinned || false,
           is_archived: room.is_archived || false,
-          metadata: room.metadata
+          metadata: room.metadata || null
         };
       })
     );
@@ -92,7 +92,7 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
       type: assertChatRoomType(data.type),
       is_pinned: data.is_pinned || false,
       is_archived: data.is_archived || false,
-      metadata: data.metadata
+      metadata: data.metadata || null
     };
   } catch (error) {
     console.error("Error fetching work order chat room:", error);
@@ -149,7 +149,7 @@ export const getDirectChatWithUser = async (currentUserId: string, otherUserId: 
       type: assertChatRoomType(directRooms.type),
       is_pinned: directRooms.is_pinned || false,
       is_archived: directRooms.is_archived || false,
-      metadata: directRooms.metadata
+      metadata: directRooms.metadata || null
     };
   } catch (error) {
     console.error("Error fetching direct chat:", error);
@@ -173,7 +173,7 @@ export const getChatRoomDetails = async (roomId: string): Promise<ChatRoom> => {
       type: assertChatRoomType(data.type),
       is_pinned: data.is_pinned || false,
       is_archived: data.is_archived || false,
-      metadata: data.metadata
+      metadata: data.metadata || null
     };
   } catch (error) {
     console.error("Error fetching chat room details:", error);
@@ -223,7 +223,7 @@ export const createChatRoom = async (
       type: assertChatRoomType(room.type),
       is_pinned: room.is_pinned || false,
       is_archived: room.is_archived || false,
-      metadata: room.metadata
+      metadata: room.metadata || null
     };
   } catch (error) {
     console.error("Error creating chat room:", error);

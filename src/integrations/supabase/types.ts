@@ -85,8 +85,14 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          file_url: string | null
+          flag_reason: string | null
           id: string
+          is_flagged: boolean | null
           is_read: boolean | null
+          message_type: string | null
+          metadata: Json | null
+          reply_to_id: string | null
           room_id: string
           sender_id: string
           sender_name: string
@@ -94,8 +100,14 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          file_url?: string | null
+          flag_reason?: string | null
           id?: string
+          is_flagged?: boolean | null
           is_read?: boolean | null
+          message_type?: string | null
+          metadata?: Json | null
+          reply_to_id?: string | null
           room_id: string
           sender_id: string
           sender_name: string
@@ -103,8 +115,14 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          file_url?: string | null
+          flag_reason?: string | null
           id?: string
+          is_flagged?: boolean | null
           is_read?: boolean | null
+          message_type?: string | null
+          metadata?: Json | null
+          reply_to_id?: string | null
           room_id?: string
           sender_id?: string
           sender_name?: string
@@ -152,6 +170,9 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_archived: boolean | null
+          is_pinned: boolean | null
+          metadata: Json | null
           name: string
           type: string
           updated_at: string
@@ -160,6 +181,9 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
+          metadata?: Json | null
           name: string
           type: string
           updated_at?: string
@@ -168,6 +192,9 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
+          metadata?: Json | null
           name?: string
           type?: string
           updated_at?: string
