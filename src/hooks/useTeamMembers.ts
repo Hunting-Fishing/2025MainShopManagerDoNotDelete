@@ -36,8 +36,14 @@ export function useTeamMembers() {
 
         // Transform the profile data to match TeamMember type
         const mappedMembers: TeamMember[] = profiles.map(profile => {
-          // Extract role information
-          const userRole = profile.user_roles?.[0]?.roles?.name || 'User';
+          // Extract role information - handling potential data structure issues
+          let userRole = 'User'; // Default role
+          if (profile.user_roles && 
+              profile.user_roles.length > 0 && 
+              profile.user_roles[0].roles && 
+              typeof profile.user_roles[0].roles === 'object') {
+            userRole = profile.user_roles[0].roles.name || 'User';
+          }
           
           // Create a TeamMember object
           return {

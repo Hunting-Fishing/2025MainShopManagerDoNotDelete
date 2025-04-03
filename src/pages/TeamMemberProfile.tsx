@@ -66,8 +66,14 @@ export default function TeamMemberProfile() {
           description: activity.action
         })) || [];
 
-        // Get the role information
-        const userRole = profileData.user_roles?.[0]?.roles?.name || 'User';
+        // Extract role information - handling potential data structure issues
+        let userRole = 'User'; // Default role
+        if (profileData.user_roles && 
+            profileData.user_roles.length > 0 && 
+            profileData.user_roles[0].roles && 
+            typeof profileData.user_roles[0].roles === 'object') {
+          userRole = profileData.user_roles[0].roles.name || 'User';
+        }
 
         // Create the member object with the fetched data
         const memberData: TeamMember = {
