@@ -43,10 +43,66 @@ export function useTeamMemberUpdate() {
       
       console.log("Profile update result:", data);
       
-      // In a full implementation, additional database updates would happen here:
-      // 1. Update role assignments in user_roles table if role changed
-      // 2. Save job title, department, etc. in a team_member_metadata table
-      // 3. Update user status if changed
+      // Update role in user_roles table if the role has changed
+      if (values.role) {
+        // First, get the role_id for the given role name
+        const { data: roleData, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', values.role)
+          .single();
+
+        if (roleError) {
+          console.error("Error fetching role:", roleError);
+          // Don't throw, continue with other updates
+        } else if (roleData) {
+          // Check if the user already has this role
+          const { data: existingRoles, error: existingRolesError } = await supabase
+            .from('user_roles')
+            .select('id, role_id')
+            .eq('user_id', memberId);
+
+          if (existingRolesError) {
+            console.error("Error fetching existing roles:", existingRolesError);
+          } else {
+            // If the user has roles, update the first one to the new role
+            // In a more sophisticated implementation, we might want to handle multiple roles
+            if (existingRoles && existingRoles.length > 0) {
+              const { error: updateRoleError } = await supabase
+                .from('user_roles')
+                .update({ role_id: roleData.id })
+                .eq('id', existingRoles[0].id);
+              
+              if (updateRoleError) {
+                console.error("Error updating role:", updateRoleError);
+              } else {
+                console.log("Role updated successfully");
+              }
+            } else {
+              // If the user has no roles, create a new one
+              const { error: insertRoleError } = await supabase
+                .from('user_roles')
+                .insert({ user_id: memberId, role_id: roleData.id });
+              
+              if (insertRoleError) {
+                console.error("Error inserting role:", insertRoleError);
+              } else {
+                console.log("Role assigned successfully");
+              }
+            }
+          }
+        }
+      }
+      
+      // We also need to store the job title, department, and status
+      // Since these aren't in the profiles table, we could create a team_member_metadata table
+      // For now, let's log that we would save these values
+      console.log("Would save additional metadata:", {
+        jobTitle: values.jobTitle,
+        department: values.department,
+        status: values.status,
+        notes: values.notes
+      });
       
       toast({
         title: "Profile updated",

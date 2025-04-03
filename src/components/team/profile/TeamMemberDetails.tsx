@@ -17,10 +17,10 @@ export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps)
     id: member.id,  // Include id for database updates
     name: member.name,
     email: member.email,
-    phone: member.phone,
-    jobTitle: member.jobTitle,
-    role: member.role,
-    department: member.department,
+    phone: member.phone || "",
+    jobTitle: member.jobTitle || "",
+    role: member.role || "",
+    department: member.department || "",
     status: member.status === "Active",
     notes: member.notes || "",
   };
