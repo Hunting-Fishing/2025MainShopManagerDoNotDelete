@@ -2030,12 +2030,46 @@ export type Database = {
           },
         ]
       }
+      profile_metadata: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          profile_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_metadata_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
+          department: string | null
           email: string
           first_name: string | null
           id: string
+          job_title: string | null
           last_name: string | null
           phone: string | null
           shop_id: string | null
@@ -2043,9 +2077,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          department?: string | null
           email: string
           first_name?: string | null
           id: string
+          job_title?: string | null
           last_name?: string | null
           phone?: string | null
           shop_id?: string | null
@@ -2053,9 +2089,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          department?: string | null
           email?: string
           first_name?: string | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
           phone?: string | null
           shop_id?: string | null

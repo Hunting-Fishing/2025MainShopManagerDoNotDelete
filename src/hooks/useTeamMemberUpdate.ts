@@ -28,7 +28,7 @@ export function useTeamMemberUpdate() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      // Update only the profile fields that exist in the database
+      // Update the profile with all available fields including the new columns
       const { error: profileError, data } = await supabase
         .from('profiles')
         .update({
@@ -36,7 +36,8 @@ export function useTeamMemberUpdate() {
           last_name: lastName,
           email: values.email,
           phone: values.phone || null,
-          // We're not including department and job_title as they don't exist in the profiles table
+          job_title: values.jobTitle, // Using the new job_title column
+          department: values.department, // Using the new department column
         })
         .eq('id', memberId)
         .select();
@@ -48,13 +49,50 @@ export function useTeamMemberUpdate() {
       
       console.log("Profile update result:", data);
       
-      // Store job title, department, and other metadata in a separate location if needed
-      // For now, let's log this information since we can't store it in the profiles table
-      console.log("Additional info that would be stored elsewhere:", {
-        jobTitle: values.jobTitle,
-        department: values.department,
-        notes: values.notes
-      });
+      // Save additional metadata in the profile_metadata table if needed
+      if (values.notes) {
+        try {
+          // First check if a metadata record exists
+          const { data: existingMetadata, error: fetchError } = await supabase
+            .from('profile_metadata')
+            .select('id')
+            .eq('profile_id', memberId)
+            .maybeSingle();
+            
+          if (fetchError) {
+            console.error("Error fetching profile metadata:", fetchError);
+          }
+          
+          if (existingMetadata) {
+            // Update existing metadata
+            const { error: updateError } = await supabase
+              .from('profile_metadata')
+              .update({
+                metadata: { notes: values.notes }
+              })
+              .eq('profile_id', memberId);
+              
+            if (updateError) {
+              console.error("Error updating profile metadata:", updateError);
+            }
+          } else {
+            // Create new metadata
+            const { error: insertError } = await supabase
+              .from('profile_metadata')
+              .insert({
+                profile_id: memberId,
+                metadata: { notes: values.notes }
+              });
+              
+            if (insertError) {
+              console.error("Error inserting profile metadata:", insertError);
+            }
+          }
+        } catch (metadataError) {
+          console.error("Metadata operation error:", metadataError);
+          // Continue with the update even if metadata fails
+        }
+      }
       
       // Handle role updates - this requires admin privileges
       if (values.role) {
