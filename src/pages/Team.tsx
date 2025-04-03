@@ -6,7 +6,7 @@ import { TeamFilters } from "@/components/team/TeamFilters";
 import { TeamViewToggle } from "@/components/team/TeamViewToggle";
 import { TeamMemberGrid } from "@/components/team/TeamMemberGrid";
 import { TeamMemberTable } from "@/components/team/TeamMemberTable";
-import { getInitials } from "@/data/teamData";
+import { getInitials, teamMembers as mockTeamMembers } from "@/data/teamData";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 export default function Team() {
@@ -16,7 +16,7 @@ export default function Team() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
   
-  // Use real data from Supabase instead of mock data
+  // Use our hook to get team members data
   const { teamMembers, isLoading } = useTeamMembers();
 
   // Get unique roles and departments for filters
@@ -51,6 +51,9 @@ export default function Team() {
     setDepartmentFilter([]);
     setStatusFilter([]);
   };
+
+  console.log("Team members:", teamMembers);
+  console.log("Filtered members:", filteredMembers);
 
   return (
     <div className="space-y-6">

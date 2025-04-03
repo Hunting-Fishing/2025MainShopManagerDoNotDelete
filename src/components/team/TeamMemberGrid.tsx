@@ -8,6 +8,8 @@ interface TeamMemberGridProps {
 }
 
 export function TeamMemberGrid({ members, getInitials }: TeamMemberGridProps) {
+  console.log("Grid received members:", members.length);
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {members.map((member) => (

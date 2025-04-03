@@ -16,7 +16,7 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
       <div className="flex items-center justify-between p-4 border-b border-slate-100">
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
-            <AvatarImage src="" alt={member.name} />
+            <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`} alt={member.name} />
             <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">{getInitials(member.name)}</AvatarFallback>
           </Avatar>
           <div>
