@@ -102,4 +102,4 @@ export const HierarchicalCategoryMenu: React.FC<HierarchicalCategoryMenuProps> =
       {categories.map(category => renderCategory(category))}
     </div>
   );
-};
+}

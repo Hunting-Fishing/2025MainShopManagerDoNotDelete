@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { getCategories } from '@/services/shopping/categoryService';
 import { getProducts } from '@/services/shopping/productService';
-import { ProductCategory, Product, ProductFilterOptions } from '@/types/shopping';
+import { ProductFilterOptions } from '@/types/shopping';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
 import { HierarchicalCategoryMenu } from '@/components/shopping/HierarchicalCategoryMenu';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Search } from "lucide-react";
 import { Input } from '@/components/ui/input';
+import { useCategories } from '@/hooks/useCategories';
 
 export default function Shopping() {
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const { categories, isLoading: categoriesLoading } = useCategories();
+  const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,31 +19,24 @@ export default function Shopping() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    async function loadData() {
+    async function loadProducts() {
       try {
         setLoading(true);
         setError(null);
         
-        console.log("Fetching categories...");
-        // Load categories
-        const categoriesData = await getCategories();
-        console.log("Categories fetched:", categoriesData);
-        setCategories(categoriesData);
-        
-        // Load initial products
         console.log("Fetching products...");
         const productsData = await getProducts();
         console.log("Products fetched:", productsData);
         setProducts(productsData);
       } catch (error) {
-        console.error("Error loading shopping data:", error);
-        setError("Failed to load shopping data. Please try again later.");
+        console.error("Error loading products:", error);
+        setError("Failed to load products. Please try again later.");
       } finally {
         setLoading(false);
       }
     }
     
-    loadData();
+    loadProducts();
   }, []);
 
   const handleCategoryChange = async (categoryId: string) => {
@@ -126,7 +119,7 @@ export default function Shopping() {
               categories={categories}
               selectedCategoryId={selectedCategory}
               onCategoryChange={handleCategoryChange}
-              isLoading={loading && categories.length === 0}
+              isLoading={categoriesLoading}
             />
           </div>
         </div>
