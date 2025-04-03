@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
 import { useChat } from '@/hooks/useChat';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -12,6 +12,7 @@ import { useChatNotifications } from '@/hooks/useChatNotifications';
 export default function Chat() {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId, userName, isLoading } = useAuthUser();
   
   const {
@@ -43,6 +44,20 @@ export default function Chat() {
     openWorkOrderChat,
     handleViewWorkOrderDetails
   } = useChatRoomActions(userId, selectRoom, refreshRooms);
+
+  // Check for shift chat request from calendar page
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.createShiftChat) {
+      setShowNewChatDialog(true);
+      
+      // We'd trigger the shift chat option here, but since the dialog is in a different component,
+      // we'll need to pass this info via context or state management in a real app
+      
+      // Reset location state to prevent reopening on navigation
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate, setShowNewChatDialog]);
 
   // Use chat notifications hook
   useChatNotifications({ userId: userId || '' });

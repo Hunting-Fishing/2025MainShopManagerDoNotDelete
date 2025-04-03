@@ -11,19 +11,22 @@ import {
 } from "date-fns";
 import { CalendarDay } from "./CalendarDay";
 import { CalendarEvent } from "@/types/calendar";
+import { ChatRoom } from "@/types/chat";
 
 interface CalendarMonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
   currentTime?: Date;
+  shiftChats?: ChatRoom[];
 }
 
 export function CalendarMonthView({ 
   currentDate, 
   events, 
   onEventClick,
-  currentTime = new Date()
+  currentTime = new Date(),
+  shiftChats = []
 }: CalendarMonthViewProps) {
   // Get days in month view (including days from previous/next month to fill the grid)
   const monthStart = startOfMonth(currentDate);
@@ -70,6 +73,7 @@ export function CalendarMonthView({
               isToday={isToday(day)}
               onEventClick={onEventClick}
               currentTime={currentTime}
+              shiftChats={shiftChats}
             />
           );
         })}

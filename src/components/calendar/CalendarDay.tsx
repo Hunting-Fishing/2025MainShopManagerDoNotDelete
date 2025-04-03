@@ -3,6 +3,9 @@ import { format, isPast, isToday, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarEvent } from "@/types/calendar";
 import { priorityMap } from "@/data/workOrdersData";
+import { ShiftChatIndicator } from "./ShiftChatIndicator";
+import { ChatRoom } from "@/types/chat";
+import { useNavigate } from "react-router-dom";
 
 interface CalendarDayProps {
   date: Date;
@@ -11,6 +14,7 @@ interface CalendarDayProps {
   isToday?: boolean;
   onEventClick: (event: CalendarEvent) => void;
   currentTime?: Date;
+  shiftChats?: ChatRoom[];
 }
 
 export function CalendarDay({ 
@@ -19,8 +23,11 @@ export function CalendarDay({
   isCurrentMonth = true, 
   isToday = false,
   onEventClick,
-  currentTime = new Date()
+  currentTime = new Date(),
+  shiftChats = []
 }: CalendarDayProps) {
+  const navigate = useNavigate();
+  
   // Check if this date is in the past
   const isPastDate = isPast(startOfDay(date)) && !isToday;
   
@@ -35,6 +42,11 @@ export function CalendarDay({
   const maxVisibleEvents = 3;
   const visibleEvents = sortedEvents.slice(0, maxVisibleEvents);
   const hiddenEventsCount = sortedEvents.length - maxVisibleEvents;
+
+  // Handle shift chat click
+  const handleShiftChatClick = (room: ChatRoom) => {
+    navigate(`/chat/${room.id}`);
+  };
 
   return (
     <div 
@@ -89,6 +101,13 @@ export function CalendarDay({
           </div>
         )}
       </div>
+      
+      {/* Shift Chat Indicator */}
+      <ShiftChatIndicator 
+        date={date}
+        chatRooms={shiftChats}
+        onClick={handleShiftChatClick}
+      />
     </div>
   );
 }

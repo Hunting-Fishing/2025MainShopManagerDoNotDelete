@@ -7,6 +7,11 @@ export const useChatDialogState = (teamMembers: TeamMember[]) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [filteredTeamMembers, setFilteredTeamMembers] = useState(teamMembers);
+  const [isShiftChat, setIsShiftChat] = useState(false);
+  const [shiftDate, setShiftDate] = useState<Date | undefined>(undefined);
+  const [shiftName, setShiftName] = useState("");
+  const [shiftTimeStart, setShiftTimeStart] = useState("09:00");
+  const [shiftTimeEnd, setShiftTimeEnd] = useState("17:00");
   
   // Determine chat type based on number of participants
   const chatType: "direct" | "group" = participants.length > 1 ? "group" : "direct";
@@ -32,7 +37,11 @@ export const useChatDialogState = (teamMembers: TeamMember[]) => {
       return;
     }
     
-    if (participants.length === 1) {
+    if (isShiftChat) {
+      // Shift chat naming
+      const formattedDate = shiftDate ? new Date(shiftDate).toLocaleDateString() : "Upcoming";
+      setChatName(`${shiftName || "Shift"} - ${formattedDate}`);
+    } else if (participants.length === 1) {
       // Direct chat - name based on the participant
       const member = teamMembers.find(m => m.id === participants[0]);
       if (member) {
@@ -52,7 +61,7 @@ export const useChatDialogState = (teamMembers: TeamMember[]) => {
         setChatName(`Group Chat (${participants.length} members)`);
       }
     }
-  }, [participants, chatName, teamMembers]);
+  }, [participants, chatName, teamMembers, isShiftChat, shiftDate, shiftName]);
 
   const handleAddParticipant = (userId: string) => {
     if (!participants.includes(userId)) {
@@ -76,6 +85,11 @@ export const useChatDialogState = (teamMembers: TeamMember[]) => {
     setChatName("");
     setSearchQuery("");
     setParticipants([]);
+    setIsShiftChat(false);
+    setShiftDate(undefined);
+    setShiftName("");
+    setShiftTimeStart("09:00");
+    setShiftTimeEnd("17:00");
   };
 
   return {
@@ -87,6 +101,16 @@ export const useChatDialogState = (teamMembers: TeamMember[]) => {
     setParticipants,
     filteredTeamMembers,
     chatType,
+    isShiftChat,
+    setIsShiftChat,
+    shiftDate,
+    setShiftDate,
+    shiftName,
+    setShiftName,
+    shiftTimeStart, 
+    setShiftTimeStart,
+    shiftTimeEnd,
+    setShiftTimeEnd,
     handleAddParticipant,
     handleRemoveParticipant,
     handleToggleParticipant,

@@ -68,7 +68,13 @@ export interface ChatRoomMetadata {
   team?: string;
   shop_id?: string;
   is_shift_chat?: boolean;
+  shift_date?: string;
   shift_name?: string;
+  shift_time?: {
+    start: string;
+    end: string;
+  };
+  shift_participants?: string[];
   purpose?: string;
   tags?: string[];
 }

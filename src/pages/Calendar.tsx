@@ -1,12 +1,16 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalendarFilters } from "@/components/calendar/CalendarFilters";
 import { workOrders } from "@/data/workOrdersData";
 import { CalendarEvent } from "@/types/calendar";
+import { CreateShiftChatButton } from "@/components/calendar/CreateShiftChatButton";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
 export default function Calendar() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<"month" | "week" | "day">("month");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
@@ -37,14 +41,29 @@ export default function Calendar() {
     return matchesTechnician && matchesStatus;
   });
 
+  // Handle creating a new shift chat from calendar
+  const handleCreateShiftChat = () => {
+    // Navigate to chat page with pre-filled shift chat date from calendar
+    navigate("/chat", { 
+      state: { 
+        createShiftChat: true, 
+        shiftDate: format(currentDate, 'yyyy-MM-dd')
+      } 
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <CalendarHeader 
-        currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
-        view={view}
-        setView={setView}
-      />
+      <div className="flex justify-between items-center">
+        <CalendarHeader 
+          currentDate={currentDate}
+          setCurrentDate={setCurrentDate}
+          view={view}
+          setView={setView}
+        />
+        
+        <CreateShiftChatButton onClick={handleCreateShiftChat} />
+      </div>
       
       <CalendarFilters 
         technicianFilter={technicianFilter}
