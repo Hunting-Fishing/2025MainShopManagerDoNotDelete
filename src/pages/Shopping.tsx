@@ -4,7 +4,7 @@ import { getCategories } from '@/services/shopping/categoryService';
 import { getProducts } from '@/services/shopping/productService';
 import { ProductCategory, Product, ProductFilterOptions } from '@/types/shopping';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
-import { CategoryMenu } from '@/components/shopping/CategoryMenu';
+import { HierarchicalCategoryMenu } from '@/components/shopping/HierarchicalCategoryMenu';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Search } from "lucide-react";
 import { Input } from '@/components/ui/input';
@@ -122,7 +122,7 @@ export default function Shopping() {
         <div className="md:col-span-1">
           <div className="sticky top-4 p-4 border rounded-lg bg-background shadow-sm">
             <h2 className="font-medium mb-3">Categories</h2>
-            <CategoryMenu 
+            <HierarchicalCategoryMenu 
               categories={categories}
               selectedCategoryId={selectedCategory}
               onCategoryChange={handleCategoryChange}

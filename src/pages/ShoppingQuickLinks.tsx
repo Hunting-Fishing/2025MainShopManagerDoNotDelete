@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ShoppingHeader } from '@/components/shopping/ShoppingHeader';
 import { ProductFilters } from '@/components/shopping/ProductFilters';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
-import { CategoryTabs } from '@/components/shopping/CategoryTabs';
+import { HierarchicalCategoryMenu } from '@/components/shopping/HierarchicalCategoryMenu';
 import { SuggestionForm } from '@/components/shopping/SuggestionForm';
 import { WishlistPanel } from '@/components/shopping/WishlistPanel';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProducts } from '@/hooks/useProducts';
+import { useCategories } from '@/hooks/useCategories';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function ShoppingQuickLinks() {
   const { products, isLoading, filterOptions, updateFilters } = useProducts();
+  const { categories, isLoading: categoriesLoading } = useCategories();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { isAdmin } = useAuthUser();
@@ -25,12 +27,14 @@ export default function ShoppingQuickLinks() {
   const [activeTab, setActiveTab] = useState<string>('all-products');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showWishlist, setShowWishlist] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   const handleSearch = (searchTerm: string) => {
     updateFilters({ search: searchTerm });
   };
 
-  const handleCategoryChange = (categoryId?: string) => {
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
     updateFilters({ categoryId });
   };
 
@@ -80,6 +84,20 @@ export default function ShoppingQuickLinks() {
               />
             ) : (
               <div className="w-full md:w-64 flex-shrink-0">
+                <Card className="mb-6">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Categories</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <HierarchicalCategoryMenu 
+                      categories={categories}
+                      selectedCategoryId={selectedCategory}
+                      onCategoryChange={handleCategoryChange}
+                      isLoading={categoriesLoading}
+                    />
+                  </CardContent>
+                </Card>
+                
                 <ProductFilters
                   filterOptions={filterOptions}
                   onFilterChange={updateFilters}
@@ -88,11 +106,6 @@ export default function ShoppingQuickLinks() {
             )}
             
             <div className="flex-grow">
-              <CategoryTabs
-                selectedCategoryId={filterOptions.categoryId}
-                onCategoryChange={handleCategoryChange}
-              />
-              
               <div className="mt-6">
                 <ProductGrid
                   products={products}

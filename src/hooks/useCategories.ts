@@ -13,9 +13,12 @@ export function useCategories() {
     async function fetchCategories() {
       try {
         setIsLoading(true);
+        console.log("useCategories: Fetching categories");
         const data = await getCategories();
+        console.log("useCategories: Got categories:", data);
         setCategories(data);
       } catch (err) {
+        console.error("useCategories: Error fetching categories:", err);
         setError(err instanceof Error ? err : new Error('Unknown error'));
         toast({
           title: "Error loading categories",
@@ -40,10 +43,32 @@ export function useCategories() {
       if (category.subcategories) {
         const subCategory = category.subcategories.find(sub => sub.id === id);
         if (subCategory) return subCategory;
+        
+        // Search in deeper levels (sub-subcategories)
+        for (const subCat of category.subcategories) {
+          if (subCat.subcategories) {
+            const subSubCategory = subCat.subcategories.find(subSub => subSub.id === id);
+            if (subSubCategory) return subSubCategory;
+          }
+        }
       }
     }
 
     return undefined;
+  };
+
+  const getAllCategoriesFlat = (): ProductCategory[] => {
+    const result: ProductCategory[] = [];
+    
+    const addCategory = (category: ProductCategory) => {
+      result.push(category);
+      if (category.subcategories) {
+        category.subcategories.forEach(addCategory);
+      }
+    };
+    
+    categories.forEach(addCategory);
+    return result;
   };
 
   const fetchCategoryBySlug = async (slug: string): Promise<ProductCategory | null> => {
@@ -64,6 +89,7 @@ export function useCategories() {
     isLoading, 
     error, 
     getCategoryById,
+    getAllCategoriesFlat,
     fetchCategoryBySlug
   };
 }

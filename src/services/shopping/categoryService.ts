@@ -39,6 +39,18 @@ export async function getCategories(): Promise<ProductCategory[]> {
           parent.subcategories = [];
         }
         parent.subcategories.push(subCategory);
+      } else {
+        // If parent is another subcategory, find the main category
+        const parentSubCategory = subCategories.find(cat => cat.id === subCategory.parent_id);
+        if (parentSubCategory) {
+          const grandParent = mainCategories.find(cat => cat.id === parentSubCategory.parent_id);
+          if (grandParent) {
+            if (!parentSubCategory.subcategories) {
+              parentSubCategory.subcategories = [];
+            }
+            parentSubCategory.subcategories.push(subCategory);
+          }
+        }
       }
     });
 
