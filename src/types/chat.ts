@@ -81,6 +81,17 @@ export interface ChatMessageMetadata {
   vehicle_id?: string;
   warranty_id?: string;
   tagged_users?: string[];
+  taggedItems?: {
+    workOrderIds: string[];
+    partIds: string[];
+    warrantyIds: string[];
+    jobIds: string[];
+  };
+  saved_to?: {
+    work_order?: string;
+    vehicle?: string;
+    saved_at?: string;
+  };
   important?: boolean;
   needs_attention?: boolean;
   needs_customer_approval?: boolean;

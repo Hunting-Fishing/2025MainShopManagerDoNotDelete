@@ -1,11 +1,20 @@
 
 import { ChatMessage } from "@/types/chat";
 import { supabase, DatabaseChatMessage } from "../supabaseClient";
-import { MessageSendParams, MessageFlagParams, getMessageType, transformDatabaseMessage } from "./types";
+import { MessageSendParams, MessageFlagParams, getMessageType, transformDatabaseMessage, parseTaggedItems } from "./types";
 
 // Send a message to a chat room
 export const sendMessage = async (message: MessageSendParams): Promise<ChatMessage> => {
   try {
+    // Parse tagged items from the message content
+    const taggedItems = parseTaggedItems(message.content);
+    
+    // Create metadata with tagged items
+    const metadata = {
+      ...message.metadata,
+      taggedItems: taggedItems
+    };
+    
     const { data, error } = await supabase
       .from('chat_messages')
       .insert([{
@@ -14,7 +23,8 @@ export const sendMessage = async (message: MessageSendParams): Promise<ChatMessa
         sender_name: message.sender_name,
         content: message.content,
         is_read: false,
-        message_type: getMessageType(message.content)
+        message_type: getMessageType(message.content),
+        metadata: metadata
       } as Partial<DatabaseChatMessage>])
       .select()
       .single();
@@ -85,6 +95,59 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
     if (error) throw error;
   } catch (error) {
     console.error("Error deleting message:", error);
+    throw error;
+  }
+};
+
+// Save message to vehicle history or work order
+export const saveMessageToRecord = async (
+  messageId: string, 
+  recordType: 'vehicle' | 'work_order', 
+  recordId: string
+): Promise<void> => {
+  try {
+    // First, get the message to be saved
+    const { data: message, error: messageError } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('id', messageId)
+      .single();
+      
+    if (messageError) throw messageError;
+    
+    // Update the message metadata to indicate it's been saved
+    const updatedMetadata = {
+      ...(message.metadata || {}),
+      saved_to: {
+        ...(message.metadata?.saved_to || {}),
+        [recordType]: recordId,
+        saved_at: new Date().toISOString()
+      }
+    };
+    
+    // Update the message with the new metadata
+    const { error: updateError } = await supabase
+      .from('chat_messages')
+      .update({
+        metadata: updatedMetadata
+      })
+      .eq('id', messageId);
+      
+    if (updateError) throw updateError;
+    
+    // If saving to a work order, you could add a note to the work order
+    if (recordType === 'work_order') {
+      // Logic to add the message to work order notes could go here
+      // This would depend on your work order table structure
+    }
+    
+    // If saving to a vehicle, you could add a note to the vehicle history
+    if (recordType === 'vehicle') {
+      // Logic to add the message to vehicle history could go here
+      // This would depend on your vehicle history table structure
+    }
+  } catch (error) {
+    console.error(`Error saving message to ${recordType}:`, error);
     throw error;
   }
 };

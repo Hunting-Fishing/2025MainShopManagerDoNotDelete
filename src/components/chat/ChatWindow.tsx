@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { ChatRoom, ChatMessage as ChatMessageType } from '@/types/chat';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -51,14 +50,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [showWorkOrderMenu, setShowWorkOrderMenu] = useState(false);
 
-  // Scroll to bottom of messages when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Handle Enter key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -66,7 +63,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  // Handle voice message
   const handleVoiceMessage = async (audioBlob: Blob) => {
     if (!room) return;
     
@@ -82,14 +78,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  // Handle file upload
   const handleFileUploaded = (fileUrl: string, fileType: string, caption?: string) => {
     if (onSendFileMessage) {
       onSendFileMessage(fileUrl + (caption ? `|${caption}` : ''));
     }
   };
 
-  // Render options menu for a work order chat
   const renderWorkOrderOptions = () => {
     if (!room?.work_order_id) return null;
     
@@ -219,6 +213,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 key={message.id}
                 message={message}
                 isCurrentUser={message.sender_id === userId}
+                onFlagMessage={onFlagMessage}
               />
             ))}
             {isTyping && (
