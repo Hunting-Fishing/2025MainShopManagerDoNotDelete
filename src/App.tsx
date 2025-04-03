@@ -50,6 +50,7 @@ import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
 import EmailCampaignAnalytics from "./pages/EmailCampaignAnalytics";
 import ShoppingQuickLinks from './pages/ShoppingQuickLinks';
+import Shopping from './pages/Shopping';
 import ShoppingAdmin from './pages/ShoppingAdmin';
 import Login from './pages/Login';
 import Index from './pages/Index';
@@ -133,7 +134,8 @@ function App() {
           <Route path="sms" element={<SmsManagement />} />
           <Route path="sms-templates" element={<SmsTemplates />} />
           <Route path="chat" element={<Chat />} />
-          <Route path="shopping" element={<ShoppingQuickLinks />} />
+          <Route path="shopping" element={<Shopping />} />
+          <Route path="shopping-quick-links" element={<ShoppingQuickLinks />} />
           <Route path="shopping/admin" element={<ShoppingAdmin />} />
           <Route path="feedback/forms" element={<FeedbackFormsPage />} />
           <Route path="feedback/forms/editor/:id?" element={<FeedbackFormEditorPage />} />

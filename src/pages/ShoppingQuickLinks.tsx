@@ -106,7 +106,7 @@ export default function ShoppingQuickLinks() {
             )}
             
             <div className="flex-grow">
-              <div className="mt-6">
+              <div className="mt-6 md:mt-0">
                 <ProductGrid
                   products={products}
                   isLoading={isLoading}
