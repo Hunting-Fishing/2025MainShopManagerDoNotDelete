@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { TeamMember } from "@/types/team";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,6 +13,13 @@ export function useTeamMemberProfile(id: string | undefined) {
     const fetchMemberData = async () => {
       setLoading(true);
       try {
+        if (!id) {
+          setMember(null);
+          setLoading(false);
+          return;
+        }
+        
+        // First get the user profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select(`
@@ -21,11 +28,7 @@ export function useTeamMemberProfile(id: string | undefined) {
             last_name,
             email,
             phone,
-            created_at,
-            user_roles:user_roles(
-              role_id,
-              roles:role_id(name)
-            )
+            created_at
           `)
           .eq('id', id)
           .single();
@@ -39,7 +42,20 @@ export function useTeamMemberProfile(id: string | undefined) {
           return;
         }
 
-        // Get user's recent activity (you might need to adjust this based on your schema)
+        // Get user's role in a separate query
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            role_id,
+            roles:role_id(name)
+          `)
+          .eq('user_id', id);
+          
+        if (rolesError) {
+          console.warn('Error fetching roles:', rolesError);
+        }
+
+        // Get user's recent activity
         const { data: activityData } = await supabase
           .from('work_order_activities')
           .select('*')
@@ -50,22 +66,20 @@ export function useTeamMemberProfile(id: string | undefined) {
         // Transform activity data to match the expected format
         const recentActivity = activityData?.map(activity => ({
           type: 'workOrder',
-          date: activity.timestamp,
+          date: activity.timestamp || new Date().toISOString(),
           description: activity.action
         })) || [];
 
-        // Extract role information - handling potential data structure issues
+        // Extract role information
         let userRole = 'User'; // Default role
         
-        if (profileData.user_roles && 
-            Array.isArray(profileData.user_roles) && 
-            profileData.user_roles.length > 0 && 
-            profileData.user_roles[0].roles) {
-          // Check if roles is an object with a name property
-          if (typeof profileData.user_roles[0].roles === 'object' && 
-              profileData.user_roles[0].roles !== null &&
-              'name' in profileData.user_roles[0].roles) {
-            userRole = profileData.user_roles[0].roles.name || 'User';
+        if (userRoles && 
+            userRoles.length > 0 && 
+            userRoles[0].roles) {
+          if (typeof userRoles[0].roles === 'object' && 
+              userRoles[0].roles !== null &&
+              'name' in userRoles[0].roles) {
+            userRole = userRoles[0].roles.name || 'User';
           }
         }
 
@@ -105,6 +119,8 @@ export function useTeamMemberProfile(id: string | undefined) {
 
     if (id) {
       fetchMemberData();
+    } else {
+      setLoading(false);
     }
   }, [id]);
 
