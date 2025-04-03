@@ -9,7 +9,7 @@ export const useChatDialogState = (teamMembers: TeamMember[]) => {
   const [filteredTeamMembers, setFilteredTeamMembers] = useState(teamMembers);
   
   // Determine chat type based on number of participants
-  const chatType = participants.length > 1 ? "group" : "direct";
+  const chatType: "direct" | "group" = participants.length > 1 ? "group" : "direct";
   
   // Filter team members based on search query
   useEffect(() => {
