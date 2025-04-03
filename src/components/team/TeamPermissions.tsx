@@ -6,6 +6,7 @@ import { PermissionSet, RolePreset } from "@/types/permissions";
 import { defaultPermissions, permissionPresets } from "@/data/permissionPresets";
 import { PermissionModuleCard } from "./permissions/PermissionModuleCard";
 import { PermissionPresetButtons } from "./permissions/PermissionPresetButtons";
+import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 
 interface TeamPermissionsProps {
   memberRole: string;
@@ -86,7 +87,16 @@ export function TeamPermissions({
         <PermissionPresetButtons onApplyPreset={applyPreset} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <ResponsiveGrid 
+        cols={{ 
+          default: 1, 
+          md: 2, 
+          lg: 2, 
+          xl: 3 
+        }}
+        gap="md"
+        className="w-full"
+      >
         {Object.entries(permissions).map(([module, actions]) => (
           <PermissionModuleCard
             key={module}
@@ -95,7 +105,7 @@ export function TeamPermissions({
             onTogglePermission={handleTogglePermission}
           />
         ))}
-      </div>
+      </ResponsiveGrid>
 
       <div className="flex justify-end">
         <Button 

@@ -21,7 +21,7 @@ export function PermissionModuleCard({
   onTogglePermission 
 }: PermissionModuleCardProps) {
   return (
-    <Card key={moduleName} className="shadow-sm">
+    <Card key={moduleName} className="shadow-sm w-full">
       <CardHeader className="pb-3">
         <CardTitle className="capitalize">{moduleName}</CardTitle>
         <CardDescription>
