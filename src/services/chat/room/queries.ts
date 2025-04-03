@@ -109,16 +109,34 @@ export const getDirectChatWithUser = async (currentUserId: string, otherUserId: 
 };
 
 // Get a chat room for a specific shift date
-export const getShiftChatRoom = async (date: Date): Promise<ChatRoom | null> => {
+export const getShiftChatRoom = async (date: Date | string): Promise<ChatRoom | null> => {
   try {
-    const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    // Handle both Date objects and string dates
+    const dateStr = typeof date === 'string' 
+      ? date 
+      : date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
     
+    // First try to find by shift chat ID format
+    if (typeof date === 'string' && date.startsWith('shift-chat-')) {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('type', 'group')
+        .eq('id', date)
+        .single();
+      
+      if (!error && data) {
+        return transformDatabaseRoom(data);
+      }
+    }
+    
+    // Then try to find by metadata
     const { data, error } = await supabase
       .from('chat_rooms')
       .select('*')
       .eq('type', 'group')
-      .contains('metadata', { is_shift_chat: true })
-      .contains('metadata', { shift_date: dateStr })
+      .filter('metadata->is_shift_chat', 'eq', true)
+      .filter('metadata->shift_date', 'ilike', `%${dateStr}%`)
       .single();
     
     if (error) {
@@ -126,6 +144,7 @@ export const getShiftChatRoom = async (date: Date): Promise<ChatRoom | null> => 
         // No chat room found for this date
         return null;
       }
+      console.error("Error in getShiftChatRoom:", error);
       throw error;
     }
     

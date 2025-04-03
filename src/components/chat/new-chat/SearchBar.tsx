@@ -1,25 +1,22 @@
 
 import React from 'react';
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
-interface SearchBarProps {
+export interface SearchBarProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({
-  searchQuery,
-  setSearchQuery
-}) => {
+export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery }) => {
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
       <Input
-        placeholder="Search users by name, email or role..."
+        placeholder="Search team members..."
+        className="pl-8"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="pl-9 w-full"
       />
     </div>
   );

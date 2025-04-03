@@ -1,3 +1,4 @@
+
 import { supabase, DatabaseChatRoom } from "../supabaseClient";
 import { ChatRoom } from "@/types/chat";
 import { transformDatabaseRoom } from "./types";
@@ -54,8 +55,17 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
         
         const unreadCount = unreadCountData ? (unreadCountData as any).count || 0 : 0;
         
+        // Generate a proper name for shift chats if none is provided
+        let roomName = room.name;
+        if (room.type === 'group' && room.metadata?.is_shift_chat && (!roomName || roomName.trim() === '')) {
+          const shiftDate = room.metadata.shift_date ? new Date(room.metadata.shift_date).toLocaleDateString() : 'Unknown Date';
+          const shiftName = room.metadata.shift_name || 'Shift';
+          roomName = `${shiftName} - ${shiftDate}`;
+        }
+        
         return {
           ...transformDatabaseRoom(room),
+          name: roomName,
           last_message: lastMessage,
           unread_count: unreadCount
         };

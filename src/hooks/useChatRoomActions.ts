@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChatRoom } from '@/types/chat';
@@ -127,17 +126,38 @@ export const useChatRoomActions = (
   }, [userId, selectRoom, navigate]);
 
   // Get shift chat for a specific date
-  const getShiftChat = useCallback(async (date: Date) => {
+  const getShiftChat = useCallback(async (date: Date | string) => {
     if (!userId) return null;
     
     try {
+      let chatId = typeof date === 'string' ? date : undefined;
       const shiftChat = await getShiftChatRoom(date);
-      return shiftChat;
+      
+      if (shiftChat) {
+        selectRoom(shiftChat);
+        navigate(`/chat/${shiftChat.id}`);
+        return shiftChat;
+      } else if (chatId && chatId.startsWith('shift-chat-')) {
+        // Handle case where the chat ID is directly provided but not found yet
+        toast({
+          title: "Shift chat not found",
+          description: "The requested shift chat could not be found. It might have been deleted or you don't have access.",
+          variant: "destructive"
+        });
+        navigate('/chat');
+      }
+      return null;
     } catch (error) {
       console.error("Error getting shift chat:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load shift chat",
+        variant: "destructive"
+      });
+      navigate('/chat');
       return null;
     }
-  }, [userId]);
+  }, [userId, navigate, selectRoom]);
 
   // View work order details
   const handleViewWorkOrderDetails = useCallback((workOrderId: string) => {

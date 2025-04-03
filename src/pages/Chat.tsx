@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
@@ -42,6 +43,7 @@ export default function Chat() {
     setShowNewChatDialog,
     handleCreateChat,
     openWorkOrderChat,
+    getShiftChat,
     handleViewWorkOrderDetails
   } = useChatRoomActions(userId, selectRoom, refreshRooms);
 
@@ -50,9 +52,6 @@ export default function Chat() {
     const state = location.state as any;
     if (state?.createShiftChat) {
       setShowNewChatDialog(true);
-      
-      // We'd trigger the shift chat option here, but since the dialog is in a different component,
-      // we'll need to pass this info via context or state management in a real app
       
       // Reset location state to prevent reopening on navigation
       navigate(location.pathname, { replace: true });
@@ -64,39 +63,32 @@ export default function Chat() {
 
   // Load specified room if roomId is provided in URL
   useEffect(() => {
-    if (roomId && userId && chatRooms.length > 0) {
+    if (!userId || !roomId) return;
+
+    // First check if it's a regular room in our loaded rooms
+    if (chatRooms.length > 0) {
       const room = chatRooms.find(r => r.id === roomId);
       if (room) {
         selectRoom(room);
-      } else {
-        // Check if this is a shift chat URL with a specific format
-        if (roomId.startsWith('shift-chat-')) {
-          // If it's a special shift chat URL but room isn't found yet
-          // Show loading toast
-          toast({
-            title: "Loading shift chat",
-            description: "Please wait while we find the shift chat room."
-          });
-          
-          // Keep waiting for rooms to load or redirect after a timeout
-          const timeout = setTimeout(() => {
-            if (!chatRooms.find(r => r.id === roomId)) {
-              navigate('/chat');
-              toast({
-                title: "Shift chat not found",
-                description: "The requested shift chat could not be found.",
-                variant: "destructive"
-              });
-            }
-          }, 5000);
-          
-          return () => clearTimeout(timeout);
-        } else {
-          navigate('/chat');
-        }
+        return; // Room found, no need to continue
       }
     }
-  }, [roomId, chatRooms, selectRoom, navigate, userId]);
+    
+    // If roomId starts with shift-chat prefix or looks like a date format, try to load it as a shift chat
+    if (roomId.startsWith('shift-chat-') || /^\d{4}-\d{2}-\d{2}$/.test(roomId)) {
+      // Show loading indicator
+      toast({
+        title: "Loading shift chat",
+        description: "Please wait while we find the shift chat room."
+      });
+      
+      // Try to load the shift chat
+      getShiftChat(roomId);
+    } else {
+      // If not found and not a shift chat format, navigate to main chat
+      navigate('/chat');
+    }
+  }, [roomId, userId, chatRooms, selectRoom, navigate, getShiftChat]);
 
   if (isLoading) {
     return <ChatLoading />;

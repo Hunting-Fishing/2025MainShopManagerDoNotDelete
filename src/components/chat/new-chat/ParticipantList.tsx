@@ -1,49 +1,54 @@
 
 import React from 'react';
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
-import { TeamMember } from "@/types/team";
-import { getInitials } from "@/data/teamData";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
+import { TeamMember } from '@/types/team';
 
-interface ParticipantListProps {
+export interface ParticipantListProps {
   participants: string[];
-  teamMembers: TeamMember[];
+  teamMembers: TeamMember[]; 
   onRemoveParticipant: (userId: string) => void;
 }
 
-export const ParticipantList: React.FC<ParticipantListProps> = ({
-  participants,
+export const ParticipantList: React.FC<ParticipantListProps> = ({ 
+  participants, 
   teamMembers,
-  onRemoveParticipant
+  onRemoveParticipant 
 }) => {
-  if (participants.length === 0) {
-    return null;
-  }
-
-  // Get selected participants' details
-  const selectedParticipantDetails = participants.map(
-    id => teamMembers.find(member => member.id === id)
-  ).filter(Boolean);
-
   return (
-    <div className="flex flex-wrap gap-2 mb-3 max-h-24 overflow-y-auto p-1">
-      {selectedParticipantDetails.map(member => member && (
-        <Badge 
-          key={member.id} 
-          variant="secondary"
-          className="flex items-center gap-1 pl-1 pr-2 py-1 hover:bg-secondary"
-        >
-          <Avatar className="h-5 w-5 mr-1">
-            <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs">{member.name}</span>
-          <X 
-            className="h-3 w-3 ml-1 cursor-pointer opacity-70 hover:opacity-100" 
-            onClick={() => onRemoveParticipant(member.id)}
-          />
-        </Badge>
-      ))}
+    <div className="border rounded-md p-2 mt-1 mb-3 max-h-32 overflow-y-auto">
+      <div className="flex flex-wrap gap-2">
+        {participants.length > 0 ? (
+          participants.map(userId => {
+            const member = teamMembers.find(m => m.id === userId);
+            
+            return (
+              <div 
+                key={userId}
+                className="flex items-center bg-gray-100 rounded-full pr-2 pl-1 py-0.5"
+              >
+                <Avatar className="h-6 w-6 mr-1">
+                  <AvatarImage src={`https://ui-avatars.com/api/?name=${member?.name || 'User'}&background=random`} />
+                  <AvatarFallback>{(member?.name || 'U').charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm truncate max-w-[100px]">{member?.name || 'Unknown User'}</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-5 w-5 p-0 ml-1"
+                  onClick={() => onRemoveParticipant(userId)}
+                >
+                  <X className="h-3 w-3" />
+                  <span className="sr-only">Remove</span>
+                </Button>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-gray-500 text-sm italic p-1">No participants selected</div>
+        )}
+      </div>
     </div>
   );
 };
