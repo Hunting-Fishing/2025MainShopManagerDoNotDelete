@@ -14,7 +14,7 @@ export function useTeamMembers() {
       setError(null);
       
       try {
-        // Fetch team members from Supabase
+        // First, fetch profiles from Supabase
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -23,11 +23,7 @@ export function useTeamMembers() {
             last_name,
             email,
             phone,
-            created_at,
-            user_roles:user_roles(
-              role_id,
-              roles:role_id(name)
-            )
+            created_at
           `);
 
         if (profilesError) {
@@ -36,7 +32,25 @@ export function useTeamMembers() {
 
         if (!profiles || profiles.length === 0) {
           setTeamMembers([]);
+          setIsLoading(false);
           return;
+        }
+
+        // Get user roles in a separate query
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            role_id,
+            roles:role_id(
+              id,
+              name
+            )
+          `);
+          
+        if (rolesError) {
+          console.warn('Error fetching roles:', rolesError);
+          // Continue without roles data
         }
 
         // Get work order data for technicians
@@ -45,23 +59,24 @@ export function useTeamMembers() {
           .select('technician_id, status');
           
         if (workOrderError) {
-          console.error('Error fetching work orders:', workOrderError);
+          console.warn('Error fetching work orders:', workOrderError);
           // Continue without work order data
         }
 
         // Transform the profile data to match TeamMember type
         const mappedMembers: TeamMember[] = profiles.map(profile => {
-          // Extract role information - handling potential data structure issues
+          // Extract role information
           let userRole = 'User'; // Default role
           
-          if (profile.user_roles && 
-              Array.isArray(profile.user_roles) && 
-              profile.user_roles.length > 0 && 
-              profile.user_roles[0].roles) {
-            if (typeof profile.user_roles[0].roles === 'object' && 
-                profile.user_roles[0].roles !== null &&
-                'name' in profile.user_roles[0].roles) {
-              userRole = profile.user_roles[0].roles.name || 'User';
+          if (userRoles && userRoles.length > 0) {
+            const userRoleData = userRoles.find(ur => ur.user_id === profile.id);
+            
+            if (userRoleData && 
+                userRoleData.roles && 
+                typeof userRoleData.roles === 'object' && 
+                userRoleData.roles !== null &&
+                'name' in userRoleData.roles) {
+              userRole = userRoleData.roles.name || 'User';
             }
           }
 
@@ -112,8 +127,11 @@ export function useTeamMembers() {
         setTeamMembers(mappedMembers);
       } catch (err) {
         console.error('Error fetching team members:', err);
-        setError('Failed to load team members');
-        setTeamMembers([]);
+        setError('Failed to load team members. Please try again later.');
+        
+        // If we can't fetch from Supabase, use data from teamData.ts as fallback
+        const { teamMembers: mockMembers, getInitials } = await import('@/data/teamData');
+        setTeamMembers(mockMembers);
       } finally {
         setIsLoading(false);
       }
