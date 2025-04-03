@@ -1,6 +1,6 @@
 
 import { ChatRoom } from "@/types/chat";
-import { supabase, assertChatRoomType } from "./supabaseClient";
+import { supabase, assertChatRoomType, DatabaseChatRoom } from "./supabaseClient";
 
 // Get all chat rooms for a user
 export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
@@ -29,7 +29,7 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
     
     // Enhance rooms with last message and unread count
     const enhancedRooms: ChatRoom[] = await Promise.all(
-      (rooms || []).map(async (room) => {
+      (rooms || []).map(async (room: DatabaseChatRoom) => {
         // Get last message
         const { data: lastMessages, error: lastMessageError } = await supabase
           .from('chat_messages')
@@ -87,12 +87,14 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
     
     if (!data) return null;
     
+    const room = data as DatabaseChatRoom;
+    
     return {
-      ...data,
-      type: assertChatRoomType(data.type),
-      is_pinned: data.is_pinned || false,
-      is_archived: data.is_archived || false,
-      metadata: data.metadata || null
+      ...room,
+      type: assertChatRoomType(room.type),
+      is_pinned: room.is_pinned || false,
+      is_archived: room.is_archived || false,
+      metadata: room.metadata || null
     };
   } catch (error) {
     console.error("Error fetching work order chat room:", error);
@@ -144,12 +146,14 @@ export const getDirectChatWithUser = async (currentUserId: string, otherUserId: 
     
     if (!directRooms) return null;
     
+    const room = directRooms as DatabaseChatRoom;
+    
     return {
-      ...directRooms,
-      type: assertChatRoomType(directRooms.type),
-      is_pinned: directRooms.is_pinned || false,
-      is_archived: directRooms.is_archived || false,
-      metadata: directRooms.metadata || null
+      ...room,
+      type: assertChatRoomType(room.type),
+      is_pinned: room.is_pinned || false,
+      is_archived: room.is_archived || false,
+      metadata: room.metadata || null
     };
   } catch (error) {
     console.error("Error fetching direct chat:", error);
@@ -168,12 +172,14 @@ export const getChatRoomDetails = async (roomId: string): Promise<ChatRoom> => {
     
     if (error) throw error;
     
+    const room = data as DatabaseChatRoom;
+    
     return {
-      ...data,
-      type: assertChatRoomType(data.type),
-      is_pinned: data.is_pinned || false,
-      is_archived: data.is_archived || false,
-      metadata: data.metadata || null
+      ...room,
+      type: assertChatRoomType(room.type),
+      is_pinned: room.is_pinned || false,
+      is_archived: room.is_archived || false,
+      metadata: room.metadata || null
     };
   } catch (error) {
     console.error("Error fetching chat room details:", error);
@@ -200,7 +206,7 @@ export const createChatRoom = async (
         metadata: metadata || null,
         is_pinned: false,
         is_archived: false
-      }])
+      } as Partial<DatabaseChatRoom>])
       .select()
       .single();
     
@@ -218,12 +224,14 @@ export const createChatRoom = async (
     
     if (participantsError) throw participantsError;
     
+    const typedRoom = room as DatabaseChatRoom;
+    
     return {
-      ...room,
-      type: assertChatRoomType(room.type),
-      is_pinned: room.is_pinned || false,
-      is_archived: room.is_archived || false,
-      metadata: room.metadata || null
+      ...typedRoom,
+      type: assertChatRoomType(typedRoom.type),
+      is_pinned: typedRoom.is_pinned || false,
+      is_archived: typedRoom.is_archived || false,
+      metadata: typedRoom.metadata || null
     };
   } catch (error) {
     console.error("Error creating chat room:", error);
@@ -236,7 +244,7 @@ export const pinChatRoom = async (roomId: string, isPinned: boolean): Promise<vo
   try {
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ is_pinned: isPinned })
+      .update({ is_pinned: isPinned } as Partial<DatabaseChatRoom>)
       .eq('id', roomId);
       
     if (error) throw error;
@@ -251,7 +259,7 @@ export const archiveChatRoom = async (roomId: string, isArchived: boolean): Prom
   try {
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ is_archived: isArchived })
+      .update({ is_archived: isArchived } as Partial<DatabaseChatRoom>)
       .eq('id', roomId);
       
     if (error) throw error;

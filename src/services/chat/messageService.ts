@@ -1,6 +1,6 @@
 
 import { ChatMessage } from "@/types/chat";
-import { supabase } from "./supabaseClient";
+import { supabase, DatabaseChatMessage } from "./supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 // Get messages for a specific chat room
@@ -101,7 +101,7 @@ export const flagChatMessage = async (messageId: string, reason: string, userId:
           flagged_by: userId,
           flagged_at: new Date().toISOString()
         }
-      })
+      } as Partial<DatabaseChatMessage>)
       .eq('id', messageId);
     
     if (error) throw error;
