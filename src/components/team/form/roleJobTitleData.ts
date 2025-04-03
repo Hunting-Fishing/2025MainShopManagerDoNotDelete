@@ -35,10 +35,43 @@ export const roleJobTitleMap: Record<string, string[]> = {
   ]
 };
 
+// Define departments associated with each role
+export const roleDepartmentMap: Record<string, string[]> = {
+  "Owner": [
+    "Management",
+    "Executive"
+  ],
+  "Administrator": [
+    "Administration",
+    "Management",
+    "Operations"
+  ],
+  "Technician": [
+    "Field Service",
+    "Shop Floor",
+    "Service Bay",
+    "Mobile Service",
+    "Diagnostics"
+  ],
+  "Customer Service": [
+    "Customer Support",
+    "Front Office",
+    "Service Desk",
+    "Reception"
+  ]
+};
+
 // Default job titles when no role is selected
 export const defaultJobTitles = [
   "General Staff",
   "Assistant",
   "Specialist",
   "Coordinator"
+];
+
+// Default departments when no role is selected
+export const defaultDepartments = [
+  "General",
+  "Unassigned",
+  "Other"
 ];

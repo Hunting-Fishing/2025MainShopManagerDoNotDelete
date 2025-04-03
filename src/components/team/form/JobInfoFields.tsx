@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Control } from "react-hook-form";
 import { TeamMemberFormValues } from "./formValidation";
 import { useEffect, useState } from "react";
-import { roleJobTitleMap, defaultJobTitles } from "./roleJobTitleData";
+import { roleJobTitleMap, roleDepartmentMap, defaultJobTitles, defaultDepartments } from "./roleJobTitleData";
 
 interface JobInfoFieldsProps {
   control: Control<TeamMemberFormValues>;
@@ -15,18 +15,25 @@ interface JobInfoFieldsProps {
 
 export function JobInfoFields({ control, availableRoles, availableDepartments }: JobInfoFieldsProps) {
   const [availableJobTitles, setAvailableJobTitles] = useState<string[]>(defaultJobTitles);
+  const [filteredDepartments, setFilteredDepartments] = useState<string[]>(availableDepartments);
   
   // Get the current role value from the form
   const currentRole = control._formValues.role as string;
   
-  // Update job titles when role changes
+  // Update job titles and departments when role changes
   useEffect(() => {
     if (currentRole && roleJobTitleMap[currentRole]) {
       setAvailableJobTitles(roleJobTitleMap[currentRole]);
     } else {
       setAvailableJobTitles(defaultJobTitles);
     }
-  }, [currentRole]);
+    
+    if (currentRole && roleDepartmentMap[currentRole]) {
+      setFilteredDepartments(roleDepartmentMap[currentRole]);
+    } else {
+      setFilteredDepartments(availableDepartments);
+    }
+  }, [currentRole, availableDepartments]);
 
   return (
     <>
@@ -44,6 +51,13 @@ export function JobInfoFields({ control, availableRoles, availableDepartments }:
                   setAvailableJobTitles(roleJobTitleMap[value]);
                 } else {
                   setAvailableJobTitles(defaultJobTitles);
+                }
+                
+                // Update available departments when role changes
+                if (roleDepartmentMap[value]) {
+                  setFilteredDepartments(roleDepartmentMap[value]);
+                } else {
+                  setFilteredDepartments(availableDepartments);
                 }
               }} 
               defaultValue={field.value}
@@ -113,7 +127,7 @@ export function JobInfoFields({ control, availableRoles, availableDepartments }:
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {availableDepartments.map((department) => (
+                {filteredDepartments.map((department) => (
                   <SelectItem key={department} value={department}>
                     {department}
                   </SelectItem>
