@@ -2113,7 +2113,10 @@ export type Database = {
           description: string | null
           id: string
           is_custom: boolean | null
+          is_default: boolean | null
           name: Database["public"]["Enums"]["app_role"]
+          permissions: Json | null
+          priority: number | null
           updated_at: string
         }
         Insert: {
@@ -2121,7 +2124,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_custom?: boolean | null
+          is_default?: boolean | null
           name: Database["public"]["Enums"]["app_role"]
+          permissions?: Json | null
+          priority?: number | null
           updated_at?: string
         }
         Update: {
@@ -2129,7 +2135,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_custom?: boolean | null
+          is_default?: boolean | null
           name?: Database["public"]["Enums"]["app_role"]
+          permissions?: Json | null
+          priority?: number | null
           updated_at?: string
         }
         Relationships: []

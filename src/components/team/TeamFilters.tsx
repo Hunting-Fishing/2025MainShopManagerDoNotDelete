@@ -1,15 +1,17 @@
 
-import { useState } from "react";
+import { X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Filter, RefreshCw, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 interface TeamFiltersProps {
   roles: string[];
@@ -36,99 +38,123 @@ export function TeamFilters({
   onStatusFilterChange,
   onResetFilters,
 }: TeamFiltersProps) {
+  const totalFilters = roleFilter.length + departmentFilter.length + statusFilter.length;
+
+  const toggleRoleFilter = (role: string) => {
+    if (roleFilter.includes(role)) {
+      onRoleFilterChange(roleFilter.filter(r => r !== role));
+    } else {
+      onRoleFilterChange([...roleFilter, role]);
+    }
+  };
+
+  const toggleDepartmentFilter = (department: string) => {
+    if (departmentFilter.includes(department)) {
+      onDepartmentFilterChange(departmentFilter.filter(d => d !== department));
+    } else {
+      onDepartmentFilterChange([...departmentFilter, department]);
+    }
+  };
+
+  const toggleStatusFilter = (status: string) => {
+    if (statusFilter.includes(status)) {
+      onStatusFilterChange(statusFilter.filter(s => s !== status));
+    } else {
+      onStatusFilterChange([...statusFilter, status]);
+    }
+  };
+
   return (
-    <div className="flex flex-wrap gap-3">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Role
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuLabel>Filter by Role</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="relative">
+          Filter
+          {totalFilters > 0 && (
+            <Badge className="ml-2 bg-esm-blue-600" variant="default">
+              {totalFilters}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[260px]">
+        <DropdownMenuGroup>
+          <DropdownMenuItem className="font-medium" disabled>
+            Filter by Role
+          </DropdownMenuItem>
+          <Separator className="my-1" />
           {roles.map((role) => (
-            <DropdownMenuCheckboxItem
+            <DropdownMenuItem
               key={role}
-              checked={roleFilter.includes(role)}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  onRoleFilterChange([...roleFilter, role]);
-                } else {
-                  onRoleFilterChange(roleFilter.filter((r) => r !== role));
-                }
+              onClick={(e) => {
+                e.preventDefault();
+                toggleRoleFilter(role);
               }}
+              className="flex items-center justify-between"
             >
               {role}
-            </DropdownMenuCheckboxItem>
+              {roleFilter.includes(role) && <X className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
           ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Department
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuLabel>Filter by Department</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        </DropdownMenuGroup>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuGroup>
+          <DropdownMenuItem className="font-medium" disabled>
+            Filter by Department
+          </DropdownMenuItem>
+          <Separator className="my-1" />
           {departments.map((department) => (
-            <DropdownMenuCheckboxItem
+            <DropdownMenuItem
               key={department}
-              checked={departmentFilter.includes(department)}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  onDepartmentFilterChange([...departmentFilter, department]);
-                } else {
-                  onDepartmentFilterChange(departmentFilter.filter((d) => d !== department));
-                }
+              onClick={(e) => {
+                e.preventDefault();
+                toggleDepartmentFilter(department);
               }}
+              className="flex items-center justify-between"
             >
               {department}
-            </DropdownMenuCheckboxItem>
+              {departmentFilter.includes(department) && <X className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
           ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Status
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        </DropdownMenuGroup>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuGroup>
+          <DropdownMenuItem className="font-medium" disabled>
+            Filter by Status
+          </DropdownMenuItem>
+          <Separator className="my-1" />
           {statuses.map((status) => (
-            <DropdownMenuCheckboxItem
+            <DropdownMenuItem
               key={status}
-              checked={statusFilter.includes(status)}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  onStatusFilterChange([...statusFilter, status]);
-                } else {
-                  onStatusFilterChange(statusFilter.filter((s) => s !== status));
-                }
+              onClick={(e) => {
+                e.preventDefault();
+                toggleStatusFilter(status);
               }}
+              className="flex items-center justify-between"
             >
               {status}
-            </DropdownMenuCheckboxItem>
+              {statusFilter.includes(status) && <X className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
           ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Button variant="outline" className="flex items-center gap-2" onClick={onResetFilters}>
-        <RefreshCw className="h-4 w-4" />
-        Reset
-      </Button>
-    </div>
+        </DropdownMenuGroup>
+        
+        <DropdownMenuSeparator />
+        
+        {totalFilters > 0 && (
+          <DropdownMenuItem 
+            className="justify-center text-center font-medium text-destructive hover:text-destructive"
+            onClick={(e) => {
+              e.preventDefault();
+              onResetFilters();
+            }}
+          >
+            Clear all filters
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
