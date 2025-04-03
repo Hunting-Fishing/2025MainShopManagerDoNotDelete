@@ -33,15 +33,24 @@ export function useAuthUser() {
             setUserName(fullName || 'User');
           }
           
-          // Check if user is admin
-          const { data: roles } = await supabase
+          // Check if user is admin by querying user_roles
+          const { data: userRoles } = await supabase
             .from('user_roles')
-            .select('roles (name)')
+            .select(`
+              role_id,
+              roles:role_id(name)
+            `)
             .eq('user_id', session.user.id);
             
-          setIsAdmin(roles?.some(role => 
-            (role.roles?.name === 'admin' || role.roles?.name === 'owner')
-          ) || false);
+          // Set isAdmin to true if any of the user's roles is 'admin' or 'owner'
+          const isUserAdmin = userRoles?.some(
+            role => role.roles?.name === 'admin' || role.roles?.name === 'owner'
+          ) || false;
+          
+          console.log('User roles:', userRoles);
+          console.log('Is admin:', isUserAdmin);
+          
+          setIsAdmin(isUserAdmin);
         } else {
           setIsAuthenticated(false);
           setUserName('');
@@ -50,6 +59,7 @@ export function useAuthUser() {
         }
       } catch (error) {
         console.error('Error checking auth:', error);
+        setIsAdmin(false);
       } finally {
         setIsLoading(false);
       }
@@ -77,14 +87,20 @@ export function useAuthUser() {
           }
           
           // Check if user is admin
-          const { data: roles } = await supabase
+          const { data: userRoles } = await supabase
             .from('user_roles')
-            .select('roles (name)')
+            .select(`
+              role_id,
+              roles:role_id(name)
+            `)
             .eq('user_id', session.user.id);
             
-          setIsAdmin(roles?.some(role => 
-            (role.roles?.name === 'admin' || role.roles?.name === 'owner')
-          ) || false);
+          // Set isAdmin to true if any of the user's roles is 'admin' or 'owner'
+          const isUserAdmin = userRoles?.some(
+            role => role.roles?.name === 'admin' || role.roles?.name === 'owner'
+          ) || false;
+          
+          setIsAdmin(isUserAdmin);
         } else {
           setUserName('');
           setIsAdmin(false);

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TeamMember } from "@/types/team";
 import { getInitials } from "@/data/teamData";
@@ -38,6 +38,7 @@ export const TeamMembersList: React.FC<TeamMembersListProps> = ({
           >
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
+                <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`} />
                 <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
               </Avatar>
               <div>

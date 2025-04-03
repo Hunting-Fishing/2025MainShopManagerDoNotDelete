@@ -9,89 +9,125 @@ import { ProfileHeader } from "@/components/team/profile/ProfileHeader";
 import { ProfileSidebar } from "@/components/team/profile/ProfileSidebar";
 import { TeamMemberDetails } from "@/components/team/profile/TeamMemberDetails";
 import { DeleteMemberDialog } from "@/components/team/profile/DeleteMemberDialog";
-
-// Mock data - would come from API in real app
-const teamMembers = [
-  {
-    id: "TM001",
-    name: "John Smith",
-    role: "Owner",
-    email: "john.smith@easyshopmanager.com",
-    phone: "555-123-4567",
-    jobTitle: "Chief Executive Officer",
-    department: "Management",
-    status: "Active",
-    notes: "Founder and CEO of the company. Has full access to all system features.",
-    workOrders: {
-      assigned: 0,
-      completed: 0,
-    },
-    recentActivity: [
-      { type: "login", date: "2023-12-01T09:15:00", description: "Logged in to the system" },
-      { type: "workOrder", date: "2023-12-01T10:30:00", description: "Created work order #WO-2023-1205" },
-      { type: "invoice", date: "2023-12-01T14:45:00", description: "Generated invoice #INV-2023-089" }
-    ],
-    joinDate: "2021-06-15",
-    lastActive: "2023-12-01T17:30:00"
-  },
-  {
-    id: "TM002",
-    name: "Sarah Johnson",
-    role: "Technician",
-    email: "sarah.johnson@easyshopmanager.com",
-    phone: "555-987-6543",
-    jobTitle: "Senior HVAC Technician",
-    department: "Field Service",
-    status: "Active",
-    notes: "Highly skilled HVAC technician with 10+ years of experience. Specializes in commercial systems.",
-    workOrders: {
-      assigned: 5,
-      completed: 24,
-    },
-    recentActivity: [
-      { type: "login", date: "2023-12-01T07:45:00", description: "Logged in to the system" },
-      { type: "workOrder", date: "2023-12-01T08:30:00", description: "Updated work order #WO-2023-1198" },
-      { type: "workOrder", date: "2023-12-01T15:20:00", description: "Completed work order #WO-2023-1201" }
-    ],
-    joinDate: "2022-02-10",
-    lastActive: "2023-12-01T16:45:00"
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { TeamMember } from "@/types/team";
 
 export default function TeamMemberProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [member, setMember] = useState<any>(null);
+  const [member, setMember] = useState<TeamMember | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Simulate API call to fetch member details
-    setLoading(true);
-    setTimeout(() => {
-      const foundMember = teamMembers.find(m => m.id === id);
-      if (foundMember) {
-        setMember(foundMember);
+    // Fetch member data from Supabase
+    const fetchMemberData = async () => {
+      setLoading(true);
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            created_at,
+            user_roles:user_roles(
+              role_id,
+              roles:role_id(name)
+            )
+          `)
+          .eq('id', id)
+          .single();
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        if (!profileData) {
+          setMember(null);
+          return;
+        }
+
+        // Get user's recent activity (you might need to adjust this based on your schema)
+        const { data: activityData } = await supabase
+          .from('work_order_activities')
+          .select('*')
+          .eq('user_id', id)
+          .order('timestamp', { ascending: false })
+          .limit(5);
+
+        // Transform activity data to match the expected format
+        const recentActivity = activityData?.map(activity => ({
+          type: 'workOrder',
+          date: activity.timestamp,
+          description: activity.action
+        })) || [];
+
+        // Get the role information
+        const userRole = profileData.user_roles?.[0]?.roles?.name || 'User';
+
+        // Create the member object with the fetched data
+        const memberData: TeamMember = {
+          id: profileData.id,
+          name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Unknown User',
+          role: userRole,
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          jobTitle: userRole, // Default to role name if no job title is available
+          department: 'General', // Default department
+          status: "Active", // Default status
+          workOrders: {
+            assigned: 0,
+            completed: 0
+          },
+          notes: "",
+          recentActivity,
+          joinDate: profileData.created_at,
+          lastActive: recentActivity?.[0]?.date || profileData.created_at
+        };
+
+        setMember(memberData);
+      } catch (error) {
+        console.error("Error fetching team member:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load team member data.",
+          variant: "destructive",
+        });
+        setMember(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 500);
+    };
+
+    if (id) {
+      fetchMemberData();
+    }
   }, [id]);
 
   // Handle member deletion
-  const handleDeleteMember = () => {
-    // In a real app, this would call an API
-    console.log("Deleting member:", id);
-    
-    // Show success message
-    toast({
-      title: "Team member deleted",
-      description: `${member.name} has been removed from the team`,
-    });
-    
-    // Close dialog and navigate back to team list
-    setDeleteDialogOpen(false);
-    navigate("/team");
+  const handleDeleteMember = async () => {
+    try {
+      // In a real app, this would delete the user or disable their account
+      // For now, just show a message and navigate back
+      toast({
+        title: "Feature not implemented",
+        description: "User deletion is not implemented in this demo.",
+      });
+      
+      setDeleteDialogOpen(false);
+      navigate("/team");
+    } catch (error) {
+      console.error("Error deleting member:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete team member.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditClick = () => {

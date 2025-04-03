@@ -6,7 +6,8 @@ import { TeamFilters } from "@/components/team/TeamFilters";
 import { TeamViewToggle } from "@/components/team/TeamViewToggle";
 import { TeamMemberGrid } from "@/components/team/TeamMemberGrid";
 import { TeamMemberTable } from "@/components/team/TeamMemberTable";
-import { teamMembers, getInitials } from "@/data/teamData";
+import { getInitials } from "@/data/teamData";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,6 +15,9 @@ export default function Team() {
   const [departmentFilter, setDepartmentFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
+  
+  // Use real data from Supabase instead of mock data
+  const { teamMembers, isLoading } = useTeamMembers();
 
   // Get unique roles and departments for filters
   const roles = Array.from(new Set(teamMembers.map(member => member.role))).sort();
@@ -78,17 +82,24 @@ export default function Team() {
         onViewChange={setView} 
       />
 
-      {/* Display team members in either grid or table view */}
-      {view === 'grid' ? (
-        <TeamMemberGrid 
-          members={filteredMembers} 
-          getInitials={getInitials} 
-        />
+      {/* Loading state */}
+      {isLoading ? (
+        <div className="flex justify-center items-center p-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        </div>
       ) : (
-        <TeamMemberTable 
-          members={filteredMembers} 
-          getInitials={getInitials} 
-        />
+        /* Display team members in either grid or table view */
+        view === 'grid' ? (
+          <TeamMemberGrid 
+            members={filteredMembers} 
+            getInitials={getInitials} 
+          />
+        ) : (
+          <TeamMemberTable 
+            members={filteredMembers} 
+            getInitials={getInitials} 
+          />
+        )
       )}
     </div>
   );
