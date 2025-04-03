@@ -15,6 +15,10 @@ interface ChatPageLayoutProps {
   onSelectRoom: (room: ChatRoom) => void;
   onSendMessage: () => void;
   onSendVoiceMessage?: (audioUrl: string) => void;
+  onSendFileMessage?: (fileUrl: string) => void;
+  onPinRoom?: () => void;
+  onArchiveRoom?: () => void;
+  onFlagMessage?: (messageId: string, reason: string) => void;
   isTyping?: boolean;
   onViewWorkOrderDetails?: () => void;
   navigateToRoom: (roomId: string) => void;
@@ -32,6 +36,10 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   onSelectRoom,
   onSendMessage,
   onSendVoiceMessage,
+  onSendFileMessage,
+  onPinRoom,
+  onArchiveRoom,
+  onFlagMessage,
   isTyping,
   onViewWorkOrderDetails,
   navigateToRoom,
@@ -66,6 +74,10 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
             setMessageText={setNewMessageText}
             onSendMessage={onSendMessage}
             onSendVoiceMessage={onSendVoiceMessage}
+            onSendFileMessage={onSendFileMessage}
+            onPinRoom={onPinRoom}
+            onArchiveRoom={onArchiveRoom}
+            onFlagMessage={onFlagMessage}
             isTyping={isTyping}
             onViewInfo={currentRoom?.work_order_id ? onViewWorkOrderDetails : undefined}
           />

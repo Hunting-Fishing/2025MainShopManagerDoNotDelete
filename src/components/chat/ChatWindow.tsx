@@ -4,12 +4,13 @@ import { ChatRoom, ChatMessage as ChatMessageType } from '@/types/chat';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Info, Users, PaperclipIcon, Smile } from 'lucide-react';
+import { Send, Info, Users, Smile, TagIcon, MoreVertical, AlertCircle, Bookmark } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { AudioRecorder } from './AudioRecorder';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { uploadVoiceRecording, formatFileMessage } from '@/services/chat/fileService';
+import { FileUploadButton } from './file/FileUploadButton';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface ChatWindowProps {
   room: ChatRoom | null;
@@ -20,8 +21,12 @@ interface ChatWindowProps {
   setMessageText: (text: string) => void;
   onSendMessage: () => void;
   onSendVoiceMessage?: (audioUrl: string) => void;
+  onSendFileMessage?: (fileMessage: string) => void;
   onViewInfo?: () => void;
   onViewParticipants?: () => void;
+  onFlagMessage?: (messageId: string, reason: string) => void;
+  onPinRoom?: () => void;
+  onArchiveRoom?: () => void;
   isTyping?: boolean;
 }
 
@@ -34,14 +39,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   setMessageText,
   onSendMessage,
   onSendVoiceMessage,
+  onSendFileMessage,
   onViewInfo,
   onViewParticipants,
+  onFlagMessage,
+  onPinRoom,
+  onArchiveRoom,
   isTyping = false
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
+  const [showWorkOrderMenu, setShowWorkOrderMenu] = useState(false);
 
   // Scroll to bottom of messages when messages change
   useEffect(() => {
@@ -58,101 +66,56 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  // Handle file upload
-  const handleFileButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !room) return;
-
-    try {
-      setIsUploading(true);
-      
-      // Check file size (limit to 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "The maximum file size is 10MB",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${room.id}/${Date.now()}.${fileExt}`;
-      
-      const { data, error } = await supabase.storage
-        .from('chat_attachments')
-        .upload(filePath, file);
-      
-      if (error) throw error;
-      
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('chat_attachments')
-        .getPublicUrl(filePath);
-      
-      // TODO: Handle sending file message
-      toast({
-        title: "File uploaded",
-        description: "Your file has been attached to the conversation"
-      });
-      
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload file. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  // Handle audio recording
+  // Handle voice message
   const handleVoiceMessage = async (audioBlob: Blob) => {
-    if (!room || !onSendVoiceMessage) return;
+    if (!room) return;
     
     try {
       setIsUploading(true);
+      const fileInfo = await uploadVoiceRecording(room.id, audioBlob);
       
-      // Upload audio to Supabase Storage
-      const filePath = `${room.id}/${Date.now()}.webm`;
-      
-      const { data, error } = await supabase.storage
-        .from('chat_attachments')
-        .upload(filePath, audioBlob);
-      
-      if (error) throw error;
-      
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('chat_attachments')
-        .getPublicUrl(filePath);
-      
-      // Send voice message
-      if (urlData?.publicUrl) {
-        onSendVoiceMessage(`audio:${urlData.publicUrl}`);
+      if (fileInfo && onSendFileMessage) {
+        onSendFileMessage(formatFileMessage(fileInfo));
       }
-      
-    } catch (error) {
-      console.error("Error uploading audio:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to send voice message. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // Handle file upload
+  const handleFileUploaded = (fileUrl: string, fileType: string, caption?: string) => {
+    if (onSendFileMessage) {
+      onSendFileMessage(fileUrl + (caption ? `|${caption}` : ''));
+    }
+  };
+
+  // Render options menu for a work order chat
+  const renderWorkOrderOptions = () => {
+    if (!room?.work_order_id) return null;
+    
+    return (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => setShowWorkOrderMenu(!showWorkOrderMenu)}
+        className="relative"
+      >
+        <TagIcon className="h-5 w-5" />
+        {showWorkOrderMenu && (
+          <div className="absolute top-full right-0 mt-1 p-2 bg-white shadow-lg rounded-md z-10 w-64">
+            <div className="text-sm font-medium mb-2">Work Order Actions</div>
+            <Button variant="outline" size="sm" className="w-full justify-start mb-1">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Flag for Attention
+            </Button>
+            <Button variant="outline" size="sm" className="w-full justify-start mb-1">
+              <Bookmark className="h-4 w-4 mr-2" />
+              Save to Vehicle History
+            </Button>
+          </div>
+        )}
+      </Button>
+    );
   };
 
   if (!room) {
@@ -174,8 +137,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2 border-b flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">{room.name}</CardTitle>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
+          <CardTitle className="text-lg">
+            {room.name}
+          </CardTitle>
+          {room.type === 'work_order' && (
+            <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+              Work Order
+            </span>
+          )}
+        </div>
+        <div className="flex items-center space-x-1">
           {room.type === 'work_order' && onViewInfo && (
             <TooltipProvider>
               <Tooltip>
@@ -204,6 +176,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               </Tooltip>
             </TooltipProvider>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onPinRoom && (
+                <DropdownMenuItem onClick={onPinRoom}>
+                  {room.is_pinned ? 'Unpin Conversation' : 'Pin Conversation'}
+                </DropdownMenuItem>
+              )}
+              {onArchiveRoom && (
+                <DropdownMenuItem onClick={onArchiveRoom}>
+                  {room.is_archived ? 'Unarchive' : 'Archive'}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => {/* Add mute functionality */}}>
+                Mute Notifications
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {/* Add search functionality */}}>
+                Search in Conversation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       
@@ -242,23 +239,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       <CardFooter className="pt-2 pb-3 px-4 border-t">
         <div className="flex w-full items-center space-x-2">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
-            onChange={handleFileUpload}
-            accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          <FileUploadButton
+            roomId={room.id}
+            onFileUploaded={handleFileUploaded}
+            isDisabled={isUploading}
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleFileButtonClick}
-            disabled={isUploading}
-            className="rounded-full"
-          >
-            <PaperclipIcon className="h-5 w-5" />
-            <span className="sr-only">Attach file</span>
-          </Button>
           
           <Input
             placeholder="Type your message..."
@@ -268,6 +253,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             className="flex-grow"
             disabled={isUploading}
           />
+          
+          {renderWorkOrderOptions()}
           
           <AudioRecorder 
             onAudioRecorded={handleVoiceMessage}

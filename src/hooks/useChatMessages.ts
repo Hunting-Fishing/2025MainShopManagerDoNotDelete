@@ -5,9 +5,11 @@ import {
   getChatMessages,
   sendMessage,
   markMessagesAsRead,
-  subscribeToMessages
+  subscribeToMessages,
+  flagChatMessage
 } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
+import { parseFileFromMessage } from '@/services/chat/fileService';
 
 interface UseChatMessagesProps {
   userId: string;
@@ -123,6 +125,58 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     }
   }, [currentRoomId, userId, userName]);
 
+  // Send a file message
+  const handleSendFileMessage = useCallback(async (fileMessage: string) => {
+    if (!currentRoomId || !userId) return;
+    
+    try {
+      await sendMessage({
+        room_id: currentRoomId,
+        sender_id: userId,
+        sender_name: userName,
+        content: fileMessage
+      });
+    } catch (err) {
+      console.error('Failed to send file message:', err);
+      setError('Failed to send file message');
+      toast({
+        title: "Error",
+        description: "Failed to send file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [currentRoomId, userId, userName]);
+
+  // Flag a message as important or for attention
+  const flagMessage = useCallback(async (messageId: string, reason: string) => {
+    if (!messageId || !userId) return;
+    
+    try {
+      await flagChatMessage(messageId, reason, userId);
+      
+      // Update the message in the local state
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, is_flagged: true, flag_reason: reason } 
+            : msg
+        )
+      );
+      
+      toast({
+        title: "Message flagged",
+        description: `The message has been flagged as ${reason}`,
+      });
+    } catch (err) {
+      console.error('Failed to flag message:', err);
+      toast({
+        title: "Error",
+        description: "Failed to flag message. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [userId]);
+
   // Simulate typing indicator
   const handleTyping = useCallback(() => {
     setIsTyping(true);
@@ -152,6 +206,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     setNewMessageText,
     handleSendMessage,
     handleSendVoiceMessage,
+    handleSendFileMessage,
+    flagMessage,
     isTyping,
     handleTyping
   };

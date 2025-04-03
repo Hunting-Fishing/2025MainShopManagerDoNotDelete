@@ -30,7 +30,8 @@ export const sendMessage = async (message: Omit<ChatMessage, "id" | "is_read" | 
         sender_id: message.sender_id,
         sender_name: message.sender_name,
         content: message.content,
-        is_read: false
+        is_read: false,
+        message_type: getMessageType(message.content)
       }])
       .select()
       .single();
@@ -85,4 +86,38 @@ export const subscribeToMessages = (roomId: string, callback: (message: ChatMess
   return () => {
     supabase.removeChannel(channel);
   };
+};
+
+// Flag a message for attention
+export const flagChatMessage = async (messageId: string, reason: string, userId: string): Promise<void> => {
+  try {
+    // Update the message to mark it as flagged
+    const { error } = await supabase
+      .from('chat_messages')
+      .update({
+        is_flagged: true,
+        flag_reason: reason,
+        metadata: {
+          flagged_by: userId,
+          flagged_at: new Date().toISOString()
+        }
+      })
+      .eq('id', messageId);
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error flagging message:", error);
+    throw error;
+  }
+};
+
+// Helper function to determine the message type based on content
+const getMessageType = (content: string): ChatMessage['message_type'] => {
+  if (content.startsWith('audio:')) return 'audio';
+  if (content.startsWith('image:')) return 'image';
+  if (content.startsWith('video:')) return 'video';
+  if (content.startsWith('file:') || content.startsWith('document:')) return 'file';
+  if (content.startsWith('system:')) return 'system';
+  if (content.startsWith('work_order:')) return 'work_order';
+  return 'text';
 };

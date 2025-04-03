@@ -24,6 +24,10 @@ export default function Chat() {
     setNewMessageText,
     handleSendMessage,
     handleSendVoiceMessage,
+    handleSendFileMessage,
+    handlePinRoom,
+    handleArchiveRoom,
+    flagMessage,
     isTyping,
     selectRoom,
     refreshRooms
@@ -72,6 +76,10 @@ export default function Chat() {
         onSelectRoom={selectRoom}
         onSendMessage={handleSendMessage}
         onSendVoiceMessage={handleSendVoiceMessage}
+        onSendFileMessage={handleSendFileMessage}
+        onPinRoom={handlePinRoom}
+        onArchiveRoom={handleArchiveRoom}
+        onFlagMessage={flagMessage}
         isTyping={isTyping}
         onViewWorkOrderDetails={() => currentRoom?.work_order_id && handleViewWorkOrderDetails(currentRoom.work_order_id)}
         navigateToRoom={(roomId) => navigate(`/chat/${roomId}`)}

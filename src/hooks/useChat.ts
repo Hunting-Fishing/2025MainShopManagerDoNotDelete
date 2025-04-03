@@ -3,7 +3,6 @@ import { useState, useCallback } from 'react';
 import { ChatRoom } from '@/types/chat';
 import { useChatRooms } from './useChatRooms';
 import { useChatMessages } from './useChatMessages';
-import { markMessagesAsRead } from '@/services/chat';
 
 interface UseChatProps {
   userId: string;
@@ -18,7 +17,9 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     chatRooms, 
     loading: roomsLoading, 
     error: roomsError,
-    refreshRooms
+    refreshRooms,
+    pinRoom,
+    archiveRoom
   } = useChatRooms({ userId });
 
   const {
@@ -29,6 +30,8 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     setNewMessageText,
     handleSendMessage,
     handleSendVoiceMessage,
+    handleSendFileMessage,
+    flagMessage,
     isTyping,
     handleTyping
   } = useChatMessages({ 
@@ -40,8 +43,21 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
   // Select a chat room
   const selectRoom = useCallback(async (room: ChatRoom) => {
     setCurrentRoom(room);
-    // Mark messages as read is handled in useChatMessages now
   }, []);
+
+  // Pin a room
+  const handlePinRoom = useCallback(() => {
+    if (currentRoom) {
+      pinRoom(currentRoom.id, !currentRoom.is_pinned);
+    }
+  }, [currentRoom, pinRoom]);
+
+  // Archive a room
+  const handleArchiveRoom = useCallback(() => {
+    if (currentRoom) {
+      archiveRoom(currentRoom.id, !currentRoom.is_archived);
+    }
+  }, [currentRoom, archiveRoom]);
 
   return {
     chatRooms,
@@ -54,6 +70,10 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     selectRoom,
     handleSendMessage,
     handleSendVoiceMessage,
+    handleSendFileMessage,
+    handlePinRoom,
+    handleArchiveRoom,
+    flagMessage,
     isTyping,
     refreshRooms
   };

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ChatRoom } from '@/types/chat';
-import { getUserChatRooms } from '@/services/chat';
+import { getUserChatRooms, pinChatRoom, archiveChatRoom } from '@/services/chat';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -21,11 +21,21 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
     try {
       setLoading(true);
       const fetchedRooms = await getUserChatRooms(userId);
-      // Sort by most recently updated
-      fetchedRooms.sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-      setChatRooms(fetchedRooms);
+      
+      // Sort by pin status first, then by most recently updated
+      fetchedRooms.sort((a, b) => {
+        // Pinned rooms come first
+        if (a.is_pinned && !b.is_pinned) return -1;
+        if (!a.is_pinned && b.is_pinned) return 1;
+        
+        // Then sort by update time
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      });
+      
+      // Filter out archived rooms unless we're specifically viewing them
+      const filteredRooms = fetchedRooms.filter(room => !room.is_archived);
+      
+      setChatRooms(filteredRooms);
     } catch (err) {
       console.error('Failed to load chat rooms:', err);
       setError('Failed to load chat rooms');
@@ -38,6 +48,70 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
       setLoading(false);
     }
   }, [userId]);
+
+  // Pin a chat room
+  const pinRoom = useCallback(async (roomId: string, isPinned: boolean) => {
+    try {
+      await pinChatRoom(roomId, isPinned);
+      
+      // Update local state
+      setChatRooms(prevRooms => {
+        const updatedRooms = prevRooms.map(room => 
+          room.id === roomId ? { ...room, is_pinned: isPinned } : room
+        );
+        
+        // Re-sort based on pin status
+        return [...updatedRooms].sort((a, b) => {
+          if (a.is_pinned && !b.is_pinned) return -1;
+          if (!a.is_pinned && b.is_pinned) return 1;
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        });
+      });
+      
+      toast({
+        title: isPinned ? "Conversation pinned" : "Conversation unpinned",
+        description: isPinned 
+          ? "This conversation will stay at the top of your list" 
+          : "This conversation has been unpinned",
+      });
+    } catch (err) {
+      console.error('Failed to pin/unpin room:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update conversation settings.",
+        variant: "destructive",
+      });
+    }
+  }, []);
+
+  // Archive a chat room
+  const archiveRoom = useCallback(async (roomId: string, isArchived: boolean) => {
+    try {
+      await archiveChatRoom(roomId, isArchived);
+      
+      // Update local state - remove from list if archived
+      if (isArchived) {
+        setChatRooms(prevRooms => prevRooms.filter(room => room.id !== roomId));
+      } else {
+        // If unarchiving, we'll need to fetch all rooms again
+        fetchChatRooms();
+      }
+      
+      toast({
+        title: isArchived ? "Conversation archived" : "Conversation unarchived",
+        description: isArchived 
+          ? "This conversation has been moved to archives" 
+          : "This conversation has been restored",
+      });
+    } catch (err) {
+      console.error('Failed to archive/unarchive room:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update conversation settings.",
+        variant: "destructive",
+      });
+    }
+  }, [fetchChatRooms]);
 
   // Subscribe to chat room updates
   useEffect(() => {
@@ -82,6 +156,8 @@ export const useChatRooms = ({ userId }: UseChatRoomsProps) => {
     chatRooms,
     loading,
     error,
-    refreshRooms: fetchChatRooms
+    refreshRooms: fetchChatRooms,
+    pinRoom,
+    archiveRoom
   };
 };

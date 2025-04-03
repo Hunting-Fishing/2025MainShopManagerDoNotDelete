@@ -58,7 +58,9 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
           ...room,
           type: assertChatRoomType(room.type),
           last_message: lastMessage,
-          unread_count: unreadCount
+          unread_count: unreadCount,
+          is_pinned: room.is_pinned || false,
+          is_archived: room.is_archived || false
         };
       })
     );
@@ -174,7 +176,8 @@ export const createChatRoom = async (
   name: string,
   type: "direct" | "group" | "work_order",
   participants: string[],
-  workOrderId?: string
+  workOrderId?: string,
+  metadata?: any
 ): Promise<ChatRoom> => {
   try {
     // Create the chat room
@@ -183,7 +186,10 @@ export const createChatRoom = async (
       .insert([{
         name,
         type,
-        work_order_id: workOrderId
+        work_order_id: workOrderId,
+        metadata: metadata || null,
+        is_pinned: false,
+        is_archived: false
       }])
       .select()
       .single();
@@ -208,6 +214,36 @@ export const createChatRoom = async (
     };
   } catch (error) {
     console.error("Error creating chat room:", error);
+    throw error;
+  }
+};
+
+// Pin or unpin a chat room
+export const pinChatRoom = async (roomId: string, isPinned: boolean): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('chat_rooms')
+      .update({ is_pinned: isPinned })
+      .eq('id', roomId);
+      
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error pinning/unpinning chat room:", error);
+    throw error;
+  }
+};
+
+// Archive or unarchive a chat room
+export const archiveChatRoom = async (roomId: string, isArchived: boolean): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('chat_rooms')
+      .update({ is_archived: isArchived })
+      .eq('id', roomId);
+      
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error archiving/unarchiving chat room:", error);
     throw error;
   }
 };
