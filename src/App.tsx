@@ -40,6 +40,7 @@ import EmailCampaigns from '@/pages/EmailCampaigns';
 import EmailSequences from '@/pages/EmailSequences';
 import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
 import SmsManagement from '@/pages/SmsManagement';
+import SmsTemplates from '@/pages/SmsTemplates';
 import CreateWorkOrder from '@/pages/CreateWorkOrder';
 import CreateInvoice from '@/pages/CreateInvoice';
 import Maintenance from '@/pages/Maintenance';
@@ -128,6 +129,7 @@ function App() {
           <Route path="email-sequences" element={<EmailSequences />} />
           <Route path="email-sequences/:id" element={<EmailSequenceDetails />} />
           <Route path="sms" element={<SmsManagement />} />
+          <Route path="sms-templates" element={<SmsTemplates />} />
           <Route path="chat" element={<Chat />} />
           <Route path="feedback/forms" element={<FeedbackFormsPage />} />
           <Route path="feedback/forms/editor/:id?" element={<FeedbackFormEditorPage />} />

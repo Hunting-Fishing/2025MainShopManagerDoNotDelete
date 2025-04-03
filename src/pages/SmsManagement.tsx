@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PlusCircle, MessageSquare, History, FileText, Send } from 'lucide-react';
+import { PlusCircle, MessageSquare, History, FileText, Send, ExternalLink } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { customers } from '@/data/customersData';
+import { Link } from 'react-router-dom';
 
 interface SmsTemplate {
   id: string;
@@ -28,7 +28,6 @@ interface SmsLogEntry {
   timestamp: string;
 }
 
-// Mock data for SMS templates
 const mockTemplates: SmsTemplate[] = [
   {
     id: "1",
@@ -50,7 +49,6 @@ const mockTemplates: SmsTemplate[] = [
   }
 ];
 
-// Mock data for SMS logs
 const mockLogs: SmsLogEntry[] = [
   {
     id: "log1",
@@ -85,7 +83,6 @@ export default function SmsManagement() {
   const [templates, setTemplates] = useState(mockTemplates);
   const [logs, setLogs] = useState(mockLogs);
   
-  // Form state for new template
   const [newTemplate, setNewTemplate] = useState<Omit<SmsTemplate, 'id'>>({
     name: "",
     content: "",
@@ -100,7 +97,6 @@ export default function SmsManagement() {
       if (template) {
         let content = template.content;
         
-        // Replace placeholders with sample values if no customer is selected
         if (!selectedCustomer) {
           content = content
             .replace(/{firstName}/g, "Customer")
@@ -130,14 +126,12 @@ export default function SmsManagement() {
   const handleCustomerSelect = (customerId: string) => {
     setSelectedCustomer(customerId);
     
-    // If a template is already selected, update the message with customer info
     if (selectedTemplate) {
       handleTemplateSelect(selectedTemplate);
     }
   };
 
   const handleSendMessage = async () => {
-    // Validate inputs
     if (!selectedCustomer) {
       toast({
         title: "Error",
@@ -159,16 +153,13 @@ export default function SmsManagement() {
     setIsSending(true);
     
     try {
-      // In a real app, you would send this to your SMS API
       console.log("Sending SMS:", {
         recipient: selectedCustomer,
         message: messageText
       });
       
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Add to logs
       const customer = customers.find(c => c.id === selectedCustomer);
       const newLog: SmsLogEntry = {
         id: `log${Date.now()}`,
@@ -180,7 +171,6 @@ export default function SmsManagement() {
       
       setLogs([newLog, ...logs]);
       
-      // Reset form
       setMessageText("");
       setSelectedCustomer("");
       setSelectedTemplate("");
@@ -202,7 +192,6 @@ export default function SmsManagement() {
   };
 
   const handleCreateTemplate = () => {
-    // Validate inputs
     if (!newTemplate.name || !newTemplate.content) {
       toast({
         title: "Error",
@@ -212,7 +201,6 @@ export default function SmsManagement() {
       return;
     }
     
-    // Add new template
     const template: SmsTemplate = {
       ...newTemplate,
       id: `template${Date.now()}`
@@ -220,7 +208,6 @@ export default function SmsManagement() {
     
     setTemplates([...templates, template]);
     
-    // Reset form and close dialog
     setNewTemplate({
       name: "",
       content: "",
@@ -244,70 +231,78 @@ export default function SmsManagement() {
             Send SMS messages and manage templates
           </p>
         </div>
-        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create Template
+        <div className="flex gap-2">
+          <Link to="/sms-templates">
+            <Button variant="outline">
+              <FileText className="h-4 w-4 mr-2" />
+              Manage Templates
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Create SMS Template</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
+          </Link>
+          <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Create Template
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
+              <DialogHeader>
+                <DialogTitle>Create SMS Template</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="templateName">Template Name</Label>
+                    <Input 
+                      id="templateName" 
+                      value={newTemplate.name}
+                      onChange={(e) => setNewTemplate({...newTemplate, name: e.target.value})}
+                      placeholder="e.g., Appointment Reminder" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="templateCategory">Category</Label>
+                    <Select 
+                      value={newTemplate.category}
+                      onValueChange={(value) => setNewTemplate({...newTemplate, category: value})}
+                    >
+                      <SelectTrigger id="templateCategory">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Reminders">Reminders</SelectItem>
+                        <SelectItem value="Notifications">Notifications</SelectItem>
+                        <SelectItem value="Billing">Billing</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="templateName">Template Name</Label>
-                  <Input 
-                    id="templateName" 
-                    value={newTemplate.name}
-                    onChange={(e) => setNewTemplate({...newTemplate, name: e.target.value})}
-                    placeholder="e.g., Appointment Reminder" 
+                  <Label htmlFor="templateContent">Template Content</Label>
+                  <Textarea 
+                    id="templateContent" 
+                    value={newTemplate.content}
+                    onChange={(e) => setNewTemplate({...newTemplate, content: e.target.value})}
+                    placeholder="Message content with placeholders like {firstName}, {workOrderId}, etc." 
+                    className="h-40" 
                   />
+                  <p className="text-sm text-muted-foreground">
+                    Available placeholders: {'{firstName}'}, {'{workOrderId}'}, {'{invoiceId}'}, {'{amount}'}, {'{time}'}
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="templateCategory">Category</Label>
-                  <Select 
-                    value={newTemplate.category}
-                    onValueChange={(value) => setNewTemplate({...newTemplate, category: value})}
-                  >
-                    <SelectTrigger id="templateCategory">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Reminders">Reminders</SelectItem>
-                      <SelectItem value="Notifications">Notifications</SelectItem>
-                      <SelectItem value="Billing">Billing</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateTemplate}>
+                    Create Template
+                  </Button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="templateContent">Template Content</Label>
-                <Textarea 
-                  id="templateContent" 
-                  value={newTemplate.content}
-                  onChange={(e) => setNewTemplate({...newTemplate, content: e.target.value})}
-                  placeholder="Message content with placeholders like {firstName}, {workOrderId}, etc." 
-                  className="h-40" 
-                />
-                <p className="text-sm text-muted-foreground">
-                  Available placeholders: {'{firstName}'}, {'{workOrderId}'}, {'{invoiceId}'}, {'{amount}'}, {'{time}'}
-                </p>
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateTemplate}>
-                  Create Template
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
