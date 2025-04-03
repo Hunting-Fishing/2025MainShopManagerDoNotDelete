@@ -1,8 +1,10 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCategory } from "@/types/shopping";
 
 export async function getCategories(): Promise<ProductCategory[]> {
   try {
+    console.log("Fetching categories from database...");
     // Using any type to work around TypeScript issues with Supabase client
     const { data, error } = await (supabase as any)
       .from('product_categories')
@@ -13,6 +15,8 @@ export async function getCategories(): Promise<ProductCategory[]> {
       console.error("Error fetching categories:", error);
       throw error;
     }
+
+    console.log(`Successfully fetched ${data.length} categories`);
 
     // Organize categories into a hierarchy
     const mainCategories: ProductCategory[] = [];
@@ -38,6 +42,7 @@ export async function getCategories(): Promise<ProductCategory[]> {
       }
     });
 
+    console.log(`Structured into ${mainCategories.length} main categories with subcategories`);
     return mainCategories;
   } catch (error) {
     console.error("Error in getCategories:", error);
