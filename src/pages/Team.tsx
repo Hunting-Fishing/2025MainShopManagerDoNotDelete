@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { TeamHeader } from "@/components/team/TeamHeader";
 import { TeamSearch } from "@/components/team/TeamSearch";
@@ -6,7 +5,7 @@ import { TeamFilters } from "@/components/team/TeamFilters";
 import { TeamViewToggle } from "@/components/team/TeamViewToggle";
 import { TeamMemberGrid } from "@/components/team/TeamMemberGrid";
 import { TeamMemberTable } from "@/components/team/TeamMemberTable";
-import { getInitials, teamMembers as mockTeamMembers } from "@/data/teamData";
+import { getInitials } from "@/data/teamData";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 export default function Team() {
@@ -16,8 +15,8 @@ export default function Team() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
   
-  // Use our hook to get team members data
-  const { teamMembers, isLoading } = useTeamMembers();
+  // Use our hook to get team members data from Supabase
+  const { teamMembers, isLoading, error } = useTeamMembers();
 
   // Get unique roles and departments for filters
   const roles = Array.from(new Set(teamMembers.map(member => member.role))).sort();
@@ -52,9 +51,6 @@ export default function Team() {
     setStatusFilter([]);
   };
 
-  console.log("Team members:", teamMembers);
-  console.log("Filtered members:", filteredMembers);
-
   return (
     <div className="space-y-6">
       <TeamHeader />
@@ -84,6 +80,12 @@ export default function Team() {
         view={view} 
         onViewChange={setView} 
       />
+
+      {error && (
+        <div className="p-4 border border-red-300 bg-red-50 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
 
       {/* Loading state */}
       {isLoading ? (

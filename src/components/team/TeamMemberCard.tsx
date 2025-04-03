@@ -45,7 +45,7 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           <div className="flex items-center gap-3 text-sm text-slate-700">
             <Phone className="h-4 w-4 text-slate-400" />
             <a href={`tel:${member.phone}`} className="text-esm-blue-600 hover:underline">
-              {member.phone}
+              {member.phone || "Not available"}
             </a>
           </div>
         </div>
