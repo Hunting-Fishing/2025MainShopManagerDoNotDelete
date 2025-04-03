@@ -33,8 +33,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const formattedTime = formatMessageTime(message.created_at);
   
   // Check if this message has been saved already
-  const isSavedToWorkOrder = message.metadata?.saved_to?.work_order;
-  const isSavedToVehicle = message.metadata?.saved_to?.vehicle;
+  const isSavedToWorkOrder = message.metadata?.saved_to?.work_order ? true : false;
+  const isSavedToVehicle = message.metadata?.saved_to?.vehicle ? true : false;
   
   // Handle saving to work order
   const handleSaveToWorkOrder = async () => {

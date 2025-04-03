@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { TagIcon, Tool, ShieldCheck, FileText } from 'lucide-react';
+import { TagIcon, Wrench, ShieldCheck, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type TagType = 'work-order' | 'part' | 'warranty' | 'job';
@@ -26,7 +26,7 @@ export const TaggedItem: React.FC<TaggedItemProps> = ({ type, id, className }) =
         };
       case 'part':
         return {
-          icon: <Tool className="h-3 w-3 mr-1" />,
+          icon: <Wrench className="h-3 w-3 mr-1" />,
           label: `Part-${id}`,
           route: `/inventory/parts/${id}`,
           color: 'bg-green-100 text-green-800 hover:bg-green-200'
