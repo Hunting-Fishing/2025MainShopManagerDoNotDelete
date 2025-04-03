@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CreateRoomParams } from '@/services/chat/room/types';
 
 export interface WorkOrderChatButtonProps {
   workOrderId: string;
@@ -43,12 +44,20 @@ export const WorkOrderChatButton: React.FC<WorkOrderChatButtonProps> = ({ workOr
       
       // If no room exists, create one
       if (!workOrderRoom) {
-        workOrderRoom = await createChatRoom(
-          `Work Order: ${workOrderName}`,
-          'work_order',
-          [user.id],
-          workOrderId
-        );
+        const roomParams: CreateRoomParams = {
+          name: `Work Order: ${workOrderName}`,
+          type: 'work_order',
+          participants: [user.id],
+          workOrderId,
+          metadata: {
+            work_order: {
+              id: workOrderId,
+              number: workOrderName
+            }
+          }
+        };
+        
+        workOrderRoom = await createChatRoom(roomParams);
         
         toast({
           title: "Chat created",

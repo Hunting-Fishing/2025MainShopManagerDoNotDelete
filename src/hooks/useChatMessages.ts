@@ -3,12 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChatMessage } from '@/types/chat';
 import { 
   getChatMessages,
-  sendMessage,
   markMessagesAsRead,
   subscribeToMessages,
+  sendMessage,
   flagChatMessage
 } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
+import { MessageSendParams } from '@/services/chat/message/types';
 import { parseFileFromMessage } from '@/services/chat/fileService';
 
 interface UseChatMessagesProps {
@@ -83,12 +84,14 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     if (!currentRoomId || !newMessageText.trim() || !userId) return;
     
     try {
-      await sendMessage({
+      const messageParams: MessageSendParams = {
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
         content: newMessageText
-      });
+      };
+      
+      await sendMessage(messageParams);
       
       // Clear the input after sending (the subscription will catch the new message)
       setNewMessageText('');
@@ -108,12 +111,14 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     if (!currentRoomId || !userId) return;
     
     try {
-      await sendMessage({
+      const messageParams: MessageSendParams = {
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
         content: audioUrl
-      });
+      };
+      
+      await sendMessage(messageParams);
     } catch (err) {
       console.error('Failed to send voice message:', err);
       setError('Failed to send voice message');
@@ -130,12 +135,14 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     if (!currentRoomId || !userId) return;
     
     try {
-      await sendMessage({
+      const messageParams: MessageSendParams = {
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
         content: fileMessage
-      });
+      };
+      
+      await sendMessage(messageParams);
     } catch (err) {
       console.error('Failed to send file message:', err);
       setError('Failed to send file message');
@@ -152,7 +159,11 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     if (!messageId || !userId) return;
     
     try {
-      await flagChatMessage(messageId, reason, userId);
+      await flagChatMessage({
+        messageId,
+        reason,
+        userId
+      });
       
       // Update the message in the local state
       setMessages(prevMessages => 

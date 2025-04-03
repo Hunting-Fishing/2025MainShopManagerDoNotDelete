@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChatRoom } from '@/types/chat';
 import { createChatRoom, getWorkOrderChatRoom } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
+import { CreateRoomParams } from '@/services/chat/room/types';
 
 export const useChatRoomActions = (
   userId: string | undefined,
@@ -36,12 +36,14 @@ export const useChatRoomActions = (
         participants.push(userId);
       }
 
-      const newRoom = await createChatRoom(
+      const roomParams: CreateRoomParams = {
         name,
         type,
         participants,
-        workOrderId
-      );
+        workOrderId,
+      };
+
+      const newRoom = await createChatRoom(roomParams);
 
       toast({
         title: "Success",
@@ -74,18 +76,20 @@ export const useChatRoomActions = (
       
       if (!workOrderRoom) {
         // If not, create a new one with a default name based on the work order
-        workOrderRoom = await createChatRoom(
-          `Work Order: ${workOrderName}`,
-          "work_order",
-          [userId], // Start with just the current user
+        const roomParams: CreateRoomParams = {
+          name: `Work Order: ${workOrderName}`,
+          type: "work_order",
+          participants: [userId],
           workOrderId,
-          { // Add metadata for the work order
+          metadata: {
             work_order: {
               id: workOrderId,
               number: workOrderName
             }
           }
-        );
+        };
+        
+        workOrderRoom = await createChatRoom(roomParams);
         
         toast({
           title: "Work Order Chat Created",
