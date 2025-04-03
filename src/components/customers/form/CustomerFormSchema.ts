@@ -40,21 +40,7 @@ export const customerSchema = z.object({
   company: z.string().optional().or(z.literal("")),
   business_type: z.string().optional().or(z.literal("")),
   business_industry: z.string().optional().or(z.literal("")),
-  other_business_industry: z.string().optional().or(z.literal(""))
-    .refine(
-      (val, ctx) => {
-        // If business_industry is 'other', then other_business_industry is required
-        const businessIndustry = ctx.path[0] === 'other_business_industry' 
-          ? (ctx.parent as any).business_industry 
-          : '';
-          
-        return businessIndustry !== 'other' || (businessIndustry === 'other' && val && val.trim() !== '');
-      },
-      {
-        message: "Please specify the industry when 'Other' is selected",
-        path: ['other_business_industry']
-      }
-    ),
+  other_business_industry: z.string().optional().or(z.literal("")),
   tax_id: z.string().optional().or(z.literal("")),
   business_email: z.string().email().optional().or(z.literal("")),
   business_phone: z.string().optional().or(z.literal("")),
@@ -97,6 +83,15 @@ export const customerSchema = z.object({
   vehicles: z.array(vehicleSchema).default([]),
   tags: z.array(z.string()).default([]),
   segments: z.array(z.string()).default([]),
+}).superRefine((data, ctx) => {
+  // If business_industry is 'other', then other_business_industry is required
+  if (data.business_industry === 'other' && (!data.other_business_industry || data.other_business_industry.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please specify the industry when 'Other' is selected",
+      path: ['other_business_industry']
+    });
+  }
 });
 
 // Type definition for the form values
@@ -145,7 +140,6 @@ export const defaultCustomerFormValues: CustomerFormValues = {
   segments: [],
 };
 
-// Adding missing exports for components
 // Country and region data
 export const countries = [
   { code: "US", name: "United States" },
