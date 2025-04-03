@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
@@ -28,7 +27,7 @@ export function useTeamMemberUpdate() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      // Update the profile record
+      // Update the profile record with all relevant information
       const { error: profileError, data } = await supabase
         .from('profiles')
         .update({
@@ -36,6 +35,8 @@ export function useTeamMemberUpdate() {
           last_name: lastName,
           email: values.email,
           phone: values.phone || null,
+          job_title: values.jobTitle, // Save job title to profiles
+          department: values.department, // Save department to profiles
         })
         .eq('id', memberId)
         .select();
@@ -65,6 +66,17 @@ export function useTeamMemberUpdate() {
             console.error("Error finding role:", roleQueryError);
             // Continue with other updates even if role lookup fails
           } else if (roleData) {
+            // First, check if the user already has a role and delete it
+            const { error: deleteRoleError } = await supabase
+              .from('user_roles')
+              .delete()
+              .eq('user_id', memberId);
+            
+            if (deleteRoleError) {
+              console.error("Error removing existing role:", deleteRoleError);
+              // Continue anyway to try inserting the new role
+            }
+            
             // Now insert using the role_id
             const { error: roleInsertError } = await supabase
               .from('user_roles')
@@ -82,17 +94,6 @@ export function useTeamMemberUpdate() {
           console.error("Role validation error:", roleValidationError);
         }
       }
-      
-      // Create a metadata object with the additional fields
-      const metadata = {
-        jobTitle: values.jobTitle,
-        department: values.department,
-        status: values.status,
-        notes: values.notes
-      };
-      
-      // Log what would be saved in a real implementation
-      console.log("Would save additional metadata:", metadata);
       
       toast({
         title: "Profile updated",
