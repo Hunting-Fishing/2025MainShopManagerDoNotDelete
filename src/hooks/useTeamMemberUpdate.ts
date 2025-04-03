@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
@@ -53,17 +54,29 @@ export function useTeamMemberUpdate() {
           const roleValue = mapRoleToDbValue(values.role);
           console.log(`Role update would set user to ${roleValue} role`);
           
-          // Try to update the role (will likely fail due to RLS unless user is admin)
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({ 
-              user_id: memberId, 
-              role: roleValue 
-            });
+          // First, get the role_id based on the role name
+          const { data: roleData, error: roleQueryError } = await supabase
+            .from('roles')
+            .select('id')
+            .eq('name', roleValue)
+            .single();
             
-          if (roleError) {
-            console.error("Error inserting role:", roleError);
-            // This error is expected for non-admin users, we'll handle it gracefully
+          if (roleQueryError) {
+            console.error("Error finding role:", roleQueryError);
+            // Continue with other updates even if role lookup fails
+          } else if (roleData) {
+            // Now insert using the role_id
+            const { error: roleInsertError } = await supabase
+              .from('user_roles')
+              .insert({ 
+                user_id: memberId, 
+                role_id: roleData.id 
+              });
+              
+            if (roleInsertError) {
+              console.error("Error inserting role:", roleInsertError);
+              // This error is expected for non-admin users, we'll handle it gracefully
+            }
           }
         } catch (roleValidationError) {
           console.error("Role validation error:", roleValidationError);
