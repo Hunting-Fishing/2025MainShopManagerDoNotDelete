@@ -3,7 +3,6 @@ import { ProductCategory } from "@/types/shopping";
 
 export async function getCategories(): Promise<ProductCategory[]> {
   try {
-    console.log("Fetching categories from database...");
     // Using any type to work around TypeScript issues with Supabase client
     const { data, error } = await (supabase as any)
       .from('product_categories')
@@ -15,77 +14,53 @@ export async function getCategories(): Promise<ProductCategory[]> {
       throw error;
     }
 
-    console.log(`Successfully fetched ${data.length} categories`);
-
-    // Organize categories into a proper hierarchy
-    const categoriesMap: Record<string, ProductCategory> = {};
+    // Organize categories into a hierarchy
     const mainCategories: ProductCategory[] = [];
+    const subCategories: ProductCategory[] = [];
 
-    // First pass: create all category objects with empty subcategories arrays
-    data.forEach((category: ProductCategory) => {
-      categoriesMap[category.id] = {
-        ...category,
-        subcategories: []
-      };
-    });
-
-    // Second pass: build the hierarchy
     data.forEach((category: ProductCategory) => {
       if (!category.parent_id) {
-        // This is a main category
-        mainCategories.push(categoriesMap[category.id]);
-      } else if (categoriesMap[category.parent_id]) {
-        // This is a subcategory, add it to its parent
-        categoriesMap[category.parent_id].subcategories!.push(categoriesMap[category.id]);
+        category.subcategories = [];
+        mainCategories.push(category);
       } else {
-        // Parent doesn't exist, add as a main category as fallback
-        console.warn(`Parent category ${category.parent_id} not found for ${category.name}`);
-        mainCategories.push(categoriesMap[category.id]);
+        subCategories.push(category);
       }
     });
 
-    // Sort subcategories by name for better organization
-    const sortSubcategories = (categories: ProductCategory[]) => {
-      for (const category of categories) {
-        if (category.subcategories && category.subcategories.length > 0) {
-          category.subcategories.sort((a, b) => a.name.localeCompare(b.name));
-          sortSubcategories(category.subcategories);
+    // Assign subcategories to their parent categories
+    subCategories.forEach((subCategory) => {
+      const parent = mainCategories.find(cat => cat.id === subCategory.parent_id);
+      if (parent) {
+        if (!parent.subcategories) {
+          parent.subcategories = [];
         }
+        parent.subcategories.push(subCategory);
       }
-    };
+    });
 
-    sortSubcategories(mainCategories);
-    mainCategories.sort((a, b) => a.name.localeCompare(b.name));
-
-    console.log(`Structured into ${mainCategories.length} main categories with subcategories`);
     return mainCategories;
   } catch (error) {
     console.error("Error in getCategories:", error);
-    throw error; // Throw the error to be handled by the caller
+    return []; // Return an empty array instead of throwing, to prevent UI breakage
   }
 }
 
 export async function getCategoryBySlug(slug: string): Promise<ProductCategory | null> {
-  try {
-    const { data, error } = await (supabase as any)
-      .from('product_categories')
-      .select('*')
-      .eq('slug', slug)
-      .single();
+  const { data, error } = await (supabase as any)
+    .from('product_categories')
+    .select('*')
+    .eq('slug', slug)
+    .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // Category not found
-      }
-      console.error("Error fetching category:", error);
-      throw error;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null; // Category not found
     }
-
-    return data;
-  } catch (error) {
-    console.error(`Error fetching category with slug ${slug}:`, error);
+    console.error("Error fetching category:", error);
     throw error;
   }
+
+  return data;
 }
 
 export async function createCategory(category: Partial<ProductCategory>): Promise<ProductCategory> {
