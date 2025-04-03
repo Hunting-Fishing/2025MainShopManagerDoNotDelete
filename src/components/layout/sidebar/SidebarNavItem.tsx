@@ -44,7 +44,8 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
     submenu: props.submenu
   };
   
-  const isActive = location.pathname === navItem.href;
+  const isActive = location.pathname === navItem.href || 
+                  (navItem.href !== '/' && location.pathname.startsWith(navItem.href));
   const hasActiveSubmenu = navItem.submenu && navItem.submenu.some(subItem => location.pathname === subItem.href);
   const showSubmenu = navItem.submenu && (location.pathname.startsWith(navItem.href) || hasActiveSubmenu);
 
