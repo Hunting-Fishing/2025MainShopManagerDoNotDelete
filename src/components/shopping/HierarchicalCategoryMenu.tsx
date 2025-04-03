@@ -19,23 +19,29 @@ export const HierarchicalCategoryMenu: React.FC<HierarchicalCategoryMenuProps> =
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    
     setExpandedCategories(prev => ({
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
   };
 
+  // Show skeletons during loading
   if (isLoading) {
     return (
       <div className="space-y-2">
-        <div className="h-8 w-full animate-pulse rounded bg-muted"></div>
-        <div className="h-8 w-full animate-pulse rounded bg-muted"></div>
-        <div className="h-8 w-full animate-pulse rounded bg-muted"></div>
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="h-8 w-full animate-pulse rounded bg-muted"></div>
+        ))}
       </div>
     );
   }
 
+  // Show message if no categories
   if (categories.length === 0) {
     return <div className="text-muted-foreground py-2">No categories available</div>;
   }
@@ -49,23 +55,18 @@ export const HierarchicalCategoryMenu: React.FC<HierarchicalCategoryMenuProps> =
       <div key={category.id} className="category-item">
         <div 
           className={cn(
-            "flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-secondary/30",
+            "flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-secondary/30 transition-colors",
             isSelected ? "bg-secondary/50 text-primary font-medium" : "text-foreground",
-            level === 0 ? "font-medium" : "text-sm",
-            level > 0 ? `ml-${level * 3}` : ""
+            level === 0 ? "font-medium" : "text-sm"
           )}
-          onClick={() => {
-            onCategoryChange(category.id);
-            if (hasSubcategories) toggleCategory(category.id);
-          }}
+          style={{ marginLeft: level > 0 ? `${level * 12}px` : '0' }}
+          onClick={() => onCategoryChange(category.id)}
         >
           {hasSubcategories && (
             <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleCategory(category.id);
-              }}
+              onClick={(e) => toggleCategory(category.id, e)}
               className="mr-1 p-1 rounded-full hover:bg-secondary/50"
+              aria-label={isExpanded ? "Collapse category" : "Expand category"}
             >
               {isExpanded ? 
                 <ChevronDown className="h-4 w-4" /> : 
@@ -73,11 +74,11 @@ export const HierarchicalCategoryMenu: React.FC<HierarchicalCategoryMenuProps> =
               }
             </button>
           )}
-          <span className={`${!hasSubcategories ? 'ml-6' : ''}`}>{category.name}</span>
+          <span className={`${!hasSubcategories ? 'ml-6' : ''} truncate`}>{category.name}</span>
         </div>
         
         {hasSubcategories && isExpanded && (
-          <div className="subcategories ml-3">
+          <div className="subcategories">
             {category.subcategories!.map(subCategory => renderCategory(subCategory, level + 1))}
           </div>
         )}
@@ -89,7 +90,7 @@ export const HierarchicalCategoryMenu: React.FC<HierarchicalCategoryMenuProps> =
     <div className="category-menu space-y-1">
       <div 
         className={cn(
-          "flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-secondary/30",
+          "flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-secondary/30 transition-colors",
           !selectedCategoryId ? "bg-secondary/50 text-primary font-medium" : "text-foreground",
           "font-medium"
         )}
