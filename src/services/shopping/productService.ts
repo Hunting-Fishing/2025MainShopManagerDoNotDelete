@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFilterOptions } from "@/types/shopping";
 
 export async function getProducts(options: ProductFilterOptions = {}): Promise<Product[]> {
-  let query = supabase
+  let query = (supabase as any)
     .from('products')
     .select('*')
     .eq('is_approved', true);
@@ -58,7 +58,7 @@ export async function getProducts(options: ProductFilterOptions = {}): Promise<P
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('products')
     .select('*')
     .eq('id', id)
@@ -76,7 +76,7 @@ export async function getProductById(id: string): Promise<Product | null> {
 }
 
 export async function createProduct(product: Partial<Product>): Promise<Product> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('products')
     .insert(product)
     .select()
@@ -91,7 +91,7 @@ export async function createProduct(product: Partial<Product>): Promise<Product>
 }
 
 export async function updateProduct(id: string, product: Partial<Product>): Promise<Product> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('products')
     .update(product)
     .eq('id', id)
@@ -107,7 +107,7 @@ export async function updateProduct(id: string, product: Partial<Product>): Prom
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('products')
     .delete()
     .eq('id', id);
@@ -119,7 +119,7 @@ export async function deleteProduct(id: string): Promise<void> {
 }
 
 export async function getUserSuggestions(includeUnapproved: boolean = false): Promise<Product[]> {
-  let query = supabase
+  let query = (supabase as any)
     .from('products')
     .select('*')
     .eq('product_type', 'suggested');
@@ -146,7 +146,7 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
     suggested_by: (await supabase.auth.getUser()).data.user?.id
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('products')
     .insert(productData)
     .select()
@@ -161,7 +161,7 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
 }
 
 export async function approveProductSuggestion(id: string): Promise<Product> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('products')
     .update({ is_approved: true })
     .eq('id', id)

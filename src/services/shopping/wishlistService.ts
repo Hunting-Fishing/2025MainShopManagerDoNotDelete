@@ -10,7 +10,7 @@ export async function getWishlistItems(): Promise<Product[]> {
   }
 
   // Get wishlist items with product details
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('user_wishlists')
     .select(`
       id,
@@ -36,7 +36,7 @@ export async function addToWishlist(productId: string): Promise<Wishlist> {
     throw new Error("User must be authenticated to add to wishlist");
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('user_wishlists')
     .insert({
       user_id: user.id,
@@ -60,7 +60,7 @@ export async function removeFromWishlist(productId: string): Promise<void> {
     throw new Error("User must be authenticated to remove from wishlist");
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('user_wishlists')
     .delete()
     .eq('user_id', user.id)
@@ -79,7 +79,7 @@ export async function isInWishlist(productId: string): Promise<boolean> {
     return false;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('user_wishlists')
     .select('id')
     .eq('user_id', user.id)

@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductCategory } from "@/types/shopping";
 
 export async function getCategories(): Promise<ProductCategory[]> {
-  const { data, error } = await supabase
+  // Using any type to work around TypeScript issues with Supabase client
+  const { data, error } = await (supabase as any)
     .from('product_categories')
     .select('*')
     .order('name');
@@ -41,7 +42,7 @@ export async function getCategories(): Promise<ProductCategory[]> {
 }
 
 export async function getCategoryBySlug(slug: string): Promise<ProductCategory | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('product_categories')
     .select('*')
     .eq('slug', slug)
@@ -59,7 +60,7 @@ export async function getCategoryBySlug(slug: string): Promise<ProductCategory |
 }
 
 export async function createCategory(category: Partial<ProductCategory>): Promise<ProductCategory> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('product_categories')
     .insert(category)
     .select()
@@ -74,7 +75,7 @@ export async function createCategory(category: Partial<ProductCategory>): Promis
 }
 
 export async function updateCategory(id: string, category: Partial<ProductCategory>): Promise<ProductCategory> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('product_categories')
     .update(category)
     .eq('id', id)
@@ -90,7 +91,7 @@ export async function updateCategory(id: string, category: Partial<ProductCatego
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('product_categories')
     .delete()
     .eq('id', id);
