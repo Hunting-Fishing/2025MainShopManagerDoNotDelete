@@ -1,44 +1,48 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCategory } from "@/types/shopping";
 
 export async function getCategories(): Promise<ProductCategory[]> {
-  // Using any type to work around TypeScript issues with Supabase client
-  const { data, error } = await (supabase as any)
-    .from('product_categories')
-    .select('*')
-    .order('name');
+  try {
+    // Using any type to work around TypeScript issues with Supabase client
+    const { data, error } = await (supabase as any)
+      .from('product_categories')
+      .select('*')
+      .order('name');
 
-  if (error) {
-    console.error("Error fetching categories:", error);
-    throw error;
-  }
-
-  // Organize categories into a hierarchy
-  const mainCategories: ProductCategory[] = [];
-  const subCategories: ProductCategory[] = [];
-
-  data.forEach((category: ProductCategory) => {
-    if (!category.parent_id) {
-      category.subcategories = [];
-      mainCategories.push(category);
-    } else {
-      subCategories.push(category);
+    if (error) {
+      console.error("Error fetching categories:", error);
+      throw error;
     }
-  });
 
-  // Assign subcategories to their parent categories
-  subCategories.forEach((subCategory) => {
-    const parent = mainCategories.find(cat => cat.id === subCategory.parent_id);
-    if (parent) {
-      if (!parent.subcategories) {
-        parent.subcategories = [];
+    // Organize categories into a hierarchy
+    const mainCategories: ProductCategory[] = [];
+    const subCategories: ProductCategory[] = [];
+
+    data.forEach((category: ProductCategory) => {
+      if (!category.parent_id) {
+        category.subcategories = [];
+        mainCategories.push(category);
+      } else {
+        subCategories.push(category);
       }
-      parent.subcategories.push(subCategory);
-    }
-  });
+    });
 
-  return mainCategories;
+    // Assign subcategories to their parent categories
+    subCategories.forEach((subCategory) => {
+      const parent = mainCategories.find(cat => cat.id === subCategory.parent_id);
+      if (parent) {
+        if (!parent.subcategories) {
+          parent.subcategories = [];
+        }
+        parent.subcategories.push(subCategory);
+      }
+    });
+
+    return mainCategories;
+  } catch (error) {
+    console.error("Error in getCategories:", error);
+    return []; // Return an empty array instead of throwing, to prevent UI breakage
+  }
 }
 
 export async function getCategoryBySlug(slug: string): Promise<ProductCategory | null> {
