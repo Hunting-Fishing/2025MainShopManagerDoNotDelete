@@ -1,30 +1,32 @@
 
-import { ChatRoom } from "@/types/chat";
+import { ChatRoom, ChatRoomMetadata } from "@/types/chat";
 import { DatabaseChatRoom } from "../supabaseClient";
-
-export interface GetRoomOptions {
-  includeLastMessage?: boolean;
-  includeUnreadCount?: boolean;
-  includeParticipants?: boolean;
-}
 
 export interface CreateRoomParams {
   name: string;
   type: "direct" | "group" | "work_order";
   participants: string[];
-  workOrderId?: string;
-  metadata?: any;
+  workOrderId?: string; 
+  metadata?: ChatRoomMetadata;
+  id?: string; // Custom ID for special cases like shift chats
 }
 
-export type EnhancedRoomResult = ChatRoom;
+export interface GetRoomOptions {
+  includeLastMessage?: boolean;
+  includeParticipants?: boolean;
+}
 
-// Helper function to transform a DatabaseChatRoom into a ChatRoom
-export function transformDatabaseRoom(room: DatabaseChatRoom): ChatRoom {
+// Transform a database chat room to our application model
+export const transformDatabaseRoom = (dbRoom: DatabaseChatRoom): ChatRoom => {
   return {
-    ...room,
-    type: room.type as "direct" | "group" | "work_order",
-    is_pinned: room.is_pinned || false,
-    is_archived: room.is_archived || false,
-    metadata: room.metadata || null
+    id: dbRoom.id,
+    name: dbRoom.name,
+    type: dbRoom.type as 'direct' | 'group' | 'work_order',
+    work_order_id: dbRoom.work_order_id,
+    created_at: dbRoom.created_at,
+    updated_at: dbRoom.updated_at,
+    is_pinned: dbRoom.is_pinned,
+    is_archived: dbRoom.is_archived,
+    metadata: dbRoom.metadata
   };
-}
+};

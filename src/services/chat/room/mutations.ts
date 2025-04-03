@@ -1,46 +1,40 @@
 
-import { supabase, DatabaseChatRoom } from "../supabaseClient";
+import { supabase } from "../supabaseClient";
 import { ChatRoom } from "@/types/chat";
 import { CreateRoomParams, transformDatabaseRoom } from "./types";
 
 // Create a new chat room
-export const createChatRoom = async ({
-  name,
-  type,
-  participants,
-  workOrderId,
-  metadata
-}: CreateRoomParams): Promise<ChatRoom> => {
+export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom> => {
   try {
-    // Create the chat room
-    const { data: room, error: roomError } = await supabase
-      .from('chat_rooms')
-      .insert([{
-        name,
-        type,
-        work_order_id: workOrderId,
-        metadata: metadata || null,
-        is_pinned: false,
-        is_archived: false
-      } as Partial<DatabaseChatRoom>])
-      .select()
-      .single();
+    // Prepare the room data
+    const roomData = {
+      name: params.name,
+      type: params.type,
+      work_order_id: params.workOrderId,
+      metadata: params.metadata,
+      id: params.id // Use custom ID if provided
+    };
+
+    // Create the room
+    const { data: room, error: roomError } = params.id 
+      ? await supabase.from('chat_rooms').upsert([roomData]).select().single()
+      : await supabase.from('chat_rooms').insert([roomData]).select().single();
     
     if (roomError) throw roomError;
     
     // Add participants to the room
-    const participantsData = participants.map(userId => ({
+    const participantData = params.participants.map(userId => ({
       room_id: room.id,
       user_id: userId
     }));
     
-    const { error: participantsError } = await supabase
+    const { error: participantError } = await supabase
       .from('chat_participants')
-      .insert(participantsData);
+      .upsert(participantData);
     
-    if (participantsError) throw participantsError;
+    if (participantError) throw participantError;
     
-    return transformDatabaseRoom(room as DatabaseChatRoom);
+    return transformDatabaseRoom(room);
   } catch (error) {
     console.error("Error creating chat room:", error);
     throw error;
@@ -52,12 +46,12 @@ export const pinChatRoom = async (roomId: string, isPinned: boolean): Promise<vo
   try {
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ is_pinned: isPinned } as Partial<DatabaseChatRoom>)
+      .update({ is_pinned: isPinned, updated_at: new Date().toISOString() })
       .eq('id', roomId);
-      
+    
     if (error) throw error;
   } catch (error) {
-    console.error("Error pinning/unpinning chat room:", error);
+    console.error("Error pinning chat room:", error);
     throw error;
   }
 };
@@ -67,12 +61,12 @@ export const archiveChatRoom = async (roomId: string, isArchived: boolean): Prom
   try {
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ is_archived: isArchived } as Partial<DatabaseChatRoom>)
+      .update({ is_archived: isArchived, updated_at: new Date().toISOString() })
       .eq('id', roomId);
-      
+    
     if (error) throw error;
   } catch (error) {
-    console.error("Error archiving/unarchiving chat room:", error);
+    console.error("Error archiving chat room:", error);
     throw error;
   }
 };

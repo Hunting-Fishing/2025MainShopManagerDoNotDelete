@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChatRoom } from '@/types/chat';
@@ -42,11 +43,19 @@ export const useChatRoomActions = (
         participants.push(userId);
       }
 
+      // Format shift chat ID if it's a shift chat
+      let customId;
+      if (shiftMetadata?.isShiftChat && shiftMetadata.shiftDate) {
+        const dateStr = shiftMetadata.shiftDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        customId = `shift-chat-${dateStr}`;
+      }
+
       const roomParams: CreateRoomParams = {
         name,
         type,
         participants,
         workOrderId,
+        id: customId, // Use custom ID for shift chats
         metadata: shiftMetadata?.isShiftChat ? {
           is_shift_chat: true,
           shift_date: shiftMetadata.shiftDate?.toISOString(),
@@ -126,22 +135,24 @@ export const useChatRoomActions = (
   }, [userId, selectRoom, navigate]);
 
   // Get shift chat for a specific date
-  const getShiftChat = useCallback(async (date: Date | string) => {
+  const getShiftChat = useCallback(async (dateOrId: Date | string) => {
     if (!userId) return null;
     
     try {
-      let chatId = typeof date === 'string' ? date : undefined;
-      const shiftChat = await getShiftChatRoom(date);
+      const shiftChat = await getShiftChatRoom(dateOrId);
       
       if (shiftChat) {
         selectRoom(shiftChat);
-        navigate(`/chat/${shiftChat.id}`);
         return shiftChat;
-      } else if (chatId && chatId.startsWith('shift-chat-')) {
-        // Handle case where the chat ID is directly provided but not found yet
+      } else {
+        // If not found, show a toast
+        const errorMessage = typeof dateOrId === 'string' && dateOrId.startsWith('shift-chat-')
+          ? "The requested shift chat could not be found." 
+          : "No shift chat exists for this date.";
+        
         toast({
           title: "Shift chat not found",
-          description: "The requested shift chat could not be found. It might have been deleted or you don't have access.",
+          description: errorMessage,
           variant: "destructive"
         });
         navigate('/chat');

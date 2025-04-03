@@ -66,27 +66,42 @@ export default function Chat() {
     if (!userId || !roomId) return;
 
     // First check if it's a regular room in our loaded rooms
-    if (chatRooms.length > 0) {
-      const room = chatRooms.find(r => r.id === roomId);
-      if (room) {
-        selectRoom(room);
-        return; // Room found, no need to continue
+    const findRoomInLoaded = () => {
+      if (chatRooms.length > 0) {
+        const room = chatRooms.find(r => r.id === roomId);
+        if (room) {
+          selectRoom(room);
+          return true;
+        }
       }
+      return false;
+    };
+
+    if (findRoomInLoaded()) {
+      return; // Room found in loaded rooms
     }
-    
-    // If roomId starts with shift-chat prefix or looks like a date format, try to load it as a shift chat
-    if (roomId.startsWith('shift-chat-') || /^\d{4}-\d{2}-\d{2}$/.test(roomId)) {
-      // Show loading indicator
+
+    // If room wasn't found in loaded rooms and is a shift chat format, try to load it specifically
+    if (roomId.startsWith('shift-chat-')) {
       toast({
         title: "Loading shift chat",
         description: "Please wait while we find the shift chat room."
       });
       
-      // Try to load the shift chat
-      getShiftChat(roomId);
+      // Load the shift chat
+      getShiftChat(roomId)
+        .then(room => {
+          if (!room && !findRoomInLoaded()) {
+            // If still not found, navigate to main chat
+            navigate('/chat', { replace: true });
+          }
+        })
+        .catch(() => {
+          navigate('/chat', { replace: true });
+        });
     } else {
       // If not found and not a shift chat format, navigate to main chat
-      navigate('/chat');
+      navigate('/chat', { replace: true });
     }
   }, [roomId, userId, chatRooms, selectRoom, navigate, getShiftChat]);
 

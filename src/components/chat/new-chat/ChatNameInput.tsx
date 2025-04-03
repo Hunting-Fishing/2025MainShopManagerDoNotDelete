@@ -3,7 +3,6 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { TeamMember } from '@/types/team';
-import { teamMembers } from '@/data/teamData';
 
 export interface ChatNameInputProps {
   chatName: string;
@@ -18,11 +17,11 @@ export const ChatNameInput: React.FC<ChatNameInputProps> = ({
   chatType, 
   participants 
 }) => {
-  // Generate a default name based on the participants and chat type
+  // Generate a default placeholder based on the participants and chat type
   const getDefaultPlaceholder = (): string => {
     if (chatType === "direct" && participants.length === 1) {
-      const member = teamMembers.find(m => m.id === participants[0]);
-      return member ? member.name : "New Chat";
+      // When used in a component, actual member lookup would happen here
+      return "Direct Message";
     } else if (participants.length > 1) {
       return "Group Chat";
     }

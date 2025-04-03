@@ -1,3 +1,4 @@
+
 import { supabase, DatabaseChatRoom } from "../supabaseClient";
 import { ChatRoom, ChatMessage } from "@/types/chat";
 import { GetRoomOptions, transformDatabaseRoom } from "./types";
@@ -111,41 +112,55 @@ export const getDirectChatWithUser = async (currentUserId: string, otherUserId: 
 // Get a chat room for a specific shift date
 export const getShiftChatRoom = async (date: Date | string): Promise<ChatRoom | null> => {
   try {
-    // Handle both Date objects and string dates
-    const dateStr = typeof date === 'string' 
-      ? date 
-      : date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    
-    // First try to find by shift chat ID format
+    // First check if the input is a shift-chat ID
     if (typeof date === 'string' && date.startsWith('shift-chat-')) {
+      // Try to fetch directly by ID
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
-        .eq('type', 'group')
         .eq('id', date)
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         return transformDatabaseRoom(data);
       }
+
+      // If not found by direct ID, try to search by shift-date pattern in metadata
+      // Extract the date part if format is shift-chat-YYYY-MM-DD
+      const dateMatch = date.match(/shift-chat-(\d{4}-\d{2}-\d{2})/);
+      if (dateMatch && dateMatch[1]) {
+        const extractedDate = dateMatch[1];
+        const { data: metadataData, error: metadataError } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .eq('type', 'group')
+          .filter('metadata->is_shift_chat', 'eq', true)
+          .filter('metadata->shift_date', 'ilike', `%${extractedDate}%`)
+          .maybeSingle();
+
+        if (!metadataError && metadataData) {
+          return transformDatabaseRoom(metadataData);
+        }
+      }
     }
     
-    // Then try to find by metadata
+    // Handle both Date objects and string dates for regular date search
+    const dateStr = typeof date === 'string' 
+      ? date 
+      : date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    
+    // Search by metadata with the date string
     const { data, error } = await supabase
       .from('chat_rooms')
       .select('*')
       .eq('type', 'group')
       .filter('metadata->is_shift_chat', 'eq', true)
       .filter('metadata->shift_date', 'ilike', `%${dateStr}%`)
-      .single();
+      .maybeSingle();
     
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No chat room found for this date
-        return null;
-      }
       console.error("Error in getShiftChatRoom:", error);
-      throw error;
+      return null;
     }
     
     if (!data) return null;
