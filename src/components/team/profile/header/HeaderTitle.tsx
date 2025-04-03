@@ -5,6 +5,8 @@ interface HeaderTitleProps {
 
 export function HeaderTitle({ memberName }: HeaderTitleProps) {
   return (
-    <h1 className="text-2xl font-bold tracking-tight">Team Member Profile</h1>
+    <h1 className="text-2xl font-bold tracking-tight">
+      {memberName || "Team Member Profile"}
+    </h1>
   );
 }
