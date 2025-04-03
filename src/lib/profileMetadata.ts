@@ -41,7 +41,7 @@ export async function saveProfileMetadata(profileId: string, metadata: Record<st
       return false;
     }
 
-    if (existingData && existingData.length > 0) {
+    if (existingData && Array.isArray(existingData) && existingData.length > 0) {
       // Update existing metadata
       const { error: updateError } = await supabase
         .rpc('update_profile_metadata', { 
@@ -87,7 +87,7 @@ export async function getProfileMetadata(profileId: string) {
       return null;
     }
 
-    if (data && data.length > 0) {
+    if (data && Array.isArray(data) && data.length > 0) {
       return data[0].metadata;
     }
 
