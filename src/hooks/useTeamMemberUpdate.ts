@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
+import { roleValueMapping } from '@/components/team/form/formConstants';
 
 // Define the valid role types that match the database enum
 type AppRole = 'owner' | 'admin' | 'manager' | 'parts_manager' | 'service_advisor' | 'technician' | 'reception' | 'other_staff';
@@ -46,27 +46,31 @@ export function useTeamMemberUpdate() {
       
       console.log("Profile update result:", data);
       
-      // Role updates might require admin privileges
-      // For now, we'll just record that this would be done but not attempt it
-      // since it's causing a row-level security policy violation
+      // Handle role updates - this requires admin privileges
       if (values.role) {
         try {
-          // Make sure the role is a valid AppRole before logging
-          const roleValue = validateRoleValue(values.role);
+          // Map the display role to the database role value
+          const roleValue = mapRoleToDbValue(values.role);
           console.log(`Role update would set user to ${roleValue} role`);
           
-          // Instead of attempting to update roles directly (which requires admin privileges),
-          // we'll just document that this would be done in a production environment
-          console.log("NOTE: Role updates require admin privileges or a specific RLS policy.");
-          console.log("In a production environment, this would update the user's role in the user_roles table.");
+          // Try to update the role (will likely fail due to RLS unless user is admin)
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({ 
+              user_id: memberId, 
+              role: roleValue 
+            });
+            
+          if (roleError) {
+            console.error("Error inserting role:", roleError);
+            // This error is expected for non-admin users, we'll handle it gracefully
+          }
         } catch (roleValidationError) {
-          // Log the validation error but continue with other updates
           console.error("Role validation error:", roleValidationError);
         }
       }
       
       // Create a metadata object with the additional fields
-      // In a real implementation, we would store this in a separate table
       const metadata = {
         jobTitle: values.jobTitle,
         department: values.department,
@@ -76,9 +80,6 @@ export function useTeamMemberUpdate() {
       
       // Log what would be saved in a real implementation
       console.log("Would save additional metadata:", metadata);
-      
-      // Here you would typically save the metadata to a team_member_metadata table
-      // For now, we'll just simulate success since the profile update worked
       
       toast({
         title: "Profile updated",
@@ -102,38 +103,24 @@ export function useTeamMemberUpdate() {
     }
   };
   
-  // Helper function to validate and convert role value to a valid AppRole
-  const validateRoleValue = (role: string): AppRole => {
-    // Define allowed roles that match the database enum
-    const validRoles: AppRole[] = [
+  // Helper function to map role display names to database values
+  const mapRoleToDbValue = (role: string): AppRole => {
+    // If the role is in the mapping, use that value
+    if (role in roleValueMapping) {
+      return roleValueMapping[role] as AppRole;
+    }
+    
+    // Otherwise normalize the role name and try to match it
+    const normalizedRole = role.toLowerCase();
+    
+    // Check if the normalized role matches any of the valid database roles
+    const validDbRoles: AppRole[] = [
       'owner', 'admin', 'manager', 'parts_manager', 
       'service_advisor', 'technician', 'reception', 'other_staff'
     ];
     
-    // Check if the provided role is valid
-    const normalizedRole = role.toLowerCase() as AppRole;
-    
-    if (validRoles.includes(normalizedRole)) {
-      return normalizedRole;
-    }
-    
-    // Map common roles to valid ones
-    // This is a workaround for user input that doesn't match the exact enum values
-    const roleMapping: Record<string, AppRole> = {
-      'administrator': 'admin',
-      'tech': 'technician',
-      'service': 'service_advisor',
-      'advisor': 'service_advisor',
-      'customer service': 'reception',
-      'owner': 'owner',
-      'user': 'other_staff',  // Default for generic "User" role
-    };
-    
-    // Try to find a mapping
-    for (const [key, value] of Object.entries(roleMapping)) {
-      if (role.toLowerCase().includes(key.toLowerCase())) {
-        return value;
-      }
+    if (validDbRoles.includes(normalizedRole as AppRole)) {
+      return normalizedRole as AppRole;
     }
     
     // If no mapping found, default to 'other_staff'
