@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { CustomerFormValues } from "./CustomerFormSchema";
+import { CustomerFormValues } from "./schemas/customerSchema";
 
 export const useFormValidation = (form: UseFormReturn<CustomerFormValues>) => {
   const [hasPersonalErrors, setHasPersonalErrors] = useState(false);

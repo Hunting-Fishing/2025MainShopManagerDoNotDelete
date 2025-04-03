@@ -1,7 +1,7 @@
 
 import React from "react";
 import { CustomerForm } from "@/components/customers/form/CustomerForm";
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CustomerCreateFormProps {

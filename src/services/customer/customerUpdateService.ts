@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
 
 // Update a customer
 export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {

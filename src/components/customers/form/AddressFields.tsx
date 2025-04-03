@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { CustomerFormValues, countries, usStates, canadianProvinces } from "./CustomerFormSchema";
+import { CustomerFormValues } from "./schemas/customerSchema";
+import { countries, usStates, canadianProvinces } from "./schemas/locationData";
 import { 
   Select,
   SelectContent,

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
 import { useShopData } from "./hooks/useShopData";
 import { useCustomerSubmit } from "./hooks/useCustomerSubmit";
 import { showImportCompleteNotification } from "./utils/customerNotificationHandler";

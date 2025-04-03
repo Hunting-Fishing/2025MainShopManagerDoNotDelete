@@ -4,7 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CustomerFormValues } from "./CustomerFormSchema";
+import { CustomerFormValues } from "./schemas/customerSchema";
 import { RequiredIndicator } from "@/components/ui/required-indicator";
 import { AddressFields } from "./AddressFields";
 

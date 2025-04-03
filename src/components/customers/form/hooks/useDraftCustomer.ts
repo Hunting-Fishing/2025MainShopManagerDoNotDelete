@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { CustomerFormValues } from "../CustomerFormSchema";
+import { CustomerFormValues } from "../schemas/customerSchema";
 import { saveDraftCustomer, getDraftCustomer } from "@/services/customers";
 import { useToast } from "@/hooks/use-toast";
 

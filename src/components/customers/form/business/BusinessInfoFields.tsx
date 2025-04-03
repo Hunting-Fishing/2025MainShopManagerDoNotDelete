@@ -5,7 +5,9 @@ import {
   Building2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CustomerFormValues, shops as defaultShops } from "../CustomerFormSchema";
+import { CustomerFormValues } from "../schemas/customerSchema";
+import { shops as defaultShops } from "../schemas/relationshipData";
+import { requiredFields } from "../schemas/customerSchema";
 import { EssentialBusinessDetails } from "./EssentialBusinessDetails";
 import { PaymentBillingSection } from "./PaymentBillingSection";
 import { FleetManagementSection } from "./FleetManagementSection";
