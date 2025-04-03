@@ -41,7 +41,8 @@ export function useTeamMembers() {
           if (profile.user_roles && 
               profile.user_roles.length > 0 && 
               profile.user_roles[0].roles && 
-              typeof profile.user_roles[0].roles === 'object') {
+              typeof profile.user_roles[0].roles === 'object' &&
+              profile.user_roles[0].roles !== null) {
             userRole = profile.user_roles[0].roles.name || 'User';
           }
           

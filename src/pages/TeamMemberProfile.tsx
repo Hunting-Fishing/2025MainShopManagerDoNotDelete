@@ -1,140 +1,21 @@
 
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 import { ProfileHeader } from "@/components/team/profile/ProfileHeader";
 import { ProfileSidebar } from "@/components/team/profile/ProfileSidebar";
 import { TeamMemberDetails } from "@/components/team/profile/TeamMemberDetails";
 import { DeleteMemberDialog } from "@/components/team/profile/DeleteMemberDialog";
-import { supabase } from "@/integrations/supabase/client";
-import { TeamMember } from "@/types/team";
+import { ProfileLoading } from "@/components/team/profile/ProfileLoading";
+import { ProfileNotFound } from "@/components/team/profile/ProfileNotFound";
+import { useTeamMemberProfile } from "@/hooks/useTeamMemberProfile";
+import { useDeleteMember } from "@/components/team/profile/useDeleteMember";
 
 export default function TeamMemberProfile() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const [member, setMember] = useState<TeamMember | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  useEffect(() => {
-    // Fetch member data from Supabase
-    const fetchMemberData = async () => {
-      setLoading(true);
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            created_at,
-            user_roles:user_roles(
-              role_id,
-              roles:role_id(name)
-            )
-          `)
-          .eq('id', id)
-          .single();
-
-        if (profileError) {
-          throw profileError;
-        }
-
-        if (!profileData) {
-          setMember(null);
-          return;
-        }
-
-        // Get user's recent activity (you might need to adjust this based on your schema)
-        const { data: activityData } = await supabase
-          .from('work_order_activities')
-          .select('*')
-          .eq('user_id', id)
-          .order('timestamp', { ascending: false })
-          .limit(5);
-
-        // Transform activity data to match the expected format
-        const recentActivity = activityData?.map(activity => ({
-          type: 'workOrder',
-          date: activity.timestamp,
-          description: activity.action
-        })) || [];
-
-        // Extract role information - handling potential data structure issues
-        let userRole = 'User'; // Default role
-        if (profileData.user_roles && 
-            profileData.user_roles.length > 0 && 
-            profileData.user_roles[0].roles && 
-            typeof profileData.user_roles[0].roles === 'object') {
-          userRole = profileData.user_roles[0].roles.name || 'User';
-        }
-
-        // Create the member object with the fetched data
-        const memberData: TeamMember = {
-          id: profileData.id,
-          name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Unknown User',
-          role: userRole,
-          email: profileData.email || '',
-          phone: profileData.phone || '',
-          jobTitle: userRole, // Default to role name if no job title is available
-          department: 'General', // Default department
-          status: "Active", // Default status
-          workOrders: {
-            assigned: 0,
-            completed: 0
-          },
-          notes: "",
-          recentActivity,
-          joinDate: profileData.created_at,
-          lastActive: recentActivity?.[0]?.date || profileData.created_at
-        };
-
-        setMember(memberData);
-      } catch (error) {
-        console.error("Error fetching team member:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load team member data.",
-          variant: "destructive",
-        });
-        setMember(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchMemberData();
-    }
-  }, [id]);
-
-  // Handle member deletion
-  const handleDeleteMember = async () => {
-    try {
-      // In a real app, this would delete the user or disable their account
-      // For now, just show a message and navigate back
-      toast({
-        title: "Feature not implemented",
-        description: "User deletion is not implemented in this demo.",
-      });
-      
-      setDeleteDialogOpen(false);
-      navigate("/team");
-    } catch (error) {
-      console.error("Error deleting member:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete team member.",
-        variant: "destructive",
-      });
-    }
-  };
+  const { member, loading } = useTeamMemberProfile(id);
+  const { deleteDialogOpen, setDeleteDialogOpen, handleDeleteMember } = useDeleteMember();
 
   const handleEditClick = () => {
     setActiveTab("edit");
@@ -145,28 +26,11 @@ export default function TeamMemberProfile() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <p className="text-slate-500">Loading team member details...</p>
-        </div>
-      </div>
-    );
+    return <ProfileLoading />;
   }
 
   if (!member) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <h2 className="text-2xl font-bold">Team Member Not Found</h2>
-        <p className="text-slate-500">The team member you're looking for doesn't exist or has been removed.</p>
-        <Button asChild>
-          <Link to="/team">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Team
-          </Link>
-        </Button>
-      </div>
-    );
+    return <ProfileNotFound />;
   }
 
   return (
