@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
@@ -66,6 +65,8 @@ export function useTeamMemberUpdate() {
       
       // Handle role updates - this requires admin privileges
       let roleUpdateSuccess = false;
+      let roleUpdateMessage = "";
+      
       if (values.role) {
         try {
           // Map the display role to the database role value
@@ -81,43 +82,23 @@ export function useTeamMemberUpdate() {
             
           if (roleQueryError) {
             console.error("Error finding role:", roleQueryError);
-            // Continue with other updates even if role lookup fails
+            roleUpdateMessage = "Could not find the requested role.";
           } else if (roleData) {
-            // First, check if the user already has a role and delete it
-            const { error: deleteRoleError } = await supabase
-              .from('user_roles')
-              .delete()
-              .eq('user_id', memberId);
-            
-            if (deleteRoleError) {
-              console.error("Error removing existing role:", deleteRoleError);
-              // Continue anyway to try inserting the new role
-            }
-            
-            // Use the assign_role_to_user RPC function instead of direct insert
-            const { error: roleAssignError } = await supabase
+            // Use the RPC function to assign the role
+            const { error: roleRpcError } = await supabase
               .rpc('assign_role_to_user', { 
                 user_id_param: memberId, 
                 role_id_param: roleData.id 
               });
               
-            if (roleAssignError) {
-              console.error("Error assigning role:", roleAssignError);
+            if (roleRpcError) {
+              console.error("Error assigning role:", roleRpcError);
+              
               // Check if it's a permission error
-              if (roleAssignError.code === '42501' || roleAssignError.message?.includes('Only admins and owners can assign roles')) {
-                // This is expected for non-admin users
-                toast({
-                  title: "Role assignment requires admin privileges",
-                  description: "The profile was updated, but changing roles requires admin access.",
-                  variant: "warning",
-                });
+              if (roleRpcError.code === '42501' || roleRpcError.message?.includes('Only admins and owners can assign roles')) {
+                roleUpdateMessage = "Role assignment requires admin privileges.";
               } else {
-                // Some other error
-                toast({
-                  title: "Role assignment failed",
-                  description: "The profile was updated, but there was a problem changing the role.",
-                  variant: "destructive",
-                });
+                roleUpdateMessage = "Role assignment failed due to a system error.";
               }
             } else {
               roleUpdateSuccess = true;
@@ -125,15 +106,23 @@ export function useTeamMemberUpdate() {
           }
         } catch (roleValidationError) {
           console.error("Role validation error:", roleValidationError);
+          roleUpdateMessage = "Invalid role selection.";
         }
       }
       
-      toast({
-        title: "Profile updated",
-        description: roleUpdateSuccess 
-          ? "Team member information has been updated successfully."
-          : "Team member information has been updated. Role changes may require admin access.",
-      });
+      // Create appropriate toast message based on results
+      if (roleUpdateMessage) {
+        toast({
+          title: "Profile updated",
+          description: `Team member information has been updated. ${roleUpdateMessage}`,
+          variant: roleUpdateSuccess ? "default" : "warning",
+        });
+      } else {
+        toast({
+          title: "Profile updated",
+          description: "Team member information has been updated successfully.",
+        });
+      }
       
       return true;
     } catch (err) {
