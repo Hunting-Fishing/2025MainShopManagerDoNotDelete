@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
 import { roleValueMapping } from '@/components/team/form/formConstants';
+import { saveProfileMetadata } from '@/lib/profileMetadata';
 
 // Define the valid role types that match the database enum
 type AppRole = 'owner' | 'admin' | 'manager' | 'parts_manager' | 'service_advisor' | 'technician' | 'reception' | 'other_staff';
@@ -52,41 +52,10 @@ export function useTeamMemberUpdate() {
       // Save additional metadata in the profile_metadata table if needed
       if (values.notes) {
         try {
-          // First check if a metadata record exists
-          const { data: existingMetadata, error: fetchError } = await supabase
-            .from('profile_metadata')
-            .select('id')
-            .eq('profile_id', memberId)
-            .maybeSingle();
-            
-          if (fetchError) {
-            console.error("Error fetching profile metadata:", fetchError);
-          }
-          
-          if (existingMetadata) {
-            // Update existing metadata
-            const { error: updateError } = await supabase
-              .from('profile_metadata')
-              .update({
-                metadata: { notes: values.notes }
-              })
-              .eq('profile_id', memberId);
-              
-            if (updateError) {
-              console.error("Error updating profile metadata:", updateError);
-            }
-          } else {
-            // Create new metadata
-            const { error: insertError } = await supabase
-              .from('profile_metadata')
-              .insert({
-                profile_id: memberId,
-                metadata: { notes: values.notes }
-              });
-              
-            if (insertError) {
-              console.error("Error inserting profile metadata:", insertError);
-            }
+          // Use our helper function to save notes metadata
+          const metadataSaved = await saveProfileMetadata(memberId, { notes: values.notes });
+          if (!metadataSaved) {
+            console.warn("Could not save profile metadata, but continuing with other updates");
           }
         } catch (metadataError) {
           console.error("Metadata operation error:", metadataError);
