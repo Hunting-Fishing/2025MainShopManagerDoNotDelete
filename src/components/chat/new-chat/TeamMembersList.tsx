@@ -6,17 +6,17 @@ import { TeamMember } from "@/types/team";
 import { getInitials } from "@/data/teamData";
 
 interface TeamMembersListProps {
-  filteredTeamMembers: TeamMember[];
-  participants: string[];
+  teamMembers: TeamMember[];
+  selectedParticipants: string[];
   onToggleParticipant: (userId: string) => void;
 }
 
 export const TeamMembersList: React.FC<TeamMembersListProps> = ({
-  filteredTeamMembers,
-  participants,
+  teamMembers,
+  selectedParticipants,
   onToggleParticipant
 }) => {
-  if (filteredTeamMembers.length === 0) {
+  if (teamMembers.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-muted-foreground">
         No users found
@@ -26,8 +26,8 @@ export const TeamMembersList: React.FC<TeamMembersListProps> = ({
 
   return (
     <ul className="divide-y">
-      {filteredTeamMembers.map(member => {
-        const isSelected = participants.includes(member.id);
+      {teamMembers.map(member => {
+        const isSelected = selectedParticipants.includes(member.id);
         return (
           <li 
             key={member.id}

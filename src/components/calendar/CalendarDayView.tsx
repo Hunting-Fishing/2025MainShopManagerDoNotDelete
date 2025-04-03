@@ -3,19 +3,22 @@ import { format, isSameDay, isPast, set } from "date-fns";
 import { CalendarEvent } from "@/types/calendar";
 import { cn } from "@/lib/utils";
 import { priorityMap } from "@/data/workOrdersData";
+import { ChatRoom } from "@/types/chat";
 
 interface CalendarDayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
   currentTime?: Date;
+  shiftChats?: ChatRoom[];
 }
 
 export function CalendarDayView({ 
   currentDate, 
   events, 
   onEventClick,
-  currentTime = new Date()
+  currentTime = new Date(),
+  shiftChats = []
 }: CalendarDayViewProps) {
   // Filter events for the current day
   const dayEvents = events.filter(event => {
