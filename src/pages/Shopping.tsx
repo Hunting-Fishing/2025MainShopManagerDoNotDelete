@@ -1,120 +1,142 @@
 
-import React, { useState, useEffect } from 'react';
-import { getCategories } from '@/services/shopping/categoryService';
-import { getProducts } from '@/services/shopping/productService';
-import { ProductCategory, Product, ProductFilterOptions } from '@/types/shopping';
+import React, { useState } from 'react';
+import { ShoppingHeader } from '@/components/shopping/ShoppingHeader';
+import { ProductFilters } from '@/components/shopping/ProductFilters';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { CategoryTabs } from '@/components/shopping/CategoryTabs';
+import { SuggestionForm } from '@/components/shopping/SuggestionForm';
+import { WishlistPanel } from '@/components/shopping/WishlistPanel';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useProducts } from '@/hooks/useProducts';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 export default function Shopping() {
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filterOptions, setFilterOptions] = useState<ProductFilterOptions>({});
+  const { products, isLoading, filterOptions, updateFilters } = useProducts();
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { isAdmin } = useAuthUser();
+  
+  const [activeTab, setActiveTab] = useState<string>('all-products');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showWishlist, setShowWishlist] = useState(false);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log("Fetching categories...");
-        // Load categories
-        const categoriesData = await getCategories();
-        console.log("Categories fetched:", categoriesData);
-        setCategories(categoriesData);
-        
-        // Load initial products
-        console.log("Fetching products...");
-        const productsData = await getProducts();
-        console.log("Products fetched:", productsData);
-        setProducts(productsData);
-      } catch (error) {
-        console.error("Error loading shopping data:", error);
-        setError("Failed to load shopping data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    loadData();
-  }, []);
+  const handleSearch = (searchTerm: string) => {
+    updateFilters({ search: searchTerm });
+  };
 
-  const handleCategoryChange = async (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    setLoading(true);
-    setError(null);
+  const handleCategoryChange = (categoryId?: string) => {
+    updateFilters({ categoryId });
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
     
-    try {
-      const newOptions = { ...filterOptions, categoryId: categoryId || undefined };
-      setFilterOptions(newOptions);
-      const filteredProducts = await getProducts(newOptions);
-      setProducts(filteredProducts);
-    } catch (error) {
-      console.error("Error filtering products:", error);
-      setError("Failed to filter products. Please try again.");
-    } finally {
-      setLoading(false);
+    if (tab === 'user-suggestions') {
+      updateFilters({ filterType: 'suggested' });
+    } else {
+      updateFilters({ filterType: 'all' });
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Shopping Quick Links</h1>
-        <p className="text-muted-foreground">
-          Browse our recommended products and affiliate links
-        </p>
-      </div>
+    <ResponsiveContainer className="py-6">
+      <ShoppingHeader
+        onSearch={handleSearch}
+        onToggleFilters={() => setShowMobileFilters(true)}
+        onToggleWishlist={() => setShowWishlist(true)}
+      />
       
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+      {isAdmin && (
+        <div className="flex justify-end mb-4">
+          <Button onClick={() => navigate('/shopping/admin')}>
+            Admin Dashboard
+          </Button>
+        </div>
       )}
       
-      {/* Simple category tabs */}
-      <div className="flex flex-wrap gap-2 pb-4">
-        <button
-          className={`px-4 py-2 rounded-full ${selectedCategory === '' ? 
-            'bg-primary text-primary-foreground' : 
-            'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-          onClick={() => handleCategoryChange('')}
-          disabled={loading}
-        >
-          All
-        </button>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all-products">All Products</TabsTrigger>
+          <TabsTrigger value="user-suggestions">
+            User Suggestions
+            <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-800">New</Badge>
+          </TabsTrigger>
+        </TabsList>
         
-        {categories.length > 0 ? (
-          categories.map(category => (
-            <button
-              key={category.id}
-              className={`px-4 py-2 rounded-full ${selectedCategory === category.id ? 
-                'bg-primary text-primary-foreground' : 
-                'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-              onClick={() => handleCategoryChange(category.id)}
-              disabled={loading}
-            >
-              {category.name}
-            </button>
-          ))
-        ) : !loading && (
-          <div className="text-muted-foreground py-2">
-            No categories available
+        <TabsContent value="all-products" className="mt-0">
+          <div className="flex flex-col md:flex-row gap-6">
+            {isMobile ? (
+              <ProductFilters
+                filterOptions={filterOptions}
+                onFilterChange={updateFilters}
+                isMobileVisible={showMobileFilters}
+                onMobileClose={() => setShowMobileFilters(false)}
+              />
+            ) : (
+              <div className="w-full md:w-64 flex-shrink-0">
+                <ProductFilters
+                  filterOptions={filterOptions}
+                  onFilterChange={updateFilters}
+                />
+              </div>
+            )}
+            
+            <div className="flex-grow">
+              <CategoryTabs
+                selectedCategoryId={filterOptions.categoryId}
+                onCategoryChange={handleCategoryChange}
+              />
+              
+              <div className="mt-6">
+                <ProductGrid
+                  products={products}
+                  isLoading={isLoading}
+                  emptyMessage="No products found matching your filters."
+                />
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="user-suggestions" className="mt-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <ProductGrid
+                products={products}
+                isLoading={isLoading}
+                emptyMessage="No user suggestions yet. Be the first to suggest a product!"
+              />
+            </div>
+            
+            <div>
+              <SuggestionForm />
+              
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>About User Suggestions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Share your favorite products with the community! Submit suggestions for tools, consumables, 
+                    or any products you find useful. Our team will review submissions before they appear in this section.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
       
-      {/* Products grid with loading state */}
-      <ProductGrid 
-        products={products} 
-        isLoading={loading}
-        emptyMessage="No products found. Please try a different category or check back later."
+      <WishlistPanel
+        visible={showWishlist}
+        onClose={() => setShowWishlist(false)}
       />
-    </div>
+    </ResponsiveContainer>
   );
 }
