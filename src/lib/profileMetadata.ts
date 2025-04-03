@@ -34,9 +34,11 @@ export async function saveProfileMetadata(profileId: string, metadata: Record<st
 
     // Check if metadata already exists
     const { data: existingData, error: fetchError } = await supabase
-      .rpc('get_profile_metadata', { profile_id_param: profileId });
+      .from('profile_metadata')
+      .select('*')
+      .eq('profile_id', profileId);
 
-    if (fetchError && !fetchError.message.includes('No rows returned')) {
+    if (fetchError) {
       console.error('Error fetching profile metadata:', fetchError);
       return false;
     }
@@ -44,10 +46,12 @@ export async function saveProfileMetadata(profileId: string, metadata: Record<st
     if (existingData && Array.isArray(existingData) && existingData.length > 0) {
       // Update existing metadata
       const { error: updateError } = await supabase
-        .rpc('update_profile_metadata', { 
-          profile_id_param: profileId, 
-          metadata_param: metadata 
-        });
+        .from('profile_metadata')
+        .update({ 
+          metadata: metadata,
+          updated_at: new Date().toISOString()
+        })
+        .eq('profile_id', profileId);
 
       if (updateError) {
         console.error('Error updating profile metadata:', updateError);
@@ -56,9 +60,10 @@ export async function saveProfileMetadata(profileId: string, metadata: Record<st
     } else {
       // Insert new metadata
       const { error: insertError } = await supabase
-        .rpc('insert_profile_metadata', {
-          profile_id_param: profileId,
-          metadata_param: metadata
+        .from('profile_metadata')
+        .insert({
+          profile_id: profileId,
+          metadata: metadata
         });
 
       if (insertError) {
@@ -80,7 +85,9 @@ export async function saveProfileMetadata(profileId: string, metadata: Record<st
 export async function getProfileMetadata(profileId: string) {
   try {
     const { data, error } = await supabase
-      .rpc('get_profile_metadata', { profile_id_param: profileId });
+      .from('profile_metadata')
+      .select('*')
+      .eq('profile_id', profileId);
 
     if (error) {
       console.error('Error getting profile metadata:', error);

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
@@ -64,6 +65,7 @@ export function useTeamMemberUpdate() {
       }
       
       // Handle role updates - this requires admin privileges
+      let roleUpdateSuccess = false;
       if (values.role) {
         try {
           // Map the display role to the database role value
@@ -92,17 +94,33 @@ export function useTeamMemberUpdate() {
               // Continue anyway to try inserting the new role
             }
             
-            // Now insert using the role_id
-            const { error: roleInsertError } = await supabase
-              .from('user_roles')
-              .insert({ 
-                user_id: memberId, 
-                role_id: roleData.id 
+            // Use the assign_role_to_user RPC function instead of direct insert
+            const { error: roleAssignError } = await supabase
+              .rpc('assign_role_to_user', { 
+                user_id_param: memberId, 
+                role_id_param: roleData.id 
               });
               
-            if (roleInsertError) {
-              console.error("Error inserting role:", roleInsertError);
-              // This error is expected for non-admin users, we'll handle it gracefully
+            if (roleAssignError) {
+              console.error("Error assigning role:", roleAssignError);
+              // Check if it's a permission error
+              if (roleAssignError.code === '42501' || roleAssignError.message?.includes('Only admins and owners can assign roles')) {
+                // This is expected for non-admin users
+                toast({
+                  title: "Role assignment requires admin privileges",
+                  description: "The profile was updated, but changing roles requires admin access.",
+                  variant: "warning",
+                });
+              } else {
+                // Some other error
+                toast({
+                  title: "Role assignment failed",
+                  description: "The profile was updated, but there was a problem changing the role.",
+                  variant: "destructive",
+                });
+              }
+            } else {
+              roleUpdateSuccess = true;
             }
           }
         } catch (roleValidationError) {
@@ -112,7 +130,9 @@ export function useTeamMemberUpdate() {
       
       toast({
         title: "Profile updated",
-        description: "Team member information has been updated successfully. Role changes may require admin access.",
+        description: roleUpdateSuccess 
+          ? "Team member information has been updated successfully."
+          : "Team member information has been updated. Role changes may require admin access.",
       });
       
       return true;
