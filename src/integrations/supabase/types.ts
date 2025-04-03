@@ -1927,6 +1927,109 @@ export type Database = {
           },
         ]
       }
+      product_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          affiliate_link: string | null
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_approved: boolean | null
+          is_bestseller: boolean | null
+          is_featured: boolean | null
+          price: number | null
+          product_type: Database["public"]["Enums"]["product_type"]
+          suggested_by: string | null
+          suggestion_reason: string | null
+          title: string
+          tracking_params: string | null
+          updated_at: string
+        }
+        Insert: {
+          affiliate_link?: string | null
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_approved?: boolean | null
+          is_bestseller?: boolean | null
+          is_featured?: boolean | null
+          price?: number | null
+          product_type?: Database["public"]["Enums"]["product_type"]
+          suggested_by?: string | null
+          suggestion_reason?: string | null
+          title: string
+          tracking_params?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affiliate_link?: string | null
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_approved?: boolean | null
+          is_bestseller?: boolean | null
+          is_featured?: boolean | null
+          price?: number | null
+          product_type?: Database["public"]["Enums"]["product_type"]
+          suggested_by?: string | null
+          suggestion_reason?: string | null
+          title?: string
+          tracking_params?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -2525,6 +2628,35 @@ export type Database = {
           },
         ]
       }
+      user_wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_wishlists_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           color: string | null
@@ -2927,6 +3059,7 @@ export type Database = {
         | "reception"
         | "other_staff"
       permission_type: "create" | "read" | "update" | "delete"
+      product_type: "affiliate" | "suggested"
       resource_type:
         | "users"
         | "roles"

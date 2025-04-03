@@ -49,6 +49,8 @@ import FeedbackFormsPage from '@/pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from '@/pages/feedback/FeedbackFormEditorPage';
 import FeedbackAnalyticsPage from '@/pages/feedback/FeedbackAnalyticsPage';
 import EmailCampaignAnalytics from "./pages/EmailCampaignAnalytics";
+import ShoppingQuickLinks from './pages/ShoppingQuickLinks';
+import ShoppingAdmin from './pages/ShoppingAdmin';
 import Login from './pages/Login';
 import Index from './pages/Index';
 import { useEffect, useState } from 'react';
@@ -131,6 +133,8 @@ function App() {
           <Route path="sms" element={<SmsManagement />} />
           <Route path="sms-templates" element={<SmsTemplates />} />
           <Route path="chat" element={<Chat />} />
+          <Route path="shopping" element={<ShoppingQuickLinks />} />
+          <Route path="shopping/admin" element={<ShoppingAdmin />} />
           <Route path="feedback/forms" element={<FeedbackFormsPage />} />
           <Route path="feedback/forms/editor/:id?" element={<FeedbackFormEditorPage />} />
           <Route path="feedback/analytics/:id" element={<FeedbackAnalyticsPage />} />
