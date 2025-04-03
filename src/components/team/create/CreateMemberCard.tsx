@@ -7,6 +7,7 @@ import { TeamMember } from "@/types/team";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { getInitials } from "@/data/teamData";
+import { handleApiError } from "@/utils/errorHandling";
 
 export function CreateMemberCard() {
   const navigate = useNavigate();
@@ -15,24 +16,26 @@ export function CreateMemberCard() {
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      // First, insert the profile data
+      // First, insert the profile data - generating UUID on the client side
+      const newUserId = crypto.randomUUID();
+      
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
+          id: newUserId, // Providing the required ID field
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email,
           phone: data.phone
         })
-        .select('id')
-        .single();
+        .select();
 
       if (profileError) {
         throw profileError;
       }
 
       // Get the role ID for the selected role
-      const { data: roleData, error: roleError } = await supabase
+      let { data: roleData, error: roleError } = await supabase
         .from('roles')
         .select('id')
         .eq('name', data.role.toLowerCase())
@@ -58,7 +61,7 @@ export function CreateMemberCard() {
       const { error: roleAssignError } = await supabase
         .from('user_roles')
         .insert({
-          user_id: profileData.id,
+          user_id: newUserId, // Using the generated user ID
           role_id: roleData.id
         });
 
@@ -76,11 +79,7 @@ export function CreateMemberCard() {
       navigate('/team');
     } catch (error: any) {
       console.error('Error creating team member:', error);
-      toast({
-        title: "Failed to create team member",
-        description: error.message || "An error occurred while creating the team member",
-        variant: "destructive",
-      });
+      handleApiError(error, "An error occurred while creating the team member");
     } finally {
       setIsSubmitting(false);
     }
@@ -92,6 +91,8 @@ export function CreateMemberCard() {
         <TeamMemberForm 
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
+          mode="create"
+          initialData={undefined}
         />
       </CardContent>
     </Card>
