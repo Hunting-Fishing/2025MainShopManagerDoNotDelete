@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -26,6 +25,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 
 export default function ShoppingAdmin() {
   const navigate = useNavigate();
@@ -38,12 +38,31 @@ export default function ShoppingAdmin() {
   const [editProductId, setEditProductId] = useState<string | null>(null);
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Redirect non-admin users
-  React.useEffect(() => {
-    if (isAdmin === false) {
-      navigate('/shopping');
-    }
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      setIsCheckingAuth(true);
+      try {
+        setTimeout(() => {
+          if (isAdmin === false) {
+            toast({
+              title: "Access Denied",
+              description: "You don't have permission to access the admin area.",
+              variant: "destructive",
+            });
+            navigate('/shopping');
+          }
+          setIsCheckingAuth(false);
+        }, 500);
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        setIsCheckingAuth(false);
+        navigate('/shopping');
+      }
+    };
+
+    checkAdminStatus();
   }, [isAdmin, navigate]);
 
   const handleEditProduct = (productId: string) => {
@@ -66,7 +85,7 @@ export default function ShoppingAdmin() {
     setRefreshKey(prev => prev + 1);
   };
 
-  if (isAdmin === undefined) {
+  if (isCheckingAuth) {
     return (
       <div className="flex justify-center items-center p-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
@@ -170,7 +189,6 @@ export default function ShoppingAdmin() {
         </TabsContent>
       </Tabs>
       
-      {/* Product Form Dialog */}
       <Dialog 
         open={showAddProduct || !!editProductId} 
         onOpenChange={(open) => {
@@ -201,7 +219,6 @@ export default function ShoppingAdmin() {
         </DialogContent>
       </Dialog>
       
-      {/* Category Form Dialog */}
       <Dialog 
         open={showAddCategory || !!editCategoryId} 
         onOpenChange={(open) => {
