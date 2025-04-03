@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
@@ -27,7 +28,7 @@ export function useTeamMemberUpdate() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      // Update the profile record with all relevant information
+      // Update only the profile fields that exist in the database
       const { error: profileError, data } = await supabase
         .from('profiles')
         .update({
@@ -35,8 +36,7 @@ export function useTeamMemberUpdate() {
           last_name: lastName,
           email: values.email,
           phone: values.phone || null,
-          job_title: values.jobTitle, // Save job title to profiles
-          department: values.department, // Save department to profiles
+          // We're not including department and job_title as they don't exist in the profiles table
         })
         .eq('id', memberId)
         .select();
@@ -47,6 +47,14 @@ export function useTeamMemberUpdate() {
       }
       
       console.log("Profile update result:", data);
+      
+      // Store job title, department, and other metadata in a separate location if needed
+      // For now, let's log this information since we can't store it in the profiles table
+      console.log("Additional info that would be stored elsewhere:", {
+        jobTitle: values.jobTitle,
+        department: values.department,
+        notes: values.notes
+      });
       
       // Handle role updates - this requires admin privileges
       if (values.role) {
