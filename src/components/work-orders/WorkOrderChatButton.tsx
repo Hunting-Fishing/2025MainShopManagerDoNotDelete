@@ -52,7 +52,9 @@ export const WorkOrderChatButton: React.FC<WorkOrderChatButtonProps> = ({ workOr
           metadata: {
             work_order: {
               id: workOrderId,
-              number: workOrderName
+              number: workOrderName,
+              status: "Unknown", // Adding required status field
+              customer_name: "Unknown" // Adding required customer_name field
             }
           }
         };
