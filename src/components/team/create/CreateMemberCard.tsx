@@ -91,8 +91,6 @@ export function CreateMemberCard() {
         <TeamMemberForm 
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
-          mode="create"
-          initialData={undefined}
         />
       </CardContent>
     </Card>
