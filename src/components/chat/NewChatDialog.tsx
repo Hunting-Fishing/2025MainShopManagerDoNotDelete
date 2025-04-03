@@ -117,10 +117,10 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
           
           <div className="my-4">
             <ChatNameInput 
-              value={chatName} 
-              onChange={setChatName} 
-              placeholder={getDefaultChatName()}
+              chatName={chatName}
+              setChatName={setChatName}
               chatType={chatType}
+              participants={selectedParticipants}
             />
           </div>
           
@@ -140,7 +140,10 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
           )}
           
           <div className="my-4">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            <SearchBar 
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
           </div>
           
           <div className="my-4">
@@ -149,7 +152,8 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
                 <Label className="text-sm font-medium">Selected members</Label>
                 <ParticipantList 
                   participants={selectedParticipants}
-                  onRemove={removeParticipant}
+                  teamMembers={teamMembers}
+                  onRemoveParticipant={removeParticipant}
                 />
               </div>
             )}
