@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -19,11 +18,24 @@ export function TeamPermissions({
   initialPermissions, 
   onChange 
 }: TeamPermissionsProps) {
-  // Initialize with either provided permissions, role preset, or defaults
-  const [permissions, setPermissions] = useState<PermissionSet>(
-    initialPermissions || 
-    (memberRole ? permissionPresets[memberRole as keyof typeof permissionPresets] : defaultPermissions)
-  );
+  // Get the appropriate permissions for the role, with fallbacks
+  const getInitialPermissions = (): PermissionSet => {
+    // If initialPermissions are provided, use those
+    if (initialPermissions) {
+      return initialPermissions;
+    }
+    
+    // If memberRole is provided and exists in permissionPresets, use those
+    if (memberRole && permissionPresets[memberRole as keyof typeof permissionPresets]) {
+      return permissionPresets[memberRole as keyof typeof permissionPresets];
+    }
+    
+    // Otherwise use default permissions
+    return defaultPermissions;
+  };
+
+  // Initialize with safe permissions
+  const [permissions, setPermissions] = useState<PermissionSet>(getInitialPermissions());
 
   // Handle toggling a permission
   const handleTogglePermission = (module: string, action: string, value: boolean) => {
@@ -97,7 +109,7 @@ export function TeamPermissions({
         gap="md"
         className="w-full"
       >
-        {Object.entries(permissions).map(([module, actions]) => (
+        {permissions && Object.entries(permissions).map(([module, actions]) => (
           <PermissionModuleCard
             key={module}
             moduleName={module}
