@@ -1,4 +1,3 @@
-
 import { supabase, DatabaseChatRoom } from "../supabaseClient";
 import { ChatRoom } from "@/types/chat";
 import { transformDatabaseRoom } from "./types";
@@ -69,3 +68,6 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
     throw error;
   }
 };
+
+// Re-export the room queries
+export { getShiftChatRoom } from './queries';

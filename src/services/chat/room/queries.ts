@@ -1,4 +1,3 @@
-
 import { supabase, DatabaseChatRoom } from "../supabaseClient";
 import { ChatRoom, ChatMessage } from "@/types/chat";
 import { GetRoomOptions, transformDatabaseRoom } from "./types";
@@ -106,5 +105,36 @@ export const getDirectChatWithUser = async (currentUserId: string, otherUserId: 
   } catch (error) {
     console.error("Error fetching direct chat:", error);
     throw error;
+  }
+};
+
+// Get a chat room for a specific shift date
+export const getShiftChatRoom = async (date: Date): Promise<ChatRoom | null> => {
+  try {
+    const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    
+    const { data, error } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .eq('type', 'group')
+      .contains('metadata', { is_shift_chat: true })
+      .contains('metadata', { shift_date: dateStr })
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No chat room found for this date
+        return null;
+      }
+      throw error;
+    }
+    
+    if (!data) return null;
+    
+    // Transform the database object to a ChatRoom
+    return transformDatabaseRoom(data);
+  } catch (error) {
+    console.error("Error fetching shift chat room:", error);
+    return null;
   }
 };

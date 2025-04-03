@@ -1,119 +1,70 @@
 
-import { useState, useEffect } from 'react';
-import { TeamMember } from '@/types/team';
+import { useState } from 'react';
 
-export const useChatDialogState = (teamMembers: TeamMember[]) => {
-  const [chatName, setChatName] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [participants, setParticipants] = useState<string[]>([]);
-  const [filteredTeamMembers, setFilteredTeamMembers] = useState(teamMembers);
+export const useChatDialogState = () => {
+  const [chatName, setChatName] = useState('');
+  const [chatType, setChatType] = useState<"direct" | "group">("direct");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
+
+  // Shift chat specific state
   const [isShiftChat, setIsShiftChat] = useState(false);
   const [shiftDate, setShiftDate] = useState<Date | undefined>(undefined);
-  const [shiftName, setShiftName] = useState("");
-  const [shiftTimeStart, setShiftTimeStart] = useState("09:00");
-  const [shiftTimeEnd, setShiftTimeEnd] = useState("17:00");
-  
-  // Determine chat type based on number of participants
-  const chatType: "direct" | "group" = participants.length > 1 ? "group" : "direct";
-  
-  // Filter team members based on search query
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredTeamMembers(teamMembers);
-    } else {
-      const filtered = teamMembers.filter(member => 
-        member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.role.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredTeamMembers(filtered);
-    }
-  }, [searchQuery, teamMembers]);
+  const [shiftName, setShiftName] = useState('');
+  const [shiftTimeStart, setShiftTimeStart] = useState('08:00');
+  const [shiftTimeEnd, setShiftTimeEnd] = useState('17:00');
 
-  // Generate chat name suggestions based on participants
-  useEffect(() => {
-    if (participants.length === 0) {
-      setChatName("");
-      return;
-    }
-    
-    if (isShiftChat) {
-      // Shift chat naming
-      const formattedDate = shiftDate ? new Date(shiftDate).toLocaleDateString() : "Upcoming";
-      setChatName(`${shiftName || "Shift"} - ${formattedDate}`);
-    } else if (participants.length === 1) {
-      // Direct chat - name based on the participant
-      const member = teamMembers.find(m => m.id === participants[0]);
-      if (member) {
-        setChatName(`Chat with ${member.name}`);
-      }
-    } else if (!chatName.trim() || chatName.startsWith('Chat with ')) {
-      // Group chat - if no custom name or it was auto-generated for direct chat
-      if (participants.length <= 3) {
-        // For small groups, use names
-        const names = participants
-          .map(id => teamMembers.find(m => m.id === id)?.name.split(' ')[0])
-          .filter(Boolean)
-          .join(', ');
-        setChatName(`Group: ${names}`);
-      } else {
-        // For larger groups, just use count
-        setChatName(`Group Chat (${participants.length} members)`);
-      }
-    }
-  }, [participants, chatName, teamMembers, isShiftChat, shiftDate, shiftName]);
-
-  const handleAddParticipant = (userId: string) => {
-    if (!participants.includes(userId)) {
-      setParticipants([...participants, userId]);
+  const addParticipant = (userId: string) => {
+    if (!selectedParticipants.includes(userId)) {
+      setSelectedParticipants([...selectedParticipants, userId]);
     }
   };
 
-  const handleRemoveParticipant = (userId: string) => {
-    setParticipants(participants.filter(id => id !== userId));
+  const removeParticipant = (userId: string) => {
+    setSelectedParticipants(selectedParticipants.filter(id => id !== userId));
   };
-  
-  const handleToggleParticipant = (userId: string) => {
-    if (participants.includes(userId)) {
-      handleRemoveParticipant(userId);
+
+  const toggleParticipant = (userId: string) => {
+    if (selectedParticipants.includes(userId)) {
+      removeParticipant(userId);
     } else {
-      handleAddParticipant(userId);
+      addParticipant(userId);
     }
   };
 
   const resetState = () => {
-    setChatName("");
-    setSearchQuery("");
-    setParticipants([]);
+    setChatName('');
+    setChatType("direct");
+    setSearchQuery('');
+    setSelectedParticipants([]);
     setIsShiftChat(false);
     setShiftDate(undefined);
-    setShiftName("");
-    setShiftTimeStart("09:00");
-    setShiftTimeEnd("17:00");
+    setShiftName('');
+    setShiftTimeStart('08:00');
+    setShiftTimeEnd('17:00');
   };
 
   return {
     chatName,
     setChatName,
+    chatType,
+    setChatType,
     searchQuery,
     setSearchQuery,
-    participants,
-    setParticipants,
-    filteredTeamMembers,
-    chatType,
+    selectedParticipants,
+    addParticipant,
+    removeParticipant,
+    toggleParticipant,
     isShiftChat,
     setIsShiftChat,
     shiftDate,
     setShiftDate,
     shiftName,
     setShiftName,
-    shiftTimeStart, 
+    shiftTimeStart,
     setShiftTimeStart,
     shiftTimeEnd,
     setShiftTimeEnd,
-    handleAddParticipant,
-    handleRemoveParticipant,
-    handleToggleParticipant,
     resetState
   };
 };

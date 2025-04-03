@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChatRoom } from '@/types/chat';
-import { createChatRoom, getWorkOrderChatRoom } from '@/services/chat';
+import { createChatRoom, getWorkOrderChatRoom, getShiftChatRoom } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
 import { CreateRoomParams } from '@/services/chat/room/types';
 
@@ -19,7 +19,14 @@ export const useChatRoomActions = (
     type: "direct" | "group" | "work_order", 
     participants: string[], 
     name: string,
-    workOrderId?: string
+    workOrderId?: string,
+    shiftMetadata?: {
+      isShiftChat: boolean;
+      shiftDate?: Date;
+      shiftName: string;
+      shiftTimeStart: string;
+      shiftTimeEnd: string;
+    }
   ) => {
     if (!userId) {
       toast({
@@ -41,6 +48,16 @@ export const useChatRoomActions = (
         type,
         participants,
         workOrderId,
+        metadata: shiftMetadata?.isShiftChat ? {
+          is_shift_chat: true,
+          shift_date: shiftMetadata.shiftDate?.toISOString(),
+          shift_name: shiftMetadata.shiftName,
+          shift_time: {
+            start: shiftMetadata.shiftTimeStart,
+            end: shiftMetadata.shiftTimeEnd
+          },
+          shift_participants: participants
+        } : undefined
       };
 
       const newRoom = await createChatRoom(roomParams);
@@ -109,6 +126,19 @@ export const useChatRoomActions = (
     }
   }, [userId, selectRoom, navigate]);
 
+  // Get shift chat for a specific date
+  const getShiftChat = useCallback(async (date: Date) => {
+    if (!userId) return null;
+    
+    try {
+      const shiftChat = await getShiftChatRoom(date);
+      return shiftChat;
+    } catch (error) {
+      console.error("Error getting shift chat:", error);
+      return null;
+    }
+  }, [userId]);
+
   // View work order details
   const handleViewWorkOrderDetails = useCallback((workOrderId: string) => {
     navigate(`/work-orders/${workOrderId}`);
@@ -119,6 +149,7 @@ export const useChatRoomActions = (
     setShowNewChatDialog,
     handleCreateChat,
     openWorkOrderChat,
+    getShiftChat,
     handleViewWorkOrderDetails
   };
 };

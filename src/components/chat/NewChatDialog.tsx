@@ -1,37 +1,48 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ShiftChatSettings } from './new-chat/ShiftChatSettings';
-import { SearchBar } from './new-chat/SearchBar';
-import { ParticipantList } from './new-chat/ParticipantList';
-import { TeamMembersList } from './new-chat/TeamMembersList';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { ChatNameInput } from './new-chat/ChatNameInput';
-import { useChatDialogState } from './new-chat/hooks/useChatDialogState';
+import { SearchBar } from './new-chat/SearchBar';
+import { TeamMembersList } from './new-chat/TeamMembersList';
+import { ParticipantList } from './new-chat/ParticipantList';
 import { teamMembers } from '@/data/teamData';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { TeamMember } from '@/types/team';
+import { ShiftChatSettings } from './new-chat/ShiftChatSettings';
+import { useChatDialogState } from './new-chat/hooks/useChatDialogState';
 
 interface NewChatDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (name: string, type: 'direct' | 'group', participants: string[]) => void;
+  onCreate: (
+    name: string, 
+    type: "direct" | "group" | "work_order", 
+    participants: string[],
+    shiftMetadata?: {
+      isShiftChat: boolean;
+      shiftDate?: Date;
+      shiftName: string;
+      shiftTimeStart: string;
+      shiftTimeEnd: string;
+    }
+  ) => void;
 }
 
-export const NewChatDialog: React.FC<NewChatDialogProps> = ({
-  open,
-  onClose,
-  onCreate
-}) => {
+export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) => {
   const {
     chatName,
     setChatName,
+    chatType,
+    setChatType,
     searchQuery,
     setSearchQuery,
-    participants,
-    filteredTeamMembers,
-    chatType,
+    selectedParticipants,
+    addParticipant,
+    removeParticipant,
+    toggleParticipant,
     isShiftChat,
     setIsShiftChat,
     shiftDate,
@@ -42,120 +53,125 @@ export const NewChatDialog: React.FC<NewChatDialogProps> = ({
     setShiftTimeStart,
     shiftTimeEnd,
     setShiftTimeEnd,
-    handleToggleParticipant,
-    handleRemoveParticipant,
     resetState
-  } = useChatDialogState(teamMembers);
+  } = useChatDialogState();
 
-  // Handle dialog close
+  // Filter team members based on search query
+  const filteredTeamMembers = teamMembers.filter(member => 
+    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSubmit = () => {
+    // Create the chat with the selected participants
+    const shiftMetadata = isShiftChat ? {
+      isShiftChat,
+      shiftDate,
+      shiftName,
+      shiftTimeStart,
+      shiftTimeEnd
+    } : undefined;
+
+    onCreate(
+      chatName || getDefaultChatName(),
+      chatType,
+      selectedParticipants,
+      shiftMetadata
+    );
+    
+    // Reset the form
+    resetState();
+  };
+
+  const getDefaultChatName = () => {
+    if (isShiftChat) {
+      return `${shiftName} - ${shiftDate ? new Date(shiftDate).toLocaleDateString() : 'Shift Chat'}`;
+    }
+
+    if (selectedParticipants.length === 1) {
+      const member = teamMembers.find(m => m.id === selectedParticipants[0]);
+      return member ? member.name : 'New Chat';
+    } else if (selectedParticipants.length > 1) {
+      return 'Group Chat';
+    }
+    return 'New Chat';
+  };
+
   const handleClose = () => {
     resetState();
     onClose();
   };
 
-  // Handle create chat
-  const handleCreate = () => {
-    let finalChatName = chatName;
-    if (isShiftChat) {
-      // Format shift chat name if not manually set
-      const formattedDate = shiftDate ? format(shiftDate, 'yyyy-MM-dd') : 'unscheduled';
-      if (!chatName) {
-        finalChatName = `${shiftName || 'Shift'} - ${formattedDate}`;
-      }
-    }
-    
-    // Pass additional metadata for shift chats
-    const metadata = isShiftChat ? {
-      is_shift_chat: true,
-      shift_date: shiftDate ? format(shiftDate, 'yyyy-MM-dd') : undefined,
-      shift_name: shiftName,
-      shift_time: {
-        start: shiftTimeStart,
-        end: shiftTimeEnd
-      },
-      shift_participants: participants
-    } : undefined;
-    
-    onCreate(finalChatName, chatType, participants);
-    handleClose();
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Create New Chat</span>
-            {participants.length > 0 && (
-              <Badge variant="outline" className="ml-2">
-                {participants.length} {participants.length === 1 ? 'participant' : 'participants'}
-              </Badge>
-            )}
-          </DialogTitle>
+          <DialogTitle>New Conversation</DialogTitle>
         </DialogHeader>
-
-        <div className="py-4 space-y-4">
-          {/* Shift Chat Settings */}
-          <ShiftChatSettings 
-            isShiftChat={isShiftChat}
-            setIsShiftChat={setIsShiftChat}
-            shiftDate={shiftDate}
-            setShiftDate={setShiftDate}
-            shiftName={shiftName}
-            setShiftName={setShiftName}
-            shiftTimeStart={shiftTimeStart}
-            setShiftTimeStart={setShiftTimeStart}
-            shiftTimeEnd={shiftTimeEnd}
-            setShiftTimeEnd={setShiftTimeEnd}
-          />
-
-          {/* Chat Name Input */}
-          <ChatNameInput 
-            chatName={chatName} 
-            chatType={chatType} 
-            participants={participants}
-            setChatName={setChatName}
-          />
-
-          {/* Selected Participants */}
-          <ParticipantList 
-            participants={participants} 
-            teamMembers={teamMembers} 
-            onRemoveParticipant={handleRemoveParticipant}
-          />
-
-          <Separator />
-
-          {/* Search Bar */}
-          <SearchBar 
-            searchQuery={searchQuery} 
-            setSearchQuery={setSearchQuery}
-          />
-
-          {/* Team Members List */}
-          <div className="h-[250px] overflow-y-auto border rounded-md">
-            <TeamMembersList 
-              teamMembers={filteredTeamMembers} 
-              selectedParticipants={participants} 
-              onToggleParticipant={handleToggleParticipant}
+        
+        <Tabs defaultValue="direct" onValueChange={(value) => setChatType(value as "direct" | "group")}>
+          <TabsList className="w-full">
+            <TabsTrigger value="direct" className="flex-1">Direct Message</TabsTrigger>
+            <TabsTrigger value="group" className="flex-1">Group Chat</TabsTrigger>
+          </TabsList>
+          
+          <div className="my-4">
+            <ChatNameInput 
+              value={chatName} 
+              onChange={setChatName} 
+              placeholder={getDefaultChatName()}
+              chatType={chatType}
             />
           </div>
-        </div>
-
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={handleClose}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleCreate} 
-            disabled={participants.length === 0}
-          >
-            {participants.length === 1 ? 'Start Chat' : 'Create Group'}
-          </Button>
-        </DialogFooter>
+          
+          {chatType === "group" && (
+            <ShiftChatSettings
+              isShiftChat={isShiftChat}
+              setIsShiftChat={setIsShiftChat}
+              shiftDate={shiftDate}
+              setShiftDate={setShiftDate}
+              shiftName={shiftName}
+              setShiftName={setShiftName}
+              shiftTimeStart={shiftTimeStart}
+              setShiftTimeStart={setShiftTimeStart}
+              shiftTimeEnd={shiftTimeEnd}
+              setShiftTimeEnd={setShiftTimeEnd}
+            />
+          )}
+          
+          <div className="my-4">
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          </div>
+          
+          <div className="my-4">
+            {selectedParticipants.length > 0 && (
+              <div className="mb-4">
+                <Label className="text-sm font-medium">Selected members</Label>
+                <ParticipantList 
+                  participants={selectedParticipants}
+                  onRemove={removeParticipant}
+                />
+              </div>
+            )}
+            
+            <Label className="text-sm font-medium">Team members</Label>
+            <TeamMembersList 
+              teamMembers={filteredTeamMembers}
+              selectedParticipants={selectedParticipants}
+              onToggleParticipant={toggleParticipant}
+            />
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={selectedParticipants.length === 0}
+            >
+              Create
+            </Button>
+          </div>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

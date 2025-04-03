@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
@@ -8,6 +7,7 @@ import { useChatRoomActions } from '@/hooks/useChatRoomActions';
 import { ChatLoading } from '@/components/chat/ChatLoading';
 import { ChatPageLayout } from '@/components/chat/ChatPageLayout';
 import { useChatNotifications } from '@/hooks/useChatNotifications';
+import { toast } from '@/hooks/use-toast';
 
 export default function Chat() {
   const { roomId } = useParams<{ roomId?: string }>();
@@ -69,7 +69,31 @@ export default function Chat() {
       if (room) {
         selectRoom(room);
       } else {
-        navigate('/chat');
+        // Check if this is a shift chat URL with a specific format
+        if (roomId.startsWith('shift-chat-')) {
+          // If it's a special shift chat URL but room isn't found yet
+          // Show loading toast
+          toast({
+            title: "Loading shift chat",
+            description: "Please wait while we find the shift chat room."
+          });
+          
+          // Keep waiting for rooms to load or redirect after a timeout
+          const timeout = setTimeout(() => {
+            if (!chatRooms.find(r => r.id === roomId)) {
+              navigate('/chat');
+              toast({
+                title: "Shift chat not found",
+                description: "The requested shift chat could not be found.",
+                variant: "destructive"
+              });
+            }
+          }, 5000);
+          
+          return () => clearTimeout(timeout);
+        } else {
+          navigate('/chat');
+        }
       }
     }
   }, [roomId, chatRooms, selectRoom, navigate, userId]);
@@ -104,7 +128,7 @@ export default function Chat() {
       <NewChatDialog
         open={showNewChatDialog}
         onClose={() => setShowNewChatDialog(false)}
-        onCreate={(name, type, participants) => handleCreateChat(type, participants, name)}
+        onCreate={(name, type, participants, shiftMetadata) => handleCreateChat(type, participants, name, undefined, shiftMetadata)}
       />
     </>
   );
