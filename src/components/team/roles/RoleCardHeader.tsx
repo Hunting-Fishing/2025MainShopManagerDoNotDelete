@@ -28,7 +28,7 @@ export function RoleCardHeader({
     <div className="flex justify-between items-start">
       <div className="flex items-center gap-2">
         <Shield className="h-5 w-5 text-esm-blue-500" />
-        <CardTitle>{role.name}</CardTitle>
+        <CardTitle className="text-lg">{role.name}</CardTitle>
       </div>
       <div className="flex items-center">
         {/* Reordering buttons */}
@@ -38,7 +38,7 @@ export function RoleCardHeader({
             size="icon"
             onClick={() => onReorder(role.id, 'up')}
             disabled={isFirst}
-            className="h-6 w-6"
+            className="h-6 w-6 opacity-70 hover:opacity-100 disabled:opacity-30"
             title="Move Up"
           >
             <ArrowUp className="h-3 w-3" />
@@ -48,7 +48,7 @@ export function RoleCardHeader({
             size="icon"
             onClick={() => onReorder(role.id, 'down')}
             disabled={isLast}
-            className="h-6 w-6"
+            className="h-6 w-6 opacity-70 hover:opacity-100 disabled:opacity-30"
             title="Move Down"
           >
             <ArrowDown className="h-3 w-3" />
@@ -59,6 +59,7 @@ export function RoleCardHeader({
           size="icon"
           onClick={() => onDuplicate(role)}
           title="Duplicate Role"
+          className="opacity-70 hover:opacity-100"
         >
           <Copy className="h-4 w-4" />
         </Button>
@@ -67,6 +68,7 @@ export function RoleCardHeader({
           size="icon"
           onClick={() => onEdit(role)}
           title="Edit Role"
+          className="opacity-70 hover:opacity-100"
         >
           <Edit className="h-4 w-4" />
         </Button>
@@ -76,6 +78,7 @@ export function RoleCardHeader({
             size="icon"
             onClick={() => onDelete(role)}
             title="Delete Role"
+            className="text-red-500 opacity-70 hover:opacity-100"
           >
             <Trash className="h-4 w-4" />
           </Button>

@@ -14,7 +14,7 @@ interface RolesGridProps {
 export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole, onReorderRole }: RolesGridProps) {
   if (roles.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8 bg-slate-50 rounded-lg border border-slate-200">
+      <div className="flex items-center justify-center p-8 bg-slate-50 rounded-lg border border-slate-200 mt-6">
         <p className="text-slate-500">No roles match your search criteria.</p>
       </div>
     );
@@ -24,7 +24,7 @@ export function RolesGrid({ roles, onEditRole, onDeleteRole, onDuplicateRole, on
   const sortedRoles = [...roles].sort((a, b) => a.priority - b.priority);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
       {sortedRoles.map(role => (
         <RoleCard 
           key={role.id} 

@@ -46,7 +46,7 @@ export function RolesPageHeader({
 
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Button variant="ghost" size="icon" asChild className="h-8 w-8">

@@ -62,7 +62,7 @@ export function RoleCard({
   const totalEnabled = countEnabledPermissions();
 
   return (
-    <Card key={role.id} className={role.isDefault ? "border-slate-200" : "border-esm-blue-200"}>
+    <Card key={role.id} className={`${role.isDefault ? "border-slate-200" : "border-esm-blue-200"} hover:shadow-md transition-shadow`}>
       <CardHeader className="pb-2">
         <RoleCardHeader 
           role={role}

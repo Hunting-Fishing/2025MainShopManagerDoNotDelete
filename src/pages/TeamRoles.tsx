@@ -13,6 +13,7 @@ import { exportRolesToJson } from "@/utils/roleUtils";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
 import { Card } from "@/components/ui/card";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
+import { toast } from "@/hooks/use-toast";
 
 const initialRoles: Role[] = [
   {
@@ -85,6 +86,10 @@ export default function TeamRoles() {
 
   const handleExportRoles = () => {
     exportRolesToJson(initialRoles);
+    toast({
+      title: "Roles Exported",
+      description: "Your roles have been exported to a JSON file",
+    });
   };
 
   const onAddRole = () => {
@@ -94,6 +99,11 @@ export default function TeamRoles() {
       setNewRoleName("");
       setNewRoleDescription("");
       setRolePermissions(null);
+      toast({
+        title: "Role Added",
+        description: "The new role has been created successfully",
+        variant: "success",
+      });
     }
   };
 
@@ -105,6 +115,11 @@ export default function TeamRoles() {
       setIsEditDialogOpen(false);
       setCurrentRole(null);
       setRolePermissions(null);
+      toast({
+        title: "Role Updated",
+        description: "The role has been updated successfully",
+        variant: "success",
+      });
     }
   };
 
@@ -115,6 +130,11 @@ export default function TeamRoles() {
     if (success) {
       setIsDeleteDialogOpen(false);
       setCurrentRole(null);
+      toast({
+        title: "Role Deleted",
+        description: "The role has been deleted successfully",
+        variant: "success",
+      });
     }
   };
 
@@ -134,8 +154,8 @@ export default function TeamRoles() {
   }, [isEditDialogOpen]);
 
   return (
-    <ResponsiveContainer maxWidth="full" className="space-y-8">
-      <Card className="border-0 shadow-sm bg-white">
+    <ResponsiveContainer maxWidth="full" className="space-y-6">
+      <Card className="border-0 shadow-sm bg-white overflow-hidden">
         <RolesPageHeader 
           onAddRoleClick={() => setIsAddDialogOpen(true)}
           onExportRoles={handleExportRoles}
@@ -151,22 +171,27 @@ export default function TeamRoles() {
           onTypeFilterChange={setTypeFilter}
         />
 
-        <div className="mt-6">
-          <RolesGrid 
-            roles={filteredRoles} 
-            onEditRole={(role) => {
-              setCurrentRole(role);
-              setRolePermissions(role.permissions as PermissionSet);
-              setIsEditDialogOpen(true);
-            }}
-            onDeleteRole={(role) => {
-              setCurrentRole(role);
-              setIsDeleteDialogOpen(true);
-            }}
-            onDuplicateRole={handleDuplicateRole}
-            onReorderRole={handleReorderRole}
-          />
-        </div>
+        <RolesGrid 
+          roles={filteredRoles} 
+          onEditRole={(role) => {
+            setCurrentRole(role);
+            setRolePermissions(role.permissions as PermissionSet);
+            setIsEditDialogOpen(true);
+          }}
+          onDeleteRole={(role) => {
+            setCurrentRole(role);
+            setIsDeleteDialogOpen(true);
+          }}
+          onDuplicateRole={(role) => {
+            handleDuplicateRole(role);
+            toast({
+              title: "Role Duplicated",
+              description: `A copy of "${role.name}" has been created`,
+              variant: "success",
+            });
+          }}
+          onReorderRole={handleReorderRole}
+        />
       </Card>
 
       <AddRoleDialog
