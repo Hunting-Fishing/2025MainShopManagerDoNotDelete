@@ -11,6 +11,8 @@ import { EditRoleDialog } from "@/components/team/roles/EditRoleDialog";
 import { DeleteRoleDialog } from "@/components/team/roles/DeleteRoleDialog";
 import { exportRolesToJson } from "@/utils/roleUtils";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
+import { Card } from "@/components/ui/card";
+import { ResponsiveContainer } from "@/components/ui/responsive-container";
 
 const initialRoles: Role[] = [
   {
@@ -132,34 +134,40 @@ export default function TeamRoles() {
   }, [isEditDialogOpen]);
 
   return (
-    <div className="space-y-6">
-      <RolesPageHeader 
-        onAddRoleClick={() => setIsAddDialogOpen(true)}
-        onExportRoles={handleExportRoles}
-        onImportRoles={handleImportRoles}
-      />
+    <ResponsiveContainer maxWidth="full" className="space-y-8">
+      <Card className="border-0 shadow-sm bg-white">
+        <RolesPageHeader 
+          onAddRoleClick={() => setIsAddDialogOpen(true)}
+          onExportRoles={handleExportRoles}
+          onImportRoles={handleImportRoles}
+        />
+      </Card>
 
-      <RolesSearch 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        typeFilter={typeFilter}
-        onTypeFilterChange={setTypeFilter}
-      />
+      <Card className="p-6 border shadow-sm bg-white">
+        <RolesSearch 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
+        />
 
-      <RolesGrid 
-        roles={filteredRoles} 
-        onEditRole={(role) => {
-          setCurrentRole(role);
-          setRolePermissions(role.permissions as PermissionSet);
-          setIsEditDialogOpen(true);
-        }}
-        onDeleteRole={(role) => {
-          setCurrentRole(role);
-          setIsDeleteDialogOpen(true);
-        }}
-        onDuplicateRole={handleDuplicateRole}
-        onReorderRole={handleReorderRole}
-      />
+        <div className="mt-6">
+          <RolesGrid 
+            roles={filteredRoles} 
+            onEditRole={(role) => {
+              setCurrentRole(role);
+              setRolePermissions(role.permissions as PermissionSet);
+              setIsEditDialogOpen(true);
+            }}
+            onDeleteRole={(role) => {
+              setCurrentRole(role);
+              setIsDeleteDialogOpen(true);
+            }}
+            onDuplicateRole={handleDuplicateRole}
+            onReorderRole={handleReorderRole}
+          />
+        </div>
+      </Card>
 
       <AddRoleDialog
         open={isAddDialogOpen}
@@ -188,6 +196,6 @@ export default function TeamRoles() {
         currentRole={currentRole}
         onDeleteRole={onDeleteRole}
       />
-    </div>
+    </ResponsiveContainer>
   );
 }

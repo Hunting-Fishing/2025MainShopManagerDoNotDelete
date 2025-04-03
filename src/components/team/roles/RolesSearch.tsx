@@ -18,12 +18,12 @@ export function RolesSearch({
   onTypeFilterChange 
 }: RolesSearchProps) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-      <div className="relative w-full">
+    <div className="flex flex-col sm:flex-row gap-4">
+      <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         <Input
           type="search"
-          placeholder="Search roles..."
+          placeholder="Search roles by name or description..."
           className="pl-10"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
