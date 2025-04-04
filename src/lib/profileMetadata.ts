@@ -1,7 +1,7 @@
 
 import { supabase } from './supabase';
 
-interface ProfileMetadata {
+export interface ProfileMetadata {
   notes?: string;
   [key: string]: any;
 }
