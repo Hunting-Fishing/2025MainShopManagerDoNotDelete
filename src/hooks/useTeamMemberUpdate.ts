@@ -72,7 +72,7 @@ export function useTeamMemberUpdate() {
         try {
           // Map the display role to the database role value
           const roleValue = mapRoleToDbValue(values.role);
-          console.log(`Role update would set user to ${roleValue} role`);
+          console.log(`Attempting to assign role: ${roleValue}`);
           
           // First, get the role_id based on the role name
           const { data: roleData, error: roleQueryError } = await supabase
@@ -85,8 +85,10 @@ export function useTeamMemberUpdate() {
             console.error("Error finding role:", roleQueryError);
             roleUpdateMessage = "Could not find the requested role.";
           } else if (roleData) {
-            // Use the RPC function to assign the role
-            const { error: roleRpcError } = await supabase
+            console.log("Found role with ID:", roleData.id);
+            
+            // Use the RPC function to assign the role - add better error handling
+            const { data: rpcData, error: roleRpcError } = await supabase
               .rpc('assign_role_to_user', { 
                 user_id_param: memberId, 
                 role_id_param: roleData.id 
@@ -95,14 +97,15 @@ export function useTeamMemberUpdate() {
             if (roleRpcError) {
               console.error("Error assigning role:", roleRpcError);
               
-              // Check if it's a permission error
-              if (roleRpcError.code === '42501' || roleRpcError.message?.includes('Only admins and owners can assign roles')) {
-                roleUpdateMessage = "Role assignment requires admin privileges.";
+              if (roleRpcError.code === '42501' || roleRpcError.message?.includes('permission')) {
+                roleUpdateMessage = "You don't have permission to assign roles. Only admins and owners can assign roles.";
               } else {
-                roleUpdateMessage = "Role assignment failed due to a system error.";
+                roleUpdateMessage = "Role assignment failed. Please try again or contact an administrator.";
               }
             } else {
+              console.log("Role assignment result:", rpcData);
               roleUpdateSuccess = true;
+              roleUpdateMessage = "Role assigned successfully.";
             }
           }
         } catch (roleValidationError) {
