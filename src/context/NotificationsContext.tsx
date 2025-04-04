@@ -8,11 +8,10 @@ export const useNotifications = () => {
   return useNotificationsHook();
 };
 
-// Exporting a provider that uses the new implementation
-export const NotificationsProvider = ({ children }: { children: React.ReactNode }) => {
-  return <NewNotificationsProvider>{children}</NewNotificationsProvider>;
-};
-
 // This context is no longer used directly - only kept for compatibility
 export const NotificationsContext = React.createContext<any>(null);
 
+// No longer wrapping with provider here since we're using the provider in main.tsx
+export const NotificationsProvider = ({ children }: { children: React.ReactNode }) => {
+  return children;
+};

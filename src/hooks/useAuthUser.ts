@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   email: string | null;
 }
@@ -19,23 +20,32 @@ export function useAuthUser() {
         setLoading(true);
         
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-        setIsAuthenticated(!!user);
+        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
         
-        if (user) {
+        // Convert Supabase user to our AuthUser type
+        if (supabaseUser) {
+          const authUser: AuthUser = {
+            id: supabaseUser.id,
+            email: supabaseUser.email
+          };
+          setUser(authUser);
+          setIsAuthenticated(true);
+          
           // Get user profile if available
           const { data: profile } = await supabase
             .from('profiles')
             .select('first_name, last_name')
-            .eq('id', user.id)
+            .eq('id', authUser.id)
             .single();
             
           if (profile) {
             setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim());
           } else {
-            setUserName(user.email || 'User');
+            setUserName(authUser.email || 'User');
           }
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
@@ -49,10 +59,15 @@ export function useAuthUser() {
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user;
-      setUser(currentUser || null);
-      setIsAuthenticated(!!currentUser);
       
       if (currentUser) {
+        const authUser: AuthUser = {
+          id: currentUser.id,
+          email: currentUser.email
+        };
+        setUser(authUser);
+        setIsAuthenticated(true);
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('first_name, last_name')
@@ -65,6 +80,8 @@ export function useAuthUser() {
           setUserName(currentUser.email || 'User');
         }
       } else {
+        setUser(null);
+        setIsAuthenticated(false);
         setUserName('');
       }
     });
@@ -76,8 +93,10 @@ export function useAuthUser() {
 
   return {
     user,
+    userId: user?.id || null,
     loading,
     userName,
-    isAuthenticated
+    isAuthenticated,
+    isAdmin: false, // Adding this for compatibility with code that expects it
   };
 }
