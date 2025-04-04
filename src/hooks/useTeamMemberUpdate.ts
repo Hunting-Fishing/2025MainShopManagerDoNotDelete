@@ -87,25 +87,48 @@ export function useTeamMemberUpdate() {
           } else if (roleData) {
             console.log("Found role with ID:", roleData.id);
             
-            // Use the RPC function to assign the role - add better error handling
-            const { data: rpcData, error: roleRpcError } = await supabase
-              .rpc('assign_role_to_user', { 
-                user_id_param: memberId, 
-                role_id_param: roleData.id 
-              });
+            // First check if the user already has this role
+            const { data: existingRole, error: checkRoleError } = await supabase
+              .from('user_roles')
+              .select('*')
+              .eq('user_id', memberId)
+              .eq('role_id', roleData.id);
               
-            if (roleRpcError) {
-              console.error("Error assigning role:", roleRpcError);
-              
-              if (roleRpcError.code === '42501' || roleRpcError.message?.includes('permission')) {
-                roleUpdateMessage = "You don't have permission to assign roles. Only admins and owners can assign roles.";
-              } else {
-                roleUpdateMessage = "Role assignment failed. Please try again or contact an administrator.";
-              }
-            } else {
-              console.log("Role assignment result:", rpcData);
+            if (checkRoleError) {
+              console.error("Error checking existing role:", checkRoleError);
+            }
+            
+            // If user already has this role, don't try to assign it again
+            if (existingRole && existingRole.length > 0) {
+              console.log("User already has this role:", roleData.id);
               roleUpdateSuccess = true;
-              roleUpdateMessage = "Role assigned successfully.";
+              roleUpdateMessage = "Role is already assigned to this user.";
+            } else {
+              // Use the RPC function to assign the role
+              const { data: rpcData, error: roleRpcError } = await supabase
+                .rpc('assign_role_to_user', { 
+                  user_id_param: memberId, 
+                  role_id_param: roleData.id 
+                });
+                
+              if (roleRpcError) {
+                console.error("Error assigning role:", roleRpcError);
+                
+                if (roleRpcError.code === '42501' || roleRpcError.message?.includes('permission')) {
+                  roleUpdateMessage = "You don't have permission to assign roles. Only admins and owners can assign roles.";
+                } else if (roleRpcError.message?.includes('duplicate key value') || roleRpcError.message?.includes('unique constraint')) {
+                  // Handle the duplicate key error explicitly
+                  console.log("Role already assigned to user - caught duplicate key error");
+                  roleUpdateSuccess = true;
+                  roleUpdateMessage = "Role is already assigned to this user.";
+                } else {
+                  roleUpdateMessage = "Role assignment failed. Please try again or contact an administrator.";
+                }
+              } else {
+                console.log("Role assignment result:", rpcData);
+                roleUpdateSuccess = true;
+                roleUpdateMessage = "Role assigned successfully.";
+              }
             }
           }
         } catch (roleValidationError) {
