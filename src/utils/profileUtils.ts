@@ -47,7 +47,7 @@ export const updateUserProfile = async (
     // Save additional metadata if provided
     if (values.notes) {
       try {
-        const metadataSaved = await saveProfileMetadata(userId, { notes: values.notes });
+        const metadataSaved = await saveProfileMetadata(userId, values.notes);
         if (!metadataSaved) {
           console.warn("Could not save profile metadata, but continuing with other updates");
         }
