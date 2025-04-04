@@ -4,6 +4,7 @@ import { Equipment } from "@/types/equipment";
 import { EquipmentStatusBadge } from "./EquipmentStatusBadge";
 import { WarrantyStatusBadge } from "./WarrantyStatusBadge";
 import { CogIcon, Loader2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface EquipmentTableProps {
   equipment: Equipment[];
@@ -23,83 +24,67 @@ export function EquipmentTable({ equipment, loading = false }: EquipmentTablePro
   }
   
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-slate-50">
-          <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              ID
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Name
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Customer
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Category
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Next Maintenance
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Warranty Status
-            </th>
-            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-slate-200">
+    <div className="rounded-lg border border-slate-200">
+      <Table>
+        <TableHeader className="bg-slate-50">
+          <TableRow>
+            <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">ID</TableHead>
+            <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Name</TableHead>
+            <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</TableHead>
+            <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Category</TableHead>
+            <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Status</TableHead>
+            <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Next Maintenance</TableHead>
+            <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Warranty Status</TableHead>
+            <TableHead className="text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {equipment.length === 0 ? (
-            <tr>
-              <td colSpan={8} className="px-6 py-4 text-center text-sm text-slate-500">
+            <TableRow>
+              <TableCell colSpan={8} className="text-center">
                 <div className="flex flex-col items-center justify-center py-6">
                   <CogIcon className="h-12 w-12 text-slate-300" />
                   <p className="mt-2 text-slate-500">No equipment found</p>
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ) : (
             equipment.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+              <TableRow key={item.id} className="hover:bg-slate-50">
+                <TableCell className="font-medium text-slate-900">
                   {item.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                </TableCell>
+                <TableCell className="text-slate-700">
                   {item.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                </TableCell>
+                <TableCell className="text-slate-700">
                   {item.customer}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                </TableCell>
+                <TableCell className="text-slate-700">
                   {item.category}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                </TableCell>
+                <TableCell>
                   <EquipmentStatusBadge status={item.status} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                </TableCell>
+                <TableCell className="text-slate-700">
                   {item.nextMaintenanceDate || 'Not scheduled'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                </TableCell>
+                <TableCell>
                   <WarrantyStatusBadge status={item.warrantyStatus} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                </TableCell>
+                <TableCell className="text-right">
                   <Link to={`/equipment/${item.id}`} className="text-blue-600 hover:text-blue-800 mr-4">
                     View
                   </Link>
                   <Link to={`/equipment/${item.id}/edit`} className="text-blue-600 hover:text-blue-800">
                     Edit
                   </Link>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
