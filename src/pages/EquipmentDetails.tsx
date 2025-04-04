@@ -52,6 +52,61 @@ export default function EquipmentDetails() {
         return;
       }
       
+      // Convert work_order_history to string array
+      const workOrderHistory = Array.isArray(equipmentData.work_order_history) 
+        ? equipmentData.work_order_history
+            .filter((id): id is string | number => id !== null && (typeof id === 'string' || typeof id === 'number'))
+            .map(String)
+        : [];
+      
+      // Convert maintenance_history to MaintenanceRecord array with proper type check
+      const maintenanceHistory: MaintenanceRecord[] = Array.isArray(equipmentData.maintenance_history)
+        ? equipmentData.maintenance_history
+            .filter((record): record is Record<string, any> => 
+              typeof record === 'object' && 
+              record !== null &&
+              'id' in record &&
+              'date' in record &&
+              'technician' in record &&
+              'description' in record
+            )
+            .map(record => ({
+              id: String(record.id),
+              date: String(record.date),
+              technician: String(record.technician),
+              description: String(record.description),
+              cost: typeof record.cost === 'number' ? record.cost : undefined,
+              notes: typeof record.notes === 'string' ? record.notes : undefined,
+              workOrderId: typeof record.workOrderId === 'string' ? record.workOrderId : undefined
+            }))
+        : [];
+      
+      // Convert maintenance_schedules to MaintenanceSchedule array with proper type check
+      const maintenanceSchedules: MaintenanceSchedule[] = Array.isArray(equipmentData.maintenance_schedules) 
+        ? equipmentData.maintenance_schedules
+            .filter((schedule): schedule is Record<string, any> =>
+              typeof schedule === 'object' &&
+              schedule !== null &&
+              'frequencyType' in schedule &&
+              'nextDate' in schedule &&
+              'description' in schedule &&
+              'estimatedDuration' in schedule &&
+              'isRecurring' in schedule &&
+              'notificationsEnabled' in schedule &&
+              'reminderDays' in schedule
+            )
+            .map(schedule => ({
+              frequencyType: schedule.frequencyType as MaintenanceSchedule['frequencyType'],
+              nextDate: String(schedule.nextDate),
+              description: String(schedule.description),
+              estimatedDuration: Number(schedule.estimatedDuration),
+              technician: typeof schedule.technician === 'string' ? schedule.technician : undefined,
+              isRecurring: Boolean(schedule.isRecurring),
+              notificationsEnabled: Boolean(schedule.notificationsEnabled),
+              reminderDays: Number(schedule.reminderDays)
+            }))
+        : [];
+      
       // Transform the data into our Equipment type with proper type conversions
       const equipment: Equipment = {
         id: equipmentData.id,
@@ -71,9 +126,9 @@ export default function EquipmentDetails() {
         warrantyExpiryDate: equipmentData.warranty_expiry_date,
         warrantyStatus: validateWarrantyStatus(equipmentData.warranty_status),
         notes: equipmentData.notes,
-        workOrderHistory: ensureStringArray(equipmentData.work_order_history),
-        maintenanceHistory: ensureMaintenanceRecordArray(equipmentData.maintenance_history),
-        maintenanceSchedules: ensureMaintenanceScheduleArray(equipmentData.maintenance_schedules)
+        workOrderHistory: workOrderHistory,
+        maintenanceHistory: maintenanceHistory,
+        maintenanceSchedules: maintenanceSchedules
       };
       
       setEquipmentItem(equipment);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { EquipmentHeader } from "@/components/equipment/EquipmentHeader";
 import { EquipmentFilters } from "@/components/equipment/EquipmentFilters";
@@ -44,33 +45,59 @@ export default function Equipment() {
         const validWarrantyStatus = validateWarrantyStatus(item.warranty_status);
         const validMaintenanceFrequency = validateMaintenanceFrequency(item.maintenance_frequency);
         
+        // Convert work_order_history to string array
         const workOrderHistory = Array.isArray(item.work_order_history) 
-          ? item.work_order_history.filter(id => typeof id === 'string').map(String)
+          ? item.work_order_history
+              .filter((id): id is string | number => id !== null && (typeof id === 'string' || typeof id === 'number'))
+              .map(String)
           : [];
         
-        const maintenanceHistory = Array.isArray(item.maintenance_history)
-          ? item.maintenance_history.filter((record): record is MaintenanceRecord => 
-              typeof record === 'object' && 
-              record !== null &&
-              'id' in record &&
-              'date' in record &&
-              'technician' in record &&
-              'description' in record
-          )
+        // Convert maintenance_history to MaintenanceRecord array with proper type check
+        const maintenanceHistory: MaintenanceRecord[] = Array.isArray(item.maintenance_history)
+          ? item.maintenance_history
+              .filter((record): record is Record<string, any> => 
+                typeof record === 'object' && 
+                record !== null &&
+                'id' in record &&
+                'date' in record &&
+                'technician' in record &&
+                'description' in record
+              )
+              .map(record => ({
+                id: String(record.id),
+                date: String(record.date),
+                technician: String(record.technician),
+                description: String(record.description),
+                cost: typeof record.cost === 'number' ? record.cost : undefined,
+                notes: typeof record.notes === 'string' ? record.notes : undefined,
+                workOrderId: typeof record.workOrderId === 'string' ? record.workOrderId : undefined
+              }))
           : [];
         
-        const maintenanceSchedules = Array.isArray(item.maintenance_schedules) 
-          ? item.maintenance_schedules.filter((schedule): schedule is MaintenanceSchedule =>
-              typeof schedule === 'object' &&
-              schedule !== null &&
-              'frequencyType' in schedule &&
-              'nextDate' in schedule &&
-              'description' in schedule &&
-              'estimatedDuration' in schedule &&
-              'isRecurring' in schedule &&
-              'notificationsEnabled' in schedule &&
-              'reminderDays' in schedule
-          )
+        // Convert maintenance_schedules to MaintenanceSchedule array with proper type check
+        const maintenanceSchedules: MaintenanceSchedule[] = Array.isArray(item.maintenance_schedules) 
+          ? item.maintenance_schedules
+              .filter((schedule): schedule is Record<string, any> =>
+                typeof schedule === 'object' &&
+                schedule !== null &&
+                'frequencyType' in schedule &&
+                'nextDate' in schedule &&
+                'description' in schedule &&
+                'estimatedDuration' in schedule &&
+                'isRecurring' in schedule &&
+                'notificationsEnabled' in schedule &&
+                'reminderDays' in schedule
+              )
+              .map(schedule => ({
+                frequencyType: schedule.frequencyType as MaintenanceSchedule['frequencyType'],
+                nextDate: String(schedule.nextDate),
+                description: String(schedule.description),
+                estimatedDuration: Number(schedule.estimatedDuration),
+                technician: typeof schedule.technician === 'string' ? schedule.technician : undefined,
+                isRecurring: Boolean(schedule.isRecurring),
+                notificationsEnabled: Boolean(schedule.notificationsEnabled),
+                reminderDays: Number(schedule.reminderDays)
+              }))
           : [];
         
         return {
