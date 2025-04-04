@@ -1,123 +1,83 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
+
+interface AuthUser {
+  id: string;
+  email: string | null;
+}
 
 export function useAuthUser() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string>('');
-  const [userId, setUserId] = useState<string | undefined>(undefined);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAdmin, setIsAdmin] = useState<boolean | undefined>(undefined);
-  
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkUser = async () => {
       try {
-        setIsLoading(true);
+        setLoading(true);
         
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+        setIsAuthenticated(!!user);
         
-        if (session) {
-          setIsAuthenticated(true);
-          setUserId(session.user.id);
-          
-          // Get user's name from profile
+        if (user) {
+          // Get user profile if available
           const { data: profile } = await supabase
             .from('profiles')
             .select('first_name, last_name')
-            .eq('id', session.user.id)
+            .eq('id', user.id)
             .single();
             
           if (profile) {
-            const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-            setUserName(fullName || 'User');
+            setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim());
+          } else {
+            setUserName(user.email || 'User');
           }
-          
-          // Check if user is admin by querying user_roles
-          const { data: userRoles } = await supabase
-            .from('user_roles')
-            .select(`
-              role_id,
-              roles:role_id(name)
-            `)
-            .eq('user_id', session.user.id);
-            
-          // Set isAdmin to true if any of the user's roles is 'admin' or 'owner'
-          const isUserAdmin = userRoles?.some(
-            role => role.roles?.name === 'admin' || role.roles?.name === 'owner'
-          ) || false;
-          
-          console.log('User roles:', userRoles);
-          console.log('Is admin:', isUserAdmin);
-          
-          setIsAdmin(isUserAdmin);
-        } else {
-          setIsAuthenticated(false);
-          setUserName('');
-          setUserId(undefined);
-          setIsAdmin(false);
         }
       } catch (error) {
-        console.error('Error checking auth:', error);
-        setIsAdmin(false);
+        console.error('Error checking authentication:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    checkAuth();
+    checkUser();
     
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setIsAuthenticated(!!session);
-        setUserId(session?.user.id);
-        
-        if (session) {
-          // Get user's name from profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (profile) {
-            const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-            setUserName(fullName || 'User');
-          }
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUser = session?.user;
+      setUser(currentUser || null);
+      setIsAuthenticated(!!currentUser);
+      
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', currentUser.id)
+          .single();
           
-          // Check if user is admin
-          const { data: userRoles } = await supabase
-            .from('user_roles')
-            .select(`
-              role_id,
-              roles:role_id(name)
-            `)
-            .eq('user_id', session.user.id);
-            
-          // Set isAdmin to true if any of the user's roles is 'admin' or 'owner'
-          const isUserAdmin = userRoles?.some(
-            role => role.roles?.name === 'admin' || role.roles?.name === 'owner'
-          ) || false;
-          
-          setIsAdmin(isUserAdmin);
+        if (profile) {
+          setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim());
         } else {
-          setUserName('');
-          setIsAdmin(false);
+          setUserName(currentUser.email || 'User');
         }
+      } else {
+        setUserName('');
       }
-    );
+    });
     
     return () => {
-      subscription.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
   }, []);
-  
-  return { 
-    userName, 
-    userId, 
-    isAuthenticated, 
-    isLoading,
-    isAdmin 
+
+  return {
+    user,
+    loading,
+    userName,
+    isAuthenticated
   };
 }

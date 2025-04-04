@@ -20,24 +20,52 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export function AddNotificationDemo() {
   const { addNotification } = useNotifications();
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [type, setType] = useState<'info' | 'warning' | 'success' | 'error'>('info');
+  const [category, setCategory] = useState<string>('system');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [link, setLink] = useState('');
   const [open, setOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Check authentication status
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      setIsAuthenticated(!!data.user);
+    };
+
+    checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+    
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title || !message) return;
+    if (!isAuthenticated) {
+      alert('You need to be signed in to create notifications');
+      return;
+    }
     
-    addNotification({
+    await addNotification({
       title,
       message,
       type,
+      category,
+      priority,
       link: link || undefined
     });
     
@@ -45,9 +73,20 @@ export function AddNotificationDemo() {
     setTitle('');
     setMessage('');
     setType('info');
+    setCategory('system');
+    setPriority('medium');
     setLink('');
     setOpen(false);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <Button variant="outline" size="sm" className="ml-auto" disabled title="Sign in to create notifications">
+        <AlertCircle className="mr-2 h-4 w-4" />
+        Demo: Add Notification
+      </Button>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -98,6 +137,44 @@ export function AddNotificationDemo() {
                 <SelectItem value="warning">Warning</SelectItem>
                 <SelectItem value="success">Success</SelectItem>
                 <SelectItem value="error">Error</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select 
+              value={category} 
+              onValueChange={setCategory}
+            >
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system">System</SelectItem>
+                <SelectItem value="invoice">Invoice</SelectItem>
+                <SelectItem value="workOrder">Work Order</SelectItem>
+                <SelectItem value="inventory">Inventory</SelectItem>
+                <SelectItem value="customer">Customer</SelectItem>
+                <SelectItem value="team">Team</SelectItem>
+                <SelectItem value="chat">Chat</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="priority">Priority</Label>
+            <Select 
+              value={priority} 
+              onValueChange={(value) => setPriority(value as any)}
+            >
+              <SelectTrigger id="priority">
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
               </SelectContent>
             </Select>
           </div>
