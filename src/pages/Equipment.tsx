@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { EquipmentHeader } from "@/components/equipment/EquipmentHeader";
 import { EquipmentFilters } from "@/components/equipment/EquipmentFilters";
@@ -18,106 +17,104 @@ export default function Equipment() {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const fetchEquipmentData = async () => {
-      setLoading(true);
-      try {
-        // Using a raw query for better type safety since the equipment table 
-        // might not be included in the generated types
-        const { data, error } = await supabase
-          .from('equipment')
-          .select('*');
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (!data || data.length === 0) {
-          setEquipment([]);
-          setLoading(false);
-          return;
-        }
-        
-        // Transform the raw data into our EquipmentType format with proper type checking
-        const transformedData: EquipmentType[] = data.map(item => {
-          // Validate the status field to ensure it matches our union type
-          const validStatus = validateEquipmentStatus(item.status);
-          
-          // Validate the warranty status field
-          const validWarrantyStatus = validateWarrantyStatus(item.warranty_status);
-          
-          // Validate the maintenance frequency field
-          const validMaintenanceFrequency = validateMaintenanceFrequency(item.maintenance_frequency);
-          
-          // Handle JSON arrays with proper type casting
-          const workOrderHistory = ensureStringArray(item.work_order_history);
-          const maintenanceHistory = ensureMaintenanceRecordArray(item.maintenance_history);
-          const maintenanceSchedules = ensureMaintenanceScheduleArray(item.maintenance_schedules);
-          
-          return {
-            id: item.id,
-            name: item.name,
-            model: item.model,
-            serialNumber: item.serial_number,
-            manufacturer: item.manufacturer,
-            category: item.category,
-            purchaseDate: item.purchase_date,
-            installDate: item.install_date,
-            customer: item.customer,
-            location: item.location,
-            status: validStatus,
-            nextMaintenanceDate: item.next_maintenance_date,
-            maintenanceFrequency: validMaintenanceFrequency,
-            lastMaintenanceDate: item.last_maintenance_date,
-            warrantyExpiryDate: item.warranty_expiry_date,
-            warrantyStatus: validWarrantyStatus,
-            notes: item.notes,
-            workOrderHistory: workOrderHistory,
-            maintenanceHistory: maintenanceHistory,
-            maintenanceSchedules: maintenanceSchedules
-          };
-        });
-        
-        setEquipment(transformedData);
-        
-        // Get equipment requiring maintenance soon
-        const today = new Date();
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(today.getDate() + 30);
-        
-        const maintenanceDue = transformedData.filter(item => {
-          if (!item.nextMaintenanceDate) return false;
-          const maintenanceDate = new Date(item.nextMaintenanceDate);
-          return maintenanceDate >= today && maintenanceDate <= thirtyDaysFromNow;
-        });
-        
-        setMaintenanceDueEquipment(maintenanceDue);
-        
-        // Get equipment with expiring warranties (within 60 days)
-        const sixtyDaysFromNow = new Date();
-        sixtyDaysFromNow.setDate(today.getDate() + 60);
-        
-        const warrantyExpiring = transformedData.filter(item => {
-          if (!item.warrantyExpiryDate) return false;
-          const expiryDate = new Date(item.warrantyExpiryDate);
-          return expiryDate >= today && expiryDate <= sixtyDaysFromNow && item.warrantyStatus === "active";
-        });
-        
-        setWarrantyExpiringEquipment(warrantyExpiring);
-        
-      } catch (error: any) {
-        console.error("Error fetching equipment data:", error);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load equipment data. Please try again later.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchEquipmentData();
   }, []);
+
+  const fetchEquipmentData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('equipment')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        setEquipment([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Transform the raw data into our EquipmentType format with proper type checking
+      const transformedData: EquipmentType[] = data.map(item => {
+        // Validate the status field to ensure it matches our union type
+        const validStatus = validateEquipmentStatus(item.status);
+        
+        // Validate the warranty status field
+        const validWarrantyStatus = validateWarrantyStatus(item.warranty_status);
+        
+        // Validate the maintenance frequency field
+        const validMaintenanceFrequency = validateMaintenanceFrequency(item.maintenance_frequency);
+        
+        // Handle JSON arrays with proper type casting
+        const workOrderHistory = ensureStringArray(item.work_order_history);
+        const maintenanceHistory = ensureMaintenanceRecordArray(item.maintenance_history);
+        const maintenanceSchedules = ensureMaintenanceScheduleArray(item.maintenance_schedules);
+        
+        return {
+          id: item.id,
+          name: item.name,
+          model: item.model,
+          serialNumber: item.serial_number,
+          manufacturer: item.manufacturer,
+          category: item.category,
+          purchaseDate: item.purchase_date,
+          installDate: item.install_date,
+          customer: item.customer,
+          location: item.location,
+          status: validStatus,
+          nextMaintenanceDate: item.next_maintenance_date,
+          maintenanceFrequency: validMaintenanceFrequency,
+          lastMaintenanceDate: item.last_maintenance_date,
+          warrantyExpiryDate: item.warranty_expiry_date,
+          warrantyStatus: validWarrantyStatus,
+          notes: item.notes,
+          workOrderHistory: workOrderHistory,
+          maintenanceHistory: maintenanceHistory,
+          maintenanceSchedules: maintenanceSchedules
+        };
+      });
+      
+      setEquipment(transformedData);
+      
+      // Get equipment requiring maintenance soon
+      const today = new Date();
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(today.getDate() + 30);
+      
+      const maintenanceDue = transformedData.filter(item => {
+        if (!item.nextMaintenanceDate) return false;
+        const maintenanceDate = new Date(item.nextMaintenanceDate);
+        return maintenanceDate >= today && maintenanceDate <= thirtyDaysFromNow;
+      });
+      
+      setMaintenanceDueEquipment(maintenanceDue);
+      
+      // Get equipment with expiring warranties (within 60 days)
+      const sixtyDaysFromNow = new Date();
+      sixtyDaysFromNow.setDate(today.getDate() + 60);
+      
+      const warrantyExpiring = transformedData.filter(item => {
+        if (!item.warrantyExpiryDate) return false;
+        const expiryDate = new Date(item.warrantyExpiryDate);
+        return expiryDate >= today && expiryDate <= sixtyDaysFromNow && item.warrantyStatus === "active";
+      });
+      
+      setWarrantyExpiringEquipment(warrantyExpiring);
+      
+    } catch (error: any) {
+      console.error("Error fetching equipment data:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load equipment data. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper functions to validate enum types
   const validateEquipmentStatus = (status: string): EquipmentType["status"] => {

@@ -1862,6 +1862,54 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          category: string | null
+          expires_at: string | null
+          id: string
+          link: string | null
+          message: string
+          priority: string | null
+          read: boolean
+          recipient: string | null
+          sender: string | null
+          timestamp: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          expires_at?: string | null
+          id?: string
+          link?: string | null
+          message: string
+          priority?: string | null
+          read?: boolean
+          recipient?: string | null
+          sender?: string | null
+          timestamp?: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          expires_at?: string | null
+          id?: string
+          link?: string | null
+          message?: string
+          priority?: string | null
+          read?: boolean
+          recipient?: string | null
+          sender?: string | null
+          timestamp?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string

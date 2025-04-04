@@ -1,15 +1,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  equipment, 
-  getWorkOrdersForEquipment, 
-  getMaintenanceHistoryForEquipment,
-  getMaintenanceSchedulesForEquipment
-} from "@/data/equipmentData";
 import { Equipment } from "@/types/equipment";
-import { WorkOrder } from "@/data/workOrdersData";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import { EquipmentDetailsHeader } from "@/components/equipment-details/EquipmentDetailsHeader";
 import { EquipmentAlerts } from "@/components/equipment-details/EquipmentAlerts";
 import { EquipmentDetailCards } from "@/components/equipment-details/EquipmentDetailCards";
@@ -23,48 +17,163 @@ export default function EquipmentDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [equipmentItem, setEquipmentItem] = useState<Equipment | null>(null);
-  const [relatedWorkOrders, setRelatedWorkOrders] = useState<WorkOrder[]>([]);
+  const [relatedWorkOrders, setRelatedWorkOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchEquipment = () => {
-      setLoading(true);
-      try {
-        if (!id) {
-          navigate("/equipment");
-          return;
-        }
+    if (id) {
+      fetchEquipment(id);
+    }
+  }, [id]);
 
-        const foundEquipment = equipment.find(item => item.id === id);
-        
-        if (foundEquipment) {
-          setEquipmentItem(foundEquipment);
-          // Get related work orders
-          const workOrders = getWorkOrdersForEquipment(id);
-          setRelatedWorkOrders(workOrders);
-        } else {
-          toast({
-            title: "Error",
-            description: "Equipment not found.",
-            variant: "destructive",
-          });
-          navigate("/equipment");
-        }
-      } catch (error) {
-        console.error("Error fetching equipment:", error);
+  const fetchEquipment = async (equipmentId: string) => {
+    setLoading(true);
+    try {
+      // Fetch equipment details
+      const { data: equipmentData, error: equipmentError } = await supabase
+        .from('equipment')
+        .select('*')
+        .eq('id', equipmentId)
+        .single();
+      
+      if (equipmentError) {
+        throw equipmentError;
+      }
+
+      if (!equipmentData) {
         toast({
-          title: "Error",
-          description: "Failed to load equipment details.",
-          variant: "destructive",
+          title: "Not Found",
+          description: "Equipment item not found.",
+          variant: "destructive"
         });
         navigate("/equipment");
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
+      
+      // Transform the data into our Equipment type
+      const equipment: Equipment = {
+        id: equipmentData.id,
+        name: equipmentData.name,
+        model: equipmentData.model,
+        serialNumber: equipmentData.serial_number,
+        manufacturer: equipmentData.manufacturer,
+        category: equipmentData.category,
+        purchaseDate: equipmentData.purchase_date,
+        installDate: equipmentData.install_date,
+        customer: equipmentData.customer,
+        location: equipmentData.location,
+        status: validateEquipmentStatus(equipmentData.status),
+        nextMaintenanceDate: equipmentData.next_maintenance_date,
+        maintenanceFrequency: validateMaintenanceFrequency(equipmentData.maintenance_frequency),
+        lastMaintenanceDate: equipmentData.last_maintenance_date,
+        warrantyExpiryDate: equipmentData.warranty_expiry_date,
+        warrantyStatus: validateWarrantyStatus(equipmentData.warranty_status),
+        notes: equipmentData.notes,
+        workOrderHistory: ensureStringArray(equipmentData.work_order_history),
+        maintenanceHistory: ensureMaintenanceRecordArray(equipmentData.maintenance_history),
+        maintenanceSchedules: ensureMaintenanceScheduleArray(equipmentData.maintenance_schedules)
+      };
+      
+      setEquipmentItem(equipment);
+      
+      // Fetch related work orders
+      // In a real implementation, this would query the work_orders table
+      // For now, we'll use the work_order_history from the equipment data
+      setRelatedWorkOrders(equipment.workOrderHistory.map(id => ({
+        id,
+        title: `Work Order ${id}`,
+        status: "completed",
+        date: new Date().toISOString().split('T')[0]
+      })));
+      
+    } catch (error: any) {
+      console.error("Error fetching equipment:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load equipment details.",
+        variant: "destructive"
+      });
+      navigate("/equipment");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchEquipment();
-  }, [id, navigate]);
+  // Helper functions to validate enum types
+  const validateEquipmentStatus = (status: string): Equipment["status"] => {
+    const validStatuses: Equipment["status"][] = ["operational", "maintenance-required", "out-of-service", "decommissioned"];
+    if (validStatuses.includes(status as Equipment["status"])) {
+      return status as Equipment["status"];
+    }
+    return "operational";
+  };
+  
+  const validateWarrantyStatus = (status: string): Equipment["warrantyStatus"] => {
+    const validStatuses: Equipment["warrantyStatus"][] = ["active", "expired", "not-applicable"];
+    if (validStatuses.includes(status as Equipment["warrantyStatus"])) {
+      return status as Equipment["warrantyStatus"];
+    }
+    return "not-applicable";
+  };
+  
+  const validateMaintenanceFrequency = (frequency: string): Equipment["maintenanceFrequency"] => {
+    const validFrequencies: Equipment["maintenanceFrequency"][] = [
+      "monthly", "quarterly", "bi-annually", "annually", "as-needed"
+    ];
+    if (validFrequencies.includes(frequency as Equipment["maintenanceFrequency"])) {
+      return frequency as Equipment["maintenanceFrequency"];
+    }
+    return "as-needed";
+  };
+  
+  // Helper functions to ensure proper array types from JSON
+  const ensureStringArray = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter(item => typeof item === 'string');
+    }
+    return [];
+  };
+  
+  const ensureMaintenanceRecordArray = (value: any): Equipment["maintenanceHistory"] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        'id' in item && 
+        'date' in item && 
+        'technician' in item && 
+        'description' in item
+      );
+    }
+    return [];
+  };
+  
+  const ensureMaintenanceScheduleArray = (value: any): Equipment["maintenanceSchedules"] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        'frequencyType' in item && 
+        'nextDate' in item && 
+        'description' in item && 
+        'estimatedDuration' in item && 
+        'isRecurring' in item && 
+        'notificationsEnabled' in item && 
+        'reminderDays' in item
+      );
+    }
+    return [];
+  };
+  
+  const handleAddMaintenanceSchedule = () => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "Adding maintenance schedules will be available in a future update.",
+    });
+  };
 
   if (loading) {
     return <EquipmentLoading />;
@@ -75,16 +184,7 @@ export default function EquipmentDetails() {
   }
 
   const isMaintenanceOverdue = new Date(equipmentItem.nextMaintenanceDate) < new Date();
-  const maintenanceHistory = getMaintenanceHistoryForEquipment(equipmentItem.id);
-  const maintenanceSchedules = getMaintenanceSchedulesForEquipment(equipmentItem.id);
-
-  const handleAddMaintenanceSchedule = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Adding maintenance schedules will be available in a future update.",
-    });
-  };
-
+  
   return (
     <div className="space-y-6">
       <EquipmentDetailsHeader 
@@ -101,12 +201,12 @@ export default function EquipmentDetails() {
       <EquipmentMaintenanceSchedules
         equipmentId={equipmentItem.id}
         equipmentName={equipmentItem.name}
-        schedules={maintenanceSchedules}
+        schedules={equipmentItem.maintenanceSchedules}
         onScheduleAdded={handleAddMaintenanceSchedule}
       />
       
       <EquipmentMaintenanceHistory 
-        maintenanceHistory={maintenanceHistory} 
+        maintenanceHistory={equipmentItem.maintenanceHistory} 
       />
       
       <EquipmentServiceHistory 
