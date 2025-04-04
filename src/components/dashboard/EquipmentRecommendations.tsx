@@ -46,6 +46,36 @@ export function EquipmentRecommendations() {
             ? item.maintenance_frequency as Equipment["maintenanceFrequency"] 
             : "as-needed";
           
+          // Properly convert JSON arrays to expected types
+          const workOrderHistory = Array.isArray(item.work_order_history) 
+            ? item.work_order_history.filter(id => typeof id === 'string').map(String)
+            : [];
+          
+          const maintenanceHistory = Array.isArray(item.maintenance_history)
+            ? item.maintenance_history.filter(record => 
+                typeof record === 'object' && 
+                record !== null &&
+                'id' in record &&
+                'date' in record &&
+                'technician' in record &&
+                'description' in record
+            )
+            : [];
+          
+          const maintenanceSchedules = Array.isArray(item.maintenance_schedules) 
+            ? item.maintenance_schedules.filter(schedule =>
+                typeof schedule === 'object' &&
+                schedule !== null &&
+                'frequencyType' in schedule &&
+                'nextDate' in schedule &&
+                'description' in schedule &&
+                'estimatedDuration' in schedule &&
+                'isRecurring' in schedule &&
+                'notificationsEnabled' in schedule &&
+                'reminderDays' in schedule
+            )
+            : [];
+          
           return {
             id: item.id,
             name: item.name,
@@ -64,9 +94,9 @@ export function EquipmentRecommendations() {
             warrantyExpiryDate: item.warranty_expiry_date,
             warrantyStatus: validWarrantyStatus,
             notes: item.notes,
-            workOrderHistory: Array.isArray(item.work_order_history) ? item.work_order_history : [],
-            maintenanceHistory: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
-            maintenanceSchedules: Array.isArray(item.maintenance_schedules) ? item.maintenance_schedules : []
+            workOrderHistory: workOrderHistory,
+            maintenanceHistory: maintenanceHistory,
+            maintenanceSchedules: maintenanceSchedules
           };
         });
         
