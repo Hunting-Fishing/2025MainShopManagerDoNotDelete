@@ -85,13 +85,13 @@ export function useTeamMemberProfile(id: string | undefined) {
           const roleData = userRoles[0].roles;
           console.log('Role data:', roleData);
           
-          // Properly handle the role data regardless of its structure
+          // Fix the type issue with the roleData handling
           if (roleData) {
             if (typeof roleData === 'object' && roleData !== null && 'name' in roleData) {
               // Role is nested in an object
               const roleName = roleData.name as string;
               
-              if (roleName) {
+              if (roleName && typeof roleName === 'string') {
                 // Format the role name (capitalize, replace underscores)
                 userRole = roleName
                   .split('_')
