@@ -41,7 +41,7 @@ export function ProfileSidebar({ member }: ProfileSidebarProps) {
             <div className="flex items-center gap-3 text-sm">
               <Mail className="h-4 w-4 text-slate-400" />
               <a href={`mailto:${member.email}`} className="text-esm-blue-600 hover:underline">
-                {member.email}
+                {member.email || 'Not available'}
               </a>
             </div>
             

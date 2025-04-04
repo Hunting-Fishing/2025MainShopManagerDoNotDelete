@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { TeamMember } from "@/types/team";
 import { toast } from "@/hooks/use-toast";
 import { getProfileMetadata } from "@/lib/profileMetadata";
-import { mapRoleToDbValue, getRoleDbValue } from "@/utils/roleUtils";
+import { mapRoleToDbValue } from "@/utils/roleUtils";
 
 export function useTeamMemberProfile(id: string | undefined) {
   const [member, setMember] = useState<TeamMember | null>(null);

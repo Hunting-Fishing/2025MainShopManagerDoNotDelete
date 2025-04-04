@@ -45,7 +45,7 @@ export function OverviewTab({ member }: OverviewTabProps) {
         </CardContent>
       </Card>
 
-      {member.role === "Technician" && member.workOrders && (
+      {member.role.toLowerCase().includes("technician") && member.workOrders && (
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Work Order Statistics</CardTitle>
