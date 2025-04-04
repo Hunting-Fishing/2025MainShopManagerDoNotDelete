@@ -1,7 +1,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, User, Briefcase } from "lucide-react";
+import { Mail, Phone, User, Briefcase, Building } from "lucide-react";
 import { getInitials } from "@/data/teamData";
 
 interface ProfileSidebarProps {
@@ -12,6 +12,7 @@ interface ProfileSidebarProps {
     email: string;
     phone: string;
     role: string;
+    department: string;
   };
 }
 
@@ -58,6 +59,13 @@ export function ProfileSidebar({ member }: ProfileSidebarProps) {
               <div className="flex items-center gap-3 text-sm">
                 <Briefcase className="h-4 w-4 text-slate-400" />
                 <span>{member.jobTitle}</span>
+              </div>
+            )}
+            
+            {member.department && (
+              <div className="flex items-center gap-3 text-sm">
+                <Building className="h-4 w-4 text-slate-400" />
+                <span>{member.department}</span>
               </div>
             )}
           </div>

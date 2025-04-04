@@ -17,11 +17,15 @@ export function OverviewTab({ member }: OverviewTabProps) {
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div>
               <dt className="text-sm font-medium text-slate-500">Department</dt>
-              <dd className="mt-1">{member.department}</dd>
+              <dd className="mt-1">{member.department || "Not specified"}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-slate-500">Role</dt>
-              <dd className="mt-1">{member.role}</dd>
+              <dd className="mt-1">{member.role || "Not specified"}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-slate-500">Job Title</dt>
+              <dd className="mt-1">{member.jobTitle || "Not specified"}</dd>
             </div>
             {member.joinDate && (
               <div>

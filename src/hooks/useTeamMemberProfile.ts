@@ -78,6 +78,7 @@ export function useTeamMemberProfile(id: string | undefined) {
         
         if (userRoles && userRoles.length > 0 && userRoles[0].roles) {
           const roleData = userRoles[0].roles;
+          // Check if roleData is an object with a name property
           if (typeof roleData === 'object' && roleData !== null && 'name' in roleData) {
             // Convert the database enum value to a display name (capitalize, replace underscores)
             const roleName = roleData.name as string;
@@ -104,8 +105,8 @@ export function useTeamMemberProfile(id: string | undefined) {
           role: userRole,
           email: profileData.email || '',
           phone: profileData.phone || '',
-          jobTitle: profileData.job_title || userRole, // Use job_title if available, fallback to role
-          department: profileData.department || 'General', // Use department if available
+          jobTitle: profileData.job_title || '', // Use empty string if not available
+          department: profileData.department || '', // Use empty string if not available
           status: "Active", // Default status
           workOrders: {
             assigned: 0,
