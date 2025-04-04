@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 interface EditProfileTabProps {
-  initialData: TeamMemberFormValues & { id: string };
+  initialData: TeamMemberFormValues;
 }
 
 export function EditProfileTab({ initialData }: EditProfileTabProps) {
