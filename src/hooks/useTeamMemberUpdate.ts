@@ -87,19 +87,21 @@ export function useTeamMemberUpdate() {
           } else if (roleData) {
             console.log("Found role with ID:", roleData.id);
             
-            // First check if the user already has this role
+            // First check if the user already has this role using single() for cleaner results
             const { data: existingRole, error: checkRoleError } = await supabase
               .from('user_roles')
-              .select('*')
+              .select('id')
               .eq('user_id', memberId)
-              .eq('role_id', roleData.id);
+              .eq('role_id', roleData.id)
+              .single();
               
-            if (checkRoleError) {
+            if (checkRoleError && checkRoleError.code !== 'PGRST116') {
+              // PGRST116 means no rows returned, which is expected if the role isn't assigned
               console.error("Error checking existing role:", checkRoleError);
             }
             
             // If user already has this role, don't try to assign it again
-            if (existingRole && existingRole.length > 0) {
+            if (existingRole) {
               console.log("User already has this role:", roleData.id);
               roleUpdateSuccess = true;
               roleUpdateMessage = "Role is already assigned to this user.";
