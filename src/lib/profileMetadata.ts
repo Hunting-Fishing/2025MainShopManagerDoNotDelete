@@ -1,85 +1,81 @@
 
-import { supabase } from './supabase';
+import { supabase } from "@/lib/supabase";
 
 export interface ProfileMetadata {
+  id?: string;
+  profile_id?: string;
+  metadata?: Record<string, any>;
+  created_at?: string;
+  updated_at?: string;
   notes?: string;
-  [key: string]: any;
 }
 
-/**
- * Saves metadata for a profile
- */
-export async function saveProfileMetadata(profileId: string, metadata: Record<string, any>): Promise<boolean> {
+export async function getProfileMetadata(profileId: string): Promise<ProfileMetadata | null> {
   try {
-    // Check if metadata already exists
-    const { data: existingData, error: fetchError } = await supabase
-      .from('profile_metadata')
-      .select('*')
-      .eq('profile_id', profileId);
-
-    if (fetchError) {
-      console.error('Error fetching profile metadata:', fetchError);
-      return false;
+    const { data, error } = await supabase
+      .rpc('get_profile_metadata', { profile_id_param: profileId });
+    
+    if (error) {
+      console.error("Error fetching profile metadata:", error);
+      return null;
     }
+    
+    // If data is found, process it
+    if (data && data.length > 0) {
+      const metadata = data[0];
+      // Extract the notes from the metadata JSON field if it exists
+      const notes = metadata.metadata?.notes || "";
+      
+      return {
+        ...metadata,
+        notes
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Exception in getProfileMetadata:", error);
+    return null;
+  }
+}
 
-    if (existingData && Array.isArray(existingData) && existingData.length > 0) {
+export async function updateProfileMetadata(
+  profileId: string, 
+  metadata: Record<string, any>
+): Promise<boolean> {
+  try {
+    // Check if metadata exists for this profile
+    const existing = await getProfileMetadata(profileId);
+    
+    if (existing) {
       // Update existing metadata
-      const { error: updateError } = await supabase
-        .from('profile_metadata')
-        .update({ 
-          metadata: metadata,
-          updated_at: new Date().toISOString()
-        })
-        .eq('profile_id', profileId);
-
-      if (updateError) {
-        console.error('Error updating profile metadata:', updateError);
+      const { error } = await supabase
+        .rpc('update_profile_metadata', { 
+          profile_id_param: profileId,
+          metadata_param: metadata
+        });
+      
+      if (error) {
+        console.error("Error updating profile metadata:", error);
         return false;
       }
     } else {
       // Insert new metadata
-      const { error: insertError } = await supabase
-        .from('profile_metadata')
-        .insert({
-          profile_id: profileId,
-          metadata: metadata
+      const { error } = await supabase
+        .rpc('insert_profile_metadata', {
+          profile_id_param: profileId,
+          metadata_param: metadata
         });
-
-      if (insertError) {
-        console.error('Error inserting profile metadata:', insertError);
+      
+      if (error) {
+        console.error("Error creating profile metadata:", error);
         return false;
       }
     }
-
+    
     return true;
-  } catch (err) {
-    console.error('Error saving profile metadata:', err);
+  } catch (error) {
+    console.error("Exception in updateProfileMetadata:", error);
     return false;
-  }
-}
-
-/**
- * Gets metadata for a profile
- */
-export async function getProfileMetadata(profileId: string): Promise<ProfileMetadata | null> {
-  try {
-    const { data, error } = await supabase
-      .from('profile_metadata')
-      .select('*')
-      .eq('profile_id', profileId);
-
-    if (error) {
-      console.error('Error getting profile metadata:', error);
-      return null;
-    }
-
-    if (data && Array.isArray(data) && data.length > 0) {
-      return data[0].metadata as ProfileMetadata;
-    }
-
-    return null;
-  } catch (err) {
-    console.error('Error getting profile metadata:', err);
-    return null;
   }
 }

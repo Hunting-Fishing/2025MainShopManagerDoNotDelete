@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { TeamMember } from "@/types/team";
 import { toast } from "@/hooks/use-toast";
 import { getProfileMetadata } from "@/lib/profileMetadata";
+import { mapRoleToDbValue, getRoleDbValue } from "@/utils/roleUtils";
 
 export function useTeamMemberProfile(id: string | undefined) {
   const [member, setMember] = useState<TeamMember | null>(null);
@@ -45,6 +46,8 @@ export function useTeamMemberProfile(id: string | undefined) {
           return;
         }
 
+        console.log('Profile data loaded:', profileData);
+
         // Get user's role with a more detailed query
         const { data: userRoles, error: rolesError } = await supabase
           .from('user_roles')
@@ -78,21 +81,33 @@ export function useTeamMemberProfile(id: string | undefined) {
         // Extract role information
         let userRole = 'User'; // Default role
         
-        if (userRoles && userRoles.length > 0 && userRoles[0].roles) {
+        if (userRoles && userRoles.length > 0) {
           const roleData = userRoles[0].roles;
           console.log('Role data:', roleData);
           
-          // Check if roleData is an object with a name property
-          if (typeof roleData === 'object' && roleData !== null && 'name' in roleData) {
-            // Convert the database enum value to a display name (capitalize, replace underscores)
-            const roleName = roleData.name as string;
-            userRole = roleName
-              .split('_')
-              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ');
+          // Properly handle the role data regardless of its structure
+          if (roleData) {
+            if (typeof roleData === 'object' && roleData !== null && 'name' in roleData) {
+              // Role is nested in an object
+              const roleName = roleData.name as string;
               
-            console.log('Formatted role name:', userRole);
+              if (roleName) {
+                // Format the role name (capitalize, replace underscores)
+                userRole = roleName
+                  .split('_')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+              }
+            } else if (typeof roleData === 'string') {
+              // Role is directly a string
+              userRole = roleData
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            }
           }
+          
+          console.log('Formatted role name:', userRole);
         }
 
         // Get additional profile metadata (notes, etc.)
@@ -108,7 +123,7 @@ export function useTeamMemberProfile(id: string | undefined) {
         const memberData: TeamMember = {
           id: profileData.id,
           name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Unknown User',
-          role: userRole,
+          role: userRole || 'User',
           email: profileData.email || '',
           phone: profileData.phone || '',
           jobTitle: profileData.job_title || '', // Use empty string if not available
