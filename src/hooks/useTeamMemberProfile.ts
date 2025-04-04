@@ -131,7 +131,7 @@ export function useTeamMemberProfile(id: string | undefined) {
           department: profileData.department || '', // Use empty string if not available
           status: "Active", // Default status
           workOrders: {
-            assigned:.
+            assigned: 0,
             completed: 0
           },
           notes: notes,
