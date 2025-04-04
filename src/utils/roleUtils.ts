@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { Role } from '@/types/team';
 
 // Define the valid role types that match the database enum
 export type AppRole = 'owner' | 'admin' | 'manager' | 'parts_manager' | 'service_advisor' | 'technician' | 'reception' | 'other_staff';
@@ -45,6 +46,7 @@ export const mapRoleToDbValue = (role: string): AppRole => {
 
 /**
  * Checks if a user already has a specific role
+ * Uses error handling for the case where no role is found
  */
 export const checkExistingRole = async (userId: string, roleId: string): Promise<boolean> => {
   try {
@@ -85,7 +87,7 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
   message: string;
 }> => {
   try {
-    // First check if user already has this role
+    // First check if user already has this role to avoid duplicate key errors
     const hasRole = await checkExistingRole(userId, roleId);
     
     if (hasRole) {

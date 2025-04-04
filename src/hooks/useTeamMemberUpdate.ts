@@ -1,14 +1,21 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
 import { updateUserProfile, showProfileUpdateToast } from '@/utils/profileUtils';
 import { findRoleByName, assignRoleToUser } from '@/utils/roleUtils';
 
+/**
+ * Hook for managing team member profile updates including role assignments
+ */
 export function useTeamMemberUpdate() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateTeamMember = async (
+  /**
+   * Updates a team member's profile information and role
+   * Using useCallback to prevent unnecessary re-renders and maintain reference stability
+   */
+  const updateTeamMember = useCallback(async (
     memberId: string, 
     values: TeamMemberFormValues
   ): Promise<boolean> => {
@@ -56,19 +63,26 @@ export function useTeamMemberUpdate() {
       return true;
     } catch (err) {
       console.error('Error updating team member:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
       
-      showProfileUpdateToast(false);
+      // Improved error handling with more specific error messages
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      
+      // Show error toast but don't let the UI freeze
+      showProfileUpdateToast(false, errorMessage);
       
       return false;
     } finally {
+      // Always reset loading state to prevent UI from being stuck
       setIsLoading(false);
     }
-  };
+  }, []); // Empty dependency array since this doesn't depend on any props or state
   
   return {
     updateTeamMember,
     isLoading,
     error,
+    // Add a reset function to clear errors when needed
+    resetError: useCallback(() => setError(null), [])
   };
 }
