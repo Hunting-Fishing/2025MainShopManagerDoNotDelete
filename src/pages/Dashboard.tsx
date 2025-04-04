@@ -8,6 +8,7 @@ import { WorkOrdersByStatusChart } from "@/components/dashboard/WorkOrdersByStat
 import { MonthlyRevenueChart } from "@/components/dashboard/MonthlyRevenueChart";
 import { TechnicianPerformanceChart } from "@/components/dashboard/TechnicianPerformanceChart";
 import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceTypeDistributionChart";
+import { EquipmentRecommendations } from "@/components/dashboard/EquipmentRecommendations";
 import { useEffect } from "react";
 
 export default function Dashboard() {
@@ -45,6 +46,9 @@ export default function Dashboard() {
       {/* Stats cards */}
       <StatsCards />
 
+      {/* Equipment Recommendations Section */}
+      <EquipmentRecommendations />
+      
       {/* Data Visualization Charts */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MonthlyRevenueChart />

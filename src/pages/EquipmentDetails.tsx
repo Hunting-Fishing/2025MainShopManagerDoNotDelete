@@ -11,7 +11,9 @@ import { EquipmentNotes } from "@/components/equipment-details/EquipmentNotes";
 import { EquipmentServiceHistory } from "@/components/equipment-details/EquipmentServiceHistory";
 import { EquipmentMaintenanceHistory } from "@/components/equipment-details/EquipmentMaintenanceHistory";
 import { EquipmentMaintenanceSchedules } from "@/components/equipment-details/EquipmentMaintenanceSchedules";
+import { EquipmentRecommendationsList } from "@/components/equipment-details/EquipmentRecommendationsList";
 import { EquipmentLoading } from "@/components/equipment-details/EquipmentLoading";
+import { getEquipmentRecommendations } from "@/utils/equipment/recommendations";
 
 export default function EquipmentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -185,6 +187,9 @@ export default function EquipmentDetails() {
 
   const isMaintenanceOverdue = new Date(equipmentItem.nextMaintenanceDate) < new Date();
   
+  // Get recommendations specific to this equipment item
+  const recommendations = getEquipmentRecommendations([equipmentItem]);
+  
   return (
     <div className="space-y-6">
       <EquipmentDetailsHeader 
@@ -193,6 +198,8 @@ export default function EquipmentDetails() {
       />
       
       <EquipmentAlerts equipmentItem={equipmentItem} />
+      
+      <EquipmentRecommendationsList recommendations={recommendations} />
       
       <EquipmentDetailCards equipmentItem={equipmentItem} />
       

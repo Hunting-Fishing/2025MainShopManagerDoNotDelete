@@ -4,9 +4,11 @@ import { EquipmentFilters } from "@/components/equipment/EquipmentFilters";
 import { EquipmentTable } from "@/components/equipment/EquipmentTable";
 import { MaintenanceDueCard } from "@/components/equipment/MaintenanceDueCard";
 import { WarrantyExpiringCard } from "@/components/equipment/WarrantyExpiringCard";
+import { EquipmentRecommendationsCard } from "@/components/equipment/EquipmentRecommendationsCard";
 import { Equipment as EquipmentType } from "@/types/equipment";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
+import { getEquipmentRecommendations } from "@/utils/equipment/recommendations";
 
 export default function Equipment() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,18 +39,10 @@ export default function Equipment() {
         return;
       }
       
-      // Transform the raw data into our EquipmentType format with proper type checking
       const transformedData: EquipmentType[] = data.map(item => {
-        // Validate the status field to ensure it matches our union type
         const validStatus = validateEquipmentStatus(item.status);
-        
-        // Validate the warranty status field
         const validWarrantyStatus = validateWarrantyStatus(item.warranty_status);
-        
-        // Validate the maintenance frequency field
         const validMaintenanceFrequency = validateMaintenanceFrequency(item.maintenance_frequency);
-        
-        // Handle JSON arrays with proper type casting
         const workOrderHistory = ensureStringArray(item.work_order_history);
         const maintenanceHistory = ensureMaintenanceRecordArray(item.maintenance_history);
         const maintenanceSchedules = ensureMaintenanceScheduleArray(item.maintenance_schedules);
@@ -79,7 +73,6 @@ export default function Equipment() {
       
       setEquipment(transformedData);
       
-      // Get equipment requiring maintenance soon
       const today = new Date();
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(today.getDate() + 30);
@@ -92,7 +85,6 @@ export default function Equipment() {
       
       setMaintenanceDueEquipment(maintenanceDue);
       
-      // Get equipment with expiring warranties (within 60 days)
       const sixtyDaysFromNow = new Date();
       sixtyDaysFromNow.setDate(today.getDate() + 60);
       
@@ -116,13 +108,11 @@ export default function Equipment() {
     }
   };
 
-  // Helper functions to validate enum types
   const validateEquipmentStatus = (status: string): EquipmentType["status"] => {
     const validStatuses: EquipmentType["status"][] = ["operational", "maintenance-required", "out-of-service", "decommissioned"];
     if (validStatuses.includes(status as EquipmentType["status"])) {
       return status as EquipmentType["status"];
     }
-    // Default to a valid value if the input is invalid
     console.warn(`Invalid equipment status: ${status}, defaulting to "operational"`);
     return "operational";
   };
@@ -147,7 +137,6 @@ export default function Equipment() {
     return "as-needed";
   };
   
-  // Helper functions to ensure proper array types from JSON
   const ensureStringArray = (value: any): string[] => {
     if (!value) return [];
     if (Array.isArray(value)) {
@@ -189,7 +178,6 @@ export default function Equipment() {
     return [];
   };
 
-  // Filter equipment based on search query and status filter
   const filteredEquipment: EquipmentType[] = equipment.filter((item) => {
     const matchesSearch = 
       !searchQuery ||
@@ -203,7 +191,8 @@ export default function Equipment() {
     return matchesSearch && matchesStatus;
   });
 
-  // Reset filters
+  const recommendations = getEquipmentRecommendations(equipment);
+
   const resetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
@@ -211,16 +200,15 @@ export default function Equipment() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <EquipmentHeader />
       
-      {/* Alert Cards */}
+      <EquipmentRecommendationsCard recommendations={recommendations} />
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <MaintenanceDueCard equipment={maintenanceDueEquipment} />
         <WarrantyExpiringCard equipment={warrantyExpiringEquipment} />
       </div>
       
-      {/* Filters */}
       <EquipmentFilters 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -229,7 +217,6 @@ export default function Equipment() {
         resetFilters={resetFilters}
       />
       
-      {/* Equipment Table */}
       <EquipmentTable equipment={filteredEquipment} loading={loading} />
     </div>
   );
