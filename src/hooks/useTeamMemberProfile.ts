@@ -90,7 +90,12 @@ export function useTeamMemberProfile(id: string | undefined) {
 
         // Get additional profile metadata (notes, etc.)
         const metadata = await getProfileMetadata(id);
-        const notes = metadata?.notes || "";
+        let notes = "";
+        
+        // Properly type check and extract notes from metadata
+        if (metadata && typeof metadata === 'object' && metadata !== null) {
+          notes = (metadata as Record<string, any>).notes || "";
+        }
         
         // Create the member object with the fetched data
         const memberData: TeamMember = {

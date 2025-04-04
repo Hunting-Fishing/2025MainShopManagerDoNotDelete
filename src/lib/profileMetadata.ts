@@ -1,6 +1,11 @@
 
 import { supabase } from './supabase';
 
+interface ProfileMetadata {
+  notes?: string;
+  [key: string]: any;
+}
+
 /**
  * Saves metadata for a profile
  */
@@ -56,7 +61,7 @@ export async function saveProfileMetadata(profileId: string, metadata: Record<st
 /**
  * Gets metadata for a profile
  */
-export async function getProfileMetadata(profileId: string) {
+export async function getProfileMetadata(profileId: string): Promise<ProfileMetadata | null> {
   try {
     const { data, error } = await supabase
       .from('profile_metadata')
@@ -69,7 +74,7 @@ export async function getProfileMetadata(profileId: string) {
     }
 
     if (data && Array.isArray(data) && data.length > 0) {
-      return data[0].metadata;
+      return data[0].metadata as ProfileMetadata;
     }
 
     return null;
