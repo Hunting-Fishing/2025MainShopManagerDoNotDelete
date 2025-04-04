@@ -5,6 +5,10 @@ import { NotificationDB } from "@/types/database.types";
 import { v4 as uuidv4 } from 'uuid';
 import { INotificationService } from "./types";
 
+// Define constants for Supabase URL and key
+const SUPABASE_URL = "https://oudkbrnvommbvtuispla.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91ZGticm52b21tYnZ0dWlzcGxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MTgzODgsImV4cCI6MjA1ODQ5NDM4OH0.Hyo-lkI96GBLt-zp5zZLvCL1bSEWTomIIrzvKRO4LF4";
+
 export class SupabaseNotificationService implements INotificationService {
   private static instance: SupabaseNotificationService;
   private notificationListeners: ((notification: Notification) => void)[] = [];
@@ -55,13 +59,13 @@ export class SupabaseNotificationService implements INotificationService {
           console.log(`Notification channel status: ${status}`);
         });
 
-      // Fetch existing notifications using REST API to avoid TypeScript errors
+      // Fetch existing notifications using REST API
       const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/notifications?user_id=eq.${userId}&order=timestamp.desc`,
+        `${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${userId}&order=timestamp.desc`,
         {
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           }
@@ -138,12 +142,12 @@ export class SupabaseNotificationService implements INotificationService {
       };
 
       const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/notifications`,
+        `${SUPABASE_URL}/rest/v1/notifications`,
         {
           method: 'POST',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
@@ -163,12 +167,12 @@ export class SupabaseNotificationService implements INotificationService {
   public async markAsRead(id: string): Promise<void> {
     try {
       const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/notifications?id=eq.${id}`,
+        `${SUPABASE_URL}/rest/v1/notifications?id=eq.${id}`,
         {
           method: 'PATCH',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
           },
@@ -190,12 +194,12 @@ export class SupabaseNotificationService implements INotificationService {
 
     try {
       const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/notifications?user_id=eq.${this.userId}`,
+        `${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${this.userId}`,
         {
           method: 'PATCH',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
           },
@@ -215,12 +219,12 @@ export class SupabaseNotificationService implements INotificationService {
   public async clearNotification(id: string): Promise<void> {
     try {
       const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/notifications?id=eq.${id}`,
+        `${SUPABASE_URL}/rest/v1/notifications?id=eq.${id}`,
         {
           method: 'DELETE',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
           }
@@ -241,12 +245,12 @@ export class SupabaseNotificationService implements INotificationService {
 
     try {
       const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/notifications?user_id=eq.${this.userId}`,
+        `${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${this.userId}`,
         {
           method: 'DELETE',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
           }
