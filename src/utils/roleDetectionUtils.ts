@@ -132,4 +132,3 @@ export const getRoleDbValue = (roleName: string): AppRole => {
   // If not, validate and normalize the role name
   return validateRoleName(roleName);
 };
-

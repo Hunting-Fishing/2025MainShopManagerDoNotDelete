@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
 import { updateUserProfile, showProfileUpdateToast } from '@/utils/profileUtils';
 import { findRoleByName, assignRoleToUser } from '@/utils/roleUtils';
-import { detectRoleFromJobTitle } from '@/utils/roleDetectionUtils';
+import { detectRoleFromJobTitle, getRoleDbValue } from '@/utils/roleDetectionUtils';
 
 /**
  * Hook for managing team member profile updates including role assignments
@@ -54,7 +54,14 @@ export function useTeamMemberUpdate() {
             // Attempt to assign the role to the user
             const assignResult = await assignRoleToUser(memberId, roleId);
             roleUpdateSuccess = assignResult.success;
-            roleUpdateMessage = assignResult.message;
+            
+            // Handle duplicate role assignments gracefully
+            if (assignResult.message.includes("already assigned")) {
+              roleUpdateSuccess = true;
+              roleUpdateMessage = "User already has this role.";
+            } else {
+              roleUpdateMessage = assignResult.message;
+            }
             
             // Store the auto-detected role if it was used
             if (!values.role && values.jobTitle) {

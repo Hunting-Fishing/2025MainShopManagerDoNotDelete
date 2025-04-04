@@ -39,32 +39,55 @@ export function CreateMemberCard() {
 
       // Determine role - either from the form or auto-detect from job title
       const roleDisplayName = data.role || (data.jobTitle ? detectRoleFromJobTitle(data.jobTitle) : null);
+      let roleAssigned = false;
       
       if (roleDisplayName) {
-        // Convert role display name to database value
-        const roleDbValue = getRoleDbValue(roleDisplayName);
-        
-        // Get the role ID for the selected role
-        let { data: roleData, error: roleError } = await supabase
-          .from('roles')
-          .select('id')
-          .eq('name', roleDbValue)
-          .single();
-
-        if (roleError) {
-          // Try a case-insensitive search if exact match fails
-          const { data: roleDataCaseInsensitive, error: roleErrorCaseInsensitive } = await supabase
+        try {
+          // Convert role display name to database value
+          const roleDbValue = getRoleDbValue(roleDisplayName);
+          console.log(`Assigning role: ${roleDisplayName} (DB value: ${roleDbValue})`);
+          
+          // Get the role ID for the selected role
+          let { data: roleData, error: roleError } = await supabase
             .from('roles')
             .select('id')
-            .ilike('name', roleDbValue)
+            .eq('name', roleDbValue)
             .single();
 
-          if (roleErrorCaseInsensitive) {
-            console.warn(`Role "${roleDisplayName}" (${roleDbValue}) not found in database.`);
-          } else {
-            // Use the case-insensitive match
-            roleData = roleDataCaseInsensitive;
-            
+          if (roleError) {
+            // Try a case-insensitive search if exact match fails
+            const { data: roleDataCaseInsensitive, error: roleErrorCaseInsensitive } = await supabase
+              .from('roles')
+              .select('id')
+              .ilike('name', roleDbValue)
+              .single();
+
+            if (roleErrorCaseInsensitive) {
+              console.warn(`Role "${roleDisplayName}" (${roleDbValue}) not found in database.`);
+            } else {
+              // Use the case-insensitive match
+              roleData = roleDataCaseInsensitive;
+              
+              // Assign the role to the user
+              const { error: roleAssignError } = await supabase
+                .from('user_roles')
+                .insert({
+                  user_id: newUserId, // Using the generated user ID
+                  role_id: roleData.id
+                });
+
+              if (roleAssignError) {
+                if (roleAssignError.message?.includes('duplicate key value')) {
+                  console.log(`Role ${roleDisplayName} already assigned to user - skipping`);
+                  roleAssigned = true;
+                } else {
+                  console.error("Error assigning role:", roleAssignError);
+                }
+              } else {
+                roleAssigned = true;
+              }
+            }
+          } else if (roleData) {
             // Assign the role to the user
             const { error: roleAssignError } = await supabase
               .from('user_roles')
@@ -74,21 +97,19 @@ export function CreateMemberCard() {
               });
 
             if (roleAssignError) {
-              console.error("Error assigning role:", roleAssignError);
+              if (roleAssignError.message?.includes('duplicate key value')) {
+                console.log(`Role ${roleDisplayName} already assigned to user - skipping`);
+                roleAssigned = true;
+              } else {
+                console.error("Error assigning role:", roleAssignError);
+              }
+            } else {
+              roleAssigned = true;
             }
           }
-        } else if (roleData) {
-          // Assign the role to the user
-          const { error: roleAssignError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: newUserId, // Using the generated user ID
-              role_id: roleData.id
-            });
-
-          if (roleAssignError) {
-            console.error("Error assigning role:", roleAssignError);
-          }
+        } catch (roleError) {
+          console.error("Error during role assignment:", roleError);
+          // Don't throw here, we'll still create the user even if role assignment fails
         }
       }
 
@@ -108,7 +129,7 @@ export function CreateMemberCard() {
 
       toast({
         title: "Team member created",
-        description: `${data.firstName} ${data.lastName} has been added to the team${roleDisplayName ? ` with role: ${roleDisplayName}` : ''}`,
+        description: `${data.firstName} ${data.lastName} has been added to the team${roleAssigned ? ` with role: ${roleDisplayName}` : ''}`,
         variant: "default",
       });
 
