@@ -28,7 +28,7 @@ export const updateUserProfile = async (
         last_name: lastName,
         email: values.email,
         phone: values.phone || null,
-        job_title: values.jobTitle,
+        job_title: values.jobTitle, // Ensure job_title is properly updated
         department: values.department,
       })
       .eq('id', userId)

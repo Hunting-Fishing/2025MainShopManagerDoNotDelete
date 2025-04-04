@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Mail, Phone, Eye } from "lucide-react";
+import { Mail, Phone, Eye, Briefcase } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { TeamMember } from "@/types/team";
@@ -21,7 +21,7 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           </Avatar>
           <div>
             <h3 className="font-medium text-slate-900">{member.name}</h3>
-            <p className="text-sm text-slate-500">{member.jobTitle}</p>
+            <p className="text-sm text-slate-500">{member.jobTitle || 'No Job Title'}</p>
           </div>
         </div>
         <Badge variant={member.status === "Active" ? "success" : "destructive"} className="ml-auto">
@@ -30,8 +30,9 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
       </div>
       <div className="p-4 space-y-4">
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-slate-700">
-            <span className="font-medium">Role:</span> {member.role}
+          <p className="text-sm text-slate-700 flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-slate-400" />
+            <span className="font-medium">Role:</span> {member.role || 'No Role Assigned'}
           </p>
           <p className="text-sm text-slate-700">
             <span className="font-medium">Department:</span> {member.department}

@@ -12,7 +12,7 @@ interface TeamMemberDetailsProps {
 }
 
 export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps) {
-  // Convert member data to form values format
+  // Convert member data to form values format, ensuring all fields are present
   const memberFormData = {
     id: member.id,  // Include id for database updates
     name: member.name,

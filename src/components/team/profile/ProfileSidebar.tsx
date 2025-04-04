@@ -1,7 +1,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, User } from "lucide-react";
+import { Mail, Phone, User, Briefcase } from "lucide-react";
 import { getInitials } from "@/data/teamData";
 
 interface ProfileSidebarProps {
@@ -28,7 +28,7 @@ export function ProfileSidebar({ member }: ProfileSidebarProps) {
           </Avatar>
           
           <h2 className="text-xl font-semibold">{member.name}</h2>
-          <p className="text-sm text-slate-500 mb-2">{member.jobTitle}</p>
+          <p className="text-sm text-slate-500 mb-2">{member.jobTitle || 'No Job Title'}</p>
           
           <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-4">
             {member.status}
@@ -45,14 +45,21 @@ export function ProfileSidebar({ member }: ProfileSidebarProps) {
             <div className="flex items-center gap-3 text-sm">
               <Phone className="h-4 w-4 text-slate-400" />
               <a href={`tel:${member.phone}`} className="text-esm-blue-600 hover:underline">
-                {member.phone}
+                {member.phone || 'Not available'}
               </a>
             </div>
             
             <div className="flex items-center gap-3 text-sm">
               <User className="h-4 w-4 text-slate-400" />
-              <span>{member.role}</span>
+              <span>{member.role || 'No Role Assigned'}</span>
             </div>
+
+            {member.jobTitle && (
+              <div className="flex items-center gap-3 text-sm">
+                <Briefcase className="h-4 w-4 text-slate-400" />
+                <span>{member.jobTitle}</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
