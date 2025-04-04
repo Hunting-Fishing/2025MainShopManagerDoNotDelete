@@ -4,7 +4,6 @@ import { supabase } from "@/lib/supabase";
 import { TeamMember } from "@/types/team";
 import { toast } from "@/hooks/use-toast";
 import { getProfileMetadata } from "@/lib/profileMetadata";
-import { mapRoleToDbValue } from "@/utils/roleUtils";
 
 export function useTeamMemberProfile(id: string | undefined) {
   const [member, setMember] = useState<TeamMember | null>(null);
@@ -122,6 +121,20 @@ export function useTeamMemberProfile(id: string | undefined) {
           notes = metadata.notes || "";
         }
         
+        // Fetch work order data for this user
+        const { data: assignedWorkOrders, error: assignedError } = await supabase
+          .from('work_orders')
+          .select('id, status')
+          .eq('technician_id', id);
+          
+        if (assignedError) {
+          console.error('Error fetching assigned work orders:', assignedError);
+        }
+        
+        // Count assigned and completed work orders
+        const assignedCount = assignedWorkOrders?.length || 0;
+        const completedCount = assignedWorkOrders?.filter(wo => wo.status === 'completed')?.length || 0;
+        
         // Create the member object with the fetched data
         const memberData: TeamMember = {
           id: profileData.id,
@@ -133,8 +146,8 @@ export function useTeamMemberProfile(id: string | undefined) {
           department: profileData.department || '', // Use empty string if not available
           status: "Active", // Default status
           workOrders: {
-            assigned: 0,
-            completed: 0
+            assigned: assignedCount,
+            completed: completedCount
           },
           notes: notes,
           recentActivity,

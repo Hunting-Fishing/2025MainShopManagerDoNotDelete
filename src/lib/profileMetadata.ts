@@ -12,7 +12,6 @@ export interface ProfileMetadata {
 
 export async function getProfileMetadata(profileId: string): Promise<ProfileMetadata | null> {
   try {
-    // Using select instead of rpc since the function doesn't exist
     const { data, error } = await supabase
       .from('profile_metadata')
       .select('*')
@@ -91,7 +90,6 @@ export async function updateProfileMetadata(
   }
 }
 
-// Add the saveProfileMetadata function that's being referenced elsewhere
 export async function saveProfileMetadata(
   profileId: string,
   notes: string
