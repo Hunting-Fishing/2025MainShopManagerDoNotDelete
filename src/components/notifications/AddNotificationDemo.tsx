@@ -22,12 +22,14 @@ import { Label } from '@/components/ui/label';
 import { AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+type NotificationCategory = 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat';
+
 export function AddNotificationDemo() {
   const { addNotification } = useNotifications();
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [type, setType] = useState<'info' | 'warning' | 'success' | 'error'>('info');
-  const [category, setCategory] = useState<string>('system');
+  const [category, setCategory] = useState<NotificationCategory>('system');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [link, setLink] = useState('');
   const [open, setOpen] = useState(false);
@@ -145,7 +147,7 @@ export function AddNotificationDemo() {
             <Label htmlFor="category">Category</Label>
             <Select 
               value={category} 
-              onValueChange={setCategory}
+              onValueChange={(value) => setCategory(value as NotificationCategory)}
             >
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select category" />

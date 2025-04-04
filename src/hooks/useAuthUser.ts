@@ -95,6 +95,7 @@ export function useAuthUser() {
     user,
     userId: user?.id || null,
     loading,
+    isLoading: loading, // Add isLoading as an alias for loading for compatibility
     userName,
     isAuthenticated,
     isAdmin: false, // Adding this for compatibility with code that expects it

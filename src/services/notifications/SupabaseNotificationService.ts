@@ -1,6 +1,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { Notification } from "@/types/notification";
+import { NotificationDB } from "@/types/database.types";
 import { v4 as uuidv4 } from 'uuid';
 import { INotificationService } from "./types";
 
@@ -54,15 +55,24 @@ export class SupabaseNotificationService implements INotificationService {
           console.log(`Notification channel status: ${status}`);
         });
 
-      // Fetch existing notifications
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('timestamp', { ascending: false });
+      // Fetch existing notifications using REST API to avoid TypeScript errors
+      const response = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/notifications?user_id=eq.${userId}&order=timestamp.desc`,
+        {
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        }
+      );
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
       }
+
+      const data = await response.json() as NotificationDB[];
 
       // Process existing notifications
       if (data && data.length > 0) {
@@ -107,7 +117,7 @@ export class SupabaseNotificationService implements INotificationService {
     };
   }
 
-  // Add a new notification to the database
+  // Add a new notification to the database using direct fetch API
   public async addNotification(notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>): Promise<void> {
     if (!this.userId) {
       console.error("Cannot add notification: No user ID available");
@@ -115,21 +125,35 @@ export class SupabaseNotificationService implements INotificationService {
     }
 
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: this.userId,
-          title: notificationData.title,
-          message: notificationData.message,
-          type: notificationData.type,
-          link: notificationData.link,
-          sender: notificationData.sender,
-          recipient: notificationData.recipient,
-          category: notificationData.category || 'system',
-          priority: notificationData.priority || 'medium'
-        });
+      const payload = {
+        user_id: this.userId,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+        link: notificationData.link,
+        sender: notificationData.sender,
+        recipient: notificationData.recipient,
+        category: notificationData.category || 'system',
+        priority: notificationData.priority || 'medium'
+      };
 
-      if (error) throw error;
+      const response = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/notifications`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to add notification');
+      }
     } catch (error) {
       console.error("Error adding notification:", error);
     }
@@ -138,12 +162,23 @@ export class SupabaseNotificationService implements INotificationService {
   // Mark a notification as read in the database
   public async markAsRead(id: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', id);
+      const response = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/notifications?id=eq.${id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ read: true })
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to mark notification as read');
+      }
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -154,12 +189,23 @@ export class SupabaseNotificationService implements INotificationService {
     if (!this.userId) return;
 
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', this.userId);
+      const response = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/notifications?user_id=eq.${this.userId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ read: true })
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to mark all notifications as read');
+      }
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
     }
@@ -168,12 +214,22 @@ export class SupabaseNotificationService implements INotificationService {
   // Clear a notification from the database
   public async clearNotification(id: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', id);
+      const response = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/notifications?id=eq.${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          }
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to clear notification');
+      }
     } catch (error) {
       console.error("Error clearing notification:", error);
     }
@@ -184,12 +240,22 @@ export class SupabaseNotificationService implements INotificationService {
     if (!this.userId) return;
 
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', this.userId);
+      const response = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/notifications?user_id=eq.${this.userId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          }
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to clear all notifications');
+      }
     } catch (error) {
       console.error("Error clearing all notifications:", error);
     }
