@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
 import { updateUserProfile, showProfileUpdateToast } from '@/utils/profileUtils';
 import { findRoleByName, assignRoleToUser } from '@/utils/roleUtils';
+import { detectRoleFromJobTitle } from '@/utils/roleDetectionUtils';
 
 /**
  * Hook for managing team member profile updates including role assignments
@@ -10,6 +11,7 @@ import { findRoleByName, assignRoleToUser } from '@/utils/roleUtils';
 export function useTeamMemberUpdate() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detectedRole, setDetectedRole] = useState<string | null>(null);
 
   /**
    * Updates a team member's profile information and role
@@ -37,10 +39,13 @@ export function useTeamMemberUpdate() {
       let roleUpdateSuccess = false;
       let roleUpdateMessage = "";
       
-      if (values.role) {
+      // If no explicit role was provided, try to detect it from job title
+      const roleToAssign = values.role || (values.jobTitle ? detectRoleFromJobTitle(values.jobTitle) : null);
+      
+      if (roleToAssign) {
         try {
           // Find the role ID based on the role name
-          const { roleId, error: findRoleError } = await findRoleByName(values.role);
+          const { roleId, error: findRoleError } = await findRoleByName(roleToAssign);
           
           if (findRoleError || !roleId) {
             console.error("Error finding role:", findRoleError);
@@ -50,6 +55,11 @@ export function useTeamMemberUpdate() {
             const assignResult = await assignRoleToUser(memberId, roleId);
             roleUpdateSuccess = assignResult.success;
             roleUpdateMessage = assignResult.message;
+            
+            // Store the auto-detected role if it was used
+            if (!values.role && values.jobTitle) {
+              setDetectedRole(roleToAssign);
+            }
           }
         } catch (roleValidationError) {
           console.error("Role validation error:", roleValidationError);
@@ -82,7 +92,11 @@ export function useTeamMemberUpdate() {
     updateTeamMember,
     isLoading,
     error,
-    // Add a reset function to clear errors when needed
-    resetError: useCallback(() => setError(null), [])
+    detectedRole,
+    // Add a reset function to clear errors and state
+    resetError: useCallback(() => {
+      setError(null);
+      setDetectedRole(null);
+    }, [])
   };
 }

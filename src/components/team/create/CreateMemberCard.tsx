@@ -2,12 +2,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { TeamMemberForm } from "../form/TeamMemberForm";
-import { TeamMember } from "@/types/team";
+import { TeamMemberFormValues } from "@/components/team/form/formValidation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { getInitials } from "@/data/teamData";
 import { handleApiError } from "@/utils/errorHandling";
+import { CreateMemberForm } from "@/components/team/CreateMemberForm";
+import { detectRoleFromJobTitle, getRoleDbValue } from "@/utils/roleDetectionUtils";
 
 export function CreateMemberCard() {
   const navigate = useNavigate();
@@ -26,7 +26,9 @@ export function CreateMemberCard() {
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email,
-          phone: data.phone
+          phone: data.phone,
+          job_title: data.jobTitle,
+          department: data.department
         })
         .select();
 
@@ -34,45 +36,79 @@ export function CreateMemberCard() {
         throw profileError;
       }
 
-      // Get the role ID for the selected role
-      let { data: roleData, error: roleError } = await supabase
-        .from('roles')
-        .select('id')
-        .eq('name', data.role.toLowerCase())
-        .single();
-
-      if (roleError) {
-        // Try a case-insensitive search if exact match fails
-        const { data: roleDataCaseInsensitive, error: roleErrorCaseInsensitive } = await supabase
+      // Determine role - either from the form or auto-detect from job title
+      const roleName = data.role || (data.jobTitle ? detectRoleFromJobTitle(data.jobTitle) : null);
+      
+      if (roleName) {
+        // Convert role display name to database value
+        const roleDbValue = getRoleDbValue(roleName);
+        
+        // Get the role ID for the selected role
+        let { data: roleData, error: roleError } = await supabase
           .from('roles')
           .select('id')
-          .ilike('name', data.role)
+          .eq('name', roleDbValue)
           .single();
 
-        if (roleErrorCaseInsensitive) {
-          throw new Error(`Role "${data.role}" not found. Please select a valid role.`);
-        }
+        if (roleError) {
+          // Try a case-insensitive search if exact match fails
+          const { data: roleDataCaseInsensitive, error: roleErrorCaseInsensitive } = await supabase
+            .from('roles')
+            .select('id')
+            .ilike('name', roleDbValue)
+            .single();
 
-        // Use the case-insensitive match
-        roleData = roleDataCaseInsensitive;
+          if (roleErrorCaseInsensitive) {
+            console.warn(`Role "${roleName}" (${roleDbValue}) not found in database.`);
+          } else {
+            // Use the case-insensitive match
+            roleData = roleDataCaseInsensitive;
+            
+            // Assign the role to the user
+            const { error: roleAssignError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: newUserId, // Using the generated user ID
+                role_id: roleData.id
+              });
+
+            if (roleAssignError) {
+              console.error("Error assigning role:", roleAssignError);
+            }
+          }
+        } else if (roleData) {
+          // Assign the role to the user
+          const { error: roleAssignError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: newUserId, // Using the generated user ID
+              role_id: roleData.id
+            });
+
+          if (roleAssignError) {
+            console.error("Error assigning role:", roleAssignError);
+          }
+        }
       }
 
-      // Assign the role to the user
-      const { error: roleAssignError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: newUserId, // Using the generated user ID
-          role_id: roleData.id
-        });
+      // Save additional metadata if provided
+      if (data.notes) {
+        const { error: metadataError } = await supabase
+          .from('profile_metadata')
+          .insert({
+            profile_id: newUserId,
+            metadata: { notes: data.notes }
+          });
 
-      if (roleAssignError) {
-        throw roleAssignError;
+        if (metadataError) {
+          console.error("Error saving profile metadata:", metadataError);
+        }
       }
 
       toast({
         title: "Team member created",
-        description: `${data.firstName} ${data.lastName} has been added to the team`,
-        variant: "success",
+        description: `${data.firstName} ${data.lastName} has been added to the team${roleName ? ` with role: ${roleName}` : ''}`,
+        variant: "default",
       });
 
       // Navigate back to team list
@@ -88,7 +124,7 @@ export function CreateMemberCard() {
   return (
     <Card className="border border-slate-200 shadow-sm">
       <CardContent className="p-6">
-        <TeamMemberForm 
+        <CreateMemberForm 
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />
