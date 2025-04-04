@@ -94,14 +94,16 @@ export function useTeamMemberProfile(id: string | undefined) {
               // Ensure roleName is treated as a string with a proper type guard
               if (roleName && typeof roleName === 'string') {
                 // Format the role name (capitalize, replace underscores)
-                const words = roleName.split('_');
+                const roleNameStr: string = roleName;
+                const words = roleNameStr.split('_');
                 userRole = words
                   .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(' ');
               }
             } else if (typeof roleData === 'string') {
               // Role is directly a string
-              const words = roleData.split('_');
+              const roleDataStr: string = roleData;
+              const words = roleDataStr.split('_');
               userRole = words
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
