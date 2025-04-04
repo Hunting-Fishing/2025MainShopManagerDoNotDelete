@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
 import { CreateMemberForm } from "@/components/team/CreateMemberForm";
 import { detectRoleFromJobTitle, getRoleDbValue } from "@/utils/roleDetectionUtils";
+import { AppRole } from "@/utils/roleUtils";
 
 export function CreateMemberCard() {
   const navigate = useNavigate();
@@ -37,11 +38,11 @@ export function CreateMemberCard() {
       }
 
       // Determine role - either from the form or auto-detect from job title
-      const roleName = data.role || (data.jobTitle ? detectRoleFromJobTitle(data.jobTitle) : null);
+      const roleDisplayName = data.role || (data.jobTitle ? detectRoleFromJobTitle(data.jobTitle) : null);
       
-      if (roleName) {
+      if (roleDisplayName) {
         // Convert role display name to database value
-        const roleDbValue = getRoleDbValue(roleName);
+        const roleDbValue = getRoleDbValue(roleDisplayName);
         
         // Get the role ID for the selected role
         let { data: roleData, error: roleError } = await supabase
@@ -59,7 +60,7 @@ export function CreateMemberCard() {
             .single();
 
           if (roleErrorCaseInsensitive) {
-            console.warn(`Role "${roleName}" (${roleDbValue}) not found in database.`);
+            console.warn(`Role "${roleDisplayName}" (${roleDbValue}) not found in database.`);
           } else {
             // Use the case-insensitive match
             roleData = roleDataCaseInsensitive;
@@ -107,7 +108,7 @@ export function CreateMemberCard() {
 
       toast({
         title: "Team member created",
-        description: `${data.firstName} ${data.lastName} has been added to the team${roleName ? ` with role: ${roleName}` : ''}`,
+        description: `${data.firstName} ${data.lastName} has been added to the team${roleDisplayName ? ` with role: ${roleDisplayName}` : ''}`,
         variant: "default",
       });
 
