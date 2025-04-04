@@ -37,29 +37,40 @@ export default function Equipment() {
           return;
         }
         
-        // Transform the raw data into our EquipmentType format
-        const transformedData: EquipmentType[] = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          model: item.model,
-          serialNumber: item.serial_number,
-          manufacturer: item.manufacturer,
-          category: item.category,
-          purchaseDate: item.purchase_date,
-          installDate: item.install_date,
-          customer: item.customer,
-          location: item.location,
-          status: item.status,
-          nextMaintenanceDate: item.next_maintenance_date,
-          maintenanceFrequency: item.maintenance_frequency,
-          lastMaintenanceDate: item.last_maintenance_date,
-          warrantyExpiryDate: item.warranty_expiry_date,
-          warrantyStatus: item.warranty_status,
-          notes: item.notes,
-          workOrderHistory: item.work_order_history || [],
-          maintenanceHistory: item.maintenance_history || [],
-          maintenanceSchedules: item.maintenance_schedules || []
-        }));
+        // Transform the raw data into our EquipmentType format with proper type checking
+        const transformedData: EquipmentType[] = data.map(item => {
+          // Validate the status field to ensure it matches our union type
+          const validStatus = validateEquipmentStatus(item.status);
+          
+          // Validate the warranty status field
+          const validWarrantyStatus = validateWarrantyStatus(item.warranty_status);
+          
+          // Validate the maintenance frequency field
+          const validMaintenanceFrequency = validateMaintenanceFrequency(item.maintenance_frequency);
+          
+          return {
+            id: item.id,
+            name: item.name,
+            model: item.model,
+            serialNumber: item.serial_number,
+            manufacturer: item.manufacturer,
+            category: item.category,
+            purchaseDate: item.purchase_date,
+            installDate: item.install_date,
+            customer: item.customer,
+            location: item.location,
+            status: validStatus,
+            nextMaintenanceDate: item.next_maintenance_date,
+            maintenanceFrequency: validMaintenanceFrequency,
+            lastMaintenanceDate: item.last_maintenance_date,
+            warrantyExpiryDate: item.warranty_expiry_date,
+            warrantyStatus: validWarrantyStatus,
+            notes: item.notes,
+            workOrderHistory: item.work_order_history || [],
+            maintenanceHistory: item.maintenance_history || [],
+            maintenanceSchedules: item.maintenance_schedules || []
+          };
+        });
         
         setEquipment(transformedData);
         
@@ -102,6 +113,37 @@ export default function Equipment() {
     
     fetchEquipmentData();
   }, []);
+
+  // Helper functions to validate enum types
+  const validateEquipmentStatus = (status: string): EquipmentType["status"] => {
+    const validStatuses: EquipmentType["status"][] = ["operational", "maintenance-required", "out-of-service", "decommissioned"];
+    if (validStatuses.includes(status as EquipmentType["status"])) {
+      return status as EquipmentType["status"];
+    }
+    // Default to a valid value if the input is invalid
+    console.warn(`Invalid equipment status: ${status}, defaulting to "operational"`);
+    return "operational";
+  };
+  
+  const validateWarrantyStatus = (status: string): EquipmentType["warrantyStatus"] => {
+    const validStatuses: EquipmentType["warrantyStatus"][] = ["active", "expired", "not-applicable"];
+    if (validStatuses.includes(status as EquipmentType["warrantyStatus"])) {
+      return status as EquipmentType["warrantyStatus"];
+    }
+    console.warn(`Invalid warranty status: ${status}, defaulting to "not-applicable"`);
+    return "not-applicable";
+  };
+  
+  const validateMaintenanceFrequency = (frequency: string): EquipmentType["maintenanceFrequency"] => {
+    const validFrequencies: EquipmentType["maintenanceFrequency"][] = [
+      "monthly", "quarterly", "bi-annually", "annually", "as-needed"
+    ];
+    if (validFrequencies.includes(frequency as EquipmentType["maintenanceFrequency"])) {
+      return frequency as EquipmentType["maintenanceFrequency"];
+    }
+    console.warn(`Invalid maintenance frequency: ${frequency}, defaulting to "as-needed"`);
+    return "as-needed";
+  };
 
   // Filter equipment based on search query and status filter
   const filteredEquipment: EquipmentType[] = equipment.filter((item) => {
