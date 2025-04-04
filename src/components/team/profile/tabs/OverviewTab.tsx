@@ -7,6 +7,8 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ member }: OverviewTabProps) {
+  console.log("OverviewTab received member:", member);
+  
   return (
     <div className="space-y-6">
       <Card className="shadow-sm">

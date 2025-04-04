@@ -17,6 +17,8 @@ interface ProfileSidebarProps {
 }
 
 export function ProfileSidebar({ member }: ProfileSidebarProps) {
+  console.log("ProfileSidebar received member:", member);
+  
   return (
     <Card className="md:col-span-1 shadow-sm">
       <CardContent className="pt-6">

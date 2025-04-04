@@ -12,6 +12,8 @@ interface TeamMemberDetailsProps {
 }
 
 export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps) {
+  console.log("TeamMemberDetails received member:", member);
+  
   // Convert member data to form values format, ensuring all fields are present
   const memberFormData: TeamMemberFormValues = {
     id: member.id,  // Include id for database updates

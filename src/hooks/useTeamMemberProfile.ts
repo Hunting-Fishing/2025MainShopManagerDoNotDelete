@@ -55,8 +55,10 @@ export function useTeamMemberProfile(id: string | undefined) {
           .eq('user_id', id);
           
         if (rolesError) {
-          console.warn('Error fetching roles:', rolesError);
+          console.error('Error fetching roles:', rolesError);
         }
+
+        console.log('User roles data:', userRoles);
 
         // Get user's recent activity
         const { data: activityData } = await supabase
@@ -78,6 +80,8 @@ export function useTeamMemberProfile(id: string | undefined) {
         
         if (userRoles && userRoles.length > 0 && userRoles[0].roles) {
           const roleData = userRoles[0].roles;
+          console.log('Role data:', roleData);
+          
           // Check if roleData is an object with a name property
           if (typeof roleData === 'object' && roleData !== null && 'name' in roleData) {
             // Convert the database enum value to a display name (capitalize, replace underscores)
@@ -86,6 +90,8 @@ export function useTeamMemberProfile(id: string | undefined) {
               .split('_')
               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ');
+              
+            console.log('Formatted role name:', userRole);
           }
         }
 
@@ -118,6 +124,7 @@ export function useTeamMemberProfile(id: string | undefined) {
           lastActive: recentActivity?.[0]?.date || profileData.created_at
         };
 
+        console.log('Team member data to be set:', memberData);
         setMember(memberData);
       } catch (error) {
         console.error("Error fetching team member:", error);

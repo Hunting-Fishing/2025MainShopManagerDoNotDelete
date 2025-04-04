@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useLocation } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileHeader } from "@/components/team/profile/ProfileHeader";
 import { ProfileSidebar } from "@/components/team/profile/ProfileSidebar";
@@ -13,9 +13,19 @@ import { useDeleteMember } from "@/components/team/profile/useDeleteMember";
 
 export default function TeamMemberProfile() {
   const { id } = useParams();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const { member, loading } = useTeamMemberProfile(id);
   const { deleteDialogOpen, setDeleteDialogOpen, handleDeleteMember } = useDeleteMember();
+
+  // Check URL query parameters for tab selection
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['overview', 'permissions', 'activity', 'edit'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
 
   const handleEditClick = () => {
     setActiveTab("edit");
@@ -32,6 +42,8 @@ export default function TeamMemberProfile() {
   if (!member) {
     return <ProfileNotFound />;
   }
+
+  console.log("TeamMemberProfile rendering with member:", member);
 
   return (
     <div className="space-y-6">
