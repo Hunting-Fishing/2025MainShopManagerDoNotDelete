@@ -116,7 +116,7 @@ export function useTeamMemberProfile(id: string | undefined) {
         
         // Properly type check and extract notes from metadata
         if (metadata && typeof metadata === 'object' && metadata !== null) {
-          notes = (metadata as Record<string, any>).notes || "";
+          notes = metadata.notes || "";
         }
         
         // Create the member object with the fetched data

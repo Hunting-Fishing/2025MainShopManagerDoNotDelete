@@ -27,10 +27,15 @@ export async function getProfileMetadata(profileId: string): Promise<ProfileMeta
     // If data is found, process it
     if (data) {
       // Extract the notes from the metadata JSON field if it exists
-      const notes = data.metadata?.notes || "";
+      const metadata = data.metadata as Record<string, any> || {};
+      const notes = metadata.notes || "";
       
       return {
-        ...data,
+        id: data.id,
+        profile_id: data.profile_id,
+        metadata: metadata,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
         notes
       };
     }
