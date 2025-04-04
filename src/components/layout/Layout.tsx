@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Header } from './Header';
+import { Navbar } from './Navbar';
 import { NotificationsProvider } from '@/context/notifications';
 import { Outlet } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -25,6 +26,7 @@ export function Layout({ children }: LayoutProps) {
         <div className={`min-h-screen flex w-full flex-col md:flex-row ${isDark ? 'dark' : ''}`}>
           <AppSidebar />
           <div className="flex flex-col flex-1">
+            <Navbar />
             <Header />
             <main className="flex-1 p-4 md:p-6 bg-slate-50 dark:bg-slate-900 overflow-auto">
               {children || <Outlet />}

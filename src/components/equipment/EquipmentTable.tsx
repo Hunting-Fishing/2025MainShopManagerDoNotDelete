@@ -3,13 +3,25 @@ import { Link } from "react-router-dom";
 import { Equipment } from "@/types/equipment";
 import { EquipmentStatusBadge } from "./EquipmentStatusBadge";
 import { WarrantyStatusBadge } from "./WarrantyStatusBadge";
-import { CogIcon } from "lucide-react";
+import { CogIcon, Loader2 } from "lucide-react";
 
 interface EquipmentTableProps {
   equipment: Equipment[];
+  loading?: boolean;
 }
 
-export function EquipmentTable({ equipment }: EquipmentTableProps) {
+export function EquipmentTable({ equipment, loading = false }: EquipmentTableProps) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-slate-200 p-8">
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-12 w-12 text-slate-300 animate-spin" />
+          <p className="mt-4 text-slate-500">Loading equipment data...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <table className="min-w-full divide-y divide-slate-200">
