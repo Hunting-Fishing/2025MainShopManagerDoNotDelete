@@ -89,19 +89,20 @@ export function useTeamMemberProfile(id: string | undefined) {
           if (roleData) {
             if (typeof roleData === 'object' && roleData !== null && 'name' in roleData) {
               // Role is nested in an object
-              const roleName = roleData.name as string;
+              const roleName = roleData.name;
               
+              // Ensure roleName is treated as a string with a proper type guard
               if (roleName && typeof roleName === 'string') {
                 // Format the role name (capitalize, replace underscores)
-                userRole = roleName
-                  .split('_')
+                const words = roleName.split('_');
+                userRole = words
                   .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(' ');
               }
             } else if (typeof roleData === 'string') {
               // Role is directly a string
-              userRole = roleData
-                .split('_')
+              const words = roleData.split('_');
+              userRole = words
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
             }
@@ -130,7 +131,7 @@ export function useTeamMemberProfile(id: string | undefined) {
           department: profileData.department || '', // Use empty string if not available
           status: "Active", // Default status
           workOrders: {
-            assigned: 0,
+            assigned:.
             completed: 0
           },
           notes: notes,
