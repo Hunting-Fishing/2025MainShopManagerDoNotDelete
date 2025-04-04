@@ -82,7 +82,7 @@ export function EquipmentTable({ equipment, loading = false }: EquipmentTablePro
                   <EquipmentStatusBadge status={item.status} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {item.nextMaintenanceDate}
+                  {item.nextMaintenanceDate || 'Not scheduled'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <WarrantyStatusBadge status={item.warrantyStatus} />

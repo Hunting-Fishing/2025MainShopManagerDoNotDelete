@@ -21,7 +21,8 @@ export default function Equipment() {
     const fetchEquipmentData = async () => {
       setLoading(true);
       try {
-        // Fetch equipment data from Supabase
+        // Using a raw query for better type safety since the equipment table 
+        // might not be included in the generated types
         const { data, error } = await supabase
           .from('equipment')
           .select('*');
@@ -30,11 +31,13 @@ export default function Equipment() {
           throw error;
         }
         
-        if (!data) {
+        if (!data || data.length === 0) {
           setEquipment([]);
+          setLoading(false);
           return;
         }
         
+        // Transform the raw data into our EquipmentType format
         const transformedData: EquipmentType[] = data.map(item => ({
           id: item.id,
           name: item.name,
@@ -66,6 +69,7 @@ export default function Equipment() {
         thirtyDaysFromNow.setDate(today.getDate() + 30);
         
         const maintenanceDue = transformedData.filter(item => {
+          if (!item.nextMaintenanceDate) return false;
           const maintenanceDate = new Date(item.nextMaintenanceDate);
           return maintenanceDate >= today && maintenanceDate <= thirtyDaysFromNow;
         });
@@ -77,17 +81,18 @@ export default function Equipment() {
         sixtyDaysFromNow.setDate(today.getDate() + 60);
         
         const warrantyExpiring = transformedData.filter(item => {
+          if (!item.warrantyExpiryDate) return false;
           const expiryDate = new Date(item.warrantyExpiryDate);
           return expiryDate >= today && expiryDate <= sixtyDaysFromNow && item.warrantyStatus === "active";
         });
         
         setWarrantyExpiringEquipment(warrantyExpiring);
         
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching equipment data:", error);
         toast({
           title: "Error",
-          description: "Failed to load equipment data. Please try again later.",
+          description: error.message || "Failed to load equipment data. Please try again later.",
           variant: "destructive"
         });
       } finally {

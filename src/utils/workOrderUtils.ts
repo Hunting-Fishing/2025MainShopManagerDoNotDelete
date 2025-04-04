@@ -289,19 +289,22 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
   }
 };
 
-// Format a date string (YYYY-MM-DD) to a more readable format
+/**
+ * Format a date string to a more readable format
+ * @param dateString - Date string to format
+ * @returns Formatted date string
+ */
 export const formatDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }).format(date);
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return dateString; // Fallback to original string if formatting fails
-  }
+  if (!dateString) return 'N/A';
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 };
 
 // Create a new invoice from a work order (to be implemented)
