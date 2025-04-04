@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, AlertTriangle, Settings, ShieldCheck, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Equipment } from "@/types/equipment";
+import { Equipment, MaintenanceRecord, MaintenanceSchedule } from "@/types/equipment";
 import { EquipmentRecommendation, getEquipmentRecommendations, getRecommendationTypeColor } from "@/utils/equipment/recommendations";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -52,7 +52,7 @@ export function EquipmentRecommendations() {
             : [];
           
           const maintenanceHistory = Array.isArray(item.maintenance_history)
-            ? item.maintenance_history.filter(record => 
+            ? item.maintenance_history.filter((record): record is MaintenanceRecord => 
                 typeof record === 'object' && 
                 record !== null &&
                 'id' in record &&
@@ -63,7 +63,7 @@ export function EquipmentRecommendations() {
             : [];
           
           const maintenanceSchedules = Array.isArray(item.maintenance_schedules) 
-            ? item.maintenance_schedules.filter(schedule =>
+            ? item.maintenance_schedules.filter((schedule): schedule is MaintenanceSchedule =>
                 typeof schedule === 'object' &&
                 schedule !== null &&
                 'frequencyType' in schedule &&

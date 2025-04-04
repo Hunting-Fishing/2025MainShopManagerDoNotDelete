@@ -5,7 +5,7 @@ import { EquipmentTable } from "@/components/equipment/EquipmentTable";
 import { MaintenanceDueCard } from "@/components/equipment/MaintenanceDueCard";
 import { WarrantyExpiringCard } from "@/components/equipment/WarrantyExpiringCard";
 import { EquipmentRecommendationsCard } from "@/components/equipment/EquipmentRecommendationsCard";
-import { Equipment as EquipmentType } from "@/types/equipment";
+import { Equipment as EquipmentType, MaintenanceRecord, MaintenanceSchedule } from "@/types/equipment";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { getEquipmentRecommendations } from "@/utils/equipment/recommendations";
@@ -43,9 +43,35 @@ export default function Equipment() {
         const validStatus = validateEquipmentStatus(item.status);
         const validWarrantyStatus = validateWarrantyStatus(item.warranty_status);
         const validMaintenanceFrequency = validateMaintenanceFrequency(item.maintenance_frequency);
-        const workOrderHistory = ensureStringArray(item.work_order_history);
-        const maintenanceHistory = ensureMaintenanceRecordArray(item.maintenance_history);
-        const maintenanceSchedules = ensureMaintenanceScheduleArray(item.maintenance_schedules);
+        
+        const workOrderHistory = Array.isArray(item.work_order_history) 
+          ? item.work_order_history.filter(id => typeof id === 'string').map(String)
+          : [];
+        
+        const maintenanceHistory = Array.isArray(item.maintenance_history)
+          ? item.maintenance_history.filter((record): record is MaintenanceRecord => 
+              typeof record === 'object' && 
+              record !== null &&
+              'id' in record &&
+              'date' in record &&
+              'technician' in record &&
+              'description' in record
+          )
+          : [];
+        
+        const maintenanceSchedules = Array.isArray(item.maintenance_schedules) 
+          ? item.maintenance_schedules.filter((schedule): schedule is MaintenanceSchedule =>
+              typeof schedule === 'object' &&
+              schedule !== null &&
+              'frequencyType' in schedule &&
+              'nextDate' in schedule &&
+              'description' in schedule &&
+              'estimatedDuration' in schedule &&
+              'isRecurring' in schedule &&
+              'notificationsEnabled' in schedule &&
+              'reminderDays' in schedule
+          )
+          : [];
         
         return {
           id: item.id,
@@ -135,47 +161,6 @@ export default function Equipment() {
     }
     console.warn(`Invalid maintenance frequency: ${frequency}, defaulting to "as-needed"`);
     return "as-needed";
-  };
-  
-  const ensureStringArray = (value: any): string[] => {
-    if (!value) return [];
-    if (Array.isArray(value)) {
-      return value.filter(item => typeof item === 'string');
-    }
-    return [];
-  };
-  
-  const ensureMaintenanceRecordArray = (value: any): EquipmentType["maintenanceHistory"] => {
-    if (!value) return [];
-    if (Array.isArray(value)) {
-      return value.filter(item => 
-        typeof item === 'object' && 
-        item !== null && 
-        'id' in item && 
-        'date' in item && 
-        'technician' in item && 
-        'description' in item
-      );
-    }
-    return [];
-  };
-  
-  const ensureMaintenanceScheduleArray = (value: any): EquipmentType["maintenanceSchedules"] => {
-    if (!value) return [];
-    if (Array.isArray(value)) {
-      return value.filter(item => 
-        typeof item === 'object' && 
-        item !== null && 
-        'frequencyType' in item && 
-        'nextDate' in item && 
-        'description' in item && 
-        'estimatedDuration' in item && 
-        'isRecurring' in item && 
-        'notificationsEnabled' in item && 
-        'reminderDays' in item
-      );
-    }
-    return [];
   };
 
   const filteredEquipment: EquipmentType[] = equipment.filter((item) => {

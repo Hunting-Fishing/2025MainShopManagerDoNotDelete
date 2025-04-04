@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Equipment } from "@/types/equipment";
+import { Equipment, MaintenanceRecord, MaintenanceSchedule } from "@/types/equipment";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { EquipmentDetailsHeader } from "@/components/equipment-details/EquipmentDetailsHeader";
@@ -52,7 +52,7 @@ export default function EquipmentDetails() {
         return;
       }
       
-      // Transform the data into our Equipment type
+      // Transform the data into our Equipment type with proper type conversions
       const equipment: Equipment = {
         id: equipmentData.id,
         name: equipmentData.name,
@@ -128,19 +128,19 @@ export default function EquipmentDetails() {
     return "as-needed";
   };
   
-  // Helper functions to ensure proper array types from JSON
+  // Helper functions to ensure proper array types from JSON with type guards
   const ensureStringArray = (value: any): string[] => {
     if (!value) return [];
     if (Array.isArray(value)) {
-      return value.filter(item => typeof item === 'string');
+      return value.filter(item => typeof item === 'string').map(String);
     }
     return [];
   };
   
-  const ensureMaintenanceRecordArray = (value: any): Equipment["maintenanceHistory"] => {
+  const ensureMaintenanceRecordArray = (value: any): MaintenanceRecord[] => {
     if (!value) return [];
     if (Array.isArray(value)) {
-      return value.filter(item => 
+      return value.filter((item): item is MaintenanceRecord => 
         typeof item === 'object' && 
         item !== null && 
         'id' in item && 
@@ -152,10 +152,10 @@ export default function EquipmentDetails() {
     return [];
   };
   
-  const ensureMaintenanceScheduleArray = (value: any): Equipment["maintenanceSchedules"] => {
+  const ensureMaintenanceScheduleArray = (value: any): MaintenanceSchedule[] => {
     if (!value) return [];
     if (Array.isArray(value)) {
-      return value.filter(item => 
+      return value.filter((item): item is MaintenanceSchedule => 
         typeof item === 'object' && 
         item !== null && 
         'frequencyType' in item && 
