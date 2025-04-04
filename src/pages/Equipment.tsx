@@ -48,6 +48,11 @@ export default function Equipment() {
           // Validate the maintenance frequency field
           const validMaintenanceFrequency = validateMaintenanceFrequency(item.maintenance_frequency);
           
+          // Handle JSON arrays with proper type casting
+          const workOrderHistory = ensureStringArray(item.work_order_history);
+          const maintenanceHistory = ensureMaintenanceRecordArray(item.maintenance_history);
+          const maintenanceSchedules = ensureMaintenanceScheduleArray(item.maintenance_schedules);
+          
           return {
             id: item.id,
             name: item.name,
@@ -66,9 +71,9 @@ export default function Equipment() {
             warrantyExpiryDate: item.warranty_expiry_date,
             warrantyStatus: validWarrantyStatus,
             notes: item.notes,
-            workOrderHistory: item.work_order_history || [],
-            maintenanceHistory: item.maintenance_history || [],
-            maintenanceSchedules: item.maintenance_schedules || []
+            workOrderHistory: workOrderHistory,
+            maintenanceHistory: maintenanceHistory,
+            maintenanceSchedules: maintenanceSchedules
           };
         });
         
@@ -143,6 +148,48 @@ export default function Equipment() {
     }
     console.warn(`Invalid maintenance frequency: ${frequency}, defaulting to "as-needed"`);
     return "as-needed";
+  };
+  
+  // Helper functions to ensure proper array types from JSON
+  const ensureStringArray = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter(item => typeof item === 'string');
+    }
+    return [];
+  };
+  
+  const ensureMaintenanceRecordArray = (value: any): EquipmentType["maintenanceHistory"] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        'id' in item && 
+        'date' in item && 
+        'technician' in item && 
+        'description' in item
+      );
+    }
+    return [];
+  };
+  
+  const ensureMaintenanceScheduleArray = (value: any): EquipmentType["maintenanceSchedules"] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        'frequencyType' in item && 
+        'nextDate' in item && 
+        'description' in item && 
+        'estimatedDuration' in item && 
+        'isRecurring' in item && 
+        'notificationsEnabled' in item && 
+        'reminderDays' in item
+      );
+    }
+    return [];
   };
 
   // Filter equipment based on search query and status filter
