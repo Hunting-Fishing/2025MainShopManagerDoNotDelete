@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
@@ -36,8 +37,8 @@ export function useTeamMemberUpdate() {
           last_name: lastName,
           email: values.email,
           phone: values.phone || null,
-          job_title: values.jobTitle, // Using the new job_title column
-          department: values.department, // Using the new department column
+          job_title: values.jobTitle,
+          department: values.department,
         })
         .eq('id', memberId)
         .select();

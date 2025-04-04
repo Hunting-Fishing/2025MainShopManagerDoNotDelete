@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 /**
  * Saves metadata for a profile
  */
-export async function saveProfileMetadata(profileId: string, metadata: Record<string, any>) {
+export async function saveProfileMetadata(profileId: string, metadata: Record<string, any>): Promise<boolean> {
   try {
     // Check if metadata already exists
     const { data: existingData, error: fetchError } = await supabase

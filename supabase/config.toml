@@ -38,10 +38,7 @@ redirect_uri = ""
 url = ""
 
 [functions]
-# Define functions as a section rather than individual properties
-# Previously these were incorrectly defined as:
-# port = 54321
-# serve_port = 54321
+# Define functions properly as a section
 port = 54321
 serve_port = 54321
 
