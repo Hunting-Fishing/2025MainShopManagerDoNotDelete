@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 const navigation = [
@@ -19,7 +19,7 @@ export function Navbar() {
   const location = useLocation();
   
   return (
-    <header className="bg-white shadow-sm dark:bg-slate-800 dark:border-slate-700">
+    <header className="bg-white shadow-sm dark:bg-slate-800 dark:border-slate-700 border-b border-slate-200">
       <nav className="mx-auto flex max-w-full items-center justify-between px-6 py-3 lg:px-8" aria-label="Global">
         <div className="flex lg:flex-1">
           <Link to="/dashboard" className="-m-1.5 p-1.5">

@@ -35,7 +35,6 @@ export default function Equipment() {
           return;
         }
         
-        // Transform data to match EquipmentType
         const transformedData: EquipmentType[] = data.map(item => ({
           id: item.id,
           name: item.name,

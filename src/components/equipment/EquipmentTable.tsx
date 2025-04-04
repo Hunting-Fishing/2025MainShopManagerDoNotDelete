@@ -88,10 +88,10 @@ export function EquipmentTable({ equipment, loading = false }: EquipmentTablePro
                   <WarrantyStatusBadge status={item.warrantyStatus} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link to={`/equipment/${item.id}`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">
+                  <Link to={`/equipment/${item.id}`} className="text-blue-600 hover:text-blue-800 mr-4">
                     View
                   </Link>
-                  <Link to={`/equipment/${item.id}/edit`} className="text-esm-blue-600 hover:text-esm-blue-800">
+                  <Link to={`/equipment/${item.id}/edit`} className="text-blue-600 hover:text-blue-800">
                     Edit
                   </Link>
                 </td>

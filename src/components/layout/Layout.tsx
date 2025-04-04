@@ -23,14 +23,16 @@ export function Layout({ children }: LayoutProps) {
   return (
     <NotificationsProvider>
       <SidebarProvider>
-        <div className={`min-h-screen flex w-full flex-col md:flex-row ${isDark ? 'dark' : ''}`}>
-          <AppSidebar />
-          <div className="flex flex-col flex-1">
-            <Navbar />
-            <Header />
-            <main className="flex-1 p-4 md:p-6 bg-slate-50 dark:bg-slate-900 overflow-auto">
-              {children || <Outlet />}
-            </main>
+        <div className={`min-h-screen flex w-full flex-col ${isDark ? 'dark' : ''}`}>
+          <Navbar />
+          <div className="flex flex-1 flex-col md:flex-row">
+            <AppSidebar />
+            <div className="flex flex-col flex-1">
+              <Header />
+              <main className="flex-1 p-4 md:p-6 bg-slate-50 dark:bg-slate-900 overflow-auto">
+                {children || <Outlet />}
+              </main>
+            </div>
           </div>
         </div>
       </SidebarProvider>
