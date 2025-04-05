@@ -5,16 +5,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CalendarClock, Bell, Plus, ClipboardCheck, Filter } from "lucide-react";
-import { ServiceRemindersList } from "@/components/reminders/ServiceRemindersList";
+import { RemindersList } from "@/components/reminders/list/RemindersList";
 import { AddReminderForm } from "@/components/reminders/AddReminderForm";
+import { DateRange } from "react-day-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ServiceReminders() {
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   
   const handleReminderCreated = () => {
     setReminderDialogOpen(false);
     // We would refresh the reminders list here
+  };
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
   };
 
   return (
@@ -27,10 +36,6 @@ export default function ServiceReminders() {
           </p>
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Button variant="outline">
-            <Filter className="mr-2 h-4 w-4" />
-            Filters
-          </Button>
           <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -46,6 +51,35 @@ export default function ServiceReminders() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-4 items-center">
+        <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? undefined : value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <DateRangePicker 
+          value={dateRange}
+          onChange={handleDateRangeChange}
+          placeholder="Filter by date"
+        />
+        
+        <Button variant="outline" onClick={() => {
+          setStatusFilter(undefined);
+          setDateRange(undefined);
+        }}>
+          <Filter className="mr-2 h-4 w-4" />
+          Reset Filters
+        </Button>
       </div>
 
       <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
@@ -65,41 +99,25 @@ export default function ServiceReminders() {
         </TabsList>
         
         <TabsContent value="upcoming" className="mt-6">
-          <ServiceRemindersList />
+          <RemindersList 
+            statusFilter={statusFilter}
+            dateRange={dateRange}
+            limit={activeTab === "upcoming" ? 30 : undefined}
+          />
         </TabsContent>
         
         <TabsContent value="pending" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Pending Notifications</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Bell className="h-12 w-12 text-slate-300 mb-2" />
-                <h3 className="text-lg font-medium">No pending notifications</h3>
-                <p className="text-sm text-slate-500 mt-1 max-w-md">
-                  There are no service reminders waiting to be sent. Create a new reminder or check the upcoming tab.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <RemindersList 
+            statusFilter="pending"
+            dateRange={dateRange}
+          />
         </TabsContent>
         
         <TabsContent value="completed" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Completed Reminders</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <ClipboardCheck className="h-12 w-12 text-slate-300 mb-2" />
-                <h3 className="text-lg font-medium">No completed reminders</h3>
-                <p className="text-sm text-slate-500 mt-1 max-w-md">
-                  There are no completed service reminders yet. Once reminders are marked as complete, they will appear here.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <RemindersList 
+            statusFilter="completed"
+            dateRange={dateRange}
+          />
         </TabsContent>
       </Tabs>
     </div>

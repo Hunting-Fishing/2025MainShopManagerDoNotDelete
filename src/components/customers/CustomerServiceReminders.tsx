@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Calendar } from "lucide-react";
-import { ServiceRemindersList } from "@/components/reminders/ServiceRemindersList";
+import { RemindersList } from "@/components/reminders/list/RemindersList";
 import { AddReminderForm } from "@/components/reminders/AddReminderForm";
 import { Customer } from "@/types/customer";
 
@@ -46,7 +46,7 @@ export function CustomerServiceReminders({ customer }: CustomerServiceRemindersP
         </Dialog>
       </CardHeader>
       <CardContent className="p-0">
-        <ServiceRemindersList customerId={customer.id} limit={5} />
+        <RemindersList customerId={customer.id} limit={5} />
       </CardContent>
     </Card>
   );
