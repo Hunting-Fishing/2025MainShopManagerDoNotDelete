@@ -1,30 +1,32 @@
 
-import { Badge } from "@/components/ui/badge";
 import { ReminderStatus } from "@/types/reminder";
-import { isAfter, parseISO } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
-interface ReminderStatusBadgeProps {
+export interface ReminderStatusBadgeProps {
   status: ReminderStatus;
-  dueDate: string;
 }
 
-export function ReminderStatusBadge({ status, dueDate }: ReminderStatusBadgeProps) {
-  const isPastDue = isAfter(new Date(), parseISO(dueDate));
+export function ReminderStatusBadge({ status }: ReminderStatusBadgeProps) {
+  const getBadgeVariant = () => {
+    switch (status) {
+      case "pending":
+        return { variant: "outline", className: "border-amber-500 text-amber-500" };
+      case "sent":
+        return { variant: "outline", className: "border-blue-500 text-blue-500" };
+      case "completed":
+        return { variant: "outline", className: "border-green-500 text-green-500" };
+      case "cancelled":
+        return { variant: "outline", className: "border-gray-500 text-gray-500" };
+      default:
+        return { variant: "outline", className: "" };
+    }
+  };
+
+  const badgeStyle = getBadgeVariant();
   
-  switch (status) {
-    case "pending":
-      return (
-        <Badge className={isPastDue ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"}>
-          {isPastDue ? "Past Due" : "Pending"}
-        </Badge>
-      );
-    case "sent":
-      return <Badge className="bg-blue-100 text-blue-800">Notification Sent</Badge>;
-    case "completed":
-      return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-    case "cancelled":
-      return <Badge className="bg-slate-100 text-slate-800">Cancelled</Badge>;
-    default:
-      return null;
-  }
+  return (
+    <Badge variant={badgeStyle.variant as any} className={badgeStyle.className}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </Badge>
+  );
 }

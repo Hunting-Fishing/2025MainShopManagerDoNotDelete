@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface ReminderActionsProps {
   reminder: ServiceReminder;
-  onStatusUpdate: (reminderId: string, updatedReminder: ServiceReminder) => void;
+  onStatusUpdate: (reminderId: string, updatedReminder: ServiceReminder) => Promise<void>;
 }
 
 export function ReminderActions({ reminder, onStatusUpdate }: ReminderActionsProps) {
@@ -33,14 +33,7 @@ export function ReminderActions({ reminder, onStatusUpdate }: ReminderActionsPro
 
   const handleSendNotification = async (reminderId: string) => {
     try {
-      await sendReminderNotification(reminderId);
-      
-      // Create a shallow copy of the reminder with updated notification properties
-      const updatedReminder = { 
-        ...reminder, 
-        notificationSent: true, 
-        notificationDate: new Date().toISOString() 
-      };
+      const updatedReminder = await sendReminderNotification(reminderId);
       
       onStatusUpdate(reminderId, updatedReminder);
       

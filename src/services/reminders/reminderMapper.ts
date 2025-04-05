@@ -1,5 +1,5 @@
 
-import { ServiceReminder } from "@/types/reminder";
+import { ServiceReminder, ReminderStatus, ReminderType } from "@/types/reminder";
 
 // Map database record to ServiceReminder type
 export const mapReminderFromDb = (record: any): ServiceReminder => {
@@ -7,11 +7,11 @@ export const mapReminderFromDb = (record: any): ServiceReminder => {
     id: record.id,
     customerId: record.customer_id,
     vehicleId: record.vehicle_id,
-    type: record.type,
+    type: record.type as ReminderType,
     title: record.title,
     description: record.description,
     dueDate: record.due_date,
-    status: record.status,
+    status: record.status as ReminderStatus,
     notificationSent: record.notification_sent,
     notificationDate: record.notification_date,
     createdAt: record.created_at,

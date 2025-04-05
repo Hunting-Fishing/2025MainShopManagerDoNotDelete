@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { createReminder } from "@/services/reminderService";
-import { ReminderType } from "@/types/reminder";
+import { ReminderType, CreateReminderParams } from "@/types/reminder";
 import { reminderFormSchema, ReminderFormValues } from "../schemas/reminderFormSchema";
 
 interface UseReminderFormProps {
@@ -35,7 +35,7 @@ export function useReminderForm({ customerId, vehicleId, onSuccess }: UseReminde
     try {
       const formattedDate = format(values.dueDate, "yyyy-MM-dd");
       
-      await createReminder({
+      const reminderParams: CreateReminderParams = {
         customerId: values.customerId,
         vehicleId: values.vehicleId,
         type: values.type as ReminderType,
@@ -43,7 +43,9 @@ export function useReminderForm({ customerId, vehicleId, onSuccess }: UseReminde
         description: values.description,
         dueDate: formattedDate,
         notes: values.notes,
-      });
+      };
+      
+      await createReminder(reminderParams);
       
       toast({
         title: "Reminder Created",

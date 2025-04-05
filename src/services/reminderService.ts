@@ -1,7 +1,8 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ServiceReminder } from "@/types/reminder";
+import { supabase } from "@/lib/supabase";
+import { ServiceReminder, ReminderStatus, CreateReminderParams } from "@/types/reminder";
 import { DateRange } from "react-day-picker";
+import { mapReminderFromDb, mapReminderToDb } from "./reminders/reminderMapper";
 
 interface ReminderFilters {
   status?: string;
@@ -50,7 +51,7 @@ export async function getAllReminders(filters?: ReminderFilters): Promise<Servic
     const { data, error } = await query;
     
     if (error) throw error;
-    return data as ServiceReminder[];
+    return (data || []).map(mapReminderFromDb);
   } catch (error) {
     console.error('Error fetching all reminders:', error);
     throw error;
@@ -71,7 +72,7 @@ export async function getCustomerReminders(customerId: string, filters?: Reminde
     const { data, error } = await query;
     
     if (error) throw error;
-    return data as ServiceReminder[];
+    return (data || []).map(mapReminderFromDb);
   } catch (error) {
     console.error(`Error fetching reminders for customer ${customerId}:`, error);
     throw error;
@@ -92,7 +93,7 @@ export async function getVehicleReminders(vehicleId: string, filters?: ReminderF
     const { data, error } = await query;
     
     if (error) throw error;
-    return data as ServiceReminder[];
+    return (data || []).map(mapReminderFromDb);
   } catch (error) {
     console.error(`Error fetching reminders for vehicle ${vehicleId}:`, error);
     throw error;
@@ -119,7 +120,7 @@ export async function getUpcomingReminders(days: number, filters?: ReminderFilte
     const { data, error } = await query;
     
     if (error) throw error;
-    return data as ServiceReminder[];
+    return (data || []).map(mapReminderFromDb);
   } catch (error) {
     console.error(`Error fetching upcoming reminders:`, error);
     throw error;
@@ -127,17 +128,25 @@ export async function getUpcomingReminders(days: number, filters?: ReminderFilte
 }
 
 // Update a reminder's status
-export async function updateReminderStatus(reminderId: string, status: string, notes?: string): Promise<void> {
+export async function updateReminderStatus(reminderId: string, status: string, notes?: string): Promise<ServiceReminder> {
   try {
     const updateData: any = { status };
     if (notes !== undefined) updateData.notes = notes;
     
-    const { error } = await supabase
+    if (status === "completed") {
+      updateData.completed_at = new Date().toISOString();
+      updateData.completed_by = "current-user"; // In a real app, get this from auth context
+    }
+    
+    const { data, error } = await supabase
       .from('service_reminders')
       .update(updateData)
-      .eq('id', reminderId);
+      .eq('id', reminderId)
+      .select()
+      .single();
       
     if (error) throw error;
+    return mapReminderFromDb(data);
   } catch (error) {
     console.error(`Error updating reminder status for ${reminderId}:`, error);
     throw error;
@@ -145,18 +154,72 @@ export async function updateReminderStatus(reminderId: string, status: string, n
 }
 
 // Create a new reminder
-export async function createReminder(reminderData: Omit<ServiceReminder, 'id'>): Promise<ServiceReminder> {
+export async function createReminder(params: CreateReminderParams): Promise<ServiceReminder> {
   try {
+    const currentUser = "current-user"; // In a real app, get this from auth context
+    
+    const reminderData = {
+      customer_id: params.customerId,
+      vehicle_id: params.vehicleId || null,
+      type: params.type,
+      title: params.title,
+      description: params.description,
+      due_date: params.dueDate,
+      status: "pending" as ReminderStatus,
+      notification_sent: false,
+      created_by: currentUser,
+      notes: params.notes || null
+    };
+
+    const { data, error } = await supabase
+      .from("service_reminders")
+      .insert(reminderData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating reminder:", error);
+      throw error;
+    }
+
+    return mapReminderFromDb(data);
+  } catch (error) {
+    console.error('Error creating reminder:', error);
+    throw error;
+  }
+}
+
+// Send a reminder notification
+export async function sendReminderNotification(reminderId: string): Promise<ServiceReminder> {
+  try {
+    // Get the current reminder
+    const { data: reminder, error: fetchError } = await supabase
+      .from('service_reminders')
+      .select('*')
+      .eq('id', reminderId)
+      .single();
+      
+    if (fetchError) throw fetchError;
+    
+    // In a real app, this would trigger an actual notification system
+    console.log(`Sending notification for reminder ${reminderId}`);
+    
+    // Update the reminder to mark notification as sent
     const { data, error } = await supabase
       .from('service_reminders')
-      .insert(reminderData)
+      .update({
+        notification_sent: true,
+        notification_date: new Date().toISOString()
+      })
+      .eq('id', reminderId)
       .select()
       .single();
       
     if (error) throw error;
-    return data as ServiceReminder;
+    
+    return mapReminderFromDb(data);
   } catch (error) {
-    console.error('Error creating reminder:', error);
+    console.error(`Error sending notification for reminder ${reminderId}:`, error);
     throw error;
   }
 }
@@ -172,30 +235,6 @@ export async function deleteReminder(reminderId: string): Promise<void> {
     if (error) throw error;
   } catch (error) {
     console.error(`Error deleting reminder ${reminderId}:`, error);
-    throw error;
-  }
-}
-
-// Mark a reminder as completed
-export async function completeReminder(reminderId: string, completionNotes?: string): Promise<void> {
-  try {
-    const updateData: any = { 
-      status: 'completed', 
-      completed_date: new Date().toISOString() 
-    };
-    
-    if (completionNotes) {
-      updateData.notes = completionNotes;
-    }
-    
-    const { error } = await supabase
-      .from('service_reminders')
-      .update(updateData)
-      .eq('id', reminderId);
-      
-    if (error) throw error;
-  } catch (error) {
-    console.error(`Error completing reminder ${reminderId}:`, error);
     throw error;
   }
 }
