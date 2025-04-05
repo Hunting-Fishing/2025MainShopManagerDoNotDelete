@@ -8,6 +8,10 @@ import { TeamMemberGrid } from "@/components/team/TeamMemberGrid";
 import { TeamMemberTable } from "@/components/team/TeamMemberTable";
 import { getInitials } from "@/data/teamData";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useAuthUser } from "@/hooks/useAuthUser";
+import { Button } from "@/components/ui/button";
+import { assignRoleToUser, findRoleByName } from "@/utils/roleManagement";
+import { toast } from "@/hooks/use-toast";
 
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,12 +19,17 @@ export default function Team() {
   const [departmentFilter, setDepartmentFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [isAssigningRole, setIsAssigningRole] = useState(false);
+  
+  // Get current user
+  const { userId } = useAuthUser();
   
   // Use our hook to get team members data from Supabase
   const { teamMembers, isLoading, error } = useTeamMembers();
 
   // Log all roles for debugging
   console.log("All available roles:", teamMembers.map(member => member.role));
+  console.log("Current user ID:", userId);
 
   // Get unique roles and departments for filters
   const roles = Array.from(new Set(teamMembers.map(member => member.role))).sort();
@@ -54,10 +63,78 @@ export default function Team() {
     setDepartmentFilter([]);
     setStatusFilter([]);
   };
+  
+  // Handle assigning the Owner role to the current user if they don't have a role
+  const handleSelfAssignOwnerRole = async () => {
+    if (!userId) return;
+    
+    setIsAssigningRole(true);
+    try {
+      // Find the owner role ID
+      const { roleId, error: findError } = await findRoleByName("Owner");
+      
+      if (findError || !roleId) {
+        console.error("Could not find Owner role:", findError);
+        toast({
+          title: "Error",
+          description: "Could not find the Owner role. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Assign the role
+      const { success, message } = await assignRoleToUser(userId, roleId);
+      
+      if (success) {
+        toast({
+          title: "Role assigned",
+          description: "You are now an Owner. The page will refresh in 3 seconds.",
+        });
+        // Refresh the page after a short delay to show the updated role
+        setTimeout(() => window.location.reload(), 3000);
+      } else {
+        toast({
+          title: "Error",
+          description: message || "Failed to assign role. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Error assigning role:", err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAssigningRole(false);
+    }
+  };
+  
+  // Check if the current user has no role
+  const currentUser = userId ? teamMembers.find(member => member.id === userId) : null;
+  const currentUserHasNoRole = currentUser && currentUser.role === "No Role Assigned";
 
   return (
     <div className="space-y-6">
       <TeamHeader />
+      
+      {currentUserHasNoRole && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <h3 className="text-lg font-medium text-yellow-800">You don't have a role assigned</h3>
+          <p className="text-yellow-700 mb-4">
+            As the first user of the system, you should assign yourself as the Owner.
+          </p>
+          <Button 
+            onClick={handleSelfAssignOwnerRole}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white"
+            disabled={isAssigningRole}
+          >
+            {isAssigningRole ? "Assigning..." : "Make Me an Owner"}
+          </Button>
+        </div>
+      )}
 
       {/* Filters and search */}
       <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">

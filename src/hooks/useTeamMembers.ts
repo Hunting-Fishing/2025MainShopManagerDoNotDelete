@@ -14,8 +14,25 @@ export function useTeamMembers() {
       setError(null);
       
       try {
-        // First, fetch profiles from Supabase that have user_roles assigned
-        // This ensures we only get actual team members and not customers
+        // First, fetch all profiles from Supabase to include users that may not have assigned roles yet
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            job_title,
+            department,
+            created_at
+          `);
+
+        if (profilesError) {
+          throw profilesError;
+        }
+
+        // Then fetch user_roles to identify who has assigned roles
         const { data: userRoles, error: rolesError } = await supabase
           .from('user_roles')
           .select(`
@@ -28,35 +45,8 @@ export function useTeamMembers() {
           `);
           
         if (rolesError) {
-          throw rolesError;
-        }
-
-        // Extract the user IDs from user_roles to fetch only those profiles
-        const teamMemberIds = userRoles.map(ur => ur.user_id);
-        
-        if (teamMemberIds.length === 0) {
-          setTeamMembers([]);
-          setIsLoading(false);
-          return;
-        }
-
-        // Now fetch only team member profiles
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            job_title,
-            department,
-            created_at
-          `)
-          .in('id', teamMemberIds);
-
-        if (profilesError) {
-          throw profilesError;
+          console.warn("Error fetching user roles:", rolesError);
+          // Continue without roles data, we'll show users without roles assigned
         }
 
         // Get work order data for technicians
@@ -71,8 +61,8 @@ export function useTeamMembers() {
 
         // Transform the profile data to match TeamMember type
         const mappedMembers: TeamMember[] = profiles.map(profile => {
-          // Extract role information - ensure we properly handle the owner role
-          let userRole = 'User'; // Default role
+          // Extract role information - default to "No Role" if no role is assigned
+          let userRole = 'No Role Assigned'; // Default for users without roles
           
           if (userRoles && userRoles.length > 0) {
             const userRoleData = userRoles.find(ur => ur.user_id === profile.id);
@@ -93,6 +83,14 @@ export function useTeamMembers() {
                 userRole = 'Technician';
               } else if (dbRoleName === 'reception') {
                 userRole = 'Customer Service';
+              } else if (dbRoleName === 'manager') {
+                userRole = 'Manager';
+              } else if (dbRoleName === 'parts_manager') {
+                userRole = 'Parts Manager';
+              } else if (dbRoleName === 'service_advisor') {
+                userRole = 'Service Advisor';
+              } else if (dbRoleName === 'other_staff') {
+                userRole = 'Other Staff';
               } else {
                 // Capitalize the first letter of other roles
                 userRole = dbRoleName.charAt(0).toUpperCase() + dbRoleName.slice(1);
@@ -156,7 +154,7 @@ export function useTeamMembers() {
         setError('Failed to load team members. Please try again later.');
         
         // If we can't fetch from Supabase, use data from teamData.ts as fallback
-        const { teamMembers: mockMembers, getInitials } = await import('@/data/teamData');
+        const { teamMembers: mockMembers } = await import('@/data/teamData');
         setTeamMembers(mockMembers);
       } finally {
         setIsLoading(false);
@@ -177,6 +175,8 @@ export function useTeamMembers() {
         return `${firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : 'Senior'} Technician`;
       case 'Customer Service':
         return 'Customer Service Representative';
+      case 'No Role Assigned':
+        return 'New User';
       default:
         return role;
     }

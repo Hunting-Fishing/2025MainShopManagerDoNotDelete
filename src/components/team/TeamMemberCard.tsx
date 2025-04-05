@@ -11,6 +11,8 @@ interface TeamMemberCardProps {
 }
 
 export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
+  const hasNoRole = member.role === "No Role Assigned";
+  
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
       <div className="flex items-center justify-between p-4 border-b border-slate-100">
@@ -24,15 +26,22 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
             <p className="text-sm text-slate-500">{member.jobTitle || 'No Job Title'}</p>
           </div>
         </div>
-        <Badge variant={member.status === "Active" ? "success" : "destructive"} className="ml-auto">
-          {member.status}
-        </Badge>
+        <div className="flex gap-2">
+          {hasNoRole && (
+            <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">
+              No Role
+            </Badge>
+          )}
+          <Badge variant={member.status === "Active" ? "success" : "destructive"}>
+            {member.status}
+          </Badge>
+        </div>
       </div>
       <div className="p-4 space-y-4">
         <div className="flex flex-col gap-2">
           <p className="text-sm text-slate-700 flex items-center gap-2">
             <Briefcase className="h-4 w-4 text-slate-400" />
-            <span className="font-medium">Role:</span> {member.role || 'No Role Assigned'}
+            <span className="font-medium">Role:</span> {member.role}
           </p>
           <p className="text-sm text-slate-700">
             <span className="font-medium">Department:</span> {member.department}
@@ -73,12 +82,14 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           View Profile
         </Link>
 
-        <Link
-          to={`/team/${member.id}?tab=permissions`}
-          className="text-sm text-esm-blue-600 hover:text-esm-blue-800"
-        >
-          Permissions
-        </Link>
+        {!hasNoRole && (
+          <Link
+            to={`/team/${member.id}?tab=permissions`}
+            className="text-sm text-esm-blue-600 hover:text-esm-blue-800"
+          >
+            Permissions
+          </Link>
+        )}
       </div>
     </div>
   );
