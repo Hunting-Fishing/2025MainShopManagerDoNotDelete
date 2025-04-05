@@ -1,5 +1,5 @@
 
-import { validateImportedRoles, exportRolesToJson } from '@/utils/roleUtils';
+import { validateImportedRoles, exportRolesToJson } from '@/utils/roleImportExport';
 import { Role } from '@/types/team';
 
 describe('validateImportedRoles', () => {
