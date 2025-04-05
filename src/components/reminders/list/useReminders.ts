@@ -69,7 +69,7 @@ export function useReminders({ customerId, vehicleId, limit, statusFilter, dateR
       }
     },
     staleTime: 1000 * 60 * 5,
-    keepPreviousData: true
+    placeholderData: (previousData) => previousData
   });
 
   useEffect(() => {

@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import Layout from '@/components/layout/Layout';
@@ -25,7 +24,6 @@ import TeamRoles from '@/pages/TeamRoles';
 import Equipment from '@/pages/Equipment';
 import EquipmentDetails from '@/pages/EquipmentDetails';
 import Calendar from '@/pages/Calendar';
-import Reminders from '@/pages/Reminders';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
@@ -61,12 +59,10 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check current auth status
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
 
-      // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         setIsAuthenticated(!!session);
       });
@@ -77,7 +73,6 @@ function App() {
     checkAuth();
   }, []);
 
-  // Show loading while checking authentication
   if (isAuthenticated === null) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -88,7 +83,6 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
         
-        {/* Protected routes */}
         <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="customers" element={<Customers />} />
@@ -118,7 +112,7 @@ function App() {
           <Route path="equipment" element={<Equipment />} />
           <Route path="equipment/:id" element={<EquipmentDetails />} />
           <Route path="calendar" element={<Calendar />} />
-          <Route path="reminders" element={<Reminders />} />
+          <Route path="reminders" element={<ServiceReminders />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings/*" element={<Settings />} />
           <Route path="analytics" element={<Analytics />} />
