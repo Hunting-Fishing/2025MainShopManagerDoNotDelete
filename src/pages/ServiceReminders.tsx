@@ -1,125 +1,94 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CalendarClock, Bell, Plus, ClipboardCheck, Filter } from "lucide-react";
+import { DateRange } from "react-day-picker";
 import { RemindersList } from "@/components/reminders/list/RemindersList";
 import { AddReminderForm } from "@/components/reminders/AddReminderForm";
-import { DateRange } from "react-day-picker";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 export default function ServiceReminders() {
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("upcoming");
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   
   const handleReminderCreated = () => {
     setReminderDialogOpen(false);
-    // We would refresh the reminders list here
-  };
-
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    setDateRange(range);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Service Reminders</h1>
           <p className="text-muted-foreground">
-            Manage service reminders and customer follow-ups
+            Track and manage upcoming service reminders for customers.
           </p>
         </div>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Reminder
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create Service Reminder</DialogTitle>
-              </DialogHeader>
-              <AddReminderForm onSuccess={handleReminderCreated} />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700">
+              <Plus className="h-4 w-4" />
+              Add Reminder
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Create Service Reminder</DialogTitle>
+            </DialogHeader>
+            <AddReminderForm onSuccess={handleReminderCreated} />
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-center">
-        <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? undefined : value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <DateRangePicker 
-          value={dateRange}
-          onChange={handleDateRangeChange}
-          placeholder="Filter by date"
-        />
-        
-        <Button variant="outline" onClick={() => {
-          setStatusFilter(undefined);
-          setDateRange(undefined);
-        }}>
-          <Filter className="mr-2 h-4 w-4" />
-          Reset Filters
-        </Button>
-      </div>
-
-      <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="upcoming">
-            <CalendarClock className="mr-2 h-4 w-4" />
-            Upcoming
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            <Bell className="mr-2 h-4 w-4" />
-            Pending Notifications
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            <ClipboardCheck className="mr-2 h-4 w-4" />
-            Completed
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="upcoming" className="mt-6">
+      <Card>
+        <CardHeader className="bg-slate-50 border-b">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle className="text-lg">All Reminders</CardTitle>
+            <div className="flex flex-row gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Date Range
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
           <RemindersList 
-            statusFilter={statusFilter}
-            dateRange={dateRange}
-            limit={activeTab === "upcoming" ? 30 : undefined}
+            statusFilter={statusFilter} 
+            dateRange={dateRange} 
           />
-        </TabsContent>
-        
-        <TabsContent value="pending" className="mt-6">
-          <RemindersList 
-            statusFilter="pending"
-            dateRange={dateRange}
-          />
-        </TabsContent>
-        
-        <TabsContent value="completed" className="mt-6">
-          <RemindersList 
-            statusFilter="completed"
-            dateRange={dateRange}
-          />
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

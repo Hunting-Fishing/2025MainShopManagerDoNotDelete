@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { ServiceReminder } from "@/types/reminder";
-import { getAllReminders, getCustomerReminders, getUpcomingReminders, getVehicleReminders } from "@/services/reminderService";
+import { getAllReminders, getCustomerReminders, getVehicleReminders, getUpcomingReminders } from "@/services/reminderService";
 import { toast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
 import { useQuery } from "@tanstack/react-query";
@@ -14,52 +15,49 @@ interface UseRemindersProps {
 }
 
 export function useReminders({ customerId, vehicleId, limit, statusFilter, dateRange }: UseRemindersProps) {
+  // Create a more optimized query key that only includes relevant parameters
   const queryKey = useMemo(() => {
-    return [
-      'reminders', 
-      customerId || 'all', 
-      vehicleId, 
-      limit, 
-      statusFilter, 
-      dateRange?.from?.toISOString(), 
-      dateRange?.to?.toISOString()
-    ];
+    const keyParts = ['reminders'];
+    
+    if (customerId) keyParts.push(`customer-${customerId}`);
+    if (vehicleId) keyParts.push(`vehicle-${vehicleId}`);
+    if (limit) keyParts.push(`limit-${limit}`);
+    if (statusFilter) keyParts.push(`status-${statusFilter}`);
+    if (dateRange?.from) keyParts.push(`from-${dateRange.from.toISOString()}`);
+    if (dateRange?.to) keyParts.push(`to-${dateRange.to?.toISOString() || dateRange.from.toISOString()}`);
+    
+    return keyParts;
   }, [customerId, vehicleId, limit, statusFilter, dateRange]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: async () => {
       try {
+        // Optimize the fetch strategy based on the provided filters
         let remindersData: ServiceReminder[];
         
         if (customerId) {
-          remindersData = await getCustomerReminders(customerId);
+          // Pass the filters directly to the service function instead of filtering client-side
+          remindersData = await getCustomerReminders(
+            customerId, 
+            { status: statusFilter, dateRange, limit }
+          );
         } else if (vehicleId) {
-          remindersData = await getVehicleReminders(vehicleId);
+          remindersData = await getVehicleReminders(
+            vehicleId,
+            { status: statusFilter, dateRange, limit }
+          );
         } else {
-          if (!limit) {
-            remindersData = await getAllReminders();
+          if (limit) {
+            remindersData = await getUpcomingReminders(
+              limit, 
+              { status: statusFilter, dateRange }
+            );
           } else {
-            remindersData = await getUpcomingReminders(30);
+            remindersData = await getAllReminders(
+              { status: statusFilter, dateRange, limit }
+            );
           }
-        }
-        
-        if (statusFilter) {
-          remindersData = remindersData.filter(reminder => reminder.status === statusFilter);
-        }
-        
-        if (dateRange && dateRange.from) {
-          const fromDate = dateRange.from;
-          const toDate = dateRange.to || fromDate;
-          
-          remindersData = remindersData.filter(reminder => {
-            const dueDate = new Date(reminder.dueDate);
-            return dueDate >= fromDate && dueDate <= toDate;
-          });
-        }
-        
-        if (limit && remindersData.length > limit) {
-          remindersData = remindersData.slice(0, limit);
         }
         
         return remindersData;
@@ -68,8 +66,8 @@ export function useReminders({ customerId, vehicleId, limit, statusFilter, dateR
         throw err;
       }
     },
-    staleTime: 1000 * 60 * 5,
-    placeholderData: (previousData) => previousData
+    staleTime: 1000 * 60 * 5, // Keep 5 minutes stale time as it seems appropriate
+    placeholderData: (previousData) => previousData // Updated to React Query v5 syntax
   });
 
   useEffect(() => {
@@ -82,14 +80,10 @@ export function useReminders({ customerId, vehicleId, limit, statusFilter, dateR
     }
   }, [error]);
 
-  const updateReminder = (reminderId: string, updatedReminder: ServiceReminder) => {
-    refetch();
-  };
-
   return {
     reminders: data || [],
     loading: isLoading,
-    updateReminder,
+    updateReminder: refetch, // Simplified to just use refetch
     refetch,
   };
 }
