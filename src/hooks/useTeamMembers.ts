@@ -71,7 +71,7 @@ export function useTeamMembers() {
 
         // Transform the profile data to match TeamMember type
         const mappedMembers: TeamMember[] = profiles.map(profile => {
-          // Extract role information
+          // Extract role information - ensure we properly handle the owner role
           let userRole = 'User'; // Default role
           
           if (userRoles && userRoles.length > 0) {
@@ -82,7 +82,21 @@ export function useTeamMembers() {
                 typeof userRoleData.roles === 'object' && 
                 userRoleData.roles !== null &&
                 'name' in userRoleData.roles) {
-              userRole = userRoleData.roles.name || 'User';
+              // Map the database role value to a display name
+              const dbRoleName = userRoleData.roles.name;
+              // Convert database role names to display names
+              if (dbRoleName === 'owner') {
+                userRole = 'Owner';
+              } else if (dbRoleName === 'admin') {
+                userRole = 'Administrator';
+              } else if (dbRoleName === 'technician') {
+                userRole = 'Technician';
+              } else if (dbRoleName === 'reception') {
+                userRole = 'Customer Service';
+              } else {
+                // Capitalize the first letter of other roles
+                userRole = dbRoleName.charAt(0).toUpperCase() + dbRoleName.slice(1);
+              }
             }
           }
 
@@ -129,6 +143,12 @@ export function useTeamMembers() {
             }
           };
         });
+
+        // Log team member roles for debugging
+        console.log('Team members with roles:', mappedMembers.map(member => ({
+          name: member.name,
+          role: member.role
+        })));
 
         setTeamMembers(mappedMembers);
       } catch (err) {

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { TeamHeader } from "@/components/team/TeamHeader";
 import { TeamSearch } from "@/components/team/TeamSearch";
@@ -17,6 +18,9 @@ export default function Team() {
   
   // Use our hook to get team members data from Supabase
   const { teamMembers, isLoading, error } = useTeamMembers();
+
+  // Log all roles for debugging
+  console.log("All available roles:", teamMembers.map(member => member.role));
 
   // Get unique roles and departments for filters
   const roles = Array.from(new Set(teamMembers.map(member => member.role))).sort();
@@ -105,6 +109,12 @@ export default function Team() {
             getInitials={getInitials} 
           />
         )
+      )}
+
+      {!isLoading && filteredMembers.length === 0 && (
+        <div className="p-6 text-center bg-white rounded-lg border border-slate-200">
+          <p className="text-slate-500">No team members found. {teamMembers.length > 0 ? "Try adjusting your filters." : ""}</p>
+        </div>
       )}
     </div>
   );
