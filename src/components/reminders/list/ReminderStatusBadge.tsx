@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 
 export interface ReminderStatusBadgeProps {
   status: ReminderStatus;
+  dueDate?: string; // Adding dueDate as an optional prop
 }
 
-export function ReminderStatusBadge({ status }: ReminderStatusBadgeProps) {
+export function ReminderStatusBadge({ status, dueDate }: ReminderStatusBadgeProps) {
   const getBadgeVariant = () => {
     switch (status) {
       case "pending":
