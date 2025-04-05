@@ -14,29 +14,8 @@ export function useTeamMembers() {
       setError(null);
       
       try {
-        // First, fetch profiles from Supabase
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            created_at
-          `);
-
-        if (profilesError) {
-          throw profilesError;
-        }
-
-        if (!profiles || profiles.length === 0) {
-          setTeamMembers([]);
-          setIsLoading(false);
-          return;
-        }
-
-        // Get user roles in a separate query
+        // First, fetch profiles from Supabase that have user_roles assigned
+        // This ensures we only get actual team members and not customers
         const { data: userRoles, error: rolesError } = await supabase
           .from('user_roles')
           .select(`
@@ -49,8 +28,35 @@ export function useTeamMembers() {
           `);
           
         if (rolesError) {
-          console.warn('Error fetching roles:', rolesError);
-          // Continue without roles data
+          throw rolesError;
+        }
+
+        // Extract the user IDs from user_roles to fetch only those profiles
+        const teamMemberIds = userRoles.map(ur => ur.user_id);
+        
+        if (teamMemberIds.length === 0) {
+          setTeamMembers([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Now fetch only team member profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            job_title,
+            department,
+            created_at
+          `)
+          .in('id', teamMemberIds);
+
+        if (profilesError) {
+          throw profilesError;
         }
 
         // Get work order data for technicians
@@ -97,12 +103,12 @@ export function useTeamMembers() {
           }
           
           // Determine department based on role
-          let department = 'General';
-          if (userRole === 'Technician') {
+          let department = profile.department || 'General';
+          if (!department && userRole === 'Technician') {
             department = 'Field Service';
-          } else if (userRole === 'Owner' || userRole === 'Administrator') {
+          } else if (!department && (userRole === 'Owner' || userRole === 'Administrator')) {
             department = 'Management';
-          } else if (userRole === 'Customer Service') {
+          } else if (!department && userRole === 'Customer Service') {
             department = 'Customer Support';
           }
           
@@ -113,7 +119,7 @@ export function useTeamMembers() {
             role: userRole,
             email: profile.email || '',
             phone: profile.phone || '',
-            jobTitle: determineJobTitle(userRole, profile.first_name), 
+            jobTitle: profile.job_title || determineJobTitle(userRole, profile.first_name), 
             department: department,
             status: "Active", // Default status - could be stored in profile
             joinDate: profile.created_at,
