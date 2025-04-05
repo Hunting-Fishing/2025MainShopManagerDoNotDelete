@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CalendarClock, Bell, Plus, ClipboardCheck, Filter } from "lucide-react";
-import { ServiceRemindersList } from "@/components/reminders/ServiceRemindersList";
+import { RemindersList } from "@/components/reminders/list/RemindersList";
 import { AddReminderForm } from "@/components/reminders/AddReminderForm";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -98,7 +98,7 @@ export default function ServiceReminders() {
         </TabsList>
         
         <TabsContent value="upcoming" className="mt-6">
-          <ServiceRemindersList 
+          <RemindersList 
             statusFilter={statusFilter}
             dateRange={dateRange}
             limit={activeTab === "upcoming" ? 30 : undefined}
@@ -106,14 +106,14 @@ export default function ServiceReminders() {
         </TabsContent>
         
         <TabsContent value="pending" className="mt-6">
-          <ServiceRemindersList 
+          <RemindersList 
             statusFilter="pending"
             dateRange={dateRange}
           />
         </TabsContent>
         
         <TabsContent value="completed" className="mt-6">
-          <ServiceRemindersList 
+          <RemindersList 
             statusFilter="completed"
             dateRange={dateRange}
           />
