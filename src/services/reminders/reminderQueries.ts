@@ -65,7 +65,7 @@ export const getUpcomingReminders = async (days: number = 7): Promise<ServiceRem
     .select("*")
     .gte("due_date", todayStr)
     .lte("due_date", targetDateStr)
-    .in("status", ["pending"])
+    .in("status", ["pending", "sent"])
     .order("due_date", { ascending: true });
 
   if (error) {

@@ -1,17 +1,14 @@
 
-import { Calendar } from "lucide-react";
-import { CardContent } from "@/components/ui/card";
+import { CalendarClock } from "lucide-react";
 
 export function EmptyRemindersList() {
   return (
-    <CardContent>
-      <div className="flex flex-col items-center justify-center py-6 text-center">
-        <Calendar className="h-12 w-12 text-slate-300 mb-2" />
-        <h3 className="text-lg font-medium">No reminders</h3>
-        <p className="text-sm text-slate-500 mt-1">
-          There are no service reminders scheduled at this time.
-        </p>
-      </div>
-    </CardContent>
+    <div className="flex flex-col items-center justify-center text-center p-8">
+      <CalendarClock className="h-12 w-12 text-muted-foreground/60 mb-3" />
+      <h3 className="text-lg font-medium">No reminders found</h3>
+      <p className="text-sm text-muted-foreground mt-1 max-w-md">
+        No service reminders match your current filters. Try adjusting your filter criteria or add a new reminder.
+      </p>
+    </div>
   );
 }

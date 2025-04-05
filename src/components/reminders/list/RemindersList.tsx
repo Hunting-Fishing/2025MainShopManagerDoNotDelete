@@ -10,53 +10,40 @@ interface RemindersListProps {
   customerId?: string;
   vehicleId?: string;
   limit?: number;
+  statusFilter?: string;
+  dateRange?: { from: Date; to: Date };
 }
 
-export function RemindersList({ customerId, vehicleId, limit }: RemindersListProps) {
-  const { reminders, loading, updateReminder } = useReminders({ customerId, vehicleId, limit });
+export function RemindersList({ customerId, vehicleId, limit, statusFilter, dateRange }: RemindersListProps) {
+  const { reminders, loading, updateReminder } = useReminders({ 
+    customerId, 
+    vehicleId, 
+    limit,
+    statusFilter,
+    dateRange
+  });
 
   const handleReminderUpdate = (reminderId: string, updatedReminder: ServiceReminder) => {
     updateReminder(reminderId, updatedReminder);
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Service Reminders</CardTitle>
-        </CardHeader>
-        <RemindersLoading />
-      </Card>
-    );
+    return <RemindersLoading />;
   }
 
   if (reminders.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Service Reminders</CardTitle>
-        </CardHeader>
-        <EmptyRemindersList />
-      </Card>
-    );
+    return <EmptyRemindersList />;
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Service Reminders</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {reminders.map((reminder) => (
-            <ReminderListItem 
-              key={reminder.id} 
-              reminder={reminder}
-              onStatusUpdate={handleReminderUpdate}
-            />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="divide-y">
+      {reminders.map((reminder) => (
+        <ReminderListItem 
+          key={reminder.id} 
+          reminder={reminder}
+          onStatusUpdate={handleReminderUpdate}
+        />
+      ))}
+    </div>
   );
 }

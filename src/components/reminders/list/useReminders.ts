@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { ServiceReminder } from "@/types/reminder";
-import { getUpcomingReminders, getCustomerReminders, getVehicleReminders } from "@/services/reminderService";
+import { getAllReminders, getCustomerReminders, getUpcomingReminders, getVehicleReminders } from "@/services/reminderService";
 import { toast } from "@/hooks/use-toast";
 
 interface UseRemindersProps {
   customerId?: string;
   vehicleId?: string;
   limit?: number;
+  statusFilter?: string;
+  dateRange?: { from: Date; to: Date };
 }
 
-export function useReminders({ customerId, vehicleId, limit }: UseRemindersProps) {
+export function useReminders({ customerId, vehicleId, limit, statusFilter, dateRange }: UseRemindersProps) {
   const [reminders, setReminders] = useState<ServiceReminder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,9 +29,30 @@ export function useReminders({ customerId, vehicleId, limit }: UseRemindersProps
         else if (vehicleId) {
           data = await getVehicleReminders(vehicleId);
         } 
-        // Otherwise, get all upcoming reminders
+        // Otherwise, get all upcoming reminders if no limit is specified
+        // or get all reminders if limit is specified
         else {
-          data = await getUpcomingReminders(30); // Get reminders for next 30 days
+          if (!limit) {
+            data = await getAllReminders();
+          } else {
+            data = await getUpcomingReminders(30); // Get reminders for next 30 days
+          }
+        }
+        
+        // Apply status filter if provided
+        if (statusFilter) {
+          data = data.filter(reminder => reminder.status === statusFilter);
+        }
+        
+        // Apply date range filter if provided
+        if (dateRange && dateRange.from && dateRange.to) {
+          const fromDate = dateRange.from;
+          const toDate = dateRange.to;
+          
+          data = data.filter(reminder => {
+            const dueDate = new Date(reminder.dueDate);
+            return dueDate >= fromDate && dueDate <= toDate;
+          });
         }
         
         // Apply limit if provided
@@ -51,7 +74,7 @@ export function useReminders({ customerId, vehicleId, limit }: UseRemindersProps
     };
 
     loadReminders();
-  }, [customerId, vehicleId, limit]);
+  }, [customerId, vehicleId, limit, statusFilter, dateRange]);
 
   const updateReminder = (reminderId: string, updatedReminder: ServiceReminder) => {
     setReminders(reminders.map(reminder => 
