@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { ServiceReminder } from "@/types/reminder";
 import { getAllReminders, getCustomerReminders, getUpcomingReminders, getVehicleReminders } from "@/services/reminderService";
 import { toast } from "@/hooks/use-toast";
+import { DateRange } from "react-day-picker";
 
 interface UseRemindersProps {
   customerId?: string;
   vehicleId?: string;
   limit?: number;
   statusFilter?: string;
-  dateRange?: { from: Date; to: Date };
+  dateRange?: DateRange;
 }
 
 export function useReminders({ customerId, vehicleId, limit, statusFilter, dateRange }: UseRemindersProps) {
@@ -45,9 +47,9 @@ export function useReminders({ customerId, vehicleId, limit, statusFilter, dateR
         }
         
         // Apply date range filter if provided
-        if (dateRange && dateRange.from && dateRange.to) {
+        if (dateRange && dateRange.from) {
           const fromDate = dateRange.from;
-          const toDate = dateRange.to;
+          const toDate = dateRange.to || fromDate;
           
           data = data.filter(reminder => {
             const dueDate = new Date(reminder.dueDate);

@@ -1,12 +1,13 @@
 
 import { RemindersList } from "./list/RemindersList";
+import { DateRange } from "react-day-picker";
 
 interface ServiceRemindersListProps {
   customerId?: string;
   vehicleId?: string;
   limit?: number;
   statusFilter?: string;
-  dateRange?: { from: Date; to: Date };
+  dateRange?: DateRange;
 }
 
 export function ServiceRemindersList({ 
