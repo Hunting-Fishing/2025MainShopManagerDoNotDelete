@@ -6,6 +6,8 @@ import { RemindersLoading } from "./RemindersLoading";
 import { useReminders } from "./useReminders";
 import { ServiceReminder } from "@/types/reminder";
 import { DateRange } from "react-day-picker";
+import { updateReminderStatus } from "@/services/reminderService";
+import { useMemo } from "react";
 
 interface RemindersListProps {
   customerId?: string;
@@ -16,7 +18,7 @@ interface RemindersListProps {
 }
 
 export function RemindersList({ customerId, vehicleId, limit, statusFilter, dateRange }: RemindersListProps) {
-  const { reminders, loading, updateReminder } = useReminders({ 
+  const { reminders, loading, refetch } = useReminders({ 
     customerId, 
     vehicleId, 
     limit,
@@ -24,15 +26,21 @@ export function RemindersList({ customerId, vehicleId, limit, statusFilter, date
     dateRange
   });
 
-  const handleReminderUpdate = (reminderId: string, updatedReminder: ServiceReminder) => {
-    updateReminder(reminderId, updatedReminder);
-  };
+  // Memoize the handleReminderUpdate function to prevent unnecessary re-renders
+  const handleReminderUpdate = useMemo(() => async (reminderId: string, updatedReminder: ServiceReminder) => {
+    try {
+      await updateReminderStatus(reminderId, updatedReminder.status, updatedReminder.notes);
+      refetch(); // Refresh the list after an update
+    } catch (error) {
+      console.error("Error updating reminder:", error);
+    }
+  }, [refetch]);
 
   if (loading) {
     return <RemindersLoading />;
   }
 
-  if (reminders.length === 0) {
+  if (!reminders.length) {
     return <EmptyRemindersList />;
   }
 

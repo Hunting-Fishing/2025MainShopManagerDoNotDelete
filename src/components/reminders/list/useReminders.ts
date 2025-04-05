@@ -1,9 +1,9 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ServiceReminder } from "@/types/reminder";
 import { getAllReminders, getCustomerReminders, getUpcomingReminders, getVehicleReminders } from "@/services/reminderService";
 import { toast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
+import { useQuery } from "@tanstack/react-query";
 
 interface UseRemindersProps {
   customerId?: string;
@@ -14,79 +14,82 @@ interface UseRemindersProps {
 }
 
 export function useReminders({ customerId, vehicleId, limit, statusFilter, dateRange }: UseRemindersProps) {
-  const [reminders, setReminders] = useState<ServiceReminder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryKey = useMemo(() => {
+    return [
+      'reminders', 
+      customerId || 'all', 
+      vehicleId, 
+      limit, 
+      statusFilter, 
+      dateRange?.from?.toISOString(), 
+      dateRange?.to?.toISOString()
+    ];
+  }, [customerId, vehicleId, limit, statusFilter, dateRange]);
 
-  useEffect(() => {
-    const loadReminders = async () => {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey,
+    queryFn: async () => {
       try {
-        setLoading(true);
-        let data: ServiceReminder[];
+        let remindersData: ServiceReminder[];
         
-        // If customerId is provided, get reminders for that customer
         if (customerId) {
-          data = await getCustomerReminders(customerId);
-        } 
-        // If vehicleId is provided, get reminders for that vehicle
-        else if (vehicleId) {
-          data = await getVehicleReminders(vehicleId);
-        } 
-        // Otherwise, get all upcoming reminders if no limit is specified
-        // or get all reminders if limit is specified
-        else {
+          remindersData = await getCustomerReminders(customerId);
+        } else if (vehicleId) {
+          remindersData = await getVehicleReminders(vehicleId);
+        } else {
           if (!limit) {
-            data = await getAllReminders();
+            remindersData = await getAllReminders();
           } else {
-            data = await getUpcomingReminders(30); // Get reminders for next 30 days
+            remindersData = await getUpcomingReminders(30);
           }
         }
         
-        // Apply status filter if provided
         if (statusFilter) {
-          data = data.filter(reminder => reminder.status === statusFilter);
+          remindersData = remindersData.filter(reminder => reminder.status === statusFilter);
         }
         
-        // Apply date range filter if provided
         if (dateRange && dateRange.from) {
           const fromDate = dateRange.from;
           const toDate = dateRange.to || fromDate;
           
-          data = data.filter(reminder => {
+          remindersData = remindersData.filter(reminder => {
             const dueDate = new Date(reminder.dueDate);
             return dueDate >= fromDate && dueDate <= toDate;
           });
         }
         
-        // Apply limit if provided
-        if (limit && data.length > limit) {
-          data = data.slice(0, limit);
+        if (limit && remindersData.length > limit) {
+          remindersData = remindersData.slice(0, limit);
         }
         
-        setReminders(data);
-      } catch (error) {
-        console.error("Error loading reminders:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load service reminders.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+        return remindersData;
+      } catch (err) {
+        console.error("Error loading reminders:", err);
+        throw err;
       }
-    };
+    },
+    staleTime: 1000 * 60 * 5,
+    keepPreviousData: true
+  });
 
-    loadReminders();
-  }, [customerId, vehicleId, limit, statusFilter, dateRange]);
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load service reminders.",
+        variant: "destructive",
+      });
+    }
+  }, [error]);
 
   const updateReminder = (reminderId: string, updatedReminder: ServiceReminder) => {
-    setReminders(reminders.map(reminder => 
-      reminder.id === reminderId ? updatedReminder : reminder
-    ));
+    refetch();
   };
 
   return {
-    reminders,
-    loading,
+    reminders: data || [],
+    loading: isLoading,
     updateReminder,
+    refetch,
   };
 }
