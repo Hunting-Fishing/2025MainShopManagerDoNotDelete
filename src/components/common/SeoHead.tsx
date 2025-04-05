@@ -8,7 +8,7 @@ interface SeoHeadProps {
   keywords?: string;
   canonicalUrl?: string;
   ogImage?: string;
-  ogType?: 'website' | 'article';
+  ogType?: 'website' | 'article' | 'profile';
 }
 
 export function SeoHead({
