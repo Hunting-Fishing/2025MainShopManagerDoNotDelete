@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
+import { SeoHead } from "@/components/common/SeoHead";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileHeader } from "@/components/team/profile/ProfileHeader";
 import { ProfileSidebar } from "@/components/team/profile/ProfileSidebar";
@@ -47,6 +48,13 @@ export default function TeamMemberProfile() {
 
   return (
     <div className="space-y-6">
+      <SeoHead 
+        title={`${member.name}'s Profile`}
+        description={`View and manage ${member.name}'s profile, permissions, activity history, and more.`}
+        keywords={`team member, ${member.role}, ${member.department}, profile management`}
+        ogType="profile"
+      />
+      
       {/* Header section */}
       <ProfileHeader 
         memberName={member.name}

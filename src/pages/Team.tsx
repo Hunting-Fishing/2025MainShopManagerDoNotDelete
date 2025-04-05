@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { SeoHead } from "@/components/common/SeoHead";
 import { TeamHeader } from "@/components/team/TeamHeader";
 import { TeamSearch } from "@/components/team/TeamSearch";
 import { TeamFilters } from "@/components/team/TeamFilters";
@@ -118,6 +119,12 @@ export default function Team() {
 
   return (
     <div className="space-y-6">
+      <SeoHead 
+        title="Team Management"
+        description="Manage your team members, assign roles and permissions, and track their performance in Easy Shop Manager."
+        keywords="team management, role assignment, technician management, staff management"
+      />
+      
       <TeamHeader />
       
       {currentUserHasNoRole && (

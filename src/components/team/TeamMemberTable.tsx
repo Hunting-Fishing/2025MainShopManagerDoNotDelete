@@ -17,29 +17,35 @@ export function TeamMemberTable({ members, getInitials }: TeamMemberTableProps) 
   return (
     <div className="rounded-md border overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" summary="Team members with their roles, departments, contact information and status">
           <thead className="bg-slate-50">
             <tr className="text-left">
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Role</th>
-              <th className="px-4 py-3 font-medium">Department</th>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Phone</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
+              <th scope="col" className="px-4 py-3 font-medium">Name</th>
+              <th scope="col" className="px-4 py-3 font-medium">Role</th>
+              <th scope="col" className="px-4 py-3 font-medium">Department</th>
+              <th scope="col" className="px-4 py-3 font-medium">Email</th>
+              <th scope="col" className="px-4 py-3 font-medium">Phone</th>
+              <th scope="col" className="px-4 py-3 font-medium">Status</th>
+              <th scope="col" className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {members.map((member) => {
               const hasNoRole = member.role === "No Role Assigned";
+              const memberInitials = getInitials(member.name);
               
               return (
                 <tr key={member.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`} alt={member.name} />
-                        <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">{getInitials(member.name)}</AvatarFallback>
+                        <AvatarImage 
+                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`} 
+                          alt={`Profile photo of ${member.name}`} 
+                        />
+                        <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">
+                          {memberInitials}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">{member.name}</div>
@@ -61,6 +67,7 @@ export function TeamMemberTable({ members, getInitials }: TeamMemberTableProps) 
                     <a 
                       href={`mailto:${member.email}`} 
                       className="text-esm-blue-600 hover:underline"
+                      aria-label={`Email ${member.name} at ${member.email}`}
                     >
                       {member.email}
                     </a>
@@ -69,6 +76,7 @@ export function TeamMemberTable({ members, getInitials }: TeamMemberTableProps) 
                     <a 
                       href={`tel:${member.phone}`} 
                       className="text-esm-blue-600 hover:underline"
+                      aria-label={`Call ${member.name} at ${member.phone || "Not available"}`}
                     >
                       {member.phone || "Not available"}
                     </a>
@@ -87,8 +95,11 @@ export function TeamMemberTable({ members, getInitials }: TeamMemberTableProps) 
                         size="icon" 
                         asChild
                       >
-                        <Link to={`/team/${member.id}`}>
-                          <Eye className="h-4 w-4 text-slate-500" />
+                        <Link 
+                          to={`/team/${member.id}`}
+                          aria-label={`View ${member.name}'s profile details`}
+                        >
+                          <Eye className="h-4 w-4 text-slate-500" aria-hidden="true" />
                         </Link>
                       </Button>
                     </div>

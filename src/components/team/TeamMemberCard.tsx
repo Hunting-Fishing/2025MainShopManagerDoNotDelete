@@ -12,17 +12,23 @@ interface TeamMemberCardProps {
 
 export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
   const hasNoRole = member.role === "No Role Assigned";
+  const memberInitials = getInitials(member.name);
   
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-center justify-between p-4 border-b border-slate-100">
+    <article className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+      <header className="flex items-center justify-between p-4 border-b border-slate-100">
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`} alt={member.name} />
-            <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">{getInitials(member.name)}</AvatarFallback>
+            <AvatarImage 
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`} 
+              alt={`Profile photo of ${member.name}`} 
+            />
+            <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700" aria-label={`${member.name} initials`}>
+              {memberInitials}
+            </AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="font-medium text-slate-900">{member.name}</h3>
+            <h2 className="font-medium text-slate-900">{member.name}</h2>
             <p className="text-sm text-slate-500">{member.jobTitle || 'No Job Title'}</p>
           </div>
         </div>
@@ -36,24 +42,24 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
             {member.status}
           </Badge>
         </div>
-      </div>
+      </header>
       <div className="p-4 space-y-4">
         <div className="flex flex-col gap-2">
           <p className="text-sm text-slate-700 flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-slate-400" />
+            <Briefcase className="h-4 w-4 text-slate-400" aria-hidden="true" />
             <span className="font-medium">Role:</span> {member.role}
           </p>
           <p className="text-sm text-slate-700">
             <span className="font-medium">Department:</span> {member.department}
           </p>
           <div className="flex items-center gap-3 text-sm text-slate-700">
-            <Mail className="h-4 w-4 text-slate-400" />
+            <Mail className="h-4 w-4 text-slate-400" aria-hidden="true" />
             <a href={`mailto:${member.email}`} className="text-esm-blue-600 hover:underline">
               {member.email}
             </a>
           </div>
           <div className="flex items-center gap-3 text-sm text-slate-700">
-            <Phone className="h-4 w-4 text-slate-400" />
+            <Phone className="h-4 w-4 text-slate-400" aria-hidden="true" />
             <a href={`tel:${member.phone}`} className="text-esm-blue-600 hover:underline">
               {member.phone || "Not available"}
             </a>
@@ -73,12 +79,13 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-between">
+      <footer className="p-4 border-t border-slate-100 bg-slate-50 flex justify-between">
         <Link 
           to={`/team/${member.id}`} 
           className="text-sm text-esm-blue-600 hover:text-esm-blue-800 flex items-center gap-1"
+          aria-label={`View ${member.name}'s complete profile`}
         >
-          <Eye className="h-4 w-4" />
+          <Eye className="h-4 w-4" aria-hidden="true" />
           View Profile
         </Link>
 
@@ -86,11 +93,12 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           <Link
             to={`/team/${member.id}?tab=permissions`}
             className="text-sm text-esm-blue-600 hover:text-esm-blue-800"
+            aria-label={`Manage ${member.name}'s permissions`}
           >
             Permissions
           </Link>
         )}
-      </div>
-    </div>
+      </footer>
+    </article>
   );
 }
