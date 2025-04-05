@@ -73,7 +73,7 @@ export function useTeamMembers() {
                 userRoleData.roles !== null &&
                 'name' in userRoleData.roles) {
               // Map the database role value to a display name
-              const dbRoleName = userRoleData.roles.name;
+              const dbRoleName = userRoleData.roles.name as string; // Add type assertion here
               // Convert database role names to display names
               if (dbRoleName === 'owner') {
                 userRole = 'Owner';
