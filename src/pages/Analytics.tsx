@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   BarChart, 
@@ -28,7 +27,7 @@ import {
 import { ChartContainer } from "@/components/analytics/ChartContainer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useReportData } from "@/hooks/useReportData";
 import { reportData } from "@/data/reportData";
 import { format, subDays, subMonths } from "date-fns";
@@ -53,7 +52,6 @@ const Analytics = () => {
     dataGranularity: 'monthly'
   });
   
-  // Get data using the useReportData hook
   const { 
     data: reportDataFromHook, 
     isLoading,
@@ -65,7 +63,6 @@ const Analytics = () => {
     refreshInterval: null
   });
   
-  // Extended custom data for new analytics visualizations
   const [analyticsData, setAnalyticsData] = useState({
     salesTrends: [] as any[],
     serviceCategoryData: [] as any[],
@@ -76,15 +73,10 @@ const Analytics = () => {
     customerRetentionData: [] as any[],
   });
   
-  // Simulate loading extended analytics data
   useEffect(() => {
-    // We're simulating API calls for more complex data here
-    // In a real app, this would come from a backend API
     const loadAnalyticsData = async () => {
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Generate more complex data for various analytics
       setAnalyticsData({
         salesTrends: generateSalesTrends(),
         serviceCategoryData: generateServiceCategoryData(),
@@ -99,9 +91,7 @@ const Analytics = () => {
     loadAnalyticsData();
   }, [timeframe, dateRange, filters]);
   
-  // Data generation functions for advanced analytics
   const generateSalesTrends = () => {
-    // Extend the basic sales data with more metrics
     return reportData.salesData.map(item => ({
       ...item,
       projectedRevenue: item.revenue * 1.15,
@@ -142,7 +132,6 @@ const Analytics = () => {
   };
   
   const generateForecastData = () => {
-    // Current year data (actual + projected)
     const now = new Date();
     const currentMonth = now.getMonth();
     
@@ -224,9 +213,10 @@ const Analytics = () => {
         </div>
         
         {timeframe === 'custom' && (
-          <DatePickerWithRange
-            date={dateRange}
-            setDate={setDateRange}
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            placeholder="Select date range"
             className="w-auto"
           />
         )}
@@ -280,7 +270,6 @@ const Analytics = () => {
           </TabsTrigger>
         </TabsList>
         
-        {/* Financial Insights Tab */}
         <TabsContent value="financial" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ChartContainer 
@@ -383,7 +372,6 @@ const Analytics = () => {
           </ChartContainer>
         </TabsContent>
         
-        {/* Operations Tab */}
         <TabsContent value="operations" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ChartContainer 
@@ -487,7 +475,6 @@ const Analytics = () => {
           </ChartContainer>
         </TabsContent>
         
-        {/* Customer Analysis Tab */}
         <TabsContent value="customers" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ChartContainer 
@@ -625,7 +612,6 @@ const Analytics = () => {
           </div>
         </TabsContent>
         
-        {/* Forecasting Tab */}
         <TabsContent value="forecasting" className="space-y-4">
           <div className="grid grid-cols-1 gap-6">
             <ChartContainer 
