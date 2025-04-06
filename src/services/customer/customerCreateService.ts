@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { addCustomerNote } from "./customerNotesService";
@@ -17,6 +18,9 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     notes,    // Handle separately for detailed notes
     ...customerData
   } = customer;
+  
+  // Ensure the role is always set to "Customer"
+  customerData.role = "Customer";
   
   // Handle special case for business_industry and other_business_industry
   if (customerData.business_industry === 'other' && customerData.other_business_industry) {
@@ -71,7 +75,6 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
       if (vehicle.make && vehicle.model) { // Only add if minimal data is present
         try {
           // Fix: Convert year to number or null, but store it correctly as a number
-          // The error was here - we need to make sure we're passing a number to the DB
           const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
           
           await supabase

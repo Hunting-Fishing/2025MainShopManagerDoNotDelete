@@ -72,6 +72,9 @@ export const customerSchema = z.object({
   vehicles: z.array(vehicleSchema).default([]),
   tags: z.array(z.string()).default([]),
   segments: z.array(z.string()).default([]),
+  
+  // Role - default to Customer
+  role: z.string().default("Customer"),
 }).superRefine(validateOtherBusinessIndustry);
 
 // Type definition for the form values

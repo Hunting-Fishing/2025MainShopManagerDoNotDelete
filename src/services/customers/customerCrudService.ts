@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "../loyalty/customerLoyaltyService";
@@ -72,6 +73,11 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
 
 // Update a customer
 export const updateCustomer = async (id: string, updates: Partial<Customer>): Promise<Customer> => {
+  // Ensure the role remains "Customer" when updating
+  if (updates && !updates.role) {
+    updates.role = "Customer";
+  }
+  
   const { data, error } = await supabase
     .from("customers")
     .update(updates)

@@ -54,6 +54,9 @@ export interface Customer {
   auto_billing?: boolean;
   credit_terms?: string;
   terms_agreed?: boolean;
+  
+  // Role field for distinguishing customers from employees/staff
+  role?: string;
 }
 
 export interface PreferredTechnicianChange {
