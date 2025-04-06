@@ -41,6 +41,9 @@ export const useCustomerSubmit = () => {
       const customerData = prepareCustomerData(data);
       customerData.household_id = householdId;
       
+      // Log vehicles before sending
+      console.log("Vehicles data being sent to createCustomer:", customerData.vehicles);
+      
       // Create the customer
       const newCustomer = await createCustomer(customerData);
       

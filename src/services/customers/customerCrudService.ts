@@ -43,20 +43,20 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
 
 // Fetch a customer by ID
 export const getCustomerById = async (id: string): Promise<Customer | null> => {
-  const { data, error } = await supabase
+  const { data: customerData, error: customerError } = await supabase
     .from("customers")
     .select("*")
     .eq("id", id)
     .single();
 
-  if (error) {
-    console.error("Error fetching customer:", error);
-    throw error;
+  if (customerError) {
+    console.error("Error fetching customer:", customerError);
+    throw customerError;
   }
 
-  if (!data) return null;
+  if (!customerData) return null;
   
-  const customer = adaptCustomerForUI(data);
+  const customer = adaptCustomerForUI(customerData);
   
   // Fetch loyalty data
   try {
@@ -66,6 +66,24 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     }
   } catch (error) {
     console.error(`Error fetching loyalty for customer ${customer.id}:`, error);
+  }
+
+  // Fetch customer's vehicles
+  try {
+    const { data: vehiclesData, error: vehiclesError } = await supabase
+      .from("vehicles")
+      .select("*")
+      .eq("customer_id", id);
+
+    if (vehiclesError) {
+      throw vehiclesError;
+    }
+    
+    // Add vehicles to customer object
+    customer.vehicles = vehiclesData || [];
+  } catch (error) {
+    console.error(`Error fetching vehicles for customer ${customer.id}:`, error);
+    customer.vehicles = [];
   }
 
   return customer;

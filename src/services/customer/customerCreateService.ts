@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
-import { addCustomerNote } from "./customerNotesService";
+import { addCustomerNote } from "./index";
 
 // Create a new customer
 export const createCustomer = async (customer: CustomerCreate): Promise<Customer> => {
@@ -12,12 +12,10 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     }
   });
 
-  // All fields should now be included in the customer object
-  const {
-    vehicles, // Handle separately
-    notes,    // Handle separately for detailed notes
-    ...customerData
-  } = customer;
+  // Extract vehicles to handle separately
+  const { vehicles = [], notes, ...customerData } = customer;
+  
+  console.log("Processing customer creation with vehicles:", vehicles);
   
   // Ensure the role is always set to "Customer"
   customerData.role = "Customer";
@@ -69,24 +67,33 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     throw error;
   }
 
-  // If there are vehicles, add them to the vehicles table
+  // Now that we have the customer ID, handle vehicles
   if (vehicles && vehicles.length > 0) {
+    console.log(`Adding ${vehicles.length} vehicles for customer ${data.id}`);
+    
     for (const vehicle of vehicles) {
-      if (vehicle.make && vehicle.model) { // Only add if minimal data is present
+      // Only add vehicle if it has at least make and model
+      if (vehicle.make && vehicle.model) {
         try {
-          // Fix: Convert year to number or null, but store it correctly as a number
+          // Convert year to number or null, but store it correctly as a number
           const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
           
-          await supabase
+          console.log(`Adding vehicle: ${vehicleYear} ${vehicle.make} ${vehicle.model}`);
+          
+          const { error: vehicleError } = await supabase
             .from("vehicles")
             .insert({
               customer_id: data.id,
               make: vehicle.make,
               model: vehicle.model,
               year: vehicleYear,
-              vin: vehicle.vin,
-              license_plate: vehicle.license_plate
+              vin: vehicle.vin || null,
+              license_plate: vehicle.license_plate || null
             });
+            
+          if (vehicleError) {
+            console.error("Error adding vehicle:", vehicleError);
+          }
         } catch (vehicleError) {
           console.error("Error adding vehicle:", vehicleError);
           // Don't throw to allow customer creation to succeed
