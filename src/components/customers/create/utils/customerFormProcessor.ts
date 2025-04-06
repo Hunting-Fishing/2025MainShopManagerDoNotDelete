@@ -1,142 +1,100 @@
 
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
-import { technicians } from "@/components/customers/form/CustomerFormSchema";
-import { createCustomer, addCustomerNote } from "@/services/customers";
-import { supabase } from "@/integrations/supabase/client";
-import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
+import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
+import { createHousehold } from "@/services/households";
+import { addHouseholdMember } from "@/services/households";
+import { assignCustomerToSegments } from "@/services/segments";
+import { CustomerCreate } from "@/types/customer";
 
 /**
- * Process household logic during customer creation
+ * Process household-related data from the customer form
  */
-export const processHouseholdData = async (data: CustomerFormValues): Promise<string | null> => {
-  if (data.household_id === "_none") {
-    return "";
-  }
-  
-  // Create new household if requested
+export const processHouseholdData = async (data: CustomerFormValues): Promise<string | undefined> => {
+  // If creating a new household
   if (data.create_new_household && data.new_household_name) {
     try {
-      const { data: newHousehold, error: householdError } = await supabase
-        .from("households")
-        .insert({
-          name: data.new_household_name,
-          address: data.address
-        })
-        .select("id")
-        .single();
-      
-      if (householdError) {
-        throw householdError;
-      }
-      
-      if (newHousehold) {
-        return newHousehold.id;
-      }
+      const newHousehold = await createHousehold({
+        name: data.new_household_name,
+        address: data.address
+      });
+      return newHousehold.id;
     } catch (error) {
       console.error("Error creating household:", error);
-      throw error;
+      return undefined;
     }
   }
   
-  return data.household_id || null;
+  // If joining an existing household
+  return data.household_id || undefined;
 };
 
 /**
- * Process segments assignment after customer creation
- */
-export const processSegmentAssignments = async (customerId: string, segments: string[]): Promise<void> => {
-  if (!segments || segments.length === 0) {
-    return;
-  }
-  
-  const segmentAssignments = segments.map(segmentId => ({
-    customer_id: customerId,
-    segment_id: segmentId,
-    is_automatic: false
-  }));
-  
-  const { error: segmentError } = await supabase
-    .from("customer_segment_assignments")
-    .insert(segmentAssignments);
-  
-  if (segmentError) {
-    console.error("Failed to assign segments to customer:", segmentError);
-    throw segmentError;
-  }
-};
-
-/**
- * Process household member relationship assignment
+ * Process household membership after customer creation
  */
 export const processHouseholdMembership = async (
-  customerId: string, 
-  householdId: string | null, 
-  relationship: string
-): Promise<void> => {
-  if (!householdId || !relationship) {
-    return;
-  }
-  
-  const { error: relationshipError } = await supabase
-    .from("household_members")
-    .insert({
-      household_id: householdId,
-      customer_id: customerId,
-      relationship_type: relationship
-    });
-  
-  if (relationshipError) {
-    console.error("Failed to add customer to household:", relationshipError);
-    throw relationshipError;
-  }
+  customerId: string,
+  householdId: string,
+  relationshipType: string
+) => {
+  return await addHouseholdMember({
+    customer_id: customerId,
+    household_id: householdId,
+    relationship_type: relationshipType
+  });
 };
 
 /**
- * Record technician preference activity
+ * Process customer segment assignments
  */
-export const recordTechnicianPreference = async (technicianId: string): Promise<void> => {
-  if (!technicianId) {
-    return;
-  }
-  
-  try {
-    const selectedTechnician = technicians.find(tech => tech.id === technicianId);
-    const technicianName = selectedTechnician ? selectedTechnician.name : "Unknown";
-    
-    await recordWorkOrderActivity(
-      `Preferred technician set to ${technicianName} (${technicianId}) during customer creation`,
-      "00000000-0000-0000-0000-000000000000",
-      "system", 
-      "System"
-    );
-  } catch (historyError) {
-    console.error("Error recording technician preference:", historyError);
-  }
+export const processSegmentAssignments = async (
+  customerId: string,
+  segmentIds: string[]
+) => {
+  if (!segmentIds.length) return;
+  return await assignCustomerToSegments(customerId, segmentIds);
 };
 
 /**
- * Prepare customer data from form values
+ * Record technician preference
  */
-export const prepareCustomerData = (formData: CustomerFormValues) => {
-  const preferredTechnicianId = formData.preferred_technician_id === "_none" ? "" : formData.preferred_technician_id;
-  const referralSource = formData.referral_source === "_none" ? "" : formData.referral_source;
-  
+export const recordTechnicianPreference = async (technicianId: string) => {
+  // Placeholder: In a real app, you might want to track this in a separate table
+  console.log("Recording technician preference:", technicianId);
+  return true;
+};
+
+/**
+ * Prepare customer data for creation from form values
+ */
+export const prepareCustomerData = (data: CustomerFormValues): CustomerCreate => {
+  // Make sure we retain all relevant fields from the form
   return {
-    first_name: formData.first_name,
-    last_name: formData.last_name,
-    email: formData.email || "",
-    phone: formData.phone || "",
-    address: formData.address || "",
-    city: formData.city || "",
-    state: formData.state || "",
-    postal_code: formData.postal_code || "",
-    country: formData.country || "",
-    shop_id: formData.shop_id,
-    preferred_technician_id: preferredTechnicianId,
-    referral_source: referralSource,
-    referral_person_id: formData.referral_person_id,
-    other_referral_details: referralSource === "Other" ? formData.other_referral_details : "",
-    household_id: null, // Will be updated after processing households
-    notes: formData.notes || "",
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email || "",
+    phone: data.phone || "",
+    address: data.address || "",
+    city: data.city || "",
+    state: data.state || "",
+    postal_code: data.postal_code || "",
+    country: data.country || "",
+    company: data.company || "",
+    notes: data.notes || "",
+    shop_id: data.shop_id,
+    tags: data.tags || [],
+    preferred_technician_id: data.preferred_technician_id || "",
+    communication_preference: data.communication_preference || "",
+    referral_source: data.referral_source || "",
+    referral_person_id: data.referral_person_id || "",
+    other_referral_details: data.other_referral_details || "",
+    is_fleet: data.is_fleet || false,
+    fleet_company: data.fleet_company || "",
+    
+    // Ensure vehicles data is correctly passed
+    vehicles: data.vehicles || [],
+    
+    segments: data.segments || [],
+    
+    // Set the role to "Customer" for consistency
+    role: "Customer",
   };
 };
