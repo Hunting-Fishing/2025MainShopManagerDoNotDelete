@@ -53,9 +53,12 @@ import Shopping from './pages/Shopping';
 import ShoppingAdmin from './pages/ShoppingAdmin';
 import Login from './pages/Login';
 import Index from './pages/Index';
-import VehicleDetails from './pages/VehicleDetails'; // Add this import
+import VehicleDetails from './pages/VehicleDetails';
+import Forms from './pages/Forms';
+import FormEditor from './pages/FormEditor';
+import FormPreview from './pages/FormPreview';
 import { useEffect, useState } from 'react';
-import { supabase } from './integrations/supabase/client';
+import { supabase } from './lib/supabase';
 import './App.css';
 
 function App() {
@@ -107,6 +110,10 @@ function App() {
             <Route path="invoices/:id" element={<InvoiceDetails />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="inventory/add" element={<InventoryAdd />} />
+            <Route path="forms" element={<Forms />} />
+            <Route path="forms/create" element={<FormEditor />} />
+            <Route path="forms/:id" element={<FormPreview />} />
+            <Route path="forms/:id/edit" element={<FormEditor />} />
             <Route path="repair-plans" element={<RepairPlans />} />
             <Route path="repair-plans/create" element={<CreateRepairPlan />} />
             <Route path="repair-plans/:id" element={<RepairPlanDetails />} />

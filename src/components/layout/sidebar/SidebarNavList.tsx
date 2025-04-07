@@ -16,7 +16,8 @@ import {
   BellRing,
   HardDrive,
   UserCog,
-  ShoppingBag
+  ShoppingBag,
+  FilePen
 } from "lucide-react";
 import { SidebarNavItem, NavItem } from "./SidebarNavItem";
 
@@ -51,6 +52,11 @@ const navigationItems: NavItem[] = [
     title: "Inventory",
     href: "/inventory",
     icon: <Package className="h-5 w-5" />
+  },
+  {
+    title: "Forms",
+    href: "/forms",
+    icon: <FilePen className="h-5 w-5" />
   },
   {
     title: "Maintenance",
