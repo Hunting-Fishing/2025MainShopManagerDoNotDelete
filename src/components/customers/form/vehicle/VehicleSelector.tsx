@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import {
   MakeField, 
   ModelField, 
   LicensePlateField 
-} from "./VehicleFormFields";
+} from "./fields";
 import { decodeVin } from "@/utils/vehicleUtils";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
@@ -31,17 +30,14 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
   const vin = form.watch(`vehicles.${index}.vin`);
 
-  // Handle VIN decoding
   useEffect(() => {
     const handleVinDecode = async () => {
       if (vin?.length === 17) {
         try {
           const decodedData = await decodeVin(vin);
           if (decodedData) {
-            // Update decodedVehicle state
             setDecodedVehicle(decodedData);
             
-            // Set form values from decoded VIN
             form.setValue(`vehicles.${index}.make`, decodedData.make || '');
             form.setValue(`vehicles.${index}.model`, decodedData.model || '');
             form.setValue(`vehicles.${index}.year`, decodedData.year || '');
