@@ -1,3 +1,5 @@
 
-// Re-export all customer services from this index file
-export * from "./customerService";
+// Re-export everything from each service file
+export * from './customerQueryService';
+export * from './customerUpdateService';
+// Include any other customer service files here

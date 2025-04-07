@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
 
@@ -78,6 +78,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
   }
 
   // If the customer has vehicles, handle those separately
+  let vehiclesUpdated = 0;
   if (updates.vehicles && updates.vehicles.length > 0) {
     try {
       // First get existing vehicles
@@ -133,6 +134,8 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
               
             if (updateError) {
               console.error("Error updating vehicle:", updateError);
+            } else {
+              vehiclesUpdated++;
             }
           } else {
             // Insert new vehicle
@@ -151,6 +154,8 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
               
             if (insertError) {
               console.error("Error adding vehicle:", insertError);
+            } else {
+              vehiclesUpdated++;
             }
           }
         }

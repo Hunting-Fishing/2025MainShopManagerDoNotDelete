@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
 
@@ -7,7 +7,10 @@ import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
 export const getAllCustomers = async (): Promise<Customer[]> => {
   const { data, error } = await supabase
     .from("customers")
-    .select("*")
+    .select(`
+      *,
+      vehicles(*)
+    `)
     .order("last_name", { ascending: true });
 
   if (error) {
@@ -40,9 +43,14 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
 
 // Fetch a customer by ID
 export const getCustomerById = async (id: string): Promise<Customer | null> => {
+  console.log("Fetching customer by ID:", id);
+  
   const { data, error } = await supabase
     .from("customers")
-    .select("*")
+    .select(`
+      *,
+      vehicles(*)
+    `)
     .eq("id", id)
     .single();
 
@@ -53,6 +61,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
 
   if (!data) return null;
   
+  console.log("Customer data from DB:", data);
   const customer = adaptCustomerForUI(data as Customer);
   
   // Fetch loyalty data

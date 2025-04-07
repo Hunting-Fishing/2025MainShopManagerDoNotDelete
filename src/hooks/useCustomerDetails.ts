@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
-import { getCustomerById } from "@/services/customerService";
+import { getCustomerById } from "@/services/customer";
 import { CustomerInteraction } from "@/types/interaction";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { getCustomerNotes } from "@/services/customers";
 
 export const useCustomerDetails = (id?: string) => {
@@ -26,8 +27,11 @@ export const useCustomerDetails = (id?: string) => {
   const loadCustomerDetails = async (customerId: string) => {
     setLoading(true);
     try {
-      // Fetch customer data
+      // Fetch customer data with vehicles included
+      console.log("Loading customer details for ID:", customerId);
       const customerData = await getCustomerById(customerId);
+      console.log("Customer data loaded:", customerData);
+      
       if (customerData) {
         setCustomer(customerData);
       }
@@ -47,35 +51,6 @@ export const useCustomerDetails = (id?: string) => {
         // Instead of querying a non-existent table, we'll generate mock data or handle differently
         // For now, we'll just initialize with an empty array
         setCustomerInteractions([]);
-        
-        // When the 'customer_interactions' table exists, uncomment this code:
-        /*
-        const { data: interactions, error: interactionsError } = await supabase
-          .from('customer_interactions')
-          .select('*')
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
-
-        if (interactionsError) throw interactionsError;
-        
-        // Type as CustomerInteraction
-        const typedInteractions = interactions?.map(interaction => {
-          return {
-            id: interaction.id,
-            customerId: interaction.customer_id,
-            customerName: `${customer?.first_name} ${customer?.last_name}`, // Add the required customerName field
-            date: interaction.created_at,
-            staffMemberId: interaction.staff_member_id || '',
-            staffMemberName: interaction.staff_member_name || '',
-            description: interaction.description || '',
-            notes: interaction.notes || '',
-            type: interaction.type as "work_order" | "communication" | "parts" | "service" | "follow_up",
-            status: interaction.status as "pending" | "in_progress" | "completed" | "cancelled"
-          } as CustomerInteraction;
-        }) || [];
-        
-        setCustomerInteractions(typedInteractions);
-        */
       } catch (error) {
         console.error("Error handling interactions:", error);
         setCustomerInteractions([]);
@@ -132,6 +107,13 @@ export const useCustomerDetails = (id?: string) => {
     }
   };
 
+  // Function to refresh customer data
+  const refreshCustomerData = async () => {
+    if (id) {
+      loadCustomerDetails(id);
+    }
+  };
+
   const handleInteractionAdded = (interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
     setActiveTab("interactions");
@@ -156,6 +138,7 @@ export const useCustomerDetails = (id?: string) => {
     setAddInteractionOpen,
     activeTab,
     setActiveTab,
+    refreshCustomerData,
     handleInteractionAdded,
     handleCommunicationAdded,
     handleNoteAdded

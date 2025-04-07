@@ -144,7 +144,7 @@ export const useCustomerEdit = (customerId?: string) => {
       console.log("Submitting form data with vehicles:", formData.vehicles);
       
       // Update customer
-      await updateCustomer(customerId, formData);
+      const updatedCustomer = await updateCustomer(customerId, formData);
       
       toast({
         title: "Success",

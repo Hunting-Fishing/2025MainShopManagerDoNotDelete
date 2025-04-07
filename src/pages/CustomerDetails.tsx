@@ -1,6 +1,6 @@
 
-import React from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { AddInteractionDialog } from "@/components/interactions/AddInteractionDialog";
 import { CustomerDetailsHeader } from "@/components/customers/details/CustomerDetailsHeader";
@@ -8,6 +8,7 @@ import { CustomerDetailsTabs } from "@/components/customers/details/CustomerDeta
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const {
     customer,
     customerWorkOrders,
@@ -19,10 +20,26 @@ export default function CustomerDetails() {
     setAddInteractionOpen,
     activeTab,
     setActiveTab,
+    refreshCustomerData,
     handleInteractionAdded,
     handleCommunicationAdded,
     handleNoteAdded
   } = useCustomerDetails(id);
+  
+  // Check if the URL has a tab parameter to set the active tab
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, setActiveTab]);
+  
+  // Refresh customer data when arriving at this page
+  useEffect(() => {
+    if (id) {
+      refreshCustomerData();
+    }
+  }, [id]);
 
   if (loading) {
     return (
@@ -51,9 +68,13 @@ export default function CustomerDetails() {
         customer={customer}
         customerWorkOrders={customerWorkOrders}
         customerInteractions={customerInteractions}
+        customerCommunications={customerCommunications}
+        customerNotes={customerNotes}
         setAddInteractionOpen={setAddInteractionOpen}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        onCommunicationAdded={handleCommunicationAdded}
+        onNoteAdded={handleNoteAdded}
       />
       
       {customer && (

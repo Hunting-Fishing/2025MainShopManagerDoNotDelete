@@ -15,6 +15,8 @@ interface CustomerVehiclesTabProps {
 export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ customer }) => {
   const navigate = useNavigate();
   const vehicles = customer.vehicles || [];
+  
+  console.log('Rendering CustomerVehiclesTab with vehicles:', vehicles);
 
   const handleAddVehicle = () => {
     // Use the correct route pattern for edit customer with vehicles tab active
@@ -25,7 +27,7 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
     navigate(`/customers/${customer.id}/edit?tab=vehicles`);
   };
 
-  if (vehicles.length === 0) {
+  if (!vehicles || vehicles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
         <Car className="w-16 h-16 mb-4 text-muted-foreground" />
