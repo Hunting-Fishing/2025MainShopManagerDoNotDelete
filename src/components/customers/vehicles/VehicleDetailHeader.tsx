@@ -48,13 +48,8 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
           <div className="flex items-center gap-2">
             <Car className="h-5 w-5 text-slate-600" />
             <h2 className="text-xl font-semibold">
-              {vehicle.year} {vehicle.make} {vehicle.model}
+              {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim && <span className="text-slate-600">{vehicle.trim}</span>}
             </h2>
-            {vehicle.color && (
-              <Badge variant="outline" className="ml-2">
-                {vehicle.color}
-              </Badge>
-            )}
           </div>
           <div className="flex items-center gap-2 text-slate-600 text-sm">
             <User className="h-4 w-4" />
@@ -138,8 +133,14 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
               )}
               {vehicle.body_style && (
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Body:</span>
+                  <span className="text-slate-500">Bodyclass:</span>
                   <span>{vehicle.body_style}</span>
+                </div>
+              )}
+              {vehicle.trim && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Trim:</span>
+                  <span>{vehicle.trim}</span>
                 </div>
               )}
               {vehicle.country && (

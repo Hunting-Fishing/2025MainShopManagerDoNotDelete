@@ -51,10 +51,11 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             form.setValue(`vehicles.${index}.make`, decodedData.make || '');
             form.setValue(`vehicles.${index}.model`, decodedData.model || '');
             form.setValue(`vehicles.${index}.year`, decodedData.year || '');
+            form.setValue(`vehicles.${index}.trim`, decodedData.trim || '');
             
             toast({
               title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
+              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model} ${decodedData.trim || ''}`,
               variant: "success",
             });
           }

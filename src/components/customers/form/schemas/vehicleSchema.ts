@@ -9,7 +9,7 @@ export interface VehicleFormData {
   year: string;
   vin?: string;
   license_plate?: string;
-  color?: string;
+  trim?: string;
   
   // Additional vehicle details
   transmission?: string;
@@ -29,7 +29,7 @@ export const emptyVehicle: VehicleFormData = {
   year: '',
   vin: '',
   license_plate: '',
-  color: '',
+  trim: '',
   transmission: '',
   drive_type: '',
   fuel_type: '',
@@ -48,7 +48,7 @@ export const vehicleSchema = z.object({
   year: z.string().min(1, "Year is required"),
   vin: z.string().optional().or(z.literal("")),
   license_plate: z.string().optional().or(z.literal("")),
-  color: z.string().optional().or(z.literal("")),
+  trim: z.string().optional().or(z.literal("")),
   transmission: z.string().optional().or(z.literal("")),
   drive_type: z.string().optional().or(z.literal("")),
   fuel_type: z.string().optional().or(z.literal("")),

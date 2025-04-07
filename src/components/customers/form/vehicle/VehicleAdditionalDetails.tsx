@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,6 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   index,
   decodedDetails
 }) => {
-  const color = form.watch(`vehicles.${index}.color`) || '';
   const transmissionType = form.watch(`vehicles.${index}.transmission_type`) || '';
   
   // Update form with decoded values if provided
@@ -23,7 +23,6 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
     if (decodedDetails) {
       console.log("Rendering VehicleAdditionalDetails with:", {
         decodedDetails,
-        color,
         transmissionType
       });
 
@@ -35,6 +34,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
       form.setValue(`vehicles.${index}.body_style`, decodedDetails.body_style || '');
       form.setValue(`vehicles.${index}.country`, decodedDetails.country || '');
       form.setValue(`vehicles.${index}.gvwr`, decodedDetails.gvwr || '');
+      form.setValue(`vehicles.${index}.trim`, decodedDetails.trim || '');
     }
   }, [decodedDetails, form, index]);
   
@@ -42,25 +42,21 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
     <div className="grid grid-cols-1 gap-4 mt-4">
       <h4 className="text-sm font-medium text-slate-500">Vehicle Details</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Color Field */}
+        {/* Trim Field */}
         <FormField
           control={form.control}
-          name={`vehicles.${index}.color`}
+          name={`vehicles.${index}.trim`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Color</FormLabel>
+              <FormLabel>Trim</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Vehicle color" />
+                <Input {...field} placeholder="Trim level (e.g., SE, XLE, Limited)" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         
-        {/* Removed duplicate Transmission Field - keeping only the one in the specialized section below */}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Drive Type Field */}
         <FormField
           control={form.control}
@@ -75,7 +71,9 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
-        
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Fuel Type Field */}
         <FormField
           control={form.control}
@@ -90,9 +88,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
         {/* Engine Field */}
         <FormField
           control={form.control}
@@ -107,14 +103,16 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
-        
-        {/* Body Style Field */}
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Body Style Field - renamed to Bodyclass */}
         <FormField
           control={form.control}
           name={`vehicles.${index}.body_style`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Body Style</FormLabel>
+              <FormLabel>Bodyclass</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Sedan, SUV, etc." />
               </FormControl>
@@ -122,9 +120,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
         {/* Country Field */}
         <FormField
           control={form.control}
@@ -139,8 +135,10 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
-        
-        {/* Transmission Field (kept this one) */}
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Transmission Field */}
         <FormField
           control={form.control}
           name={`vehicles.${index}.transmission`}
@@ -154,9 +152,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
         {/* Transmission Type Field - Specific details */}
         <FormField
           control={form.control}
@@ -171,7 +167,9 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
-        
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* GVWR Field */}
         <FormField
           control={form.control}

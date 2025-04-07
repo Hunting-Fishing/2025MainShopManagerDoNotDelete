@@ -7,7 +7,7 @@ export interface CustomerVehicle {
   model?: string;
   vin?: string;
   license_plate?: string;
-  color?: string;
+  trim?: string;
   last_service_date?: string;
   // Additional vehicle details
   transmission?: string;
