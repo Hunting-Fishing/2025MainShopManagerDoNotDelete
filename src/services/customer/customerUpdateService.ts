@@ -47,6 +47,34 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
 
   console.log("Updating customer with data:", customerData);
 
+  // Store business details in separate table or metadata
+  const hasBusinessDetails = updates.business_type || 
+                            updates.business_industry || 
+                            updates.other_business_industry ||
+                            updates.tax_id ||
+                            updates.business_email ||
+                            updates.business_phone;
+
+  // For now, we'll store business details in the notes if they exist
+  if (hasBusinessDetails) {
+    let businessNotes = "Business Details:\n";
+    if (updates.business_type) businessNotes += `Type: ${updates.business_type}\n`;
+    if (updates.business_industry) businessNotes += `Industry: ${updates.business_industry}\n`;
+    if (updates.other_business_industry) businessNotes += `Other Industry: ${updates.other_business_industry}\n`;
+    if (updates.tax_id) businessNotes += `Tax ID: ${updates.tax_id}\n`;
+    if (updates.business_email) businessNotes += `Business Email: ${updates.business_email}\n`;
+    if (updates.business_phone) businessNotes += `Business Phone: ${updates.business_phone}\n`;
+    
+    if (customerData.notes) {
+      // Append to existing notes
+      customerData.notes += "\n\n" + businessNotes;
+    } else {
+      customerData.notes = businessNotes;
+    }
+    
+    console.log("Added business details to notes");
+  }
+
   const { data, error } = await supabase
     .from("customers")
     .update(customerData)
