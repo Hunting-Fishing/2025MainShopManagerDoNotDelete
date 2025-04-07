@@ -60,7 +60,9 @@ export function WorkOrderInventoryItems({ workOrder, inventoryItems }: WorkOrder
 
   // Calculate total by status
   const totalsByStatus = Object.entries(groupedItems).reduce((acc, [status, statusItems]) => {
-    acc[status] = statusItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    // Explicitly type statusItems as WorkOrderInventoryItem[] to fix the TypeScript error
+    const typedItems = statusItems as WorkOrderInventoryItem[];
+    acc[status] = typedItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     return acc;
   }, {} as Record<string, number>);
 
