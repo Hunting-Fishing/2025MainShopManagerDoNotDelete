@@ -24,31 +24,31 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   // Define the fields to display
   const additionalFields = [
     {
-      name: `vehicles.${index}.transmission`,
+      name: `vehicles.${index}.transmission` as const,
       label: "Transmission",
       value: decodedDetails.transmission,
       placeholder: "Transmission"
     },
     {
-      name: `vehicles.${index}.drive_type`,
+      name: `vehicles.${index}.drive_type` as const,
       label: "Drive Type",
       value: decodedDetails.drive_type,
       placeholder: "Drive Type"
     },
     {
-      name: `vehicles.${index}.fuel_type`,
+      name: `vehicles.${index}.fuel_type` as const,
       label: "Fuel Type",
       value: decodedDetails.fuel_type,
       placeholder: "Fuel Type"
     },
     {
-      name: `vehicles.${index}.engine`,
+      name: `vehicles.${index}.engine` as const,
       label: "Engine",
       value: decodedDetails.engine,
       placeholder: "Engine"
     },
     {
-      name: `vehicles.${index}.country`,
+      name: `vehicles.${index}.country` as const,
       label: "Country of Origin",
       value: decodedDetails.country,
       placeholder: "Country of Origin"
