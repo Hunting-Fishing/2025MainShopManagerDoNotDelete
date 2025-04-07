@@ -63,3 +63,6 @@ export interface Customer {
 
 // Import CustomerLoyalty from loyalty.ts
 import { CustomerLoyalty } from '../loyalty';
+// Import missing types
+import { PreferredTechnicianChange } from './technician';
+import { CustomerVehicle } from './vehicle';
