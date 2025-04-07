@@ -23,6 +23,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
   const [isDecoding, setIsDecoding] = useState(false);
   const [decodedDetails, setDecodedDetails] = useState<any>(null);
   const vehicle = form.watch(`vehicles.${index}`);
+  const color = form.watch(`vehicles.${index}.color`);
   
   const handleVinUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const vin = e.target.value;
@@ -52,6 +53,17 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
           if (decodedData.engine) form.setValue(`vehicles.${index}.engine`, decodedData.engine);
           if (decodedData.gvwr) form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr);
           
+          // Log all the values we've set
+          console.log("Form values after setting:", {
+            make: form.getValues(`vehicles.${index}.make`),
+            model: form.getValues(`vehicles.${index}.model`),
+            year: form.getValues(`vehicles.${index}.year`),
+            transmission: form.getValues(`vehicles.${index}.transmission`),
+            transmission_type: form.getValues(`vehicles.${index}.transmission_type`),
+            drive_type: form.getValues(`vehicles.${index}.drive_type`),
+            fuel_type: form.getValues(`vehicles.${index}.fuel_type`)
+          });
+          
           // Trigger form validation after setting values
           form.trigger([
             `vehicles.${index}.make`,
@@ -64,6 +76,18 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
       } finally {
         setIsDecoding(false);
       }
+    }
+  };
+
+  // Handle color change to update the decodedDetails and force re-render
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Update the form value
+    form.setValue(`vehicles.${index}.color`, e.target.value);
+    
+    // Force a re-render of the additional details component
+    if (decodedDetails) {
+      console.log("Color changed, updating decodedDetails to force re-render");
+      setDecodedDetails({...decodedDetails});
     }
   };
 
@@ -147,10 +171,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
                     value={field.value || ''}
                     onChange={(e) => {
                       field.onChange(e);
-                      // Force a re-render of the additional details component
-                      if (decodedDetails) {
-                        setDecodedDetails({...decodedDetails});
-                      }
+                      handleColorChange(e);
                     }}
                   />
                 </FormControl>

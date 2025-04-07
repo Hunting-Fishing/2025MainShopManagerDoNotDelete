@@ -14,7 +14,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Pickup Truck",
     country: "USA",
-    engine: "3.5L V6 EcoBoost"
+    engine: "3.5L V6 EcoBoost",
+    gvwr: "Class 3: 10,001 - 14,000 lb"
   },
   "1G1ZD5ST": { 
     year: "2017", 
@@ -26,31 +27,34 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "USA",
-    engine: "1.5L 4-Cylinder Turbo"
+    engine: "1.5L 4-Cylinder Turbo",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
   "1HGCV1F3": { 
     year: "2019", 
     make: "honda", 
     model: "Accord",
     transmission: "Automatic",
-    transmission_type: "CVT",
+    transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "USA",
-    engine: "1.5L 4-Cylinder Turbo"
+    engine: "1.5L 4-Cylinder Turbo",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
   "2T1BURH": { 
     year: "2020", 
     make: "toyota", 
     model: "Corolla",
     transmission: "Automatic",
-    transmission_type: "CVT",
+    transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "JAPAN",
-    engine: "1.8L 4-Cylinder"
+    engine: "1.8L 4-Cylinder",
+    gvwr: "Class 1A: 0 - 3,000 lb"
   },
   "JN1AZ4EH": { 
     year: "2016", 
@@ -62,7 +66,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Coupe",
     country: "JAPAN",
-    engine: "3.7L V6"
+    engine: "3.7L V6",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
   "3VWCB7AU": { 
     year: "2021", 
@@ -74,7 +79,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "GERMANY",
-    engine: "1.4L 4-Cylinder Turbo"
+    engine: "1.4L 4-Cylinder Turbo",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
   "5YJSA1E4": { 
     year: "2019", 
@@ -86,7 +92,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Electric",
     body_style: "Sedan",
     country: "USA",
-    engine: "Dual Electric Motors"
+    engine: "Dual Electric Motors",
+    gvwr: "Class 1C: 4,001 - 5,000 lb"
   },
   "WAUENAF4": { 
     year: "2017", 
@@ -98,7 +105,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "GERMANY",
-    engine: "2.0L 4-Cylinder Turbo"
+    engine: "2.0L 4-Cylinder Turbo",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
   "4JGDA5HB": { 
     year: "2020", 
@@ -110,7 +118,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "SUV",
     country: "GERMANY",
-    engine: "3.0L 6-Cylinder Turbo"
+    engine: "3.0L 6-Cylinder Turbo",
+    gvwr: "Class 2A: 6,001 - 8,000 lb"
   },
   "WBA3N5C5": { 
     year: "2018", 
@@ -122,7 +131,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "GERMANY",
-    engine: "2.0L 4-Cylinder Turbo" 
+    engine: "2.0L 4-Cylinder Turbo",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
   "YV4A22PK": { 
     year: "2021", 
@@ -134,7 +144,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "SUV",
     country: "SWEDEN",
-    engine: "2.0L 4-Cylinder Turbo"
+    engine: "2.0L 4-Cylinder Turbo",
+    gvwr: "Class 1D: 5,001 - 6,000 lb"
   },
   "5TFDY5F1": { 
     year: "2022", 
@@ -146,7 +157,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Pickup Truck",
     country: "USA",
-    engine: "3.5L V6 Twin-Turbo"
+    engine: "3.5L V6 Twin-Turbo",
+    gvwr: "Class 2B: 8,001 - 10,000 lb"
   },
   "1C6SRFJT": { 
     year: "2023", 
@@ -158,7 +170,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Pickup Truck",
     country: "USA",
-    engine: "5.7L V8 HEMI"
+    engine: "5.7L V8 HEMI",
+    gvwr: "Class 2A: 6,001 - 8,000 lb"
   },
   "1C4RJFBG": { 
     year: "2020", 
@@ -170,7 +183,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "SUV",
     country: "USA",
-    engine: "3.6L V6"
+    engine: "3.6L V6",
+    gvwr: "Class 1D: 5,001 - 6,000 lb"
   },
   "KM8J3CAL": { 
     year: "2021", 
@@ -182,7 +196,8 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "SUV",
     country: "KOREA",
-    engine: "2.5L 4-Cylinder Turbo"
+    engine: "2.5L 4-Cylinder Turbo",
+    gvwr: "Class 1D: 5,001 - 6,000 lb"
   },
   "5XXG64J2": { 
     year: "2019", 
@@ -194,43 +209,47 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "KOREA",
-    engine: "2.4L 4-Cylinder"
+    engine: "2.4L 4-Cylinder",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
   "JF2GTAMC": { 
     year: "2022", 
     make: "subaru", 
     model: "Forester",
     transmission: "Automatic",
-    transmission_type: "CVT",
+    transmission_type: "CVT Automatic",
     drive_type: "AWD",
     fuel_type: "Gas",
     body_style: "SUV",
     country: "JAPAN",
-    engine: "2.5L 4-Cylinder"
+    engine: "2.5L 4-Cylinder",
+    gvwr: "Class 1C: 4,001 - 5,000 lb"
   },
   "KMHLM4AG": { 
     year: "2023", 
     make: "hyundai", 
     model: "Elantra",
     transmission: "Automatic",
-    transmission_type: "CVT",
+    transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "KOREA",
-    engine: "2.0L 4-Cylinder"
+    engine: "2.0L 4-Cylinder",
+    gvwr: "Class 1A: 0 - 3,000 lb"
   },
   "2HGFC2F5": { 
     year: "2022", 
     make: "honda", 
     model: "Civic",
     transmission: "Automatic",
-    transmission_type: "CVT",
+    transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
     body_style: "Sedan",
     country: "JAPAN",
-    engine: "1.5L 4-Cylinder Turbo"
+    engine: "1.5L 4-Cylinder Turbo",
+    gvwr: "Class 1A: 0 - 3,000 lb"
   },
   "3GNAXKEV": { 
     year: "2021", 
@@ -242,6 +261,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     fuel_type: "Gas",
     body_style: "SUV",
     country: "USA",
-    engine: "1.5L 4-Cylinder Turbo"
+    engine: "1.5L 4-Cylinder Turbo",
+    gvwr: "Class 1D: 5,001 - 6,000 lb"
   }
 };

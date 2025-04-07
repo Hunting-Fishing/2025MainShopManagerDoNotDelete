@@ -24,12 +24,19 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   // Get the color value from the form
   const color = form.watch(`vehicles.${index}.color`);
 
+  console.log("Rendering VehicleAdditionalDetails with:", { 
+    decodedDetails, 
+    color,
+    transmissionType: decodedDetails.transmission_type || "",
+    transmission: decodedDetails.transmission || ""
+  });
+
   // Define the fields to display
   const additionalFields = [
     {
       name: `vehicles.${index}.transmission` as const,
       label: "Transmission",
-      value: decodedDetails.transmission,
+      value: decodedDetails.transmission || "",
       placeholder: "Transmission"
     },
     {
@@ -41,19 +48,19 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
     {
       name: `vehicles.${index}.drive_type` as const,
       label: "Drive Type",
-      value: decodedDetails.drive_type,
+      value: decodedDetails.drive_type || "",
       placeholder: "Drive Type"
     },
     {
       name: `vehicles.${index}.fuel_type` as const,
       label: "Fuel Type",
-      value: decodedDetails.fuel_type,
+      value: decodedDetails.fuel_type || "",
       placeholder: "Fuel Type"
     },
     {
       name: `vehicles.${index}.engine` as const,
       label: "Engine",
-      value: decodedDetails.engine,
+      value: decodedDetails.engine || "",
       placeholder: "Engine"
     },
     {
@@ -65,13 +72,13 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
     {
       name: `vehicles.${index}.body_style` as const,
       label: "Body Style",
-      value: decodedDetails.body_style,
+      value: decodedDetails.body_style || "",
       placeholder: "Body Style"
     },
     {
       name: `vehicles.${index}.country` as const,
       label: "Country of Origin",
-      value: decodedDetails.country,
+      value: decodedDetails.country || "",
       placeholder: "Country of Origin"
     },
     {
@@ -82,15 +89,12 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
     }
   ];
 
-  // Check if any of the fields have values to display
-  const hasAdditionalInfo = additionalFields.some(field => field.value);
+  // Show all fields with values or fields that can be edited (like color)
+  const fieldsToShow = additionalFields.filter(field => 
+    field.value || field.name === `vehicles.${index}.color`
+  );
 
-  if (!hasAdditionalInfo) return null;
-
-  // For debugging - log what fields are available and their values
-  console.log("Decoded vehicle details:", decodedDetails);
-  console.log("Transmission type:", decodedDetails.transmission_type);
-  console.log("Color from form:", color);
+  if (fieldsToShow.length === 0) return null;
 
   return (
     <div className="mt-4">
@@ -99,32 +103,27 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
           <CardTitle className="text-md">Additional Vehicle Information</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-          {additionalFields.map(field => {
-            // Only render fields that have values
-            if (!field.value) return null;
-            
-            return (
-              <FormField
-                key={field.name}
-                control={form.control}
-                name={field.name}
-                render={({ field: formField }) => (
-                  <FormItem>
-                    <FormLabel>{field.label}</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...formField}
-                        value={field.value || formField.value || ''}
-                        placeholder={field.placeholder}
-                        className="bg-gray-50"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            );
-          })}
+          {fieldsToShow.map(field => (
+            <FormField
+              key={field.name}
+              control={form.control}
+              name={field.name}
+              render={({ field: formField }) => (
+                <FormItem>
+                  <FormLabel>{field.label}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...formField}
+                      value={field.value || formField.value || ''}
+                      placeholder={field.placeholder}
+                      className="bg-gray-50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ))}
         </CardContent>
       </Card>
     </div>
