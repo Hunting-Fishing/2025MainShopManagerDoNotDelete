@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
@@ -5,9 +6,11 @@ import { WorkOrderTemplateSelector } from "@/components/work-orders/templates/Wo
 import { workOrderTemplates, updateTemplateUsage } from "@/data/workOrderTemplatesData";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearchParams } from "react-router-dom";
 
 export default function WorkOrderCreate() {
   const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplate | null>(null);
+  const [searchParams] = useSearchParams();
   const [technicians, setTechnicians] = useState<string[]>([
     "Michael Brown",
     "Sarah Johnson",
@@ -15,6 +18,9 @@ export default function WorkOrderCreate() {
     "Emily Chen",
     "Unassigned",
   ]);
+
+  // Check if coming from vehicle details with pre-filled info
+  const hasPreFilledInfo = searchParams.has('customerId') && searchParams.has('vehicleId');
 
   // Fetch technicians (in a real app, this would fetch from a users/employees table)
   useEffect(() => {
@@ -67,13 +73,17 @@ export default function WorkOrderCreate() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <WorkOrderFormHeader 
-          title="Create Work Order" 
-          description="Create a new work order for your team to complete."
+          title={hasPreFilledInfo ? "Create Vehicle Work Order" : "Create Work Order"}
+          description={hasPreFilledInfo 
+            ? "Create a new work order for the selected vehicle." 
+            : "Create a new work order for your team to complete."}
         />
-        <WorkOrderTemplateSelector
-          templates={workOrderTemplates}
-          onSelectTemplate={handleSelectTemplate}
-        />
+        {!hasPreFilledInfo && (
+          <WorkOrderTemplateSelector
+            templates={workOrderTemplates}
+            onSelectTemplate={handleSelectTemplate}
+          />
+        )}
       </div>
 
       {/* Form */}

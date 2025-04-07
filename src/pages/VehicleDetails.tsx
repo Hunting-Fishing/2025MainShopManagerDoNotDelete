@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, MessageSquare, Calendar, Wrench, List, Info, FileSpreadsheet, BarChart3 } from "lucide-react";
+import { ArrowLeft, FileText, MessageSquare, Calendar, Wrench, List, Info, FileSpreadsheet, BarChart3, ClipboardList } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CustomerVehicle } from "@/types/customer";
 import { VehicleDetailHeader } from "@/components/customers/vehicles/VehicleDetailHeader";
@@ -93,13 +93,21 @@ export default function VehicleDetails() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center mb-4">
+      <div className="flex items-center justify-between mb-4">
         <Button onClick={handleBack} variant="ghost" className="mr-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
         </Button>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold flex-1">
           {vehicle.year} {vehicle.make} {vehicle.model}
         </h1>
+        <Button 
+          variant="default"
+          asChild
+        >
+          <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(`${vehicle.year} ${vehicle.make} ${vehicle.model}`)}`}>
+            <ClipboardList className="mr-2 h-4 w-4" /> Create Work Order
+          </Link>
+        </Button>
       </div>
 
       <VehicleDetailHeader vehicle={vehicle} customerName={customerName} customerId={customerId} />

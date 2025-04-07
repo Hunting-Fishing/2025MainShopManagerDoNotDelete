@@ -1,34 +1,78 @@
 
-import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import React, { useState, useEffect } from "react";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
-import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
 import { Customer } from "@/types/customer";
+import { Loader2 } from "lucide-react";
 
 interface CustomerInfoSectionProps {
-  form: UseFormReturn<WorkOrderFormValues>;
+  form: any;
   customers: Customer[];
   isLoading: boolean;
+  selectedVehicleId?: string | null;
 }
 
-export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ form, customers, isLoading }) => {
+export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ 
+  form, 
+  customers, 
+  isLoading,
+  selectedVehicleId 
+}) => {
+  const [selectedCustomerName, setSelectedCustomerName] = useState<string>("");
+  const [customerAddress, setCustomerAddress] = useState<string>("");
+  
+  // When a customer is selected, find their name and address
+  useEffect(() => {
+    const customerId = form.getValues().customer;
+    if (customerId) {
+      const customer = customers.find(c => c.id === customerId);
+      if (customer) {
+        setSelectedCustomerName(`${customer.first_name} ${customer.last_name}`);
+        
+        // Build address string from customer data
+        const addressParts = [];
+        if (customer.address) addressParts.push(customer.address);
+        if (customer.city) addressParts.push(customer.city);
+        if (customer.state) addressParts.push(customer.state);
+        if (customer.postal_code) addressParts.push(customer.postal_code);
+        
+        setCustomerAddress(addressParts.join(", "));
+      }
+    }
+  }, [form, customers]);
+  
   return (
     <>
+      {/* Customer Select Field */}
       <FormField
         control={form.control}
         name="customer"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Customer</FormLabel>
-            <Select 
-              onValueChange={field.onChange} 
-              value={field.value || undefined}
-              disabled={isLoading}
-            >
-              <FormControl>
+            <FormControl>
+              <Select
+                disabled={isLoading}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  // Find customer name for the selected ID
+                  const customer = customers.find(c => c.id === value);
+                  if (customer) {
+                    setSelectedCustomerName(`${customer.first_name} ${customer.last_name}`);
+                    
+                    // Update address
+                    const addressParts = [];
+                    if (customer.address) addressParts.push(customer.address);
+                    if (customer.city) addressParts.push(customer.city);
+                    if (customer.state) addressParts.push(customer.state);
+                    if (customer.postal_code) addressParts.push(customer.postal_code);
+                    
+                    setCustomerAddress(addressParts.join(", "));
+                  }
+                }}
+                value={field.value}
+              >
                 <SelectTrigger>
                   {isLoading ? (
                     <div className="flex items-center">
@@ -39,30 +83,22 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ form, 
                     <SelectValue placeholder="Select a customer" />
                   )}
                 </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {customers.map((customer) => (
-                  <SelectItem 
-                    key={customer.id} 
-                    value={customer.first_name && customer.last_name ? 
-                      `${customer.first_name} ${customer.last_name}` : 
-                      customer.id}
-                  >
-                    {customer.first_name} {customer.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <SelectContent>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.first_name} {customer.last_name}
+                      {customer.company ? ` (${customer.company})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormControl>
             <FormMessage />
-            {customers.length === 0 && !isLoading && (
-              <FormDescription className="text-amber-600">
-                No customers found. Please add a customer first.
-              </FormDescription>
-            )}
           </FormItem>
         )}
       />
 
+      {/* Location Field */}
       <FormField
         control={form.control}
         name="location"
@@ -70,26 +106,39 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ form, 
           <FormItem>
             <FormLabel>Location</FormLabel>
             <FormControl>
-              <Input placeholder="Enter location" {...field} />
+              <Input 
+                placeholder="Service location" 
+                {...field} 
+                defaultValue={customerAddress}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
 
+      {/* Description Field */}
       <FormField
         control={form.control}
         name="description"
         render={({ field }) => (
-          <FormItem className="col-span-1 md:col-span-2">
+          <FormItem className="col-span-full">
             <FormLabel>Description</FormLabel>
             <FormControl>
-              <Input placeholder="Brief description of the work" {...field} />
+              <Input 
+                placeholder="Brief description of the work" 
+                {...field} 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
+
+      {/* Hidden field to track the selected vehicle */}
+      {selectedVehicleId && (
+        <input type="hidden" id="selected-vehicle-id" value={selectedVehicleId} />
+      )}
     </>
   );
 };

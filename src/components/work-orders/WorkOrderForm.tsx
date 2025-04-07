@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -31,10 +32,18 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   initialTemplate
 }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { form, onSubmit, isSubmitting, error, setTimeEntries, setFormValues } = useWorkOrderForm();
   const [timeEntries, setLocalTimeEntries] = useState<TimeEntry[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+
+  // Get customer and vehicle information from URL parameters
+  const customerId = searchParams.get('customerId');
+  const vehicleId = searchParams.get('vehicleId');
+  const customerName = searchParams.get('customerName');
+  const vehicleInfo = searchParams.get('vehicleInfo');
 
   // Fetch real customers from Supabase
   useEffect(() => {
@@ -94,6 +103,28 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     }
   }, [initialTemplate, form]);
 
+  // Pre-fill form with customer and vehicle information from URL
+  useEffect(() => {
+    if (customerId && customerName) {
+      form.setValue('customer', customerId);
+      
+      if (vehicleInfo) {
+        form.setValue('description', `Service for ${vehicleInfo}`);
+        
+        // If we have a vehicle ID, store it for the component that needs it
+        if (vehicleId) {
+          setSelectedVehicleId(vehicleId);
+        }
+        
+        // Show a toast notification to confirm the pre-fill
+        toast({
+          title: "Information Pre-filled",
+          description: `Work order created for ${customerName}'s ${vehicleInfo}`,
+        });
+      }
+    }
+  }, [customerId, customerName, vehicleId, vehicleInfo, form]);
+
   const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
     setLocalTimeEntries(entries);
     setTimeEntries(entries);
@@ -118,7 +149,12 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Customer Information */}
-            <CustomerInfoSection form={form as any} customers={customers} isLoading={loadingCustomers} />
+            <CustomerInfoSection 
+              form={form as any} 
+              customers={customers} 
+              isLoading={loadingCustomers} 
+              selectedVehicleId={selectedVehicleId}
+            />
             
             {/* Status & Priority */}
             <WorkOrderStatusSection form={form as any} />
