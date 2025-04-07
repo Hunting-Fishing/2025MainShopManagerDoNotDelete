@@ -73,7 +73,7 @@ export interface PreferredTechnicianChange {
 }
 
 export interface CustomerVehicle {
-  id: string;
+  id?: string; // Making id optional for creation
   year?: number;
   make?: string;
   model?: string;
