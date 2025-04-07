@@ -22,6 +22,8 @@ interface CustomerDetailsTabsProps {
   setAddInteractionOpen: (open: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  onCommunicationAdded: (communication: CustomerCommunication) => void;
+  onNoteAdded: (note: CustomerNote) => void;
 }
 
 export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
@@ -30,7 +32,9 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   customerInteractions,
   setAddInteractionOpen,
   activeTab,
-  setActiveTab
+  setActiveTab,
+  onCommunicationAdded,
+  onNoteAdded
 }) => {
   // Initialize state with empty arrays
   const [notes, setNotes] = useState<CustomerNote[]>([]);
@@ -77,11 +81,13 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   // Handle adding a new note
   const handleNoteAdded = (newNote: CustomerNote) => {
     setNotes([newNote, ...notes]);
+    onNoteAdded(newNote);
   };
 
   // Handle adding a new communication
   const handleCommunicationAdded = (newCommunication: CustomerCommunication) => {
     setCommunications([newCommunication, ...communications]);
+    onCommunicationAdded(newCommunication);
   };
 
   // Calculate the number of vehicles for the badge

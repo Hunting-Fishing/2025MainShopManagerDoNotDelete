@@ -27,6 +27,10 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
     navigate(`/customers/${customer.id}/edit?tab=vehicles`);
   };
 
+  const handleVehicleClick = (vehicleId: string) => {
+    navigate(`/customers/${customer.id}/vehicles/${vehicleId}`);
+  };
+
   if (!vehicles || vehicles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
@@ -71,7 +75,11 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
           </TableHeader>
           <TableBody>
             {vehicles.map((vehicle, index) => (
-              <TableRow key={vehicle.id || index} className="hover:bg-muted/50 cursor-pointer" onClick={handleEditCustomer}>
+              <TableRow 
+                key={vehicle.id || index} 
+                className="hover:bg-muted/50 cursor-pointer" 
+                onClick={() => vehicle.id && handleVehicleClick(vehicle.id)}
+              >
                 <TableCell>{vehicle.year}</TableCell>
                 <TableCell>{vehicle.make}</TableCell>
                 <TableCell>{vehicle.model}</TableCell>

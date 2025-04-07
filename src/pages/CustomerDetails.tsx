@@ -68,11 +68,9 @@ export default function CustomerDetails() {
         customer={customer}
         customerWorkOrders={customerWorkOrders}
         customerInteractions={customerInteractions}
-        customerCommunications={customerCommunications}
-        customerNotes={customerNotes}
-        setAddInteractionOpen={setAddInteractionOpen}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        setAddInteractionOpen={setAddInteractionOpen}
         onCommunicationAdded={handleCommunicationAdded}
         onNoteAdded={handleNoteAdded}
       />
