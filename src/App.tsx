@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { HelmetProvider } from 'react-helmet-async';
@@ -52,6 +53,7 @@ import Shopping from './pages/Shopping';
 import ShoppingAdmin from './pages/ShoppingAdmin';
 import Login from './pages/Login';
 import Index from './pages/Index';
+import VehicleDetails from './pages/VehicleDetails'; // Add this import
 import { useEffect, useState } from 'react';
 import { supabase } from './integrations/supabase/client';
 import './App.css';

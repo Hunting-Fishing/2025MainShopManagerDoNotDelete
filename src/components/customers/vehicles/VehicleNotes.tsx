@@ -32,7 +32,14 @@ export const VehicleNotes: React.FC<{
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setNotes(data || []);
+        
+        // Ensure the notes have the correct category type
+        const typedNotes = (data || []).map(note => ({
+          ...note,
+          category: note.category as "service" | "sales" | "follow-up" | "general"
+        }));
+        
+        setNotes(typedNotes);
       } catch (error) {
         console.error("Error fetching notes:", error);
         setNotes([]);
@@ -54,7 +61,7 @@ export const VehicleNotes: React.FC<{
         .insert({
           customer_id: customerId,
           content: `[Vehicle Note] ${newNote}`,
-          category: 'service',
+          category: 'service' as "service" | "sales" | "follow-up" | "general",
           created_by: 'staff'  // In a real app, this would be the logged-in user
         })
         .select();
@@ -62,7 +69,11 @@ export const VehicleNotes: React.FC<{
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setNotes([data[0], ...notes]);
+        const typedNote = {
+          ...data[0], 
+          category: data[0].category as "service" | "sales" | "follow-up" | "general"
+        };
+        setNotes([typedNote, ...notes]);
         setNewNote('');
         setIsAdding(false);
         toast({

@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
-import { addCustomerNote } from "./index";
+import { addCustomerNote } from "./customerNotesService";
 
 // Create a new customer
 export const createCustomer = async (customer: CustomerCreate): Promise<Customer> => {
