@@ -36,7 +36,7 @@ export const emptyVehicle: VehicleFormData = {
   country: ''
 };
 
-// Add the missing vehicleSchema export using Zod
+// Add the vehicleSchema export using Zod
 export const vehicleSchema = z.object({
   id: z.string().optional(),
   make: z.string().min(1, "Make is required"),

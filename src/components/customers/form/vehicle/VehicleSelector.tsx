@@ -127,6 +127,20 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
               </FormItem>
             )}
           />
+          
+          <FormField
+            control={form.control}
+            name={`vehicles.${index}.color`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Color</FormLabel>
+                <FormControl>
+                  <Input placeholder="Vehicle Color" {...field} value={field.value || ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         
         {/* Display additional vehicle details if available */}

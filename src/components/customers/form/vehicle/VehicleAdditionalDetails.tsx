@@ -48,6 +48,12 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
       placeholder: "Engine"
     },
     {
+      name: `vehicles.${index}.body_style` as const,
+      label: "Body Style",
+      value: decodedDetails.body_style,
+      placeholder: "Body Style"
+    },
+    {
       name: `vehicles.${index}.country` as const,
       label: "Country of Origin",
       value: decodedDetails.country,
@@ -85,7 +91,6 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                         value={field.value || formField.value || ''}
                         placeholder={field.placeholder}
                         className="bg-gray-50"
-                        readOnly
                       />
                     </FormControl>
                     <FormMessage />

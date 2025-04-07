@@ -93,7 +93,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
       // First get existing vehicles
       const { data: existingVehicles, error: vehiclesFetchError } = await supabase
         .from("vehicles")
-        .select("id, make, model, year, vin, license_plate")
+        .select("id, make, model, year, vin, license_plate, color, transmission, drive_type, fuel_type, engine, body_style, country")
         .eq("customer_id", id);
         
       if (vehiclesFetchError) {
@@ -114,7 +114,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
           const vehicleYear = vehicle.year ? parseInt(vehicle.year, 10) : null;
           
           if (existingVehicle) {
-            // Update existing vehicle
+            // Update existing vehicle with all fields
             await supabase
               .from("vehicles")
               .update({
@@ -122,11 +122,18 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 model: vehicle.model,
                 year: vehicleYear,
                 vin: vehicle.vin,
-                license_plate: vehicle.license_plate
+                license_plate: vehicle.license_plate,
+                color: vehicle.color,
+                transmission: vehicle.transmission,
+                drive_type: vehicle.drive_type,
+                fuel_type: vehicle.fuel_type,
+                engine: vehicle.engine,
+                body_style: vehicle.body_style,
+                country: vehicle.country
               })
               .eq("id", existingVehicle.id);
           } else {
-            // Insert new vehicle
+            // Insert new vehicle with all fields
             await supabase
               .from("vehicles")
               .insert({
@@ -135,7 +142,14 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 model: vehicle.model,
                 year: vehicleYear,
                 vin: vehicle.vin,
-                license_plate: vehicle.license_plate
+                license_plate: vehicle.license_plate,
+                color: vehicle.color,
+                transmission: vehicle.transmission,
+                drive_type: vehicle.drive_type,
+                fuel_type: vehicle.fuel_type,
+                engine: vehicle.engine,
+                body_style: vehicle.body_style,
+                country: vehicle.country
               });
           }
         }
