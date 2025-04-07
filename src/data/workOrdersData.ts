@@ -25,6 +25,12 @@ export interface WorkOrder {
     odometer?: string;
     licensePlate?: string;
   };
+  // Add missing fields
+  totalBillableTime?: number;
+  createdBy?: string;
+  createdAt?: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
 }
 
 // Define status colors and labels
@@ -34,6 +40,9 @@ export const statusMap: Record<string, string> = {
   "completed": "Completed",
   "cancelled": "Cancelled"
 };
+
+// Add WorkOrderStatus export for components that import it
+export const WorkOrderStatus = statusMap;
 
 // Define priority display properties
 export const priorityMap: Record<
@@ -68,6 +77,11 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "Michael Brown",
       location: "Bay 3",
       dueDate: format(addDays(new Date(), -5), "yyyy-MM-dd"),
+      totalBillableTime: 60, // Add totalBillableTime in minutes
+      createdBy: "System",
+      createdAt: "2023-09-15T10:00:00",
+      lastUpdatedBy: "Michael Brown",
+      lastUpdatedAt: "2023-09-15T11:30:00",
     },
     {
       id: "WO-2023-002",
@@ -79,7 +93,12 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "David Lee",
       location: "Bay 1",
       dueDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
-      notes: "Customer reported intermittent stalling at highway speeds."
+      notes: "Customer reported intermittent stalling at highway speeds.",
+      totalBillableTime: 120,
+      createdBy: "System",
+      createdAt: "2023-09-17T14:00:00",
+      lastUpdatedBy: "David Lee",
+      lastUpdatedAt: "2023-09-17T16:30:00",
     },
     {
       id: "WO-2023-003",
@@ -91,6 +110,9 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "Emily Chen",
       location: "Bay 2",
       dueDate: format(addDays(new Date(), 2), "yyyy-MM-dd"),
+      totalBillableTime: 0,
+      createdBy: "System",
+      createdAt: "2023-09-18T08:45:00",
     },
     {
       id: "WO-2023-004",
@@ -102,7 +124,12 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "Michael Brown",
       location: "Bay 4",
       dueDate: format(addDays(new Date(), -3), "yyyy-MM-dd"),
-      notes: "Recharged refrigerant and replaced cabin air filter."
+      notes: "Recharged refrigerant and replaced cabin air filter.",
+      totalBillableTime: 90,
+      createdBy: "System",
+      createdAt: "2023-09-14T11:30:00",
+      lastUpdatedBy: "Michael Brown",
+      lastUpdatedAt: "2023-09-14T13:15:00",
     },
     {
       id: "WO-2023-005",
@@ -114,7 +141,12 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "David Lee",
       location: "Bay 2",
       dueDate: format(addDays(new Date(), -1), "yyyy-MM-dd"),
-      notes: "Customer called to cancel - rescheduling for next week."
+      notes: "Customer called to cancel - rescheduling for next week.",
+      totalBillableTime: 0,
+      createdBy: "System",
+      createdAt: "2023-09-16T16:15:00",
+      lastUpdatedBy: "System",
+      lastUpdatedAt: "2023-09-16T17:00:00",
     },
     {
       id: "WO-2023-006",
@@ -126,6 +158,9 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "Emily Chen",
       location: "Bay 3",
       dueDate: format(addDays(new Date(), 3), "yyyy-MM-dd"),
+      totalBillableTime: 0,
+      createdBy: "System",
+      createdAt: "2023-09-19T12:45:00",
     },
     {
       id: "WO-2023-007",
@@ -137,7 +172,12 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "Michael Brown",
       location: "Bay 1",
       dueDate: format(addDays(new Date(), 0), "yyyy-MM-dd"),
-      notes: "Parts are on backorder, expected arrival tomorrow."
+      notes: "Parts are on backorder, expected arrival tomorrow.",
+      totalBillableTime: 45,
+      createdBy: "System",
+      createdAt: "2023-09-16T09:45:00",
+      lastUpdatedBy: "Michael Brown",
+      lastUpdatedAt: "2023-09-16T10:30:00",
     },
     {
       id: "WO-2023-008",
@@ -149,6 +189,9 @@ const generateWorkOrders = (): WorkOrder[] => {
       technician: "David Lee",
       location: "Bay 4",
       dueDate: format(addDays(new Date(), 4), "yyyy-MM-dd"),
+      totalBillableTime: 0,
+      createdBy: "System",
+      createdAt: "2023-09-20T09:15:00",
     }
   ];
 };
@@ -192,3 +235,23 @@ export const updateWorkOrder = async (updatedWorkOrder: WorkOrder): Promise<Work
     }
   });
 };
+
+// Add missing utility functions
+export const formatTimeInHoursAndMinutes = (minutes: number): string => {
+  if (!minutes) return '0h 0m';
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${remainingMinutes}m`;
+  }
+  
+  return `${remainingMinutes}m`;
+};
+
+// Get unique technicians for filtering
+export const getUniqueTechnicians = (): string[] => {
+  return Array.from(new Set(workOrders.map(order => order.technician))).sort();
+};
+
