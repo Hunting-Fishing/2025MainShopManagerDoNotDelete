@@ -13,9 +13,15 @@ interface VehicleDetailsFieldProps {
 export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({ form, isFleetCustomer = false }) => {
   const [searchParams] = useSearchParams();
   const vehicleInfo = searchParams.get('vehicleInfo');
-  const vehicleMake = vehicleInfo?.split(' ')[1] || '';
-  const vehicleModel = vehicleInfo?.split(' ')[2] || '';
-  const vehicleYear = vehicleInfo?.split(' ')[0] || '';
+  
+  // Properly parse vehicle info - assuming format "YEAR MAKE MODEL"
+  const vehicleParts = vehicleInfo?.split(' ') || [];
+  const vehicleYear = vehicleParts[0] || '';
+  const vehicleMake = vehicleParts.length > 1 ? vehicleParts[1] : '';
+  
+  // Join all remaining parts as the model (in case model has spaces)
+  const vehicleModel = vehicleParts.length > 2 ? vehicleParts.slice(2).join(' ') : '';
+  
   const vehicleId = searchParams.get('vehicleId') || '';
   
   return (
