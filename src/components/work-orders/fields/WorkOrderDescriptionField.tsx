@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,30 +20,30 @@ export const WorkOrderDescriptionField: React.FC<WorkOrderDescriptionFieldProps>
   
   const handleAreaChange = (area: string) => {
     if (!selectedAreas.includes(area)) {
-      const newAreas = [...selectedAreas, area];
-      setSelectedAreas(newAreas);
-      updateDescription(newAreas, selectedServices);
+      const newSelectedAreas = [...selectedAreas, area];
+      setSelectedAreas(newSelectedAreas);
+      updateDescription(newSelectedAreas, selectedServices);
     }
   };
   
   const handleServiceChange = (service: string) => {
     if (!selectedServices.includes(service)) {
-      const newServices = [...selectedServices, service];
-      setSelectedServices(newServices);
-      updateDescription(selectedAreas, newServices);
+      const newSelectedServices = [...selectedServices, service];
+      setSelectedServices(newSelectedServices);
+      updateDescription(selectedAreas, newSelectedServices);
     }
   };
   
   const removeArea = (area: string) => {
-    const newAreas = selectedAreas.filter(a => a !== area);
-    setSelectedAreas(newAreas);
-    updateDescription(newAreas, selectedServices);
+    const newSelectedAreas = selectedAreas.filter(a => a !== area);
+    setSelectedAreas(newSelectedAreas);
+    updateDescription(newSelectedAreas, selectedServices);
   };
   
   const removeService = (service: string) => {
-    const newServices = selectedServices.filter(s => s !== service);
-    setSelectedServices(newServices);
-    updateDescription(newAreas, newServices);
+    const newSelectedServices = selectedServices.filter(s => s !== service);
+    setSelectedServices(newSelectedServices);
+    updateDescription(selectedAreas, newSelectedServices);
   };
   
   const updateDescription = (areas: string[], services: string[]) => {

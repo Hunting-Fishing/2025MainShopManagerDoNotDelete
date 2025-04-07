@@ -1,195 +1,194 @@
 
-import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
+import { v4 as uuidv4 } from 'uuid';
+import { format, addDays } from 'date-fns';
 
-// Work order status definitions
-export const statusMap = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-  "cancelled": "Cancelled",
-};
-
-// Priority level definitions with styling
-export const priorityMap = {
-  "high": { label: "High", classes: "bg-red-100 text-red-800" },
-  "medium": { label: "Medium", classes: "bg-yellow-100 text-yellow-800" },
-  "low": { label: "Low", classes: "bg-green-100 text-green-800" },
-};
-
-// Types for work orders
-export type WorkOrderStatus = keyof typeof statusMap;
-export type WorkOrderPriority = keyof typeof priorityMap;
-
-// Work order interface
+// Mock data for Work Orders
 export interface WorkOrder {
   id: string;
+  date: string;
   customer: string;
   description: string;
   status: "pending" | "in-progress" | "completed" | "cancelled";
   priority: "low" | "medium" | "high";
-  date: string;
-  dueDate: string;
   technician: string;
   location: string;
+  dueDate: string;
   notes?: string;
-  inventoryItems?: WorkOrderInventoryItem[];
-  timeEntries?: TimeEntry[];
-  totalBillableTime?: number; // Total billable time in minutes
-  createdBy?: string; // Person who created the work order
-  createdAt?: string; // Creation timestamp
-  lastUpdatedBy?: string; // Person who last updated the work order
-  lastUpdatedAt?: string; // Last update timestamp
+  inventoryItems?: any[];
+  timeEntries?: any[];
+  serviceCategory?: string;
+  vehicleId?: string;
+  vehicleDetails?: {
+    make?: string;
+    model?: string;
+    year?: string;
+    odometer?: string;
+    licensePlate?: string;
+  };
 }
 
-// Mock data for work orders
-export const workOrders: WorkOrder[] = [
-  {
-    id: "WO-2023-0012",
-    customer: "Acme Corporation",
-    description: "HVAC System Repair",
-    status: "in-progress",
-    date: "2023-08-15",
-    dueDate: "2023-08-20",
-    priority: "high",
-    technician: "Michael Brown",
-    location: "123 Business Park, Suite 400",
-    timeEntries: [
-      {
-        id: "TE-001",
-        employeeId: "EMP-001",
-        employeeName: "Michael Brown",
-        startTime: "2023-08-15T09:00:00Z",
-        endTime: "2023-08-15T11:30:00Z",
-        duration: 150, // 2.5 hours in minutes
-        notes: "Initial diagnostic and repair work",
-        billable: true
-      },
-      {
-        id: "TE-002",
-        employeeId: "EMP-001",
-        employeeName: "Michael Brown",
-        startTime: "2023-08-16T13:00:00Z",
-        endTime: "2023-08-16T15:00:00Z",
-        duration: 120, // 2 hours in minutes
-        notes: "Completed system repair and testing",
-        billable: true
-      }
-    ],
-    totalBillableTime: 270 // 4.5 hours in minutes
-  },
-  {
-    id: "WO-2023-0011",
-    customer: "Johnson Residence",
-    description: "Electrical Panel Upgrade",
-    status: "pending",
-    date: "2023-08-14",
-    dueDate: "2023-08-22",
-    priority: "medium",
-    technician: "Unassigned",
-    location: "456 Maple Street",
-  },
-  {
-    id: "WO-2023-0010",
-    customer: "City Hospital",
-    description: "Security System Installation",
-    status: "completed",
-    date: "2023-08-12",
-    dueDate: "2023-08-16",
-    priority: "high",
-    technician: "Sarah Johnson",
-    location: "789 Medical Center Drive",
-    timeEntries: [
-      {
-        id: "TE-003",
-        employeeId: "EMP-002",
-        employeeName: "Sarah Johnson",
-        startTime: "2023-08-12T08:00:00Z",
-        endTime: "2023-08-12T16:00:00Z",
-        duration: 480, // 8 hours in minutes
-        notes: "Installation of security cameras and access control systems",
-        billable: true
-      },
-      {
-        id: "TE-004",
-        employeeId: "EMP-002",
-        employeeName: "Sarah Johnson",
-        startTime: "2023-08-13T09:00:00Z",
-        endTime: "2023-08-13T12:00:00Z",
-        duration: 180, // 3 hours in minutes
-        notes: "System configuration and testing",
-        billable: true
-      }
-    ],
-    totalBillableTime: 660 // 11 hours in minutes
-  },
-  {
-    id: "WO-2023-0009",
-    customer: "Metro Hotel",
-    description: "Plumbing System Maintenance",
-    status: "cancelled",
-    date: "2023-08-10",
-    dueDate: "2023-08-14",
-    priority: "low",
-    technician: "David Lee",
-    location: "321 Downtown Avenue",
-  },
-  {
-    id: "WO-2023-0008",
-    customer: "Green Valley School",
-    description: "Fire Alarm System Inspection",
-    status: "completed",
-    date: "2023-08-08",
-    dueDate: "2023-08-12",
-    priority: "medium",
-    technician: "Emily Chen",
-    location: "555 Education Road",
-  },
-  {
-    id: "WO-2023-0007",
-    customer: "Sunset Restaurant",
-    description: "Kitchen Equipment Repair",
-    status: "in-progress",
-    date: "2023-08-05",
-    dueDate: "2023-08-09",
-    priority: "high",
-    technician: "Michael Brown",
-    location: "777 Culinary Place",
-  },
-  {
-    id: "WO-2023-0006",
-    customer: "Parkview Apartments",
-    description: "HVAC Maintenance - Multiple Units",
-    status: "pending",
-    date: "2023-08-03",
-    dueDate: "2023-08-18",
-    priority: "medium",
-    technician: "Unassigned",
-    location: "888 Residential Circle",
-  },
-];
-
-// Get unique technicians from work orders
-export const getUniqueTechnicians = (orders: WorkOrder[] = workOrders): string[] => {
-  return Array.from(new Set(orders.map(order => order.technician))).sort();
+// Define status colors and labels
+export const statusMap: Record<string, string> = {
+  "pending": "Pending",
+  "in-progress": "In Progress",
+  "completed": "Completed",
+  "cancelled": "Cancelled"
 };
 
-// Helper function to format time in hours and minutes
-export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  
-  if (hours === 0) {
-    return `${mins} mins`;
-  } else if (mins === 0) {
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
-  } else {
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${mins} mins`;
+// Define priority display properties
+export const priorityMap: Record<
+  string, 
+  { label: string; classes: string; }
+> = {
+  "low": {
+    label: "Low",
+    classes: "bg-slate-100 text-slate-700"
+  },
+  "medium": {
+    label: "Medium",
+    classes: "bg-blue-100 text-blue-700"
+  },
+  "high": {
+    label: "High", 
+    classes: "bg-red-100 text-red-700"
   }
 };
 
-// Calculate total billable time for a work order
-export const calculateTotalBillableTime = (timeEntries: TimeEntry[] = []): number => {
-  return timeEntries.reduce((total, entry) => {
-    return entry.billable ? total + entry.duration : total;
-  }, 0);
+// Generate a realistic list of work orders
+const generateWorkOrders = (): WorkOrder[] => {
+  // Generate mock data with various statuses and priorities
+  return [
+    {
+      id: "WO-2023-001",
+      date: "2023-09-15T10:30:00",
+      customer: "John Smith",
+      description: "Oil change and tire rotation",
+      status: "completed",
+      priority: "medium",
+      technician: "Michael Brown",
+      location: "Bay 3",
+      dueDate: format(addDays(new Date(), -5), "yyyy-MM-dd"),
+    },
+    {
+      id: "WO-2023-002",
+      date: "2023-09-17T14:15:00",
+      customer: "Sarah Johnson",
+      description: "Check engine light diagnosis and repair",
+      status: "in-progress",
+      priority: "high",
+      technician: "David Lee",
+      location: "Bay 1",
+      dueDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
+      notes: "Customer reported intermittent stalling at highway speeds."
+    },
+    {
+      id: "WO-2023-003",
+      date: "2023-09-18T09:00:00",
+      customer: "Robert Davis",
+      description: "Replace brake pads and rotors",
+      status: "pending",
+      priority: "medium",
+      technician: "Emily Chen",
+      location: "Bay 2",
+      dueDate: format(addDays(new Date(), 2), "yyyy-MM-dd"),
+    },
+    {
+      id: "WO-2023-004",
+      date: "2023-09-14T11:45:00",
+      customer: "Jennifer Wilson",
+      description: "A/C system not cooling properly",
+      status: "completed",
+      priority: "medium",
+      technician: "Michael Brown",
+      location: "Bay 4",
+      dueDate: format(addDays(new Date(), -3), "yyyy-MM-dd"),
+      notes: "Recharged refrigerant and replaced cabin air filter."
+    },
+    {
+      id: "WO-2023-005",
+      date: "2023-09-16T16:30:00",
+      customer: "Michael Thomas",
+      description: "Alignment and suspension check",
+      status: "cancelled",
+      priority: "low",
+      technician: "David Lee",
+      location: "Bay 2",
+      dueDate: format(addDays(new Date(), -1), "yyyy-MM-dd"),
+      notes: "Customer called to cancel - rescheduling for next week."
+    },
+    {
+      id: "WO-2023-006",
+      date: "2023-09-19T13:00:00",
+      customer: "Lisa Anderson",
+      description: "30,000 mile maintenance service",
+      status: "pending",
+      priority: "medium",
+      technician: "Emily Chen",
+      location: "Bay 3",
+      dueDate: format(addDays(new Date(), 3), "yyyy-MM-dd"),
+    },
+    {
+      id: "WO-2023-007",
+      date: "2023-09-16T10:00:00",
+      customer: "James Martinez",
+      description: "Replace serpentine belt and tensioner",
+      status: "in-progress",
+      priority: "high",
+      technician: "Michael Brown",
+      location: "Bay 1",
+      dueDate: format(addDays(new Date(), 0), "yyyy-MM-dd"),
+      notes: "Parts are on backorder, expected arrival tomorrow."
+    },
+    {
+      id: "WO-2023-008",
+      date: "2023-09-20T09:30:00",
+      customer: "Patricia Taylor",
+      description: "Transmission fluid flush",
+      status: "pending",
+      priority: "low",
+      technician: "David Lee",
+      location: "Bay 4",
+      dueDate: format(addDays(new Date(), 4), "yyyy-MM-dd"),
+    }
+  ];
+};
+
+export const workOrders = generateWorkOrders();
+
+// Create a new work order
+export const createWorkOrder = async (workOrder: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
+  const newWorkOrder: WorkOrder = {
+    id: `WO-${new Date().getFullYear()}-${String(workOrders.length + 1).padStart(3, '0')}`,
+    date: new Date().toISOString(),
+    ...workOrder,
+  };
+  
+  // Add to the list (in a real app, this would be saved to a database)
+  workOrders.unshift(newWorkOrder);
+  
+  // For demo purposes, pretend this is an async API call
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(newWorkOrder), 300);
+  });
+};
+
+// Find a work order by ID
+export const findWorkOrderById = (id: string): Promise<WorkOrder | null> => {
+  return new Promise((resolve) => {
+    const workOrder = workOrders.find((wo) => wo.id === id);
+    setTimeout(() => resolve(workOrder || null), 300);
+  });
+};
+
+// Update a work order
+export const updateWorkOrder = async (updatedWorkOrder: WorkOrder): Promise<WorkOrder> => {
+  return new Promise((resolve, reject) => {
+    const index = workOrders.findIndex((wo) => wo.id === updatedWorkOrder.id);
+    if (index !== -1) {
+      workOrders[index] = { ...updatedWorkOrder };
+      setTimeout(() => resolve(workOrders[index]), 300);
+    } else {
+      setTimeout(() => reject(new Error("Work order not found")), 300);
+    }
+  });
 };
