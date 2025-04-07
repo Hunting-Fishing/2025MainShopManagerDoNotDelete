@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { CustomerForm } from "@/components/customers/form/CustomerForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { useCustomerEdit } from "@/hooks/useCustomerEdit";
 export default function EditCustomer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab');
   const { toast } = useToast();
   const { 
     formValues, 
@@ -83,6 +85,7 @@ export default function EditCustomer() {
         singleShopMode={availableShops.length === 1}
         isEditMode={true}
         customerId={id}
+        initialTab={activeTab || undefined}
       />
     </div>
   );

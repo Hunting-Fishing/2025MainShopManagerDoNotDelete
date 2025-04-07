@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
@@ -35,6 +36,24 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   const [notes, setNotes] = useState<CustomerNote[]>([]);
   const [communications, setCommunications] = useState<CustomerCommunication[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Check if there's a tab in the URL and use it
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, setActiveTab]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    if (activeTab !== 'overview') {
+      setSearchParams({ tab: activeTab });
+    } else {
+      setSearchParams({});
+    }
+  }, [activeTab, setSearchParams]);
 
   // Load notes when tab changes to notes or on initial load
   useEffect(() => {

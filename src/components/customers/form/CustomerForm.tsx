@@ -1,104 +1,77 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Card } from "@/components/ui/card";
-import { customerSchema, CustomerFormValues } from "./schemas/customerSchema";
-import { shops as defaultShops } from "./schemas/relationshipData";
-import { NotificationsProvider } from "@/context/notifications";
-import { useFormNavigation } from "./useFormNavigation";
-import { FormContentWrapper } from "./FormContentWrapper";
-import { PreviewToggle } from "./preview/PreviewToggle";
-import { useDraftCustomer } from "./hooks/useDraftCustomer";
+import { Form } from "@/components/ui/form";
+import { CustomerFormValues, customerSchema } from "./schemas/customerSchema";
+import { FormTabs } from "./FormTabs";
+import { FormContent } from "./FormContent";
+import { CustomerFormActions } from "./CustomerFormActions";
 
 interface CustomerFormProps {
-  defaultValues: CustomerFormValues;
-  onSubmit: (data: CustomerFormValues) => Promise<void>;
-  isSubmitting: boolean;
-  availableShops?: Array<{id: string, name: string}>;
+  defaultValues?: CustomerFormValues;
+  onSubmit: (data: CustomerFormValues) => void;
+  isSubmitting?: boolean;
+  availableShops?: Array<{ id: string; name: string }>;
   singleShopMode?: boolean;
   isEditMode?: boolean;
   customerId?: string;
+  initialTab?: string;
 }
 
-export const CustomerForm: React.FC<CustomerFormProps> = ({ 
-  defaultValues, 
-  onSubmit, 
-  isSubmitting,
-  availableShops = defaultShops,
+export const CustomerForm: React.FC<CustomerFormProps> = ({
+  defaultValues,
+  onSubmit,
+  isSubmitting = false,
+  availableShops = [],
   singleShopMode = false,
   isEditMode = false,
-  customerId
+  customerId,
+  initialTab
 }) => {
-  // Initialize form with validation
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
-    defaultValues,
-    mode: "onChange" // Enable real-time validation as the user types
-  });
-  
-  useEffect(() => {
-    if (defaultValues.shop_id) {
-      form.setValue('shop_id', defaultValues.shop_id);
-    }
-  }, [defaultValues.shop_id, form]);
-  
-  // Get navigation state and handlers
-  const { currentTab, setCurrentTab, handleNext, handlePrevious } = useFormNavigation();
-  
-  // Get draft functionality
-  const { handleSaveDraft } = useDraftCustomer({ 
-    form, 
-    singleShopMode, 
-    availableShops 
+    defaultValues: defaultValues || {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      shop_id: singleShopMode && availableShops.length === 1 
+        ? availableShops[0]?.id
+        : "",
+      vehicles: [],
+      tags: [],
+      segments: [],
+      is_fleet: false,
+      auto_billing: false,
+      terms_agreed: false,
+      create_new_household: false
+    },
   });
 
-  // Handle floating action button click
-  const handleFloatingSubmit = () => {
-    form.handleSubmit(async (data) => {
-      console.log("Form submitted with data:", data);
-      
-      // If we're in single shop mode, ensure we use the current shop
-      if (singleShopMode && availableShops.length === 1) {
-        data.shop_id = availableShops[0].id;
-      }
-      
-      await onSubmit(data);
-    })();
-  };
-
-  // Make the available shops and single shop mode accessible to form fields
-  const formContext = {
-    availableShops,
-    singleShopMode
+  const handleFormSubmit = (data: CustomerFormValues) => {
+    onSubmit(data);
   };
 
   return (
-    <NotificationsProvider>
-      <Card>
-        <div className="p-4 sm:p-6">
-          <PreviewToggle 
-            formData={form.getValues()} 
-            isSubmitting={isSubmitting}
-            isEditMode={isEditMode}
-            onSave={isEditMode ? handleFloatingSubmit : undefined}
-          />
-
-          <FormContentWrapper 
-            form={form}
-            currentTab={currentTab}
-            setCurrentTab={setCurrentTab}
-            handleNext={handleNext}
-            handlePrevious={handlePrevious}
-            handleSaveDraft={handleSaveDraft}
-            isSubmitting={isSubmitting}
-            onSubmit={onSubmit}
-            formContext={formContext}
-            isEditMode={isEditMode}
-            customerId={customerId}
-          />
-        </div>
-      </Card>
-    </NotificationsProvider>
+    <Form {...form}>
+      <form 
+        onSubmit={form.handleSubmit(handleFormSubmit)} 
+        className="space-y-8 pb-10 relative"
+      >
+        <FormTabs initialTab={initialTab} />
+        <FormContent 
+          form={form} 
+          availableShops={availableShops} 
+          singleShopMode={singleShopMode} 
+          isEditMode={isEditMode}
+          customerId={customerId}
+        />
+        <CustomerFormActions 
+          isSubmitting={isSubmitting} 
+          isEditMode={isEditMode}
+        />
+      </form>
+    </Form>
   );
 };

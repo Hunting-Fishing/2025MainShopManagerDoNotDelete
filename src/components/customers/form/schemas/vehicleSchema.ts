@@ -3,6 +3,7 @@ import { z } from "zod";
 
 // Define the schema for vehicle data
 export const vehicleSchema = z.object({
+  id: z.string().optional(),
   make: z.string().optional(),
   model: z.string().optional(),
   year: z.string().optional(),

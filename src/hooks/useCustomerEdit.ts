@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
 import { useToast } from '@/hooks/use-toast';
 import { getCustomerById, updateCustomer } from '@/services/customer';
@@ -70,8 +70,9 @@ const customerToFormValues = (customer: Customer): CustomerFormValues => {
     household_relationship: '',
     
     // Convert customer vehicles to the expected form schema format
-    // Key difference: year is converted from number to string
+    // Include vehicle ID for proper updates and ensure conversion from number to string for year
     vehicles: (customer.vehicles || []).map(vehicle => ({
+      id: vehicle.id || '',
       make: vehicle.make || '',
       model: vehicle.model || '',
       year: vehicle.year ? String(vehicle.year) : '',
@@ -89,6 +90,7 @@ export const useCustomerEdit = (customerId?: string) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableShops, setAvailableShops] = useState<Array<{id: string, name: string}>>([]);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -104,16 +106,20 @@ export const useCustomerEdit = (customerId?: string) => {
       try {
         setIsLoading(true);
         
-        // Load customer data
+        // Load customer data with vehicles included
         const customerData = await getCustomerById(customerId);
         if (!customerData) {
           setError("Customer not found");
           return;
         }
         
+        console.log("Loaded customer data:", customerData);
+        
         setCustomer(customerData);
         // Convert to form values
-        setFormValues(customerToFormValues(customerData));
+        const formData = customerToFormValues(customerData);
+        setFormValues(formData);
+        console.log("Converted to form values:", formData);
         
         // Load available shops
         const shops = await getAllShops();
@@ -135,6 +141,7 @@ export const useCustomerEdit = (customerId?: string) => {
     
     try {
       setIsSubmitting(true);
+      console.log("Submitting form data with vehicles:", formData.vehicles);
       
       // Update customer
       await updateCustomer(customerId, formData);
@@ -144,8 +151,11 @@ export const useCustomerEdit = (customerId?: string) => {
         description: "Customer information updated successfully.",
       });
       
+      // Check if we should return to a specific tab
+      const tab = searchParams.get('tab');
+      
       // Navigate back to customer details page
-      navigate(`/customers/${customerId}`);
+      navigate(`/customers/${customerId}${tab ? `?tab=${tab}` : ''}`);
     } catch (err) {
       handleApiError(err, "Failed to update customer");
     } finally {

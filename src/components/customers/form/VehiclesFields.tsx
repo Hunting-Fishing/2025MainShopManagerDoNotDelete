@@ -19,6 +19,10 @@ export const VehiclesFields: React.FC<VehiclesFieldsProps> = ({ form }) => {
       ...currentVehicles,
       { make: '', model: '', year: '', vin: '', license_plate: '' }
     ]);
+    
+    // Trigger form validation after adding vehicle
+    form.trigger('vehicles');
+    console.log('Vehicle added, current vehicles:', [...currentVehicles, { make: '', model: '', year: '', vin: '', license_plate: '' }]);
   };
 
   const removeVehicle = (index: number) => {
@@ -27,6 +31,10 @@ export const VehiclesFields: React.FC<VehiclesFieldsProps> = ({ form }) => {
       'vehicles',
       currentVehicles.filter((_, i) => i !== index)
     );
+    
+    // Trigger form validation after removing vehicle
+    form.trigger('vehicles');
+    console.log('Vehicle removed, remaining vehicles:', currentVehicles.filter((_, i) => i !== index));
   };
 
   return (

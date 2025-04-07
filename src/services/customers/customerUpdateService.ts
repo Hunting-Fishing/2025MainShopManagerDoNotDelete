@@ -81,6 +81,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
   if (updates.vehicles && updates.vehicles.length > 0) {
     try {
       // First get existing vehicles
+      console.log("Fetching existing vehicles for customer", id);
       const { data: existingVehicles, error: vehiclesFetchError } = await supabase
         .from("vehicles")
         .select("*")
@@ -97,17 +98,21 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
           
           // Skip empty vehicles
           if (!vehicle.make && !vehicle.model && !vehicle.year && !vehicle.vin && !vehicle.license_plate) {
+            console.log("Skipping empty vehicle at index", i);
             continue;
           }
           
-          // Convert year from string to number
-          const vehicleYear = vehicle.year ? parseInt(vehicle.year, 10) : null;
+          // Convert year from string to number if present
+          const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
           
           // Find if this vehicle already exists for the customer
           const existingVehicleIndex = existingVehicles?.findIndex(v => 
-            v.make === vehicle.make && 
-            v.model === vehicle.model &&
-            (v.vin === vehicle.vin || (v.vin === null && vehicle.vin === ""))
+            (v.id && vehicle.id && v.id === vehicle.id) || 
+            (v.vin && vehicle.vin && v.vin === vehicle.vin) ||
+            (v.make === vehicle.make && 
+             v.model === vehicle.model &&
+             v.year === vehicleYear &&
+             v.license_plate === vehicle.license_plate)
           );
           
           if (existingVehicleIndex >= 0 && existingVehicles) {
@@ -154,15 +159,29 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
         const vehiclesToKeep = new Set();
         
         updates.vehicles.forEach(vehicle => {
-          if (vehicle.make && vehicle.model) {
-            const key = `${vehicle.make}-${vehicle.model}-${vehicle.vin || ""}`;
+          if (vehicle.id) {
+            vehiclesToKeep.add(vehicle.id);
+          } else if (vehicle.make && vehicle.model) {
+            const key = `${vehicle.make}-${vehicle.model}-${vehicle.vin || ""}-${vehicle.license_plate || ""}`;
             vehiclesToKeep.add(key);
           }
         });
         
         for (const existingVehicle of (existingVehicles || [])) {
-          const key = `${existingVehicle.make}-${existingVehicle.model}-${existingVehicle.vin || ""}`;
-          if (!vehiclesToKeep.has(key)) {
+          let shouldKeep = false;
+          
+          // Check by ID first
+          if (existingVehicle.id && vehiclesToKeep.has(existingVehicle.id)) {
+            shouldKeep = true;
+          }
+          
+          // Then check by make-model-vin-license combination
+          const key = `${existingVehicle.make}-${existingVehicle.model}-${existingVehicle.vin || ""}-${existingVehicle.license_plate || ""}`;
+          if (vehiclesToKeep.has(key)) {
+            shouldKeep = true;
+          }
+          
+          if (!shouldKeep) {
             console.log(`Deleting vehicle: ${existingVehicle.year} ${existingVehicle.make} ${existingVehicle.model}`);
             
             const { error: deleteError } = await supabase
@@ -181,7 +200,22 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     }
   }
 
-  return adaptCustomerForUI(data as Customer);
+  // Fetch the updated customer with vehicles
+  const { data: updatedCustomer, error: fetchError } = await supabase
+    .from("customers")
+    .select(`
+      *,
+      vehicles(*)
+    `)
+    .eq("id", id)
+    .single();
+    
+  if (fetchError) {
+    console.error("Error fetching updated customer:", fetchError);
+    return adaptCustomerForUI(data as Customer);
+  }
+
+  return adaptCustomerForUI(updatedCustomer as Customer);
 };
 
 // Delete a customer

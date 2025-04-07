@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash } from "lucide-react";
+import { Trash, Loader2 } from "lucide-react";
 import { CustomerFormValues } from "../CustomerFormSchema";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { VehicleMakeSelector } from "./VehicleMakeSelector";
@@ -32,6 +32,13 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
           form.setValue(`vehicles.${index}.make`, decodedData.make || '');
           form.setValue(`vehicles.${index}.model`, decodedData.model || '');
           form.setValue(`vehicles.${index}.year`, decodedData.year || '');
+          
+          // Trigger form validation after setting values
+          form.trigger([
+            `vehicles.${index}.make`,
+            `vehicles.${index}.model`,
+            `vehicles.${index}.year`
+          ]);
         }
       } catch (error) {
         console.error("Error decoding VIN:", error);
@@ -61,7 +68,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
               <FormItem>
                 <FormLabel>Year</FormLabel>
                 <FormControl>
-                  <Input type="text" placeholder="Year" {...field} />
+                  <Input type="text" placeholder="Year" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -77,11 +84,12 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
             name={`vehicles.${index}.vin`}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>VIN</FormLabel>
+                <FormLabel>VIN {isDecoding && <Loader2 className="h-4 w-4 inline animate-spin ml-2" />}</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Vehicle Identification Number" 
                     {...field} 
+                    value={field.value || ''}
                     onChange={(e) => {
                       field.onChange(e);
                       handleVinUpdate(e);
@@ -100,7 +108,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
               <FormItem>
                 <FormLabel>License Plate</FormLabel>
                 <FormControl>
-                  <Input placeholder="License Plate Number" {...field} />
+                  <Input placeholder="License Plate Number" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
