@@ -29,33 +29,33 @@ export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({
   const vehicleMake = vehicleParts.length > 1 ? vehicleParts[1] : '';
   const vehicleModel = vehicleParts.length > 2 ? vehicleParts.slice(2).join(' ') : '';
   
-  // If a VIN exists in the form, attempt to decode it on component mount
-  const vin = form.watch("vin");
-  
   // Handler for when VIN is successfully decoded
   const handleVehicleDecoded = (vehicleData: VinDecodeResult) => {
+    console.log("Vehicle decoded with data:", vehicleData);
     setDecodedVehicle(vehicleData);
   };
   
   return (
     <Card className="mb-4">
       <CardContent className="pt-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* VIN Decoder Field */}
-          <VinDecoderField 
-            form={form} 
-            onVehicleDecoded={handleVehicleDecoded} 
-          />
+        <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* VIN Decoder Field */}
+            <VinDecoderField 
+              form={form} 
+              onVehicleDecoded={handleVehicleDecoded} 
+            />
 
-          {/* Basic Vehicle Information Fields */}
-          <BasicVehicleFields 
-            form={form}
-            vehicleMake={vehicleMake}
-            vehicleModel={vehicleModel}
-            vehicleYear={vehicleYear}
-            vehicleId={vehicleId}
-            isFleetCustomer={isFleetCustomer}
-          />
+            {/* Basic Vehicle Information Fields */}
+            <BasicVehicleFields 
+              form={form}
+              vehicleMake={vehicleMake}
+              vehicleModel={vehicleModel}
+              vehicleYear={vehicleYear}
+              vehicleId={vehicleId}
+              isFleetCustomer={isFleetCustomer}
+            />
+          </div>
 
           {/* Additional Decoded Vehicle Fields */}
           <DecodedVehicleFields 
