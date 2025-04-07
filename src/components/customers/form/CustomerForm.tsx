@@ -12,7 +12,7 @@ import { FormContentWrapper } from "./FormContentWrapper";
 
 interface CustomerFormProps {
   defaultValues?: CustomerFormValues;
-  onSubmit: (data: CustomerFormValues) => void;
+  onSubmit: (data: CustomerFormValues) => Promise<void>;
   isSubmitting?: boolean;
   availableShops?: Array<{ id: string; name: string }>;
   singleShopMode?: boolean;
@@ -68,8 +68,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     },
   });
 
-  const handleFormSubmit = (data: CustomerFormValues) => {
-    onSubmit(data);
+  const handleFormSubmit = async (data: CustomerFormValues) => {
+    await onSubmit(data);
   };
   
   // Placeholder for save draft functionality
