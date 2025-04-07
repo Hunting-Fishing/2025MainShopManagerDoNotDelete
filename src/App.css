@@ -23,12 +23,28 @@
   }
 }
 
+@keyframes pulse-subtle {
+  0% {
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(147, 51, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
 
 .animate-scale-in {
   animation: scale-in 0.2s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite;
 }
 
 /* Interactive vehicle hover styles */
