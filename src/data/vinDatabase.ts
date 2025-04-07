@@ -9,139 +9,239 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     make: "ford", 
     model: "F-150",
     transmission: "Automatic",
-    transmission_type: "10-Speed Automatic" 
+    transmission_type: "10-Speed Automatic",
+    drive_type: "4x4",
+    fuel_type: "Gas",
+    body_style: "Pickup Truck",
+    country: "USA",
+    engine: "3.5L V6 EcoBoost"
   },
   "1G1ZD5ST": { 
     year: "2017", 
     make: "chevrolet", 
     model: "Malibu",
     transmission: "Automatic",
-    transmission_type: "6-Speed Automatic" 
+    transmission_type: "6-Speed Automatic",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "USA",
+    engine: "1.5L 4-Cylinder Turbo"
   },
   "1HGCV1F3": { 
     year: "2019", 
     make: "honda", 
     model: "Accord",
     transmission: "Automatic",
-    transmission_type: "CVT" 
+    transmission_type: "CVT",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "USA",
+    engine: "1.5L 4-Cylinder Turbo"
   },
   "2T1BURH": { 
     year: "2020", 
     make: "toyota", 
     model: "Corolla",
     transmission: "Automatic",
-    transmission_type: "CVT" 
+    transmission_type: "CVT",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "JAPAN",
+    engine: "1.8L 4-Cylinder"
   },
   "JN1AZ4EH": { 
     year: "2016", 
     make: "nissan", 
     model: "370Z",
     transmission: "Manual",
-    transmission_type: "6-Speed Manual" 
+    transmission_type: "6-Speed Manual",
+    drive_type: "RWD",
+    fuel_type: "Gas",
+    body_style: "Coupe",
+    country: "JAPAN",
+    engine: "3.7L V6"
   },
   "3VWCB7AU": { 
     year: "2021", 
     make: "volkswagen", 
     model: "Jetta",
     transmission: "Automatic",
-    transmission_type: "8-Speed Automatic" 
+    transmission_type: "8-Speed Automatic",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "GERMANY",
+    engine: "1.4L 4-Cylinder Turbo"
   },
   "5YJSA1E4": { 
     year: "2019", 
     make: "tesla", 
     model: "Model S",
     transmission: "Automatic",
-    transmission_type: "1-Speed Direct Drive" 
+    transmission_type: "1-Speed Direct Drive",
+    drive_type: "AWD",
+    fuel_type: "Electric",
+    body_style: "Sedan",
+    country: "USA",
+    engine: "Dual Electric Motors"
   },
   "WAUENAF4": { 
     year: "2017", 
     make: "audi", 
     model: "A4",
     transmission: "Automatic",
-    transmission_type: "7-Speed Dual-Clutch Automatic" 
+    transmission_type: "7-Speed Dual-Clutch Automatic",
+    drive_type: "AWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "GERMANY",
+    engine: "2.0L 4-Cylinder Turbo"
   },
   "4JGDA5HB": { 
     year: "2020", 
     make: "mercedes-benz", 
     model: "GLE",
     transmission: "Automatic",
-    transmission_type: "9-Speed Automatic" 
+    transmission_type: "9-Speed Automatic",
+    drive_type: "AWD",
+    fuel_type: "Gas",
+    body_style: "SUV",
+    country: "GERMANY",
+    engine: "3.0L 6-Cylinder Turbo"
   },
   "WBA3N5C5": { 
     year: "2018", 
     make: "bmw", 
     model: "3 Series",
     transmission: "Automatic",
-    transmission_type: "8-Speed Automatic" 
+    transmission_type: "8-Speed Automatic",
+    drive_type: "RWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "GERMANY",
+    engine: "2.0L 4-Cylinder Turbo" 
   },
   "YV4A22PK": { 
     year: "2021", 
     make: "volvo", 
     model: "XC60",
     transmission: "Automatic",
-    transmission_type: "8-Speed Automatic" 
+    transmission_type: "8-Speed Automatic",
+    drive_type: "AWD",
+    fuel_type: "Gas",
+    body_style: "SUV",
+    country: "SWEDEN",
+    engine: "2.0L 4-Cylinder Turbo"
   },
   "5TFDY5F1": { 
     year: "2022", 
     make: "toyota", 
     model: "Tundra",
     transmission: "Automatic",
-    transmission_type: "10-Speed Automatic" 
+    transmission_type: "10-Speed Automatic",
+    drive_type: "4x4",
+    fuel_type: "Gas",
+    body_style: "Pickup Truck",
+    country: "USA",
+    engine: "3.5L V6 Twin-Turbo"
   },
   "1C6SRFJT": { 
     year: "2023", 
     make: "ram", 
     model: "1500",
     transmission: "Automatic",
-    transmission_type: "8-Speed Automatic" 
+    transmission_type: "8-Speed Automatic",
+    drive_type: "4x4",
+    fuel_type: "Gas",
+    body_style: "Pickup Truck",
+    country: "USA",
+    engine: "5.7L V8 HEMI"
   },
   "1C4RJFBG": { 
     year: "2020", 
     make: "jeep", 
     model: "Grand Cherokee",
     transmission: "Automatic",
-    transmission_type: "8-Speed Automatic" 
+    transmission_type: "8-Speed Automatic",
+    drive_type: "4x4",
+    fuel_type: "Gas",
+    body_style: "SUV",
+    country: "USA",
+    engine: "3.6L V6"
   },
   "KM8J3CAL": { 
     year: "2021", 
     make: "hyundai", 
     model: "Santa Fe",
     transmission: "Automatic",
-    transmission_type: "8-Speed Automatic" 
+    transmission_type: "8-Speed Automatic",
+    drive_type: "AWD",
+    fuel_type: "Gas",
+    body_style: "SUV",
+    country: "KOREA",
+    engine: "2.5L 4-Cylinder Turbo"
   },
   "5XXG64J2": { 
     year: "2019", 
     make: "kia", 
     model: "Optima",
     transmission: "Automatic",
-    transmission_type: "6-Speed Automatic" 
+    transmission_type: "6-Speed Automatic",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "KOREA",
+    engine: "2.4L 4-Cylinder"
   },
   "JF2GTAMC": { 
     year: "2022", 
     make: "subaru", 
     model: "Forester",
     transmission: "Automatic",
-    transmission_type: "CVT" 
+    transmission_type: "CVT",
+    drive_type: "AWD",
+    fuel_type: "Gas",
+    body_style: "SUV",
+    country: "JAPAN",
+    engine: "2.5L 4-Cylinder"
   },
   "KMHLM4AG": { 
     year: "2023", 
     make: "hyundai", 
     model: "Elantra",
     transmission: "Automatic",
-    transmission_type: "CVT" 
+    transmission_type: "CVT",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "KOREA",
+    engine: "2.0L 4-Cylinder"
   },
   "2HGFC2F5": { 
     year: "2022", 
     make: "honda", 
     model: "Civic",
     transmission: "Automatic",
-    transmission_type: "CVT" 
+    transmission_type: "CVT",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "Sedan",
+    country: "JAPAN",
+    engine: "1.5L 4-Cylinder Turbo"
   },
   "3GNAXKEV": { 
     year: "2021", 
     make: "chevrolet", 
     model: "Equinox",
     transmission: "Automatic",
-    transmission_type: "6-Speed Automatic" 
+    transmission_type: "6-Speed Automatic",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "SUV",
+    country: "USA",
+    engine: "1.5L 4-Cylinder Turbo"
   }
 };

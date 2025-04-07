@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -140,7 +141,18 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
               <FormItem>
                 <FormLabel>Color</FormLabel>
                 <FormControl>
-                  <Input placeholder="Vehicle Color" {...field} value={field.value || ''} />
+                  <Input 
+                    placeholder="Vehicle Color" 
+                    {...field} 
+                    value={field.value || ''}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // Force a re-render of the additional details component
+                      if (decodedDetails) {
+                        setDecodedDetails({...decodedDetails});
+                      }
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

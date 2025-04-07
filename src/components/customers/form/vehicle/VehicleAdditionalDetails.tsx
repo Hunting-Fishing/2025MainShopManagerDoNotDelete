@@ -21,6 +21,9 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   // If no decoded details, don't render anything
   if (!decodedDetails) return null;
 
+  // Get the color value from the form
+  const color = form.watch(`vehicles.${index}.color`);
+
   // Define the fields to display
   const additionalFields = [
     {
@@ -70,6 +73,12 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
       label: "Country of Origin",
       value: decodedDetails.country,
       placeholder: "Country of Origin"
+    },
+    {
+      name: `vehicles.${index}.color` as const,
+      label: "Vehicle Color",
+      value: color || "",
+      placeholder: "Vehicle Color"
     }
   ];
 
@@ -81,6 +90,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   // For debugging - log what fields are available and their values
   console.log("Decoded vehicle details:", decodedDetails);
   console.log("Transmission type:", decodedDetails.transmission_type);
+  console.log("Color from form:", color);
 
   return (
     <div className="mt-4">
