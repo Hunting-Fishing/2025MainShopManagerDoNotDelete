@@ -189,6 +189,64 @@ export default function VehicleDetails() {
             </div>
             
             <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium mb-4">Vehicle Specifications</h3>
+              <div className="space-y-3">
+                {vehicle.transmission && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Transmission:</span>
+                    <span className="font-medium">{vehicle.transmission}</span>
+                  </div>
+                )}
+                {vehicle.transmission_type && vehicle.transmission_type !== vehicle.transmission && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Transmission Type:</span>
+                    <span className="font-medium">{vehicle.transmission_type}</span>
+                  </div>
+                )}
+                {vehicle.drive_type && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Drive Type:</span>
+                    <span className="font-medium">{vehicle.drive_type}</span>
+                  </div>
+                )}
+                {vehicle.fuel_type && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Fuel Type:</span>
+                    <span className="font-medium">{vehicle.fuel_type}</span>
+                  </div>
+                )}
+                {vehicle.engine && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Engine:</span>
+                    <span className="font-medium">{vehicle.engine}</span>
+                  </div>
+                )}
+                {vehicle.body_style && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Body Style:</span>
+                    <span className="font-medium">{vehicle.body_style}</span>
+                  </div>
+                )}
+                {vehicle.country && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Country of Origin:</span>
+                    <span className="font-medium">{vehicle.country}</span>
+                  </div>
+                )}
+                {vehicle.gvwr && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">GVWR:</span>
+                    <span className="font-medium">{vehicle.gvwr}</span>
+                  </div>
+                )}
+                {!vehicle.transmission && !vehicle.drive_type && !vehicle.fuel_type && 
+                 !vehicle.engine && !vehicle.body_style && !vehicle.country && !vehicle.gvwr && (
+                  <div className="text-gray-400 italic">No additional specifications available</div>
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium mb-4">Service Summary</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
