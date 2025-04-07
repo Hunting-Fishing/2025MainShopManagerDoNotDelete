@@ -59,8 +59,8 @@ export function WorkOrderInventoryItems({ workOrder, inventoryItems }: WorkOrder
   }, {} as Record<string, WorkOrderInventoryItem[]>);
 
   // Calculate total by status
-  const totalsByStatus = Object.entries(groupedItems).reduce((acc, [status, items]) => {
-    acc[status] = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  const totalsByStatus = Object.entries(groupedItems).reduce((acc, [status, statusItems]) => {
+    acc[status] = statusItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     return acc;
   }, {} as Record<string, number>);
 
