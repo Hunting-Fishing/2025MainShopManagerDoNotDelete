@@ -7,6 +7,8 @@ import { CustomerFormValues, customerSchema } from "./schemas/customerSchema";
 import { FormTabs } from "./FormTabs";
 import { FormContent } from "./FormContent";
 import { CustomerFormActions } from "./CustomerFormActions";
+import { useFormNavigation } from "./useFormNavigation";
+import { FormContentWrapper } from "./FormContentWrapper";
 
 interface CustomerFormProps {
   defaultValues?: CustomerFormValues;
@@ -29,7 +31,22 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   customerId,
   initialTab
 }) => {
-  const [currentTab, setCurrentTab] = useState<string>(initialTab || "personal");
+  const {
+    currentTab,
+    setCurrentTab,
+    handleNext,
+    handlePrevious,
+    currentStep,
+    totalSteps,
+    progressPercentage
+  } = useFormNavigation();
+  
+  // Set initial tab if provided
+  React.useEffect(() => {
+    if (initialTab) {
+      setCurrentTab(initialTab);
+    }
+  }, [initialTab, setCurrentTab]);
   
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -54,27 +71,34 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   const handleFormSubmit = (data: CustomerFormValues) => {
     onSubmit(data);
   };
+  
+  // Placeholder for save draft functionality
+  const handleSaveDraft = () => {
+    console.log("Saving as draft:", form.getValues());
+    // Implement actual save draft logic here
+  };
 
   return (
-    <Form {...form}>
-      <form 
-        onSubmit={form.handleSubmit(handleFormSubmit)} 
-        className="space-y-8 pb-10 relative"
-      >
-        <FormTabs initialTab={initialTab} currentTab={currentTab} setCurrentTab={setCurrentTab} />
-        <FormContent 
-          form={form} 
-          currentTab={currentTab}
-          formContext={{
-            availableShops,
-            singleShopMode
-          }}
-        />
-        <CustomerFormActions 
-          isSubmitting={isSubmitting} 
-          isEditMode={isEditMode}
-        />
-      </form>
-    </Form>
+    <div className="space-y-8 pb-10 relative">
+      <FormContentWrapper
+        form={form}
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        handleNext={handleNext}
+        handlePrevious={handlePrevious}
+        handleSaveDraft={handleSaveDraft}
+        isSubmitting={isSubmitting}
+        onSubmit={handleFormSubmit}
+        formContext={{
+          availableShops,
+          singleShopMode
+        }}
+        isEditMode={isEditMode}
+        customerId={customerId}
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        progressPercentage={progressPercentage}
+      />
+    </div>
   );
 };

@@ -1,14 +1,14 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { CustomerFormActions } from "./CustomerFormActions";
+import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 
 interface FormNavigationProps {
   currentTab: string;
   handlePrevious: () => void;
   handleNext: () => void;
   isSubmitting: boolean;
-  isEditMode?: boolean;
+  isEditMode: boolean;
 }
 
 export const FormNavigation: React.FC<FormNavigationProps> = ({
@@ -16,36 +16,45 @@ export const FormNavigation: React.FC<FormNavigationProps> = ({
   handlePrevious,
   handleNext,
   isSubmitting,
-  isEditMode = false,
+  isEditMode
 }) => {
+  // Define the final tab where we show the submit button instead of next
+  const finalTabs = ["segments"];
+  const isFirstTab = currentTab === "personal";
+  const isFinalTab = finalTabs.includes(currentTab);
+  
   return (
-    <div className="flex justify-between mt-6">
-      {currentTab !== "personal" && (
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={handlePrevious}
-        >
-          Previous
-        </Button>
-      )}
+    <div className="flex justify-between mt-6 border-t pt-6">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handlePrevious}
+        disabled={isFirstTab || isSubmitting}
+        className={`flex items-center ${isFirstTab ? 'invisible' : ''}`}
+      >
+        <ChevronLeft className="h-4 w-4 mr-2" />
+        Previous
+      </Button>
       
-      <div className="flex-1"></div>
-      
-      {currentTab !== "vehicles" ? (
-        <Button 
-          type="button" 
+      {!isFinalTab ? (
+        <Button
+          type="button"
           onClick={handleNext}
+          disabled={isSubmitting}
+          className="flex items-center"
         >
           Next
+          <ChevronRight className="h-4 w-4 ml-2" />
         </Button>
       ) : (
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2"
+          className="flex items-center"
         >
-          {isSubmitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Customer" : "Create Customer")}
+          <Save className="h-4 w-4 mr-2" />
+          {isEditMode ? "Save Changes" : "Create Customer"}
+          {isSubmitting && <span className="ml-2 spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>}
         </Button>
       )}
     </div>

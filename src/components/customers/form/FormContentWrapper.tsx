@@ -10,6 +10,7 @@ import { FormContent } from "./FormContent";
 import { FormNavigation } from "./FormNavigation";
 import { FormErrorSummary } from "./FormErrorSummary";
 import { FormStatusAlert } from "./FormStatusAlert";
+import { FormProgressIndicator } from "./FormProgressIndicator";
 import { useFormValidation } from "./useFormValidation";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -28,6 +29,10 @@ interface FormContentWrapperProps {
   };
   isEditMode?: boolean;
   customerId?: string;
+  // Add new props for progress tracking
+  currentStep: number;
+  totalSteps: number;
+  progressPercentage: number;
 }
 
 export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
@@ -41,7 +46,11 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
   onSubmit,
   formContext,
   isEditMode = false,
-  customerId
+  customerId,
+  // Add new props for progress tracking
+  currentStep,
+  totalSteps,
+  progressPercentage
 }) => {
   const isMobile = useIsMobile();
   const { 
@@ -72,6 +81,14 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
       <form id="customer-create-form" onSubmit={handleFormSubmit} className="space-y-6">
         {/* Only show duplicate alert for new customers, not when editing */}
         {!isEditMode && <DuplicateCustomerAlert form={form} />}
+        
+        {/* Add progress indicator */}
+        <FormProgressIndicator 
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          progressPercentage={progressPercentage}
+          currentTab={currentTab}
+        />
         
         {/* Show error summary if there are validation errors and form is dirty */}
         {form.formState.isDirty && hasErrors && (
