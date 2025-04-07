@@ -54,9 +54,9 @@ import FormEditor from './pages/FormEditor';
 import FormBuilder from './pages/FormBuilder';
 import VehicleInspectionForm from './pages/VehicleInspectionForm';
 
-import { FeedbackFormsPage } from './pages/feedback/FeedbackFormsPage';
-import { FeedbackFormEditorPage } from './pages/feedback/FeedbackFormEditorPage';
-import { FeedbackAnalyticsPage } from './pages/feedback/FeedbackAnalyticsPage';
+import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
+import FeedbackFormEditorPage from './pages/feedback/FeedbackFormEditorPage';
+import FeedbackAnalyticsPage from './pages/feedback/FeedbackAnalyticsPage';
 
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -67,7 +67,7 @@ import './App.css';
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light">
+    <ThemeProvider>
       <LanguageProvider>
         <NotificationsProvider>
           <Router>
