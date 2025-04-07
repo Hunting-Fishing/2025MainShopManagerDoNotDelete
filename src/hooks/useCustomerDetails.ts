@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { getCustomerById } from "@/services/customerService";
@@ -15,7 +14,7 @@ export const useCustomerDetails = (id?: string) => {
   const [customerNotes, setCustomerNotes] = useState<CustomerNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("service");
+  const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
   useEffect(() => {

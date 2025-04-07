@@ -10,7 +10,9 @@ import { CustomerInteractionsTab } from "../CustomerInteractionsTab";
 import { CustomerServiceTab } from "../CustomerServiceTab";
 import { CustomerNotesTimeline } from "../notes/CustomerNotesTimeline";
 import { CommunicationHistory } from "../communications/CommunicationHistory";
+import { CustomerVehiclesTab } from "../vehicles/CustomerVehiclesTab";
 import { getCustomerNotes } from "@/services/customers";
+import { Car } from "lucide-react";
 
 interface CustomerDetailsTabsProps {
   customer: Customer & { name?: string, status?: string, lastServiceDate?: string };
@@ -63,10 +65,19 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
     setCommunications([newCommunication, ...communications]);
   };
 
+  // Calculate the number of vehicles for the badge
+  const vehicleCount = customer.vehicles?.length || 0;
+
   return (
     <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
       <TabsList>
         <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="vehicles">
+          Vehicles
+          {vehicleCount > 0 && (
+            <Badge className="ml-2 bg-amber-100 text-amber-800">{vehicleCount}</Badge>
+          )}
+        </TabsTrigger>
         <TabsTrigger value="notes">
           Notes
           {notes.length > 0 && (
@@ -97,6 +108,10 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
             lastServiceDate={customer.lastServiceDate}
           />
         </div>
+      </TabsContent>
+      
+      <TabsContent value="vehicles" className="mt-6">
+        <CustomerVehiclesTab customer={customer} />
       </TabsContent>
       
       <TabsContent value="notes" className="mt-6">
