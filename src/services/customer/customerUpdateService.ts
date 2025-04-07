@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
@@ -93,7 +92,7 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
       // First get existing vehicles
       const { data: existingVehicles, error: vehiclesFetchError } = await supabase
         .from("vehicles")
-        .select("id, make, model, year, vin, license_plate, color, transmission, drive_type, fuel_type, engine, body_style, country")
+        .select("id, make, model, year, vin, license_plate, color, transmission, drive_type, fuel_type, engine, body_style, country, transmission_type, gvwr")
         .eq("customer_id", id);
         
       if (vehiclesFetchError) {
@@ -129,7 +128,9 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 fuel_type: vehicle.fuel_type,
                 engine: vehicle.engine,
                 body_style: vehicle.body_style,
-                country: vehicle.country
+                country: vehicle.country,
+                transmission_type: vehicle.transmission_type,
+                gvwr: vehicle.gvwr
               })
               .eq("id", existingVehicle.id);
           } else {
@@ -149,7 +150,9 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 fuel_type: vehicle.fuel_type,
                 engine: vehicle.engine,
                 body_style: vehicle.body_style,
-                country: vehicle.country
+                country: vehicle.country,
+                transmission_type: vehicle.transmission_type,
+                gvwr: vehicle.gvwr
               });
           }
         }

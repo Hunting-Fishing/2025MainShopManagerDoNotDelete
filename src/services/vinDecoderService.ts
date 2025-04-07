@@ -35,6 +35,8 @@ interface NhtsaVehicleInfo {
   ErrorText: string;
   PlantCountry: string;
   TransmissionStyle?: string;
+  GVWR?: string;           // Added GVWR field
+  TransmissionType?: string;  // Added TransmissionType field
   [key: string]: any; // For other properties in the response
 }
 
@@ -176,9 +178,11 @@ export const decodeVinWithApi = async (vin: string): Promise<VinDecodeResult | n
       drive_type: formatDriveType(vehicleInfo.DriveType || ""),
       fuel_type: formatFuelType(vehicleInfo.FuelTypePrimary || ""),
       transmission: formatTransmission(vehicleInfo.TransmissionStyle || ""),
+      transmission_type: vehicleInfo.TransmissionType || "", // Add transmission type
       body_style: vehicleInfo.BodyClass || "",
       country: vehicleInfo.PlantCountry || "",
-      engine: engineInfo
+      engine: engineInfo,
+      gvwr: vehicleInfo.GVWR || "" // Add GVWR
     };
 
     console.log(`VIN decoded successfully via API: ${normalizedVin} ->`, result);

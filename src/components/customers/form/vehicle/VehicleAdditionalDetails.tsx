@@ -30,6 +30,12 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
       placeholder: "Transmission"
     },
     {
+      name: `vehicles.${index}.transmission_type` as const,
+      label: "Transmission Type",
+      value: decodedDetails.transmission_type || "",
+      placeholder: "Transmission Type"
+    },
+    {
       name: `vehicles.${index}.drive_type` as const,
       label: "Drive Type",
       value: decodedDetails.drive_type,
@@ -46,6 +52,12 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
       label: "Engine",
       value: decodedDetails.engine,
       placeholder: "Engine"
+    },
+    {
+      name: `vehicles.${index}.gvwr` as const,
+      label: "GVWR",
+      value: decodedDetails.gvwr || "",
+      placeholder: "Gross Vehicle Weight Rating"
     },
     {
       name: `vehicles.${index}.body_style` as const,

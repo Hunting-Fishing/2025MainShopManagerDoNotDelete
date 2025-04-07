@@ -21,7 +21,9 @@ export interface VinDecodeResult {
   drive_type?: string;      // AWD, FWD, 4x4, etc.
   fuel_type?: string;       // Gasoline, Diesel, Electric, etc.
   transmission?: string;    // Automatic, Manual, etc.
+  transmission_type?: string; // More specific transmission details
   body_style?: string;      // Sedan, SUV, Truck, etc.
   country?: string;         // Country of manufacture
   engine?: string;          // Engine size/configuration
+  gvwr?: string;            // Gross Vehicle Weight Rating
 }

@@ -42,9 +42,11 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
           if (decodedData.drive_type) form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type);
           if (decodedData.fuel_type) form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type);
           if (decodedData.transmission) form.setValue(`vehicles.${index}.transmission`, decodedData.transmission);
+          if (decodedData.transmission_type) form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type);
           if (decodedData.body_style) form.setValue(`vehicles.${index}.body_style`, decodedData.body_style);
           if (decodedData.country) form.setValue(`vehicles.${index}.country`, decodedData.country);
           if (decodedData.engine) form.setValue(`vehicles.${index}.engine`, decodedData.engine);
+          if (decodedData.gvwr) form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr);
           
           // Trigger form validation after setting values
           form.trigger([
