@@ -1,7 +1,7 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { CustomerFormValues } from "./schemas/customerSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { BusinessInfoFields } from "./business/BusinessInfoFields";
@@ -26,7 +26,7 @@ export const FormContent: React.FC<FormContentProps> = ({
   formContext
 }) => {
   return (
-    <>
+    <Tabs value={currentTab}>
       <TabsContent value="personal" className="mt-6">
         <PersonalInfoFields form={form} />
       </TabsContent>
@@ -58,6 +58,6 @@ export const FormContent: React.FC<FormContentProps> = ({
       <TabsContent value="vehicles" className="mt-6">
         <VehiclesFields form={form} />
       </TabsContent>
-    </>
+    </Tabs>
   );
 };

@@ -77,11 +77,7 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
           <FormErrorSummary errors={form.formState.errors} />
         )}
 
-        <Tabs 
-          value={currentTab} 
-          onValueChange={setCurrentTab} 
-          className="w-full"
-        >
+        <Tabs value={currentTab} onValueChange={setCurrentTab}>
           <FormTabs 
             initialTab={currentTab} 
             currentTab={currentTab}
