@@ -1,70 +1,19 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
-import { addCustomerNote } from "./index";
+import { addCustomerNote } from "./customerNotesService";
 
 // Create a new customer
-export const createCustomer = async (customer: CustomerCreate): Promise<Customer> => {
-  // Remove any undefined values to prevent Supabase errors
-  Object.keys(customer).forEach(key => {
-    if (customer[key as keyof CustomerCreate] === undefined) {
-      delete customer[key as keyof CustomerCreate];
-    }
-  });
-
-  // Remove fields that don't exist in the customers table
-  const { 
-    fleet_company, 
-    is_fleet,
-    tags,
-    segments,
-    communication_preference,
-    other_referral_details,
-    notes, // We'll handle notes separately
-    city,
-    state,
-    postal_code,
-    country,
-    ...customerData 
-  } = customer;
-
-  // Update the address field to include the full address if components are provided
-  let fullAddress = customer.address || '';
-  if (city || state || postal_code || country) {
-    // Only append components that exist
-    if (fullAddress && city) fullAddress += ', ';
-    if (city) fullAddress += city;
-    if ((fullAddress && state) || (city && state)) fullAddress += ', ';
-    if (state) fullAddress += state;
-    if ((fullAddress && postal_code) || (state && postal_code)) fullAddress += ' ';
-    if (postal_code) fullAddress += postal_code;
-    if ((fullAddress && country) || (postal_code && country) || (state && country)) fullAddress += ', ';
-    if (country) fullAddress += country;
-
-    // Update the address in customerData
-    customerData.address = fullAddress;
-  }
-
-  // Handle households
-  if (customerData.household_id === '' || customerData.household_id === '_none') {
-    customerData.household_id = undefined;
-  }
-
-  // Handle preferred technician
-  if (customerData.preferred_technician_id === '' || customerData.preferred_technician_id === '_none') {
-    customerData.preferred_technician_id = undefined;
-  }
-
-  // Handle referral source
-  if (customerData.referral_source === '' || customerData.referral_source === '_none') {
-    customerData.referral_source = undefined;
-  }
-
-  // Remove referral_person_id if it's empty
-  if (customerData.referral_person_id === '') {
-    delete customerData.referral_person_id;
-  }
-
-  // Ensure shop_id is set
+export const createCustomer = async (customer: CustomerCreate): Promise<Customer> {
+  console.log("Creating customer with data:", customer);
+  
+  // Extract vehicles to handle separately
+  const { vehicles = [], notes, ...customerData } = customer;
+  
+  // Ensure the role is always set to "Customer"
+  customerData.role = "Customer";
+  
+  // Handle shop_id fallback logic
   if (!customerData.shop_id) {
     // Fetch the shop_id from the current user's profile
     const { data: { user } } = await supabase.auth.getUser();
@@ -92,8 +41,6 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     customerData.shop_id = '00000000-0000-0000-0000-000000000000';
   }
 
-  console.log("Submitting customer data:", customerData);
-
   const { data, error } = await supabase
     .from("customers")
     .insert(customerData)
@@ -105,15 +52,48 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
     throw error;
   }
 
+  // Now that we have the customer ID, handle vehicles
+  if (vehicles && vehicles.length > 0) {
+    console.log(`Adding ${vehicles.length} vehicles for customer ${data.id}`);
+    
+    for (const vehicle of vehicles) {
+      // Only add vehicle if it has at least make and model
+      if (vehicle.make && vehicle.model) {
+        try {
+          // Convert year to number or null
+          const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
+          
+          console.log(`Adding vehicle: ${vehicleYear} ${vehicle.make} ${vehicle.model}`);
+          
+          const { error: vehicleError } = await supabase
+            .from("vehicles")
+            .insert({
+              customer_id: data.id,
+              make: vehicle.make,
+              model: vehicle.model,
+              year: vehicleYear,
+              vin: vehicle.vin || null,
+              license_plate: vehicle.license_plate || null
+            });
+            
+          if (vehicleError) {
+            console.error("Error adding vehicle:", vehicleError);
+          }
+        } catch (vehicleError) {
+          console.error("Error adding vehicle:", vehicleError);
+        }
+      }
+    }
+  }
+
   // If there's a note, add it to the customer_notes table
   if (notes && notes.trim()) {
     try {
       await addCustomerNote(data.id, notes, 'general', 'System');
     } catch (noteError) {
       console.error("Error adding initial customer note:", noteError);
-      // We don't throw here to avoid preventing customer creation
     }
   }
 
-  return adaptCustomerForUI(data);
+  return adaptCustomerForUI(data as Customer);
 };

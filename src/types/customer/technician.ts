@@ -1,5 +1,5 @@
 
-// Type definitions related to preferred technicians
+// Technician-related types for customer system
 export interface PreferredTechnicianChange {
   id: string;
   customer_id: string;
