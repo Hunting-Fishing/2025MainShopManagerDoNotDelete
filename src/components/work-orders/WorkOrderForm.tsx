@@ -21,6 +21,9 @@ import { FormActions } from "@/components/work-orders/FormActions";
 import { TimeTrackingSection } from "@/components/work-orders/time-tracking/TimeTrackingSection";
 import { SaveAsTemplateDialog } from "./templates/SaveAsTemplateDialog";
 import { toast } from "@/hooks/use-toast";
+import { WorkOrderDescriptionField } from "./fields/WorkOrderDescriptionField";
+import { VehicleDetailsField } from "./fields/VehicleDetailsField";
+import { CommonServicesChecklist } from "./fields/CommonServicesChecklist";
 
 interface WorkOrderFormProps {
   technicians: string[];
@@ -114,6 +117,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         // If we have a vehicle ID, store it for the component that needs it
         if (vehicleId) {
           setSelectedVehicleId(vehicleId);
+          form.setValue('vehicleId', vehicleId);
         }
         
         // Show a toast notification to confirm the pre-fill
@@ -135,6 +139,28 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     workOrderTemplates.push(template);
   };
 
+  const handleServiceChecked = (services: string[]) => {
+    // Add checked services to description
+    if (services.length > 0) {
+      let currentDescription = form.getValues("description") || "";
+      
+      // Check if we already have a checklist section
+      if (!currentDescription.includes("Service Checklist:")) {
+        currentDescription += "\n\nService Checklist:\n";
+      } else {
+        // Remove the existing checklist section
+        currentDescription = currentDescription.replace(/\n\nService Checklist:[\s\S]*/, "");
+        currentDescription += "\n\nService Checklist:\n";
+      }
+      
+      services.forEach(service => {
+        currentDescription += `- ${service}\n`;
+      });
+      
+      form.setValue("description", currentDescription);
+    }
+  };
+
   return (
     <div className="rounded-lg border border-slate-200 p-6 bg-white">
       {error && (
@@ -147,6 +173,14 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Vehicle Details Section - New! */}
+          {vehicleId && vehicleInfo && (
+            <VehicleDetailsField form={form} />
+          )}
+          
+          {/* Common Services Checklist - New! */}
+          <CommonServicesChecklist onServiceChecked={handleServiceChecked} />
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Customer Information */}
             <CustomerInfoSection 
@@ -161,6 +195,11 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
             
             {/* Assignment */}
             <AssignmentSection form={form as any} technicians={technicians} />
+            
+            {/* Description Field - Enhanced! */}
+            <div className="col-span-1 md:col-span-2">
+              <WorkOrderDescriptionField form={form} />
+            </div>
             
             {/* Notes */}
             <NotesSection form={form as any} />

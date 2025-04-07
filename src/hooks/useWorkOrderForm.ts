@@ -24,7 +24,7 @@ const inventoryItemSchema = z.object({
   unitPrice: z.number()
 });
 
-// Form schema validation
+// Form schema validation - enhanced with new fields
 const formSchema = z.object({
   customer: z.string().min(2, {
     message: "Customer name must be at least 2 characters.",
@@ -32,6 +32,7 @@ const formSchema = z.object({
   description: z.string().min(5, {
     message: "Description must be at least 5 characters.",
   }),
+  serviceCategory: z.string().optional(),
   status: z.enum(["pending", "in-progress", "completed", "cancelled"], {
     required_error: "Please select a status.",
   }),
@@ -49,6 +50,13 @@ const formSchema = z.object({
   }),
   notes: z.string().optional(),
   inventoryItems: z.array(inventoryItemSchema).optional(),
+  // New vehicle fields
+  vehicleId: z.string().optional(),
+  vehicleMake: z.string().optional(),
+  vehicleModel: z.string().optional(),
+  vehicleYear: z.string().optional(),
+  odometer: z.string().optional(),
+  licensePlate: z.string().optional(),
 });
 
 export type WorkOrderFormValues = z.infer<typeof formSchema>;
@@ -68,6 +76,13 @@ export const useWorkOrderForm = () => {
       technician: "Unassigned",
       notes: "",
       inventoryItems: [],
+      serviceCategory: undefined,
+      vehicleId: "",
+      vehicleMake: "",
+      vehicleModel: "",
+      vehicleYear: "", 
+      odometer: "",
+      licensePlate: "",
     },
   });
 
@@ -108,9 +123,22 @@ export const useWorkOrderForm = () => {
         return entry.billable ? total + entry.duration : total;
       }, 0);
       
+      // Prepare vehicle data if provided
+      const vehicleData = values.vehicleId ? {
+        vehicleId: values.vehicleId,
+        vehicleDetails: {
+          make: values.vehicleMake,
+          model: values.vehicleModel,
+          year: values.vehicleYear,
+          odometer: values.odometer,
+          licensePlate: values.licensePlate,
+        }
+      } : {};
+      
       // Create the work order with additional tracking fields
       const newWorkOrder = await createWorkOrder({
         ...values,
+        ...vehicleData,
         dueDate: formattedDueDate,
         customer: values.customer,
         description: values.description,
@@ -125,6 +153,7 @@ export const useWorkOrderForm = () => {
         createdAt: new Date().toISOString(),
         lastUpdatedBy: currentUser.name,
         lastUpdatedAt: new Date().toISOString(),
+        serviceCategory: values.serviceCategory
       });
       
       // Record the activity
