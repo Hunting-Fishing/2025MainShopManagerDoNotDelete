@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { decodeVin } from "@/utils/vehicleUtils";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
 import { VinDecodeResult } from "@/types/vehicle";
+import { useVehicleData } from "@/hooks/useVehicleData";
 
 interface VehicleSelectorProps {
   form: UseFormReturn<any>;
@@ -27,8 +29,16 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   onRemove
 }) => {
   const { toast } = useToast();
+  const { fetchModels, makes, models } = useVehicleData();
   const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
   const vin = form.watch(`vehicles.${index}.vin`);
+  const make = form.watch(`vehicles.${index}.make`);
+
+  useEffect(() => {
+    if (make) {
+      fetchModels(make);
+    }
+  }, [make, fetchModels]);
 
   useEffect(() => {
     const handleVinDecode = async () => {
@@ -88,14 +98,18 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           <MakeField 
             form={form} 
             index={index} 
-            makes={[]} 
-            onMakeChange={() => {}}
+            makes={makes} 
+            onMakeChange={(make) => {
+              // When make changes, refresh models and reset model value
+              fetchModels(make);
+              form.setValue(`vehicles.${index}.model`, '');
+            }}
           />
           <ModelField 
             form={form} 
             index={index} 
-            models={[]}
-            selectedMake=""
+            models={models}
+            selectedMake={make}
           />
         </div>
         <VehicleAdditionalDetails form={form} index={index} decodedDetails={decodedVehicle} />

@@ -5,11 +5,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
+import { CarModel } from "@/types/vehicle";
 
-export const ModelField: React.FC<BaseFieldProps & {
-  models: any[];
+interface ModelFieldProps extends BaseFieldProps {
+  models: CarModel[];
   selectedMake: string;
-}> = ({ form, index, models, selectedMake }) => {
+}
+
+export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = [], selectedMake }) => {
   return (
     <FormField
       control={form.control}
@@ -24,32 +27,35 @@ export const ModelField: React.FC<BaseFieldProps & {
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  <p>Specific model of the vehicle (e.g., F-150, Corolla, Civic)</p>
+                  <p>Specific vehicle model (e.g., Camry, F-150)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
-          <Select 
-            onValueChange={field.onChange} 
-            value={field.value}
-            disabled={!selectedMake || models.length === 0}
+          <Select
+            value={field.value || ""}
+            onValueChange={field.onChange}
+            disabled={!selectedMake || field.disabled}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select Model" />
+                <SelectValue placeholder={selectedMake ? "Select model" : "Select make first"} />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {models.length > 0 ? (
-                models.map(model => (
-                  <SelectItem key={model.model_name} value={model.model_name}>
+              {!selectedMake ? (
+                <SelectItem value="" disabled>Select make first</SelectItem>
+              ) : models.length > 0 ? (
+                models.map((model) => (
+                  <SelectItem 
+                    key={model.model_name} 
+                    value={model.model_name}
+                  >
                     {model.model_name}
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="no-models" disabled>
-                  {selectedMake ? "No models available" : "Select a make first"}
-                </SelectItem>
+                <SelectItem value="" disabled>No models available</SelectItem>
               )}
             </SelectContent>
           </Select>

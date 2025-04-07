@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -17,7 +16,6 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   decodedDetails
 }) => {
   const color = form.watch(`vehicles.${index}.color`) || '';
-  const transmission = form.watch(`vehicles.${index}.transmission`) || '';
   const transmissionType = form.watch(`vehicles.${index}.transmission_type`) || '';
   
   // Update form with decoded values if provided
@@ -26,8 +24,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
       console.log("Rendering VehicleAdditionalDetails with:", {
         decodedDetails,
         color,
-        transmissionType,
-        transmission
+        transmissionType
       });
 
       form.setValue(`vehicles.${index}.transmission`, decodedDetails.transmission || '');
@@ -60,20 +57,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
           )}
         />
         
-        {/* Transmission Field */}
-        <FormField
-          control={form.control}
-          name={`vehicles.${index}.transmission`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Transmission</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Transmission type" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Removed duplicate Transmission Field - keeping only the one in the specialized section below */}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -156,6 +140,23 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
           )}
         />
         
+        {/* Transmission Field (kept this one) */}
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.transmission`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Transmission</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Automatic, Manual, etc." />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Transmission Type Field - Specific details */}
         <FormField
           control={form.control}
@@ -170,22 +171,22 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
             </FormItem>
           )}
         />
+        
+        {/* GVWR Field */}
+        <FormField
+          control={form.control}
+          name={`vehicles.${index}.gvwr`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>GVWR</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Weight class" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
-      
-      {/* GVWR Field */}
-      <FormField
-        control={form.control}
-        name={`vehicles.${index}.gvwr`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>GVWR (Gross Vehicle Weight Rating)</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Weight class" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 };

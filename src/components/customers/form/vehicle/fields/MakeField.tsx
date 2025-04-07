@@ -5,11 +5,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
+import { CarMake } from "@/types/vehicle";
 
-export const MakeField: React.FC<BaseFieldProps & { 
-  makes: any[]; 
-  onMakeChange: (value: string) => void 
-}> = ({ form, index, makes, onMakeChange }) => {
+interface MakeFieldProps extends BaseFieldProps {
+  makes: CarMake[];
+  onMakeChange?: (make: string) => void;
+}
+
+export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], onMakeChange }) => {
+  const makeValue = form.watch(`vehicles.${index}.make`);
+
   return (
     <FormField
       control={form.control}
@@ -24,26 +29,39 @@ export const MakeField: React.FC<BaseFieldProps & {
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  <p>Vehicle manufacturer (e.g., Ford, Toyota, Honda)</p>
+                  <p>Vehicle manufacturer (e.g., Toyota, Ford)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
-          <Select 
-            onValueChange={onMakeChange} 
-            value={field.value}
+          <Select
+            value={field.value || ""}
+            onValueChange={(value) => {
+              field.onChange(value);
+              if (onMakeChange) {
+                onMakeChange(value);
+              }
+            }}
+            disabled={field.disabled}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select Make" />
+                <SelectValue placeholder="Select make" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {makes.map(make => (
-                <SelectItem key={make.make_id} value={make.make_id}>
-                  {make.make_display}
-                </SelectItem>
-              ))}
+              {makes.length > 0 ? (
+                makes.map((make) => (
+                  <SelectItem 
+                    key={make.make_id || make.make_display} 
+                    value={make.make_id || make.make_display}
+                  >
+                    {make.make_display}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="" disabled>No makes available</SelectItem>
+              )}
             </SelectContent>
           </Select>
           <FormMessage />
