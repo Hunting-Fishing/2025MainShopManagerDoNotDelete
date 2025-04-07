@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { AddInteractionDialog } from "@/components/interactions/AddInteractionDialog";
 import { CustomerDetailsHeader } from "@/components/customers/details/CustomerDetailsHeader";
-import { CustomerDetailsTabs } from "@/components/customers/CustomerDetailsTabs";
+import { CustomerDetailsTabs } from "@/components/customers/details/CustomerDetailsTabs";
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
@@ -51,11 +51,7 @@ export default function CustomerDetails() {
         customer={customer}
         customerWorkOrders={customerWorkOrders}
         customerInteractions={customerInteractions}
-        customerCommunications={customerCommunications}
-        customerNotes={customerNotes}
         setAddInteractionOpen={setAddInteractionOpen}
-        onCommunicationAdded={handleCommunicationAdded}
-        onNoteAdded={handleNoteAdded}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
