@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Car, User, Building2, CreditCard, Users, Heart } from "lucide-react";
 
-type TabValue = "personal" | "business" | "vehicles" | "preferences" | "household" | "loyalty";
+type TabValue = "personal" | "business" | "payment" | "vehicles" | "preferences" | "household" | "loyalty";
 
 export interface FormTabsProps {
   initialTab?: string;
@@ -11,6 +11,7 @@ export interface FormTabsProps {
   setCurrentTab?: (value: string) => void;
   hasPersonalErrors?: boolean;
   hasBusinessErrors?: boolean;
+  hasPaymentErrors?: boolean;
   hasPreferencesErrors?: boolean;
   hasReferralErrors?: boolean;
   hasVehicleErrors?: boolean;
@@ -25,6 +26,7 @@ export const FormTabs: React.FC<FormTabsProps> = ({
   setCurrentTab,
   hasPersonalErrors,
   hasBusinessErrors,
+  hasPaymentErrors,
   hasPreferencesErrors,
   hasReferralErrors,
   hasVehicleErrors,
@@ -65,13 +67,19 @@ export const FormTabs: React.FC<FormTabsProps> = ({
             <span className="inline sm:hidden">Business</span>
             {hasBusinessErrors && <span className="w-2 h-2 rounded-full bg-destructive ml-1"></span>}
           </TabsTrigger>
+          <TabsTrigger value="payment" className="flex items-center gap-2" data-section="payment">
+            <CreditCard className="h-4 w-4" />
+            <span className="hidden sm:inline">Payment & Billing</span>
+            <span className="inline sm:hidden">Payment</span>
+            {hasPaymentErrors && <span className="w-2 h-2 rounded-full bg-destructive ml-1"></span>}
+          </TabsTrigger>
           <TabsTrigger value="vehicles" className="flex items-center gap-2" data-section="vehicles">
             <Car className="h-4 w-4" />
             <span>Vehicles</span>
             {hasVehicleErrors && <span className="w-2 h-2 rounded-full bg-destructive ml-1"></span>}
           </TabsTrigger>
           <TabsTrigger value="preferences" className="flex items-center gap-2" data-section="preferences">
-            <CreditCard className="h-4 w-4" />
+            <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Preferences</span>
             <span className="inline sm:hidden">Prefs</span>
             {hasPreferencesErrors && <span className="w-2 h-2 rounded-full bg-destructive ml-1"></span>}

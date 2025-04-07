@@ -9,7 +9,6 @@ import { CustomerFormValues } from "../schemas/customerSchema";
 import { shops as defaultShops } from "../schemas/relationshipData";
 import { requiredFields } from "../schemas/customerSchema";
 import { EssentialBusinessDetails } from "./EssentialBusinessDetails";
-import { PaymentBillingSection } from "./PaymentBillingSection";
 import { FleetManagementSection } from "./FleetManagementSection";
 
 interface BusinessInfoFieldsProps {
@@ -24,7 +23,6 @@ export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({
   singleShopMode = false
 }) => {
   const [isEssentialInfoOpen, setIsEssentialInfoOpen] = React.useState(true);
-  const [isPaymentBillingOpen, setIsPaymentBillingOpen] = React.useState(true);
   const [isFleetOpen, setIsFleetOpen] = React.useState(true);
   const isFleet = form.watch("is_fleet");
 
@@ -42,13 +40,6 @@ export const BusinessInfoFields: React.FC<BusinessInfoFieldsProps> = ({
           setIsOpen={setIsEssentialInfoOpen}
           availableShops={availableShops}
           singleShopMode={singleShopMode}
-        />
-
-        {/* Payment & Billing Section */}
-        <PaymentBillingSection 
-          form={form} 
-          isOpen={isPaymentBillingOpen} 
-          setIsOpen={setIsPaymentBillingOpen} 
         />
 
         {/* Fleet Management Section */}

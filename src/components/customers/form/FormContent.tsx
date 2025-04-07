@@ -5,6 +5,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { CustomerFormValues } from "./schemas/customerSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { BusinessInfoFields } from "./business/BusinessInfoFields";
+import { PaymentBillingFields } from "./payment/PaymentBillingFields";
 import { PreferencesFields } from "./PreferencesFields";
 import { ReferralFields } from "./ReferralFields";
 import { VehiclesFields } from "./VehiclesFields";
@@ -37,6 +38,10 @@ export const FormContent: React.FC<FormContentProps> = ({
           availableShops={formContext?.availableShops} 
           singleShopMode={formContext?.singleShopMode}
         />
+      </TabsContent>
+      
+      <TabsContent value="payment" className="mt-6">
+        <PaymentBillingFields form={form} />
       </TabsContent>
       
       <TabsContent value="preferences" className="mt-6">

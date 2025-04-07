@@ -7,8 +7,8 @@ export const useFormNavigation = () => {
   const tabOrder = [
     "personal", 
     "business", 
+    "payment",
     "preferences", 
-    "referral", 
     "vehicles", 
     "household", 
     "segments"

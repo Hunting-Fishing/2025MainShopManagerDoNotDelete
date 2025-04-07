@@ -47,7 +47,8 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
   const { 
     hasErrors, 
     hasPersonalErrors, 
-    hasBusinessErrors, 
+    hasBusinessErrors,
+    hasPaymentErrors, 
     hasPreferencesErrors, 
     hasReferralErrors, 
     hasVehicleErrors,
@@ -84,6 +85,7 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
             setCurrentTab={setCurrentTab}
             hasPersonalErrors={hasPersonalErrors}
             hasBusinessErrors={hasBusinessErrors}
+            hasPaymentErrors={hasPaymentErrors}
             hasPreferencesErrors={hasPreferencesErrors}
             hasReferralErrors={hasReferralErrors}
             hasVehicleErrors={hasVehicleErrors}
