@@ -9,4 +9,13 @@ export interface CustomerVehicle {
   license_plate?: string;
   color?: string;
   last_service_date?: string;
+  // Additional vehicle details
+  transmission?: string;
+  transmission_type?: string;
+  drive_type?: string;
+  fuel_type?: string;
+  engine?: string;
+  body_style?: string;
+  country?: string;
+  gvwr?: string;
 }

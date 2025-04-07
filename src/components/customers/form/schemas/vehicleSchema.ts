@@ -18,8 +18,8 @@ export interface VehicleFormData {
   engine?: string;
   body_style?: string;
   country?: string;
-  transmission_type?: string; // New field for transmission type
-  gvwr?: string; // New field for GVWR (Gross Vehicle Weight Rating)
+  transmission_type?: string;
+  gvwr?: string;
 }
 
 // Default empty vehicle
@@ -36,8 +36,8 @@ export const emptyVehicle: VehicleFormData = {
   engine: '',
   body_style: '',
   country: '',
-  transmission_type: '', // Initialize new field
-  gvwr: '' // Initialize new field
+  transmission_type: '',
+  gvwr: ''
 };
 
 // Add the vehicleSchema export using Zod
@@ -55,6 +55,6 @@ export const vehicleSchema = z.object({
   engine: z.string().optional().or(z.literal("")),
   body_style: z.string().optional().or(z.literal("")),
   country: z.string().optional().or(z.literal("")),
-  transmission_type: z.string().optional().or(z.literal("")), // Add validation for new field
-  gvwr: z.string().optional().or(z.literal("")) // Add validation for new field
+  transmission_type: z.string().optional().or(z.literal("")),
+  gvwr: z.string().optional().or(z.literal(""))
 });

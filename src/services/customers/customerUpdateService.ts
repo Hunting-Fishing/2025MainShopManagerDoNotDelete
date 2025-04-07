@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -128,7 +127,16 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 model: vehicle.model,
                 year: vehicleYear,
                 vin: vehicle.vin || null,
-                license_plate: vehicle.license_plate || null
+                license_plate: vehicle.license_plate || null,
+                color: vehicle.color || null,
+                transmission: vehicle.transmission || null,
+                transmission_type: vehicle.transmission_type || null,
+                drive_type: vehicle.drive_type || null,
+                fuel_type: vehicle.fuel_type || null,
+                engine: vehicle.engine || null,
+                body_style: vehicle.body_style || null,
+                country: vehicle.country || null,
+                gvwr: vehicle.gvwr || null
               })
               .eq("id", existingVehicle.id);
               
@@ -149,7 +157,16 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
                 model: vehicle.model,
                 year: vehicleYear,
                 vin: vehicle.vin || null,
-                license_plate: vehicle.license_plate || null
+                license_plate: vehicle.license_plate || null,
+                color: vehicle.color || null,
+                transmission: vehicle.transmission || null,
+                transmission_type: vehicle.transmission_type || null,
+                drive_type: vehicle.drive_type || null,
+                fuel_type: vehicle.fuel_type || null,
+                engine: vehicle.engine || null,
+                body_style: vehicle.body_style || null,
+                country: vehicle.country || null,
+                gvwr: vehicle.gvwr || null
               });
               
             if (insertError) {
