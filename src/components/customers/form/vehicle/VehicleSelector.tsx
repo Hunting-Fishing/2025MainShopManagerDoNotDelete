@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -31,6 +30,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
       try {
         const decodedData = await decodeVin(vin);
         if (decodedData) {
+          console.log("Decoded VIN data:", decodedData);
           form.setValue(`vehicles.${index}.make`, decodedData.make || '');
           form.setValue(`vehicles.${index}.model`, decodedData.model || '');
           form.setValue(`vehicles.${index}.year`, decodedData.year || '');
@@ -42,7 +42,10 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
           if (decodedData.drive_type) form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type);
           if (decodedData.fuel_type) form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type);
           if (decodedData.transmission) form.setValue(`vehicles.${index}.transmission`, decodedData.transmission);
-          if (decodedData.transmission_type) form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type);
+          if (decodedData.transmission_type) {
+            console.log("Setting transmission_type:", decodedData.transmission_type);
+            form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type);
+          }
           if (decodedData.body_style) form.setValue(`vehicles.${index}.body_style`, decodedData.body_style);
           if (decodedData.country) form.setValue(`vehicles.${index}.country`, decodedData.country);
           if (decodedData.engine) form.setValue(`vehicles.${index}.engine`, decodedData.engine);
@@ -145,7 +148,6 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
           />
         </div>
         
-        {/* Display additional vehicle details if available */}
         <VehicleAdditionalDetails 
           form={form} 
           index={index}

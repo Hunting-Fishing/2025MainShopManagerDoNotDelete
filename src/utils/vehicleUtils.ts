@@ -1,4 +1,3 @@
-
 import { VinDecodeResult } from "@/types/vehicle";
 import { mockVinDatabase } from "@/data/vinDatabase";
 import { decodeVinWithApi } from "@/services/vinDecoderService";
@@ -25,6 +24,8 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
     
     // If we got a valid result from the API, return it
     if (apiResult && apiResult.make && apiResult.model && apiResult.year) {
+      // Log the complete API result for debugging
+      console.log("Complete API decode result:", apiResult);
       return apiResult;
     }
     

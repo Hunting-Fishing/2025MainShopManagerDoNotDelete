@@ -78,6 +78,10 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
 
   if (!hasAdditionalInfo) return null;
 
+  // For debugging - log what fields are available and their values
+  console.log("Decoded vehicle details:", decodedDetails);
+  console.log("Transmission type:", decodedDetails.transmission_type);
+
   return (
     <div className="mt-4">
       <Card>

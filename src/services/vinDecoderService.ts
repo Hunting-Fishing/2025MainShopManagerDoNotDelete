@@ -121,6 +121,34 @@ const formatTransmission = (transmission: string): string => {
 };
 
 /**
+ * Format transmission type to a more specific classification
+ */
+const formatTransmissionType = (transmissionType: string): string => {
+  if (!transmissionType) return "";
+  
+  transmissionType = transmissionType.toLowerCase();
+  if (transmissionType.includes("automatic")) {
+    if (transmissionType.includes("cvt")) return "Continuously Variable Automatic";
+    if (transmissionType.includes("8")) return "8-Speed Automatic";
+    if (transmissionType.includes("7")) return "7-Speed Automatic";
+    if (transmissionType.includes("6")) return "6-Speed Automatic";
+    if (transmissionType.includes("5")) return "5-Speed Automatic";
+    if (transmissionType.includes("4")) return "4-Speed Automatic";
+    if (transmissionType.includes("dual") || transmissionType.includes("dct")) return "Dual-Clutch Automatic";
+    return "Automatic";
+  }
+  
+  if (transmissionType.includes("manual")) {
+    if (transmissionType.includes("7")) return "7-Speed Manual";
+    if (transmissionType.includes("6")) return "6-Speed Manual";
+    if (transmissionType.includes("5")) return "5-Speed Manual";
+    return "Manual";
+  }
+  
+  return transmissionType;
+};
+
+/**
  * Decode a VIN using the NHTSA API
  * @param vin The 17-digit Vehicle Identification Number
  * @returns Promise resolving to vehicle information or null if invalid
@@ -169,6 +197,18 @@ export const decodeVinWithApi = async (vin: string): Promise<VinDecodeResult | n
       engineInfo = `${vehicleInfo.EngineSize}L`;
     }
 
+    // Process the transmission type field - if we have TransmissionStyle, use it to detect type
+    let transmissionType = formatTransmissionType(vehicleInfo.TransmissionType || "");
+    
+    // If we don't have a transmission type but have a transmission style, derive the type
+    if (!transmissionType && vehicleInfo.TransmissionStyle) {
+      transmissionType = formatTransmissionType(vehicleInfo.TransmissionStyle);
+    }
+
+    console.log("API TransmissionType:", vehicleInfo.TransmissionType);
+    console.log("API TransmissionStyle:", vehicleInfo.TransmissionStyle);
+    console.log("Formatted transmissionType:", transmissionType);
+
     // Map the API response to our VinDecodeResult format with enhanced details
     const result: VinDecodeResult = {
       year: vehicleInfo.ModelYear || "",
@@ -178,7 +218,7 @@ export const decodeVinWithApi = async (vin: string): Promise<VinDecodeResult | n
       drive_type: formatDriveType(vehicleInfo.DriveType || ""),
       fuel_type: formatFuelType(vehicleInfo.FuelTypePrimary || ""),
       transmission: formatTransmission(vehicleInfo.TransmissionStyle || ""),
-      transmission_type: vehicleInfo.TransmissionType || "", // Add transmission type
+      transmission_type: transmissionType, // Use our processed transmission type
       body_style: vehicleInfo.BodyClass || "",
       country: vehicleInfo.PlantCountry || "",
       engine: engineInfo,
