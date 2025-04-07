@@ -41,6 +41,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [isFleetCustomer, setIsFleetCustomer] = useState<boolean>(false);
 
   // Get customer and vehicle information from URL parameters
   const customerId = searchParams.get('customerId');
@@ -64,7 +65,16 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         
         if (data) {
           // Apply adaptCustomerForUI to normalize each customer record
-          setCustomers(data.map(customer => adaptCustomerForUI(customer)));
+          const adaptedCustomers = data.map(customer => adaptCustomerForUI(customer));
+          setCustomers(adaptedCustomers);
+
+          // If we have a customerId, find if this customer is a fleet customer
+          if (customerId) {
+            const selectedCustomer = adaptedCustomers.find(c => c.id === customerId);
+            if (selectedCustomer) {
+              setIsFleetCustomer(selectedCustomer.is_fleet === true || Boolean(selectedCustomer.fleet_company));
+            }
+          }
         }
       } catch (err) {
         console.error("Error fetching customers:", err);
@@ -108,7 +118,8 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
 
   // Pre-fill form with customer and vehicle information from URL
   useEffect(() => {
-    if (customerId && customerName) {
+    if (customerId) {
+      // Automatically select the customer in the form
       form.setValue('customer', customerId);
       
       if (vehicleInfo) {
@@ -173,21 +184,25 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Vehicle Details Section - New! */}
+          {/* Vehicle Details Section - Only show if we have a vehicleId and vehicleInfo */}
           {vehicleId && vehicleInfo && (
-            <VehicleDetailsField form={form} />
+            <VehicleDetailsField 
+              form={form} 
+              isFleetCustomer={isFleetCustomer} 
+            />
           )}
           
           {/* Common Services Checklist - New! */}
           <CommonServicesChecklist onServiceChecked={handleServiceChecked} />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Customer Information */}
+            {/* Customer Information - Pass the selected customer ID */}
             <CustomerInfoSection 
               form={form as any} 
               customers={customers} 
               isLoading={loadingCustomers} 
               selectedVehicleId={selectedVehicleId}
+              preSelectedCustomerId={customerId}
             />
             
             {/* Status & Priority */}

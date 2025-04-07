@@ -11,20 +11,22 @@ interface CustomerInfoSectionProps {
   customers: Customer[];
   isLoading: boolean;
   selectedVehicleId?: string | null;
+  preSelectedCustomerId?: string | null;
 }
 
 export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ 
   form, 
   customers, 
   isLoading,
-  selectedVehicleId 
+  selectedVehicleId,
+  preSelectedCustomerId
 }) => {
   const [selectedCustomerName, setSelectedCustomerName] = useState<string>("");
   const [customerAddress, setCustomerAddress] = useState<string>("");
   
-  // When a customer is selected, find their name and address
+  // When a customer is selected or pre-selected, find their name and address
   useEffect(() => {
-    const customerId = form.getValues().customer;
+    const customerId = preSelectedCustomerId || form.getValues().customer;
     if (customerId) {
       const customer = customers.find(c => c.id === customerId);
       if (customer) {
@@ -38,9 +40,14 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({
         if (customer.postal_code) addressParts.push(customer.postal_code);
         
         setCustomerAddress(addressParts.join(", "));
+        
+        // If a customer is pre-selected, ensure it's set in the form
+        if (preSelectedCustomerId && form.getValues().customer !== preSelectedCustomerId) {
+          form.setValue('customer', preSelectedCustomerId);
+        }
       }
     }
-  }, [form, customers]);
+  }, [form, customers, preSelectedCustomerId]);
   
   return (
     <>
@@ -71,7 +78,7 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({
                     setCustomerAddress(addressParts.join(", "));
                   }
                 }}
-                value={field.value}
+                value={field.value || preSelectedCustomerId || ""}
               >
                 <SelectTrigger>
                   {isLoading ? (

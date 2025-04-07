@@ -7,9 +7,10 @@ import { useSearchParams } from "react-router-dom";
 
 interface VehicleDetailsFieldProps {
   form: any;
+  isFleetCustomer?: boolean;
 }
 
-export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({ form }) => {
+export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({ form, isFleetCustomer = false }) => {
   const [searchParams] = useSearchParams();
   const vehicleInfo = searchParams.get('vehicleInfo');
   const vehicleMake = vehicleInfo?.split(' ')[1] || '';
@@ -21,23 +22,30 @@ export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({ form }
     <Card className="mb-4">
       <CardContent className="pt-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="vehicleId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Vehicle ID</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    value={field.value || vehicleId}
-                    readOnly 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Only display Vehicle ID field for fleet/business customers */}
+          {isFleetCustomer && (
+            <FormField
+              control={form.control}
+              name="vehicleId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fleet Vehicle ID</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      value={field.value || vehicleId}
+                      placeholder="Fleet/Business Vehicle ID"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          {/* Always hidden field to store vehicle ID for database reference */}
+          {!isFleetCustomer && vehicleId && (
+            <input type="hidden" name="vehicleId" value={vehicleId} />
+          )}
 
           <FormField
             control={form.control}
