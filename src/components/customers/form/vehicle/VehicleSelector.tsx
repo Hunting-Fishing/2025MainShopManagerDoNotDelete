@@ -4,7 +4,13 @@ import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { X } from "lucide-react";
-import { VehicleFormFields } from "./VehicleFormFields";
+import { 
+  VinField, 
+  YearField, 
+  MakeField, 
+  ModelField, 
+  LicensePlateField 
+} from "./VehicleFormFields";
 import { decodeVin } from "@/utils/vehicleUtils";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
@@ -73,7 +79,29 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       </Button>
       
       <CardContent className="pt-6 pb-4">
-        <VehicleFormFields form={form} index={index} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <VinField form={form} index={index} />
+          <LicensePlateField form={form} index={index} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <YearField 
+            form={form} 
+            index={index}
+            years={Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i)}
+          />
+          <MakeField 
+            form={form} 
+            index={index} 
+            makes={[]} 
+            onMakeChange={() => {}}
+          />
+          <ModelField 
+            form={form} 
+            index={index} 
+            models={[]}
+            selectedMake=""
+          />
+        </div>
         <VehicleAdditionalDetails form={form} index={index} decodedDetails={decodedVehicle} />
       </CardContent>
     </Card>
