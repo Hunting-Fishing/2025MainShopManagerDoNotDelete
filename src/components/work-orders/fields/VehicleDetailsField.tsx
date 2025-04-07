@@ -19,6 +19,7 @@ export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({ form, 
   const vehicleInfo = searchParams.get('vehicleInfo');
   const vehicleId = searchParams.get('vehicleId') || '';
   const [isDecoding, setIsDecoding] = useState(false);
+  const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
   
   // Parse vehicle info - assuming format "YEAR MAKE MODEL"
   const vehicleParts = vehicleInfo?.split(' ') || [];
@@ -42,10 +43,21 @@ export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({ form, 
     try {
       const decodedData = await decodeVin(vinNumber);
       if (decodedData) {
+        // Store the decoded vehicle data
+        setDecodedVehicle(decodedData);
+        
         // Update form fields with decoded vehicle information
         form.setValue("vehicleMake", decodedData.make || '');
         form.setValue("vehicleModel", decodedData.model || '');
         form.setValue("vehicleYear", decodedData.year || '');
+        
+        // Add additional vehicle details to the form
+        if (decodedData.drive_type) form.setValue("driveType", decodedData.drive_type);
+        if (decodedData.fuel_type) form.setValue("fuelType", decodedData.fuel_type);
+        if (decodedData.transmission) form.setValue("transmission", decodedData.transmission);
+        if (decodedData.body_style) form.setValue("bodyStyle", decodedData.body_style);
+        if (decodedData.country) form.setValue("country", decodedData.country);
+        if (decodedData.engine) form.setValue("engine", decodedData.engine);
         
         toast({
           title: "VIN Decoded Successfully",
@@ -179,6 +191,107 @@ export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({ form, 
               </FormItem>
             )}
           />
+
+          {/* Additional vehicle details - only show if we have decoded data */}
+          {decodedVehicle && decodedVehicle.transmission && (
+            <FormField
+              control={form.control}
+              name="transmission"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Transmission</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      readOnly
+                      placeholder="Transmission" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {decodedVehicle && decodedVehicle.drive_type && (
+            <FormField
+              control={form.control}
+              name="driveType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Drive Type</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      readOnly
+                      placeholder="Drive Type" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {decodedVehicle && decodedVehicle.fuel_type && (
+            <FormField
+              control={form.control}
+              name="fuelType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fuel Type</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      readOnly
+                      placeholder="Fuel Type" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {decodedVehicle && decodedVehicle.engine && (
+            <FormField
+              control={form.control}
+              name="engine"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Engine</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      readOnly
+                      placeholder="Engine" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {decodedVehicle && decodedVehicle.country && (
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country of Origin</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      readOnly
+                      placeholder="Country of Origin" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}

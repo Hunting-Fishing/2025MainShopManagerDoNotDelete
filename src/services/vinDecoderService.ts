@@ -33,6 +33,8 @@ interface NhtsaVehicleInfo {
   Manufacturer: string;
   ErrorCode: string;
   ErrorText: string;
+  PlantCountry: string;
+  TransmissionStyle?: string;
   [key: string]: any; // For other properties in the response
 }
 
@@ -65,6 +67,55 @@ const makeNameMap: Record<string, string> = {
   "CADILLAC": "cadillac",
   "LINCOLN": "lincoln",
   // Add other mappings as needed
+};
+
+/**
+ * Format drive type to a more readable format
+ */
+const formatDriveType = (driveType: string): string => {
+  if (!driveType) return "";
+  
+  driveType = driveType.toUpperCase();
+  if (driveType.includes("4X4") || driveType.includes("FOUR-WHEEL")) return "4x4";
+  if (driveType.includes("4X2") || driveType.includes("TWO-WHEEL") && driveType.includes("REAR")) return "4x2";
+  if (driveType.includes("ALL WHEEL") || driveType.includes("AWD")) return "AWD";
+  if (driveType.includes("FRONT WHEEL") || driveType.includes("FWD")) return "FWD";
+  if (driveType.includes("REAR WHEEL") || driveType.includes("RWD")) return "RWD";
+  
+  return driveType;
+};
+
+/**
+ * Format fuel type to a more readable format
+ */
+const formatFuelType = (fuelType: string): string => {
+  if (!fuelType) return "";
+  
+  fuelType = fuelType.toLowerCase();
+  if (fuelType.includes("gasoline")) return "Gas";
+  if (fuelType.includes("diesel")) return "Diesel";
+  if (fuelType.includes("electric")) return "Electric";
+  if (fuelType.includes("hybrid")) return "Hybrid";
+  if (fuelType.includes("plug-in hybrid")) return "Plug-in Hybrid";
+  if (fuelType.includes("flex")) return "Flex Fuel";
+  if (fuelType.includes("cng")) return "CNG";
+  
+  return fuelType;
+};
+
+/**
+ * Format transmission type to a more readable format
+ */
+const formatTransmission = (transmission: string): string => {
+  if (!transmission) return "";
+  
+  transmission = transmission.toLowerCase();
+  if (transmission.includes("automatic")) return "Automatic";
+  if (transmission.includes("manual")) return "Manual";
+  if (transmission.includes("cvt")) return "CVT";
+  if (transmission.includes("dual clutch")) return "Dual Clutch";
+  
+  return transmission;
 };
 
 /**
@@ -105,13 +156,29 @@ export const decodeVinWithApi = async (vin: string): Promise<VinDecodeResult | n
     // Normalize the make to match our application's make_id format
     const normalizedMake = vehicleInfo.Make?.toUpperCase() || "";
     const makeId = makeNameMap[normalizedMake] || normalizedMake.toLowerCase();
+    
+    // Build engine information
+    let engineInfo = "";
+    if (vehicleInfo.EngineCylinders && vehicleInfo.EngineSize) {
+      engineInfo = `${vehicleInfo.EngineCylinders}cyl ${vehicleInfo.EngineSize}L`;
+    } else if (vehicleInfo.EngineCylinders) {
+      engineInfo = `${vehicleInfo.EngineCylinders} cylinder`;
+    } else if (vehicleInfo.EngineSize) {
+      engineInfo = `${vehicleInfo.EngineSize}L`;
+    }
 
-    // Map the API response to our VinDecodeResult format
+    // Map the API response to our VinDecodeResult format with enhanced details
     const result: VinDecodeResult = {
       year: vehicleInfo.ModelYear || "",
       make: makeId,
       model: vehicleInfo.Model || "",
-      trim: vehicleInfo.Trim || ""
+      trim: vehicleInfo.Trim || "",
+      drive_type: formatDriveType(vehicleInfo.DriveType || ""),
+      fuel_type: formatFuelType(vehicleInfo.FuelTypePrimary || ""),
+      transmission: formatTransmission(vehicleInfo.TransmissionStyle || ""),
+      body_style: vehicleInfo.BodyClass || "",
+      country: vehicleInfo.PlantCountry || "",
+      engine: engineInfo
     };
 
     console.log(`VIN decoded successfully via API: ${normalizedVin} ->`, result);
