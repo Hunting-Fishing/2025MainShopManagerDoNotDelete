@@ -17,12 +17,12 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
   const vehicles = customer.vehicles || [];
 
   const handleAddVehicle = () => {
-    // Navigate to edit customer page with vehicles tab active
-    navigate(`/customers/edit/${customer.id}?tab=vehicles`);
+    // Use the correct route pattern for edit customer with vehicles tab active
+    navigate(`/customers/${customer.id}/edit?tab=vehicles`);
   };
 
   const handleEditCustomer = () => {
-    navigate(`/customers/edit/${customer.id}?tab=vehicles`);
+    navigate(`/customers/${customer.id}/edit?tab=vehicles`);
   };
 
   if (vehicles.length === 0) {
