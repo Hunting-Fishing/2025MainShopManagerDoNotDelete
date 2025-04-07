@@ -86,11 +86,13 @@ export interface CustomerVehicle {
   
   // Add the additional vehicle details
   transmission?: string;
+  transmission_type?: string;
   drive_type?: string;
   fuel_type?: string;
   engine?: string;
   body_style?: string;
   country?: string;
+  gvwr?: string;
 }
 
 export interface CustomerNote {
