@@ -41,7 +41,7 @@ export const VehicleMakeSelector: React.FC<VehicleMakeSelectorProps> = ({ form, 
             <SelectContent>
               <SelectItem value="_none" disabled>Select make</SelectItem>
               {makes.map((make) => (
-                <SelectItem key={make.make_id} value={make.make_id}>
+                <SelectItem key={make.make_id} value={make.make_id || "_unknown"}>
                   {make.make_display}
                 </SelectItem>
               ))}

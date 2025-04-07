@@ -88,7 +88,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value}
-                value={field.value || undefined}
+                value={field.value || "_none"}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -97,7 +97,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
                 </FormControl>
                 <SelectContent>
                   {countries.map((country) => (
-                    <SelectItem key={country.code} value={country.code || "_none"}>
+                    <SelectItem key={country.code} value={country.code || "_unknown"}>
                       {country.name}
                     </SelectItem>
                   ))}
@@ -122,7 +122,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
                 <Select 
                   onValueChange={field.onChange} 
                   defaultValue={field.value}
-                  value={field.value || undefined}
+                  value={field.value || "_none"}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -133,7 +133,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
                   </FormControl>
                   <SelectContent>
                     {regionOptions.map((region) => (
-                      <SelectItem key={region.code} value={region.code || "_none"}>
+                      <SelectItem key={region.code} value={region.code || "_unknown"}>
                         {region.name}
                       </SelectItem>
                     ))}

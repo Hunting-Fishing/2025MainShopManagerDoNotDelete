@@ -57,7 +57,7 @@ export const VehicleModelSelector: React.FC<VehicleModelSelectorProps> = ({ form
                 }
               </SelectItem>
               {models.map((model) => (
-                <SelectItem key={model.model_name} value={model.model_name}>
+                <SelectItem key={model.model_name} value={model.model_name || "_unknown"}>
                   {model.model_name}
                 </SelectItem>
               ))}
