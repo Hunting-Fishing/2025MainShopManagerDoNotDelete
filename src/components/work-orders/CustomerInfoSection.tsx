@@ -25,7 +25,7 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ form, 
             <FormLabel>Customer</FormLabel>
             <Select 
               onValueChange={field.onChange} 
-              value={field.value}
+              value={field.value || undefined}
               disabled={isLoading}
             >
               <FormControl>
@@ -44,7 +44,9 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ form, 
                 {customers.map((customer) => (
                   <SelectItem 
                     key={customer.id} 
-                    value={`${customer.first_name} ${customer.last_name}`}
+                    value={customer.first_name && customer.last_name ? 
+                      `${customer.first_name} ${customer.last_name}` : 
+                      customer.id}
                   >
                     {customer.first_name} {customer.last_name}
                   </SelectItem>

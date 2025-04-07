@@ -97,7 +97,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
                 </FormControl>
                 <SelectContent>
                   {countries.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
+                    <SelectItem key={country.code} value={country.code || "_none"}>
                       {country.name}
                     </SelectItem>
                   ))}
@@ -133,7 +133,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
                   </FormControl>
                   <SelectContent>
                     {regionOptions.map((region) => (
-                      <SelectItem key={region.code} value={region.code}>
+                      <SelectItem key={region.code} value={region.code || "_none"}>
                         {region.name}
                       </SelectItem>
                     ))}

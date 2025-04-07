@@ -1,3 +1,4 @@
+
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
@@ -91,8 +92,8 @@ export function InvoiceFilters({
           <SelectContent>
             <SelectItem value="all">All Creators</SelectItem>
             {creators.map((creator) => (
-              <SelectItem key={creator} value={creator}>
-                {creator}
+              <SelectItem key={creator} value={creator || "_unknown"}>
+                {creator || "Unknown"}
               </SelectItem>
             ))}
           </SelectContent>

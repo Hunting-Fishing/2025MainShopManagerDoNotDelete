@@ -76,13 +76,14 @@ export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelect
       <div className="space-y-2">
         <Label>Communication Type</Label>
         <Select
-          value={type}
-          onValueChange={(value) => setType(value)}
+          value={type || "_none"}
+          onValueChange={(value) => setType(value === "_none" ? "" : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select type" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="_none">Select a type</SelectItem>
             <SelectItem value="email">Email</SelectItem>
             <SelectItem value="phone">Phone</SelectItem>
             <SelectItem value="text">Text</SelectItem>
@@ -94,18 +95,27 @@ export const CommunicationTemplateSelector: React.FC<CommunicationTemplateSelect
       <div className="space-y-2">
         <Label>Select Template</Label>
         <Select
-          value={selectedTemplateId}
+          value={selectedTemplateId || "_none"}
           onValueChange={handleTemplateSelect}
         >
           <SelectTrigger>
             <SelectValue placeholder="Choose a template" />
           </SelectTrigger>
           <SelectContent>
-            {filteredTemplates.map(template => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.name}
+            <SelectItem value="_none" disabled>
+              Choose a template
+            </SelectItem>
+            {filteredTemplates.length === 0 ? (
+              <SelectItem value="_no_templates" disabled>
+                No templates available for selected type
               </SelectItem>
-            ))}
+            ) : (
+              filteredTemplates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.name}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
