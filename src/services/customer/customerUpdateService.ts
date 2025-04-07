@@ -1,10 +1,11 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
 
 // Update a customer
 export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {
-  // Format the data for the database - include all fields that exist in the customers table
+  // Format the data for the database - include only fields that exist in the customers table
   const customerData = {
     // Personal information
     first_name: updates.first_name,
@@ -22,14 +23,6 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     // Business information
     company: updates.company,
     shop_id: updates.shop_id,
-    
-    // Business details
-    business_type: updates.business_type,
-    business_industry: updates.business_industry,
-    other_business_industry: updates.other_business_industry,
-    tax_id: updates.tax_id,
-    business_email: updates.business_email,
-    business_phone: updates.business_phone,
     
     // Tags and preferences
     tags: updates.tags,
