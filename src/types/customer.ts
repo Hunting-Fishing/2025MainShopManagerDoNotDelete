@@ -93,6 +93,7 @@ export interface CustomerVehicle {
   body_style?: string;
   country?: string;
   gvwr?: string;
+  trim?: string;
 }
 
 export interface CustomerNote {

@@ -18,4 +18,5 @@ export interface CustomerVehicle {
   body_style?: string;
   country?: string;
   gvwr?: string;
+  color?: string; // Adding color for backward compatibility with services
 }

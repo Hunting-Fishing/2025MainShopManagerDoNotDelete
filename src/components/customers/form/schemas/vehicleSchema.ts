@@ -20,6 +20,7 @@ export interface VehicleFormData {
   country?: string;
   transmission_type?: string;
   gvwr?: string;
+  color?: string; // Adding color for backward compatibility
 }
 
 // Default empty vehicle
@@ -37,7 +38,8 @@ export const emptyVehicle: VehicleFormData = {
   body_style: '',
   country: '',
   transmission_type: '',
-  gvwr: ''
+  gvwr: '',
+  color: '' // Adding color for backward compatibility
 };
 
 // Add the vehicleSchema export using Zod
@@ -56,5 +58,6 @@ export const vehicleSchema = z.object({
   body_style: z.string().optional().or(z.literal("")),
   country: z.string().optional().or(z.literal("")),
   transmission_type: z.string().optional().or(z.literal("")),
-  gvwr: z.string().optional().or(z.literal(""))
+  gvwr: z.string().optional().or(z.literal("")),
+  color: z.string().optional().or(z.literal("")) // Adding color for backward compatibility
 });
