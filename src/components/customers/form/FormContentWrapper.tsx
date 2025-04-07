@@ -83,6 +83,7 @@ export const FormContentWrapper: React.FC<FormContentWrapperProps> = ({
           className="w-full"
         >
           <FormTabs 
+            initialTab={currentTab} 
             currentTab={currentTab}
             setCurrentTab={setCurrentTab}
             hasPersonalErrors={hasPersonalErrors}

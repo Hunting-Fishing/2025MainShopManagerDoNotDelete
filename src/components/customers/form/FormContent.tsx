@@ -11,7 +11,7 @@ import { VehiclesFields } from "./VehiclesFields";
 import { SegmentFields } from "./SegmentFields";
 import { HouseholdFields } from "./HouseholdFields";
 
-interface FormContentProps {
+export interface FormContentProps {
   form: UseFormReturn<CustomerFormValues>;
   currentTab: string;
   formContext?: {

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
@@ -29,6 +29,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   customerId,
   initialTab
 }) => {
+  const [currentTab, setCurrentTab] = useState<string>(initialTab || "personal");
+  
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
     defaultValues: defaultValues || {
@@ -59,13 +61,14 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         onSubmit={form.handleSubmit(handleFormSubmit)} 
         className="space-y-8 pb-10 relative"
       >
-        <FormTabs initialTab={initialTab} />
+        <FormTabs initialTab={initialTab} currentTab={currentTab} setCurrentTab={setCurrentTab} />
         <FormContent 
           form={form} 
-          availableShops={availableShops} 
-          singleShopMode={singleShopMode} 
-          isEditMode={isEditMode}
-          customerId={customerId}
+          currentTab={currentTab}
+          formContext={{
+            availableShops,
+            singleShopMode
+          }}
         />
         <CustomerFormActions 
           isSubmitting={isSubmitting} 
