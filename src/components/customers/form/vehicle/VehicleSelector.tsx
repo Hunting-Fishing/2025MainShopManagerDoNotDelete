@@ -10,6 +10,7 @@ import { CustomerFormValues } from "../CustomerFormSchema";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { VehicleMakeSelector } from "./VehicleMakeSelector";
 import { VehicleModelSelector } from "./VehicleModelSelector";
+import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
 
 interface VehicleSelectorProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -20,6 +21,7 @@ interface VehicleSelectorProps {
 export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, onRemove }) => {
   const { decodeVin } = useVehicleData();
   const [isDecoding, setIsDecoding] = useState(false);
+  const [decodedDetails, setDecodedDetails] = useState<any>(null);
   const vehicle = form.watch(`vehicles.${index}`);
   
   const handleVinUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,6 +34,17 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
           form.setValue(`vehicles.${index}.make`, decodedData.make || '');
           form.setValue(`vehicles.${index}.model`, decodedData.model || '');
           form.setValue(`vehicles.${index}.year`, decodedData.year || '');
+          
+          // Store additional decoded details for display
+          setDecodedDetails(decodedData);
+          
+          // Set additional fields in the form data
+          if (decodedData.drive_type) form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type);
+          if (decodedData.fuel_type) form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type);
+          if (decodedData.transmission) form.setValue(`vehicles.${index}.transmission`, decodedData.transmission);
+          if (decodedData.body_style) form.setValue(`vehicles.${index}.body_style`, decodedData.body_style);
+          if (decodedData.country) form.setValue(`vehicles.${index}.country`, decodedData.country);
+          if (decodedData.engine) form.setValue(`vehicles.${index}.engine`, decodedData.engine);
           
           // Trigger form validation after setting values
           form.trigger([
@@ -115,6 +128,13 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
             )}
           />
         </div>
+        
+        {/* Display additional vehicle details if available */}
+        <VehicleAdditionalDetails 
+          form={form} 
+          index={index}
+          decodedDetails={decodedDetails} 
+        />
       </CardContent>
     </Card>
   );

@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   first_name: string;
@@ -73,15 +72,25 @@ export interface PreferredTechnicianChange {
   changed_by_name: string;
 }
 
+// Extend the existing CustomerVehicle interface to include additional fields
 export interface CustomerVehicle {
-  id?: string; // Making id optional for creation
-  year?: number;
-  make?: string;
-  model?: string;
+  id?: string;
+  customer_id?: string;
+  make: string;
+  model: string;
+  year: string | number;
   vin?: string;
   license_plate?: string;
   color?: string;
   last_service_date?: string;
+  
+  // Add the additional vehicle details
+  transmission?: string;
+  drive_type?: string;
+  fuel_type?: string;
+  engine?: string;
+  body_style?: string;
+  country?: string;
 }
 
 export interface CustomerNote {

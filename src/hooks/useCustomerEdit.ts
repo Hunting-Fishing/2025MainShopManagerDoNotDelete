@@ -77,7 +77,16 @@ const customerToFormValues = (customer: Customer): CustomerFormValues => {
       model: vehicle.model || '',
       year: vehicle.year ? String(vehicle.year) : '',
       vin: vehicle.vin || '',
-      license_plate: vehicle.license_plate || ''
+      license_plate: vehicle.license_plate || '',
+      color: vehicle.color || '',
+      
+      // Support for additional vehicle details
+      transmission: vehicle.transmission || '',
+      drive_type: vehicle.drive_type || '',
+      fuel_type: vehicle.fuel_type || '',
+      engine: vehicle.engine || '',
+      body_style: vehicle.body_style || '',
+      country: vehicle.country || ''
     })),
     segments: customer.segments || [],
   };
