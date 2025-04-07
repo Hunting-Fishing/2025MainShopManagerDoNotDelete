@@ -31,7 +31,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
     transmission: decodedDetails.transmission || ""
   });
 
-  // Define the fields to display
+  // Define the fields to display - remove the duplicate transmission fields
   const additionalFields = [
     {
       name: `vehicles.${index}.transmission` as const,
@@ -39,12 +39,15 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
       value: decodedDetails.transmission || "",
       placeholder: "Transmission"
     },
-    {
-      name: `vehicles.${index}.transmission_type` as const,
-      label: "Transmission Type",
-      value: decodedDetails.transmission_type || "",
-      placeholder: "Transmission Type"
-    },
+    // Only show transmission_type if it's different from transmission
+    ...(decodedDetails.transmission_type && 
+      decodedDetails.transmission_type !== decodedDetails.transmission ? 
+      [{
+        name: `vehicles.${index}.transmission_type` as const,
+        label: "Transmission Type",
+        value: decodedDetails.transmission_type || "",
+        placeholder: "Transmission Type"
+      }] : []),
     {
       name: `vehicles.${index}.drive_type` as const,
       label: "Drive Type",

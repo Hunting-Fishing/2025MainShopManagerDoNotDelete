@@ -81,12 +81,13 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, index, o
 
   // Handle color change to update the decodedDetails and force re-render
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newColor = e.target.value;
     // Update the form value
-    form.setValue(`vehicles.${index}.color`, e.target.value);
+    form.setValue(`vehicles.${index}.color`, newColor);
     
     // Force a re-render of the additional details component
     if (decodedDetails) {
-      console.log("Color changed, updating decodedDetails to force re-render");
+      console.log("Color changed to:", newColor, "updating decodedDetails to force re-render");
       setDecodedDetails({...decodedDetails});
     }
   };
