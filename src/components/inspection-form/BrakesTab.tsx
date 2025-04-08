@@ -5,24 +5,28 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Disc, AlertTriangle, Check, Gauge, Disc2, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface BrakeItem {
   name: string;
   status: 'good' | 'fair' | 'replace';
-  wearPercentage: number;
+  thicknessMM: number;
+  originalThicknessMM: number;
 }
 
 const BrakesTab = () => {
   const [frontBrakes, setFrontBrakes] = useState<BrakeItem>({
     name: "Front Brake Pads",
     status: 'good',
-    wearPercentage: 25,
+    thicknessMM: 8,
+    originalThicknessMM: 12,
   });
 
   const [rearBrakes, setRearBrakes] = useState<BrakeItem>({
     name: "Rear Brake Pads",
     status: 'good',
-    wearPercentage: 20,
+    thicknessMM: 9,
+    originalThicknessMM: 12,
   });
 
   const [rotors, setRotors] = useState<{
@@ -49,10 +53,10 @@ const BrakesTab = () => {
 
   const [notes, setNotes] = useState('');
 
-  const getBrakeStatus = (wearPercentage: number) => {
-    if (wearPercentage < 30) {
+  const getBrakeStatus = (thicknessMM: number) => {
+    if (thicknessMM >= 6) {
       return { status: 'good', label: 'Good', color: 'text-green-600', bgColor: 'bg-green-100', icon: <Check className="h-5 w-5" /> };
-    } else if (wearPercentage < 70) {
+    } else if (thicknessMM >= 4) {
       return { status: 'fair', label: 'Fair', color: 'text-amber-600', bgColor: 'bg-amber-100', icon: <AlertTriangle className="h-5 w-5" /> };
     } else {
       return { status: 'replace', label: 'Replace', color: 'text-red-600', bgColor: 'bg-red-100', icon: <AlertCircle className="h-5 w-5" /> };
@@ -60,15 +64,32 @@ const BrakesTab = () => {
   };
 
   const handleFrontBrakeChange = (values: number[]) => {
-    const wearPercentage = values[0];
-    const status = getBrakeStatus(wearPercentage).status;
-    setFrontBrakes({ ...frontBrakes, wearPercentage, status: status as 'good' | 'fair' | 'replace' });
+    const thicknessMM = values[0];
+    const status = getBrakeStatus(thicknessMM).status;
+    setFrontBrakes({ ...frontBrakes, thicknessMM, status: status as 'good' | 'fair' | 'replace' });
   };
 
   const handleRearBrakeChange = (values: number[]) => {
-    const wearPercentage = values[0];
-    const status = getBrakeStatus(wearPercentage).status;
-    setRearBrakes({ ...rearBrakes, wearPercentage, status: status as 'good' | 'fair' | 'replace' });
+    const thicknessMM = values[0];
+    const status = getBrakeStatus(thicknessMM).status;
+    setRearBrakes({ ...rearBrakes, thicknessMM, status: status as 'good' | 'fair' | 'replace' });
+  };
+
+  const handleOriginalThicknessChange = (type: 'front' | 'rear', value: string) => {
+    const thickness = parseInt(value) || 0;
+    if (type === 'front') {
+      setFrontBrakes({ ...frontBrakes, originalThicknessMM: thickness });
+    } else {
+      setRearBrakes({ ...rearBrakes, originalThicknessMM: thickness });
+    }
+  };
+
+  // Calculate the percentage worn for visualization purposes
+  const calculateWearPercentage = (current: number, original: number) => {
+    if (original <= 0) return 0;
+    const worn = original - current;
+    const percentage = (worn / original) * 100;
+    return Math.min(Math.max(percentage, 0), 100); // Clamp between 0-100%
   };
 
   return (
@@ -82,53 +103,92 @@ const BrakesTab = () => {
                 <Disc className="h-5 w-5" /> Front Brake Pads
               </h3>
               <div className={`px-3 py-1 rounded-full font-medium text-sm ${
-                getBrakeStatus(frontBrakes.wearPercentage).bgColor} ${
-                getBrakeStatus(frontBrakes.wearPercentage).color} border border-white/20 bg-white/90 shadow-md`}>
-                {getBrakeStatus(frontBrakes.wearPercentage).icon}
-                <span className="ml-1">{getBrakeStatus(frontBrakes.wearPercentage).label}</span>
+                getBrakeStatus(frontBrakes.thicknessMM).bgColor} ${
+                getBrakeStatus(frontBrakes.thicknessMM).color} border border-white/20 bg-white/90 shadow-md`}>
+                {getBrakeStatus(frontBrakes.thicknessMM).icon}
+                <span className="ml-1">{getBrakeStatus(frontBrakes.thicknessMM).label}</span>
               </div>
             </div>
           </div>
           <CardContent className="pt-6">
             <div className="space-y-6">
+              <div className="flex items-end gap-4 mb-4">
+                <div className="flex-1">
+                  <Label htmlFor="front-original" className="text-sm font-medium mb-1 block">Original Thickness</Label>
+                  <div className="relative">
+                    <Input 
+                      id="front-original" 
+                      type="number" 
+                      min="6" 
+                      max="12" 
+                      value={frontBrakes.originalThicknessMM}
+                      onChange={(e) => handleOriginalThicknessChange('front', e.target.value)}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">mm</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="front-current" className="text-sm font-medium mb-1 block">Current Thickness</Label>
+                  <div className="relative">
+                    <Input 
+                      id="front-current" 
+                      type="number" 
+                      min="0" 
+                      max={frontBrakes.originalThicknessMM} 
+                      value={frontBrakes.thicknessMM}
+                      onChange={(e) => handleFrontBrakeChange([parseInt(e.target.value) || 0])}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">mm</span>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <div className="flex justify-between mb-2 text-sm">
-                  <span className="font-medium">Brake Pad Wear</span>
-                  <span className="font-bold text-purple-600">{frontBrakes.wearPercentage}% Worn</span>
+                  <span className="font-medium">Brake Pad Thickness</span>
+                  <span className="font-bold text-purple-600">{frontBrakes.thicknessMM} mm</span>
                 </div>
                 <Slider
-                  value={[frontBrakes.wearPercentage]}
+                  value={[frontBrakes.thicknessMM]}
                   min={0}
-                  max={100}
-                  step={5}
+                  max={frontBrakes.originalThicknessMM}
+                  step={0.5}
                   onValueChange={handleFrontBrakeChange}
                   className="mb-2"
                 />
                 <div className="flex justify-between text-xs font-medium">
-                  <span className="text-green-500">New</span>
-                  <span className="text-amber-500">Fair</span>
-                  <span className="text-red-500">Replace</span>
+                  <span className="text-red-500">0 mm</span>
+                  <span className="text-amber-500">4 mm</span>
+                  <span className="text-green-500">{frontBrakes.originalThicknessMM} mm</span>
                 </div>
               </div>
 
               {/* Brake pad visualization */}
-              <div className="relative h-12 bg-gray-100 rounded-md overflow-hidden shadow-inner mt-4">
+              <div className="relative h-14 bg-gray-100 rounded-md overflow-hidden shadow-inner mt-4">
                 <div 
                   className={`absolute top-0 left-0 h-full rounded-md ${
-                    frontBrakes.wearPercentage < 30 
+                    frontBrakes.thicknessMM >= 6
                       ? "bg-gradient-to-r from-green-400 to-green-500" 
-                      : frontBrakes.wearPercentage < 70 
+                      : frontBrakes.thicknessMM >= 4
                         ? "bg-gradient-to-r from-amber-400 to-amber-500"
                         : "bg-gradient-to-r from-red-400 to-red-500"
                   } transition-all duration-300 ease-in-out`}
-                  style={{ width: `${frontBrakes.wearPercentage}%` }}
+                  style={{ width: `${calculateWearPercentage(frontBrakes.thicknessMM, frontBrakes.originalThicknessMM)}%` }}
                 />
-                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-end px-4">
-                  <div className="h-6 w-2 bg-gray-700 rounded-sm shadow-md"></div>
+                <div className="absolute top-0 right-0 h-full flex items-center">
+                  <div className="h-14 w-2 bg-gray-700 rounded-sm shadow-md"></div>
                 </div>
-                <div className="absolute top-0 left-0 w-full h-full flex items-center px-4">
-                  <div className={`h-6 bg-gray-800 rounded-sm shadow-md transition-all duration-300`} style={{ width: `${100 - frontBrakes.wearPercentage}%` }}></div>
+                <div className="absolute top-0 left-0 w-full h-full flex items-center">
+                  <div className="h-full flex items-center justify-center w-full text-sm font-medium text-gray-800">
+                    {frontBrakes.thicknessMM} mm of {frontBrakes.originalThicknessMM} mm
+                  </div>
                 </div>
+              </div>
+
+              <div className="text-xs text-gray-500 mt-2 text-center">
+                Minimum safe thickness: 3mm
               </div>
             </div>
           </CardContent>
@@ -142,53 +202,92 @@ const BrakesTab = () => {
                 <Disc className="h-5 w-5" /> Rear Brake Pads
               </h3>
               <div className={`px-3 py-1 rounded-full font-medium text-sm ${
-                getBrakeStatus(rearBrakes.wearPercentage).bgColor} ${
-                getBrakeStatus(rearBrakes.wearPercentage).color} border border-white/20 bg-white/90 shadow-md`}>
-                {getBrakeStatus(rearBrakes.wearPercentage).icon}
-                <span className="ml-1">{getBrakeStatus(rearBrakes.wearPercentage).label}</span>
+                getBrakeStatus(rearBrakes.thicknessMM).bgColor} ${
+                getBrakeStatus(rearBrakes.thicknessMM).color} border border-white/20 bg-white/90 shadow-md`}>
+                {getBrakeStatus(rearBrakes.thicknessMM).icon}
+                <span className="ml-1">{getBrakeStatus(rearBrakes.thicknessMM).label}</span>
               </div>
             </div>
           </div>
           <CardContent className="pt-6">
             <div className="space-y-6">
+              <div className="flex items-end gap-4 mb-4">
+                <div className="flex-1">
+                  <Label htmlFor="rear-original" className="text-sm font-medium mb-1 block">Original Thickness</Label>
+                  <div className="relative">
+                    <Input 
+                      id="rear-original" 
+                      type="number" 
+                      min="6" 
+                      max="12" 
+                      value={rearBrakes.originalThicknessMM}
+                      onChange={(e) => handleOriginalThicknessChange('rear', e.target.value)}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">mm</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="rear-current" className="text-sm font-medium mb-1 block">Current Thickness</Label>
+                  <div className="relative">
+                    <Input 
+                      id="rear-current" 
+                      type="number" 
+                      min="0" 
+                      max={rearBrakes.originalThicknessMM} 
+                      value={rearBrakes.thicknessMM}
+                      onChange={(e) => handleRearBrakeChange([parseInt(e.target.value) || 0])}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">mm</span>
+                  </div>
+                </div>
+              </div>
+              
               <div>
                 <div className="flex justify-between mb-2 text-sm">
-                  <span className="font-medium">Brake Pad Wear</span>
-                  <span className="font-bold text-blue-600">{rearBrakes.wearPercentage}% Worn</span>
+                  <span className="font-medium">Brake Pad Thickness</span>
+                  <span className="font-bold text-blue-600">{rearBrakes.thicknessMM} mm</span>
                 </div>
                 <Slider
-                  value={[rearBrakes.wearPercentage]}
+                  value={[rearBrakes.thicknessMM]}
                   min={0}
-                  max={100}
-                  step={5}
+                  max={rearBrakes.originalThicknessMM}
+                  step={0.5}
                   onValueChange={handleRearBrakeChange}
                   className="mb-2"
                 />
                 <div className="flex justify-between text-xs font-medium">
-                  <span className="text-green-500">New</span>
-                  <span className="text-amber-500">Fair</span>
-                  <span className="text-red-500">Replace</span>
+                  <span className="text-red-500">0 mm</span>
+                  <span className="text-amber-500">4 mm</span>
+                  <span className="text-green-500">{rearBrakes.originalThicknessMM} mm</span>
                 </div>
               </div>
 
               {/* Brake pad visualization */}
-              <div className="relative h-12 bg-gray-100 rounded-md overflow-hidden shadow-inner mt-4">
+              <div className="relative h-14 bg-gray-100 rounded-md overflow-hidden shadow-inner mt-4">
                 <div 
                   className={`absolute top-0 left-0 h-full rounded-md ${
-                    rearBrakes.wearPercentage < 30 
+                    rearBrakes.thicknessMM >= 6
                       ? "bg-gradient-to-r from-green-400 to-green-500" 
-                      : rearBrakes.wearPercentage < 70 
+                      : rearBrakes.thicknessMM >= 4
                         ? "bg-gradient-to-r from-amber-400 to-amber-500"
                         : "bg-gradient-to-r from-red-400 to-red-500"
                   } transition-all duration-300 ease-in-out`}
-                  style={{ width: `${rearBrakes.wearPercentage}%` }}
+                  style={{ width: `${calculateWearPercentage(rearBrakes.thicknessMM, rearBrakes.originalThicknessMM)}%` }}
                 />
-                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-end px-4">
-                  <div className="h-6 w-2 bg-gray-700 rounded-sm shadow-md"></div>
+                <div className="absolute top-0 right-0 h-full flex items-center">
+                  <div className="h-14 w-2 bg-gray-700 rounded-sm shadow-md"></div>
                 </div>
-                <div className="absolute top-0 left-0 w-full h-full flex items-center px-4">
-                  <div className={`h-6 bg-gray-800 rounded-sm shadow-md transition-all duration-300`} style={{ width: `${100 - rearBrakes.wearPercentage}%` }}></div>
+                <div className="absolute top-0 left-0 w-full h-full flex items-center">
+                  <div className="h-full flex items-center justify-center w-full text-sm font-medium text-gray-800">
+                    {rearBrakes.thicknessMM} mm of {rearBrakes.originalThicknessMM} mm
+                  </div>
                 </div>
+              </div>
+              
+              <div className="text-xs text-gray-500 mt-2 text-center">
+                Minimum safe thickness: 3mm
               </div>
             </div>
           </CardContent>
