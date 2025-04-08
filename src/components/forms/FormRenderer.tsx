@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { FormBuilder, FormBuilderTemplate, FormBuilderField } from '@/types/formBuilder';
+import { FormBuilderTemplate, FormBuilderField } from '@/types/formBuilder';
 import { useFormSubmission, FormFieldValue } from '@/hooks/useFormSubmission';
 import { getFormTemplate } from '@/services/formBuilderService';
 
