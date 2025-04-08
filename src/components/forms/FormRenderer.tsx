@@ -1,317 +1,199 @@
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { FormBuilderTemplate } from '@/types/formBuilder';
-import { 
-  useFormSubmission, 
-  useFormProcessor, 
-  FormFieldValue 
-} from '@/hooks/useFormSubmission';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { FormBuilder, FormBuilderTemplate, FormBuilderField } from '@/types/formBuilder';
+import { useFormSubmission, FormFieldValue } from '@/hooks/useFormSubmission';
+import { getFormTemplate } from '@/services/formBuilderService';
 
 interface FormRendererProps {
-  template: FormBuilderTemplate;
+  templateId: string;
+  onSubmit?: (data: Record<string, any>) => void;
   customerId?: string;
   vehicleId?: string;
   workOrderId?: string;
-  onComplete?: () => void;
 }
 
-export const FormRenderer: React.FC<FormRendererProps> = ({
-  template,
+export const FormRenderer = ({ 
+  templateId, 
+  onSubmit, 
   customerId,
   vehicleId,
-  workOrderId,
-  onComplete
-}) => {
-  const [submitted, setSubmitted] = useState(false);
-  
-  const { 
-    submitForm, 
-    isSubmitting, 
-    error, 
-    success 
-  } = useFormSubmission();
-  
-  const {
-    formValues,
-    errors,
-    updateFieldValue,
-    validateForm,
-    getSubmissionData,
-    resetForm
-  } = useFormProcessor(template);
+  workOrderId
+}: FormRendererProps) => {
+  const [template, setTemplate] = useState<FormBuilderTemplate | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const { submitForm, isSubmitting, error, success } = useFormSubmission();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function loadTemplate() {
+      setLoading(true);
+      const templateData = await getFormTemplate(templateId);
+      setTemplate(templateData);
+      setLoading(false);
+    }
+
+    loadTemplate();
+  }, [templateId]);
+
+  const handleInputChange = (fieldId: string, value: any) => {
+    setFormValues(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      toast.error("Please fix the errors in the form");
-      return;
-    }
-    
-    const result = await submitForm({
-      templateId: template.id,
+    const submissionData = {
+      templateId,
+      submittedData: formValues,
       customerId,
       vehicleId,
-      workOrderId,
-      data: getSubmissionData()
-    });
+      workOrderId
+    };
+    
+    const result = await submitForm(submissionData);
+    
+    if (result && onSubmit) {
+      onSubmit(formValues);
+    }
     
     if (result) {
-      setSubmitted(true);
-      toast.success("Form submitted successfully");
-      resetForm();
-      if (onComplete) onComplete();
+      toast({
+        title: "Form submitted successfully",
+        description: "Thank you for your submission",
+        variant: "default",
+      });
     } else {
-      toast.error(error || "Failed to submit form");
+      toast({
+        title: "Error submitting form",
+        description: error || "An unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
-  const renderField = (section: any, field: any) => {
-    const fieldValue = formValues[field.id]?.value;
-    const fieldError = errors[field.id];
-    
-    const handleValueChange = (value: any) => {
-      updateFieldValue(field.id, value, field.fieldType, field.label);
-    };
-    
-    return (
-      <div key={field.id} className="space-y-2 mb-4">
-        <Label 
-          htmlFor={`field-${field.id}`}
-          className="flex items-center"
-        >
-          {field.label}
-          {field.isRequired && (
-            <span className="text-red-500 ml-1">*</span>
-          )}
-        </Label>
-        
-        {field.fieldType === 'text' && (
+  const renderField = (field: FormBuilderField) => {
+    switch (field.fieldType) {
+      case 'text':
+        return (
           <Input
-            id={`field-${field.id}`}
+            id={field.id}
             placeholder={field.placeholder || ''}
-            value={(fieldValue as string) || ''}
-            onChange={(e) => handleValueChange(e.target.value)}
-            className={fieldError ? "border-red-500" : ""}
+            value={formValues[field.id] || field.defaultValue || ''}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.isRequired}
           />
-        )}
-        
-        {field.fieldType === 'textarea' && (
+        );
+      case 'textarea':
+        return (
           <Textarea
-            id={`field-${field.id}`}
+            id={field.id}
             placeholder={field.placeholder || ''}
-            value={(fieldValue as string) || ''}
-            onChange={(e) => handleValueChange(e.target.value)}
-            className={fieldError ? "border-red-500" : ""}
-            rows={4}
+            value={formValues[field.id] || field.defaultValue || ''}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.isRequired}
           />
-        )}
-        
-        {field.fieldType === 'number' && (
-          <Input
-            id={`field-${field.id}`}
-            type="number"
-            placeholder={field.placeholder || ''}
-            value={(fieldValue as string) || ''}
-            onChange={(e) => handleValueChange(e.target.value ? Number(e.target.value) : '')}
-            className={fieldError ? "border-red-500" : ""}
+        );
+      case 'checkbox':
+        return (
+          <Checkbox
+            id={field.id}
+            checked={formValues[field.id] || false}
+            onCheckedChange={(checked) => handleInputChange(field.id, checked)}
+            required={field.isRequired}
           />
-        )}
-        
-        {field.fieldType === 'email' && (
-          <Input
-            id={`field-${field.id}`}
-            type="email"
-            placeholder={field.placeholder || ''}
-            value={(fieldValue as string) || ''}
-            onChange={(e) => handleValueChange(e.target.value)}
-            className={fieldError ? "border-red-500" : ""}
-          />
-        )}
-        
-        {field.fieldType === 'select' && (
-          <Select
-            value={(fieldValue as string) || ''}
-            onValueChange={handleValueChange}
+        );
+      case 'radio':
+        return (
+          <RadioGroup
+            value={formValues[field.id] || field.defaultValue || ''}
+            onValueChange={(value) => handleInputChange(field.id, value)}
           >
-            <SelectTrigger 
-              id={`field-${field.id}`}
-              className={fieldError ? "border-red-500" : ""}
-            >
+            {field.options?.map((option) => (
+              <div key={option.value} className="flex items-center space-x-2">
+                <RadioGroupItem value={option.value} id={`${field.id}-${option.value}`} />
+                <label htmlFor={`${field.id}-${option.value}`}>{option.label}</label>
+              </div>
+            ))}
+          </RadioGroup>
+        );
+      case 'select':
+        return (
+          <Select
+            value={formValues[field.id] || field.defaultValue || ''}
+            onValueChange={(value) => handleInputChange(field.id, value)}
+          >
+            <SelectTrigger>
               <SelectValue placeholder={field.placeholder || 'Select an option'} />
             </SelectTrigger>
             <SelectContent>
-              {field.options?.map((option: any, i: number) => (
-                <SelectItem key={i} value={option.value}>
+              {field.options?.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        )}
-        
-        {field.fieldType === 'checkbox' && field.options && (
-          <div className="space-y-2">
-            {field.options.map((option: any, i: number) => {
-              const values = Array.isArray(fieldValue) ? fieldValue : [];
-              const isChecked = values.includes(option.value);
-              
-              return (
-                <div key={i} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${field.id}-${i}`}
-                    checked={isChecked}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        handleValueChange([...values, option.value]);
-                      } else {
-                        handleValueChange(values.filter((v: string) => v !== option.value));
-                      }
-                    }}
-                  />
-                  <Label htmlFor={`${field.id}-${i}`}>{option.label}</Label>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        
-        {field.fieldType === 'radio' && field.options && (
-          <div className="space-y-2">
-            {field.options.map((option: any, i: number) => (
-              <div key={i} className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id={`${field.id}-${i}`}
-                  name={`radio-${field.id}`}
-                  checked={(fieldValue as string) === option.value}
-                  onChange={() => handleValueChange(option.value)}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor={`${field.id}-${i}`}>{option.label}</Label>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {field.fieldType === 'date' && (
-          <Input
-            id={`field-${field.id}`}
-            type="date"
-            value={(fieldValue as string) || ''}
-            onChange={(e) => handleValueChange(e.target.value)}
-            className={fieldError ? "border-red-500" : ""}
-          />
-        )}
-        
-        {field.fieldType === 'file' && (
-          <Input
-            id={`field-${field.id}`}
-            type="file"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              handleValueChange(file ? file.name : null);
-              // In a real implementation, you'd handle file upload here
-            }}
-            className={fieldError ? "border-red-500" : ""}
-          />
-        )}
-        
-        {field.helpText && (
-          <p className="text-xs text-muted-foreground">{field.helpText}</p>
-        )}
-        
-        {fieldError && (
-          <p className="text-xs text-red-500">{fieldError}</p>
-        )}
-      </div>
-    );
+        );
+      default:
+        return <Input placeholder="Unsupported field type" disabled />;
+    }
   };
 
-  if (submitted) {
-    return (
-      <div className="p-6 bg-green-50 rounded-md border border-green-200 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-4">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor" 
-            className="w-6 h-6"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h3 className="text-xl font-medium text-gray-900 mb-2">
-          Thank you!
-        </h3>
-        <p className="text-gray-600 mb-4">
-          Your form has been submitted successfully.
-        </p>
-        <Button onClick={() => setSubmitted(false)}>
-          Submit Another Response
-        </Button>
-      </div>
-    );
+  if (loading) {
+    return <div className="p-8 text-center">Loading form...</div>;
+  }
+
+  if (!template) {
+    return <div className="p-8 text-center">Form not found</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg border shadow-sm">
-        <h2 className="text-2xl font-bold mb-2">{template.name}</h2>
-        {template.description && (
-          <p className="text-gray-600 mb-6">{template.description}</p>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          {template.sections
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((section) => (
-              <div key={section.id} className="mb-8">
-                <h3 className="text-xl font-semibold mb-2">
-                  {section.title}
-                </h3>
-                
-                {section.description && (
-                  <p className="text-gray-600 mb-4">
-                    {section.description}
-                  </p>
-                )}
-                
-                <div className="space-y-4 border-l-2 border-gray-200 pl-4">
-                  {section.fields
-                    .sort((a, b) => a.displayOrder - b.displayOrder)
-                    .map((field) => renderField(section, field))
-                  }
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>{template.name}</CardTitle>
+        {template.description && <CardDescription>{template.description}</CardDescription>}
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {template.sections.map((section) => (
+            <div key={section.id} className="space-y-4">
+              <h3 className="text-lg font-medium">{section.title}</h3>
+              {section.description && <p className="text-sm text-gray-500">{section.description}</p>}
+              
+              {section.fields.map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <div className="flex items-center">
+                    <label htmlFor={field.id} className="text-sm font-medium">
+                      {field.label}
+                      {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                  </div>
+                  {field.helpText && <p className="text-xs text-gray-500">{field.helpText}</p>}
+                  {renderField(field)}
                 </div>
-              </div>
-            ))
-          }
+              ))}
+            </div>
+          ))}
           
-          <div className="mt-6 flex justify-end">
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="px-6"
-            >
-              {isSubmitting ? "Submitting..." : "Submit"}
-            </Button>
-          </div>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </Button>
         </form>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
+
+export default FormRenderer;

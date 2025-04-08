@@ -2,12 +2,36 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-interface FormSubmissionData {
+export interface FormFieldValue {
+  fieldId: string;
+  value: string | number | boolean | string[] | null;
+}
+
+export interface FormSubmissionData {
   templateId: string;
   submittedData: Record<string, any>;
   customerId?: string;
   vehicleId?: string;
   workOrderId?: string;
+}
+
+export function useFormProcessor() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const processForm = async (values: FormFieldValue[]) => {
+    // Process form values into a structured format
+    const processedData: Record<string, any> = {};
+    
+    values.forEach(field => {
+      processedData[field.fieldId] = field.value;
+    });
+    
+    return processedData;
+  };
+
+  return { processForm };
 }
 
 export function useFormSubmission() {
@@ -21,6 +45,7 @@ export function useFormSubmission() {
     setSuccess(false);
 
     try {
+      // Type assertion to handle Supabase typing issues
       const { error } = await supabase
         .from('form_submissions')
         .insert({

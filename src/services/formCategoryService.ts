@@ -11,7 +11,8 @@ export async function getFormCategories(): Promise<FormCategory[]> {
     
     if (error) throw error;
     
-    return data as FormCategory[] || [];
+    // Add proper type assertion to resolve TypeScript errors
+    return (data || []) as FormCategory[];
   } catch (error) {
     console.error('Error fetching form categories:', error);
     return [];
@@ -31,6 +32,7 @@ export async function createFormCategory(category: Partial<FormCategory>): Promi
     
     if (error) throw error;
     
+    // Add proper type assertion to resolve TypeScript errors
     return data as FormCategory;
   } catch (error) {
     console.error('Error creating form category:', error);
