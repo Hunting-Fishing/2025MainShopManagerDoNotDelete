@@ -1344,6 +1344,33 @@ export type Database = {
         }
         Relationships: []
       }
+      form_categories: {
+        Row: {
+          count: number | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          count?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          count?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_fields: {
         Row: {
           created_at: string | null
