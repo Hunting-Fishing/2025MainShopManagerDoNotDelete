@@ -123,6 +123,18 @@ const getVehicleImage = (vehicleType: VehicleBodyStyle): string => {
   }
 };
 
+// Get vehicle type display name
+const getVehicleTypeDisplayName = (vehicleType: VehicleBodyStyle): string => {
+  switch (vehicleType) {
+    case 'sedan': return 'Sedan';
+    case 'hatchback': return 'Hatchback';
+    case 'suv': return 'SUV';
+    case 'van': return 'Van';
+    case 'truck': return 'Truck';
+    default: return 'Vehicle';
+  }
+};
+
 const VehicleInteractivePanel: React.FC<VehicleInteractivePanelProps> = ({ 
   vehicleType, 
   damageAreas, 
@@ -140,6 +152,13 @@ const VehicleInteractivePanel: React.FC<VehicleInteractivePanelProps> = ({
   return (
     <div className="w-full">
       <div className="relative w-full max-w-[600px] mx-auto">
+        {/* Vehicle Type Display */}
+        <div className="mb-3 flex items-center justify-center">
+          <Badge variant="secondary" className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-200">
+            {getVehicleTypeDisplayName(vehicleType)}
+          </Badge>
+        </div>
+
         {/* Vehicle Diagram Container */}
         <div className="relative aspect-square border rounded-lg overflow-hidden bg-gray-50">
           {/* Vehicle image */}

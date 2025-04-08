@@ -12,7 +12,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "10-Speed Automatic",
     drive_type: "4x4",
     fuel_type: "Gas",
-    body_style: "Pickup Truck",
+    body_style: "truck",    // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "3.5L V6 EcoBoost",
     gvwr: "Class 3: 10,001 - 14,000 lb"
@@ -25,7 +25,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "6-Speed Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "1.5L 4-Cylinder Turbo",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
@@ -38,7 +38,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "1.5L 4-Cylinder Turbo",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
@@ -51,7 +51,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "JAPAN",
     engine: "1.8L 4-Cylinder",
     gvwr: "Class 1A: 0 - 3,000 lb"
@@ -64,7 +64,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "6-Speed Manual",
     drive_type: "RWD",
     fuel_type: "Gas",
-    body_style: "Coupe",
+    body_style: "sedan",    // Sports car, but using sedan for illustration
     country: "JAPAN",
     engine: "3.7L V6",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
@@ -77,7 +77,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "8-Speed Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "GERMANY",
     engine: "1.4L 4-Cylinder Turbo",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
@@ -90,7 +90,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "1-Speed Direct Drive",
     drive_type: "AWD",
     fuel_type: "Electric",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "Dual Electric Motors",
     gvwr: "Class 1C: 4,001 - 5,000 lb"
@@ -103,7 +103,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "7-Speed Dual-Clutch Automatic",
     drive_type: "AWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "GERMANY",
     engine: "2.0L 4-Cylinder Turbo",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
@@ -116,7 +116,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "9-Speed Automatic",
     drive_type: "AWD",
     fuel_type: "Gas",
-    body_style: "SUV",
+    body_style: "suv",      // Updated to match our VehicleBodyStyle type
     country: "GERMANY",
     engine: "3.0L 6-Cylinder Turbo",
     gvwr: "Class 2A: 6,001 - 8,000 lb"
@@ -129,7 +129,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "8-Speed Automatic",
     drive_type: "RWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "GERMANY",
     engine: "2.0L 4-Cylinder Turbo",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
@@ -142,7 +142,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "8-Speed Automatic",
     drive_type: "AWD",
     fuel_type: "Gas",
-    body_style: "SUV",
+    body_style: "suv",      // Updated to match our VehicleBodyStyle type
     country: "SWEDEN",
     engine: "2.0L 4-Cylinder Turbo",
     gvwr: "Class 1D: 5,001 - 6,000 lb"
@@ -155,7 +155,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "10-Speed Automatic",
     drive_type: "4x4",
     fuel_type: "Gas",
-    body_style: "Pickup Truck",
+    body_style: "truck",    // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "3.5L V6 Twin-Turbo",
     gvwr: "Class 2B: 8,001 - 10,000 lb"
@@ -168,7 +168,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "8-Speed Automatic",
     drive_type: "4x4",
     fuel_type: "Gas",
-    body_style: "Pickup Truck",
+    body_style: "truck",    // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "5.7L V8 HEMI",
     gvwr: "Class 2A: 6,001 - 8,000 lb"
@@ -181,7 +181,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "8-Speed Automatic",
     drive_type: "4x4",
     fuel_type: "Gas",
-    body_style: "SUV",
+    body_style: "suv",      // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "3.6L V6",
     gvwr: "Class 1D: 5,001 - 6,000 lb"
@@ -194,7 +194,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "8-Speed Automatic",
     drive_type: "AWD",
     fuel_type: "Gas",
-    body_style: "SUV",
+    body_style: "suv",      // Updated to match our VehicleBodyStyle type
     country: "KOREA",
     engine: "2.5L 4-Cylinder Turbo",
     gvwr: "Class 1D: 5,001 - 6,000 lb"
@@ -207,7 +207,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "6-Speed Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "KOREA",
     engine: "2.4L 4-Cylinder",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
@@ -220,7 +220,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "CVT Automatic",
     drive_type: "AWD",
     fuel_type: "Gas",
-    body_style: "SUV",
+    body_style: "suv",      // Updated to match our VehicleBodyStyle type
     country: "JAPAN",
     engine: "2.5L 4-Cylinder",
     gvwr: "Class 1C: 4,001 - 5,000 lb"
@@ -233,7 +233,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "KOREA",
     engine: "2.0L 4-Cylinder",
     gvwr: "Class 1A: 0 - 3,000 lb"
@@ -246,7 +246,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "CVT Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "Sedan",
+    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
     country: "JAPAN",
     engine: "1.5L 4-Cylinder Turbo",
     gvwr: "Class 1A: 0 - 3,000 lb"
@@ -259,9 +259,75 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "6-Speed Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "SUV",
+    body_style: "suv",      // Updated to match our VehicleBodyStyle type
     country: "USA",
     engine: "1.5L 4-Cylinder Turbo",
     gvwr: "Class 1D: 5,001 - 6,000 lb"
+  },
+  // Adding more diverse body styles
+  "WVWAA71K": { 
+    year: "2022", 
+    make: "volkswagen", 
+    model: "Golf",
+    transmission: "Automatic",
+    transmission_type: "7-Speed Automatic",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "hatchback", // Hatchback example
+    country: "GERMANY",
+    engine: "1.4L 4-Cylinder Turbo",
+    gvwr: "Class 1A: 0 - 3,000 lb"
+  },
+  "JTMRFREV": { 
+    year: "2023", 
+    make: "toyota", 
+    model: "RAV4",
+    transmission: "Automatic",
+    transmission_type: "8-Speed Automatic",
+    drive_type: "AWD",
+    fuel_type: "Hybrid",
+    body_style: "suv",      // SUV example
+    country: "JAPAN",
+    engine: "2.5L 4-Cylinder Hybrid",
+    gvwr: "Class 1C: 4,001 - 5,000 lb"
+  },
+  "NMTKHMBX": { 
+    year: "2022", 
+    make: "toyota", 
+    model: "Sienna",
+    transmission: "Automatic",
+    transmission_type: "CVT Automatic",
+    drive_type: "FWD",
+    fuel_type: "Hybrid",
+    body_style: "van",      // Van example
+    country: "USA",
+    engine: "2.5L 4-Cylinder Hybrid",
+    gvwr: "Class 1D: 5,001 - 6,000 lb"
+  },
+  "8AJFB8CD": { 
+    year: "2023", 
+    make: "toyota", 
+    model: "Tacoma",
+    transmission: "Automatic",
+    transmission_type: "6-Speed Automatic",
+    drive_type: "4x4",
+    fuel_type: "Gas",
+    body_style: "truck",    // Truck example
+    country: "USA",
+    engine: "3.5L V6",
+    gvwr: "Class 2A: 6,001 - 8,000 lb"
+  },
+  "3N1CP5CU": { 
+    year: "2022", 
+    make: "nissan", 
+    model: "Kicks",
+    transmission: "Automatic",
+    transmission_type: "CVT Automatic",
+    drive_type: "FWD",
+    fuel_type: "Gas",
+    body_style: "suv",      // SUV/Crossover example
+    country: "MEXICO",
+    engine: "1.6L 4-Cylinder",
+    gvwr: "Class 1B: 3,001 - 4,000 lb"
   }
 };

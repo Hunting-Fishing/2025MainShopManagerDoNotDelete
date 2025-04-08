@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
 import { decodeVin } from "@/utils/vehicleUtils";
+import { VehicleBodyStyle } from "@/types/vehicleBodyStyles";
 
 interface VinDecoderFieldProps {
   form: any;
@@ -31,7 +32,14 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
         if (decodedData.drive_type) form.setValue("driveType", decodedData.drive_type);
         if (decodedData.fuel_type) form.setValue("fuelType", decodedData.fuel_type);
         if (decodedData.transmission) form.setValue("transmission", decodedData.transmission);
-        if (decodedData.body_style) form.setValue("bodyStyle", decodedData.body_style);
+        
+        // Update the body style if available
+        if (decodedData.body_style) {
+          const bodyStyle = decodedData.body_style.toLowerCase() as VehicleBodyStyle;
+          form.setValue("bodyStyle", bodyStyle);
+          console.log("Setting body style from VIN:", bodyStyle);
+        }
+        
         if (decodedData.country) form.setValue("country", decodedData.country);
         if (decodedData.engine) form.setValue("engine", decodedData.engine);
         

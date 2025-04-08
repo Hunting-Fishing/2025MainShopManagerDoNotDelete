@@ -1,14 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Car, Search } from "lucide-react";
+import { Car, Search, AlertCircle } from "lucide-react";
 import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
+import { useToast } from "@/hooks/use-toast";
+import { decodeVin } from "@/utils/vehicleUtils";
 
 const VehicleInfoTab = () => {
+  const { toast } = useToast();
+  const [isDecoding, setIsDecoding] = useState(false);
   const [vehicleInfo, setVehicleInfo] = useState({
     vin: "",
     make: "",
@@ -25,6 +29,55 @@ const VehicleInfoTab = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleVinDecode = async () => {
+    if (!vehicleInfo.vin || vehicleInfo.vin.length !== 17) {
+      toast({
+        title: "Invalid VIN",
+        description: "Please enter a valid 17-character VIN",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDecoding(true);
+    try {
+      const decodedData = await decodeVin(vehicleInfo.vin);
+      if (decodedData) {
+        setVehicleInfo(prev => ({
+          ...prev,
+          make: decodedData.make || prev.make,
+          model: decodedData.model || prev.model,
+          year: decodedData.year || prev.year,
+          // Use the body_style from the decoded data if available
+          bodyStyle: (decodedData.body_style as VehicleBodyStyle) || prev.bodyStyle
+        }));
+
+        toast({
+          title: "VIN Decoded Successfully",
+          description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
+          variant: "success",
+        });
+        
+        console.log("Decoded vehicle body style:", decodedData.body_style);
+      } else {
+        toast({
+          title: "VIN Decode Failed",
+          description: "Could not decode the provided VIN. Please check and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error decoding VIN:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while decoding the VIN.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDecoding(false);
+    }
   };
 
   return (
@@ -55,15 +108,21 @@ const VehicleInfoTab = () => {
                     variant="ghost" 
                     className="absolute right-0 top-0 h-full px-3 text-muted-foreground" 
                     type="button"
+                    onClick={() => handleChange('vin', '')}
+                    disabled={!vehicleInfo.vin}
                   >
-                    <Search className="h-4 w-4" />
+                    {vehicleInfo.vin ? <AlertCircle className="h-4 w-4" /> : <Search className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
               <div>
                 <Label className="text-sm font-medium mb-1.5 block opacity-0">Search</Label>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                  Decode VIN
+                <Button 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  onClick={handleVinDecode}
+                  disabled={isDecoding || !vehicleInfo.vin || vehicleInfo.vin.length !== 17}
+                >
+                  {isDecoding ? "Decoding..." : "Decode VIN"}
                 </Button>
               </div>
             </div>
@@ -128,7 +187,7 @@ const VehicleInfoTab = () => {
                   value={vehicleInfo.bodyStyle} 
                   onValueChange={(value) => handleChange('bodyStyle', value as VehicleBodyStyle)}
                 >
-                  <SelectTrigger id="bodyStyle">
+                  <SelectTrigger id="bodyStyle" className="bg-white">
                     <SelectValue placeholder="Select body style" />
                   </SelectTrigger>
                   <SelectContent>
@@ -139,6 +198,9 @@ const VehicleInfoTab = () => {
                     <SelectItem value="van">Van</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Body style will be automatically detected when decoding VIN
+                </p>
               </div>
               <div>
                 <Label htmlFor="mileage" className="text-sm font-medium mb-1.5 block">Mileage</Label>
