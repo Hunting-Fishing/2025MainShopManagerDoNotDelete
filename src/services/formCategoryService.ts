@@ -1,6 +1,6 @@
 
 import { FormCategory } from '@/types/form';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export async function getFormCategories(): Promise<FormCategory[]> {
   try {
@@ -13,7 +13,7 @@ export async function getFormCategories(): Promise<FormCategory[]> {
     if (error) throw error;
     
     // Add an explicit type assertion to the returned data
-    return (data || []) as FormCategory[];
+    return (data as any[] || []) as FormCategory[];
   } catch (error) {
     console.error('Error fetching form categories:', error);
     return [];

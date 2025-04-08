@@ -5,148 +5,158 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Car, FileText } from "lucide-react";
-import { mockMakes } from "@/data/vehicleMakes";
+import { Car, Search } from "lucide-react";
+import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
 
 const VehicleInfoTab = () => {
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 30 }, (_, i) => currentYear - i);
-  
-  const [searchByVin, setSearchByVin] = useState(false);
-  
+  const [vehicleInfo, setVehicleInfo] = useState({
+    vin: "",
+    make: "",
+    model: "",
+    year: new Date().getFullYear().toString(),
+    licensePlate: "",
+    color: "",
+    bodyStyle: "sedan" as VehicleBodyStyle,
+    mileage: ""
+  });
+
+  const handleChange = (field: string, value: string) => {
+    setVehicleInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
-    <div className="space-y-5">
-      <Card className="overflow-hidden border border-purple-100 shadow-sm transition-all hover:shadow-md">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 pb-4">
-          <CardTitle className="text-xl font-semibold flex items-center text-purple-900">
-            <Car className="mr-2 h-5 w-5 text-purple-700" />
+    <div className="space-y-6">
+      <Card className="overflow-hidden border border-blue-100 shadow-md transition-all hover:shadow-lg rounded-xl">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 pb-4">
+          <CardTitle className="text-xl font-semibold flex items-center text-blue-900">
+            <Car className="mr-3 h-6 w-6 text-blue-700" />
             Vehicle Information
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="flex flex-col gap-1.5 mb-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-medium">Search Vehicle</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSearchByVin(!searchByVin)}
-                className="text-xs h-8 px-2"
-              >
-                {searchByVin ? "Enter Manually" : "Search by VIN"}
-              </Button>
+          <div className="grid grid-cols-1 gap-6">
+            {/* VIN and search */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <Label htmlFor="vin" className="text-sm font-medium mb-1.5 block">VIN</Label>
+                <div className="relative">
+                  <Input 
+                    id="vin" 
+                    placeholder="Enter Vehicle Identification Number" 
+                    value={vehicleInfo.vin}
+                    onChange={(e) => handleChange('vin', e.target.value)}
+                    className="pr-10" 
+                  />
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="absolute right-0 top-0 h-full px-3 text-muted-foreground" 
+                    type="button"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block opacity-0">Search</Label>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  Decode VIN
+                </Button>
+              </div>
             </div>
             
-            {searchByVin ? (
-              <div className="mt-2 space-y-4">
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="vin">VIN Number</Label>
-                    <div className="flex mt-1">
-                      <Input id="vin" placeholder="Enter VIN" className="rounded-r-none" />
-                      <Button className="rounded-l-none">
-                        <Search className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">Enter the Vehicle Identification Number (VIN) to automatically populate vehicle details</p>
+            {/* Basic vehicle info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="make" className="text-sm font-medium mb-1.5 block">Make</Label>
+                <Input 
+                  id="make" 
+                  placeholder="e.g. Toyota" 
+                  value={vehicleInfo.make}
+                  onChange={(e) => handleChange('make', e.target.value)}
+                />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div>
-                  <Label htmlFor="make">Make</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Make" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockMakes.map(make => (
-                        <SelectItem key={make.make_id} value={make.make_id}>
-                          {make.make_display}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="model">Model</Label>
-                  <Input id="model" placeholder="Enter Model" />
-                </div>
-                <div>
-                  <Label htmlFor="year">Year</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="color">Color</Label>
-                  <Input id="color" placeholder="Enter Color" />
-                </div>
+              <div>
+                <Label htmlFor="model" className="text-sm font-medium mb-1.5 block">Model</Label>
+                <Input 
+                  id="model" 
+                  placeholder="e.g. Camry" 
+                  value={vehicleInfo.model}
+                  onChange={(e) => handleChange('model', e.target.value)}
+                />
               </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            <div>
-              <Label htmlFor="license">License Plate</Label>
-              <Input id="license" placeholder="Enter License Plate" />
+              <div>
+                <Label htmlFor="year" className="text-sm font-medium mb-1.5 block">Year</Label>
+                <Input 
+                  id="year" 
+                  placeholder="e.g. 2023" 
+                  value={vehicleInfo.year}
+                  onChange={(e) => handleChange('year', e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="odometer">Odometer</Label>
-              <Input id="odometer" placeholder="Enter Mileage" type="number" />
+            
+            {/* Additional vehicle details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="license" className="text-sm font-medium mb-1.5 block">License Plate</Label>
+                <Input 
+                  id="license" 
+                  placeholder="e.g. ABC123" 
+                  value={vehicleInfo.licensePlate}
+                  onChange={(e) => handleChange('licensePlate', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="color" className="text-sm font-medium mb-1.5 block">Color</Label>
+                <Input 
+                  id="color" 
+                  placeholder="e.g. Silver" 
+                  value={vehicleInfo.color}
+                  onChange={(e) => handleChange('color', e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="customer">Customer</Label>
-              <Input id="customer" placeholder="Enter Customer Name" />
-            </div>
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="Enter Phone Number" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="bodyStyle" className="text-sm font-medium mb-1.5 block">Body Style</Label>
+                <Select 
+                  value={vehicleInfo.bodyStyle} 
+                  onValueChange={(value) => handleChange('bodyStyle', value as VehicleBodyStyle)}
+                >
+                  <SelectTrigger id="bodyStyle">
+                    <SelectValue placeholder="Select body style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sedan">Sedan</SelectItem>
+                    <SelectItem value="suv">SUV</SelectItem>
+                    <SelectItem value="hatchback">Hatchback</SelectItem>
+                    <SelectItem value="truck">Truck</SelectItem>
+                    <SelectItem value="van">Van</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="mileage" className="text-sm font-medium mb-1.5 block">Mileage</Label>
+                <Input 
+                  id="mileage" 
+                  placeholder="e.g. 45000" 
+                  type="number"
+                  value={vehicleInfo.mileage}
+                  onChange={(e) => handleChange('mileage', e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="overflow-hidden border border-blue-100 shadow-sm transition-all hover:shadow-md">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-4">
-          <CardTitle className="text-xl font-semibold flex items-center text-blue-900">
-            <FileText className="mr-2 h-5 w-5 text-blue-700" />
-            Additional Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="notes">Special Notes or Requests</Label>
-              <textarea 
-                id="notes"
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Enter any additional information or special requests from the customer"
-              ></textarea>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="arrival">Arrival Date</Label>
-                <Input id="arrival" type="date" />
-              </div>
-              <div>
-                <Label htmlFor="technician">Assigned Technician</Label>
-                <Input id="technician" placeholder="Enter Technician Name" />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Pass the updated vehicle body style to the parent component */}
+      <input type="hidden" name="vehicleBodyStyle" value={vehicleInfo.bodyStyle} />
     </div>
   );
 };

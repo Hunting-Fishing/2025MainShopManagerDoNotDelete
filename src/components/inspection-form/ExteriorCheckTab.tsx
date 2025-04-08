@@ -3,18 +3,33 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Camera, Car, AlertTriangle, ThumbsUp, ThumbsDown, Upload, PanelLeft, PanelRight } from "lucide-react";
+import { Car, AlertTriangle, ThumbsUp, ThumbsDown, PanelLeft, PanelRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import InspectionItem from "./shared/InspectionItem";
 import ImageUploadButton from './shared/ImageUploadButton';
 import InteractiveVehicle from './shared/InteractiveVehicle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
 
 const ExteriorCheckTab = () => {
   const [photos, setPhotos] = useState<string[]>([]);
   const [activeVehicleTab, setActiveVehicleTab] = useState("interactive");
+  // Get the vehicle body style from the VehicleInfoTab form value (or URL parameter)
+  // For demo purposes, we'll use a state variable that can be updated later
+  const [vehicleBodyStyle, setVehicleBodyStyle] = useState<VehicleBodyStyle>("sedan");
   
+  // Get the form vehicle body style from the hidden input in VehicleInfoTab
+  React.useEffect(() => {
+    const vehicleBodyStyleInput = document.querySelector('input[name="vehicleBodyStyle"]');
+    if (vehicleBodyStyleInput instanceof HTMLInputElement) {
+      const bodyStyle = vehicleBodyStyleInput.value as VehicleBodyStyle;
+      if (bodyStyle) {
+        setVehicleBodyStyle(bodyStyle);
+      }
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden border border-blue-100 shadow-md transition-all hover:shadow-lg rounded-xl">
@@ -40,7 +55,7 @@ const ExteriorCheckTab = () => {
             <TabsContent value="interactive" className="space-y-4">
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 className="text-lg font-medium mb-4 text-blue-800">Click on any part of the vehicle to mark damage</h3>
-                <InteractiveVehicle />
+                <InteractiveVehicle vehicleType={vehicleBodyStyle} />
               </div>
             </TabsContent>
             

@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, X } from 'lucide-react';
+import { VehicleBodyStyle, VEHICLE_BODY_STYLES } from '@/types/vehicleBodyStyles';
 
 interface DamageArea {
   id: string;
@@ -16,25 +17,27 @@ interface DamageArea {
 }
 
 interface InteractiveVehicleProps {
+  vehicleType?: VehicleBodyStyle;
   onDamageUpdate?: (damages: DamageArea[]) => void;
 }
 
-const InteractiveVehicle: React.FC<InteractiveVehicleProps> = ({ onDamageUpdate }) => {
-  const [vehicleAreas, setVehicleAreas] = useState<DamageArea[]>([
-    { id: 'front_bumper', name: 'Front Bumper', isDamaged: false, damageType: null, notes: '' },
-    { id: 'hood', name: 'Hood', isDamaged: false, damageType: null, notes: '' },
-    { id: 'front_left_panel', name: 'Front Left Panel', isDamaged: false, damageType: null, notes: '' },
-    { id: 'driver_door', name: 'Driver Door', isDamaged: false, damageType: null, notes: '' },
-    { id: 'rear_left_panel', name: 'Rear Left Panel', isDamaged: false, damageType: null, notes: '' },
-    { id: 'roof', name: 'Roof', isDamaged: false, damageType: null, notes: '' },
-    { id: 'trunk', name: 'Trunk', isDamaged: false, damageType: null, notes: '' },
-    { id: 'rear_bumper', name: 'Rear Bumper', isDamaged: false, damageType: null, notes: '' },
-    { id: 'rear_right_panel', name: 'Rear Right Panel', isDamaged: false, damageType: null, notes: '' },
-    { id: 'passenger_door', name: 'Passenger Door', isDamaged: false, damageType: null, notes: '' },
-    { id: 'front_right_panel', name: 'Front Right Panel', isDamaged: false, damageType: null, notes: '' },
-    { id: 'windshield', name: 'Windshield', isDamaged: false, damageType: null, notes: '' },
-    { id: 'rear_window', name: 'Rear Window', isDamaged: false, damageType: null, notes: '' },
-  ]);
+const InteractiveVehicle: React.FC<InteractiveVehicleProps> = ({ 
+  vehicleType = 'sedan', 
+  onDamageUpdate 
+}) => {
+  // Use vehicle type to get the correct configuration
+  const bodyStyle = VEHICLE_BODY_STYLES[vehicleType] || VEHICLE_BODY_STYLES.unknown;
+  
+  // Initialize vehicle areas based on the panels for this vehicle type
+  const [vehicleAreas, setVehicleAreas] = useState<DamageArea[]>(
+    bodyStyle.panels.map(panel => ({
+      id: panel.id,
+      name: panel.name,
+      isDamaged: false,
+      damageType: null,
+      notes: ''
+    }))
+  );
 
   const [selectedArea, setSelectedArea] = useState<DamageArea | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -81,150 +84,215 @@ const InteractiveVehicle: React.FC<InteractiveVehicleProps> = ({ onDamageUpdate 
     setSelectedArea(null);
   };
 
+  // Get panel status - whether it's damaged or not
+  const getPanelStatus = (panelId: string) => {
+    const area = vehicleAreas.find(a => a.id === panelId);
+    return {
+      isDamaged: area?.isDamaged || false,
+      damageType: area?.damageType || null
+    };
+  };
+
   return (
     <div className="w-full">
       <div className="relative w-full max-w-[600px] mx-auto">
-        {/* Vehicle SVG Container */}
-        <div className="relative aspect-[4/3] border rounded-lg overflow-hidden bg-gray-50">
-          {/* Top view */}
-          <svg className="absolute top-0 left-0 right-0 w-full h-1/3" viewBox="0 0 300 100" preserveAspectRatio="xMidYMid meet">
-            <path 
-              d="M75,80 C75,50 150,30 225,80" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="none"
+        {/* Vehicle Diagram Container */}
+        <div className="relative aspect-[1/1] border rounded-lg overflow-hidden bg-gray-50">
+          {/* Vehicle image */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <img 
+              src={bodyStyle.imagePath} 
+              alt={bodyStyle.altText}
+              className="max-w-full max-h-full object-contain"
             />
-            <path 
-              d="M75,80 C100,90 200,90 225,80" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('roof')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'roof')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <path 
-              d="M75,80 L100,90 L75,95 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#e0e0e0"
-              onClick={() => handleAreaClick('windshield')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'windshield')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <path 
-              d="M225,80 L200,90 L225,95 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#e0e0e0"
-              onClick={() => handleAreaClick('rear_window')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'rear_window')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <text x="150" y="20" textAnchor="middle" className="text-[8px] font-bold">TOP VIEW</text>
-          </svg>
+          </div>
 
-          {/* Front view */}
-          <svg className="absolute top-1/3 left-0 w-1/3 h-1/3" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-            <rect 
-              x="20" 
-              y="20" 
-              width="60" 
-              height="60" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('front_bumper')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'front_bumper')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <text x="50" y="95" textAnchor="middle" className="text-[8px] font-bold">FRONT VIEW</text>
-          </svg>
+          {/* Clickable overlay areas */}
+          <div className="absolute inset-0">
+            <svg 
+              className="w-full h-full" 
+              viewBox="0 0 600 600" 
+              preserveAspectRatio="xMidYMid meet"
+            >
+              {/* Front section */}
+              <g className="vehicle-front">
+                {/* Hood */}
+                <polygon 
+                  points="200,150 400,150 350,250 250,250" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('hood').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('hood')}
+                />
+                
+                {/* Front bumper */}
+                <rect 
+                  x="200" 
+                  y="120" 
+                  width="200" 
+                  height="30" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('front_bumper').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('front_bumper')}
+                />
+              </g>
 
-          {/* Side view */}
-          <svg className="absolute top-1/3 left-1/3 right-0 h-1/3" viewBox="0 0 200 100" preserveAspectRatio="xMidYMid meet">
-            <path 
-              d="M10,50 L40,30 L160,30 L190,50 L190,70 L10,70 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="none"
-            />
-            <path 
-              d="M10,50 L10,70 L40,70 L40,50 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('front_left_panel')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'front_left_panel')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <path 
-              d="M40,30 L40,70 L80,70 L80,30 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('hood')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'hood')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <path 
-              d="M80,30 L80,70 L120,70 L120,30 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('driver_door')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'driver_door')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <path 
-              d="M120,30 L120,70 L160,70 L160,30 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('rear_left_panel')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'rear_left_panel')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <path 
-              d="M160,30 L160,70 L190,70 L190,50 Z" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('trunk')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'trunk')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <circle cx="50" cy="70" r="10" stroke="#000" strokeWidth="1" fill="#d0d0d0" />
-            <circle cx="150" cy="70" r="10" stroke="#000" strokeWidth="1" fill="#d0d0d0" />
-            <text x="100" y="95" textAnchor="middle" className="text-[8px] font-bold">SIDE VIEW</text>
-          </svg>
+              {/* Left side */}
+              <g className="vehicle-left-side">
+                {/* Left front fender */}
+                <polygon 
+                  points="200,150 250,250 200,250 150,180" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('front_left_fender').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('front_left_fender')}
+                />
+                
+                {/* Left front door */}
+                <polygon 
+                  points="200,250 250,250 250,350 200,350" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('front_left_door').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('front_left_door')}
+                />
+                
+                {/* Left rear door/panel */}
+                <polygon 
+                  points="200,350 250,350 250,450 150,450" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('rear_left_panel').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('rear_left_panel')}
+                />
+              </g>
 
-          {/* Bottom view mirrors top view */}
-          <svg className="absolute bottom-0 left-0 right-0 h-1/3" viewBox="0 0 300 100" preserveAspectRatio="xMidYMid meet">
-            <path 
-              d="M75,20 C75,50 150,70 225,20" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="none"
-            />
-            <path 
-              d="M75,20 C100,10 200,10 225,20" 
-              stroke="#000" 
-              strokeWidth="1" 
-              fill="#f0f0f0"
-              onClick={() => handleAreaClick('rear_bumper')}
-              className={`cursor-pointer transition-colors hover:fill-blue-200 ${vehicleAreas.find(a => a.id === 'rear_bumper')?.isDamaged ? 'fill-amber-200' : ''}`}
-            />
-            <text x="150" y="95" textAnchor="middle" className="text-[8px] font-bold">BOTTOM VIEW</text>
-          </svg>
+              {/* Right side */}
+              <g className="vehicle-right-side">
+                {/* Right front fender */}
+                <polygon 
+                  points="400,150 350,250 400,250 450,180" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('front_right_fender').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('front_right_fender')}
+                />
+                
+                {/* Right front door */}
+                <polygon 
+                  points="350,250 400,250 400,350 350,350" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('front_right_door').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('front_right_door')}
+                />
+                
+                {/* Right rear door/panel */}
+                <polygon 
+                  points="350,350 400,350 450,450 350,450" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('rear_right_panel').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('rear_right_panel')}
+                />
+              </g>
+
+              {/* Roof */}
+              <rect 
+                x="250" 
+                y="250" 
+                width="100" 
+                height="100" 
+                className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                  getPanelStatus('roof').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                }`}
+                onClick={() => handleAreaClick('roof')}
+              />
+
+              {/* Rear section */}
+              <g className="vehicle-rear">
+                {/* Trunk/Hatch */}
+                <polygon 
+                  points="250,450 350,450 400,500 200,500" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('trunk').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('trunk')}
+                />
+                
+                {/* Rear bumper */}
+                <rect 
+                  x="200" 
+                  y="500" 
+                  width="200" 
+                  height="30" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('rear_bumper').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                  }`}
+                  onClick={() => handleAreaClick('rear_bumper')}
+                />
+              </g>
+
+              {/* Vehicle specific panels for truck */}
+              {vehicleType === 'truck' && (
+                <g className="vehicle-truck-specific">
+                  <rect 
+                    x="250" 
+                    y="350" 
+                    width="100" 
+                    height="100" 
+                    className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                      getPanelStatus('truck_bed').isDamaged ? 'fill-amber-500' : 'fill-blue-200 hover:fill-blue-300'
+                    }`}
+                    onClick={() => handleAreaClick('truck_bed')}
+                  />
+                </g>
+              )}
+              
+              {/* Glass areas */}
+              <g className="vehicle-glass">
+                {/* Windshield */}
+                <polygon 
+                  points="250,250 350,250 325,200 275,200" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('windshield').isDamaged ? 'fill-amber-500' : 'fill-green-200 hover:fill-green-300'
+                  }`}
+                  onClick={() => handleAreaClick('windshield')}
+                />
+                
+                {/* Rear window */}
+                <polygon 
+                  points="250,350 350,350 325,400 275,400" 
+                  className={`opacity-50 cursor-pointer hover:opacity-70 transition-opacity ${
+                    getPanelStatus('rear_window').isDamaged ? 'fill-amber-500' : 'fill-green-200 hover:fill-green-300'
+                  }`}
+                  onClick={() => handleAreaClick('rear_window')}
+                />
+              </g>
+            </svg>
+          </div>
         </div>
 
         {/* Legend */}
         <div className="mt-4 flex justify-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-amber-200 border border-amber-300"></div>
+            <div className="w-4 h-4 bg-amber-500 border border-amber-600"></div>
             <span className="text-sm">Damaged Area</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-200 border border-blue-300"></div>
-            <span className="text-sm">Hover Area</span>
+            <span className="text-sm">Body Panel</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-200 border border-green-300"></div>
+            <span className="text-sm">Glass</span>
           </div>
         </div>
         
         {/* Damage list */}
         {vehicleAreas.some(area => area.isDamaged) && (
-          <div className="mt-6 border rounded-lg p-4">
+          <div className="mt-6 border rounded-lg p-4 bg-white shadow-sm">
             <h4 className="font-medium mb-2">Damage Report:</h4>
             <ul className="divide-y">
               {vehicleAreas
@@ -273,7 +341,7 @@ const InteractiveVehicle: React.FC<InteractiveVehicleProps> = ({ onDamageUpdate 
               <Label>Damage Type</Label>
               <RadioGroup 
                 value={selectedArea?.damageType || ""} 
-                onValueChange={(value) => handleDamageUpdate(value || null, selectedArea?.notes || "")}
+                onValueChange={(value) => selectedArea && handleDamageUpdate(value || null, selectedArea.notes || "")}
                 className="grid grid-cols-3 gap-2"
               >
                 <div className="flex items-center space-x-2">
@@ -303,6 +371,7 @@ const InteractiveVehicle: React.FC<InteractiveVehicleProps> = ({ onDamageUpdate 
                     );
                   }
                 }}
+                className="min-h-24"
               />
             </div>
           </div>
