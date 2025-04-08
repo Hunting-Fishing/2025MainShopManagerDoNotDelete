@@ -8,6 +8,16 @@ interface Row {
   [key: string]: any;
 }
 
+export interface FormQueryParams {
+  category?: string;
+  search?: string;
+  sortBy?: 'name' | 'created_at' | 'updated_at' | 'category';
+  sortOrder?: 'asc' | 'desc';
+  isPublished?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
 // Save a complete form template with sections and fields
 export async function saveFormTemplate(template: FormBuilderTemplate): Promise<FormBuilderTemplate | null> {
   try {
@@ -238,12 +248,40 @@ export async function getFormTemplate(templateId: string): Promise<FormBuilderTe
 }
 
 // Get all form templates (without sections and fields)
-export async function getAllFormTemplates(): Promise<Partial<FormBuilderTemplate>[]> {
+export async function getAllFormTemplates(params?: FormQueryParams): Promise<Partial<FormBuilderTemplate>[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('form_templates' as any)
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
+    
+    // Apply filters
+    if (params?.category) {
+      query = query.eq('category', params.category);
+    }
+    
+    if (params?.search) {
+      query = query.or(`name.ilike.%${params.search}%,description.ilike.%${params.search}%`);
+    }
+    
+    if (params?.isPublished !== undefined) {
+      query = query.eq('is_published', params.isPublished);
+    }
+    
+    // Apply sorting
+    const sortBy = params?.sortBy || 'created_at';
+    const sortOrder = params?.sortOrder || 'desc';
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+    
+    // Apply pagination
+    if (params?.limit) {
+      query = query.limit(params.limit);
+      
+      if (params?.offset) {
+        query = query.range(params.offset, params.offset + params.limit - 1);
+      }
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
@@ -253,7 +291,9 @@ export async function getAllFormTemplates(): Promise<Partial<FormBuilderTemplate
       description: template.description,
       category: template.category,
       isPublished: template.is_published,
-      version: template.version
+      version: template.version,
+      createdAt: template.created_at,
+      updatedAt: template.updated_at
     }));
     
   } catch (error) {
@@ -277,5 +317,30 @@ export async function deleteFormTemplate(templateId: string): Promise<boolean> {
   } catch (error) {
     console.error('Error deleting form template:', error);
     return false;
+  }
+}
+
+// Get form template count by category
+export async function getFormTemplateCountByCategory(): Promise<Record<string, number>> {
+  try {
+    const { data, error } = await supabase
+      .from('form_templates' as any)
+      .select('category');
+    
+    if (error) throw error;
+    
+    const categoryCounts: Record<string, number> = {};
+    
+    if (data) {
+      data.forEach((item: Row) => {
+        const category = item.category || 'Uncategorized';
+        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+      });
+    }
+    
+    return categoryCounts;
+  } catch (error) {
+    console.error('Error getting form template count by category:', error);
+    return {};
   }
 }

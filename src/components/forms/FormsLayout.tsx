@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FormTemplatesList } from "./FormTemplatesList";
+import { EnhancedFormTemplatesList } from "./EnhancedFormTemplatesList";
 import { FormUploads } from "./FormUploads";
 import { FormCategories } from "./FormCategories";
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,7 @@ export const FormsLayout = () => {
       </TabsList>
       <div>
         <TabsContent value="templates">
-          <FormTemplatesList />
+          <EnhancedFormTemplatesList />
         </TabsContent>
         <TabsContent value="uploads">
           <FormUploads />

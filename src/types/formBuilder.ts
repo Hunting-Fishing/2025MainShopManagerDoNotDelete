@@ -58,4 +58,6 @@ export interface FormBuilderTemplate {
   isPublished: boolean;
   version: number;
   sections: FormBuilderSection[];
+  createdAt?: string;
+  updatedAt?: string;
 }
