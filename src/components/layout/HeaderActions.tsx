@@ -11,11 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bell } from 'lucide-react';
+import { User, Bell, Settings } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { AddNotificationDemo } from '@/components/notifications/AddNotificationDemo';
 import { supabase } from '@/lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { useAuthUser } from '@/hooks/useAuthUser';
 
@@ -48,7 +48,7 @@ export function HeaderActions({ onOpenCommandMenu }: HeaderActionsProps) {
 export function UserMenu() {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { userName, isAuthenticated } = useAuthUser();
+  const { userName, isAuthenticated, loading } = useAuthUser();
   
   // Get initials from the user name
   const getInitials = (name: string): string => {
@@ -88,6 +88,16 @@ export function UserMenu() {
     }
   };
 
+  if (loading) {
+    return (
+      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Avatar className="h-10 w-10">
+          <AvatarFallback className="bg-esm-blue-100 text-esm-blue-700">...</AvatarFallback>
+        </Avatar>
+      </Button>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -106,16 +116,26 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+        <DropdownMenuItem asChild>
+          <Link to="/settings" className="flex cursor-pointer items-center">
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Bell className="mr-2 h-4 w-4" />
-          <span>Notifications</span>
+        <DropdownMenuItem asChild>
+          <Link to="/reminders" className="flex cursor-pointer items-center">
+            <Bell className="mr-2 h-4 w-4" />
+            <span>Notifications</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings" className="flex cursor-pointer items-center">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
+        <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
         </DropdownMenuItem>

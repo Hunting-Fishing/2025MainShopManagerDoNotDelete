@@ -73,17 +73,20 @@ export function useAuthUser() {
         setUser(authUser);
         setIsAuthenticated(true);
         
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', currentUser.id)
-          .single();
-          
-        if (profile) {
-          setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim());
-        } else {
-          setUserName(currentUser.email || 'User');
-        }
+        // Process async in next tick to avoid Supabase deadlocks
+        setTimeout(async () => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', currentUser.id)
+            .single();
+            
+          if (profile) {
+            setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim());
+          } else {
+            setUserName(currentUser.email || 'User');
+          }
+        }, 0);
       } else {
         setUser(null);
         setIsAuthenticated(false);
