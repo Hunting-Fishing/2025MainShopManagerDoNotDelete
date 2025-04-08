@@ -13,7 +13,7 @@ interface BrakeRotorsSectionProps {
     rearLeft: RotorStatus;
     rearRight: RotorStatus;
   };
-  onRotorChange: (position: keyof typeof rotors, value: RotorStatus) => void;
+  onRotorChange: (position: keyof BrakeRotorsSectionProps['rotors'], value: RotorStatus) => void;
 }
 
 export const BrakeRotorsSection: React.FC<BrakeRotorsSectionProps> = ({
