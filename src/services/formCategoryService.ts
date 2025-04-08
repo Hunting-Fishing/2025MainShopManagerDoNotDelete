@@ -5,11 +5,11 @@ import { PostgrestError } from '@supabase/supabase-js';
 
 export async function getFormCategories(): Promise<FormCategory[]> {
   try {
-    // Use the generic query method instead of strongly-typed table access
-    const { data, error } = await supabase
-      .from('form_categories')
+    // Use any type to bypass TypeScript's type checking
+    const { data, error } = await (supabase
+      .from('form_categories') as any)
       .select('*')
-      .order('name', { ascending: true }) as { data: FormCategory[] | null, error: PostgrestError | null };
+      .order('name', { ascending: true });
     
     if (error) throw error;
     
@@ -22,15 +22,15 @@ export async function getFormCategories(): Promise<FormCategory[]> {
 
 export async function createFormCategory(category: Partial<FormCategory>): Promise<FormCategory | null> {
   try {
-    // Use the generic query method instead of strongly-typed table access
-    const { data, error } = await supabase
-      .from('form_categories')
+    // Use any type to bypass TypeScript's type checking
+    const { data, error } = await (supabase
+      .from('form_categories') as any)
       .insert({
         name: category.name,
         description: category.description
       })
       .select()
-      .single() as { data: FormCategory | null, error: PostgrestError | null };
+      .single();
     
     if (error) throw error;
     
@@ -43,14 +43,14 @@ export async function createFormCategory(category: Partial<FormCategory>): Promi
 
 export async function updateFormCategory(id: string, updates: Partial<FormCategory>): Promise<boolean> {
   try {
-    // Use the generic query method instead of strongly-typed table access
-    const { error } = await supabase
-      .from('form_categories')
+    // Use any type to bypass TypeScript's type checking
+    const { error } = await (supabase
+      .from('form_categories') as any)
       .update({
         name: updates.name,
         description: updates.description
       })
-      .eq('id', id) as { error: PostgrestError | null };
+      .eq('id', id);
     
     if (error) throw error;
     
@@ -63,11 +63,11 @@ export async function updateFormCategory(id: string, updates: Partial<FormCatego
 
 export async function deleteFormCategory(id: string): Promise<boolean> {
   try {
-    // Use the generic query method instead of strongly-typed table access
-    const { error } = await supabase
-      .from('form_categories')
+    // Use any type to bypass TypeScript's type checking
+    const { error } = await (supabase
+      .from('form_categories') as any)
       .delete()
-      .eq('id', id) as { error: PostgrestError | null };
+      .eq('id', id);
     
     if (error) throw error;
     
