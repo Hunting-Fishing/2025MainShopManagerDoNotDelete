@@ -10,6 +10,7 @@ import ExteriorCheckTab from "@/components/inspection-form/ExteriorCheckTab";
 import InteriorCheckTab from "@/components/inspection-form/InteriorCheckTab";
 import EngineBayTab from "@/components/inspection-form/EngineBayTab";
 import TiresTab from "@/components/inspection-form/TiresTab";
+import BrakesTab from "@/components/inspection-form/BrakesTab";
 import { toast } from "sonner";
 
 export default function VehicleInspectionForm() {
@@ -24,10 +25,11 @@ export default function VehicleInspectionForm() {
     // Update progress based on tab
     const progressMap: Record<string, number> = {
       "vehicle": 0,
-      "exterior": 25,
-      "interior": 50,
-      "engine": 75,
-      "tires": 100
+      "exterior": 17,
+      "interior": 34,
+      "engine": 51,
+      "brakes": 68,
+      "tires": 85
     };
     
     setProgress(progressMap[value] || 0);
@@ -81,8 +83,8 @@ export default function VehicleInspectionForm() {
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isSubmitting || progress < 100}
-            className={`${progress >= 100 ? 'animate-pulse' : ''} transition-all duration-300`}
+            disabled={isSubmitting || progress < 85}
+            className={`${progress >= 85 ? 'animate-pulse' : ''} transition-all duration-300`}
           >
             {isSubmitting ? "Submitting..." : "Submit Inspection"}
           </Button>
@@ -97,10 +99,11 @@ export default function VehicleInspectionForm() {
         ></div>
         <div className="absolute top-0 left-0 w-full h-full flex justify-between px-1">
           <div className={`h-3 w-1 bg-white rounded-full ${progress >= 0 ? 'opacity-100' : 'opacity-30'}`}></div>
-          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 25 ? 'opacity-100' : 'opacity-30'}`}></div>
-          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 50 ? 'opacity-100' : 'opacity-30'}`}></div>
-          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 75 ? 'opacity-100' : 'opacity-30'}`}></div>
-          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 100 ? 'opacity-100' : 'opacity-30'}`}></div>
+          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 17 ? 'opacity-100' : 'opacity-30'}`}></div>
+          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 34 ? 'opacity-100' : 'opacity-30'}`}></div>
+          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 51 ? 'opacity-100' : 'opacity-30'}`}></div>
+          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 68 ? 'opacity-100' : 'opacity-30'}`}></div>
+          <div className={`h-3 w-1 bg-white rounded-full ${progress >= 85 ? 'opacity-100' : 'opacity-30'}`}></div>
         </div>
       </div>
 
@@ -136,6 +139,13 @@ export default function VehicleInspectionForm() {
               Engine Bay
             </TabsTrigger>
             <TabsTrigger 
+              value="brakes" 
+              className="px-4 py-3 flex-1 md:flex-initial min-w-[120px]"
+              data-state={activeTab === "brakes" ? "active" : ""}
+            >
+              Brakes
+            </TabsTrigger>
+            <TabsTrigger 
               value="tires" 
               className="px-4 py-3 flex-1 md:flex-initial min-w-[120px]"
               data-state={activeTab === "tires" ? "active" : ""}
@@ -162,6 +172,10 @@ export default function VehicleInspectionForm() {
             <EngineBayTab />
           </TabsContent>
           
+          <TabsContent value="brakes" className="space-y-4 mt-0 animate-fade-in">
+            <BrakesTab />
+          </TabsContent>
+          
           <TabsContent value="tires" className="space-y-4 mt-0 animate-fade-in">
             <TiresTab />
           </TabsContent>
@@ -173,7 +187,7 @@ export default function VehicleInspectionForm() {
           variant="outline"
           onClick={() => {
             // Navigate to previous tab
-            const tabs = ["vehicle", "exterior", "interior", "engine", "tires"];
+            const tabs = ["vehicle", "exterior", "interior", "engine", "brakes", "tires"];
             const currentIndex = tabs.indexOf(activeTab);
             if (currentIndex > 0) {
               handleTabChange(tabs[currentIndex - 1]);
@@ -189,7 +203,7 @@ export default function VehicleInspectionForm() {
           <Button
             onClick={() => {
               // Navigate to next tab
-              const tabs = ["vehicle", "exterior", "interior", "engine", "tires"];
+              const tabs = ["vehicle", "exterior", "interior", "engine", "brakes", "tires"];
               const currentIndex = tabs.indexOf(activeTab);
               if (currentIndex < tabs.length - 1) {
                 handleTabChange(tabs[currentIndex + 1]);
