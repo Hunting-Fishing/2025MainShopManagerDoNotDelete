@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Camera, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import VehicleInteractivePanel from './VehicleInteractivePanel';
+import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
 
 interface DamageArea {
   id: string;
@@ -23,6 +25,33 @@ export const VehicleInspections: React.FC<{ vehicleId: string }> = ({ vehicleId 
   const [activeTab, setActiveTab] = useState("interactive");
   const { toast } = useToast();
   
+  // Get the vehicle body style from VIN or other data
+  const [vehicleBodyStyle, setVehicleBodyStyle] = useState<VehicleBodyStyle>('sedan');
+  
+  // Determine vehicle type from VIN or stored data
+  useEffect(() => {
+    const fetchVehicleDetails = async () => {
+      try {
+        // This would normally come from an API based on vehicleId
+        // For demo, we're setting a default or checking the URL for a type param
+        const urlParams = new URLSearchParams(window.location.search);
+        const typeParam = urlParams.get('type');
+        
+        if (typeParam && ['sedan', 'truck', 'suv', 'hatchback', 'van'].includes(typeParam)) {
+          setVehicleBodyStyle(typeParam as VehicleBodyStyle);
+        } else {
+          // If no type parameter is present, you could fetch from an API
+          // For now, we'll just use 'sedan' as default
+          setVehicleBodyStyle('sedan');
+        }
+      } catch (error) {
+        console.error("Error fetching vehicle details:", error);
+      }
+    };
+    
+    fetchVehicleDetails();
+  }, [vehicleId]);
+  
   // Damage areas for the vehicle
   const [damageAreas, setDamageAreas] = useState<DamageArea[]>([
     { id: 'front', name: 'Front', isDamaged: false, damageType: null, notes: '' },
@@ -32,6 +61,14 @@ export const VehicleInspections: React.FC<{ vehicleId: string }> = ({ vehicleId 
     { id: 'hood', name: 'Hood', isDamaged: false, damageType: null, notes: '' },
     { id: 'roof', name: 'Roof', isDamaged: false, damageType: null, notes: '' },
     { id: 'windshield', name: 'Windshield', isDamaged: false, damageType: null, notes: '' },
+    { id: 'trunk', name: 'Trunk/Cargo', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_front_door', name: 'Left Front Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_front_door', name: 'Right Front Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_rear_door', name: 'Left Rear Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_rear_door', name: 'Right Rear Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_front_fender', name: 'Left Front Fender', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_front_fender', name: 'Right Front Fender', isDamaged: false, damageType: null, notes: '' },
+    { id: 'truck_bed', name: 'Truck Bed', isDamaged: false, damageType: null, notes: '' },
   ]);
   
   const [selectedArea, setSelectedArea] = useState<DamageArea | null>(null);
@@ -133,103 +170,11 @@ export const VehicleInspections: React.FC<{ vehicleId: string }> = ({ vehicleId 
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 className="text-lg font-medium mb-4 text-blue-800">Click on any view to mark damage</h3>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Front view */}
-                  <div 
-                    className={`relative aspect-square border-2 rounded-lg overflow-hidden cursor-pointer transition-all 
-                      ${damageAreas.find(a => a.id === 'front')?.isDamaged ? 'border-amber-500' : 'border-blue-200 hover:border-blue-400'}`}
-                    onClick={() => handleAreaClick('front')}
-                  >
-                    <img 
-                      src="/lovable-uploads/9317dbec-6527-42f7-a07e-b39d23354c30.jpg" 
-                      alt="Front view" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                      <span className="text-white font-medium text-lg">Front</span>
-                    </div>
-                    {damageAreas.find(a => a.id === 'front')?.isDamaged && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="destructive">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Damaged
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Rear view */}
-                  <div 
-                    className={`relative aspect-square border-2 rounded-lg overflow-hidden cursor-pointer transition-all 
-                      ${damageAreas.find(a => a.id === 'rear')?.isDamaged ? 'border-amber-500' : 'border-blue-200 hover:border-blue-400'}`}
-                    onClick={() => handleAreaClick('rear')}
-                  >
-                    <img 
-                      src="/lovable-uploads/e42debb7-9062-4cdb-b598-e58c28f562bb.jpg" 
-                      alt="Rear view" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                      <span className="text-white font-medium text-lg">Rear</span>
-                    </div>
-                    {damageAreas.find(a => a.id === 'rear')?.isDamaged && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="destructive">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Damaged
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Driver side */}
-                  <div 
-                    className={`relative aspect-square border-2 rounded-lg overflow-hidden cursor-pointer transition-all 
-                      ${damageAreas.find(a => a.id === 'driver_side')?.isDamaged ? 'border-amber-500' : 'border-blue-200 hover:border-blue-400'}`}
-                    onClick={() => handleAreaClick('driver_side')}
-                  >
-                    <img 
-                      src="/lovable-uploads/1c8a8a5c-76eb-48d3-9498-f51084d58b65.jpg" 
-                      alt="Driver side" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                      <span className="text-white font-medium text-lg">Driver Side</span>
-                    </div>
-                    {damageAreas.find(a => a.id === 'driver_side')?.isDamaged && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="destructive">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Damaged
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Passenger side */}
-                  <div 
-                    className={`relative aspect-square border-2 rounded-lg overflow-hidden cursor-pointer transition-all 
-                      ${damageAreas.find(a => a.id === 'passenger_side')?.isDamaged ? 'border-amber-500' : 'border-blue-200 hover:border-blue-400'}`}
-                    onClick={() => handleAreaClick('passenger_side')}
-                  >
-                    <img 
-                      src="/lovable-uploads/1bd47d03-5c0d-41e7-9d78-79d66acf2abe.jpg" 
-                      alt="Passenger side" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                      <span className="text-white font-medium text-lg">Passenger Side</span>
-                    </div>
-                    {damageAreas.find(a => a.id === 'passenger_side')?.isDamaged && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="destructive">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Damaged
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <VehicleInteractivePanel
+                  vehicleType={vehicleBodyStyle}
+                  damageAreas={damageAreas}
+                  onAreaClick={handleAreaClick}
+                />
                 
                 {/* Damage report */}
                 {damageAreas.some(area => area.isDamaged) && (
