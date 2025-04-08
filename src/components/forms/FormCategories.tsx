@@ -164,7 +164,7 @@ export const FormCategories = () => {
                 <Label htmlFor="description">Description (Optional)</Label>
                 <Textarea 
                   id="description" 
-                  value={newCategory.description} 
+                  value={newCategory.description || ''} 
                   onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
                   placeholder="Brief description of this category"
                   rows={3}

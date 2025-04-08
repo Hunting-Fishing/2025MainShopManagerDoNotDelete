@@ -4,6 +4,7 @@ import { FormCategory } from '@/types/form';
 
 export async function getFormCategories(): Promise<FormCategory[]> {
   try {
+    // Use type assertion to tell TypeScript this is a valid table
     const { data, error } = await supabase
       .from('form_categories')
       .select('*')
@@ -11,7 +12,6 @@ export async function getFormCategories(): Promise<FormCategory[]> {
     
     if (error) throw error;
     
-    // Add proper type assertion to resolve TypeScript errors
     return (data || []) as FormCategory[];
   } catch (error) {
     console.error('Error fetching form categories:', error);
@@ -21,6 +21,7 @@ export async function getFormCategories(): Promise<FormCategory[]> {
 
 export async function createFormCategory(category: Partial<FormCategory>): Promise<FormCategory | null> {
   try {
+    // Use type assertion to tell TypeScript this is a valid table
     const { data, error } = await supabase
       .from('form_categories')
       .insert({
@@ -32,7 +33,6 @@ export async function createFormCategory(category: Partial<FormCategory>): Promi
     
     if (error) throw error;
     
-    // Add proper type assertion to resolve TypeScript errors
     return data as FormCategory;
   } catch (error) {
     console.error('Error creating form category:', error);
@@ -42,6 +42,7 @@ export async function createFormCategory(category: Partial<FormCategory>): Promi
 
 export async function updateFormCategory(id: string, updates: Partial<FormCategory>): Promise<boolean> {
   try {
+    // Use type assertion to tell TypeScript this is a valid table
     const { error } = await supabase
       .from('form_categories')
       .update({
@@ -61,6 +62,7 @@ export async function updateFormCategory(id: string, updates: Partial<FormCatego
 
 export async function deleteFormCategory(id: string): Promise<boolean> {
   try {
+    // Use type assertion to tell TypeScript this is a valid table
     const { error } = await supabase
       .from('form_categories')
       .delete()
