@@ -36,7 +36,7 @@ export async function saveFormTemplate(template: FormBuilderTemplate): Promise<F
       // Create new template
       templateId = uuidv4();
       const { error } = await supabase
-        .from('form_templates' as any)
+        .from('form_templates')
         .insert({
           ...templateData,
           id: templateId,
@@ -47,7 +47,7 @@ export async function saveFormTemplate(template: FormBuilderTemplate): Promise<F
     } else {
       // Update existing template
       const { error } = await supabase
-        .from('form_templates' as any)
+        .from('form_templates')
         .update(templateData)
         .eq('id', templateId);
       
@@ -97,7 +97,7 @@ async function saveFormSection(section: FormBuilderSection): Promise<string | nu
     const sectionId = section.id === 'new' ? uuidv4() : section.id;
     
     const { error } = await supabase
-      .from('form_sections' as any)
+      .from('form_sections')
       .insert({
         ...sectionData,
         id: sectionId
@@ -131,7 +131,7 @@ async function saveFormField(field: FormBuilderField): Promise<string | null> {
     const fieldId = field.id === 'new' ? uuidv4() : field.id;
     
     const { error } = await supabase
-      .from('form_fields' as any)
+      .from('form_fields')
       .insert({
         ...fieldData,
         id: fieldId
@@ -151,7 +151,7 @@ async function deleteSectionsByTemplateId(templateId: string): Promise<void> {
   try {
     // Get all section IDs for this template
     const { data: sections, error: sectionsError } = await supabase
-      .from('form_sections' as any)
+      .from('form_sections')
       .select('id')
       .eq('template_id', templateId);
     
@@ -160,7 +160,7 @@ async function deleteSectionsByTemplateId(templateId: string): Promise<void> {
     // Delete the sections (fields will be cascaded due to FK constraint)
     if (sections && sections.length > 0) {
       const { error: deleteError } = await supabase
-        .from('form_sections' as any)
+        .from('form_sections')
         .delete()
         .eq('template_id', templateId);
       
@@ -176,7 +176,7 @@ export async function getFormTemplate(templateId: string): Promise<FormBuilderTe
   try {
     // Get the template
     const { data: templateData, error: templateError } = await supabase
-      .from('form_templates' as any)
+      .from('form_templates')
       .select('*')
       .eq('id', templateId)
       .single();
@@ -186,7 +186,7 @@ export async function getFormTemplate(templateId: string): Promise<FormBuilderTe
     
     // Get all sections for this template
     const { data: sections, error: sectionsError } = await supabase
-      .from('form_sections' as any)
+      .from('form_sections')
       .select('*')
       .eq('template_id', templateId)
       .order('display_order', { ascending: true });
@@ -198,7 +198,7 @@ export async function getFormTemplate(templateId: string): Promise<FormBuilderTe
     // Get fields for each section
     for (const section of sections || []) {
       const { data: fields, error: fieldsError } = await supabase
-        .from('form_fields' as any)
+        .from('form_fields')
         .select('*')
         .eq('section_id', section.id)
         .order('display_order', { ascending: true });
@@ -238,7 +238,9 @@ export async function getFormTemplate(templateId: string): Promise<FormBuilderTe
       category: template.category,
       isPublished: template.is_published,
       version: template.version,
-      sections: processedSections
+      sections: processedSections,
+      createdAt: template.created_at,
+      updatedAt: template.updated_at
     };
     
   } catch (error) {
@@ -251,7 +253,7 @@ export async function getFormTemplate(templateId: string): Promise<FormBuilderTe
 export async function getAllFormTemplates(params?: FormQueryParams): Promise<Partial<FormBuilderTemplate>[]> {
   try {
     let query = supabase
-      .from('form_templates' as any)
+      .from('form_templates')
       .select('*');
     
     // Apply filters
@@ -307,7 +309,7 @@ export async function deleteFormTemplate(templateId: string): Promise<boolean> {
   try {
     // The sections and fields will be deleted automatically due to CASCADE
     const { error } = await supabase
-      .from('form_templates' as any)
+      .from('form_templates')
       .delete()
       .eq('id', templateId);
     
@@ -324,7 +326,7 @@ export async function deleteFormTemplate(templateId: string): Promise<boolean> {
 export async function getFormTemplateCountByCategory(): Promise<Record<string, number>> {
   try {
     const { data, error } = await supabase
-      .from('form_templates' as any)
+      .from('form_templates')
       .select('category');
     
     if (error) throw error;
