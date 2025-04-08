@@ -1,5 +1,6 @@
 
-import { FormField, FormSection } from './form';
+import { FormFieldType } from './formBuilder';
+import { FormCategory } from './form';
 
 export type FormFieldType = 
   | 'text'

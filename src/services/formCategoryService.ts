@@ -1,5 +1,5 @@
 
-import { FormCategory } from '@/types/form';
+import { FormCategory, FormCategoryResponse } from '@/types/form';
 import { supabase } from '@/lib/supabase';
 
 export async function getFormCategories(): Promise<FormCategory[]> {
@@ -13,7 +13,7 @@ export async function getFormCategories(): Promise<FormCategory[]> {
     if (error) throw error;
     
     // Add an explicit type assertion to the returned data
-    return (data as any[] || []) as FormCategory[];
+    return ((data as any[]) || []) as FormCategory[];
   } catch (error) {
     console.error('Error fetching form categories:', error);
     return [];
@@ -32,8 +32,8 @@ export async function createFormCategory(category: Partial<FormCategory>): Promi
     
     if (error) throw error;
     
-    // Add an explicit type assertion for the returned data
-    return data && data[0] ? data[0] as FormCategory : null;
+    // Use as unknown first, then as FormCategory to satisfy TypeScript
+    return data && data[0] ? (data[0] as unknown as FormCategory) : null;
   } catch (error) {
     console.error('Error creating form category:', error);
     return null;
