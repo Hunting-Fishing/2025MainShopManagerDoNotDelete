@@ -1,13 +1,12 @@
 
-import { supabase } from '@/lib/supabase';
 import { FormCategory } from '@/types/form';
-import { PostgrestError } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 export async function getFormCategories(): Promise<FormCategory[]> {
   try {
-    // Use a type assertion to tell TypeScript this is safe
-    const { data, error } = await (supabase
-      .from('form_categories') as any)
+    // Use the proper client with proper typing
+    const { data, error } = await supabase
+      .from('form_categories')
       .select('*')
       .order('name', { ascending: true });
     
@@ -22,8 +21,8 @@ export async function getFormCategories(): Promise<FormCategory[]> {
 
 export async function createFormCategory(category: Partial<FormCategory>): Promise<FormCategory | null> {
   try {
-    const { data, error } = await (supabase
-      .from('form_categories') as any)
+    const { data, error } = await supabase
+      .from('form_categories')
       .insert({
         name: category.name,
         description: category.description
@@ -41,8 +40,8 @@ export async function createFormCategory(category: Partial<FormCategory>): Promi
 
 export async function updateFormCategory(id: string, updates: Partial<FormCategory>): Promise<boolean> {
   try {
-    const { error } = await (supabase
-      .from('form_categories') as any)
+    const { error } = await supabase
+      .from('form_categories')
       .update({
         name: updates.name,
         description: updates.description
@@ -60,8 +59,8 @@ export async function updateFormCategory(id: string, updates: Partial<FormCatego
 
 export async function deleteFormCategory(id: string): Promise<boolean> {
   try {
-    const { error } = await (supabase
-      .from('form_categories') as any)
+    const { error } = await supabase
+      .from('form_categories')
       .delete()
       .eq('id', id);
     
