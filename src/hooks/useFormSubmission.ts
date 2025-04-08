@@ -22,8 +22,9 @@ export function useFormSubmission() {
     setSuccess(false);
     
     try {
+      // Use a more type-safe approach with explicit type casting
       const { error } = await supabase
-        .from('form_submissions')
+        .from('form_submissions' as any)
         .insert({
           template_id: submissionData.templateId,
           customer_id: submissionData.customerId || null,
