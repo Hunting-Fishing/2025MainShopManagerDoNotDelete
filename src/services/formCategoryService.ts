@@ -5,14 +5,11 @@ import { PostgrestError } from '@supabase/supabase-js';
 
 export async function getFormCategories(): Promise<FormCategory[]> {
   try {
-    // Use more specific typing to handle the form_categories table
-    const { data, error } = await supabase
-      .from('form_categories')
+    // Use a type assertion to tell TypeScript this is safe
+    const { data, error } = await (supabase
+      .from('form_categories') as any)
       .select('*')
-      .order('name', { ascending: true }) as unknown as { 
-        data: FormCategory[] | null, 
-        error: PostgrestError | null 
-      };
+      .order('name', { ascending: true });
     
     if (error) throw error;
     
@@ -25,16 +22,13 @@ export async function getFormCategories(): Promise<FormCategory[]> {
 
 export async function createFormCategory(category: Partial<FormCategory>): Promise<FormCategory | null> {
   try {
-    const { data, error } = await supabase
-      .from('form_categories')
+    const { data, error } = await (supabase
+      .from('form_categories') as any)
       .insert({
         name: category.name,
         description: category.description
       })
-      .select() as unknown as {
-        data: FormCategory[] | null,
-        error: PostgrestError | null
-      };
+      .select();
     
     if (error) throw error;
     
@@ -47,15 +41,13 @@ export async function createFormCategory(category: Partial<FormCategory>): Promi
 
 export async function updateFormCategory(id: string, updates: Partial<FormCategory>): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('form_categories')
+    const { error } = await (supabase
+      .from('form_categories') as any)
       .update({
         name: updates.name,
         description: updates.description
       })
-      .eq('id', id) as unknown as {
-        error: PostgrestError | null
-      };
+      .eq('id', id);
     
     if (error) throw error;
     
@@ -68,12 +60,10 @@ export async function updateFormCategory(id: string, updates: Partial<FormCatego
 
 export async function deleteFormCategory(id: string): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('form_categories')
+    const { error } = await (supabase
+      .from('form_categories') as any)
       .delete()
-      .eq('id', id) as unknown as {
-        error: PostgrestError | null
-      };
+      .eq('id', id);
     
     if (error) throw error;
     
