@@ -1,6 +1,5 @@
-
-import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import WorkOrders from './pages/WorkOrders';
@@ -62,18 +61,16 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { NotificationsProvider } from '@/context/notifications';
-import { checkSupabaseConnection } from './lib/supabase';
+import { checkSupabaseConnection, supabase } from './lib/supabase';
 
 import './App.css';
 
-// Simple loading component for suspense
 const PageLoading = () => (
   <div className="flex items-center justify-center h-screen w-full">
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
   </div>
 );
 
-// Simple error fallback component
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
     super(props);
@@ -113,7 +110,47 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-// Initialize Supabase connection on app load
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate('/login', { state: { from: location.pathname } });
+        } else {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        navigate('/login', { state: { from: location.pathname } });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/login', { replace: true });
+      }
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, location]);
+  
+  if (isLoading) return <PageLoading />;
+  
+  return isAuthenticated ? <>{children}</> : <PageLoading />;
+};
+
 checkSupabaseConnection().then((isConnected) => {
   console.log("Supabase connection status:", isConnected ? "Connected" : "Connection failed");
 });
@@ -127,9 +164,14 @@ function App() {
             <Router>
               <Suspense fallback={<PageLoading />}>
                 <Routes>
+                  <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   
-                  <Route path="/" element={<Layout />}>
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <Layout />
+                    </ProtectedRoute>
+                  }>
                     <Route index element={<Navigate to="/dashboard" replace />} />
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="work-orders" element={<WorkOrders />} />

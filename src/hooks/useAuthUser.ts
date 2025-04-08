@@ -46,9 +46,12 @@ export function useAuthUser() {
         } else {
           setUser(null);
           setIsAuthenticated(false);
+          setUserName('');
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
@@ -58,6 +61,8 @@ export function useAuthUser() {
     
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      
       const currentUser = session?.user;
       
       if (currentUser) {

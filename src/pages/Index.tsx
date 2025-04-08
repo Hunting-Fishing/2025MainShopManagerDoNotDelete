@@ -1,9 +1,10 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Clipboard, BarChart, Package, Users, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const Index = () => {
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 mb-12">
           {/* Quick access cards */}
-          <Link to="/work-orders" className="group">
+          <Link to="/login" className="group">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all border border-slate-200 h-full">
               <div className="flex items-center mb-4">
                 <Clipboard className="h-8 w-8 text-esm-blue-500 mr-3" />
@@ -42,12 +43,12 @@ const Index = () => {
                 Create, manage and track work orders for customer service requests
               </p>
               <span className="text-esm-blue-600 group-hover:underline inline-flex items-center">
-                Manage work orders
+                Login to manage work orders
               </span>
             </div>
           </Link>
 
-          <Link to="/reports" className="group">
+          <Link to="/login" className="group">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all border border-slate-200 h-full">
               <div className="flex items-center mb-4">
                 <BarChart className="h-8 w-8 text-esm-blue-500 mr-3" />
@@ -57,12 +58,12 @@ const Index = () => {
                 View business performance metrics and generate detailed reports
               </p>
               <span className="text-esm-blue-600 group-hover:underline inline-flex items-center">
-                View reports
+                Login to view reports
               </span>
             </div>
           </Link>
 
-          <Link to="/inventory" className="group">
+          <Link to="/login" className="group">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all border border-slate-200 h-full">
               <div className="flex items-center mb-4">
                 <Package className="h-8 w-8 text-esm-blue-500 mr-3" />
@@ -72,12 +73,12 @@ const Index = () => {
                 Manage parts, supplies and track inventory levels
               </p>
               <span className="text-esm-blue-600 group-hover:underline inline-flex items-center">
-                Manage inventory
+                Login to manage inventory
               </span>
             </div>
           </Link>
 
-          <Link to="/team" className="group">
+          <Link to="/login" className="group">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all border border-slate-200 h-full">
               <div className="flex items-center mb-4">
                 <Users className="h-8 w-8 text-esm-blue-500 mr-3" />
@@ -87,7 +88,7 @@ const Index = () => {
                 Manage technicians, staff and role permissions
               </p>
               <span className="text-esm-blue-600 group-hover:underline inline-flex items-center">
-                Manage team
+                Login to manage team
               </span>
             </div>
           </Link>

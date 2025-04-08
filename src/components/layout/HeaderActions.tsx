@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Bell } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { AddNotificationDemo } from '@/components/notifications/AddNotificationDemo';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -67,11 +67,15 @@ export function UserMenu() {
     try {
       setIsLoggingOut(true);
       await supabase.auth.signOut();
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
-      navigate('/login');
+      
+      // Ensure we navigate to the login page after successful logout
+      navigate('/login', { replace: true });
+      
     } catch (error) {
       console.error('Error logging out:', error);
       toast({
