@@ -1,4 +1,3 @@
-
 export interface FormTemplate {
   id: string;
   name: string;
@@ -33,12 +32,14 @@ export interface FormCategory {
 
 export interface FormField {
   id: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'radio' | 'date';
+  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'radio' | 'date' | 'email' | 'phone' | 'file';
   label: string;
   placeholder?: string;
   required: boolean;
-  options?: string[]; // For select, checkbox, radio
+  options?: string[] | { label: string; value: string }[]; // For select, checkbox, radio
   defaultValue?: any;
+  helpText?: string;
+  validation?: any;
 }
 
 export interface FormSection {
@@ -46,4 +47,15 @@ export interface FormSection {
   title: string;
   description?: string;
   fields: FormField[];
+}
+
+export interface FormSubmission {
+  id: string;
+  templateId: string;
+  submittedBy?: string;
+  submittedData: Record<string, any>;
+  customerId?: string;
+  vehicleId?: string;
+  workOrderId?: string;
+  createdAt: string;
 }

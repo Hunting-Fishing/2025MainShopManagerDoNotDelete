@@ -1344,6 +1344,177 @@ export type Database = {
         }
         Relationships: []
       }
+      form_fields: {
+        Row: {
+          created_at: string | null
+          default_value: string | null
+          display_order: number
+          field_type: Database["public"]["Enums"]["form_field_type"]
+          help_text: string | null
+          id: string
+          is_required: boolean | null
+          label: string
+          options: Json | null
+          placeholder: string | null
+          section_id: string
+          updated_at: string | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_value?: string | null
+          display_order: number
+          field_type: Database["public"]["Enums"]["form_field_type"]
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+          section_id: string
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          default_value?: string | null
+          display_order?: number
+          field_type?: Database["public"]["Enums"]["form_field_type"]
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+          section_id?: string
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "form_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_sections: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number
+          id: string
+          template_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order: number
+          id?: string
+          template_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          template_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_sections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          submitted_by: string | null
+          submitted_data: Json
+          template_id: string
+          vehicle_id: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          submitted_by?: string | null
+          submitted_data: Json
+          template_id: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          submitted_by?: string | null
+          submitted_data?: Json
+          template_id?: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          category: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_published: boolean | null
+          name: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          name: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          name?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
       household_members: {
         Row: {
           created_at: string
@@ -3199,6 +3370,17 @@ export type Database = {
         | "technician"
         | "reception"
         | "other_staff"
+      form_field_type:
+        | "text"
+        | "textarea"
+        | "number"
+        | "select"
+        | "checkbox"
+        | "radio"
+        | "date"
+        | "email"
+        | "phone"
+        | "file"
       permission_type: "create" | "read" | "update" | "delete"
       product_type: "affiliate" | "suggested"
       resource_type:
@@ -3335,6 +3517,18 @@ export const Constants = {
         "technician",
         "reception",
         "other_staff",
+      ],
+      form_field_type: [
+        "text",
+        "textarea",
+        "number",
+        "select",
+        "checkbox",
+        "radio",
+        "date",
+        "email",
+        "phone",
+        "file",
       ],
       permission_type: ["create", "read", "update", "delete"],
       product_type: ["affiliate", "suggested"],
