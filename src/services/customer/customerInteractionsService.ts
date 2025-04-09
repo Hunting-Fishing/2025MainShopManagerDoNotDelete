@@ -21,11 +21,11 @@ export const getCustomerInteractions = async (customerId: string): Promise<Custo
     console.log("Retrieved customer interactions:", data);
     
     // Ensure proper type casting
-    const interactions = data?.map(interaction => ({
+    const interactions = (data || []).map(interaction => ({
       ...interaction,
       type: interaction.type as InteractionType,
       status: interaction.status as InteractionStatus
-    })) || [];
+    })) as CustomerInteraction[];
     
     return interactions;
   } catch (error) {
@@ -61,7 +61,7 @@ export const addCustomerInteraction = async (
       ...data,
       type: data.type as InteractionType,
       status: data.status as InteractionStatus
-    };
+    } as CustomerInteraction;
   } catch (error) {
     console.error("Error in addCustomerInteraction:", error);
     return null;
@@ -94,7 +94,7 @@ export const updateCustomerInteraction = async (
       ...data,
       type: data.type as InteractionType,
       status: data.status as InteractionStatus
-    };
+    } as CustomerInteraction;
   } catch (error) {
     console.error("Error in updateCustomerInteraction:", error);
     return null;
@@ -144,7 +144,7 @@ export const completeFollowUp = async (id: string): Promise<CustomerInteraction 
       ...data,
       type: data.type as InteractionType,
       status: data.status as InteractionStatus
-    };
+    } as CustomerInteraction;
   } catch (error) {
     console.error("Error in completeFollowUp:", error);
     return null;
@@ -168,11 +168,11 @@ export const getPendingFollowUps = async (): Promise<CustomerInteraction[]> => {
     }
     
     // Ensure proper type casting
-    const interactions = data?.map(interaction => ({
+    const interactions = (data || []).map(interaction => ({
       ...interaction,
       type: interaction.type as InteractionType,
       status: interaction.status as InteractionStatus
-    })) || [];
+    })) as CustomerInteraction[];
     
     return interactions;
   } catch (error) {

@@ -24,11 +24,11 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           setInteractions([]);
         } else {
           // Properly cast the data to ensure type safety
-          const typedInteractions = data?.map(item => ({
+          const typedInteractions = (data || []).map(item => ({
             ...item,
             type: item.type as InteractionType,
             status: item.status as InteractionStatus
-          })) || [];
+          })) as CustomerInteraction[];
           
           setInteractions(typedInteractions);
         }
