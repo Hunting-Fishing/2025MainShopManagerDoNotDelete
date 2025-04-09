@@ -21,6 +21,7 @@ interface VehicleData {
   vin?: string;
   license_plate?: string;
   color?: string;
+  body_style?: string; // Added this optional property
 }
 
 const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({ 
@@ -74,9 +75,12 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
   };
 
   const handleBodyStyleChange = (value: string) => {
-    const style = value as VehicleBodyStyle;
-    setBodyStyle(style);
-    onBodyStyleChange(style);
+    // Ensure value is a valid VehicleBodyStyle
+    if (Object.values(VehicleBodyStyle).includes(value as VehicleBodyStyle)) {
+      const style = value as VehicleBodyStyle;
+      setBodyStyle(style);
+      onBodyStyleChange(style);
+    }
   };
 
   return (

@@ -10,6 +10,7 @@ export interface DamageArea {
   notes?: string;
   photoUrls?: string[];
   timestamp: string;
+  isDamaged?: boolean; // Added for compatibility with VehicleInteractivePanel
 }
 
 export interface VehicleInspection {
@@ -18,14 +19,14 @@ export interface VehicleInspection {
   technicianId: string;
   inspectionDate: Date;
   vehicleBodyStyle: VehicleBodyStyle;
-  status: 'draft' | 'completed' | 'approved' | 'rejected';
+  status: 'draft' | 'completed' | 'approved' | 'pending'; // Changed 'rejected' to 'pending' for compatibility
   damageAreas: DamageArea[];
   notes?: string;
 }
 
 // Convert DamageAreas array to a format suitable for JSON storage
-export const convertToJson = (damageAreas: DamageArea[]) => {
-  return damageAreas;
+export const convertToJson = (damageAreas: DamageArea[]): any => {
+  return JSON.parse(JSON.stringify(damageAreas));
 };
 
 // Convert from JSON to typed DamageArea objects
@@ -39,7 +40,8 @@ export const convertToDamageAreas = (json: any): DamageArea[] => {
     damageType: item.damageType,
     notes: item.notes,
     photoUrls: item.photoUrls || [],
-    timestamp: item.timestamp || new Date().toISOString()
+    timestamp: item.timestamp || new Date().toISOString(),
+    isDamaged: true // Default to true for backward compatibility
   }));
 };
 

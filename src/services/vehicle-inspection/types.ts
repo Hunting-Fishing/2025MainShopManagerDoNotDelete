@@ -7,10 +7,12 @@ export type { VehicleBodyStyle };
 
 export interface DamageArea {
   id: string;
-  name: string;
-  isDamaged: boolean;
-  damageType: string | null;
-  notes: string;
+  panelId: string;
+  panelName: string;
+  damageType: string;
+  notes?: string;
+  photoUrls?: string[];
+  timestamp: string;
 }
 
 export interface VehicleInspection {
@@ -19,7 +21,7 @@ export interface VehicleInspection {
   technicianId: string;
   inspectionDate: Date;
   vehicleBodyStyle: VehicleBodyStyle;
-  status: 'draft' | 'completed' | 'pending' | 'approved';
+  status: 'draft' | 'completed' | 'pending' | 'approved'; // Changed to match our service
   damageAreas: DamageArea[];
   notes?: string;
 }

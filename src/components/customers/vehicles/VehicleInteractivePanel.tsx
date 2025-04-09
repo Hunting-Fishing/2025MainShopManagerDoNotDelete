@@ -17,7 +17,8 @@ const VehicleInteractivePanel: React.FC<VehicleInteractivePanelProps> = ({
 }) => {
   // Convert damageAreas to a map for quick lookup
   const damageMap = damageAreas.reduce((map, area) => {
-    map[area.id] = area.isDamaged;
+    // Set to true if area exists (we assume damaged areas are included in this list)
+    map[area.panelId] = true;
     return map;
   }, {} as Record<string, boolean>);
   

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, Plus, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getVehicleInspections } from "@/services/vehicleInspectionService";
-import { VehicleInspection } from "@/services/vehicle-inspection/types";
+import { VehicleInspection } from "@/services/vehicleInspectionService"; // Import directly from the service file
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
