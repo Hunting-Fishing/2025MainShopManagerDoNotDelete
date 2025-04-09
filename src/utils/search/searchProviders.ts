@@ -1,173 +1,106 @@
-import { workOrders } from "@/data/workOrdersData";
-import { invoices } from "@/data/invoiceData";
-import { getCustomerFullName } from "@/types/customer";
-import { equipment } from "@/data/equipmentData";
-import { inventoryItems } from "@/data/mockInventoryData";
-import { findMatches } from "./relevanceUtils";
-import { SearchResult, SearchResultType } from "./types";
-import { getAllCustomers } from "@/services/customerService";
 
-// Search work orders
-export const searchWorkOrders = (query: string): SearchResult[] => {
-  const normalizedQuery = query.toLowerCase().trim();
-  const results: SearchResult[] = [];
+import { supabase } from "@/lib/supabase";
+import { Customer } from "@/types/customer";
 
-  workOrders.forEach(order => {
-    let relevance = 0;
-    
-    relevance = Math.max(
-      relevance,
-      findMatches(order.id, normalizedQuery),
-      findMatches(order.description, normalizedQuery) * 0.9,
-      findMatches(order.customer, normalizedQuery) * 0.8,
-      findMatches(order.location, normalizedQuery) * 0.7,
-      findMatches(order.technician, normalizedQuery) * 0.7
-    );
-    
-    if (relevance > 0) {
-      results.push({
-        id: order.id,
-        title: order.description,
-        subtitle: `Work Order - ${order.customer}`,
-        type: 'work-order',
-        url: `/work-orders/${order.id}`,
-        relevance
-      });
-    }
-  });
-
-  return results;
-};
-
-// Search invoices
-export const searchInvoices = (query: string): SearchResult[] => {
-  const normalizedQuery = query.toLowerCase().trim();
-  const results: SearchResult[] = [];
-
-  invoices.forEach(invoice => {
-    let relevance = 0;
-    
-    relevance = Math.max(
-      relevance,
-      findMatches(invoice.id, normalizedQuery),
-      findMatches(invoice.description, normalizedQuery) * 0.9,
-      findMatches(invoice.customer, normalizedQuery) * 0.8
-    );
-    
-    if (relevance > 0) {
-      results.push({
-        id: invoice.id,
-        title: invoice.description,
-        subtitle: `Invoice - ${invoice.customer}`,
-        type: 'invoice',
-        url: `/invoices/${invoice.id}`,
-        relevance
-      });
-    }
-  });
-
-  return results;
-};
-
-// Search customers - updated to work with real customer data
-export const searchCustomers = async (query: string): Promise<SearchResult[]> => {
-  const normalizedQuery = query.toLowerCase().trim();
-  const results: SearchResult[] = [];
-
+export const searchCustomers = async (query: string): Promise<Customer[]> => {
+  if (!query || query.length < 2) return [];
+  
   try {
-    const customers = await getAllCustomers();
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+      .limit(10);
     
-    customers.forEach(customer => {
-      let relevance = 0;
-      const fullName = getCustomerFullName(customer);
-      
-      relevance = Math.max(
-        relevance,
-        findMatches(customer.id, normalizedQuery),
-        findMatches(fullName, normalizedQuery),
-        customer.email ? findMatches(customer.email, normalizedQuery) * 0.8 : 0,
-        customer.phone ? findMatches(customer.phone, normalizedQuery) * 0.7 : 0
-      );
-      
-      if (relevance > 0) {
-        results.push({
-          id: customer.id,
-          title: fullName,
-          subtitle: `Customer`,
-          type: 'customer',
-          url: `/customers/${customer.id}`,
-          relevance
-        });
-      }
-    });
+    if (error) {
+      console.error('Error searching customers:', error);
+      return [];
+    }
+    
+    return data || [];
   } catch (error) {
-    console.error("Error searching customers:", error);
+    console.error('Error in searchCustomers:', error);
+    return [];
   }
-
-  return results;
 };
 
-// Search equipment
-export const searchEquipment = (query: string): SearchResult[] => {
-  const normalizedQuery = query.toLowerCase().trim();
-  const results: SearchResult[] = [];
-
-  equipment.forEach(item => {
-    let relevance = 0;
+export const searchInventory = async (query: string): Promise<any[]> => {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('*')
+      .or(`name.ilike.%${query}%,sku.ilike.%${query}%,category.ilike.%${query}%`)
+      .limit(10);
     
-    relevance = Math.max(
-      relevance,
-      findMatches(item.id, normalizedQuery),
-      findMatches(item.name, normalizedQuery),
-      findMatches(item.model, normalizedQuery) * 0.9,
-      findMatches(item.serialNumber, normalizedQuery) * 0.9,
-      findMatches(item.customer, normalizedQuery) * 0.8,
-      findMatches(item.manufacturer, normalizedQuery) * 0.7
-    );
-    
-    if (relevance > 0) {
-      results.push({
-        id: item.id,
-        title: item.name,
-        subtitle: `Equipment - ${item.customer}`,
-        type: 'equipment',
-        url: `/equipment/${item.id}`,
-        relevance
-      });
+    if (error) {
+      console.error('Error searching inventory:', error);
+      return [];
     }
-  });
-
-  return results;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in searchInventory:', error);
+    return [];
+  }
 };
 
-// Search inventory
-export const searchInventory = (query: string): SearchResult[] => {
-  const normalizedQuery = query.toLowerCase().trim();
-  const results: SearchResult[] = [];
-
-  inventoryItems.forEach(item => {
-    let relevance = 0;
+export const searchVehicles = async (query: string): Promise<any[]> => {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select('*, customers(first_name, last_name)')
+      .or(`make.ilike.%${query}%,model.ilike.%${query}%,vin.ilike.%${query}%,license_plate.ilike.%${query}%`)
+      .limit(10);
     
-    relevance = Math.max(
-      relevance,
-      findMatches(item.id, normalizedQuery),
-      findMatches(item.name, normalizedQuery),
-      findMatches(item.sku, normalizedQuery) * 0.9,
-      findMatches(item.description || '', normalizedQuery) * 0.8,  // Handle optional description
-      findMatches(item.category, normalizedQuery) * 0.7
-    );
-    
-    if (relevance > 0) {
-      results.push({
-        id: item.id,
-        title: item.name,
-        subtitle: `Inventory - ${item.sku}`,
-        type: 'inventory',
-        url: `/inventory/${item.id}`,
-        relevance
-      });
+    if (error) {
+      console.error('Error searching vehicles:', error);
+      return [];
     }
-  });
+    
+    // Transform the results to include customer name for display
+    return (data || []).map(vehicle => ({
+      ...vehicle,
+      customerName: vehicle.customers ? 
+        `${vehicle.customers.first_name} ${vehicle.customers.last_name}` : 
+        'Unknown Customer'
+    }));
+  } catch (error) {
+    console.error('Error in searchVehicles:', error);
+    return [];
+  }
+};
 
-  return results;
+export const searchWorkOrders = async (query: string): Promise<any[]> => {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('*, customers(first_name, last_name), vehicles(make, model, year)')
+      .or(`id.ilike.%${query}%,description.ilike.%${query}%`)
+      .limit(10);
+    
+    if (error) {
+      console.error('Error searching work orders:', error);
+      return [];
+    }
+    
+    // Transform the results to include customer and vehicle info
+    return (data || []).map(order => ({
+      ...order,
+      customerName: order.customers ? 
+        `${order.customers.first_name} ${order.customers.last_name}` : 
+        'Unknown Customer',
+      vehicleInfo: order.vehicles ? 
+        `${order.vehicles.year} ${order.vehicles.make} ${order.vehicles.model}` : 
+        'Unknown Vehicle'
+    }));
+  } catch (error) {
+    console.error('Error in searchWorkOrders:', error);
+    return [];
+  }
 };
