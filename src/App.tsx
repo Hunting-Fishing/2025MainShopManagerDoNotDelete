@@ -52,6 +52,7 @@ import FormPreview from './pages/FormPreview';
 import FormEditor from './pages/FormEditor';
 import FormBuilder from './pages/FormBuilder';
 import VehicleInspectionForm from './pages/VehicleInspectionForm';
+import { CustomerRedirect } from './components/routing/CustomerRedirect';
 
 import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
 import FeedbackFormEditorPage from './pages/feedback/FeedbackFormEditorPage';
@@ -182,12 +183,45 @@ function App() {
                     <Route path="invoices/:id" element={<InvoiceDetails />} />
                     <Route path="customers" element={<Customers />} />
                     <Route path="customers/create" element={<CreateCustomer />} />
-                    <Route path="customers/:id" element={<CustomerDetails />} />
-                    <Route path="customers/:id/edit" element={<EditCustomer />} />
-                    <Route path="customers/:id/service-history" element={<CustomerServiceHistory />} />
-                    <Route path="customers/:id/follow-ups" element={<CustomerFollowUps />} />
-                    <Route path="customers/:id/analytics" element={<CustomerAnalytics />} />
-                    <Route path="customers/:id/vehicles/:vehicleId" element={<VehicleDetails />} />
+                    
+                    <Route path="customers/undefined" element={<Navigate to="/customers" replace />} />
+                    <Route path="customers/:id" element={
+                      <>
+                        <CustomerRedirect />
+                        <CustomerDetails />
+                      </>
+                    } />
+                    <Route path="customers/:id/edit" element={
+                      <>
+                        <CustomerRedirect />
+                        <EditCustomer />
+                      </>
+                    } />
+                    <Route path="customers/:id/service-history" element={
+                      <>
+                        <CustomerRedirect />
+                        <CustomerServiceHistory />
+                      </>
+                    } />
+                    <Route path="customers/:id/follow-ups" element={
+                      <>
+                        <CustomerRedirect />
+                        <CustomerFollowUps />
+                      </>
+                    } />
+                    <Route path="customers/:id/analytics" element={
+                      <>
+                        <CustomerRedirect />
+                        <CustomerAnalytics />
+                      </>
+                    } />
+                    <Route path="customers/:id/vehicles/:vehicleId" element={
+                      <>
+                        <CustomerRedirect />
+                        <VehicleDetails />
+                      </>
+                    } />
+                    
                     <Route path="equipment" element={<Equipment />} />
                     <Route path="equipment/:id" element={<EquipmentDetails />} />
                     <Route path="inventory" element={<Inventory />} />

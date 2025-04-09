@@ -16,16 +16,16 @@ interface CustomerVehiclesTabProps {
 
 export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ customer }) => {
   const navigate = useNavigate();
-  const vehicles = customer.vehicles || [];
+  const vehicles = customer?.vehicles || [];
   
   console.log('Rendering CustomerVehiclesTab with vehicles:', vehicles);
 
   // Validate customer ID exists
-  if (!customer.id) {
+  if (!customer || !customer.id) {
     return (
       <Alert variant="warning" className="my-4">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Missing Customer ID</AlertTitle>
+        <AlertTitle>Missing Customer Information</AlertTitle>
         <AlertDescription>
           Cannot display vehicles - customer information is incomplete.
         </AlertDescription>
@@ -62,7 +62,7 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
         <Car className="w-16 h-16 mb-4 text-muted-foreground" />
         <h3 className="text-lg font-medium mb-2">No Vehicles Found</h3>
         <p className="text-muted-foreground mb-6">This customer doesn't have any vehicles registered yet.</p>
-        <Button onClick={handleAddVehicle}>
+        <Button onClick={handleAddVehicle} className="bg-esm-blue-600 hover:bg-esm-blue-700 text-white">
           <Plus className="h-4 w-4 mr-2" />
           Add Vehicle
         </Button>
@@ -75,7 +75,7 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Customer Vehicles</h3>
         <div className="flex gap-2">
-          <Button onClick={handleAddVehicle}>
+          <Button onClick={handleAddVehicle} className="bg-esm-blue-600 hover:bg-esm-blue-700 text-white">
             <Plus className="h-4 w-4 mr-2" />
             Add Vehicle
           </Button>
@@ -101,7 +101,7 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
           <TableBody>
             {vehicles.map((vehicle, index) => (
               <TableRow 
-                key={vehicle.id || index} 
+                key={vehicle.id || `vehicle-${index}`} 
                 className="hover:bg-muted/50 cursor-pointer" 
                 onClick={() => vehicle.id ? handleVehicleClick(vehicle.id) : null}
               >

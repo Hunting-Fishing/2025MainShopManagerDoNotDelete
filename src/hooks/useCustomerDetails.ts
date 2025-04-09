@@ -22,12 +22,14 @@ export const useCustomerDetails = (id?: string) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (id) {
-      loadCustomerDetails(id);
-    } else {
-      setError("Missing customer ID");
+    // Validate ID before making any API calls
+    if (!id || id === "undefined") {
+      setError("Invalid customer ID provided");
       setLoading(false);
+      return;
     }
+    
+    loadCustomerDetails(id);
   }, [id]);
 
   const loadCustomerDetails = async (customerId: string) => {
@@ -35,7 +37,7 @@ export const useCustomerDetails = (id?: string) => {
     setError(null);
     
     try {
-      if (!customerId) {
+      if (!customerId || customerId === "undefined") {
         throw new Error("Invalid customer ID provided");
       }
       
@@ -149,10 +151,10 @@ export const useCustomerDetails = (id?: string) => {
 
   // Function to refresh customer data
   const refreshCustomerData = useCallback(async () => {
-    if (id) {
+    if (id && id !== "undefined") {
       loadCustomerDetails(id);
     } else {
-      setError("Cannot refresh: Missing customer ID");
+      setError("Cannot refresh: Missing or invalid customer ID");
       toast({
         title: "Error",
         description: "Cannot refresh customer data: Missing ID",

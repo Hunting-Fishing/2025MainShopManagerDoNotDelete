@@ -6,13 +6,22 @@ import { AddInteractionDialog } from "@/components/interactions/AddInteractionDi
 import { CustomerDetailsHeader } from "@/components/customers/details/CustomerDetailsHeader";
 import { CustomerDetailsTabs } from "@/components/customers/details/CustomerDetailsTabs";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Early validation - redirect if no ID or "undefined" ID
+  useEffect(() => {
+    if (!id || id === "undefined") {
+      console.error("Invalid customer ID in URL:", id);
+      navigate("/customers", { replace: true });
+    }
+  }, [id, navigate]);
+  
   const {
     customer,
     customerWorkOrders,
@@ -41,10 +50,31 @@ export default function CustomerDetails() {
   
   // Refresh customer data when arriving at this page
   useEffect(() => {
-    if (id) {
+    if (id && id !== "undefined") {
       refreshCustomerData();
     }
   }, [id, refreshCustomerData]);
+
+  if (!id || id === "undefined") {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive" className="animate-pulse">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Missing Customer ID</AlertTitle>
+          <AlertDescription>
+            No customer ID was provided. You'll be redirected to the customers list.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="flex justify-center mt-6">
+          <Button onClick={() => navigate('/customers')} variant="default">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go to Customers List
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -67,6 +97,7 @@ export default function CustomerDetails() {
         
         <div className="flex justify-center mt-6">
           <Button onClick={() => navigate('/customers')} variant="default">
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Return to Customers List
           </Button>
         </div>

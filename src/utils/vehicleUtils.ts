@@ -1,20 +1,23 @@
 
 import { VinDecodeResult } from "@/types/vehicle";
-import { mockVinDatabase } from "@/data/vinDatabase";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 /**
- * Decodes a VIN using our mock VIN database
- * In a real app, this would call an API
+ * Decodes a VIN using Supabase database
  */
 export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> => {
-  // For demo purposes, we're using a mock database with VIN prefixes
   try {
     console.log("Decoding VIN:", vin);
     
     // Validate input
     if (!vin) {
       console.error("Missing VIN");
+      toast({
+        title: "Error",
+        description: "VIN is required",
+        variant: "destructive",
+      });
       return null;
     }
     
@@ -29,16 +32,26 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
       return null;
     }
     
-    // Find a matching entry in our mock database using the first 8 chars of the VIN
-    const prefix = vin.substring(0, 8);
-    const match = mockVinDatabase[prefix];
+    // Query the vin_data table in Supabase
+    const { data, error } = await supabase
+      .from('vin_data')
+      .select('*')
+      .or(`prefix.eq.${vin.substring(0, 8)},full_vin.eq.${vin}`)
+      .limit(1);
     
-    if (match) {
-      console.log("VIN match found:", match);
-      return {
-        ...match
-        // Note: we don't add the VIN property here as it's not in the VinDecodeResult type
-      };
+    if (error) {
+      console.error("Database error during VIN lookup:", error);
+      toast({
+        title: "Database Error",
+        description: "Could not look up VIN information",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    if (data && data.length > 0) {
+      console.log("VIN match found:", data[0]);
+      return data[0] as VinDecodeResult;
     }
     
     // No match found
