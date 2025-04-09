@@ -32,7 +32,7 @@ export interface VehicleStyleConfig {
 
 // Map of vehicle body styles to their configurations
 export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
-  sedan: {
+  [VehicleBodyStyle.Sedan]: {
     imagePath: '/lovable-uploads/bd96d9af-12db-494e-8e7f-609805c801a0.png',
     altText: 'Sedan vehicle diagram',
     panels: [
@@ -50,7 +50,7 @@ export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
       { id: 'front_right_fender', name: 'Right Front Fender' }
     ]
   },
-  suv: {
+  [VehicleBodyStyle.SUV]: {
     imagePath: '/lovable-uploads/332913db-cb57-4dbd-b290-3925552a3911.png',
     altText: 'SUV vehicle diagram',
     panels: [
@@ -69,7 +69,7 @@ export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
       { id: 'front_right_fender', name: 'Right Front Fender' }
     ]
   },
-  hatchback: {
+  [VehicleBodyStyle.Hatchback]: {
     imagePath: '/lovable-uploads/aa1d5122-b95b-4b2e-9109-0d70e0808da6.png',
     altText: 'Hatchback vehicle diagram',
     panels: [
@@ -87,7 +87,7 @@ export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
       { id: 'front_right_fender', name: 'Right Front Fender' }
     ]
   },
-  truck: {
+  [VehicleBodyStyle.Truck]: {
     imagePath: '/lovable-uploads/57aefd54-8d89-4b93-b523-5bd2474d84af.png',
     altText: 'Truck vehicle diagram',
     panels: [
@@ -103,7 +103,7 @@ export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
       { id: 'front_right_fender', name: 'Right Front Fender' }
     ]
   },
-  van: {
+  [VehicleBodyStyle.Van]: {
     imagePath: '/lovable-uploads/332913db-cb57-4dbd-b290-3925552a3911.png',
     altText: 'Van vehicle diagram',
     panels: [
@@ -122,7 +122,7 @@ export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
       { id: 'front_right_fender', name: 'Right Front Fender' }
     ]
   },
-  unknown: {
+  [VehicleBodyStyle.Unknown]: {
     imagePath: '/lovable-uploads/bd96d9af-12db-494e-8e7f-609805c801a0.png',
     altText: 'Generic vehicle diagram',
     panels: [
@@ -135,3 +135,4 @@ export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
     ]
   }
 };
+

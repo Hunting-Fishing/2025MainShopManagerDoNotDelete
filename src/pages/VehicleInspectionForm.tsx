@@ -369,7 +369,7 @@ export default function VehicleInspectionForm() {
           
           <TabsContent value="exterior" className="space-y-4 mt-0 animate-fade-in">
             <ExteriorCheckTab 
-              vehicleBodyStyle={inspectionData.vehicleBodyStyle || 'sedan'}
+              vehicleBodyStyle={inspectionData.vehicleBodyStyle || VehicleBodyStyle.Sedan}
               damageAreas={inspectionData.damageAreas || []}
               onDamageAreasChange={handleDamageAreaUpdate}
             />

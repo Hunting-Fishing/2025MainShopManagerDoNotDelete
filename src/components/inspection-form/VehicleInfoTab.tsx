@@ -57,7 +57,7 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
             year: data.year ? data.year.toString() : new Date().getFullYear().toString(),
             licensePlate: data.license_plate || '',
             color: data.color || '',
-            bodyStyle: initialBodyStyle || "sedan",
+            bodyStyle: initialBodyStyle || VehicleBodyStyle.Sedan,
             mileage: ""  // Set mileage if available in your schema
           });
           
@@ -281,11 +281,11 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
                     <SelectValue placeholder="Select body style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sedan">Sedan</SelectItem>
-                    <SelectItem value="suv">SUV</SelectItem>
-                    <SelectItem value="hatchback">Hatchback</SelectItem>
-                    <SelectItem value="truck">Truck</SelectItem>
-                    <SelectItem value="van">Van</SelectItem>
+                    <SelectItem value={VehicleBodyStyle.Sedan}>Sedan</SelectItem>
+                    <SelectItem value={VehicleBodyStyle.SUV}>SUV</SelectItem>
+                    <SelectItem value={VehicleBodyStyle.Hatchback}>Hatchback</SelectItem>
+                    <SelectItem value={VehicleBodyStyle.Truck}>Truck</SelectItem>
+                    <SelectItem value={VehicleBodyStyle.Van}>Van</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
