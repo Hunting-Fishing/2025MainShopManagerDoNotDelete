@@ -316,6 +316,84 @@ export type Database = {
           },
         ]
       }
+      customer_documents: {
+        Row: {
+          category: string | null
+          created_at: string
+          customer_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          is_shared: boolean
+          original_name: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          uploaded_by: string
+          uploaded_by_name: string
+          version: number
+          version_notes: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          is_shared?: boolean
+          original_name: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          uploaded_by: string
+          uploaded_by_name: string
+          version?: number
+          version_notes?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          is_shared?: boolean
+          original_name?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+          uploaded_by_name?: string
+          version?: number
+          version_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_documents_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "document_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_loyalty: {
         Row: {
           created_at: string
@@ -556,6 +634,101 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_categories: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      document_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          usage_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          usage_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      document_versions: {
+        Row: {
+          created_at: string
+          document_id: string
+          file_path: string
+          file_size: number
+          id: string
+          uploaded_by: string
+          uploaded_by_name: string
+          version_notes: string | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          file_path: string
+          file_size: number
+          id?: string
+          uploaded_by: string
+          uploaded_by_name: string
+          version_notes?: string | null
+          version_number: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          uploaded_by?: string
+          uploaded_by_name?: string
+          version_notes?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "customer_documents"
             referencedColumns: ["id"]
           },
         ]

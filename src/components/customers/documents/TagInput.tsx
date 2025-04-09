@@ -1,76 +1,97 @@
 
-import React, { useState, KeyboardEvent } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TagInputProps {
   value: string[];
-  onChange: (value: string[]) => void;
+  onChange: (tags: string[]) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export const TagInput: React.FC<TagInputProps> = ({
   value,
   onChange,
-  placeholder = "Add tag...",
-  className
+  placeholder = "Add tags...",
+  className,
+  disabled = false
 }) => {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    // Add tag on Enter or comma
-    if ((e.key === 'Enter' || e.key === ',') && inputValue.trim()) {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && inputValue.trim()) {
       e.preventDefault();
-      
-      // Normalize tag (trim and lowercase)
-      const newTag = inputValue.trim().toLowerCase();
-      
-      // Check if tag already exists
-      if (!value.includes(newTag)) {
-        onChange([...value, newTag]);
-      }
-      
-      setInputValue('');
+      addTag(inputValue);
+    } else if (e.key === "Backspace" && !inputValue && value.length > 0) {
+      removeTag(value[value.length - 1]);
     }
-    
-    // Remove last tag on Backspace if input is empty
-    if (e.key === 'Backspace' && !inputValue && value.length > 0) {
-      onChange(value.slice(0, -1));
+  };
+
+  const addTag = (tag: string) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !value.includes(trimmedTag)) {
+      onChange([...value, trimmedTag]);
+      setInputValue("");
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    onChange(value.filter(tag => tag !== tagToRemove));
+    onChange(value.filter((tag) => tag !== tagToRemove));
+  };
+
+  const handleContainerClick = () => {
+    inputRef.current?.focus();
   };
 
   return (
-    <div className={cn("flex flex-wrap gap-2 p-1 border rounded-md bg-background", className)}>
-      {value.map(tag => (
-        <Badge 
-          key={tag} 
-          variant="secondary"
-          className="text-xs font-normal"
+    <div
+      className={cn(
+        "flex flex-wrap gap-1.5 p-2 border rounded-md bg-background min-h-10 cursor-text",
+        disabled && "opacity-70 cursor-not-allowed",
+        className
+      )}
+      onClick={handleContainerClick}
+    >
+      {value.map((tag) => (
+        <Badge
+          key={tag}
+          variant="outline"
+          className="px-2 py-0.5 text-xs flex items-center gap-1"
         >
-          {tag}
-          <button
-            type="button"
-            onClick={() => removeTag(tag)}
-            className="ml-1 rounded-full hover:bg-muted"
-          >
-            <X className="h-3 w-3" />
-          </button>
+          <span>{tag}</span>
+          {!disabled && (
+            <X
+              size={14}
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeTag(tag);
+              }}
+            />
+          )}
         </Badge>
       ))}
-      <Input
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleInputKeyDown}
-        placeholder={value.length === 0 ? placeholder : ""}
-        className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1 py-0 h-6 text-sm"
-      />
+      {!disabled && (
+        <Input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          className="flex-1 min-w-[80px] border-none shadow-none h-7 p-0 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+          placeholder={value.length === 0 ? placeholder : ""}
+          disabled={disabled}
+        />
+      )}
     </div>
   );
 };

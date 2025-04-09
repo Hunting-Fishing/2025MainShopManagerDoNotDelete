@@ -13,8 +13,9 @@ import { CustomerNotesTimeline } from "../notes/CustomerNotesTimeline";
 import { CommunicationHistory } from "../communications/CommunicationHistory";
 import { CustomerVehiclesTab } from "../vehicles/CustomerVehiclesTab";
 import { getCustomerNotes } from "@/services/customers";
-import { Car } from "lucide-react";
+import { Car, FileText } from "lucide-react";
 import { CustomerSummaryCard } from "../CustomerSummaryCard";
+import { CustomerDocumentsTab } from "../documents/CustomerDocumentsTab";
 
 interface CustomerDetailsTabsProps {
   customer: Customer & { name?: string, status?: string, lastServiceDate?: string };
@@ -74,6 +75,9 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
             <Badge className="ml-2 bg-amber-100 text-amber-800">{vehicleCount}</Badge>
           )}
         </TabsTrigger>
+        <TabsTrigger value="documents">
+          Documents
+        </TabsTrigger>
         <TabsTrigger value="notes">
           Notes
           {customerNotes.length > 0 && (
@@ -83,7 +87,7 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
         <TabsTrigger value="communications">
           Communications
           {customerCommunications.length > 0 && (
-            <Badge className="ml-2 bg-green-100 text-green-800">{customerCommunications.length}</Badge>
+            <Badge className="ml-2 bg-green-100 text-green-800">{customerC ommunications.length}</Badge>
           )}
         </TabsTrigger>
         <TabsTrigger value="interactions">
@@ -109,6 +113,10 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       
       <TabsContent value="vehicles" className="mt-6">
         <CustomerVehiclesTab customer={customer} />
+      </TabsContent>
+      
+      <TabsContent value="documents" className="mt-6">
+        <CustomerDocumentsTab customer={customer} />
       </TabsContent>
       
       <TabsContent value="notes" className="mt-6">
