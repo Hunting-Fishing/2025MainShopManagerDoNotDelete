@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
 
+// Define a standalone interface just for this component to avoid circular dependencies
 interface VehicleInteraction {
   id: string;
   date: string;
@@ -14,6 +15,7 @@ interface VehicleInteraction {
 }
 
 export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
+  // Explicitly type the state to avoid deep type instantiation issues
   const [interactions, setInteractions] = useState<VehicleInteraction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +33,16 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          setInteractions(data || []);
+          // Map the data to our simplified VehicleInteraction type
+          const mappedInteractions: VehicleInteraction[] = (data || []).map(item => ({
+            id: item.id,
+            date: item.date,
+            type: item.type,
+            staff_member_name: item.staff_member_name,
+            description: item.description
+          }));
+          
+          setInteractions(mappedInteractions);
         }
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);
