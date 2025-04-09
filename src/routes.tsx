@@ -12,7 +12,7 @@ import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 
 // Create a context provider component if it doesn't exist
 const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
+  return <CustomerDataProvider>{children}</CustomerDataProvider>;
 };
 
 export const router = createBrowserRouter([

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ export default function Customers() {
   const [connectionOk, setConnectionOk] = useState<boolean | null>(null);
   const { toast } = useToast();
   
-  // First check Supabase connection
   useEffect(() => {
     const checkConnection = async () => {
       const isConnected = await checkSupabaseConnection();
@@ -74,7 +72,6 @@ export default function Customers() {
   }, [toast, connectionOk]);
   
   useEffect(() => {
-    // Apply filters whenever customers or filters change
     setFilteredCustomers(filterCustomers(customers, filters));
   }, [customers, filters]);
 
