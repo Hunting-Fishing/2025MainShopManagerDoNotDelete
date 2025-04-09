@@ -22,7 +22,7 @@ export const getReferralSources = async (): Promise<ReferralSource[]> => {
     throw error;
   }
 
-  return data || [];
+  return data as ReferralSource[];
 };
 
 /**
@@ -40,7 +40,7 @@ export const getActiveReferralSources = async (): Promise<ReferralSource[]> => {
     throw error;
   }
 
-  return data || [];
+  return data as ReferralSource[];
 };
 
 /**
@@ -66,7 +66,7 @@ export const createCustomerReferral = async (referral: {
     throw error;
   }
 
-  return data;
+  return data as CustomerReferral;
 };
 
 /**
@@ -88,7 +88,7 @@ export const updateCustomerReferral = async (
     throw error;
   }
 
-  return data;
+  return data as CustomerReferral;
 };
 
 /**
@@ -109,7 +109,7 @@ export const processReferralReward = async (
     throw error;
   }
 
-  return data;
+  return data as string;
 };
 
 /**
@@ -127,7 +127,7 @@ export const getReferralsByReferrer = async (referrerId: string): Promise<Custom
     throw error;
   }
 
-  return data || [];
+  return data as CustomerReferralView[];
 };
 
 /**
@@ -145,7 +145,7 @@ export const getReferralsForCustomer = async (referredId: string): Promise<Custo
     throw error;
   }
 
-  return data || [];
+  return data as CustomerReferralView[];
 };
 
 /**
@@ -162,7 +162,7 @@ export const getReferralTransactions = async (): Promise<ReferralTransaction[]> 
     throw error;
   }
 
-  return data || [];
+  return data as ReferralTransaction[];
 };
 
 /**
@@ -182,7 +182,7 @@ export const getCustomerReferralTransactions = async (
     throw error;
   }
 
-  return data || [];
+  return data as ReferralTransaction[];
 };
 
 /**

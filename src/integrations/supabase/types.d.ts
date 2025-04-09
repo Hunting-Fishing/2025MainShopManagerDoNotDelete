@@ -416,6 +416,182 @@ export interface Database {
           created_at?: string
         }
       }
-    }
-  }
+      referral_sources: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      
+      customer_referrals: {
+        Row: {
+          id: string;
+          referrer_id: string;
+          referred_id: string;
+          referral_date: string;
+          status: string;
+          converted_at: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          referrer_id: string;
+          referred_id: string;
+          referral_date?: string;
+          status?: string;
+          converted_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          referrer_id?: string;
+          referred_id?: string;
+          referral_date?: string;
+          status?: string;
+          converted_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_referrals_referrer_id_fkey";
+            columns: ["referrer_id"];
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "customer_referrals_referred_id_fkey";
+            columns: ["referred_id"];
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      
+      referral_transactions: {
+        Row: {
+          id: string;
+          referral_id: string;
+          referrer_id: string;
+          referred_id: string;
+          points_awarded: number;
+          transaction_date: string;
+          transaction_type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          referral_id: string;
+          referrer_id: string;
+          referred_id: string;
+          points_awarded?: number;
+          transaction_date?: string;
+          transaction_type: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          referral_id?: string;
+          referrer_id?: string;
+          referred_id?: string;
+          points_awarded?: number;
+          transaction_date?: string;
+          transaction_type?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referral_transactions_referral_id_fkey";
+            columns: ["referral_id"];
+            referencedRelation: "customer_referrals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referral_transactions_referrer_id_fkey";
+            columns: ["referrer_id"];
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referral_transactions_referred_id_fkey";
+            columns: ["referred_id"];
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+    };
+    
+    Views: {
+      customer_referrals_view: {
+        Row: {
+          id: string;
+          referrer_id: string;
+          referrer_first_name: string;
+          referrer_last_name: string;
+          referrer_email: string;
+          referred_id: string;
+          referred_first_name: string;
+          referred_last_name: string;
+          referred_email: string;
+          referral_date: string;
+          status: string;
+          converted_at: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_referrals_referrer_id_fkey";
+            columns: ["referrer_id"];
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "customer_referrals_referred_id_fkey";
+            columns: ["referred_id"];
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+    };
+    
+    Functions: {
+      process_referral_reward: {
+        Args: {
+          referral_id: string;
+          points?: number;
+        };
+        Returns: string;
+      };
+    };
+  };
 }

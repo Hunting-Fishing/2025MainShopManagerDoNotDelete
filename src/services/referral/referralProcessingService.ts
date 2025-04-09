@@ -32,7 +32,7 @@ export const convertReferral = async (referralId: string): Promise<{ success: bo
       message: `Referral converted successfully. ${result.points_awarded} points awarded.`,
       data: result 
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error converting referral:", error);
     return { 
       success: false, 
@@ -72,7 +72,7 @@ export const cancelReferral = async (referralId: string): Promise<{ success: boo
       message: 'Referral cancelled successfully',
       data: result 
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error cancelling referral:", error);
     return { 
       success: false, 
