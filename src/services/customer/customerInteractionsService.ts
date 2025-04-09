@@ -73,6 +73,7 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
   try {
     console.log("Fetching interactions for vehicle:", vehicleId);
     
+    // Use specific field selection instead of * to avoid deep type instantiation
     const { data, error } = await supabase
       .from("customer_interactions")
       .select(`
@@ -102,12 +103,24 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
     
     console.log("Retrieved vehicle interactions:", data);
     
-    // Ensure proper type casting
-    const interactions = (data || []).map(interaction => ({
-      ...interaction,
-      type: interaction.type as InteractionType,
-      status: interaction.status as InteractionStatus
-    })) as CustomerInteraction[];
+    // Transform the response to match the CustomerInteraction type
+    const interactions: CustomerInteraction[] = (data || []).map(item => ({
+      id: item.id,
+      customer_id: item.customer_id,
+      customer_name: item.customer_name,
+      date: item.date,
+      type: item.type as InteractionType,
+      description: item.description,
+      staff_member_id: item.staff_member_id,
+      staff_member_name: item.staff_member_name,
+      status: item.status as InteractionStatus,
+      notes: item.notes,
+      related_work_order_id: item.related_work_order_id,
+      follow_up_date: item.follow_up_date,
+      follow_up_completed: item.follow_up_completed,
+      created_at: item.created_at,
+      updated_at: item.updated_at
+    }));
     
     return interactions;
   } catch (error) {
