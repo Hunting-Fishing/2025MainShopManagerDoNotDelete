@@ -34,6 +34,7 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           setInteractions([]);
         } else {
           // Map the data to our simplified VehicleInteraction type
+          // This breaks the potential circular dependency
           const mappedInteractions: VehicleInteraction[] = (data || []).map(item => ({
             id: item.id,
             date: item.date,
