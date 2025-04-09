@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { CustomerInteraction, InteractionType, InteractionStatus } from "@/types/interaction";
 
@@ -67,21 +68,37 @@ export const addCustomerInteraction = async (
   }
 };
 
-// Get vehicle interactions - Complete rewrite to avoid deep type instantiation
+// Get vehicle interactions - Modified to filter by vehicle_id from related_work_order_id
 export const getVehicleInteractions = async (vehicleId: string): Promise<CustomerInteraction[]> => {
   try {
     console.log("Fetching interactions for vehicle:", vehicleId);
     
-    // Using a different approach to avoid deep type instantiation
+    // Since vehicle_id doesn't exist in the table, we need to modify our approach
+    // We'll get all interactions and then filter for work_orders related to this vehicle
+    const { data: workOrders, error: workOrderError } = await supabase
+      .from('work_orders')
+      .select('id')
+      .eq('vehicle_id', vehicleId);
+      
+    if (workOrderError) {
+      console.error("Error fetching work orders for vehicle:", workOrderError);
+      throw workOrderError;
+    }
+    
+    // Extract work order IDs
+    const workOrderIds = workOrders?.map(wo => wo.id) || [];
+    console.log(`Found ${workOrderIds.length} work orders for vehicle`);
+    
+    // If no work orders, return empty array
+    if (workOrderIds.length === 0) {
+      return [];
+    }
+    
+    // Get interactions related to these work orders
     const { data, error } = await supabase
       .from("customer_interactions")
-      .select(`
-        id, customer_id, customer_name, date, type, description, 
-        staff_member_id, staff_member_name, status, notes, 
-        related_work_order_id, follow_up_date, follow_up_completed, 
-        created_at, updated_at, vehicle_id
-      `)
-      .eq("vehicle_id", vehicleId)
+      .select("*")
+      .in("related_work_order_id", workOrderIds)
       .order("date", { ascending: false });
     
     if (error) {
@@ -108,7 +125,8 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
       follow_up_completed: item.follow_up_completed,
       created_at: item.created_at,
       updated_at: item.updated_at,
-      vehicle_id: item.vehicle_id
+      // Add the vehicle_id property for UI consistency
+      vehicle_id: vehicleId
     }));
     
     return interactions;
