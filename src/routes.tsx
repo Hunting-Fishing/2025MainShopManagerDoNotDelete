@@ -7,6 +7,7 @@ import { VehicleDetailsPage } from "./components/customers/vehicles/VehicleDetai
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import EditCustomer from "./pages/EditCustomer";
+import CreateCustomer from "./pages/CreateCustomer";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 
 // Create a context provider component if it doesn't exist
@@ -34,7 +35,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "customers/new",
-        element: <>Create Customer</>,
+        element: <CreateCustomer />,
       },
       {
         path: "customers/:customerId",
