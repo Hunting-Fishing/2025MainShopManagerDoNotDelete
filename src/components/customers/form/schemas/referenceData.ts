@@ -70,3 +70,15 @@ export const creditTermsOptions = [
 
 // Empty predefined tags since we're using database tags now
 export const predefinedTags = [];
+
+// Export variables with names matching imports in CustomerFormSchema.ts
+export const paymentMethods = paymentMethodOptions;
+export const businessTypes = businessTypeOptions;
+export const businessIndustries = industryOptions;
+export const serviceTypes = [
+  { value: "maintenance", label: "Regular Maintenance" },
+  { value: "repair", label: "Repair" },
+  { value: "emergency", label: "Emergency Service" },
+  { value: "inspection", label: "Inspection" },
+  { value: "upgrade", label: "Upgrade/Modification" }
+];
