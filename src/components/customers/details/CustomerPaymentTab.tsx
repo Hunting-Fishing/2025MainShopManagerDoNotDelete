@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentHistory } from '@/hooks/usePaymentHistory';
 import { PaymentMethodsList } from '@/components/payments/PaymentMethodsList';
@@ -65,7 +65,7 @@ export function CustomerPaymentTab({ customer }: CustomerPaymentTabProps) {
     <div className="space-y-8">
       <PaymentMethodsList 
         customerId={customer.id}
-        paymentMethods={paymentMethods}
+        paymentMethods={paymentMethods || []}
         onPaymentMethodAdded={handlePaymentMethodAdded}
         onPaymentMethodUpdated={handlePaymentMethodUpdated}
         onPaymentMethodDeleted={handlePaymentMethodDeleted}

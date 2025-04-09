@@ -1,3 +1,4 @@
+
 export interface Invoice {
   id: string;
   workOrderId?: string;
@@ -11,7 +12,7 @@ export interface Invoice {
   subtotal: number;
   tax: number;
   status: "draft" | "pending" | "paid" | "overdue" | "cancelled";
-  paymentMethod?: string;
+  paymentMethod: string; // Changed from optional to required
   date: string;
   dueDate: string;
   createdBy?: string;

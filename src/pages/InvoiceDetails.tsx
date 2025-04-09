@@ -66,7 +66,7 @@ export default function InvoiceDetails() {
           tax: data.tax,
           workOrderId: data.work_order_id,
           createdBy: data.created_by,
-          paymentMethod: data.payment_method || '',
+          paymentMethod: data.payment_method || '', // Ensure paymentMethod is always defined
           items: data.invoice_items || [],
         };
         

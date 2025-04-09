@@ -68,10 +68,13 @@ export function PaymentForm({ customerId, invoiceId, initialData, onSubmit }: Pa
     try {
       // Ensure we have the correct typing for PaymentFormValues
       const paymentValues: PaymentFormValues = {
-        ...values,
         amount: values.amount,
+        payment_method_id: values.payment_method_id,
         payment_type: values.payment_type as "full" | "partial" | "deposit" | "refund",
-        status: values.status as "pending" | "processed" | "failed" | "refunded"
+        status: values.status as "pending" | "processed" | "failed" | "refunded",
+        transaction_id: values.transaction_id,
+        transaction_date: values.transaction_date || format(new Date(), 'yyyy-MM-dd'),
+        notes: values.notes,
       };
       
       await onSubmit(paymentValues);
