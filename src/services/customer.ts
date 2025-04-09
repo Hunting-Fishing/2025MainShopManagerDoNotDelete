@@ -38,6 +38,4 @@ export const getCustomer = async (id: string): Promise<Customer | null> => {
   return data;
 };
 
-// Re-export from more specialized services
-export { getCustomerById, getAllCustomers } from './customer';
-export { updateCustomer } from './customer/customerUpdateService';
+// Don't import from './customer' as that would create a circular dependency

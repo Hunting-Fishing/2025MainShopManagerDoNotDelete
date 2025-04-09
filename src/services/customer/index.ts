@@ -6,7 +6,7 @@ export * from './customerNotesService';
 // Include any other customer service files here
 
 // Export the renamed functions to match what existing code expects
-export { getCustomer as getCustomerById } from './customerQueryService';
-export { getAllCustomers } from './customer/customerQueryService';
-export { searchCustomers } from './customer';
-export { updateCustomer } from './customer/customerUpdateService';
+export { getCustomerById } from './customerQueryService';
+export { getAllCustomers } from './customerQueryService';
+export { searchCustomers } from '../customer';  // referring to the parent directory
+export { updateCustomer } from './customerUpdateService';
