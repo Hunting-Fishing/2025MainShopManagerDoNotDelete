@@ -32,10 +32,9 @@ export const useVehicleData = () => {
       setError(null);
       
       try {
-        // Type assertion to handle the TypeScript error
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('vehicle_makes')
-          .select('id, make_id, make_display')
+          .select('*')
           .order('make_display');
         
         if (error) {
@@ -47,14 +46,14 @@ export const useVehicleData = () => {
           make_id: make.make_id,
           make_display: make.make_display,
           make_is_common: '1', // All makes in our DB are considered common
-          make_country: '' // We don't store country in our DB
+          make_country: make.country || '' // Use country if available
         }));
         
         setMakes(formattedMakes);
-        setLoading(false);
       } catch (err) {
         console.error("Error loading vehicle makes:", err);
         setError("Could not load vehicle makes");
+      } finally {
         setLoading(false);
       }
     };
@@ -72,10 +71,9 @@ export const useVehicleData = () => {
     setSelectedModel('');
     
     try {
-      // Type assertion to handle the TypeScript error
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('vehicle_models')
-        .select('id, model_id, model_display, make_id')
+        .select('*')
         .eq('make_id', make)
         .order('model_display');
       
@@ -90,13 +88,13 @@ export const useVehicleData = () => {
       }));
       
       setModels(formattedModels);
-      setLoading(false);
       return Promise.resolve();
     } catch (err) {
       console.error("Error fetching vehicle models:", err);
       setError("Could not load vehicle models");
-      setLoading(false);
       return Promise.reject(err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -118,13 +116,13 @@ export const useVehicleData = () => {
         }
       }
       
-      setLoading(false);
       return result;
     } catch (error) {
       console.error("Error in decodeVin:", error);
       setError("Failed to decode VIN");
-      setLoading(false);
       return null;
+    } finally {
+      setLoading(false);
     }
   }, [makes]);
 

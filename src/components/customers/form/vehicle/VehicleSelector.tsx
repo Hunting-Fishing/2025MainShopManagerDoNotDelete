@@ -48,10 +48,24 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           if (decodedData) {
             setDecodedVehicle(decodedData);
             
+            // Set all the decoded details in the form
             form.setValue(`vehicles.${index}.make`, decodedData.make || '');
             form.setValue(`vehicles.${index}.model`, decodedData.model || '');
             form.setValue(`vehicles.${index}.year`, decodedData.year || '');
             form.setValue(`vehicles.${index}.trim`, decodedData.trim || '');
+            form.setValue(`vehicles.${index}.transmission`, decodedData.transmission || '');
+            form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type || '');
+            form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type || '');
+            form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type || '');
+            form.setValue(`vehicles.${index}.engine`, decodedData.engine || '');
+            form.setValue(`vehicles.${index}.body_style`, decodedData.body_style || '');
+            form.setValue(`vehicles.${index}.country`, decodedData.country || '');
+            form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr || '');
+            
+            // If the make has changed, update the models
+            if (decodedData.make) {
+              fetchModels(decodedData.make);
+            }
             
             toast({
               title: "VIN Decoded Successfully",
@@ -71,7 +85,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     };
     
     handleVinDecode();
-  }, [vin, form, index, toast]);
+  }, [vin, form, index, toast, fetchModels]);
 
   return (
     <Card className="relative">
