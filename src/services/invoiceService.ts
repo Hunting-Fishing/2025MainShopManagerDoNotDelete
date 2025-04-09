@@ -9,7 +9,7 @@ export async function fetchInvoices() {
   try {
     const { data, error } = await supabase
       .from('invoices')
-      .select('*')
+      .select('*, invoice_items(*)')
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -38,7 +38,8 @@ export async function fetchInvoiceById(invoiceId: string) {
       .select(`
         *,
         items:invoice_items(*),
-        invoice_staff(*)
+        invoice_staff(*),
+        payments(*)
       `)
       .eq('id', invoiceId)
       .maybeSingle();
@@ -62,10 +63,26 @@ export async function fetchInvoiceById(invoiceId: string) {
 /**
  * Creates or updates an invoice with transaction support
  */
-export async function saveInvoice(invoice: Invoice, items: InvoiceItem[]) {
+export async function saveInvoice(invoice: Invoice, items: any[]) {
   // Start a transaction by creating a Supabase client
   // with explicit RPC call for transactions
   try {
+    // If customer_id is not set in invoice but we have customer information,
+    // try to look up the customer by name or create a new customer
+    if (!invoice.customer_id && invoice.customer) {
+      // Try to find the customer by name
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('id')
+        .or(`first_name.ilike.%${invoice.customer}%,last_name.ilike.%${invoice.customer}%`)
+        .limit(1)
+        .maybeSingle();
+        
+      if (existingCustomer) {
+        invoice.customer_id = existingCustomer.id;
+      }
+    }
+    
     // First save or update the invoice
     const { data: invoiceData, error: invoiceError } = await supabase
       .from('invoices')
@@ -74,6 +91,7 @@ export async function saveInvoice(invoice: Invoice, items: InvoiceItem[]) {
         customer: invoice.customer,
         customer_address: invoice.customerAddress,
         customer_email: invoice.customerEmail,
+        customer_id: invoice.customer_id,
         description: invoice.description, 
         notes: invoice.notes,
         date: invoice.date,
@@ -149,20 +167,10 @@ export async function saveInvoice(invoice: Invoice, items: InvoiceItem[]) {
       }
     }
     
-    toast({
-      title: "Invoice saved",
-      description: "Invoice has been saved successfully.",
-    });
-    
     return invoiceData;
-  } catch (err) {
-    console.error("Error saving invoice:", err);
-    toast({
-      title: "Error saving invoice",
-      description: "Failed to save invoice. Please try again.",
-      variant: "destructive",
-    });
-    throw err;
+  } catch (error) {
+    console.error('Error saving invoice:', error);
+    throw error;
   }
 }
 

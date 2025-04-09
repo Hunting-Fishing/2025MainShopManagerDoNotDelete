@@ -56,9 +56,50 @@ export default function CreateInvoice() {
     price: 0,
     total: 0
   });
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const dueDate = format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd');
+
+  // Fetch customers from the database
+  useEffect(() => {
+    async function fetchCustomers() {
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, first_name, last_name, email, address, city, state, postal_code');
+          
+        if (error) {
+          throw error;
+        }
+        
+        const formattedCustomers = (data || []).map(customer => ({
+          id: customer.id,
+          name: `${customer.first_name} ${customer.last_name}`,
+          email: customer.email,
+          address: [
+            customer.address,
+            customer.city,
+            customer.state,
+            customer.postal_code
+          ].filter(Boolean).join(', ')
+        }));
+        
+        setCustomers(formattedCustomers);
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+        toast({
+          title: "Failed to load customers",
+          description: "There was a problem loading customer data.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    fetchCustomers();
+  }, []);
 
   useEffect(() => {
     async function fetchWorkOrders() {
@@ -73,10 +114,11 @@ export default function CreateInvoice() {
         }
 
         // Cast to unknown first, then to WorkOrderData[] to handle the type conversion safely
-        const formattedWorkOrders = (data as unknown as WorkOrderData[]).map(wo => ({
+        const formattedWorkOrders = (data || []).map(wo => ({
           id: wo.id,
           customer: wo.customers ? `${wo.customers.first_name} ${wo.customers.last_name}` : 'Unknown Customer',
-          description: wo.description || 'No description'
+          description: wo.description || 'No description',
+          customer_id: wo.customer_id
         }));
 
         setWorkOrders(formattedWorkOrders);
@@ -94,6 +136,13 @@ export default function CreateInvoice() {
 
     fetchWorkOrders();
   }, []);
+
+  // Handle customer selection
+  const handleCustomerSelect = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    const customer = customers.find(c => c.id === customerId);
+    setSelectedCustomer(customer);
+  };
 
   const fetchWorkOrderInventoryItems = async (workOrderId: string) => {
     try {
@@ -164,10 +213,20 @@ export default function CreateInvoice() {
     setSelectedWorkOrder(workOrderId);
     
     if (workOrderId) {
-      const inventoryItems = await fetchWorkOrderInventoryItems(workOrderId) as DbInventoryItem[];
+      // Find the selected work order
+      const workOrder = workOrders.find(wo => wo.id === workOrderId);
+      
+      // If the work order has a customer_id, set the selected customer
+      if (workOrder && workOrder.customer_id) {
+        setSelectedCustomerId(workOrder.customer_id);
+        const customer = customers.find(c => c.id === workOrder.customer_id);
+        setSelectedCustomer(customer);
+      }
+      
+      const inventoryItems = await fetchWorkOrderInventoryItems(workOrderId) as any[];
       
       // Map DB field names to our type fields
-      const mappedItems: WorkOrderInventoryItem[] = inventoryItems.map((item: DbInventoryItem) => ({
+      const mappedItems: WorkOrderInventoryItem[] = inventoryItems.map((item) => ({
         id: item.id,
         name: item.name,
         sku: item.sku || "",
@@ -211,6 +270,7 @@ export default function CreateInvoice() {
         .insert({
           id: invoiceId,
           work_order_id: selectedWorkOrder || null,
+          customer_id: selectedCustomerId || null,
           customer: form.customer.value,
           customer_email: form.customerEmail.value,
           customer_address: form.customerAddress.value,
@@ -317,22 +377,61 @@ export default function CreateInvoice() {
                       </Select>
                     )}
                   </div>
+                  <div>
+                    <Label htmlFor="customer">Customer*</Label>
+                    <Select
+                      onValueChange={handleCustomerSelect}
+                      value={selectedCustomerId}
+                    >
+                      <SelectTrigger id="customer-select">
+                        <SelectValue placeholder="Select a customer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Manual Entry</SelectItem>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="customer">Customer Name*</Label>
-                    <Input id="customer" name="customer" placeholder="Customer name" required />
+                    <Input 
+                      id="customer" 
+                      name="customer" 
+                      placeholder="Customer name" 
+                      required 
+                      value={selectedCustomer?.name || ''}
+                      onChange={(e) => !selectedCustomerId && e.target.value}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="customerEmail">Customer Email</Label>
-                    <Input id="customerEmail" name="customerEmail" type="email" placeholder="Customer email" />
+                    <Input 
+                      id="customerEmail" 
+                      name="customerEmail" 
+                      type="email" 
+                      placeholder="Customer email" 
+                      value={selectedCustomer?.email || ''}
+                      onChange={(e) => !selectedCustomerId && e.target.value}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="customerAddress">Customer Address</Label>
-                  <Textarea id="customerAddress" name="customerAddress" placeholder="Customer address" />
+                  <Textarea 
+                    id="customerAddress" 
+                    name="customerAddress" 
+                    placeholder="Customer address"
+                    value={selectedCustomer?.address || ''}
+                    onChange={(e) => !selectedCustomerId && e.target.value}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -2051,6 +2051,7 @@ export type Database = {
           customer: string
           customer_address: string | null
           customer_email: string | null
+          customer_id: string | null
           date: string
           description: string | null
           due_date: string
@@ -2071,6 +2072,7 @@ export type Database = {
           customer: string
           customer_address?: string | null
           customer_email?: string | null
+          customer_id?: string | null
           date: string
           description?: string | null
           due_date: string
@@ -2091,6 +2093,7 @@ export type Database = {
           customer?: string
           customer_address?: string | null
           customer_email?: string | null
+          customer_id?: string | null
           date?: string
           description?: string | null
           due_date?: string
@@ -2105,7 +2108,15 @@ export type Database = {
           total?: number | null
           work_order_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loyalty_redemptions: {
         Row: {
@@ -2397,6 +2408,141 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          billing_address: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_name: string | null
+          billing_postal_code: string | null
+          billing_state: string | null
+          card_brand: string | null
+          card_last_four: string | null
+          created_at: string | null
+          customer_id: string
+          expiry_month: number | null
+          expiry_year: number | null
+          id: string
+          is_default: boolean | null
+          method_type: string
+          token_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postal_code?: string | null
+          billing_state?: string | null
+          card_brand?: string | null
+          card_last_four?: string | null
+          created_at?: string | null
+          customer_id: string
+          expiry_month?: number | null
+          expiry_year?: number | null
+          id?: string
+          is_default?: boolean | null
+          method_type: string
+          token_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postal_code?: string | null
+          billing_state?: string | null
+          card_brand?: string | null
+          card_last_four?: string | null
+          created_at?: string | null
+          customer_id?: string
+          expiry_month?: number | null
+          expiry_year?: number | null
+          id?: string
+          is_default?: boolean | null
+          method_type?: string
+          token_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_id: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_method_id: string | null
+          payment_type: string
+          status: string
+          transaction_date: string | null
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_method_id?: string | null
+          payment_type: string
+          status: string
+          transaction_date?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_method_id?: string | null
+          payment_type?: string
+          status?: string
+          transaction_date?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       permissions: {
         Row: {

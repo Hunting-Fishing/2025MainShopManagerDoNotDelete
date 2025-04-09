@@ -1,162 +1,106 @@
 
-import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
-import { CustomerInteraction } from "@/types/interaction";
-import { CustomerInfoCard } from "../CustomerInfoCard";
-import { EnhancedCustomerPreview } from "../EnhancedCustomerPreview";
-import { CustomerInteractionsTab } from "../CustomerInteractionsTab";
-import { CustomerServiceTab } from "../CustomerServiceTab";
-import { CustomerNotesTimeline } from "../notes/CustomerNotesTimeline";
-import { CommunicationHistory } from "../communications/CommunicationHistory";
-import { CustomerVehiclesTab } from "../vehicles/CustomerVehiclesTab";
-import { getCustomerNotes } from "@/services/customers";
-import { Car, FileText } from "lucide-react";
-import { CustomerSummaryCard } from "../CustomerSummaryCard";
-import { CustomerDocumentsTab } from "../documents/CustomerDocumentsTab";
-import { CustomerReferralsTab } from "../referrals/CustomerReferralsTab";
+import { CustomerProfileTab } from "./CustomerProfileTab";
+import { CustomerVehiclesTab } from "./CustomerVehiclesTab";
+import { CustomerNotesTab } from "./CustomerNotesTab";
+import { CustomerWorkOrdersTab } from "./CustomerWorkOrdersTab";
+import { CustomerHistoryTab } from "./CustomerHistoryTab";
+import { CustomerCommunicationsTab } from "./CustomerCommunicationsTab";
+import { Customer } from "@/types/customer";
+import { WorkOrder } from "@/types/workOrder";
+import { CustomerNote } from "@/types/customer";
+import { CustomerPaymentTab } from "./CustomerPaymentTab";
+import { CreditCard } from "lucide-react";
 
 interface CustomerDetailsTabsProps {
-  customer: Customer & { name?: string, status?: string, lastServiceDate?: string };
-  customerWorkOrders: any[];
-  customerInteractions: CustomerInteraction[];
-  customerCommunications: CustomerCommunication[];
+  customer: Customer;
+  customerWorkOrders: WorkOrder[];
+  customerInteractions: any[];
+  customerCommunications: any[];
   customerNotes: CustomerNote[];
-  setAddInteractionOpen: (open: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  onCommunicationAdded: (communication: CustomerCommunication) => void;
-  onNoteAdded: (note: CustomerNote) => void;
+  setAddInteractionOpen: (open: boolean) => void;
+  onCommunicationAdded?: () => void;
+  onNoteAdded?: () => void;
 }
 
-export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
+export function CustomerDetailsTabs({
   customer,
   customerWorkOrders,
   customerInteractions,
   customerCommunications,
   customerNotes,
-  setAddInteractionOpen,
   activeTab,
   setActiveTab,
+  setAddInteractionOpen,
   onCommunicationAdded,
   onNoteAdded
-}) => {
-  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
+}: CustomerDetailsTabsProps) {
+  const tabs = [
+    { id: "profile", label: "Profile" },
+    { id: "vehicles", label: "Vehicles" },
+    { id: "work-orders", label: "Work Orders" },
+    { id: "payments", label: "Payments" },
+    { id: "history", label: "Activity" },
+    { id: "communications", label: "Communications" },
+    { id: "notes", label: "Notes" }
+  ];
 
-  // Check if there's a tab in the URL and use it
-  useEffect(() => {
-    const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [searchParams, setActiveTab]);
-
-  // Update URL when tab changes
-  useEffect(() => {
-    if (activeTab !== 'overview') {
-      setSearchParams({ tab: activeTab });
-    } else {
-      setSearchParams({});
-    }
-  }, [activeTab, setSearchParams]);
-
-  // Calculate the number of vehicles for the badge
-  const vehicleCount = customer.vehicles?.length || 0;
-  
   return (
-    <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="overflow-x-auto">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="vehicles">
-          Vehicles
-          {vehicleCount > 0 && (
-            <Badge className="ml-2 bg-amber-100 text-amber-800">{vehicleCount}</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="documents">
-          Documents
-        </TabsTrigger>
-        <TabsTrigger value="referrals">
-          Referrals
-        </TabsTrigger>
-        <TabsTrigger value="notes">
-          Notes
-          {customerNotes.length > 0 && (
-            <Badge className="ml-2 bg-blue-100 text-blue-800">{customerNotes.length}</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="communications">
-          Communications
-          {customerCommunications.length > 0 && (
-            <Badge className="ml-2 bg-green-100 text-green-800">{customerCommunications.length}</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="interactions">
-          Interaction History 
-          {customerInteractions.length > 0 && (
-            <Badge className="ml-2 bg-blue-100 text-blue-800">{customerInteractions.length}</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="service">Service History</TabsTrigger>
+    <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="grid grid-cols-3 md:grid-cols-7">
+        {tabs.map(tab => (
+          <TabsTrigger key={tab.id} value={tab.id}>
+            {tab.id === 'payments' && <CreditCard className="h-4 w-4 mr-2 md:hidden" />}
+            <span className={tab.id === 'payments' ? "hidden md:inline" : ""}>{tab.label}</span>
+          </TabsTrigger>
+        ))}
       </TabsList>
       
-      <TabsContent value="overview" className="space-y-6 mt-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <CustomerInfoCard customer={customer} />
-          <CustomerSummaryCard
-            customer={customer}
-            customerWorkOrders={customerWorkOrders}
-            customerInteractions={customerInteractions}
-            setActiveTab={setActiveTab}
-          />
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="vehicles" className="mt-6">
-        <CustomerVehiclesTab customer={customer} />
-      </TabsContent>
-      
-      <TabsContent value="documents" className="mt-6">
-        <CustomerDocumentsTab customer={customer} />
+      <TabsContent value="profile" className="space-y-6 pt-4">
+        <CustomerProfileTab customer={customer} />
       </TabsContent>
 
-      <TabsContent value="referrals" className="mt-6">
-        <CustomerReferralsTab customer={customer} />
+      <TabsContent value="vehicles" className="space-y-4 pt-4">
+        <CustomerVehiclesTab customer={customer} />
       </TabsContent>
-      
-      <TabsContent value="notes" className="mt-6">
-        <CustomerNotesTimeline
-          customer={customer}
-          notes={customerNotes}
-          onNoteAdded={onNoteAdded}
-          isLoading={isLoadingNotes}
+
+      <TabsContent value="work-orders" className="space-y-4 pt-4">
+        <CustomerWorkOrdersTab 
+          customer={customer} 
+          workOrders={customerWorkOrders} 
         />
       </TabsContent>
       
-      <TabsContent value="communications" className="mt-6">
-        <CommunicationHistory
+      <TabsContent value="payments" className="pt-4">
+        <CustomerPaymentTab customer={customer} />
+      </TabsContent>
+
+      <TabsContent value="history" className="space-y-4 pt-4">
+        <CustomerHistoryTab
+          customer={customer}
+          interactions={customerInteractions}
+          onAddInteraction={() => setAddInteractionOpen(true)}
+        />
+      </TabsContent>
+      
+      <TabsContent value="communications" className="space-y-4 pt-4">
+        <CustomerCommunicationsTab
           customer={customer}
           communications={customerCommunications}
           onCommunicationAdded={onCommunicationAdded}
         />
       </TabsContent>
       
-      <TabsContent value="interactions" className="mt-6">
-        <CustomerInteractionsTab
-          customerInteractions={customerInteractions}
-          setAddInteractionOpen={setAddInteractionOpen}
-        />
-      </TabsContent>
-      
-      <TabsContent value="service" className="mt-6">
-        <CustomerServiceTab
-          customer={customer}
-          customerWorkOrders={customerWorkOrders}
+      <TabsContent value="notes" className="space-y-4 pt-4">
+        <CustomerNotesTab 
+          customer={customer} 
+          notes={customerNotes} 
+          onNoteAdded={onNoteAdded}
         />
       </TabsContent>
     </Tabs>
   );
-};
+}

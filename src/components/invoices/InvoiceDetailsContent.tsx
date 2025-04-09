@@ -14,6 +14,7 @@ interface InvoiceDetailsContentProps {
     total: number;
     hours?: boolean;
     paymentMethod: string;
+    customer_id?: string;
   };
   statusStyles: {
     [key: string]: { label: string; classes: string };
@@ -81,7 +82,8 @@ export function InvoiceDetailsContent({
         paymentMethod={invoice.paymentMethod || "N/A"}
         status={invoice.status}
         statusLabel={statusStyles[invoice.status as keyof typeof statusStyles].label}
-        createdBy={invoice.createdBy}
+        createdBy={invoice.createdBy || ""}
+        customerId={invoice.customer_id}
       />
       
       {/* Footer */}
