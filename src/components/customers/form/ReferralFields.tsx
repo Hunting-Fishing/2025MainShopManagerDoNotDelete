@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CustomerFormValues, referralSources } from "./CustomerFormSchema";
+import { CustomerFormValues } from "./CustomerFormSchema";
 import { HelpCircle, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getActiveReferralSources } from "@/services/referral/referralService";
+import { ReferralSource } from "@/types/referral";
 
 interface ReferralFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -30,9 +32,28 @@ interface ReferralFieldsProps {
 export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [showOtherField, setShowOtherField] = useState(false);
+  const [referralSources, setReferralSources] = useState<ReferralSource[]>([]);
+  const [loading, setLoading] = useState(false);
   
   // Watch for changes to referral source to show/hide the "Other" field
   const referralSource = form.watch("referral_source");
+  
+  // Fetch referral sources from the database
+  useEffect(() => {
+    const fetchReferralSources = async () => {
+      try {
+        setLoading(true);
+        const sources = await getActiveReferralSources();
+        setReferralSources(sources);
+      } catch (error) {
+        console.error("Error loading referral sources:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchReferralSources();
+  }, []);
   
   useEffect(() => {
     setShowOtherField(referralSource === "Other");
@@ -90,6 +111,7 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                     }
                   }}
                   value={field.value || "_none"}
+                  disabled={loading}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -99,8 +121,8 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
                   <SelectContent>
                     <SelectItem value="_none">Not specified</SelectItem>
                     {referralSources.map((source) => (
-                      <SelectItem key={source} value={source}>
-                        {source}
+                      <SelectItem key={source.id} value={source.name}>
+                        {source.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

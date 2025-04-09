@@ -473,6 +473,57 @@ export type Database = {
           },
         ]
       }
+      customer_referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          referral_date: string
+          referred_id: string
+          referrer_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          referral_date?: string
+          referred_id: string
+          referrer_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          referral_date?: string
+          referred_id?: string
+          referrer_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_segment_assignments: {
         Row: {
           created_at: string
@@ -2603,6 +2654,95 @@ export type Database = {
           },
         ]
       }
+      referral_sources: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      referral_transactions: {
+        Row: {
+          created_at: string
+          id: string
+          points_awarded: number
+          referral_id: string
+          referred_id: string
+          referrer_id: string
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          referral_id: string
+          referred_id: string
+          referrer_id: string
+          transaction_date?: string
+          transaction_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          referral_id?: string
+          referred_id?: string
+          referrer_id?: string
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_transactions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "customer_referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_transactions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "customer_referrals_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_transactions_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_transactions_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -3565,7 +3705,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      customer_referrals_view: {
+        Row: {
+          converted_at: string | null
+          created_at: string | null
+          id: string | null
+          notes: string | null
+          referral_date: string | null
+          referred_email: string | null
+          referred_first_name: string | null
+          referred_id: string | null
+          referred_last_name: string | null
+          referrer_email: string | null
+          referrer_first_name: string | null
+          referrer_id: string | null
+          referrer_last_name: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       assign_role_to_user: {
@@ -3676,6 +3850,10 @@ export type Database = {
           p_notes: string
           p_billable: boolean
         }
+        Returns: string
+      }
+      process_referral_reward: {
+        Args: { referral_id: string; points?: number }
         Returns: string
       }
       record_work_order_activity: {

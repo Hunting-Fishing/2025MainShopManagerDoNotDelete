@@ -16,6 +16,7 @@ import { getCustomerNotes } from "@/services/customers";
 import { Car, FileText } from "lucide-react";
 import { CustomerSummaryCard } from "../CustomerSummaryCard";
 import { CustomerDocumentsTab } from "../documents/CustomerDocumentsTab";
+import { CustomerReferralsTab } from "../referrals/CustomerReferralsTab";
 
 interface CustomerDetailsTabsProps {
   customer: Customer & { name?: string, status?: string, lastServiceDate?: string };
@@ -78,6 +79,9 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
         <TabsTrigger value="documents">
           Documents
         </TabsTrigger>
+        <TabsTrigger value="referrals">
+          Referrals
+        </TabsTrigger>
         <TabsTrigger value="notes">
           Notes
           {customerNotes.length > 0 && (
@@ -117,6 +121,10 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       
       <TabsContent value="documents" className="mt-6">
         <CustomerDocumentsTab customer={customer} />
+      </TabsContent>
+
+      <TabsContent value="referrals" className="mt-6">
+        <CustomerReferralsTab customer={customer} />
       </TabsContent>
       
       <TabsContent value="notes" className="mt-6">
