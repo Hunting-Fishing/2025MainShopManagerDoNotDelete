@@ -1,4 +1,3 @@
-
 // Define the inventory item interface for work orders
 export interface WorkOrderInventoryItem {
   id: string;
@@ -41,6 +40,23 @@ export interface WorkOrderTemplate {
   technician: string;
   notes?: string;
   inventoryItems?: WorkOrderInventoryItem[];
+}
+
+// Add the WorkOrder interface
+export interface WorkOrder {
+  id: string;
+  customer_id?: string;
+  vehicle_id?: string;
+  vehicle_make?: string;
+  vehicle_model?: string;
+  description?: string;
+  status: string;
+  service_type?: string;
+  created_at?: string;
+  updated_at?: string;
+  technician_id?: string;
+  total_cost?: number;
+  estimated_hours?: number;
 }
 
 // Other types related to work orders can be added here

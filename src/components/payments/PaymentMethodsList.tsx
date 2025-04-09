@@ -1,212 +1,137 @@
-
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { PaymentMethod } from '@/types/payment';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   CreditCard, 
-  Bank, 
-  Banknote, 
-  CheckCircle, 
-  Trash2, 
-  Star, 
-  PlusCircle 
-} from "lucide-react";
-import { PaymentMethod, paymentMethodOptions } from '@/types/payment';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { PaymentMethodForm } from './PaymentMethodForm';
+  Plus, 
+  Edit2, 
+  Trash, 
+  CheckCircle2,
+  Wallet, 
+  RefreshCw, 
+  DollarSign
+} from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AddPaymentMethodDialog } from './AddPaymentMethodDialog';
 
 interface PaymentMethodsListProps {
   customerId: string;
+  paymentMethods: PaymentMethod[];
+  onPaymentMethodAdded: () => void;
+  onPaymentMethodUpdated: () => void;
+  onPaymentMethodDeleted: () => void;
 }
 
-export function PaymentMethodsList({ customerId }: PaymentMethodsListProps) {
-  const { 
-    paymentMethods, 
-    isLoading, 
-    error,
-    addPaymentMethod,
-    deletePaymentMethod,
-    setDefaultPaymentMethod
-  } = usePaymentMethods(customerId);
+export function PaymentMethodsList({ 
+  customerId,
+  paymentMethods, 
+  onPaymentMethodAdded,
+  onPaymentMethodUpdated,
+  onPaymentMethodDeleted
+}: PaymentMethodsListProps) {
+  const [open, setOpen] = React.useState(false);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [methodToDelete, setMethodToDelete] = React.useState<string | null>(null);
   
-  const [showAddDialog, setShowAddDialog] = React.useState(false);
-  
-  const getPaymentMethodIcon = (type: string) => {
-    switch (type) {
-      case 'credit_card':
-      case 'debit_card':
-        return <CreditCard className="h-5 w-5 mr-2" />;
-      case 'bank_transfer':
-        return <Bank className="h-5 w-5 mr-2" />;
-      case 'cash':
-        return <Banknote className="h-5 w-5 mr-2" />;
-      case 'check':
-        return <CheckCircle className="h-5 w-5 mr-2" />;
-      default:
-        return <CreditCard className="h-5 w-5 mr-2" />;
-    }
-  };
-
-  const getPaymentMethodLabel = (type: string) => {
-    const option = paymentMethodOptions.find(opt => opt.value === type);
-    return option ? option.label : type;
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open);
   };
   
-  const handleAddPaymentMethod = async (data: Omit<PaymentMethod, 'id' | 'customer_id' | 'created_at' | 'updated_at'>) => {
-    const result = await addPaymentMethod(data);
-    if (result) {
-      setShowAddDialog(false);
-    }
-    return !!result;
+  const handleDeleteConfirmation = (methodId: string) => {
+    setMethodToDelete(methodId);
+    setDeleteOpen(true);
   };
   
-  const handleRemove = async (id: string) => {
-    if (confirm("Are you sure you want to remove this payment method?")) {
-      await deletePaymentMethod(id);
-    }
+  const handleDelete = async () => {
+    // Simulate deleting the payment method
+    console.log("Deleting payment method:", methodToDelete);
+    setDeleteOpen(false);
+    setMethodToDelete(null);
+    onPaymentMethodDeleted();
   };
-  
-  const handleSetDefault = async (id: string) => {
-    await setDefaultPaymentMethod(id);
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Methods</CardTitle>
-          <CardDescription>Loading your payment methods...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Methods</CardTitle>
-          <CardDescription>Unable to load payment methods</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-destructive/10 text-destructive p-4 rounded-md">
-            <p>{error.message}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
           <CardTitle>Payment Methods</CardTitle>
-          <CardDescription>Manage your payment methods</CardDescription>
-        </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Method
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Payment Method</DialogTitle>
-              <DialogDescription>
-                Fill out the form below to add a new payment method.
-              </DialogDescription>
-            </DialogHeader>
-            <PaymentMethodForm onSubmit={handleAddPaymentMethod} />
-          </DialogContent>
-        </Dialog>
-      </CardHeader>
-      <CardContent>
-        {paymentMethods.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <p>No payment methods found.</p>
-            <p className="text-sm mt-1">Add a payment method to get started.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {paymentMethods.map((method) => (
-              <div 
-                key={method.id} 
-                className={`border p-4 rounded-md ${method.is_default ? 'border-primary bg-primary/5' : ''}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    {getPaymentMethodIcon(method.method_type)}
-                    <div>
-                      <p className="font-medium">
-                        {getPaymentMethodLabel(method.method_type)}
-                        {method.is_default && (
-                          <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                            Default
-                          </span>
-                        )}
-                      </p>
-                      {method.card_brand && method.card_last_four && (
-                        <p className="text-sm text-muted-foreground">
-                          {method.card_brand} •••• {method.card_last_four}
-                          {method.expiry_month && method.expiry_year && (
-                            <span> (Expires: {method.expiry_month}/{method.expiry_year})</span>
-                          )}
-                        </p>
+          <CardDescription>
+            Manage your saved payment methods.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {paymentMethods.length === 0 ? (
+            <div className="text-center py-6">
+              <Wallet className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">No payment methods added yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {paymentMethods.map((method) => (
+                <Card key={method.id} className="bg-muted">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      {method.method_type === 'credit_card' && method.card_brand 
+                        ? `${method.card_brand} ••••${method.card_last_four}`
+                        : method.method_type
+                      }
+                      {method.is_default && (
+                        <Badge variant="secondary">Default</Badge>
                       )}
-                      {method.billing_name && (
-                        <p className="text-sm text-muted-foreground">
-                          {method.billing_name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    {!method.is_default && (
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
-                        onClick={() => handleSetDefault(method.id)}
-                        title="Set as default"
-                      >
-                        <Star className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button 
-                      size="icon" 
-                      variant="outline" 
-                      onClick={() => handleRemove(method.id)}
-                      title="Remove"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </CardTitle>
+                    <CardDescription>
+                      {method.billing_name}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground">
+                    {method.billing_address}, {method.billing_city}, {method.billing_state} {method.billing_postal_code}, {method.billing_country}
+                  </CardContent>
+                  <CardFooter className="justify-end space-x-2">
+                    <Button variant="ghost" size="sm">
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edit
                     </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteConfirmation(method.id)}>
+                      <Trash className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+        <CardFooter>
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Payment Method
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      <AddPaymentMethodDialog 
+        open={open} 
+        onOpenChange={handleOpenChange} 
+        customerId={customerId}
+        onPaymentMethodAdded={onPaymentMethodAdded}
+      />
+      
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the payment method from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

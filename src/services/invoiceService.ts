@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Invoice, InvoiceItem } from "@/types/invoice";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Fetches all invoices for the current user/organization

@@ -30,6 +30,8 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
+type FormSchemaType = z.infer<typeof formSchema>;
+
 interface PaymentFormProps {
   customerId: string;
   invoiceId?: string;
@@ -50,17 +52,22 @@ export function PaymentForm({ customerId, invoiceId, initialData, onSubmit }: Pa
     notes: initialData?.notes || '',
   };
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
-  const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleFormSubmit = async (values: FormSchemaType) => {
     setIsSubmitting(true);
     try {
-      await onSubmit(values);
+      // Ensure amount is included and not optional when passing to onSubmit
+      const paymentValues: PaymentFormValues = {
+        ...values,
+        amount: values.amount,
+      };
+      await onSubmit(paymentValues);
     } finally {
       setIsSubmitting(false);
     }

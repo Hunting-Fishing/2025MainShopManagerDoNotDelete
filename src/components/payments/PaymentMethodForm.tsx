@@ -18,9 +18,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { paymentMethodOptions, PaymentMethod } from '@/types/payment';
 
+type PaymentMethodType = "credit_card" | "debit_card" | "bank_transfer" | "cash" | "check" | "other";
+
 // Define the form schema
 const formSchema = z.object({
-  method_type: z.string(),
+  method_type: z.string() as z.ZodType<PaymentMethodType>,
   card_last_four: z.string().optional(),
   card_brand: z.string().optional(),
   expiry_month: z.string()
@@ -53,7 +55,7 @@ export function PaymentMethodForm({ initialData, onSubmit }: PaymentMethodFormPr
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      method_type: initialData?.method_type || 'credit_card',
+      method_type: initialData?.method_type as PaymentMethodType || 'credit_card',
       card_last_four: initialData?.card_last_four || '',
       card_brand: initialData?.card_brand || '',
       expiry_month: initialData?.expiry_month?.toString() || '',
@@ -78,6 +80,7 @@ export function PaymentMethodForm({ initialData, onSubmit }: PaymentMethodFormPr
         ...values,
         expiry_month: values.expiry_month ? parseInt(values.expiry_month) : undefined,
         expiry_year: values.expiry_year ? parseInt(values.expiry_year) : undefined,
+        method_type: values.method_type as PaymentMethodType,
       };
       await onSubmit(formattedValues);
     } finally {

@@ -50,11 +50,12 @@ export default function InvoiceDetails() {
           throw new Error("Invoice not found");
         }
         
-        const formattedInvoice = {
+        const formattedInvoice: Invoice = {
           id: data.id,
           customer: data.customer,
           customerAddress: data.customer_address,
           customerEmail: data.customer_email,
+          customer_id: data.customer_id,
           description: data.description,
           notes: data.notes,
           status: data.status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
@@ -65,14 +66,8 @@ export default function InvoiceDetails() {
           tax: data.tax,
           workOrderId: data.work_order_id,
           createdBy: data.created_by,
-          paymentMethod: data.payment_method,
-          customer_id: data.customer_id,
+          paymentMethod: data.payment_method || '',
           items: data.invoice_items || [],
-        } as Invoice & { 
-          subtotal: number;
-          tax: number;
-          total: number;
-          paymentMethod: string;
         };
         
         setInvoice(formattedInvoice);

@@ -5,6 +5,7 @@ export interface Invoice {
   customer: string;
   customerAddress?: string;
   customerEmail?: string;
+  customer_id?: string;
   description?: string;
   notes?: string;
   total: number;

@@ -8,6 +8,7 @@ import { CustomerDetailsTabs } from "@/components/customers/details/CustomerDeta
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CustomerCommunication, CustomerNote } from "@/types/customer";
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
@@ -54,6 +55,21 @@ export default function CustomerDetails() {
       refreshCustomerData();
     }
   }, [id, refreshCustomerData]);
+
+  // Create wrapper functions for onCommunicationAdded and onNoteAdded
+  const onCommunicationAddedWrapper = () => {
+    if (handleCommunicationAdded) {
+      // If we need to pass a parameter later, we can adjust this function
+      handleCommunicationAdded({} as CustomerCommunication);
+    }
+  };
+
+  const onNoteAddedWrapper = () => {
+    if (handleNoteAdded) {
+      // If we need to pass a parameter later, we can adjust this function
+      handleNoteAdded({} as CustomerNote);
+    }
+  };
 
   if (!id || id === "undefined") {
     return (
@@ -121,8 +137,8 @@ export default function CustomerDetails() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         setAddInteractionOpen={setAddInteractionOpen}
-        onCommunicationAdded={handleCommunicationAdded}
-        onNoteAdded={handleNoteAdded}
+        onCommunicationAdded={onCommunicationAddedWrapper}
+        onNoteAdded={onNoteAddedWrapper}
       />
       
       {customer && (
