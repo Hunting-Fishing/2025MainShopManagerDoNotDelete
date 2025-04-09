@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,7 +58,7 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
             year: data.year ? data.year.toString() : new Date().getFullYear().toString(),
             licensePlate: data.license_plate || '',
             color: data.color || '',
-            bodyStyle: initialBodyStyle || "sedan",
+            bodyStyle: initialBodyStyle || "sedan" as VehicleBodyStyle,
             mileage: ""  // Set mileage if available in your schema
           });
           
@@ -115,7 +114,10 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
     try {
       const decodedData = await decodeVin(vinValue);
       if (decodedData) {
-        const newBodyStyle = (decodedData.body_style as VehicleBodyStyle) || vehicleInfo.bodyStyle;
+        // Use body_style from decoded data if present, otherwise keep existing bodyStyle
+        const newBodyStyle = decodedData.body_style ? 
+          (decodedData.body_style as VehicleBodyStyle) : 
+          vehicleInfo.bodyStyle;
         
         setVehicleInfo(prev => ({
           ...prev,
