@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
 
-// Define a standalone interface explicitly for this component
+// Define a completely standalone interface for this component
 interface VehicleInteraction {
   id: string;
   date: string;
@@ -22,6 +22,7 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
     const fetchVehicleInteractions = async () => {
       try {
         setLoading(true);
+        // Explicitly select only the fields we need instead of using '*'
         const { data, error } = await supabase
           .from('customer_interactions')
           .select('id, date, type, staff_member_name, description')
@@ -32,8 +33,16 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          // Use type assertion to explicitly convert the data
-          setInteractions(data as VehicleInteraction[]);
+          // Create explicit mapped array to avoid type inference issues
+          const typedInteractions = (data || []).map(item => ({
+            id: item.id,
+            date: item.date,
+            type: item.type,
+            staff_member_name: item.staff_member_name,
+            description: item.description
+          }));
+          
+          setInteractions(typedInteractions);
         }
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);
