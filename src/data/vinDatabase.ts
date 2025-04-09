@@ -1,9 +1,9 @@
-
 import { VinDecodeResult } from "@/types/vehicle";
 
-// Mock VIN database - simplified for demo purposes
-// Structure: VIN prefix (first 8 chars) -> vehicle info
+// This file contains a limited set of VIN prefixes for fallback purposes
+// when external API calls fail or are rate-limited
 export const mockVinDatabase: Record<string, VinDecodeResult> = {
+  // We'll keep a small subset of the most common VIN prefixes for fallback
   "1FTFW1ET": { 
     year: "2018", 
     make: "ford", 
@@ -12,7 +12,7 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "10-Speed Automatic",
     drive_type: "4x4",
     fuel_type: "Gas",
-    body_style: "truck",    // Updated to match our VehicleBodyStyle type
+    body_style: "truck",
     country: "USA",
     engine: "3.5L V6 EcoBoost",
     gvwr: "Class 3: 10,001 - 14,000 lb"
@@ -25,309 +25,22 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     transmission_type: "6-Speed Automatic",
     drive_type: "FWD",
     fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
+    body_style: "sedan",
     country: "USA",
     engine: "1.5L 4-Cylinder Turbo",
     gvwr: "Class 1B: 3,001 - 4,000 lb"
   },
-  "1HGCV1F3": { 
-    year: "2019", 
-    make: "honda", 
-    model: "Accord",
-    transmission: "Automatic",
-    transmission_type: "CVT Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "USA",
-    engine: "1.5L 4-Cylinder Turbo",
-    gvwr: "Class 1B: 3,001 - 4,000 lb"
-  },
-  "2T1BURH": { 
-    year: "2020", 
-    make: "toyota", 
-    model: "Corolla",
-    transmission: "Automatic",
-    transmission_type: "CVT Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "JAPAN",
-    engine: "1.8L 4-Cylinder",
-    gvwr: "Class 1A: 0 - 3,000 lb"
-  },
-  "JN1AZ4EH": { 
-    year: "2016", 
-    make: "nissan", 
-    model: "370Z",
-    transmission: "Manual",
-    transmission_type: "6-Speed Manual",
-    drive_type: "RWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Sports car, but using sedan for illustration
-    country: "JAPAN",
-    engine: "3.7L V6",
-    gvwr: "Class 1B: 3,001 - 4,000 lb"
-  },
-  "3VWCB7AU": { 
-    year: "2021", 
-    make: "volkswagen", 
-    model: "Jetta",
-    transmission: "Automatic",
-    transmission_type: "8-Speed Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "GERMANY",
-    engine: "1.4L 4-Cylinder Turbo",
-    gvwr: "Class 1B: 3,001 - 4,000 lb"
-  },
-  "5YJSA1E4": { 
-    year: "2019", 
-    make: "tesla", 
-    model: "Model S",
-    transmission: "Automatic",
-    transmission_type: "1-Speed Direct Drive",
-    drive_type: "AWD",
-    fuel_type: "Electric",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "USA",
-    engine: "Dual Electric Motors",
-    gvwr: "Class 1C: 4,001 - 5,000 lb"
-  },
-  "WAUENAF4": { 
-    year: "2017", 
-    make: "audi", 
-    model: "A4",
-    transmission: "Automatic",
-    transmission_type: "7-Speed Dual-Clutch Automatic",
-    drive_type: "AWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "GERMANY",
-    engine: "2.0L 4-Cylinder Turbo",
-    gvwr: "Class 1B: 3,001 - 4,000 lb"
-  },
-  "4JGDA5HB": { 
-    year: "2020", 
-    make: "mercedes-benz", 
-    model: "GLE",
-    transmission: "Automatic",
-    transmission_type: "9-Speed Automatic",
-    drive_type: "AWD",
-    fuel_type: "Gas",
-    body_style: "suv",      // Updated to match our VehicleBodyStyle type
-    country: "GERMANY",
-    engine: "3.0L 6-Cylinder Turbo",
-    gvwr: "Class 2A: 6,001 - 8,000 lb"
-  },
-  "WBA3N5C5": { 
-    year: "2018", 
-    make: "bmw", 
-    model: "3 Series",
-    transmission: "Automatic",
-    transmission_type: "8-Speed Automatic",
-    drive_type: "RWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "GERMANY",
-    engine: "2.0L 4-Cylinder Turbo",
-    gvwr: "Class 1B: 3,001 - 4,000 lb"
-  },
-  "YV4A22PK": { 
-    year: "2021", 
-    make: "volvo", 
-    model: "XC60",
-    transmission: "Automatic",
-    transmission_type: "8-Speed Automatic",
-    drive_type: "AWD",
-    fuel_type: "Gas",
-    body_style: "suv",      // Updated to match our VehicleBodyStyle type
-    country: "SWEDEN",
-    engine: "2.0L 4-Cylinder Turbo",
-    gvwr: "Class 1D: 5,001 - 6,000 lb"
-  },
-  "5TFDY5F1": { 
-    year: "2022", 
-    make: "toyota", 
-    model: "Tundra",
-    transmission: "Automatic",
-    transmission_type: "10-Speed Automatic",
-    drive_type: "4x4",
-    fuel_type: "Gas",
-    body_style: "truck",    // Updated to match our VehicleBodyStyle type
-    country: "USA",
-    engine: "3.5L V6 Twin-Turbo",
-    gvwr: "Class 2B: 8,001 - 10,000 lb"
-  },
-  "1C6SRFJT": { 
-    year: "2023", 
-    make: "ram", 
-    model: "1500",
-    transmission: "Automatic",
-    transmission_type: "8-Speed Automatic",
-    drive_type: "4x4",
-    fuel_type: "Gas",
-    body_style: "truck",    // Updated to match our VehicleBodyStyle type
-    country: "USA",
-    engine: "5.7L V8 HEMI",
-    gvwr: "Class 2A: 6,001 - 8,000 lb"
-  },
-  "1C4RJFBG": { 
-    year: "2020", 
-    make: "jeep", 
-    model: "Grand Cherokee",
-    transmission: "Automatic",
-    transmission_type: "8-Speed Automatic",
-    drive_type: "4x4",
-    fuel_type: "Gas",
-    body_style: "suv",      // Updated to match our VehicleBodyStyle type
-    country: "USA",
-    engine: "3.6L V6",
-    gvwr: "Class 1D: 5,001 - 6,000 lb"
-  },
-  "KM8J3CAL": { 
-    year: "2021", 
-    make: "hyundai", 
-    model: "Santa Fe",
-    transmission: "Automatic",
-    transmission_type: "8-Speed Automatic",
-    drive_type: "AWD",
-    fuel_type: "Gas",
-    body_style: "suv",      // Updated to match our VehicleBodyStyle type
-    country: "KOREA",
-    engine: "2.5L 4-Cylinder Turbo",
-    gvwr: "Class 1D: 5,001 - 6,000 lb"
-  },
-  "5XXG64J2": { 
-    year: "2019", 
-    make: "kia", 
-    model: "Optima",
-    transmission: "Automatic",
-    transmission_type: "6-Speed Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "KOREA",
-    engine: "2.4L 4-Cylinder",
-    gvwr: "Class 1B: 3,001 - 4,000 lb"
-  },
-  "JF2GTAMC": { 
-    year: "2022", 
-    make: "subaru", 
-    model: "Forester",
-    transmission: "Automatic",
-    transmission_type: "CVT Automatic",
-    drive_type: "AWD",
-    fuel_type: "Gas",
-    body_style: "suv",      // Updated to match our VehicleBodyStyle type
-    country: "JAPAN",
-    engine: "2.5L 4-Cylinder",
-    gvwr: "Class 1C: 4,001 - 5,000 lb"
-  },
-  "KMHLM4AG": { 
-    year: "2023", 
-    make: "hyundai", 
-    model: "Elantra",
-    transmission: "Automatic",
-    transmission_type: "CVT Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "KOREA",
-    engine: "2.0L 4-Cylinder",
-    gvwr: "Class 1A: 0 - 3,000 lb"
-  },
-  "2HGFC2F5": { 
-    year: "2022", 
-    make: "honda", 
-    model: "Civic",
-    transmission: "Automatic",
-    transmission_type: "CVT Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "sedan",    // Updated to match our VehicleBodyStyle type
-    country: "JAPAN",
-    engine: "1.5L 4-Cylinder Turbo",
-    gvwr: "Class 1A: 0 - 3,000 lb"
-  },
-  "3GNAXKEV": { 
-    year: "2021", 
+  "2GNFLNEK": { 
+    year: "2013", 
     make: "chevrolet", 
     model: "Equinox",
     transmission: "Automatic",
     transmission_type: "6-Speed Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "suv",      // Updated to match our VehicleBodyStyle type
-    country: "USA",
-    engine: "1.5L 4-Cylinder Turbo",
-    gvwr: "Class 1D: 5,001 - 6,000 lb"
-  },
-  // Adding more diverse body styles
-  "WVWAA71K": { 
-    year: "2022", 
-    make: "volkswagen", 
-    model: "Golf",
-    transmission: "Automatic",
-    transmission_type: "7-Speed Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "hatchback", // Hatchback example
-    country: "GERMANY",
-    engine: "1.4L 4-Cylinder Turbo",
-    gvwr: "Class 1A: 0 - 3,000 lb"
-  },
-  "JTMRFREV": { 
-    year: "2023", 
-    make: "toyota", 
-    model: "RAV4",
-    transmission: "Automatic",
-    transmission_type: "8-Speed Automatic",
     drive_type: "AWD",
-    fuel_type: "Hybrid",
-    body_style: "suv",      // SUV example
-    country: "JAPAN",
-    engine: "2.5L 4-Cylinder Hybrid",
-    gvwr: "Class 1C: 4,001 - 5,000 lb"
-  },
-  "NMTKHMBX": { 
-    year: "2022", 
-    make: "toyota", 
-    model: "Sienna",
-    transmission: "Automatic",
-    transmission_type: "CVT Automatic",
-    drive_type: "FWD",
-    fuel_type: "Hybrid",
-    body_style: "van",      // Van example
-    country: "USA",
-    engine: "2.5L 4-Cylinder Hybrid",
+    fuel_type: "Gas",
+    body_style: "suv",
+    country: "CANADA",
+    engine: "2.4L 4-Cylinder",
     gvwr: "Class 1D: 5,001 - 6,000 lb"
-  },
-  "8AJFB8CD": { 
-    year: "2023", 
-    make: "toyota", 
-    model: "Tacoma",
-    transmission: "Automatic",
-    transmission_type: "6-Speed Automatic",
-    drive_type: "4x4",
-    fuel_type: "Gas",
-    body_style: "truck",    // Truck example
-    country: "USA",
-    engine: "3.5L V6",
-    gvwr: "Class 2A: 6,001 - 8,000 lb"
-  },
-  "3N1CP5CU": { 
-    year: "2022", 
-    make: "nissan", 
-    model: "Kicks",
-    transmission: "Automatic",
-    transmission_type: "CVT Automatic",
-    drive_type: "FWD",
-    fuel_type: "Gas",
-    body_style: "suv",      // SUV/Crossover example
-    country: "MEXICO",
-    engine: "1.6L 4-Cylinder",
-    gvwr: "Class 1B: 3,001 - 4,000 lb"
   }
 };

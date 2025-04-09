@@ -69,6 +69,18 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           setTimeout(() => {
             form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
             
+            // Set additional vehicle details if available
+            if (vehicleInfo.transmission) 
+              form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
+            if (vehicleInfo.drive_type) 
+              form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
+            if (vehicleInfo.fuel_type) 
+              form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
+            if (vehicleInfo.body_style) 
+              form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
+            if (vehicleInfo.engine) 
+              form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
+            
             // Trigger form validation after all fields are set
             form.trigger([
               `vehicles.${index}.year`,
@@ -102,7 +114,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         variant: "destructive",
       });
     }
-  }, [form, index, fetchModels]);
+  }, [form, index, fetchModels, toast]);
 
   // Auto-populate fields when VIN changes with improved debouncing
   useEffect(() => {
@@ -152,7 +164,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [vin, populateVehicleFromVin, lastProcessedVin, vinProcessing, decodeVin]);
+  }, [vin, populateVehicleFromVin, lastProcessedVin, vinProcessing, decodeVin, toast]);
 
   const handleMakeChange = (value: string) => {
     // Make sure value is never empty

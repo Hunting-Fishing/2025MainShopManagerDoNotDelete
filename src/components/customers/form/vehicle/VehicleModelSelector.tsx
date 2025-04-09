@@ -37,11 +37,11 @@ export function VehicleModelSelector<T>({
             {loading ? (
               <SelectItem value="loading">Loading models...</SelectItem>
             ) : models.length > 0 ? (
-              models.map(model => (
-                <SelectItem key={model} value={model || "unknown"}>
+              models.map(model => model ? (
+                <SelectItem key={model} value={model}>
                   {model || "Unknown Model"}
                 </SelectItem>
-              ))
+              ) : null)
             ) : (
               <SelectItem value="no-models">No models available</SelectItem>
             )}

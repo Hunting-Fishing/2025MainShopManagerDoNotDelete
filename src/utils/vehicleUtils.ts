@@ -1,7 +1,6 @@
 
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
 import { decodeVin as externalDecodeVin } from "@/services/vinDecoderService";
 
 /**
@@ -33,7 +32,7 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
       return null;
     }
     
-    // Use the external VIN decoding service instead of trying to query a non-existent table
+    // Use the external VIN decoding service to get real data
     const decodedData = await externalDecodeVin(vin);
     
     if (decodedData) {

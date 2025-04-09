@@ -1,9 +1,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
-import { mockMakes } from '@/data/vehicleMakes';
-import { mockModelsByMake } from '@/data/vehicleModels';
 import { decodeVin as decodeVinUtil } from '@/utils/vehicleUtils';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Hook to provide vehicle data functionality including makes, models, years,
@@ -26,18 +25,33 @@ export const useVehicleData = () => {
     setYears(yearsList);
   }, []);
 
-  // Load makes on mount (now using mock data)
+  // Load makes on mount from Supabase
   useEffect(() => {
     setLoading(true);
-    try {
-      // Use our mock data instead of API
-      setMakes(mockMakes);
-      setLoading(false);
-    } catch (err) {
-      console.error("Error setting mock makes:", err);
-      setError("Could not load vehicle makes");
-      setLoading(false);
-    }
+    
+    const fetchMakes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('vehicle_makes')
+          .select('*')
+          .order('make_display', { ascending: true });
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setMakes(data as CarMake[]);
+        }
+      } catch (err) {
+        console.error("Error fetching vehicle makes:", err);
+        setError("Could not load vehicle makes");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMakes();
   }, []);
 
   // Function to fetch models for a selected make
@@ -50,20 +64,27 @@ export const useVehicleData = () => {
     setSelectedModel('');
     
     try {
-      // Get models from our mock data
-      const modelsForMake = mockModelsByMake[make] || [];
-      setModels(modelsForMake);
+      // Get models from Supabase
+      const { data, error } = await supabase
+        .from('vehicle_models')
+        .select('*')
+        .eq('model_make_id', make)
+        .order('model_name', { ascending: true });
+        
+      if (error) {
+        throw error;
+      }
       
-      // Return a promise that resolves when models are set
-      // This allows components to wait for models to be loaded
-      return new Promise<void>((resolve) => {
-        setTimeout(() => {
-          setLoading(false);
-          resolve();
-        }, 100);
-      });
+      if (data) {
+        setModels(data as CarModel[]);
+      } else {
+        setModels([]);
+      }
+      
+      setLoading(false);
+      return Promise.resolve();
     } catch (err) {
-      console.error("Error setting mock models:", err);
+      console.error("Error fetching vehicle models:", err);
       setError("Could not load vehicle models");
       setLoading(false);
       return Promise.reject(err);

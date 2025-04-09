@@ -39,11 +39,11 @@ export function VehicleMakeSelector<T>({
           </SelectTrigger>
           <SelectContent>
             {makes.length > 0 ? (
-              makes.map(make => (
-                <SelectItem key={make} value={make || "unknown"}>
+              makes.map(make => make ? (
+                <SelectItem key={make} value={make}>
                   {make || "Unknown Make"}
                 </SelectItem>
-              ))
+              ) : null)
             ) : (
               <SelectItem value="loading">Loading makes...</SelectItem>
             )}
