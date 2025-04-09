@@ -73,26 +73,10 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
   try {
     console.log("Fetching interactions for vehicle:", vehicleId);
     
-    // Use specific field selection instead of * to avoid deep type instantiation
+    // Fix: Use a simpler approach to avoid deep type instantiation issues
     const { data, error } = await supabase
       .from("customer_interactions")
-      .select(`
-        id, 
-        customer_id, 
-        customer_name,
-        date, 
-        type, 
-        description,
-        staff_member_id,
-        staff_member_name,
-        status,
-        notes,
-        related_work_order_id,
-        follow_up_date,
-        follow_up_completed,
-        created_at,
-        updated_at
-      `)
+      .select("*")
       .eq("vehicle_id", vehicleId)
       .order("date", { ascending: false });
     
@@ -103,24 +87,31 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
     
     console.log("Retrieved vehicle interactions:", data);
     
-    // Transform the response to match the CustomerInteraction type
-    const interactions: CustomerInteraction[] = (data || []).map(item => ({
-      id: item.id,
-      customer_id: item.customer_id,
-      customer_name: item.customer_name,
-      date: item.date,
-      type: item.type as InteractionType,
-      description: item.description,
-      staff_member_id: item.staff_member_id,
-      staff_member_name: item.staff_member_name,
-      status: item.status as InteractionStatus,
-      notes: item.notes,
-      related_work_order_id: item.related_work_order_id,
-      follow_up_date: item.follow_up_date,
-      follow_up_completed: item.follow_up_completed,
-      created_at: item.created_at,
-      updated_at: item.updated_at
-    }));
+    // Explicitly cast the data to CustomerInteraction[] to avoid deep type instantiation
+    const interactions: CustomerInteraction[] = [];
+    
+    // Manually process each item to ensure type safety
+    if (data) {
+      for (const item of data) {
+        interactions.push({
+          id: item.id,
+          customer_id: item.customer_id,
+          customer_name: item.customer_name,
+          date: item.date,
+          type: item.type as InteractionType,
+          description: item.description,
+          staff_member_id: item.staff_member_id,
+          staff_member_name: item.staff_member_name,
+          status: item.status as InteractionStatus,
+          notes: item.notes,
+          related_work_order_id: item.related_work_order_id,
+          follow_up_date: item.follow_up_date,
+          follow_up_completed: item.follow_up_completed,
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        });
+      }
+    }
     
     return interactions;
   } catch (error) {
