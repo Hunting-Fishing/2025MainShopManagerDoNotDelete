@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomerEdit } from "@/hooks/useCustomerEdit";
+import { DeleteCustomerButton } from "@/components/customers/form/DeleteCustomerButton";
 
 export default function EditCustomer() {
   const { id } = useParams<{ id: string }>();
@@ -70,12 +71,17 @@ export default function EditCustomer() {
     return null;
   }
 
+  const customerName = `${formValues.first_name} ${formValues.last_name}`;
+
   return (
     <div className="space-y-6">
-      <Button variant="ghost" onClick={handleBack}>
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        Back to Customer Details
-      </Button>
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" onClick={handleBack}>
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to Customer Details
+        </Button>
+        {id && <DeleteCustomerButton customerId={id} customerName={customerName} />}
+      </div>
       <h1 className="text-2xl font-bold tracking-tight">Edit Customer</h1>
       <CustomerForm 
         defaultValues={formValues}

@@ -11,6 +11,7 @@ export { createCustomer } from "./customerCreateService";
 export { clearDraftCustomer, saveDraftCustomer, getDraftCustomer } from "./customerDraftService";
 export { getCustomerNotes, addCustomerNote } from "./customerNotesService";
 export { importCustomersFromCSV } from "./customerImportService";
+export { deleteCustomer } from "./customerDeleteService";
 
 // Re-export types
 export type { CustomerCreate } from "@/types/customer";
