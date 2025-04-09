@@ -33,6 +33,7 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
   useEffect(() => {
     const fetchVehicleInteractions = async () => {
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('customer_interactions')
           .select('*')
