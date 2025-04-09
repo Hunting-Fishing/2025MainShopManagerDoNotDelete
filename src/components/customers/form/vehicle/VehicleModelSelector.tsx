@@ -28,13 +28,17 @@ export function VehicleModelSelector<T>({
   // Use the useController hook to properly handle form integration
   const { field } = useController({ name, control });
 
+  // Safe check for missing values
+  const safeValue = field.value as string || "";
+  const safeModels = Array.isArray(models) ? models : [];
+
   return (
     <FormItem>
       <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
       <FormControl>
         <Select 
           disabled={disabled || loading} 
-          value={field.value as string || ""} 
+          value={safeValue} 
           onValueChange={field.onChange}
           name={name}
         >
@@ -43,9 +47,9 @@ export function VehicleModelSelector<T>({
           </SelectTrigger>
           <SelectContent>
             {loading ? (
-              <SelectItem value="loading">Loading models...</SelectItem>
-            ) : models && models.length > 0 ? (
-              models.map(model => {
+              <SelectItem value="loading" disabled>Loading models...</SelectItem>
+            ) : safeModels.length > 0 ? (
+              safeModels.map(model => {
                 // Skip any empty values to avoid Radix UI error
                 if (!model.model_name) return null;
                 
@@ -56,7 +60,7 @@ export function VehicleModelSelector<T>({
                 );
               })
             ) : (
-              <SelectItem value="no-models">No models available</SelectItem>
+              <SelectItem value="no-models" disabled>No models available</SelectItem>
             )}
           </SelectContent>
         </Select>

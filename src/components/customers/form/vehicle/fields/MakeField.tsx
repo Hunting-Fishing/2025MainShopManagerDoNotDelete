@@ -13,7 +13,8 @@ interface MakeFieldProps extends BaseFieldProps {
 }
 
 export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], onMakeChange }) => {
-  // No need to use watch here as the form handles the value
+  // Ensure makes is valid array
+  const safeMakes = Array.isArray(makes) ? makes : [];
   
   return (
     <FormField
@@ -50,8 +51,8 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {makes.length > 0 ? (
-                makes.map((make) => (
+              {safeMakes.length > 0 ? (
+                safeMakes.map((make) => (
                   <SelectItem 
                     key={make.make_id} 
                     value={make.make_id}

@@ -28,6 +28,10 @@ export function VehicleMakeSelector<T>({
   // Use the useController hook to properly handle form integration
   const { field } = useController({ name, control });
   
+  // Safe check for missing values
+  const safeValue = field.value as string || "";
+  const safeMakes = Array.isArray(makes) ? makes : [];
+  
   return (
     <FormItem>
       <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
@@ -38,15 +42,15 @@ export function VehicleMakeSelector<T>({
             field.onChange(value);
             onMakeChange(value);
           }}
-          value={field.value as string || ""}
+          value={safeValue}
           name={name}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent>
-            {makes && makes.length > 0 ? (
-              makes.map(make => {
+            {safeMakes.length > 0 ? (
+              safeMakes.map(make => {
                 // Skip any empty values to avoid Radix UI error
                 if (!make.make_id) return null;
                 
@@ -57,7 +61,7 @@ export function VehicleMakeSelector<T>({
                 );
               })
             ) : (
-              <SelectItem value="no-makes-available">No makes available</SelectItem>
+              <SelectItem value="no-makes-available" disabled>No makes available</SelectItem>
             )}
           </SelectContent>
         </Select>

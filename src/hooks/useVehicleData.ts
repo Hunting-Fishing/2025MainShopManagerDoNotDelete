@@ -32,7 +32,7 @@ export const useVehicleData = () => {
       setError(null);
       
       try {
-        // Use as any to bypass TypeScript errors until database types are updated
+        // Type assertion to handle the TypeScript error
         const { data, error } = await (supabase as any)
           .from('vehicle_makes')
           .select('id, make_id, make_display')
@@ -72,7 +72,7 @@ export const useVehicleData = () => {
     setSelectedModel('');
     
     try {
-      // Use as any to bypass TypeScript errors until database types are updated
+      // Type assertion to handle the TypeScript error
       const { data, error } = await (supabase as any)
         .from('vehicle_models')
         .select('id, model_id, model_display, make_id')
