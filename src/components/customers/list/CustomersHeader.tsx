@@ -13,7 +13,7 @@ export const CustomersHeader = () => {
         </p>
       </div>
       <Button asChild>
-        <Link to="/customers/new">
+        <Link to="/customers/create">
           <Plus className="mr-2 h-4 w-4" /> Add Customer
         </Link>
       </Button>
