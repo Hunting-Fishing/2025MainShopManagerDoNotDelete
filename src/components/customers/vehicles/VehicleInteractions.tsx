@@ -22,19 +22,19 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
     const fetchVehicleInteractions = async () => {
       try {
         setLoading(true);
-        // Explicitly select only the fields we need instead of using '*'
-        const { data, error } = await supabase
+        // Use a type cast to avoid deep type instantiation
+        const response = await supabase
           .from('customer_interactions')
           .select('id, date, type, staff_member_name, description')
           .eq('vehicle_id', vehicleId)
           .order('date', { ascending: false });
         
-        if (error) {
-          console.error('Error fetching vehicle interactions:', error);
+        if (response.error) {
+          console.error('Error fetching vehicle interactions:', response.error);
           setInteractions([]);
         } else {
-          // Create explicit mapped array to avoid type inference issues
-          const typedInteractions = (data || []).map(item => ({
+          // Explicitly map the response data to our interface
+          const typedInteractions: VehicleInteraction[] = (response.data || []).map(item => ({
             id: item.id,
             date: item.date,
             type: item.type,
