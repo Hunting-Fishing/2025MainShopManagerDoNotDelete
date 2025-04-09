@@ -1,5 +1,5 @@
 
-// Customer notes and communications
+// Note and communication type definitions
 export interface CustomerNote {
   id: string;
   customer_id: string;

@@ -1,8 +1,5 @@
 
-// Utility functions for customers
 import { Customer } from './base';
-
-export type CustomerCreate = Omit<Customer, 'id' | 'created_at' | 'updated_at'>;
 
 export const getCustomerFullName = (customer: Customer): string => {
   return `${customer.first_name} ${customer.last_name}`;

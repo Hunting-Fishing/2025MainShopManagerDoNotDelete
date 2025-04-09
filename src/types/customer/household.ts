@@ -1,5 +1,7 @@
 
-// Household-related types
+// Household-related type definitions
+import { Customer } from './base';
+
 export interface Household {
   id: string;
   name: string;
@@ -17,6 +19,3 @@ export interface HouseholdMember {
   relationship_type?: string;
   customer?: Customer;
 }
-
-// Need to import Customer type
-import { Customer } from './base';

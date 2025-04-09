@@ -1,5 +1,5 @@
 
-// Customer segment-related types
+// Segment-related type definitions
 export interface CustomerSegment {
   id: string;
   name: string;

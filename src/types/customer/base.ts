@@ -1,5 +1,5 @@
 
-// Base customer interface with primary fields
+// Base customer types
 export interface Customer {
   id: string;
   first_name: string;
@@ -27,9 +27,9 @@ export interface Customer {
   fleet_contact?: string;
   preferred_service_type?: string;
   notes?: string;
-  tags?: string[] | any; // Allow any type that will be normalized in adaptCustomerForUI
+  tags?: string[] | any; // Will be normalized in adaptCustomerForUI
   
-  segments?: string[] | any; // Allow any type that will be normalized in adaptCustomerForUI
+  segments?: string[] | any; // Will be normalized in adaptCustomerForUI
   
   loyalty?: CustomerLoyalty;
   
@@ -61,8 +61,21 @@ export interface Customer {
   role?: string;
 }
 
-// Import CustomerLoyalty from loyalty.ts
-import { CustomerLoyalty } from '../loyalty';
-// Import missing types
-import { PreferredTechnicianChange } from './technician';
+export interface PreferredTechnicianChange {
+  id: string;
+  customer_id: string;
+  previous_technician_id?: string;
+  previous_technician_name?: string;
+  new_technician_id?: string;
+  new_technician_name?: string;
+  change_date: string;
+  change_reason?: string;
+  changed_by_id: string;
+  changed_by_name: string;
+}
+
+export type CustomerCreate = Omit<Customer, 'id' | 'created_at' | 'updated_at'>;
+
+// Import from other module types to avoid circular dependencies
+import { CustomerLoyalty } from '@/types/loyalty';
 import { CustomerVehicle } from './vehicle';

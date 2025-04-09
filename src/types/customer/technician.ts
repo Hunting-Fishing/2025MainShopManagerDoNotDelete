@@ -1,14 +1,19 @@
 
-// Technician-related types for customer system
-export interface PreferredTechnicianChange {
+// Technician-related type definitions
+export interface TechnicianStatus {
   id: string;
-  customer_id: string;
-  previous_technician_id?: string;
-  previous_technician_name?: string;
-  new_technician_id?: string;
-  new_technician_name?: string;
-  change_date: string;
-  change_reason?: string;
-  changed_by_id: string;
-  changed_by_name: string;
+  technician_id: string;
+  status: string;
+  timestamp: string;
+  changed_by: string;
+}
+
+export interface TechnicianSchedule {
+  id: string;
+  technician_id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_recurring: boolean;
+  specific_date?: string;
 }
