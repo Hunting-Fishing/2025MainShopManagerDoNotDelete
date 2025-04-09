@@ -67,12 +67,10 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   }, [activeTab, customer.id]);
 
   const loadNotes = async () => {
-    if (!customer?.id) return;
-    
     try {
       setIsLoadingNotes(true);
       const loadedNotes = await getCustomerNotes(customer.id);
-      setNotes(loadedNotes || []);
+      setNotes(loadedNotes);
     } catch (error) {
       console.error("Failed to load notes:", error);
     } finally {
@@ -93,7 +91,7 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   };
 
   // Calculate the number of vehicles for the badge
-  const vehicleCount = customer?.vehicles?.length || 0;
+  const vehicleCount = customer.vehicles?.length || 0;
 
   return (
     <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
