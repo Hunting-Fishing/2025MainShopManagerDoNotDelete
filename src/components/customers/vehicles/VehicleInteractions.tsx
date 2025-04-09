@@ -13,10 +13,11 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
   useEffect(() => {
     const fetchVehicleInteractions = async () => {
       try {
+        // Fix: Use the appropriate field name for the query
         const { data, error } = await supabase
           .from('customer_interactions')
           .select('*')
-          .eq('related_work_order_id', vehicleId)
+          .eq('vehicle_id', vehicleId)
           .order('date', { ascending: false });
         
         if (error) {
