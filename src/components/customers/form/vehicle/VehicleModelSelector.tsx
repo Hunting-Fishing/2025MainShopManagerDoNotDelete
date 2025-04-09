@@ -2,7 +2,7 @@
 import React from 'react';
 import { FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Control, FieldPath } from 'react-hook-form';
+import { Control, FieldPath, useController } from 'react-hook-form';
 
 interface VehicleModelSelectorProps<T> {
   name: FieldPath<T>;
@@ -25,11 +25,19 @@ export function VehicleModelSelector<T>({
   required = false,
   placeholder = 'Select model'
 }: VehicleModelSelectorProps<T>) {
+  // Use the useController hook to properly handle form integration
+  const { field } = useController({ name, control });
+
   return (
     <FormItem>
       <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
       <FormControl>
-        <Select disabled={disabled || loading} name={name}>
+        <Select 
+          disabled={disabled || loading} 
+          value={field.value as string || ""} 
+          onValueChange={field.onChange}
+          name={name}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>

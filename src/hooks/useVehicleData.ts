@@ -32,7 +32,8 @@ export const useVehicleData = () => {
       setError(null);
       
       try {
-        const { data, error } = await supabase
+        // Use as any to bypass TypeScript errors until database types are updated
+        const { data, error } = await (supabase as any)
           .from('vehicle_makes')
           .select('id, make_id, make_display')
           .order('make_display');
@@ -42,7 +43,7 @@ export const useVehicleData = () => {
         }
         
         // Map the data to match our CarMake type
-        const formattedMakes: CarMake[] = data.map(make => ({
+        const formattedMakes: CarMake[] = data.map((make: any) => ({
           make_id: make.make_id,
           make_display: make.make_display,
           make_is_common: '1', // All makes in our DB are considered common
@@ -71,9 +72,10 @@ export const useVehicleData = () => {
     setSelectedModel('');
     
     try {
-      const { data, error } = await supabase
+      // Use as any to bypass TypeScript errors until database types are updated
+      const { data, error } = await (supabase as any)
         .from('vehicle_models')
-        .select('id, model_id, model_display')
+        .select('id, model_id, model_display, make_id')
         .eq('make_id', make)
         .order('model_display');
       
@@ -82,9 +84,9 @@ export const useVehicleData = () => {
       }
       
       // Map the data to match our CarModel type
-      const formattedModels: CarModel[] = data.map(model => ({
+      const formattedModels: CarModel[] = data.map((model: any) => ({
         model_name: model.model_display,
-        model_make_id: make
+        model_make_id: model.make_id
       }));
       
       setModels(formattedModels);

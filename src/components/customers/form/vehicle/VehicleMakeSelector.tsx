@@ -2,7 +2,7 @@
 import React from 'react';
 import { FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Control, FieldPath } from 'react-hook-form';
+import { Control, FieldPath, useController } from 'react-hook-form';
 
 interface VehicleMakeSelectorProps<T> {
   name: FieldPath<T>;
@@ -25,20 +25,27 @@ export function VehicleMakeSelector<T>({
   required = false,
   placeholder = 'Select make'
 }: VehicleMakeSelectorProps<T>) {
+  // Use the useController hook to properly handle form integration
+  const { field } = useController({ name, control });
+  
   return (
     <FormItem>
       <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
       <FormControl>
         <Select
           disabled={disabled}
-          onValueChange={onMakeChange}
+          onValueChange={(value) => {
+            field.onChange(value);
+            onMakeChange(value);
+          }}
+          value={field.value as string || ""}
           name={name}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent>
-            {makes.length > 0 ? (
+            {makes && makes.length > 0 ? (
               makes.map(make => {
                 // Skip any empty values to avoid Radix UI error
                 if (!make.make_id) return null;

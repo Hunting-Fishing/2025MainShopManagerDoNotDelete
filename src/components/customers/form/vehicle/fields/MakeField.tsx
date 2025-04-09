@@ -13,8 +13,8 @@ interface MakeFieldProps extends BaseFieldProps {
 }
 
 export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], onMakeChange }) => {
-  const makeValue = form.watch(`vehicles.${index}.make`);
-
+  // No need to use watch here as the form handles the value
+  
   return (
     <FormField
       control={form.control}
