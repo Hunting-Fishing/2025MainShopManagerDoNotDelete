@@ -10,11 +10,13 @@ export const filterCustomers = (
     return customers || [];
   }
 
+  console.log(`Running filter on ${customers.length} customers with:`, filters);
+
   return customers.filter((customer) => {
     // Search query filter
     if (filters.searchQuery && filters.searchQuery.trim() !== '') {
       const query = filters.searchQuery.toLowerCase();
-      const fullName = `${customer.first_name} ${customer.last_name}`.toLowerCase();
+      const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase();
       const email = customer.email?.toLowerCase() || '';
       const phone = customer.phone?.toLowerCase() || '';
       const company = customer.company?.toLowerCase() || '';
@@ -32,7 +34,14 @@ export const filterCustomers = (
     // Tags filter
     if (filters.tags && filters.tags.length > 0) {
       const customerTags = customer.tags || [];
-      if (!customerTags.some(tag => filters.tags!.includes(tag))) {
+      // Handle different formats of tags (array or string that needs parsing)
+      const normalizedTags = Array.isArray(customerTags) 
+        ? customerTags 
+        : typeof customerTags === 'string' 
+          ? JSON.parse(customerTags) 
+          : [];
+          
+      if (!normalizedTags.some(tag => filters.tags!.includes(tag))) {
         return false;
       }
     }
@@ -40,7 +49,7 @@ export const filterCustomers = (
     // Vehicle type filter
     if (filters.vehicleType && customer.vehicles && customer.vehicles.length > 0) {
       const hasVehicleType = customer.vehicles.some(
-        v => v.body_style === filters.vehicleType
+        v => v.body_style?.toLowerCase() === filters.vehicleType?.toLowerCase()
       );
       if (!hasVehicleType) {
         return false;

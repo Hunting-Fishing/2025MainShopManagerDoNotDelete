@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Customer } from "@/types/customer";
-import { getAllCustomers } from "@/services/customer";
+import { getAllCustomers } from "@/services/customer/customerQueryService";
 import { useToast } from "@/hooks/use-toast";
 import { checkSupabaseConnection } from "@/lib/supabase";
 import { filterCustomers } from "@/utils/search/customerSearch";
@@ -19,25 +19,34 @@ export const useCustomers = () => {
   const [connectionOk, setConnectionOk] = useState<boolean | null>(null);
   const { toast } = useToast();
   
+  // Check database connection
   useEffect(() => {
     const checkConnection = async () => {
-      const isConnected = await checkSupabaseConnection();
-      setConnectionOk(isConnected);
-      
-      if (!isConnected) {
-        setError("Unable to connect to the database. Please try again later.");
-        setLoading(false);
-        toast({
-          title: "Connection Error",
-          description: "Could not connect to the database. Please check your connection and try again.",
-          variant: "destructive",
-        });
+      try {
+        const isConnected = await checkSupabaseConnection();
+        console.log("Connection status:", isConnected);
+        setConnectionOk(isConnected);
+        
+        if (!isConnected) {
+          setError("Unable to connect to the database. Please try again later.");
+          setLoading(false);
+          toast({
+            title: "Connection Error",
+            description: "Could not connect to the database. Please check your connection and try again.",
+            variant: "destructive",
+          });
+        }
+      } catch (err) {
+        console.error("Error checking connection:", err);
+        setConnectionOk(false);
+        setError("Connection check failed. Please try again later.");
       }
     };
     
     checkConnection();
   }, [toast]);
   
+  // Fetch customers when connection is confirmed
   useEffect(() => {
     const fetchCustomers = async () => {
       if (connectionOk !== true) return;
@@ -48,8 +57,14 @@ export const useCustomers = () => {
         console.log("Fetching all customers in useCustomers hook");
         const data = await getAllCustomers();
         console.log("Customer data received:", data);
-        setCustomers(data);
-        setFilteredCustomers(data);
+        
+        if (data && Array.isArray(data)) {
+          setCustomers(data);
+          setFilteredCustomers(data);
+        } else {
+          console.error("Received invalid customer data format:", data);
+          setError("Received invalid data format from the server.");
+        }
       } catch (error) {
         console.error("Error fetching customers:", error);
         setError("Failed to load customer data. Please try again.");
@@ -66,11 +81,18 @@ export const useCustomers = () => {
     fetchCustomers();
   }, [toast, connectionOk]);
   
+  // Apply filters whenever customers or filters change
   useEffect(() => {
-    setFilteredCustomers(filterCustomers(customers, filters));
+    if (customers && customers.length > 0) {
+      console.log("Filtering customers with filters:", filters);
+      const filtered = filterCustomers(customers, filters);
+      console.log(`Filtered customers: ${filtered.length} of ${customers.length}`);
+      setFilteredCustomers(filtered);
+    }
   }, [customers, filters]);
 
   const handleFilterChange = (newFilters: CustomerFilters) => {
+    console.log("Filter changed:", newFilters);
     setFilters(newFilters);
   };
 

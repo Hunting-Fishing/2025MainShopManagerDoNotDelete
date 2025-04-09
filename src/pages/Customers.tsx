@@ -13,6 +13,13 @@ export default function Customers() {
     handleFilterChange
   } = useCustomers();
 
+  console.log("Customers page rendering with:", { 
+    totalCustomers: customers?.length || 0, 
+    filteredCount: filteredCustomers?.length || 0,
+    isLoading: loading,
+    hasError: !!error
+  });
+
   return (
     <div className="space-y-6">
       <CustomersHeader />

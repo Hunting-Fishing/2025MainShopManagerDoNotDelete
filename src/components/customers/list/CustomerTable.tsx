@@ -48,7 +48,7 @@ export const CustomerTable = ({ customers, loading, error }: CustomerTableProps)
     );
   }
   
-  if (customers.length === 0) {
+  if (!customers || customers.length === 0) {
     return (
       <TableRow>
         <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
