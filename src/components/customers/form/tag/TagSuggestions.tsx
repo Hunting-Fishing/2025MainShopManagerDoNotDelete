@@ -3,6 +3,7 @@ import React from "react";
 import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { predefinedTags } from "../schemas/referenceData";
+import { supabase } from "@/lib/supabase";
 
 interface TagSuggestionsProps {
   inputValue: string;
@@ -23,6 +24,36 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
       !tags.includes(tag.id) && 
       tag.label.toLowerCase().includes(inputValue.toLowerCase())
   );
+
+  // Function to save a new custom tag to the database
+  const saveCustomTag = async (tag: string) => {
+    try {
+      // In a real implementation, you would save to a customer_tags table
+      // This is pseudocode for the concept:
+      /* 
+      const { data, error } = await supabase
+        .from('customer_tags')
+        .insert([{ 
+          name: tag,
+          color: 'bg-gray-500'
+        }]);
+      
+      if (error) {
+        console.error('Error saving tag:', error);
+      }
+      */
+      console.log('Would save custom tag to database:', tag);
+    } catch (error) {
+      console.error('Error saving custom tag:', error);
+    }
+  };
+
+  const handleAddCustomTag = (tag: string) => {
+    // Save to database first (if we had a real implementation)
+    saveCustomTag(tag);
+    // Then add to the UI
+    onAddTag(tag);
+  };
 
   return (
     <div 
@@ -48,7 +79,7 @@ export const TagSuggestions: React.FC<TagSuggestionsProps> = ({
           {inputValue ? (
             <div 
               className="flex items-center gap-2 cursor-pointer hover:text-blue-500"
-              onClick={() => onAddTag(inputValue)}
+              onClick={() => handleAddCustomTag(inputValue)}
             >
               <Plus size={16} />
               <span>Create "{inputValue}"</span>

@@ -22,6 +22,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TagSelector } from "./tag";
+import { supabase } from "@/lib/supabase";
 
 interface PreferencesFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
@@ -31,6 +33,8 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
   const [isOpen, setIsOpen] = useState(true);
   const [inactiveTechSelected, setInactiveTechSelected] = useState(false);
   const [showInactiveWarning, setShowInactiveWarning] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [dbTechnicians, setDbTechnicians] = useState<any[]>([]);
 
   // This would come from your API in a real implementation
   // For now, we'll use the status field from our technician data
@@ -45,6 +49,44 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
     tech.status.toLowerCase() === "on leave" || 
     tech.status.toLowerCase() === "terminated"
   ).length;
+
+  // Fetch technicians from database
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      setLoading(true);
+      try {
+        // In a real implementation, you would query your technicians table
+        // For now, we'll use the profiles table with a role filter when available
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, job_title')
+          .eq('job_title', 'Technician')
+          .order('last_name');
+          
+        if (error) {
+          console.error('Error fetching technicians:', error);
+        } else if (data) {
+          // If we have real data, use it - otherwise fall back to our predefined data
+          if (data.length > 0) {
+            setDbTechnicians(data.map(tech => ({
+              id: tech.id,
+              name: `${tech.first_name} ${tech.last_name}`,
+              status: "Active" // Default status, can be updated if you have a status field
+            })));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching technicians:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTechnicians();
+  }, []);
+  
+  // Use database technicians if available, otherwise fall back to our predefined list
+  const displayTechnicians = dbTechnicians.length > 0 ? dbTechnicians : technicians;
 
   // Check if the selected technician is inactive when component loads or selection changes
   useEffect(() => {
@@ -104,15 +146,16 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
                 <Select
                   onValueChange={field.onChange}
                   value={field.value || "_none"}
+                  disabled={loading}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a preferred technician" />
+                      <SelectValue placeholder={loading ? "Loading technicians..." : "Select a preferred technician"} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="_none">No preference</SelectItem>
-                    {technicians.map((tech) => (
+                    {displayTechnicians.map((tech) => (
                       <SelectItem 
                         key={tech.id} 
                         value={tech.id} 
@@ -195,6 +238,40 @@ export const PreferencesFields: React.FC<PreferencesFieldsProps> = ({ form }) =>
                 </Select>
                 <FormDescription>
                   How the customer prefers to be contacted
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="mt-6">
+          <FormField
+            control={form.control}
+            name="tags"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center gap-2">
+                  <FormLabel>Customer Tags</FormLabel>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>Tags help categorize and filter customers</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <FormControl>
+                  <TagSelector
+                    selectedTags={field.value || []}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Add tags to help organize this customer
                 </FormDescription>
                 <FormMessage />
               </FormItem>

@@ -1,64 +1,76 @@
 
 import React from "react";
-import { Input } from "@/components/ui/input";
 import { TagBadge } from "./TagBadge";
 import { TagSuggestions } from "./TagSuggestions";
+import { Input } from "@/components/ui/input";
 import { useTagSelector } from "./useTagSelector";
-import { TagSelectorProps } from "../TagSelectorTypes";
+import { Loader2 } from "lucide-react";
 
-export const TagSelector: React.FC<TagSelectorProps> = (props) => {
-  const { disabled } = props;
+interface TagSelectorProps {
+  selectedTags: string[];
+  onChange: (tags: string[]) => void;
+  disabled?: boolean;
+}
+
+export const TagSelector: React.FC<TagSelectorProps> = ({
+  selectedTags = [],
+  onChange,
+  disabled = false
+}) => {
   const {
     inputValue,
     showSuggestions,
-    tags,
+    handleInputChange,
+    handleInputFocus,
+    handleAddTag,
+    handleRemoveTag,
+    handleKeyDown,
     inputRef,
     suggestionsRef,
-    addTag,
-    removeTag,
-    handleInputChange,
-    handleKeyDown,
-    setShowSuggestions
-  } = useTagSelector(props);
+    loading
+  } = useTagSelector(selectedTags, onChange);
 
   return (
-    <div className="w-full">
-      <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-white min-h-[40px] focus-within:ring-1 focus-within:ring-ring focus-within:border-input">
-        {tags.map((tag: string) => (
-          <TagBadge 
+    <div className="relative">
+      <div className="flex flex-wrap gap-1 p-2 border rounded-md bg-background min-h-10 mb-1">
+        {selectedTags.map((tag) => (
+          <TagBadge
             key={tag}
             tag={tag}
-            onRemove={removeTag}
+            onRemove={handleRemoveTag}
             disabled={disabled}
           />
         ))}
         
         {!disabled && (
           <div className="flex-1 min-w-[120px]">
-            <div className="relative">
-              <Input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setShowSuggestions(true)}
-                placeholder={tags.length ? "Add more tags..." : "Add tags..."}
-                className="border-0 h-8 p-0 focus-visible:ring-0 bg-transparent"
-              />
-              
-              {showSuggestions && (
-                <TagSuggestions
-                  inputValue={inputValue}
-                  tags={tags}
-                  onAddTag={addTag}
-                  suggestionsRef={suggestionsRef}
-                />
-              )}
-            </div>
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              onKeyDown={handleKeyDown}
+              className="border-none shadow-none h-8 p-0 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+              placeholder={loading ? "Loading tags..." : "Type to add tags..."}
+              disabled={loading}
+            />
+            {loading && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
           </div>
         )}
       </div>
+      
+      {showSuggestions && !disabled && !loading && (
+        <TagSuggestions
+          inputValue={inputValue}
+          tags={selectedTags}
+          onAddTag={handleAddTag}
+          suggestionsRef={suggestionsRef}
+        />
+      )}
     </div>
   );
 };
