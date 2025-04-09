@@ -1,49 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
-
-// Define a completely standalone interface for this component
-interface VehicleInteraction {
-  id: string;
-  date: string;
-  type: string;
-  staff_member_name: string;
-  description: string;
-}
+import { getVehicleInteractions } from '@/services/customer/customerInteractionsService';
+import { CustomerInteraction } from '@/types/interaction';
 
 export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
-  const [interactions, setInteractions] = useState<VehicleInteraction[]>([]);
+  const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchVehicleInteractions = async () => {
       try {
         setLoading(true);
-        // Use a type cast to avoid deep type instantiation
-        const response = await supabase
-          .from('customer_interactions')
-          .select('id, date, type, staff_member_name, description')
-          .eq('vehicle_id', vehicleId)
-          .order('date', { ascending: false });
-        
-        if (response.error) {
-          console.error('Error fetching vehicle interactions:', response.error);
-          setInteractions([]);
-        } else {
-          // Explicitly map the response data to our interface
-          const typedInteractions: VehicleInteraction[] = (response.data || []).map(item => ({
-            id: item.id,
-            date: item.date,
-            type: item.type,
-            staff_member_name: item.staff_member_name,
-            description: item.description
-          }));
-          
-          setInteractions(typedInteractions);
-        }
+        const data = await getVehicleInteractions(vehicleId);
+        setInteractions(data);
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);
         setInteractions([]);

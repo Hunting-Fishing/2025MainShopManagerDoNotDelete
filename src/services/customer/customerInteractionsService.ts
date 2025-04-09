@@ -68,6 +68,38 @@ export const addCustomerInteraction = async (
   }
 };
 
+// Get vehicle interactions
+export const getVehicleInteractions = async (vehicleId: string): Promise<CustomerInteraction[]> => {
+  try {
+    console.log("Fetching interactions for vehicle:", vehicleId);
+    
+    const { data, error } = await supabase
+      .from("customer_interactions")
+      .select("*")
+      .eq("vehicle_id", vehicleId)
+      .order("date", { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching vehicle interactions:", error);
+      throw error;
+    }
+    
+    console.log("Retrieved vehicle interactions:", data);
+    
+    // Ensure proper type casting
+    const interactions = (data || []).map(interaction => ({
+      ...interaction,
+      type: interaction.type as InteractionType,
+      status: interaction.status as InteractionStatus
+    })) as CustomerInteraction[];
+    
+    return interactions;
+  } catch (error) {
+    console.error("Error in getVehicleInteractions:", error);
+    return [];
+  }
+};
+
 // Update a customer interaction
 export const updateCustomerInteraction = async (
   id: string,
