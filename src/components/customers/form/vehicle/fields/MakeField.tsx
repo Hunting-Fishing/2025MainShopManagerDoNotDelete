@@ -53,8 +53,8 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
               {makes.length > 0 ? (
                 makes.map((make) => (
                   <SelectItem 
-                    key={make.make_id || make.make_display} 
-                    value={make.make_id || make.make_display}
+                    key={make.make_id} 
+                    value={make.make_id}
                   >
                     {make.make_display}
                   </SelectItem>

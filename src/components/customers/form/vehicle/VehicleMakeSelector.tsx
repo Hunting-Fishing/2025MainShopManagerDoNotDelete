@@ -8,7 +8,7 @@ interface VehicleMakeSelectorProps<T> {
   name: FieldPath<T>;
   label?: string;
   control: Control<T>;
-  makes: string[];
+  makes: { make_id: string; make_display: string }[];
   onMakeChange: (make: string) => void;
   disabled?: boolean;
   required?: boolean;
@@ -41,11 +41,11 @@ export function VehicleMakeSelector<T>({
             {makes.length > 0 ? (
               makes.map(make => {
                 // Skip any empty values to avoid Radix UI error
-                if (!make) return null;
+                if (!make.make_id) return null;
                 
                 return (
-                  <SelectItem key={make} value={make}>
-                    {make || "Unknown Make"}
+                  <SelectItem key={make.make_id} value={make.make_id}>
+                    {make.make_display || "Unknown Make"}
                   </SelectItem>
                 );
               })

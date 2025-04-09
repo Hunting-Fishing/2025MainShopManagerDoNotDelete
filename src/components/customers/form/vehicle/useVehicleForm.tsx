@@ -80,6 +80,14 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
               form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
             if (vehicleInfo.engine) 
               form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
+            if (vehicleInfo.trim)
+              form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
+            if (vehicleInfo.transmission_type)
+              form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
+            if (vehicleInfo.gvwr)
+              form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
+            if (vehicleInfo.country)
+              form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
             
             // Trigger form validation after all fields are set
             form.trigger([

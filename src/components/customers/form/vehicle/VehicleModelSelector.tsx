@@ -8,7 +8,7 @@ interface VehicleModelSelectorProps<T> {
   name: FieldPath<T>;
   label?: string;
   control: Control<T>;
-  models: string[];
+  models: { model_name: string; model_make_id: string }[];
   disabled?: boolean;
   loading?: boolean;
   required?: boolean;
@@ -39,11 +39,11 @@ export function VehicleModelSelector<T>({
             ) : models && models.length > 0 ? (
               models.map(model => {
                 // Skip any empty values to avoid Radix UI error
-                if (!model) return null;
+                if (!model.model_name) return null;
                 
                 return (
-                  <SelectItem key={model} value={model}>
-                    {model || "Unknown Model"}
+                  <SelectItem key={model.model_name} value={model.model_name}>
+                    {model.model_name || "Unknown Model"}
                   </SelectItem>
                 );
               })

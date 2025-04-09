@@ -3072,50 +3072,135 @@ export type Database = {
           },
         ]
       }
+      vehicle_makes: {
+        Row: {
+          created_at: string
+          id: string
+          make_display: string
+          make_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          make_display: string
+          make_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          make_display?: string
+          make_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vehicle_models: {
+        Row: {
+          created_at: string
+          id: string
+          make_id: string
+          model_display: string
+          model_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          make_id: string
+          model_display: string
+          model_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          make_id?: string
+          model_display?: string
+          model_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
+          body_style: string | null
           color: string | null
+          country: string | null
           created_at: string
           customer_id: string
+          drive_type: string | null
+          engine: string | null
+          fuel_type: string | null
+          gvwr: string | null
           id: string
           last_service_date: string | null
           license_plate: string | null
           make: string
           model: string
           notes: string | null
+          transmission: string | null
+          transmission_type: string | null
+          trim: string | null
           updated_at: string
           vin: string | null
           year: number | null
         }
         Insert: {
+          body_style?: string | null
           color?: string | null
+          country?: string | null
           created_at?: string
           customer_id: string
+          drive_type?: string | null
+          engine?: string | null
+          fuel_type?: string | null
+          gvwr?: string | null
           id?: string
           last_service_date?: string | null
           license_plate?: string | null
           make: string
           model: string
           notes?: string | null
+          transmission?: string | null
+          transmission_type?: string | null
+          trim?: string | null
           updated_at?: string
           vin?: string | null
           year?: number | null
         }
         Update: {
+          body_style?: string | null
           color?: string | null
+          country?: string | null
           created_at?: string
           customer_id?: string
+          drive_type?: string | null
+          engine?: string | null
+          fuel_type?: string | null
+          gvwr?: string | null
           id?: string
           last_service_date?: string | null
           license_plate?: string | null
           make?: string
           model?: string
           notes?: string | null
+          transmission?: string | null
+          transmission_type?: string | null
+          trim?: string | null
           updated_at?: string
           vin?: string | null
           year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_vehicles_customer_id"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vehicles_customer_id_fkey"
             columns: ["customer_id"]

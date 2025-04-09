@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
 import { decodeVin as decodeVinUtil } from '@/utils/vehicleUtils';
 import { supabase } from '@/lib/supabase';
-import { mockMakes } from '@/data/vehicleMakes';
-import { mockModelsByMake } from '@/data/vehicleModels';
 
 /**
  * Hook to provide vehicle data functionality including makes, models, years,
@@ -27,19 +25,40 @@ export const useVehicleData = () => {
     setYears(yearsList);
   }, []);
 
-  // Load makes from static data on mount
+  // Load makes from database on mount
   useEffect(() => {
-    setLoading(true);
+    const fetchMakes = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const { data, error } = await supabase
+          .from('vehicle_makes')
+          .select('id, make_id, make_display')
+          .order('make_display');
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Map the data to match our CarMake type
+        const formattedMakes: CarMake[] = data.map(make => ({
+          make_id: make.make_id,
+          make_display: make.make_display,
+          make_is_common: '1', // All makes in our DB are considered common
+          make_country: '' // We don't store country in our DB
+        }));
+        
+        setMakes(formattedMakes);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading vehicle makes:", err);
+        setError("Could not load vehicle makes");
+        setLoading(false);
+      }
+    };
     
-    // Using the mock data directly instead of trying to query a non-existent table
-    try {
-      setMakes(mockMakes);
-      setLoading(false);
-    } catch (err) {
-      console.error("Error loading vehicle makes:", err);
-      setError("Could not load vehicle makes");
-      setLoading(false);
-    }
+    fetchMakes();
   }, []);
 
   // Function to fetch models for a selected make
@@ -52,10 +71,23 @@ export const useVehicleData = () => {
     setSelectedModel('');
     
     try {
-      // Using the mock data directly instead of trying to query a non-existent table
-      const makeModels = mockModelsByMake[make] || [];
-      setModels(makeModels);
+      const { data, error } = await supabase
+        .from('vehicle_models')
+        .select('id, model_id, model_display')
+        .eq('make_id', make)
+        .order('model_display');
       
+      if (error) {
+        throw error;
+      }
+      
+      // Map the data to match our CarModel type
+      const formattedModels: CarModel[] = data.map(model => ({
+        model_name: model.model_display,
+        model_make_id: make
+      }));
+      
+      setModels(formattedModels);
       setLoading(false);
       return Promise.resolve();
     } catch (err) {
