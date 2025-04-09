@@ -23,7 +23,7 @@ export const TagSelector: React.FC<TagSelectorProps> = (props) => {
 
   return (
     <div className="w-full">
-      <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-white min-h-[40px]">
+      <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-white min-h-[40px] focus-within:ring-1 focus-within:ring-ring focus-within:border-input">
         {tags.map((tag: string) => (
           <TagBadge 
             key={tag}

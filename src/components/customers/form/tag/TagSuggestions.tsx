@@ -2,7 +2,7 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { predefinedTags } from "../CustomerFormSchema";
+import { predefinedTags } from "../schemas/referenceData";
 
 interface TagSuggestionsProps {
   inputValue: string;

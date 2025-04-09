@@ -2,7 +2,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
-import { predefinedTags } from "../CustomerFormSchema";
+import { predefinedTags } from "../schemas/referenceData";
 
 interface TagBadgeProps {
   tag: string;
