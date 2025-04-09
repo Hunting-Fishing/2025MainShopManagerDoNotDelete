@@ -1,6 +1,4 @@
 
-import { TeamMember } from "./team";
-
 export type InteractionType = 
   | 'work_order'
   | 'communication' 
@@ -16,18 +14,20 @@ export type InteractionStatus =
 
 export interface CustomerInteraction {
   id: string;
-  customerId: string;
-  customerName: string;
+  customer_id: string;
+  customer_name: string;
   date: string;
   type: InteractionType;
   description: string;
-  staffMemberId: string;
-  staffMemberName: string;
+  staff_member_id: string;
+  staff_member_name: string;
   status: InteractionStatus;
   notes?: string;
-  relatedWorkOrderId?: string;
-  followUpDate?: string;
-  followUpCompleted?: boolean;
+  related_work_order_id?: string;
+  follow_up_date?: string;
+  follow_up_completed?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface InteractionFilters {

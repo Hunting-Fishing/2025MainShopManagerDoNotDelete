@@ -26,7 +26,11 @@ export const InteractionDetailsDialog: React.FC<InteractionDetailsDialogProps> =
   onOpenChange,
 }) => {
   const formatDate = (dateString: string) => {
-    return format(parseISO(dateString), "PPP");
+    try {
+      return format(parseISO(dateString), "PPP");
+    } catch (error) {
+      return dateString;
+    }
   };
 
   return (

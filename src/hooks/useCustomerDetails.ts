@@ -165,7 +165,7 @@ export const useCustomerDetails = (id?: string) => {
 
   const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
-    setActiveTab("interactions");
+    setActiveTab("history");
   }, []);
 
   const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {

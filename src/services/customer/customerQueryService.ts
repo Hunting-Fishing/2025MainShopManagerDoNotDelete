@@ -7,12 +7,10 @@ import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
 export const getAllCustomers = async (): Promise<Customer[]> => {
   try {
     console.log("Fetching all customers...");
+    // Fix the vehicles relationship query by selecting just the customers first
     const { data, error } = await supabase
       .from("customers")
-      .select(`
-        *,
-        vehicles(*)
-      `)
+      .select("*")
       .order("last_name", { ascending: true });
     
     if (error) {
@@ -32,6 +30,25 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
     const customers = data.map(customer => adaptCustomerForUI(customer as Customer));
     
     console.log("Adapted customers:", customers);
+    
+    // Fetch vehicles for each customer separately to avoid relationship issues
+    for (const customer of customers) {
+      try {
+        const { data: vehiclesData, error: vehiclesError } = await supabase
+          .from("vehicles")
+          .select("*")
+          .eq("customer_id", customer.id);
+          
+        if (vehiclesError) {
+          console.error(`Error fetching vehicles for customer ${customer.id}:`, vehiclesError);
+        } else {
+          customer.vehicles = vehiclesData || [];
+        }
+      } catch (error) {
+        console.error(`Error processing vehicles for customer ${customer.id}:`, error);
+        customer.vehicles = [];
+      }
+    }
     
     // Fetch loyalty data for each customer
     // This is done separately to keep the initial customer query simple
@@ -64,10 +81,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     
     const { data, error } = await supabase
       .from("customers")
-      .select(`
-        *,
-        vehicles(*)
-      `)
+      .select("*")
       .eq("id", id)
       .single();
 
@@ -83,6 +97,23 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     
     console.log("Customer data from DB:", data);
     const customer = adaptCustomerForUI(data as Customer);
+    
+    // Fetch vehicles for this customer
+    try {
+      const { data: vehiclesData, error: vehiclesError } = await supabase
+        .from("vehicles")
+        .select("*")
+        .eq("customer_id", customer.id);
+        
+      if (vehiclesError) {
+        console.error(`Error fetching vehicles for customer ${customer.id}:`, vehiclesError);
+      } else {
+        customer.vehicles = vehiclesData || [];
+      }
+    } catch (error) {
+      console.error(`Error processing vehicles for customer ${customer.id}:`, error);
+      customer.vehicles = [];
+    }
     
     // Fetch loyalty data
     try {
