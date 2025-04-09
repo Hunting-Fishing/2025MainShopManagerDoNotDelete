@@ -24,6 +24,7 @@ export default function VehicleDetails() {
   const [vehicle, setVehicle] = useState<CustomerVehicle | null>(null);
   const [customerName, setCustomerName] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
@@ -31,6 +32,7 @@ export default function VehicleDetails() {
     const fetchVehicleDetails = async () => {
       if (!vehicleId || !customerId) {
         setLoading(false);
+        setError("Vehicle ID or Customer ID is missing");
         toast({
           title: "Missing information",
           description: "Vehicle ID or Customer ID is missing",
@@ -41,15 +43,18 @@ export default function VehicleDetails() {
       
       try {
         console.log(`Fetching vehicle details for ID: ${vehicleId}`);
-        // Fetch the vehicle details
+        
+        // First check that the vehicle belongs to the customer
         const { data: vehicleData, error: vehicleError } = await supabase
           .from('vehicles')
           .select('*')
           .eq('id', vehicleId)
+          .eq('customer_id', customerId)
           .single();
 
         if (vehicleError) {
           console.error("Error fetching vehicle:", vehicleError);
+          setError("Failed to load vehicle details");
           toast({
             title: "Error",
             description: "Failed to load vehicle details",
@@ -63,9 +68,10 @@ export default function VehicleDetails() {
           setVehicle(vehicleData as CustomerVehicle);
         } else {
           console.log("No vehicle found with ID:", vehicleId);
+          setError("Vehicle not found");
           toast({
             title: "Vehicle Not Found",
-            description: "The requested vehicle could not be found",
+            description: "The requested vehicle could not be found or doesn't belong to this customer",
             variant: "destructive",
           });
         }
@@ -90,6 +96,7 @@ export default function VehicleDetails() {
         }
       } catch (error) {
         console.error("Error in fetchVehicleDetails:", error);
+        setError("An unexpected error occurred");
         toast({
           title: "Error",
           description: "An unexpected error occurred while loading vehicle details",
@@ -116,10 +123,10 @@ export default function VehicleDetails() {
     );
   }
 
-  if (!vehicle) {
+  if (error || !vehicle) {
     return (
       <div className="flex flex-col space-y-4 items-center justify-center h-64">
-        <div className="text-lg text-slate-500">Vehicle not found</div>
+        <div className="text-lg text-slate-500">{error || "Vehicle not found"}</div>
         <Button onClick={handleBack} variant="outline">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
         </Button>
@@ -136,15 +143,14 @@ export default function VehicleDetails() {
     vin: vehicle.vin || '',
     license_plate: vehicle.license_plate || '',
     color: vehicle.color || '',
-    // Safely add additional properties that might be needed
-    transmission: (vehicle as any).transmission || '',
-    transmission_type: (vehicle as any).transmission_type || '',
-    drive_type: (vehicle as any).drive_type || '',
-    fuel_type: (vehicle as any).fuel_type || '',
-    engine: (vehicle as any).engine || '',
-    body_style: (vehicle as any).body_style || '',
-    country: (vehicle as any).country || '',
-    gvwr: (vehicle as any).gvwr || '',
+    transmission: vehicle.transmission || '',
+    transmission_type: vehicle.transmission_type || '',
+    drive_type: vehicle.drive_type || '',
+    fuel_type: vehicle.fuel_type || '',
+    engine: vehicle.engine || '',
+    body_style: vehicle.body_style || '',
+    country: vehicle.country || '',
+    gvwr: vehicle.gvwr || '',
   };
 
   return (
@@ -154,14 +160,14 @@ export default function VehicleDetails() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
         </Button>
         <h1 className="text-2xl font-bold flex-1 truncate">
-          {vehicle.year ? vehicle.year : ''} {vehicle.make} {vehicle.model}
+          {vehicle.year ? vehicle.year : ''} {vehicle.make || ''} {vehicle.model || ''}
         </h1>
         <Button 
           variant="default"
           asChild
           className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
         >
-          <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(`${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}`)}`}>
+          <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName || '')}&vehicleInfo=${encodeURIComponent(`${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}`)}`}>
             <ClipboardList className="mr-2 h-4 w-4" /> Create Work Order
           </Link>
         </Button>

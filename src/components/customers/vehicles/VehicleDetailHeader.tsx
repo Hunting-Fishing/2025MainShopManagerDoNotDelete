@@ -18,16 +18,7 @@ import { Button } from "@/components/ui/button";
 import { CustomerVehicle } from "@/types/customer";
 
 interface VehicleDetailHeaderProps {
-  vehicle: CustomerVehicle & {
-    transmission?: string;
-    transmission_type?: string;
-    drive_type?: string;
-    fuel_type?: string;
-    engine?: string;
-    body_style?: string;
-    country?: string;
-    gvwr?: string;
-  };
+  vehicle: CustomerVehicle;
   customerName: string;
   customerId: string;
 }
