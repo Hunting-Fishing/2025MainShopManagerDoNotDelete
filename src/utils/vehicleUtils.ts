@@ -2,9 +2,10 @@
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { decodeVin as externalDecodeVin } from "@/services/vinDecoderService";
 
 /**
- * Decodes a VIN using Supabase database
+ * Decodes a VIN using external service
  */
 export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> => {
   try {
@@ -32,30 +33,16 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
       return null;
     }
     
-    // Query the vin_data table in Supabase
-    const { data, error } = await supabase
-      .from('vin_data')
-      .select('*')
-      .or(`prefix.eq.${vin.substring(0, 8)},full_vin.eq.${vin}`)
-      .limit(1);
+    // Use the external VIN decoding service instead of trying to query a non-existent table
+    const decodedData = await externalDecodeVin(vin);
     
-    if (error) {
-      console.error("Database error during VIN lookup:", error);
-      toast({
-        title: "Database Error",
-        description: "Could not look up VIN information",
-        variant: "destructive",
-      });
-      return null;
-    }
-    
-    if (data && data.length > 0) {
-      console.log("VIN match found:", data[0]);
-      return data[0] as VinDecodeResult;
+    if (decodedData) {
+      console.log("VIN decoded successfully:", decodedData);
+      return decodedData;
     }
     
     // No match found
-    console.log("No VIN match found in database");
+    console.log("No VIN match found");
     toast({
       title: "VIN Not Found",
       description: "No vehicle information was found for this VIN",
