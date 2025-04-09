@@ -28,6 +28,16 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
   };
 
   const handleVehicleClick = (vehicleId: string) => {
+    if (!vehicleId) {
+      console.error("Cannot navigate to vehicle details: missing vehicle ID");
+      return;
+    }
+    
+    if (!customer.id) {
+      console.error("Cannot navigate to vehicle details: missing customer ID");
+      return;
+    }
+    
     navigate(`/customers/${customer.id}/vehicles/${vehicleId}`);
   };
 
@@ -80,9 +90,9 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
                 className="hover:bg-muted/50 cursor-pointer" 
                 onClick={() => vehicle.id && handleVehicleClick(vehicle.id)}
               >
-                <TableCell>{vehicle.year}</TableCell>
-                <TableCell>{vehicle.make}</TableCell>
-                <TableCell>{vehicle.model}</TableCell>
+                <TableCell>{vehicle.year || 'N/A'}</TableCell>
+                <TableCell>{vehicle.make || 'N/A'}</TableCell>
+                <TableCell>{vehicle.model || 'N/A'}</TableCell>
                 <TableCell className="font-mono text-xs">
                   {vehicle.vin || <span className="text-muted-foreground">No VIN</span>}
                 </TableCell>

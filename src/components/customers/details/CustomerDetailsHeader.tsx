@@ -18,6 +18,9 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
   const navigate = useNavigate();
   const customerName = customer.name || getCustomerFullName(customer);
   const customerStatus = customer.status || 'active';
+  
+  // Safety check - make sure customer ID exists
+  const canCreateWorkOrder = !!customer && !!customer.id;
 
   return (
     <div>
@@ -34,7 +37,7 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{customerName}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{customerName || "Customer"}</h1>
             <Badge 
               variant={customerStatus === 'active' ? 'default' : 'secondary'}
             >
@@ -52,22 +55,34 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
           >
             <MessageSquare className="mr-2 h-4 w-4" /> Record Interaction
           </Button>
-          <Button 
-            variant="outline"
-            asChild
-          >
-            <Link to={`/work-orders/new?customer=${customer.id}&customerName=${encodeURIComponent(customerName)}`}>
+          {canCreateWorkOrder ? (
+            <Button 
+              variant="outline"
+              asChild
+            >
+              <Link to={`/work-orders/new?customerId=${customer.id}&customerName=${encodeURIComponent(customerName || '')}`}>
+                <ClipboardList className="mr-2 h-4 w-4" /> New Work Order
+              </Link>
+            </Button>
+          ) : (
+            <Button 
+              variant="outline"
+              disabled
+              title="Customer ID is required to create a work order"
+            >
               <ClipboardList className="mr-2 h-4 w-4" /> New Work Order
-            </Link>
-          </Button>
-          <Button 
-            variant="outline"
-            asChild
-          >
-            <Link to={`/customers/${customer.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" /> Edit Customer
-            </Link>
-          </Button>
+            </Button>
+          )}
+          {customer.id && (
+            <Button 
+              variant="outline"
+              asChild
+            >
+              <Link to={`/customers/${customer.id}/edit`}>
+                <Edit className="mr-2 h-4 w-4" /> Edit Customer
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </div>

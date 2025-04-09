@@ -22,7 +22,7 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
     if (match) {
       console.log("VIN match found:", match);
       return {
-        ...match,
+        ...match
         // Don't add the VIN property here as it's not in the VinDecodeResult type
       };
     }
