@@ -31,6 +31,7 @@ export default function VehicleDetails() {
   useEffect(() => {
     const fetchVehicleDetails = async () => {
       if (!vehicleId || !customerId) {
+        console.error("Missing vehicle or customer ID in URL params:", { vehicleId, customerId });
         setError("Missing vehicle or customer ID");
         setLoading(false);
         return;
@@ -122,23 +123,27 @@ export default function VehicleDetails() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
-        <Button onClick={handleBack} variant="ghost" className="mr-4">
+        <Button onClick={() => navigate(`/customers/${customerId}`)} variant="ghost" className="mr-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
         </Button>
         <h1 className="text-2xl font-bold flex-1">
-          {vehicle.year} {vehicle.make} {vehicle.model}
+          {vehicle?.year} {vehicle?.make} {vehicle?.model}
         </h1>
         <Button 
           variant="default"
           asChild
         >
-          <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(`${vehicle.year} ${vehicle.make} ${vehicle.model}`)}`}>
+          <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName || '')}&vehicleInfo=${encodeURIComponent(`${vehicle?.year || ''} ${vehicle?.make || ''} ${vehicle?.model || ''}`)}`}>
             <ClipboardList className="mr-2 h-4 w-4" /> Create Work Order
           </Link>
         </Button>
       </div>
 
-      <VehicleDetailHeader vehicle={vehicle} customerName={customerName} customerId={customerId || ""} />
+      {vehicle && <VehicleDetailHeader 
+        vehicle={vehicle} 
+        customerName={customerName} 
+        customerId={customerId || ""} 
+      />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
         <TabsList className="grid grid-cols-5 md:grid-cols-10 gap-2">

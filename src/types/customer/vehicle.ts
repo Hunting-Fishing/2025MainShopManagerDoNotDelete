@@ -4,8 +4,8 @@ export interface CustomerVehicle {
   id?: string; // Making id optional for creation
   customer_id?: string;
   year?: number | string;
-  make?: string;
-  model?: string;
+  make: string;  // This is required to match the type in customer.ts
+  model: string; // This is required to match the type in customer.ts
   vin?: string;
   license_plate?: string;
   trim?: string;
