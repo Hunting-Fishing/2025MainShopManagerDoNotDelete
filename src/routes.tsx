@@ -1,7 +1,8 @@
-
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import ErrorPage from "./pages/error-page";
+import NotFound from "./pages/NotFound";
+import { VehicleDetailsPage } from "./components/customers/vehicles/VehicleDetailsPage";
 import { Dashboard } from "./pages/dashboard";
 import { Customers } from "./pages/customers";
 import { CustomerDetails } from "./pages/customer-details";
@@ -14,7 +15,6 @@ import { Invoices } from "./pages/invoices";
 import { InvoiceCreate } from "./pages/invoice-create";
 import { InvoiceDetails } from "./pages/invoice-details";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
-import { VehicleDetailsPage } from "./components/customers/vehicles/VehicleDetailsPage";
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +22,10 @@ export const router = createBrowserRouter([
     element: <App />,
     errorElement: <ErrorPage />,
     children: [
+      {
+        path: "*",
+        element: <NotFound />
+      },
       {
         index: true,
         element: <Dashboard />,

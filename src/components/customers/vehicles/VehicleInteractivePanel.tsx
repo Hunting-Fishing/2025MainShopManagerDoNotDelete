@@ -94,7 +94,164 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
     { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
     { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '245,180, 285,180, 285,250, 245,250' },
   ],
-  unknown: [
+  coupe: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,120, 285,120, 285,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Left Door', coordinates: '175,180, 175,260, 215,260, 215,180' },
+    { id: 'right_front_door', name: 'Right Door', coordinates: '245,180, 245,260, 285,260, 285,180' },
+    { id: 'trunk', name: 'Trunk', coordinates: '285,140, 345,140, 345,260, 285,260' },
+    { id: 'rear', name: 'Rear', coordinates: '315,180, 345,180, 345,260, 315,260' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
+  ],
+  convertible: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Convertible Top', coordinates: '175,120, 285,120, 285,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Left Door', coordinates: '175,180, 175,260, 215,260, 215,180' },
+    { id: 'right_front_door', name: 'Right Door', coordinates: '245,180, 245,260, 285,260, 285,180' },
+    { id: 'trunk', name: 'Trunk', coordinates: '285,140, 345,140, 345,260, 285,260' },
+    { id: 'rear', name: 'Rear', coordinates: '315,180, 345,180, 345,260, 315,260' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
+  ],
+  wagon: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,120, 285,120, 285,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Left Front Door', coordinates: '175,180, 175,260, 215,260, 215,180' },
+    { id: 'right_front_door', name: 'Right Front Door', coordinates: '245,180, 245,260, 285,260, 285,180' },
+    { id: 'left_rear_door', name: 'Left Rear Door', coordinates: '215,180, 215,260, 245,260, 245,180' },
+    { id: 'right_rear_door', name: 'Right Rear Door', coordinates: '285,180, 285,260, 315,260, 315,180' },
+    { id: 'trunk', name: 'Cargo Area', coordinates: '285,140, 345,140, 345,260, 285,260' },
+    { id: 'rear', name: 'Rear Gate', coordinates: '315,180, 345,180, 345,260, 315,260' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
+  ],
+  crossover: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Left Front Door', coordinates: '175,180, 175,260, 215,260, 215,180' },
+    { id: 'right_front_door', name: 'Right Front Door', coordinates: '245,180, 245,260, 285,260, 285,180' },
+    { id: 'left_rear_door', name: 'Left Rear Door', coordinates: '215,180, 215,260, 245,260, 245,180' },
+    { id: 'right_rear_door', name: 'Right Rear Door', coordinates: '285,180, 285,260, 315,260, 315,180' },
+    { id: 'trunk', name: 'Cargo Area', coordinates: '285,140, 345,140, 345,260, 285,260' },
+    { id: 'rear', name: 'Rear', coordinates: '315,180, 345,180, 345,260, 315,260' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
+  ],
+  minivan: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Left Front Door', coordinates: '175,180, 175,260, 215,260, 215,180' },
+    { id: 'right_front_door', name: 'Right Front Door', coordinates: '245,180, 245,260, 285,260, 285,180' },
+    { id: 'left_rear_door', name: 'Left Sliding Door', coordinates: '215,180, 215,260, 245,260, 245,180' },
+    { id: 'right_rear_door', name: 'Right Sliding Door', coordinates: '285,180, 285,260, 315,260, 315,180' },
+    { id: 'trunk', name: 'Cargo Area', coordinates: '285,140, 345,140, 345,260, 285,260' },
+    { id: 'rear', name: 'Rear Door', coordinates: '315,180, 345,180, 345,260, 315,260' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
+  ],
+  pickup: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,120, 245,120, 245,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 245,140, 245,160, 175,160' },
+    { id: 'left_front_door', name: 'Driver Door', coordinates: '175,180, 175,260, 210,260, 210,180' },
+    { id: 'right_front_door', name: 'Passenger Door', coordinates: '210,180, 210,260, 245,260, 245,180' },
+    { id: 'truck_bed', name: 'Truck Bed', coordinates: '245,140, 345,140, 345,260, 245,260' },
+    { id: 'rear', name: 'Tailgate', coordinates: '245,260, 345,260, 345,300, 245,300' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '245,180, 285,180, 285,250, 245,250' },
+  ],
+  motorcycle: [
+    { id: 'front_wheel', name: 'Front Wheel', coordinates: '175,180, 215,180, 215,220, 175,220' },
+    { id: 'rear_wheel', name: 'Rear Wheel', coordinates: '275,180, 315,180, 315,220, 275,220' },
+    { id: 'gas_tank', name: 'Gas Tank', coordinates: '225,140, 275,140, 275,180, 225,180' },
+    { id: 'seat', name: 'Seat', coordinates: '225,180, 275,180, 275,200, 225,200' },
+    { id: 'engine', name: 'Engine', coordinates: '225,200, 275,200, 275,220, 225,220' },
+    { id: 'handlebars', name: 'Handlebars', coordinates: '175,140, 225,140, 225,160, 175,160' },
+  ],
+  scooter: [
+    { id: 'front_wheel', name: 'Front Wheel', coordinates: '175,180, 215,180, 215,220, 175,220' },
+    { id: 'rear_wheel', name: 'Rear Wheel', coordinates: '275,180, 315,180, 315,220, 275,220' },
+    { id: 'seat', name: 'Seat', coordinates: '225,160, 275,160, 275,200, 225,200' },
+    { id: 'body', name: 'Body', coordinates: '215,200, 285,200, 285,220, 215,220' },
+    { id: 'handlebars', name: 'Handlebars', coordinates: '175,140, 225,140, 225,160, 175,160' },
+  ],
+  atv: [
+    { id: 'front_left_wheel', name: 'Front Left Wheel', coordinates: '175,180, 215,180, 215,220, 175,220' },
+    { id: 'front_right_wheel', name: 'Front Right Wheel', coordinates: '175,230, 215,230, 215,270, 175,270' },
+    { id: 'rear_left_wheel', name: 'Rear Left Wheel', coordinates: '275,180, 315,180, 315,220, 275,220' },
+    { id: 'rear_right_wheel', name: 'Rear Right Wheel', coordinates: '275,230, 315,230, 315,270, 275,270' },
+    { id: 'seat', name: 'Seat', coordinates: '225,180, 275,180, 275,220, 225,220' },
+    { id: 'handlebars', name: 'Handlebars', coordinates: '175,140, 225,140, 225,160, 175,160' },
+  ],
+  rv: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Driver Door', coordinates: '175,180, 175,260, 210,260, 210,180' },
+    { id: 'right_front_door', name: 'Passenger Door', coordinates: '210,180, 210,260, 245,260, 245,180' },
+    { id: 'left_side', name: 'Left Side', coordinates: '210,180, 210,260, 245,260, 245,180' },
+    { id: 'right_side', name: 'Right Side', coordinates: '245,180, 245,260, 315,260, 315,180' },
+    { id: 'rear', name: 'Rear', coordinates: '315,180, 345,180, 345,260, 315,260' },
+  ],
+  camper: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Driver Door', coordinates: '175,180, 175,260, 210,260, 210,180' },
+    { id: 'right_front_door', name: 'Passenger Door', coordinates: '210,180, 210,260, 245,260, 245,180' },
+    { id: 'left_side', name: 'Left Side', coordinates: '210,180, 210,260, 245,260, 245,180' },
+    { id: 'right_side', name: 'Right Side', coordinates: '245,180, 245,260, 315,260, 315,180' },
+    { id: 'rear', name: 'Rear', coordinates: '315,180, 345,180, 345,260, 315,260' },
+  ],
+  limousine: [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,120, 285,120, 285,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Left Front Door', coordinates: '175,180, 175,260, 215,260, 215,180' },
+    { id: 'right_front_door', name: 'Right Front Door', coordinates: '245,180, 245,260, 285,260, 285,180' },
+    { id: 'left_rear_door', name: 'Left Passenger Doors', coordinates: '215,180, 215,260, 245,260, 245,180' },
+    { id: 'right_rear_door', name: 'Right Passenger Doors', coordinates: '285,180, 285,260, 315,260, 315,180' },
+    { id: 'trunk', name: 'Trunk', coordinates: '285,140, 345,140, 345,260, 285,260' },
+    { id: 'rear', name: 'Rear', coordinates: '315,180, 345,180, 345,260, 315,260' },
+  ],
+  'off-road': [
+    { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'left_front_door', name: 'Left Front Door', coordinates: '175,180, 175,260, 215,260, 215,180' },
+    { id: 'right_front_door', name: 'Right Front Door', coordinates: '245,180, 245,260, 285,260, 285,180' },
+    { id: 'left_rear_door', name: 'Left Rear Door', coordinates: '215,180, 215,260, 245,260, 245,180' },
+    { id: 'right_rear_door', name: 'Right Rear Door', coordinates: '285,180, 285,260, 315,260, 315,180' },
+    { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
+    { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
+  ],
+  bus: [
+    { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
+    { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
+    { id: 'windshield', name: 'Windshield', coordinates: '175,140, 285,140, 285,160, 175,160' },
+    { id: 'driver_door', name: 'Driver Door', coordinates: '175,180, 175,260, 210,260, 210,180' },
+    { id: 'passenger_doors', name: 'Passenger Doors', coordinates: '210,180, 210,260, 285,260, 285,180' },
+    { id: 'left_side', name: 'Left Side', coordinates: '175,180, 175,260, 285,260, 285,180' },
+    { id: 'right_side', name: 'Right Side', coordinates: '285,180, 285,260, 345,260, 345,180' },
+    { id: 'rear', name: 'Rear', coordinates: '315,180, 345,180, 345,260, 315,260' },
+  ],
+  other: [
     { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
     { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
     { id: 'roof', name: 'Roof', coordinates: '175,120, 285,120, 285,140, 175,140' },
@@ -110,13 +267,20 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
 const getVehicleImage = (vehicleType: VehicleBodyStyle): string => {
   switch (vehicleType) {
     case 'sedan':
+    case 'coupe':
+    case 'convertible':
+    case 'other':
       return '/lovable-uploads/bd96d9af-12db-494e-8e7f-609805c801a0.png';
     case 'hatchback':
+    case 'wagon':
       return '/lovable-uploads/aa1d5122-b95b-4b2e-9109-0d70e0808da6.png';
     case 'suv':
     case 'van':
+    case 'minivan':
+    case 'crossover':
       return '/lovable-uploads/332913db-cb57-4dbd-b290-3925552a3911.png';
     case 'truck':
+    case 'pickup':
       return '/lovable-uploads/57aefd54-8d89-4b93-b523-5bd2474d84af.png';
     default:
       return '/lovable-uploads/bd96d9af-12db-494e-8e7f-609805c801a0.png'; // Default to sedan
@@ -131,6 +295,20 @@ const getVehicleTypeDisplayName = (vehicleType: VehicleBodyStyle): string => {
     case 'suv': return 'SUV';
     case 'van': return 'Van';
     case 'truck': return 'Truck';
+    case 'coupe': return 'Coupe';
+    case 'convertible': return 'Convertible';
+    case 'wagon': return 'Wagon';
+    case 'crossover': return 'Crossover';
+    case 'minivan': return 'Minivan';
+    case 'pickup': return 'Pickup';
+    case 'motorcycle': return 'Motorcycle';
+    case 'scooter': return 'Scooter';
+    case 'atv': return 'ATV';
+    case 'rv': return 'RV';
+    case 'camper': return 'Camper';
+    case 'limousine': return 'Limousine';
+    case 'off-road': return 'Off-road';
+    case 'bus': return 'Bus';
     default: return 'Vehicle';
   }
 };
