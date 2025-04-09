@@ -45,13 +45,23 @@ export const createVehicleInspection = async (inspection: VehicleInspection): Pr
 
     if (error) {
       console.error('Error creating vehicle inspection:', error);
-      throw error;
+      toast({
+        title: "Error creating inspection",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
     }
 
     return data?.id || null;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating vehicle inspection:', error);
-    throw error;
+    toast({
+      title: "Error creating inspection",
+      description: error.message || "An unexpected error occurred",
+      variant: "destructive",
+    });
+    return null;
   }
 };
 
@@ -74,12 +84,22 @@ export const updateVehicleInspection = async (id: string, inspection: Partial<Ve
 
     if (error) {
       console.error('Error updating vehicle inspection:', error);
+      toast({
+        title: "Error updating inspection",
+        description: error.message,
+        variant: "destructive",
+      });
       return false;
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating vehicle inspection:', error);
+    toast({
+      title: "Error updating inspection",
+      description: error.message || "An unexpected error occurred",
+      variant: "destructive",
+    });
     return false;
   }
 };
@@ -97,6 +117,11 @@ export const getVehicleInspection = async (id: string): Promise<VehicleInspectio
 
     if (error) {
       console.error('Error fetching vehicle inspection:', error);
+      toast({
+        title: "Error loading inspection",
+        description: error.message,
+        variant: "destructive",
+      });
       return null;
     }
 
@@ -112,8 +137,13 @@ export const getVehicleInspection = async (id: string): Promise<VehicleInspectio
       damageAreas: data.damage_areas || [],
       notes: data.notes
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching vehicle inspection:', error);
+    toast({
+      title: "Error loading inspection",
+      description: error.message || "An unexpected error occurred",
+      variant: "destructive",
+    });
     return null;
   }
 };
@@ -131,6 +161,11 @@ export const getVehicleInspections = async (vehicleId: string): Promise<VehicleI
 
     if (error) {
       console.error('Error fetching vehicle inspections:', error);
+      toast({
+        title: "Error loading inspections",
+        description: error.message,
+        variant: "destructive",
+      });
       return [];
     }
 
@@ -144,8 +179,13 @@ export const getVehicleInspections = async (vehicleId: string): Promise<VehicleI
       damageAreas: item.damage_areas || [],
       notes: item.notes
     }));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching vehicle inspections:', error);
+    toast({
+      title: "Error loading inspections",
+      description: error.message || "An unexpected error occurred",
+      variant: "destructive",
+    });
     return [];
   }
 };
@@ -162,12 +202,22 @@ export const deleteVehicleInspection = async (id: string): Promise<boolean> => {
 
     if (error) {
       console.error('Error deleting vehicle inspection:', error);
+      toast({
+        title: "Error deleting inspection",
+        description: error.message,
+        variant: "destructive",
+      });
       return false;
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting vehicle inspection:', error);
+    toast({
+      title: "Error deleting inspection",
+      description: error.message || "An unexpected error occurred",
+      variant: "destructive",
+    });
     return false;
   }
 };
