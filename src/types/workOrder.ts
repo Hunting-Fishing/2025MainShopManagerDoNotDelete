@@ -43,13 +43,13 @@ export interface WorkOrderTemplate {
   inventoryItems?: WorkOrderInventoryItem[];
 }
 
-// Add the WorkOrder interface, using required fields to avoid conflicts
+// Update the WorkOrder interface to ensure description is required
 export interface WorkOrder {
   id: string;
   customer: string;
   description: string; // Make description required to avoid interface conflicts
   status: string;
-  date?: string;
+  date: string; // Make date required to avoid conflicts
   dueDate?: string;
   priority?: string;
   technician: string;

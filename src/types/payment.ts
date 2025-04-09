@@ -22,6 +22,21 @@ export interface PaymentMethod {
   updated_at?: string;
 }
 
+export interface Payment {
+  id: string;
+  customer_id: string;
+  invoice_id?: string;
+  amount: number;
+  payment_type: PaymentType;
+  status: PaymentStatus;
+  payment_method_id?: string;
+  transaction_id?: string;
+  transaction_date: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface PaymentFormValues {
   amount: number;
   payment_method_id?: string;
@@ -44,4 +59,13 @@ export const paymentStatusOptions = [
   { label: 'Processed', value: 'processed' },
   { label: 'Failed', value: 'failed' },
   { label: 'Refunded', value: 'refunded' },
+];
+
+export const paymentMethodOptions = [
+  { label: 'Credit Card', value: 'credit_card' },
+  { label: 'Debit Card', value: 'debit_card' },
+  { label: 'Bank Transfer', value: 'bank_transfer' },
+  { label: 'Cash', value: 'cash' },
+  { label: 'Check', value: 'check' },
+  { label: 'Other', value: 'other' },
 ];

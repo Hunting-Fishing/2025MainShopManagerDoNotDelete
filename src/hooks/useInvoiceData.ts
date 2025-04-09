@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Invoice } from '@/types/invoice';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,9 +40,10 @@ export function useInvoiceData() {
             tax: invoice.tax,
             workOrderId: invoice.work_order_id,
             createdBy: invoice.created_by,
-            paymentMethod: invoice.payment_method || '',
+            paymentMethod: invoice.payment_method || '', // Ensure paymentMethod is always defined
             customer_id: invoice.customer_id,
-            items: invoice.invoice_items || []
+            items: invoice.invoice_items || [],
+            assignedStaff: [] // Add the missing assignedStaff property
           } as Invoice;
         });
 

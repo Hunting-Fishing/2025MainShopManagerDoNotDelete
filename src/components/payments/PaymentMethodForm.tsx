@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -16,9 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { paymentMethodOptions, PaymentMethod } from '@/types/payment';
-
-type PaymentMethodType = "credit_card" | "debit_card" | "bank_transfer" | "cash" | "check" | "other";
+import { paymentMethodOptions, PaymentMethod, PaymentMethodType } from '@/types/payment';
 
 // Define the form schema
 const formSchema = z.object({
@@ -75,13 +72,12 @@ export function PaymentMethodForm({ initialData, onSubmit }: PaymentMethodFormPr
   const handleFormSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Convert expiry_month and expiry_year to numbers if they exist
       const formattedValues = {
         ...values,
         expiry_month: values.expiry_month ? parseInt(values.expiry_month) : undefined,
         expiry_year: values.expiry_year ? parseInt(values.expiry_year) : undefined,
         method_type: values.method_type as PaymentMethodType,
-        is_default: values.is_default || false // Ensure is_default is always defined
+        is_default: values.is_default || false
       };
       
       await onSubmit(formattedValues as Omit<PaymentMethod, 'id' | 'customer_id' | 'created_at' | 'updated_at'>);

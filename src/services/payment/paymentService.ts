@@ -1,6 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
-import { Payment, PaymentMethod } from "@/types/payment";
+import { Payment, PaymentMethod, PaymentType, PaymentStatus } from "@/types/payment";
 
 /**
  * Fetch all payment methods for a customer
@@ -133,10 +133,20 @@ export const getCustomerPayments = async (customerId: string): Promise<Payment[]
 /**
  * Record a new payment
  */
-export const recordPayment = async (payment: Omit<Payment, "id" | "created_at" | "updated_at">): Promise<Payment> => {
+export const recordPayment = async (paymentData: {
+  customer_id: string;
+  invoice_id?: string;
+  amount: number;
+  payment_type: PaymentType;
+  status: PaymentStatus;
+  payment_method_id?: string;
+  transaction_id?: string;
+  transaction_date: string;
+  notes?: string;
+}): Promise<Payment> => {
   const { data, error } = await supabase
     .from("payments")
-    .insert(payment)
+    .insert(paymentData)
     .select()
     .single();
 
