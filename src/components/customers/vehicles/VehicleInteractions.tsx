@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
 
-// Define a standalone interface just for this component to avoid circular dependencies
+// Define a self-contained interface explicitly for this component to avoid circular dependencies
 interface VehicleInteraction {
   id: string;
   date: string;
@@ -15,7 +15,7 @@ interface VehicleInteraction {
 }
 
 export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
-  // Explicitly type the state to avoid deep type instantiation issues
+  // Explicitly type the state to avoid deep type instantiation
   const [interactions, setInteractions] = useState<VehicleInteraction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,9 +33,8 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          // Map the data to our simplified VehicleInteraction type
-          // This breaks the potential circular dependency
-          const mappedInteractions: VehicleInteraction[] = (data || []).map(item => ({
+          // Create manually mapped objects to break the deep type instantiation
+          const mappedInteractions = (data || []).map(item => ({
             id: item.id,
             date: item.date,
             type: item.type,
