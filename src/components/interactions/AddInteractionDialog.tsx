@@ -1,241 +1,341 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Customer } from "@/types/customer";
-import { CustomerInteraction, InteractionType, InteractionStatus } from "@/types/interaction";
-import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Customer } from "@/types/customer";
 import { addCustomerInteraction } from "@/services/customer/customerInteractionsService";
+import { CustomerInteraction, InteractionType } from "@/types/interaction";
+import { useToast } from "@/hooks/use-toast";
+
+const interactionSchema = z.object({
+  type: z.enum(["work_order", "communication", "parts", "service", "follow_up"]),
+  description: z.string().min(5, "Description is required").max(200, "Description is too long"),
+  staffMemberName: z.string().min(3, "Staff member name is required"),
+  staffMemberId: z.string().min(1, "Staff member ID is required"),
+  notes: z.string().optional(),
+  followUpDate: z.date().optional().nullable(),
+  status: z.enum(["pending", "in_progress", "completed", "cancelled"]),
+  relatedWorkOrderId: z.string().optional(),
+});
+
+type InteractionFormValues = z.infer<typeof interactionSchema>;
 
 interface AddInteractionDialogProps {
   customer: Customer;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onInteractionAdded: (interaction: CustomerInteraction) => void;
+  onInteractionAdded?: (interaction: CustomerInteraction) => void;
 }
 
 export const AddInteractionDialog: React.FC<AddInteractionDialogProps> = ({
   customer,
   open,
   onOpenChange,
-  onInteractionAdded
+  onInteractionAdded,
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const [description, setDescription] = useState("");
-  const [type, setType] = useState<InteractionType>("communication");
-  const [notes, setNotes] = useState("");
-  const [date, setDate] = useState<Date>(new Date());
-  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
-  const [followUpRequired, setFollowUpRequired] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [followUpDatePickerOpen, setFollowUpDatePickerOpen] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
+  const form = useForm<InteractionFormValues>({
+    resolver: zodResolver(interactionSchema),
+    defaultValues: {
+      type: "service",
+      description: "",
+      staffMemberName: "Service Staff",
+      staffMemberId: "staff-1",
+      notes: "",
+      followUpDate: null,
+      status: "pending",
+      relatedWorkOrderId: "",
+    },
+  });
+
+  const onSubmit = async (values: InteractionFormValues) => {
     try {
-      // Get current user info - in a real app this would come from your auth context
-      const staffMemberId = "current-user-id";
-      const staffMemberName = "Current User";
-      
-      const newInteraction = {
-        customerId: customer.id,
-        customerName: customer.name || `${customer.first_name} ${customer.last_name}`,
-        date: date.toISOString(),
-        type,
-        description,
-        staffMemberId,
-        staffMemberName,
-        status: "completed" as InteractionStatus,
-        notes,
-        followUpDate: followUpRequired && followUpDate ? followUpDate.toISOString() : undefined,
-        followUpCompleted: false
+      setIsSubmitting(true);
+
+      // Convert form values to the structure expected by the service
+      const interactionData = {
+        customer_id: customer.id,
+        customer_name: `${customer.first_name} ${customer.last_name}`,
+        date: new Date().toISOString(),
+        type: values.type,
+        description: values.description,
+        staff_member_id: values.staffMemberId,
+        staff_member_name: values.staffMemberName,
+        status: values.status,
+        notes: values.notes,
+        related_work_order_id: values.relatedWorkOrderId || undefined,
+        follow_up_date: values.followUpDate ? values.followUpDate.toISOString() : undefined,
+        follow_up_completed: false,
       };
-      
-      const savedInteraction = await addCustomerInteraction(newInteraction);
-      
-      if (savedInteraction) {
+
+      // Add the interaction
+      const newInteraction = await addCustomerInteraction(interactionData);
+
+      if (newInteraction) {
         toast({
-          title: "Interaction recorded",
-          description: "The customer interaction has been saved.",
+          title: "Interaction Added",
+          description: "The interaction has been recorded successfully.",
         });
+
+        // Reset form
+        form.reset();
         
-        onInteractionAdded(savedInteraction);
+        // Call callback with new interaction
+        if (onInteractionAdded) {
+          onInteractionAdded(newInteraction);
+        }
+        
+        // Close dialog
         onOpenChange(false);
-        resetForm();
-      } else {
-        throw new Error("Failed to save interaction");
       }
     } catch (error) {
       console.error("Error adding interaction:", error);
       toast({
         title: "Error",
-        description: "Failed to record the interaction. Please try again.",
+        description: "Failed to add the interaction. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
-  
-  const resetForm = () => {
-    setDescription("");
-    setType("communication");
-    setNotes("");
-    setDate(new Date());
-    setFollowUpDate(undefined);
-    setFollowUpRequired(false);
-  };
-  
+
+  const watchType = form.watch("type");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Record Customer Interaction</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="interaction-date">Date</Label>
-              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(date) => {
-                      date && setDate(date);
-                      setDatePickerOpen(false);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="interaction-type">Type</Label>
-              <Select value={type} onValueChange={(value) => setType(value as InteractionType)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="communication">Communication</SelectItem>
-                  <SelectItem value="work_order">Work Order</SelectItem>
-                  <SelectItem value="parts">Parts</SelectItem>
-                  <SelectItem value="service">Service</SelectItem>
-                  <SelectItem value="follow_up">Follow-up</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="interaction-description">Description</Label>
-            <Input
-              id="interaction-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of the interaction"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="interaction-notes">Notes</Label>
-            <Textarea
-              id="interaction-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes or details"
-              className="min-h-[100px]"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="follow-up-required"
-                checked={followUpRequired}
-                onChange={(e) => setFollowUpRequired(e.target.checked)}
-              />
-              <Label htmlFor="follow-up-required">Follow-up required?</Label>
-            </div>
-            
-            {followUpRequired && (
-              <div className="pt-2">
-                <Label htmlFor="follow-up-date">Follow-up Date</Label>
-                <Popover open={followUpDatePickerOpen} onOpenChange={setFollowUpDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal mt-1",
-                        !followUpDate && "text-muted-foreground"
-                      )}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {followUpDate ? format(followUpDate, "PPP") : <span>Pick a follow-up date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={followUpDate}
-                      onSelect={(date) => {
-                        setFollowUpDate(date);
-                        setFollowUpDatePickerOpen(false);
-                      }}
-                      initialFocus
-                      disabled={(date) => date < new Date()}
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="work_order">Work Order</SelectItem>
+                        <SelectItem value="communication">Communication</SelectItem>
+                        <SelectItem value="parts">Parts</SelectItem>
+                        <SelectItem value="service">Service</SelectItem>
+                        <SelectItem value="follow_up">Follow-up</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Brief description of the interaction"
+                      {...field}
+                      disabled={isSubmitting}
                     />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="staffMemberName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Staff Member</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {watchType === "follow_up" && (
+              <FormField
+                control={form.control}
+                name="followUpDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Follow-up Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                            disabled={isSubmitting}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      When to follow up with the customer
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => {
-                resetForm();
-                onOpenChange(false);
-              }}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !description}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Record Interaction
-            </Button>
-          </DialogFooter>
-        </form>
+
+            {watchType === "work_order" && (
+              <FormField
+                control={form.control}
+                name="relatedWorkOrderId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Work Order ID (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Related work order ID"
+                        {...field}
+                        disabled={isSubmitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Additional details about this interaction"
+                      className="resize-none"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Interaction"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

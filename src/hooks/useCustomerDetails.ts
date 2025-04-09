@@ -77,7 +77,7 @@ export const useCustomerDetails = (id?: string) => {
         setCustomerWorkOrders(workOrders || []);
       }
 
-      // Fetch customer interactions using our service
+      // Fetch customer interactions using the updated service
       try {
         const interactions = await getCustomerInteractions(customerId);
         setCustomerInteractions(interactions || []);

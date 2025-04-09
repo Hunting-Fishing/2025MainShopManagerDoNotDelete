@@ -5,15 +5,22 @@ import { CustomerInteraction } from "@/types/interaction";
 // Get customer interactions
 export const getCustomerInteractions = async (customerId: string): Promise<CustomerInteraction[]> => {
   try {
-    // Get interactions from the data/interactions module instead of Supabase
-    // This will be replaced with real data when the table exists
-    const interactions = await import("@/data/interactionsData").then(
-      module => module.getCustomerInteractions(customerId)
-    );
+    console.log("Fetching interactions for customer:", customerId);
     
-    console.log("Retrieved customer interactions:", interactions);
+    const { data, error } = await supabase
+      .from("customer_interactions")
+      .select("*")
+      .eq("customer_id", customerId)
+      .order("date", { ascending: false });
     
-    return interactions;
+    if (error) {
+      console.error("Error fetching customer interactions:", error);
+      throw error;
+    }
+    
+    console.log("Retrieved customer interactions:", data);
+    
+    return data || [];
   } catch (error) {
     console.error("Error in getCustomerInteractions:", error);
     return [];
@@ -25,14 +32,20 @@ export const addCustomerInteraction = async (
   interaction: Omit<CustomerInteraction, 'id'>
 ): Promise<CustomerInteraction | null> => {
   try {
-    // Add interaction using the data/interactions module
-    const newInteraction = await import("@/data/interactionsData").then(
-      module => module.addInteraction(interaction)
-    );
+    const { data, error } = await supabase
+      .from("customer_interactions")
+      .insert(interaction)
+      .select()
+      .single();
     
-    console.log("Added new interaction:", newInteraction);
+    if (error) {
+      console.error("Error adding customer interaction:", error);
+      throw error;
+    }
     
-    return newInteraction;
+    console.log("Added new interaction:", data);
+    
+    return data;
   } catch (error) {
     console.error("Error in addCustomerInteraction:", error);
     return null;
@@ -45,13 +58,19 @@ export const updateCustomerInteraction = async (
   updates: Partial<CustomerInteraction>
 ): Promise<CustomerInteraction | null> => {
   try {
-    // For now, we don't have a direct way to update interactions in the mock data
-    // This will be replaced with real database calls once the table exists
-    console.warn("updateCustomerInteraction not fully implemented with real data yet");
-    return {
-      id,
-      ...updates
-    } as CustomerInteraction;
+    const { data, error } = await supabase
+      .from("customer_interactions")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error updating customer interaction:", error);
+      throw error;
+    }
+    
+    return data;
   } catch (error) {
     console.error("Error in updateCustomerInteraction:", error);
     return null;
@@ -61,12 +80,68 @@ export const updateCustomerInteraction = async (
 // Delete a customer interaction
 export const deleteCustomerInteraction = async (id: string): Promise<boolean> => {
   try {
-    // For now, we don't have a direct way to delete interactions in the mock data
-    // This will be replaced with real database calls once the table exists
-    console.warn("deleteCustomerInteraction not fully implemented with real data yet");
+    const { error } = await supabase
+      .from("customer_interactions")
+      .delete()
+      .eq("id", id);
+    
+    if (error) {
+      console.error("Error deleting customer interaction:", error);
+      throw error;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error in deleteCustomerInteraction:", error);
     return false;
+  }
+};
+
+// Complete a follow-up interaction
+export const completeFollowUp = async (id: string): Promise<CustomerInteraction | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("customer_interactions")
+      .update({
+        follow_up_completed: true,
+        status: "completed",
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error completing follow-up:", error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in completeFollowUp:", error);
+    return null;
+  }
+};
+
+// Get all pending follow-ups
+export const getPendingFollowUps = async (): Promise<CustomerInteraction[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("customer_interactions")
+      .select("*")
+      .eq("type", "follow_up")
+      .eq("follow_up_completed", false)
+      .not("follow_up_date", "is", null)
+      .order("follow_up_date", { ascending: true });
+    
+    if (error) {
+      console.error("Error fetching pending follow-ups:", error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error("Error in getPendingFollowUps:", error);
+    return [];
   }
 };

@@ -23,8 +23,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
-import { completeFollowUp } from "@/data/interactionsData";
-import { toast } from "@/hooks/use-toast";
+import { completeFollowUp } from "@/services/customer/customerInteractionsService";
+import { useToast } from "@/hooks/use-toast";
 
 interface InteractionsListProps {
   interactions: CustomerInteraction[];
@@ -40,6 +40,7 @@ export const InteractionsList: React.FC<InteractionsListProps> = ({
   const [filteredType, setFilteredType] = useState<InteractionType | "all">("all");
   const [selectedInteraction, setSelectedInteraction] = useState<CustomerInteraction | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { toast } = useToast();
 
   // Filter interactions by type
   const filteredInteractions = filteredType === "all" 
@@ -47,13 +48,30 @@ export const InteractionsList: React.FC<InteractionsListProps> = ({
     : interactions.filter(interaction => interaction.type === filteredType);
 
   // Handle marking a follow-up as complete
-  const handleCompleteFollowUp = (interaction: CustomerInteraction) => {
-    if (interaction.type === "follow_up" && !interaction.followUpCompleted) {
-      const updated = completeFollowUp(interaction.id);
-      if (updated) {
+  const handleCompleteFollowUp = async (interaction: CustomerInteraction) => {
+    if (interaction.type === "follow_up" && !interaction.follow_up_completed) {
+      try {
+        const updated = await completeFollowUp(interaction.id);
+        if (updated) {
+          // Update the interaction in the list
+          const updatedInteractions = interactions.map(i => 
+            i.id === interaction.id ? { ...i, follow_up_completed: true, status: "completed" } : i
+          );
+          
+          // Notice: This won't update the parent component's state
+          // The parent would need to refresh the data or handle the update
+
+          toast({
+            title: "Follow-up completed",
+            description: "The follow-up has been marked as completed.",
+          });
+        }
+      } catch (error) {
+        console.error("Error completing follow-up:", error);
         toast({
-          title: "Follow-up completed",
-          description: "The follow-up has been marked as completed.",
+          title: "Error",
+          description: "Failed to complete the follow-up. Please try again.",
+          variant: "destructive"
         });
       }
     }
@@ -107,9 +125,9 @@ export const InteractionsList: React.FC<InteractionsListProps> = ({
                     <div className="flex items-center gap-2 mb-1">
                       <InteractionTypeBadge type={interaction.type} />
                       <InteractionStatusBadge status={interaction.status} />
-                      {interaction.type === "follow_up" && interaction.followUpDate && !interaction.followUpCompleted && (
+                      {interaction.type === "follow_up" && interaction.follow_up_date && !interaction.follow_up_completed && (
                         <Badge className="bg-yellow-100 text-yellow-800">
-                          Follow-up due: {new Date(interaction.followUpDate).toLocaleDateString()}
+                          Follow-up due: {new Date(interaction.follow_up_date).toLocaleDateString()}
                         </Badge>
                       )}
                     </div>
@@ -117,16 +135,16 @@ export const InteractionsList: React.FC<InteractionsListProps> = ({
                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-slate-500">
                       <div className="flex items-center">
                         <UserRound className="h-3.5 w-3.5 mr-1" />
-                        <span>{interaction.staffMemberName}</span>
+                        <span>{interaction.staff_member_name}</span>
                       </div>
                       <div className="flex items-center">
                         <CalendarIcon className="h-3.5 w-3.5 mr-1" />
                         <span>{new Date(interaction.date).toLocaleDateString()}</span>
                       </div>
-                      {interaction.relatedWorkOrderId && (
+                      {interaction.related_work_order_id && (
                         <div className="flex items-center">
                           <Clock className="h-3.5 w-3.5 mr-1" />
-                          <span>WO: {interaction.relatedWorkOrderId}</span>
+                          <span>WO: {interaction.related_work_order_id}</span>
                         </div>
                       )}
                     </div>
@@ -147,20 +165,20 @@ export const InteractionsList: React.FC<InteractionsListProps> = ({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {interaction.relatedWorkOrderId && (
+                        {interaction.related_work_order_id && (
                           <DropdownMenuItem asChild>
-                            <Link to={`/work-orders/${interaction.relatedWorkOrderId}`}>
+                            <Link to={`/work-orders/${interaction.related_work_order_id}`}>
                               View Work Order
                             </Link>
                           </DropdownMenuItem>
                         )}
-                        {interaction.type === "follow_up" && !interaction.followUpCompleted && (
+                        {interaction.type === "follow_up" && !interaction.follow_up_completed && (
                           <DropdownMenuItem onClick={() => handleCompleteFollowUp(interaction)}>
                             Mark Follow-up Complete
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem asChild>
-                          <Link to={`/customers/${interaction.customerId}`}>
+                          <Link to={`/customers/${interaction.customer_id}`}>
                             View Customer
                           </Link>
                         </DropdownMenuItem>
@@ -182,4 +200,4 @@ export const InteractionsList: React.FC<InteractionsListProps> = ({
       )}
     </Card>
   );
-};
+}

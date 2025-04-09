@@ -394,6 +394,75 @@ export type Database = {
           },
         ]
       }
+      customer_interactions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          customer_name: string
+          date: string
+          description: string
+          follow_up_completed: boolean | null
+          follow_up_date: string | null
+          id: string
+          notes: string | null
+          related_work_order_id: string | null
+          staff_member_id: string
+          staff_member_name: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          date?: string
+          description: string
+          follow_up_completed?: boolean | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          related_work_order_id?: string | null
+          staff_member_id: string
+          staff_member_name: string
+          status: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          date?: string
+          description?: string
+          follow_up_completed?: boolean | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          related_work_order_id?: string | null
+          staff_member_id?: string
+          staff_member_name?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_interactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_interactions_related_work_order_id_fkey"
+            columns: ["related_work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_loyalty: {
         Row: {
           created_at: string

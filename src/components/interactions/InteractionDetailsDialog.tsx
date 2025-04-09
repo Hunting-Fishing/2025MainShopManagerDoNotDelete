@@ -50,7 +50,7 @@ export const InteractionDetailsDialog: React.FC<InteractionDetailsDialogProps> =
               <User className="h-4 w-4 text-slate-500 mt-0.5" />
               <div>
                 <p className="font-medium text-slate-700">Staff Member</p>
-                <p>{interaction.staffMemberName}</p>
+                <p>{interaction.staff_member_name}</p>
               </div>
             </div>
 
@@ -62,14 +62,14 @@ export const InteractionDetailsDialog: React.FC<InteractionDetailsDialogProps> =
               </div>
             </div>
 
-            {interaction.followUpDate && (
+            {interaction.follow_up_date && (
               <div className="flex items-start gap-2">
                 <CalendarIcon className="h-4 w-4 text-slate-500 mt-0.5" />
                 <div>
                   <p className="font-medium text-slate-700">Follow-up Date</p>
-                  <p>{formatDate(interaction.followUpDate)}</p>
+                  <p>{formatDate(interaction.follow_up_date)}</p>
                   <p className="text-sm text-slate-500 mt-1">
-                    Status: {interaction.followUpCompleted ? "Completed" : "Pending"}
+                    Status: {interaction.follow_up_completed ? "Completed" : "Pending"}
                   </p>
                 </div>
               </div>
@@ -85,35 +85,40 @@ export const InteractionDetailsDialog: React.FC<InteractionDetailsDialogProps> =
               </div>
             )}
 
-            {interaction.relatedWorkOrderId && (
+            {interaction.related_work_order_id && (
               <div className="flex items-start gap-2">
                 <LinkIcon className="h-4 w-4 text-slate-500 mt-0.5" />
                 <div>
                   <p className="font-medium text-slate-700">Related Work Order</p>
-                  <Link 
-                    to={`/work-orders/${interaction.relatedWorkOrderId}`}
-                    className="text-blue-600 hover:underline"
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto" 
+                    asChild
                   >
-                    {interaction.relatedWorkOrderId}
-                  </Link>
+                    <Link to={`/work-orders/${interaction.related_work_order_id}`}>
+                      View Work Order
+                    </Link>
+                  </Button>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+            >
               Close
             </Button>
-            <div className="flex gap-2">
-              {interaction.relatedWorkOrderId && (
-                <Button asChild>
-                  <Link to={`/work-orders/${interaction.relatedWorkOrderId}`}>
-                    View Work Order
-                  </Link>
-                </Button>
-              )}
-            </div>
+            
+            {interaction.type === "follow_up" && !interaction.follow_up_completed && (
+              <Button asChild>
+                <Link to={`/customers/${interaction.customer_id}`}>
+                  Go to Customer
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

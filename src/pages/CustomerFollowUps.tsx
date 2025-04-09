@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClipboardCheck, Filter, SlidersHorizontal } from "lucide-react";
-import { getPendingFollowUps, completeFollowUp } from "@/data/interactionsData";
+import { getPendingFollowUps, completeFollowUp } from "@/services/customer/customerInteractionsService";
 import { CustomerInteraction } from "@/types/interaction";
 import { InteractionTypeBadge } from "@/components/interactions/InteractionTypeBadge";
 import { toast } from "@/hooks/use-toast";
@@ -12,8 +12,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { teamMembers } from "@/data/teamData";
 import { DateRange } from "react-day-picker";
+import { teamMembers } from "@/data/teamData";
 
 export default function CustomerFollowUps() {
   const [followUps, setFollowUps] = useState<CustomerInteraction[]>([]);
@@ -22,28 +22,54 @@ export default function CustomerFollowUps() {
   const [staffFilter, setStaffFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const allFollowUps = getPendingFollowUps();
-    setFollowUps(allFollowUps);
-    setFilteredFollowUps(allFollowUps);
+    loadFollowUps();
   }, []);
 
-  const handleCompleteFollowUp = (followUpId: string) => {
-    const updatedFollowUp = completeFollowUp(followUpId);
-    
-    if (updatedFollowUp) {
-      if (!showCompleted) {
-        setFollowUps(followUps.filter(fu => fu.id !== followUpId));
-        setFilteredFollowUps(filteredFollowUps.filter(fu => fu.id !== followUpId));
-      } else {
-        setFollowUps(followUps.map(fu => fu.id === followUpId ? updatedFollowUp : fu));
-        setFilteredFollowUps(filteredFollowUps.map(fu => fu.id === followUpId ? updatedFollowUp : fu));
-      }
-      
+  const loadFollowUps = async () => {
+    try {
+      setLoading(true);
+      const pendingFollowUps = await getPendingFollowUps();
+      setFollowUps(pendingFollowUps);
+      setFilteredFollowUps(pendingFollowUps);
+    } catch (error) {
+      console.error("Error loading follow-ups:", error);
       toast({
-        title: "Follow-up completed",
-        description: "The follow-up has been marked as completed.",
+        title: "Error",
+        description: "Failed to load follow-ups. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteFollowUp = async (followUpId: string) => {
+    try {
+      const updatedFollowUp = await completeFollowUp(followUpId);
+      
+      if (updatedFollowUp) {
+        if (!showCompleted) {
+          setFollowUps(followUps.filter(fu => fu.id !== followUpId));
+          setFilteredFollowUps(filteredFollowUps.filter(fu => fu.id !== followUpId));
+        } else {
+          setFollowUps(followUps.map(fu => fu.id === followUpId ? updatedFollowUp : fu));
+          setFilteredFollowUps(filteredFollowUps.map(fu => fu.id === followUpId ? updatedFollowUp : fu));
+        }
+        
+        toast({
+          title: "Follow-up completed",
+          description: "The follow-up has been marked as completed.",
+        });
+      }
+    } catch (error) {
+      console.error("Error completing follow-up:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete follow-up. Please try again.",
+        variant: "destructive"
       });
     }
   };
@@ -52,18 +78,21 @@ export default function CustomerFollowUps() {
     let filtered = [...followUps];
     
     if (staffFilter !== "all") {
-      filtered = filtered.filter(fu => fu.staffMemberId === staffFilter);
+      filtered = filtered.filter(fu => fu.staff_member_id === staffFilter);
     }
     
     if (dateRange && dateRange.from && dateRange.to) {
       filtered = filtered.filter(fu => {
-        const followUpDate = new Date(fu.followUpDate);
-        return followUpDate >= dateRange.from && followUpDate <= dateRange.to;
+        if (!fu.follow_up_date) return false;
+        const followUpDate = new Date(fu.follow_up_date);
+        const from = dateRange.from as Date;
+        const to = dateRange.to as Date;
+        return followUpDate >= from && followUpDate <= to;
       });
     }
     
     if (!showCompleted) {
-      filtered = filtered.filter(fu => !fu.followUpCompleted);
+      filtered = filtered.filter(fu => !fu.follow_up_completed);
     }
     
     setFilteredFollowUps(filtered);
@@ -160,7 +189,11 @@ export default function CustomerFollowUps() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {filteredFollowUps.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8 text-slate-500">
+              Loading follow-ups...
+            </div>
+          ) : filteredFollowUps.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               No follow-ups found. 
             </div>
@@ -172,18 +205,18 @@ export default function CustomerFollowUps() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <InteractionTypeBadge type={followUp.type} />
-                        {followUp.followUpCompleted ? (
+                        {followUp.follow_up_completed ? (
                           <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Completed</span>
                         ) : (
                           <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                            Due: {new Date(followUp.followUpDate).toLocaleDateString()}
+                            Due: {new Date(followUp.follow_up_date as string).toLocaleDateString()}
                           </span>
                         )}
                       </div>
                       <p className="font-medium">{followUp.description}</p>
                       <div className="flex flex-wrap gap-x-4 mt-1 text-sm text-slate-500">
-                        <p>Customer: {followUp.customerName}</p>
-                        <p>Staff: {followUp.staffMemberName}</p>
+                        <p>Customer: {followUp.customer_name}</p>
+                        <p>Staff: {followUp.staff_member_name}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -192,11 +225,11 @@ export default function CustomerFollowUps() {
                         size="sm" 
                         asChild
                       >
-                        <Link to={`/customers/${followUp.customerId}`}>
+                        <Link to={`/customers/${followUp.customer_id}`}>
                           View Customer
                         </Link>
                       </Button>
-                      {!followUp.followUpCompleted && (
+                      {!followUp.follow_up_completed && (
                         <Button 
                           size="sm" 
                           onClick={() => handleCompleteFollowUp(followUp.id)}
