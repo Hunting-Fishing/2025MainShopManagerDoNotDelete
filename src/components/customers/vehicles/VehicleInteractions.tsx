@@ -43,8 +43,14 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          // Handle the data with proper type casting
-          setInteractions(data as VehicleInteraction[] || []);
+          // Convert the data to our local VehicleInteraction type
+          const typedInteractions = data ? data.map(item => ({
+            ...item,
+            type: item.type as InteractionType,
+            status: item.status as InteractionStatus
+          })) : [];
+          
+          setInteractions(typedInteractions);
         }
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);
