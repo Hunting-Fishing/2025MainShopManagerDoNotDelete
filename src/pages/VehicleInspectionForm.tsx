@@ -30,7 +30,8 @@ export default function VehicleInspectionForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [inspectionData, setInspectionData] = useState<Partial<VehicleInspection>>({
     status: 'draft',
-    damageAreas: []
+    damageAreas: [],
+    vehicleBodyStyle: VehicleBodyStyle.Sedan
   });
   
   // Load existing inspection if we have an ID
@@ -197,7 +198,7 @@ export default function VehicleInspectionForm() {
           vehicleId,
           technicianId: userId,
           inspectionDate: new Date(),
-          vehicleBodyStyle: inspectionData.vehicleBodyStyle || 'sedan',
+          vehicleBodyStyle: inspectionData.vehicleBodyStyle || VehicleBodyStyle.Sedan,
           status: 'completed',
           damageAreas: inspectionData.damageAreas || [],
           notes: inspectionData.notes

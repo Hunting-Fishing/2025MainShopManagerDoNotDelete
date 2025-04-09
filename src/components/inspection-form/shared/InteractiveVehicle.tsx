@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,7 +21,7 @@ interface InteractiveVehicleProps {
 }
 
 const InteractiveVehicle: React.FC<InteractiveVehicleProps> = ({ 
-  vehicleType = 'sedan', 
+  vehicleType = VehicleBodyStyle.Sedan, 
   onDamageUpdate 
 }) => {
   // Use vehicle type to get the correct configuration

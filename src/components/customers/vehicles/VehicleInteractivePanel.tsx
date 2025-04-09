@@ -25,8 +25,8 @@ interface VehicleArea {
 }
 
 // Define clickable areas for each vehicle type
-const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
-  sedan: [
+const vehicleAreasMap: Record<string, VehicleArea[]> = {
+  [VehicleBodyStyle.Sedan]: [
     { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
     { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
     { id: 'roof', name: 'Roof', coordinates: '175,120, 285,120, 285,140, 175,140' },
@@ -40,7 +40,7 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
     { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
     { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
   ],
-  hatchback: [
+  [VehicleBodyStyle.Hatchback]: [
     { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
     { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
     { id: 'roof', name: 'Roof', coordinates: '175,120, 285,120, 285,140, 175,140' },
@@ -54,7 +54,7 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
     { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
     { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
   ],
-  suv: [
+  [VehicleBodyStyle.SUV]: [
     { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
     { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
     { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
@@ -68,7 +68,7 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
     { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
     { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
   ],
-  van: [
+  [VehicleBodyStyle.Van]: [
     { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
     { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
     { id: 'roof', name: 'Roof', coordinates: '175,90, 315,90, 315,140, 175,140' },
@@ -82,7 +82,7 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
     { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
     { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '285,180, 315,180, 315,250, 285,250' },
   ],
-  truck: [
+  [VehicleBodyStyle.Truck]: [
     { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
     { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
     { id: 'roof', name: 'Roof', coordinates: '175,120, 245,120, 245,140, 175,140' },
@@ -94,7 +94,7 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
     { id: 'left_front_fender', name: 'Left Front Fender', coordinates: '140,180, 175,180, 175,250, 140,250' },
     { id: 'right_front_fender', name: 'Right Front Fender', coordinates: '245,180, 285,180, 285,250, 245,250' },
   ],
-  unknown: [
+  [VehicleBodyStyle.Unknown]: [
     { id: 'hood', name: 'Hood', coordinates: '175,140, 230,120, 285,140, 285,180, 175,180' },
     { id: 'front', name: 'Front', coordinates: '175,180, 285,180, 285,230, 175,230' },
     { id: 'roof', name: 'Roof', coordinates: '175,120, 285,120, 285,140, 175,140' },
@@ -109,14 +109,14 @@ const vehicleAreasMap: Record<VehicleBodyStyle, VehicleArea[]> = {
 // Get vehicle image based on vehicle type
 const getVehicleImage = (vehicleType: VehicleBodyStyle): string => {
   switch (vehicleType) {
-    case 'sedan':
+    case VehicleBodyStyle.Sedan:
       return '/lovable-uploads/bd96d9af-12db-494e-8e7f-609805c801a0.png';
-    case 'hatchback':
+    case VehicleBodyStyle.Hatchback:
       return '/lovable-uploads/aa1d5122-b95b-4b2e-9109-0d70e0808da6.png';
-    case 'suv':
-    case 'van':
+    case VehicleBodyStyle.SUV:
+    case VehicleBodyStyle.Van:
       return '/lovable-uploads/332913db-cb57-4dbd-b290-3925552a3911.png';
-    case 'truck':
+    case VehicleBodyStyle.Truck:
       return '/lovable-uploads/57aefd54-8d89-4b93-b523-5bd2474d84af.png';
     default:
       return '/lovable-uploads/bd96d9af-12db-494e-8e7f-609805c801a0.png'; // Default to sedan
@@ -126,11 +126,11 @@ const getVehicleImage = (vehicleType: VehicleBodyStyle): string => {
 // Get vehicle type display name
 const getVehicleTypeDisplayName = (vehicleType: VehicleBodyStyle): string => {
   switch (vehicleType) {
-    case 'sedan': return 'Sedan';
-    case 'hatchback': return 'Hatchback';
-    case 'suv': return 'SUV';
-    case 'van': return 'Van';
-    case 'truck': return 'Truck';
+    case VehicleBodyStyle.Sedan: return 'Sedan';
+    case VehicleBodyStyle.Hatchback: return 'Hatchback';
+    case VehicleBodyStyle.SUV: return 'SUV';
+    case VehicleBodyStyle.Van: return 'Van';
+    case VehicleBodyStyle.Truck: return 'Truck';
     default: return 'Vehicle';
   }
 };
@@ -141,7 +141,8 @@ const VehicleInteractivePanel: React.FC<VehicleInteractivePanelProps> = ({
   onAreaClick 
 }) => {
   // Get the appropriate areas for this vehicle type
-  const vehicleAreas = vehicleAreasMap[vehicleType] || vehicleAreasMap.sedan;
+  const vehicleTypeKey = vehicleType as string; // Cast to string to use as key
+  const vehicleAreas = vehicleAreasMap[vehicleTypeKey] || vehicleAreasMap[VehicleBodyStyle.Unknown];
   
   // Get damage status for an area
   const getAreaDamageStatus = (areaId: string) => {
