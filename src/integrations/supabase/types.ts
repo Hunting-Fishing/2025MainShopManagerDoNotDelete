@@ -3025,6 +3025,53 @@ export type Database = {
           },
         ]
       }
+      vehicle_inspections: {
+        Row: {
+          created_at: string
+          damage_areas: Json | null
+          id: string
+          inspection_date: string
+          notes: string | null
+          status: string
+          technician_id: string | null
+          updated_at: string
+          vehicle_body_style: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          damage_areas?: Json | null
+          id?: string
+          inspection_date?: string
+          notes?: string | null
+          status?: string
+          technician_id?: string | null
+          updated_at?: string
+          vehicle_body_style: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          damage_areas?: Json | null
+          id?: string
+          inspection_date?: string
+          notes?: string | null
+          status?: string
+          technician_id?: string | null
+          updated_at?: string
+          vehicle_body_style?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_inspections_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           color: string | null
