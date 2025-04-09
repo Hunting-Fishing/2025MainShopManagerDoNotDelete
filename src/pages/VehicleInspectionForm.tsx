@@ -30,10 +30,10 @@ export default function VehicleInspectionForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [inspectionData, setInspectionData] = useState<Partial<VehicleInspection>>({
     status: 'draft',
-    damageAreas: [],
-    vehicleBodyStyle: VehicleBodyStyle.Sedan
+    damageAreas: []
   });
   
+  // Load existing inspection if we have an ID
   useEffect(() => {
     async function loadInspection() {
       if (!inspectionId) return;
@@ -43,6 +43,7 @@ export default function VehicleInspectionForm() {
         const data = await getVehicleInspection(inspectionId);
         if (data) {
           setInspectionData(data);
+          // Update progress based on status
           if (data.status === 'completed' || data.status === 'approved') {
             setProgress(100);
           }
@@ -72,6 +73,7 @@ export default function VehicleInspectionForm() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     
+    // Update progress based on tab
     const progressMap: Record<string, number> = {
       "vehicle": 0,
       "exterior": 17,
@@ -111,6 +113,7 @@ export default function VehicleInspectionForm() {
     setIsSaving(true);
     try {
       if (inspectionId) {
+        // Update existing inspection
         const success = await updateVehicleInspection(inspectionId, {
           ...inspectionData,
           status: 'draft'
@@ -125,11 +128,12 @@ export default function VehicleInspectionForm() {
           throw new Error("Failed to update inspection");
         }
       } else {
+        // Create new inspection
         const newId = await createVehicleInspection({
           vehicleId,
           technicianId: userId,
           inspectionDate: new Date(),
-          vehicleBodyStyle: inspectionData.vehicleBodyStyle || VehicleBodyStyle.Sedan,
+          vehicleBodyStyle: inspectionData.vehicleBodyStyle || 'sedan',
           status: 'draft',
           damageAreas: inspectionData.damageAreas || [],
           notes: inspectionData.notes
@@ -140,6 +144,7 @@ export default function VehicleInspectionForm() {
             title: "Saved",
             description: "New inspection saved as draft",
           });
+          // Navigate to the edit URL for the new inspection
           navigate(`/vehicle-inspection/${newId}?vehicleId=${vehicleId}`);
         } else {
           throw new Error("Failed to create inspection");
@@ -170,6 +175,7 @@ export default function VehicleInspectionForm() {
     setIsSubmitting(true);
     try {
       if (inspectionId) {
+        // Update existing inspection
         const success = await updateVehicleInspection(inspectionId, {
           ...inspectionData,
           status: 'completed'
@@ -186,11 +192,12 @@ export default function VehicleInspectionForm() {
           throw new Error("Failed to update inspection");
         }
       } else {
+        // Create new inspection
         const newId = await createVehicleInspection({
           vehicleId,
           technicianId: userId,
           inspectionDate: new Date(),
-          vehicleBodyStyle: inspectionData.vehicleBodyStyle || VehicleBodyStyle.Sedan,
+          vehicleBodyStyle: inspectionData.vehicleBodyStyle || 'sedan',
           status: 'completed',
           damageAreas: inspectionData.damageAreas || [],
           notes: inspectionData.notes
@@ -277,6 +284,7 @@ export default function VehicleInspectionForm() {
         </div>
       </div>
 
+      {/* Progress bar */}
       <div className="relative w-full h-3 bg-gray-100 rounded-full mb-6 overflow-hidden shadow-inner">
         <div 
           className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-700 ease-out"
@@ -360,7 +368,7 @@ export default function VehicleInspectionForm() {
           
           <TabsContent value="exterior" className="space-y-4 mt-0 animate-fade-in">
             <ExteriorCheckTab 
-              vehicleBodyStyle={inspectionData.vehicleBodyStyle || VehicleBodyStyle.Sedan}
+              vehicleBodyStyle={inspectionData.vehicleBodyStyle || 'sedan'}
               damageAreas={inspectionData.damageAreas || []}
               onDamageAreasChange={handleDamageAreaUpdate}
             />
@@ -388,6 +396,7 @@ export default function VehicleInspectionForm() {
         <Button
           variant="outline"
           onClick={() => {
+            // Navigate to previous tab
             const tabs = ["vehicle", "exterior", "interior", "engine", "brakes", "tires"];
             const currentIndex = tabs.indexOf(activeTab);
             if (currentIndex > 0) {
@@ -403,6 +412,7 @@ export default function VehicleInspectionForm() {
         {activeTab !== "tires" ? (
           <Button
             onClick={() => {
+              // Navigate to next tab
               const tabs = ["vehicle", "exterior", "interior", "engine", "brakes", "tires"];
               const currentIndex = tabs.indexOf(activeTab);
               if (currentIndex < tabs.length - 1) {

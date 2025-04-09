@@ -37,143 +37,128 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
 
   // Extract NHTSA information to display
   const hasNhtsaInfo = vehicle.transmission || vehicle.drive_type || 
-    vehicle.fuel_type || vehicle.engine || vehicle.body_style;
+                      vehicle.fuel_type || vehicle.engine || 
+                      vehicle.body_style || vehicle.country || 
+                      vehicle.transmission_type || vehicle.gvwr;
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <Card className="md:col-span-2">
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between">
-            <div className="mb-4 sm:mb-0">
-              <h3 className="text-2xl font-bold flex items-center">
-                <Car className="h-5 w-5 mr-2 text-primary" />
-                {vehicle.year} {vehicle.make} {vehicle.model}
-                {vehicle.trim && <span className="ml-1 text-muted-foreground">{vehicle.trim}</span>}
-              </h3>
-              
-              <div className="flex flex-wrap items-center mt-1 space-x-2">
-                {vehicle.license_plate && (
-                  <Badge variant="outline" className="flex items-center">
-                    <Tag className="h-3 w-3 mr-1" /> 
-                    {vehicle.license_plate}
-                  </Badge>
-                )}
-                {vehicle.color && (
-                  <Badge variant="outline" className="flex items-center">
-                    <span 
-                      className="h-3 w-3 rounded-full mr-1"
-                      style={{ 
-                        backgroundColor: vehicle.color.toLowerCase(),
-                        border: '1px solid #ccc'
-                      }}
-                    /> 
-                    {vehicle.color}
-                  </Badge>
-                )}
-                {vehicle.vin && (
-                  <Badge variant="outline" className="flex items-center font-mono">
-                    VIN: {vehicle.vin}
-                  </Badge>
-                )}
-                {vehicle.body_style && (
-                  <Badge variant="outline" className="flex items-center">
-                    {vehicle.body_style}
-                  </Badge>
-                )}
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Car className="h-5 w-5 text-slate-600" />
+            <h2 className="text-xl font-semibold">
+              {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim && <span className="text-slate-600">{vehicle.trim}</span>}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2 text-slate-600 text-sm">
+            <User className="h-4 w-4" />
+            <Link to={`/customers/${customerId}`} className="hover:underline">
+              {customerName}
+            </Link>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-600 text-sm">
+            {vehicle.license_plate && (
+              <div className="flex items-center gap-1">
+                <Tag className="h-4 w-4" />
+                <span>Plate: {vehicle.license_plate}</span>
               </div>
-              
-              <div className="flex items-center gap-2 mt-2 text-muted-foreground text-sm">
-                <User className="h-4 w-4" />
-                <Link to={`/customers/${customerId}`} className="hover:underline">
-                  {customerName}
-                </Link>
+            )}
+            {vehicle.vin && (
+              <div className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                <span>VIN: {vehicle.vin}</span>
               </div>
-              
-              {vehicle.last_service_date && (
-                <div className="flex items-center gap-2 mt-2 text-muted-foreground text-sm">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    Last service: {new Date(vehicle.last_service_date).toLocaleDateString()}
-                  </span>
+            )}
+            {vehicle.last_service_date && (
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                <span>
+                  Last Service:{" "}
+                  {new Date(vehicle.last_service_date).toLocaleDateString()}
+                </span>
+              </div>
+            )}
+            {noServiceHistoryAlert}
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/customers/${customerId}/edit?vehicleId=${vehicle.id}`}>
+              Edit Vehicle
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* NHTSA Information Card - Quickly visible to the user */}
+      {hasNhtsaInfo && (
+        <Card className="bg-slate-50 border-slate-200">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2 mb-2 text-sm font-medium text-slate-700">
+              <Info className="h-4 w-4" />
+              <span>Vehicle Specifications (NHTSA)</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1 text-sm">
+              {vehicle.transmission && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Transmission:</span>
+                  <span>{vehicle.transmission}</span>
                 </div>
               )}
-              
-              {noServiceHistoryAlert}
+              {vehicle.transmission_type && vehicle.transmission_type !== vehicle.transmission && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Trans. Type:</span>
+                  <span>{vehicle.transmission_type}</span>
+                </div>
+              )}
+              {vehicle.drive_type && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Drive Type:</span>
+                  <span>{vehicle.drive_type}</span>
+                </div>
+              )}
+              {vehicle.fuel_type && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Fuel:</span>
+                  <span>{vehicle.fuel_type}</span>
+                </div>
+              )}
+              {vehicle.engine && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Engine:</span>
+                  <span>{vehicle.engine}</span>
+                </div>
+              )}
+              {vehicle.body_style && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Bodyclass:</span>
+                  <span>{vehicle.body_style}</span>
+                </div>
+              )}
+              {vehicle.trim && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Trim:</span>
+                  <span>{vehicle.trim}</span>
+                </div>
+              )}
+              {vehicle.country && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Origin:</span>
+                  <span>{vehicle.country}</span>
+                </div>
+              )}
+              {vehicle.gvwr && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">GVWR:</span>
+                  <span>{vehicle.gvwr}</span>
+                </div>
+              )}
             </div>
-            
-            <div className="flex flex-col gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/vehicle-inspection?vehicleId=${vehicle.id}`}>
-                  <FileText className="h-4 w-4 mr-1" /> New Inspection
-                </Link>
-              </Button>
-            </div>
-          </div>
-          
-          {hasNhtsaInfo && (
-            <div className="mt-4 pt-4 border-t">
-              <h4 className="text-sm font-medium mb-2 flex items-center">
-                <Info className="h-4 w-4 mr-1" /> Vehicle Specifications
-              </h4>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-1 sm:grid-cols-3 text-sm">
-                {vehicle.transmission && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Transmission:</span>
-                    <span>{vehicle.transmission}</span>
-                  </div>
-                )}
-                {vehicle.drive_type && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Drive:</span>
-                    <span>{vehicle.drive_type}</span>
-                  </div>
-                )}
-                {vehicle.fuel_type && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Fuel:</span>
-                    <span>{vehicle.fuel_type}</span>
-                  </div>
-                )}
-                {vehicle.engine && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Engine:</span>
-                    <span>{vehicle.engine}</span>
-                  </div>
-                )}
-                {vehicle.body_style && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Body:</span>
-                    <span>{vehicle.body_style}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-4">Quick Actions</h3>
-          <div className="space-y-2">
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicle.id}`}>
-                <FileText className="h-4 w-4 mr-2" /> Create Work Order
-              </Link>
-            </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to={`/service-reminders/create?vehicleId=${vehicle.id}`}>
-                <Calendar className="h-4 w-4 mr-2" /> Schedule Service
-              </Link>
-            </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to={`/vehicles/${vehicle.id}/edit?customerId=${customerId}`}>
-                <Car className="h-4 w-4 mr-2" /> Edit Vehicle Details
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

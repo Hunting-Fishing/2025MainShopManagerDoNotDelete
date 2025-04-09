@@ -162,7 +162,7 @@ const formatTransmissionType = (transmissionType: string): string => {
  * Enhanced to better recognize various vehicle type descriptions
  */
 export const mapBodyClassToVehicleBodyStyle = (bodyClass: string): VehicleBodyStyle => {
-  if (!bodyClass) return VehicleBodyStyle.Unknown;
+  if (!bodyClass) return 'unknown';
   
   const normalizedBodyClass = bodyClass.toLowerCase();
   
@@ -173,7 +173,7 @@ export const mapBodyClassToVehicleBodyStyle = (bodyClass: string): VehicleBodySt
     normalizedBodyClass.includes('four-door') ||
     normalizedBodyClass.includes('notchback')
   ) {
-    return VehicleBodyStyle.Sedan;
+    return 'sedan';
   }
   
   // Hatchback matches
@@ -183,7 +183,7 @@ export const mapBodyClassToVehicleBodyStyle = (bodyClass: string): VehicleBodySt
     normalizedBodyClass.includes('five-door') ||
     normalizedBodyClass.includes('liftback')
   ) {
-    return VehicleBodyStyle.Hatchback;
+    return 'hatchback';
   }
   
   // SUV/Crossover matches
@@ -193,7 +193,7 @@ export const mapBodyClassToVehicleBodyStyle = (bodyClass: string): VehicleBodySt
     normalizedBodyClass.includes('crossover') ||
     normalizedBodyClass.includes('multipurpose passenger vehicle (mpv)')
   ) {
-    return VehicleBodyStyle.SUV;
+    return 'suv';
   }
   
   // Truck matches
@@ -203,7 +203,7 @@ export const mapBodyClassToVehicleBodyStyle = (bodyClass: string): VehicleBodySt
     normalizedBodyClass.includes('pick-up') ||
     normalizedBodyClass.includes('ute')
   ) {
-    return VehicleBodyStyle.Truck;
+    return 'truck';
   }
   
   // Van matches
@@ -213,20 +213,20 @@ export const mapBodyClassToVehicleBodyStyle = (bodyClass: string): VehicleBodySt
     normalizedBodyClass.includes('passenger van') ||
     normalizedBodyClass.includes('cargo van')
   ) {
-    return VehicleBodyStyle.Van;
+    return 'van';
   }
   
   // If no clear match, make some educated guesses based on typical vehicle characteristics
   if (normalizedBodyClass.includes('coupe')) {
-    return VehicleBodyStyle.Sedan; // Most coupes are visually closer to sedans in our system
+    return 'sedan'; // Most coupes are visually closer to sedans in our system
   }
   
   if (normalizedBodyClass.includes('wagon') || normalizedBodyClass.includes('estate')) {
-    return VehicleBodyStyle.Hatchback; // Most wagons are visually closer to hatchbacks in our system
+    return 'hatchback'; // Most wagons are visually closer to hatchbacks in our system
   }
   
   // If still no match, return unknown
-  return VehicleBodyStyle.Unknown;
+  return 'unknown';
 };
 
 /**

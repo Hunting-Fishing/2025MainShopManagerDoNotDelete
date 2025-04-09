@@ -1,219 +1,267 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Info, Camera, X } from "lucide-react";
-import { VehicleBodyStyle, VEHICLE_BODY_STYLES } from "@/types/vehicleBodyStyles";
-import InteractiveVehicle from './shared/InteractiveVehicle';
+import { Check, AlertCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
+import VehicleInteractivePanel from '../customers/vehicles/VehicleInteractivePanel';
 import { DamageArea } from '@/services/vehicleInspectionService';
 
 interface ExteriorCheckTabProps {
   vehicleBodyStyle: VehicleBodyStyle;
   damageAreas?: DamageArea[];
-  onDamageAreasChange: (damageAreas: DamageArea[]) => void;
+  onDamageAreasChange?: (damageAreas: DamageArea[]) => void;
 }
 
-const DAMAGE_TYPES = [
-  { value: 'scratch', label: 'Scratch', color: 'bg-yellow-400' },
-  { value: 'dent', label: 'Dent', color: 'bg-orange-500' },
-  { value: 'crack', label: 'Crack', color: 'bg-red-500' },
-  { value: 'rust', label: 'Rust', color: 'bg-amber-800' },
-  { value: 'missing', label: 'Missing Part', color: 'bg-purple-500' }
-];
-
 const ExteriorCheckTab: React.FC<ExteriorCheckTabProps> = ({ 
-  vehicleBodyStyle,
-  damageAreas = [], 
+  vehicleBodyStyle = 'sedan',
+  damageAreas = [],
   onDamageAreasChange
 }) => {
-  const [selectedDamageType, setSelectedDamageType] = useState<string>('scratch');
-  const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
-  const [notes, setNotes] = useState<string>('');
-
-  const handlePanelClick = (panelId: string) => {
-    setSelectedPanelId(panelId);
-  };
-
-  const handleAddDamage = () => {
-    if (!selectedPanelId) return;
+  // Initialize damage areas
+  const [localDamageAreas, setLocalDamageAreas] = useState<DamageArea[]>([
+    { id: 'front', name: 'Front', isDamaged: false, damageType: null, notes: '' },
+    { id: 'rear', name: 'Rear', isDamaged: false, damageType: null, notes: '' },
+    { id: 'driver_side', name: 'Driver Side', isDamaged: false, damageType: null, notes: '' },
+    { id: 'passenger_side', name: 'Passenger Side', isDamaged: false, damageType: null, notes: '' },
+    { id: 'hood', name: 'Hood', isDamaged: false, damageType: null, notes: '' },
+    { id: 'roof', name: 'Roof', isDamaged: false, damageType: null, notes: '' },
+    { id: 'windshield', name: 'Windshield', isDamaged: false, damageType: null, notes: '' },
+    { id: 'trunk', name: 'Trunk/Cargo', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_front_door', name: 'Left Front Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_front_door', name: 'Right Front Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_rear_door', name: 'Left Rear Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_rear_door', name: 'Right Rear Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_front_fender', name: 'Left Front Fender', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_front_fender', name: 'Right Front Fender', isDamaged: false, damageType: null, notes: '' },
+    { id: 'truck_bed', name: 'Truck Bed', isDamaged: false, damageType: null, notes: '' },
+  ]);
+  
+  // If provided with initial damage areas data, merge it with our default data
+  useEffect(() => {
+    if (damageAreas && damageAreas.length > 0) {
+      // Create a map of existing damage areas for quick lookup
+      const damageAreaMap = damageAreas.reduce((map, area) => {
+        map[area.id] = area;
+        return map;
+      }, {} as Record<string, DamageArea>);
+      
+      // Update local state with provided data
+      setLocalDamageAreas(prevAreas => 
+        prevAreas.map(area => {
+          if (damageAreaMap[area.id]) {
+            return {
+              ...area,
+              isDamaged: damageAreaMap[area.id].isDamaged,
+              damageType: damageAreaMap[area.id].damageType,
+              notes: damageAreaMap[area.id].notes
+            };
+          }
+          return area;
+        })
+      );
+    }
+  }, [damageAreas]);
+  
+  const [selectedArea, setSelectedArea] = useState<DamageArea | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [tempDamageType, setTempDamageType] = useState<string | null>(null);
+  const [tempNotes, setTempNotes] = useState('');
+  
+  const damageTypes = [
+    { id: 'scratch', label: 'Scratch' },
+    { id: 'dent', label: 'Dent' },
+    { id: 'crack', label: 'Crack' },
+    { id: 'rust', label: 'Rust' },
+  ];
+  
+  const handleAreaClick = (areaId: string) => {
+    const area = localDamageAreas.find(a => a.id === areaId) || null;
+    setSelectedArea(area);
     
-    // Find the panel to get its name
-    const panelConfig = VEHICLE_BODY_STYLES[vehicleBodyStyle]?.panels.find(
-      panel => panel.id === selectedPanelId
-    );
+    if (area) {
+      setTempDamageType(area.damageType);
+      setTempNotes(area.notes);
+    }
     
-    if (!panelConfig) return;
-
-    const newDamage: DamageArea = {
-      id: `damage-${Date.now()}`,
-      panelId: selectedPanelId,
-      panelName: panelConfig.name,
-      damageType: selectedDamageType,
-      notes: notes,
-      timestamp: new Date().toISOString()
-    };
-
-    // Add to the list of damages
-    const updatedDamages = [...damageAreas, newDamage];
-    onDamageAreasChange(updatedDamages);
+    setIsDialogOpen(true);
+  };
+  
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedArea(null);
+    setTempDamageType(null);
+    setTempNotes('');
+  };
+  
+  const handleSaveDamage = () => {
+    if (!selectedArea) return;
     
-    // Reset form
-    setNotes('');
-    setSelectedPanelId(null);
+    const updatedAreas = localDamageAreas.map(area => {
+      if (area.id === selectedArea.id) {
+        return {
+          ...area,
+          isDamaged: !!tempDamageType,
+          damageType: tempDamageType,
+          notes: tempNotes
+        };
+      }
+      return area;
+    });
+    
+    setLocalDamageAreas(updatedAreas);
+    
+    // Notify parent component of changes
+    if (onDamageAreasChange) {
+      onDamageAreasChange(updatedAreas);
+    }
+    
+    toast({
+      title: "Damage recorded",
+      description: `Updated ${selectedArea.name} inspection information`,
+    });
+    
+    closeDialog();
   };
-
-  const handleRemoveDamage = (damageId: string) => {
-    const updatedDamages = damageAreas.filter(damage => damage.id !== damageId);
-    onDamageAreasChange(updatedDamages);
-  };
-
-  const getColor = (damageType: string) => {
-    return DAMAGE_TYPES.find(type => type.value === damageType)?.color || 'bg-gray-500';
+  
+  const handleClearDamage = () => {
+    if (!selectedArea) return;
+    
+    setTempDamageType(null);
+    setTempNotes('');
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <Card className="md:row-span-2">
-        <CardHeader>
-          <CardTitle className="text-xl">Vehicle Exterior</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InteractiveVehicle 
-            bodyStyle={vehicleBodyStyle} 
-            selectedPanelId={selectedPanelId}
-            onPanelClick={handlePanelClick}
-            damageAreas={damageAreas}
+    <Card className="overflow-hidden border border-blue-100 shadow-md transition-all hover:shadow-lg rounded-xl">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 pb-4">
+        <CardTitle className="text-xl font-semibold flex items-center text-blue-900">
+          <Check className="mr-3 h-6 w-6 text-blue-700" />
+          Exterior Condition Inspection
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm border">
+          <h3 className="text-lg font-medium mb-4 text-blue-800">Click on any view to mark damage</h3>
+          
+          <VehicleInteractivePanel
+            vehicleType={vehicleBodyStyle}
+            damageAreas={localDamageAreas}
+            onAreaClick={handleAreaClick}
           />
-
-          {selectedPanelId && (
-            <div className="mt-6 p-4 border rounded-lg bg-slate-50">
-              <h3 className="font-medium mb-2">
-                {VEHICLE_BODY_STYLES[vehicleBodyStyle]?.panels.find(
-                  panel => panel.id === selectedPanelId
-                )?.name || 'Selected Panel'}
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label>Damage Type</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {DAMAGE_TYPES.map(type => (
-                      <Button
-                        key={type.value}
-                        type="button"
-                        variant={selectedDamageType === type.value ? "default" : "outline"}
-                        className="justify-start"
-                        onClick={() => setSelectedDamageType(type.value)}
-                      >
-                        <div className={`w-3 h-3 rounded-full ${type.color} mr-2`} />
-                        {type.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="damage-notes">Notes (Optional)</Label>
-                  <Textarea 
-                    id="damage-notes"
-                    placeholder="Describe the damage..." 
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    type="button" 
-                    className="flex-1"
-                    onClick={handleAddDamage}
-                  >
-                    Add Damage
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setSelectedPanelId(null)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
+          
+          {/* Damage report */}
+          {localDamageAreas.some(area => area.isDamaged) && (
+            <div className="mt-6 border rounded-lg p-4 bg-white shadow-sm">
+              <h4 className="font-medium mb-3">Damage Report:</h4>
+              <div className="space-y-2">
+                {localDamageAreas
+                  .filter(area => area.isDamaged)
+                  .map(area => (
+                    <div key={area.id} className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-md">
+                      <div className="flex justify-between items-center">
+                        <h5 className="font-medium text-amber-900">{area.name}</h5>
+                        <Badge variant="outline" className="bg-white">
+                          {area.damageType}
+                        </Badge>
+                      </div>
+                      {area.notes && <p className="text-sm mt-1 text-gray-600">{area.notes}</p>}
+                    </div>
+                  ))
+                }
               </div>
             </div>
           )}
+        </div>
+        
+        {/* Checklist view */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border space-y-4 mt-6">
+          <h3 className="text-lg font-medium mb-4 text-blue-800">Exterior Condition Checklist</h3>
           
-          {!selectedPanelId && (
-            <div className="flex items-center justify-center p-4 border rounded-lg border-dashed mt-6">
-              <Info className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span className="text-muted-foreground">Click on a vehicle panel to report damage</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Documented Damage</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {damageAreas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center p-6 border rounded-lg border-dashed">
-              <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">No damage reported yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Click on a vehicle panel to report damage</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {damageAreas.map(damage => (
-                <div 
-                  key={damage.id} 
-                  className="p-3 border rounded-lg flex items-start justify-between"
-                >
-                  <div>
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full ${getColor(damage.damageType)} mr-2`} />
-                      <h4 className="font-medium">{damage.panelName}</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground capitalize mt-1">
-                      {damage.damageType}
-                    </p>
-                    {damage.notes && (
-                      <p className="text-sm mt-2">{damage.notes}</p>
-                    )}
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => handleRemoveDamage(damage.id)}
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {localDamageAreas.map(area => (
+              <div 
+                key={area.id}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                onClick={() => handleAreaClick(area.id)}
+              >
+                <div>
+                  <h4 className="font-medium">{area.name}</h4>
+                  <p className="text-sm text-gray-500">
+                    {area.isDamaged 
+                      ? `${area.damageType || 'Damaged'} ${area.notes ? `- ${area.notes}` : ''}`
+                      : 'No issues reported'
+                    }
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Photos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center text-center p-6 border rounded-lg border-dashed">
-            <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No photos uploaded</p>
-            <Button className="mt-4" variant="outline">
-              <Camera className="h-4 w-4 mr-2" /> Add Photos
-            </Button>
+                {area.isDamaged ? (
+                  <AlertCircle className="h-5 w-5 text-amber-500" />
+                ) : (
+                  <Check className="h-5 w-5 text-green-500" />
+                )}
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+      
+      {/* Damage Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedArea?.name || 'Area'} Condition</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Damage Type</Label>
+              <RadioGroup value={tempDamageType || ''} onValueChange={setTempDamageType} className="flex flex-wrap gap-4">
+                {damageTypes.map(type => (
+                  <div key={type.id} className="flex items-center space-x-2">
+                    <RadioGroupItem value={type.id} id={`damage-${type.id}`} />
+                    <Label htmlFor={`damage-${type.id}`} className="cursor-pointer">{type.label}</Label>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="" id="damage-none" />
+                  <Label htmlFor="damage-none" className="cursor-pointer">No Damage</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="damage-notes">Notes</Label>
+              <Textarea 
+                id="damage-notes"
+                placeholder="Add details about the damage"
+                value={tempNotes}
+                onChange={(e) => setTempNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+            <Button variant="outline" onClick={handleClearDamage} type="button">
+              Clear
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={closeDialog} type="button">
+                Cancel
+              </Button>
+              <Button onClick={handleSaveDamage} type="button">
+                Save
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };
 
