@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
@@ -99,3 +100,6 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     return null;
   }
 };
+
+// Backward compatible function to maintain existing code compatibility
+export const getCustomer = getCustomerById;
