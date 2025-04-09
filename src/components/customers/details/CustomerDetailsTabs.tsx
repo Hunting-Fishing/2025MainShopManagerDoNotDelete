@@ -87,7 +87,7 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
         <TabsTrigger value="communications">
           Communications
           {customerCommunications.length > 0 && (
-            <Badge className="ml-2 bg-green-100 text-green-800">{customerC ommunications.length}</Badge>
+            <Badge className="ml-2 bg-green-100 text-green-800">{customerCommunications.length}</Badge>
           )}
         </TabsTrigger>
         <TabsTrigger value="interactions">
