@@ -1,29 +1,16 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
-import { InteractionType, InteractionStatus } from '@/types/interaction';
 
-// Define a simplified interface just for this component to avoid circular dependencies
 interface VehicleInteraction {
   id: string;
-  customer_id: string;
-  customer_name: string;
   date: string;
-  type: InteractionType;
-  description: string;
-  staff_member_id: string;
+  type: string;
   staff_member_name: string;
-  status: InteractionStatus;
-  notes?: string;
-  related_work_order_id?: string;
-  follow_up_date?: string;
-  follow_up_completed?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  vehicle_id?: string;
+  description: string;
 }
 
 export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
@@ -44,14 +31,7 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          // Convert the data to our local VehicleInteraction type
-          const typedInteractions = data ? data.map(item => ({
-            ...item,
-            type: item.type as InteractionType,
-            status: item.status as InteractionStatus
-          })) : [];
-          
-          setInteractions(typedInteractions);
+          setInteractions(data || []);
         }
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);

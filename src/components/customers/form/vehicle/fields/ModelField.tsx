@@ -44,18 +44,17 @@ export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = []
             </FormControl>
             <SelectContent>
               {!selectedMake ? (
-                <SelectItem value="" disabled>Select make first</SelectItem>
+                <SelectItem value="select-make">Select make first</SelectItem>
               ) : models.length > 0 ? (
-                models.map((model) => (
-                  <SelectItem 
-                    key={model.model_name} 
-                    value={model.model_name}
-                  >
-                    {model.model_name}
-                  </SelectItem>
-                ))
+                models
+                  .filter(model => model.model_name) // Filter out invalid models
+                  .map((model) => (
+                    <SelectItem key={model.model_name} value={model.model_name}>
+                      {model.model_name}
+                    </SelectItem>
+                  ))
               ) : (
-                <SelectItem value="" disabled>No models available</SelectItem>
+                <SelectItem value="no-models">No models available</SelectItem>
               )}
             </SelectContent>
           </Select>

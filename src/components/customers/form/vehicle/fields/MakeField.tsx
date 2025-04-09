@@ -52,16 +52,15 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
             </FormControl>
             <SelectContent>
               {safeMakes.length > 0 ? (
-                safeMakes.map((make) => (
-                  <SelectItem 
-                    key={make.make_id} 
-                    value={make.make_id}
-                  >
-                    {make.make_display}
-                  </SelectItem>
-                ))
+                safeMakes
+                  .filter(make => make.make_id && make.make_display) // Filter out invalid makes
+                  .map((make) => (
+                    <SelectItem key={make.make_id} value={make.make_id}>
+                      {make.make_display}
+                    </SelectItem>
+                  ))
               ) : (
-                <SelectItem value="" disabled>No makes available</SelectItem>
+                <SelectItem value="no-makes">No makes available</SelectItem>
               )}
             </SelectContent>
           </Select>
