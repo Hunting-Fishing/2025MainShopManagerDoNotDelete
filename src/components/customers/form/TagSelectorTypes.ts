@@ -11,7 +11,7 @@ export interface TagSelectorFieldProps {
   onChange: (value: string[]) => void;
 }
 
-export interface TagSelectorProps {
+export interface FormTagSelectorProps {
   form: TagSelectorFormProps;
   field: TagSelectorFieldProps;
   disabled?: boolean;

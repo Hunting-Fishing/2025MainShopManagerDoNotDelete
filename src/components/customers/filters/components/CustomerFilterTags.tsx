@@ -23,15 +23,8 @@ export const CustomerFilterTags: React.FC<CustomerFilterTagsProps> = ({
     <div className="space-y-2">
       <Label>Tags</Label>
       <TagSelector 
-        form={{ 
-          setValue: (_name: string, value: string[]) => handleTagsChange(value), 
-          watch: () => tempTags
-        }}
-        field={{ 
-          name: "tags", 
-          value: tempTags,
-          onChange: (value: string[]) => handleTagsChange(value) 
-        }}
+        selectedTags={tempTags}
+        onChange={handleTagsChange}
       />
     </div>
   );

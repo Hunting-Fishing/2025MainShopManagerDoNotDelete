@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useTagSelector } from "./useTagSelector";
 import { Loader2 } from "lucide-react";
 
-interface TagSelectorProps {
+export interface TagSelectorProps {
   selectedTags: string[];
   onChange: (tags: string[]) => void;
   disabled?: boolean;
