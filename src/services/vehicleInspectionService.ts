@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import type { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface DamageArea {
   id: string;
@@ -36,7 +37,7 @@ export const createVehicleInspection = async (inspection: VehicleInspection): Pr
           inspection_date: inspection.inspectionDate.toISOString(),
           vehicle_body_style: inspection.vehicleBodyStyle,
           status: inspection.status,
-          damage_areas: inspection.damageAreas as any, // Type assertion to bypass the type check
+          damage_areas: inspection.damageAreas as unknown as Json, // Two-step casting for TypeScript
           notes: inspection.notes
         }
       ])
@@ -74,7 +75,7 @@ export const updateVehicleInspection = async (id: string, inspection: Partial<Ve
     
     if (inspection.vehicleBodyStyle) updateData.vehicle_body_style = inspection.vehicleBodyStyle;
     if (inspection.status) updateData.status = inspection.status;
-    if (inspection.damageAreas) updateData.damage_areas = inspection.damageAreas;
+    if (inspection.damageAreas) updateData.damage_areas = inspection.damageAreas as unknown as Json;
     if (inspection.notes !== undefined) updateData.notes = inspection.notes;
     
     const { error } = await supabase
@@ -127,6 +128,11 @@ export const getVehicleInspection = async (id: string): Promise<VehicleInspectio
 
     if (!data) return null;
 
+    // Properly map JSON data to DamageArea type with two-step casting
+    const damageAreas = data.damage_areas 
+      ? (data.damage_areas as unknown as DamageArea[]) 
+      : [];
+
     return {
       id: data.id,
       vehicleId: data.vehicle_id,
@@ -134,7 +140,7 @@ export const getVehicleInspection = async (id: string): Promise<VehicleInspectio
       inspectionDate: new Date(data.inspection_date),
       vehicleBodyStyle: data.vehicle_body_style as VehicleBodyStyle,
       status: data.status as VehicleInspection['status'],
-      damageAreas: (data.damage_areas || []) as DamageArea[], // Type assertion to ensure correct type
+      damageAreas: damageAreas,
       notes: data.notes
     };
   } catch (error: any) {
@@ -176,7 +182,10 @@ export const getVehicleInspections = async (vehicleId: string): Promise<VehicleI
       inspectionDate: new Date(item.inspection_date),
       vehicleBodyStyle: item.vehicle_body_style as VehicleBodyStyle,
       status: item.status as VehicleInspection['status'],
-      damageAreas: (item.damage_areas || []) as DamageArea[], // Type assertion to ensure correct type
+      // Properly map JSON data to DamageArea type with two-step casting
+      damageAreas: item.damage_areas 
+        ? (item.damage_areas as unknown as DamageArea[]) 
+        : [],
       notes: item.notes
     }));
   } catch (error: any) {
