@@ -52,7 +52,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     
     try {
       // First set the year
-      form.setValue(`vehicles.${index}.year`, vehicleInfo.year);
+      if (vehicleInfo.year) {
+        form.setValue(`vehicles.${index}.year`, vehicleInfo.year);
+      }
       
       // Then set the make and fetch models for this make
       if (vehicleInfo.make) {
@@ -153,6 +155,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   }, [vin, populateVehicleFromVin, lastProcessedVin, vinProcessing, decodeVin]);
 
   const handleMakeChange = (value: string) => {
+    // Make sure value is never empty
+    if (!value) return;
+    
     // Update the form
     form.setValue(`vehicles.${index}.make`, value);
     // Clear the model since it depends on make
