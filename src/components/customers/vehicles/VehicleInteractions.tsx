@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
-import { CustomerInteraction } from '@/types/interaction';
+import { CustomerInteraction, InteractionStatus, InteractionType } from '@/types/interaction';
 
 export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
@@ -23,7 +23,14 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          setInteractions(data || []);
+          // Properly cast the data to ensure type safety
+          const typedInteractions = data?.map(item => ({
+            ...item,
+            type: item.type as InteractionType,
+            status: item.status as InteractionStatus
+          })) || [];
+          
+          setInteractions(typedInteractions);
         }
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);

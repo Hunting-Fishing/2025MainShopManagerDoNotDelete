@@ -43,8 +43,8 @@ export const addCustomerInteraction = async (
       .from("customer_interactions")
       .insert({
         ...interaction,
-        type: interaction.type as InteractionType,
-        status: interaction.status as InteractionStatus
+        type: interaction.type,
+        status: interaction.status
       })
       .select()
       .single();

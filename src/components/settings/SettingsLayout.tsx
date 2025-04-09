@@ -6,7 +6,7 @@ import { CompanyTab } from "./CompanyTab";
 import { SecurityTab } from "./SecurityTab";
 import { NotificationsTab } from "./NotificationsTab";
 import { BrandingTab } from "./BrandingTab";
-import DataExportTab from "./DataExportTab";
+import { DataExportTab } from "./DataExportTab";
 import { LanguageTab } from "./LanguageTab";
 import { LoyaltyTab } from "./LoyaltyTab";
 import { InventorySettingsTab } from "./InventorySettingsTab";
