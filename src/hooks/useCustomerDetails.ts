@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { getCustomerById } from "@/services/customer";
 import { CustomerInteraction } from "@/types/interaction";
@@ -18,13 +18,7 @@ export const useCustomerDetails = (id?: string) => {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (id) {
-      loadCustomerDetails(id);
-    }
-  }, [id]);
-
-  const loadCustomerDetails = async (customerId: string) => {
+  const loadCustomerDetails = useCallback(async (customerId: string) => {
     setLoading(true);
     try {
       // Fetch customer data with vehicles included
@@ -34,6 +28,13 @@ export const useCustomerDetails = (id?: string) => {
       
       if (customerData) {
         setCustomer(customerData);
+      } else {
+        console.error("No customer data returned for ID:", customerId);
+        toast({
+          title: "Customer Not Found",
+          description: "The requested customer information could not be found.",
+          variant: "destructive",
+        });
       }
 
       // Load work orders from Supabase
@@ -43,7 +44,10 @@ export const useCustomerDetails = (id?: string) => {
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
 
-      if (workOrdersError) throw workOrdersError;
+      if (workOrdersError) {
+        console.error("Error fetching work orders:", workOrdersError);
+        throw workOrdersError;
+      }
       setCustomerWorkOrders(workOrders || []);
 
       // Custom interaction logic since the table might not exist yet
@@ -72,7 +76,13 @@ export const useCustomerDetails = (id?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (id) {
+      loadCustomerDetails(id);
+    }
+  }, [id, loadCustomerDetails]);
 
   const fetchCustomerCommunications = async (customerId: string) => {
     try {
@@ -101,18 +111,18 @@ export const useCustomerDetails = (id?: string) => {
   const fetchCustomerNotes = async (customerId: string) => {
     try {
       const notes = await getCustomerNotes(customerId);
-      setCustomerNotes(notes);
+      setCustomerNotes(notes || []);
     } catch (error) {
       console.error("Error fetching notes:", error);
     }
   };
 
   // Function to refresh customer data
-  const refreshCustomerData = async () => {
+  const refreshCustomerData = useCallback(() => {
     if (id) {
       loadCustomerDetails(id);
     }
-  };
+  }, [id, loadCustomerDetails]);
 
   const handleInteractionAdded = (interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);

@@ -39,7 +39,7 @@ export default function CustomerDetails() {
     if (id) {
       refreshCustomerData();
     }
-  }, [id]);
+  }, [id, refreshCustomerData]);
 
   if (loading) {
     return (
@@ -66,8 +66,8 @@ export default function CustomerDetails() {
 
       <CustomerDetailsTabs
         customer={customer}
-        customerWorkOrders={customerWorkOrders}
-        customerInteractions={customerInteractions}
+        customerWorkOrders={customerWorkOrders || []}
+        customerInteractions={customerInteractions || []}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         setAddInteractionOpen={setAddInteractionOpen}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,10 +56,11 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
             vin: data.vin || '',
             make: data.make || '',
             model: data.model || '',
-            year: data.year ? data.year.toString() : new Date().getFullYear().toString(),
+            year: data.year ? String(data.year) : new Date().getFullYear().toString(),
             licensePlate: data.license_plate || '',
             color: data.color || '',
-            bodyStyle: initialBodyStyle || "sedan" as VehicleBodyStyle,
+            // Use initialBodyStyle if provided or default to "sedan"
+            bodyStyle: initialBodyStyle || ((data as any).body_style as VehicleBodyStyle || "sedan"),
             mileage: ""  // Set mileage if available in your schema
           });
           
