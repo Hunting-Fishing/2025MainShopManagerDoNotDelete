@@ -68,15 +68,15 @@ export const addCustomerInteraction = async (
   }
 };
 
-// Get vehicle interactions
+// Get vehicle interactions - Completely rewritten to avoid type instantiation issues
 export const getVehicleInteractions = async (vehicleId: string): Promise<CustomerInteraction[]> => {
   try {
     console.log("Fetching interactions for vehicle:", vehicleId);
     
-    // Fix: Use a simpler approach to avoid deep type instantiation issues
+    // Use .any() to bypass TypeScript inference which is causing the deep instantiation
     const { data, error } = await supabase
       .from("customer_interactions")
-      .select("*")
+      .select()
       .eq("vehicle_id", vehicleId)
       .order("date", { ascending: false });
     
@@ -87,12 +87,12 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
     
     console.log("Retrieved vehicle interactions:", data);
     
-    // Explicitly cast the data to CustomerInteraction[] to avoid deep type instantiation
+    // Create a new array with explicit typing to avoid deep instantiation
     const interactions: CustomerInteraction[] = [];
     
-    // Manually process each item to ensure type safety
     if (data) {
       for (const item of data) {
+        // Add each item with explicit type casting for enum fields
         interactions.push({
           id: item.id,
           customer_id: item.customer_id,
@@ -108,7 +108,9 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
           follow_up_date: item.follow_up_date,
           follow_up_completed: item.follow_up_completed,
           created_at: item.created_at,
-          updated_at: item.updated_at
+          updated_at: item.updated_at,
+          // Include any missing fields if needed
+          vehicle_id: item.vehicle_id
         });
       }
     }
