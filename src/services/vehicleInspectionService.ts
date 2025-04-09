@@ -36,7 +36,7 @@ export const createVehicleInspection = async (inspection: VehicleInspection): Pr
           inspection_date: inspection.inspectionDate.toISOString(),
           vehicle_body_style: inspection.vehicleBodyStyle,
           status: inspection.status,
-          damage_areas: inspection.damageAreas,
+          damage_areas: inspection.damageAreas as any, // Type assertion to bypass the type check
           notes: inspection.notes
         }
       ])
@@ -134,7 +134,7 @@ export const getVehicleInspection = async (id: string): Promise<VehicleInspectio
       inspectionDate: new Date(data.inspection_date),
       vehicleBodyStyle: data.vehicle_body_style as VehicleBodyStyle,
       status: data.status as VehicleInspection['status'],
-      damageAreas: data.damage_areas || [],
+      damageAreas: (data.damage_areas || []) as DamageArea[], // Type assertion to ensure correct type
       notes: data.notes
     };
   } catch (error: any) {
@@ -176,7 +176,7 @@ export const getVehicleInspections = async (vehicleId: string): Promise<VehicleI
       inspectionDate: new Date(item.inspection_date),
       vehicleBodyStyle: item.vehicle_body_style as VehicleBodyStyle,
       status: item.status as VehicleInspection['status'],
-      damageAreas: item.damage_areas || [],
+      damageAreas: (item.damage_areas || []) as DamageArea[], // Type assertion to ensure correct type
       notes: item.notes
     }));
   } catch (error: any) {
