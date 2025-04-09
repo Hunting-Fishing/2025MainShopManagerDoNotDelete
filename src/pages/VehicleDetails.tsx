@@ -59,7 +59,14 @@ export default function VehicleDetails() {
 
         if (vehicleData) {
           console.log("Vehicle data loaded:", vehicleData);
-          setVehicle(vehicleData);
+          // Ensure required fields have default values if they're missing
+          const processedVehicleData: CustomerVehicle = {
+            ...vehicleData,
+            make: vehicleData.make || 'Unknown Make',
+            model: vehicleData.model || 'Unknown Model',
+            year: vehicleData.year || 'Unknown Year',
+          };
+          setVehicle(processedVehicleData);
         } else {
           setError("Vehicle not found");
           toast({
