@@ -4,7 +4,25 @@ import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
-import { CustomerInteraction, InteractionStatus, InteractionType } from '@/types/interaction';
+
+// Define the local CustomerInteraction type to avoid circular dependencies
+interface CustomerInteraction {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  date: string;
+  type: string;
+  description: string;
+  staff_member_id: string;
+  staff_member_name: string;
+  status: string;
+  notes?: string;
+  related_work_order_id?: string;
+  follow_up_date?: string;
+  follow_up_completed?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
@@ -24,14 +42,8 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          // Properly cast the data to ensure type safety
-          const typedInteractions = (data || []).map(item => ({
-            ...item,
-            type: item.type as InteractionType,
-            status: item.status as InteractionStatus
-          })) as CustomerInteraction[];
-          
-          setInteractions(typedInteractions);
+          // Handle the data properly without relying on external types
+          setInteractions(data || []);
         }
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);

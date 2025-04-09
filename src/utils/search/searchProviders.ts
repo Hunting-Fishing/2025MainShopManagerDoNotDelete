@@ -51,31 +51,48 @@ export const searchVehicles = async (query: string): Promise<any[]> => {
   if (!query || query.length < 2) return [];
   
   try {
-    // Fix the query to properly specify the foreign key relationship
-    const { data, error } = await supabase
+    // Fix: First fetch vehicles that match the query
+    const { data: vehiclesData, error: vehiclesError } = await supabase
       .from('vehicles')
-      .select(`
-        *,
-        customers:customer_id (
-          first_name,
-          last_name
-        )
-      `)
+      .select('*')
       .or(`make.ilike.%${query}%,model.ilike.%${query}%,vin.ilike.%${query}%,license_plate.ilike.%${query}%`)
       .limit(10);
     
-    if (error) {
-      console.error('Error searching vehicles:', error);
+    if (vehiclesError) {
+      console.error('Error searching vehicles:', vehiclesError);
       return [];
     }
     
-    // Transform the results to include customer name for display
-    return (data || []).map(vehicle => ({
-      ...vehicle,
-      customerName: vehicle.customers ? 
-        `${vehicle.customers.first_name} ${vehicle.customers.last_name}` : 
-        'Unknown Customer'
+    // Then fetch customer data separately for each vehicle
+    const vehicles = await Promise.all((vehiclesData || []).map(async (vehicle) => {
+      if (!vehicle.customer_id) {
+        return {
+          ...vehicle,
+          customerName: 'Unknown Customer'
+        };
+      }
+      
+      // Get customer data
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('first_name, last_name')
+        .eq('id', vehicle.customer_id)
+        .single();
+      
+      if (customerError || !customerData) {
+        return {
+          ...vehicle,
+          customerName: 'Unknown Customer'
+        };
+      }
+      
+      return {
+        ...vehicle,
+        customerName: `${customerData.first_name} ${customerData.last_name}`
+      };
     }));
+    
+    return vehicles;
   } catch (error) {
     console.error('Error in searchVehicles:', error);
     return [];
@@ -86,32 +103,57 @@ export const searchWorkOrders = async (query: string): Promise<any[]> => {
   if (!query || query.length < 2) return [];
   
   try {
-    // Fix the query to specify relationships between tables properly
-    const { data, error } = await supabase
+    // Fetch work orders first
+    const { data: workOrdersData, error: workOrdersError } = await supabase
       .from('work_orders')
-      .select(`
-        *,
-        customers:customer_id (first_name, last_name),
-        vehicles:vehicle_id (make, model, year)
-      `)
+      .select('*')
       .or(`id::text.ilike.%${query}%,description.ilike.%${query}%`)
       .limit(10);
     
-    if (error) {
-      console.error('Error searching work orders:', error);
+    if (workOrdersError) {
+      console.error('Error searching work orders:', workOrdersError);
       return [];
     }
     
-    // Transform the results to include customer and vehicle info
-    return (data || []).map(order => ({
-      ...order,
-      customerName: order.customers ? 
-        `${order.customers.first_name} ${order.customers.last_name}` : 
-        'Unknown Customer',
-      vehicleInfo: order.vehicles ? 
-        `${order.vehicles.year} ${order.vehicles.make} ${order.vehicles.model}` : 
-        'Unknown Vehicle'
+    // Process each work order to add customer and vehicle info
+    const workOrders = await Promise.all((workOrdersData || []).map(async (order) => {
+      let customerName = 'Unknown Customer';
+      let vehicleInfo = 'Unknown Vehicle';
+      
+      // Get customer data if we have a customer_id
+      if (order.customer_id) {
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('first_name, last_name')
+          .eq('id', order.customer_id)
+          .single();
+          
+        if (customerData) {
+          customerName = `${customerData.first_name} ${customerData.last_name}`;
+        }
+      }
+      
+      // Get vehicle data if we have a vehicle_id
+      if (order.vehicle_id) {
+        const { data: vehicleData } = await supabase
+          .from('vehicles')
+          .select('year, make, model')
+          .eq('id', order.vehicle_id)
+          .single();
+          
+        if (vehicleData) {
+          vehicleInfo = `${vehicleData.year} ${vehicleData.make} ${vehicleData.model}`;
+        }
+      }
+      
+      return {
+        ...order,
+        customerName,
+        vehicleInfo
+      };
     }));
+    
+    return workOrders;
   } catch (error) {
     console.error('Error in searchWorkOrders:', error);
     return [];
@@ -123,21 +165,23 @@ export const searchInvoices = async (query: string): Promise<SearchResult[]> => 
   if (!query || query.length < 2) return [];
   
   try {
-    const { data, error } = await supabase
+    // First fetch invoices
+    const { data: invoicesData, error: invoicesError } = await supabase
       .from('invoices')
-      .select('*, customers:customer_id (first_name, last_name)')
-      .or(`id::text.ilike.%${query}%,description.ilike.%${query}%,customer.ilike.%${query}%`)
+      .select('*')
+      .or(`id::text.ilike.%${query}%,description.ilike.%${query}%`)
       .limit(10);
     
-    if (error) {
-      console.error('Error searching invoices:', error);
+    if (invoicesError) {
+      console.error('Error searching invoices:', invoicesError);
       return [];
     }
     
-    return (data || []).map(invoice => ({
+    // Map to search results format
+    return (invoicesData || []).map(invoice => ({
       id: invoice.id,
       title: `Invoice #${invoice.id}`,
-      subtitle: `${invoice.customer} - $${invoice.total || 0}`,
+      subtitle: `${invoice.customer || 'Unknown'} - $${invoice.total || 0}`,
       type: 'invoice',
       url: `/invoices/${invoice.id}`,
       relevance: 1
