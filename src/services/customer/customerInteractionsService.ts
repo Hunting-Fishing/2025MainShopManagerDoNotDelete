@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { CustomerInteraction, InteractionType, InteractionStatus } from "@/types/interaction";
 
@@ -68,15 +67,20 @@ export const addCustomerInteraction = async (
   }
 };
 
-// Get vehicle interactions - Completely rewritten to avoid type instantiation issues
+// Get vehicle interactions - Complete rewrite to avoid deep type instantiation
 export const getVehicleInteractions = async (vehicleId: string): Promise<CustomerInteraction[]> => {
   try {
     console.log("Fetching interactions for vehicle:", vehicleId);
     
-    // Use .any() to bypass TypeScript inference which is causing the deep instantiation
+    // Using a different approach to avoid deep type instantiation
     const { data, error } = await supabase
       .from("customer_interactions")
-      .select()
+      .select(`
+        id, customer_id, customer_name, date, type, description, 
+        staff_member_id, staff_member_name, status, notes, 
+        related_work_order_id, follow_up_date, follow_up_completed, 
+        created_at, updated_at, vehicle_id
+      `)
       .eq("vehicle_id", vehicleId)
       .order("date", { ascending: false });
     
@@ -87,33 +91,25 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
     
     console.log("Retrieved vehicle interactions:", data);
     
-    // Create a new array with explicit typing to avoid deep instantiation
-    const interactions: CustomerInteraction[] = [];
-    
-    if (data) {
-      for (const item of data) {
-        // Add each item with explicit type casting for enum fields
-        interactions.push({
-          id: item.id,
-          customer_id: item.customer_id,
-          customer_name: item.customer_name,
-          date: item.date,
-          type: item.type as InteractionType,
-          description: item.description,
-          staff_member_id: item.staff_member_id,
-          staff_member_name: item.staff_member_name,
-          status: item.status as InteractionStatus,
-          notes: item.notes,
-          related_work_order_id: item.related_work_order_id,
-          follow_up_date: item.follow_up_date,
-          follow_up_completed: item.follow_up_completed,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          // Include any missing fields if needed
-          vehicle_id: item.vehicle_id
-        });
-      }
-    }
+    // Map with explicit type casting for enum fields
+    const interactions: CustomerInteraction[] = (data || []).map(item => ({
+      id: item.id,
+      customer_id: item.customer_id,
+      customer_name: item.customer_name,
+      date: item.date,
+      type: item.type as InteractionType,
+      description: item.description,
+      staff_member_id: item.staff_member_id,
+      staff_member_name: item.staff_member_name,
+      status: item.status as InteractionStatus,
+      notes: item.notes,
+      related_work_order_id: item.related_work_order_id,
+      follow_up_date: item.follow_up_date,
+      follow_up_completed: item.follow_up_completed,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      vehicle_id: item.vehicle_id
+    }));
     
     return interactions;
   } catch (error) {

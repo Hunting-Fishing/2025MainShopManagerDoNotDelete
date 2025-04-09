@@ -28,6 +28,7 @@ export interface CustomerInteraction {
   follow_up_completed?: boolean;
   created_at?: string;
   updated_at?: string;
+  vehicle_id?: string;
   
   // Backwards compatibility properties
   customerId?: string;
