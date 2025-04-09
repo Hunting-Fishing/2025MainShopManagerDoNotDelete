@@ -1,23 +1,74 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Camera, Save, FileText, Send, CheckCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Camera, Save, FileText, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import VehicleInfoTab from "@/components/inspection-form/VehicleInfoTab";
 import ExteriorCheckTab from "@/components/inspection-form/ExteriorCheckTab";
 import InteriorCheckTab from "@/components/inspection-form/InteriorCheckTab";
 import EngineBayTab from "@/components/inspection-form/EngineBayTab";
 import TiresTab from "@/components/inspection-form/TiresTab";
 import BrakesTab from "@/components/inspection-form/BrakesTab";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
+import { useAuthUser } from "@/hooks/useAuthUser";
+import { createVehicleInspection, updateVehicleInspection, getVehicleInspection, VehicleInspection, DamageArea } from "@/services/vehicleInspectionService";
+import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
 
 export default function VehicleInspectionForm() {
   const navigate = useNavigate();
+  const { userId } = useAuthUser();
+  const [searchParams] = useSearchParams();
+  const { inspectionId } = useParams<{ inspectionId: string }>();
+  const vehicleId = searchParams.get('vehicleId');
+  
   const [activeTab, setActiveTab] = useState("vehicle");
   const [progress, setProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [inspectionData, setInspectionData] = useState<Partial<VehicleInspection>>({
+    status: 'draft',
+    damageAreas: []
+  });
+  
+  // Load existing inspection if we have an ID
+  useEffect(() => {
+    async function loadInspection() {
+      if (!inspectionId) return;
+      
+      setIsLoading(true);
+      try {
+        const data = await getVehicleInspection(inspectionId);
+        if (data) {
+          setInspectionData(data);
+          // Update progress based on status
+          if (data.status === 'completed' || data.status === 'approved') {
+            setProgress(100);
+          }
+        } else {
+          toast({
+            title: "Error",
+            description: "Could not find the requested inspection",
+            variant: "destructive",
+          });
+          navigate('/forms');
+        }
+      } catch (error) {
+        console.error("Error loading inspection:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load inspection data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadInspection();
+  }, [inspectionId, navigate]);
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -35,19 +86,154 @@ export default function VehicleInspectionForm() {
     setProgress(progressMap[value] || 0);
   };
 
-  const handleSubmit = () => {
-    setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      toast.success("Inspection form submitted successfully", {
-        description: "The vehicle inspection has been recorded",
-        icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-      });
-      setIsSubmitting(false);
-      navigate("/forms");
-    }, 1500);
+  const handleBodyStyleChange = (style: VehicleBodyStyle) => {
+    setInspectionData(prev => ({
+      ...prev,
+      vehicleBodyStyle: style
+    }));
   };
+
+  const handleDamageAreaUpdate = (damageAreas: DamageArea[]) => {
+    setInspectionData(prev => ({
+      ...prev,
+      damageAreas
+    }));
+  };
+
+  const handleSaveDraft = async () => {
+    if (!userId || !vehicleId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to save",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      if (inspectionId) {
+        // Update existing inspection
+        const success = await updateVehicleInspection(inspectionId, {
+          ...inspectionData,
+          status: 'draft'
+        });
+        
+        if (success) {
+          toast({
+            title: "Saved",
+            description: "Inspection saved as draft",
+          });
+        } else {
+          throw new Error("Failed to update inspection");
+        }
+      } else {
+        // Create new inspection
+        const newId = await createVehicleInspection({
+          vehicleId,
+          technicianId: userId,
+          inspectionDate: new Date(),
+          vehicleBodyStyle: inspectionData.vehicleBodyStyle || 'sedan',
+          status: 'draft',
+          damageAreas: inspectionData.damageAreas || [],
+          notes: inspectionData.notes
+        });
+        
+        if (newId) {
+          toast({
+            title: "Saved",
+            description: "New inspection saved as draft",
+          });
+          // Navigate to the edit URL for the new inspection
+          navigate(`/vehicle-inspection/${newId}?vehicleId=${vehicleId}`);
+        } else {
+          throw new Error("Failed to create inspection");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving inspection:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save inspection",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!userId || !vehicleId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to submit",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      if (inspectionId) {
+        // Update existing inspection
+        const success = await updateVehicleInspection(inspectionId, {
+          ...inspectionData,
+          status: 'completed'
+        });
+        
+        if (success) {
+          toast({
+            title: "Submitted",
+            description: "Inspection has been completed and submitted",
+            variant: "success",
+          });
+          navigate('/forms');
+        } else {
+          throw new Error("Failed to update inspection");
+        }
+      } else {
+        // Create new inspection
+        const newId = await createVehicleInspection({
+          vehicleId,
+          technicianId: userId,
+          inspectionDate: new Date(),
+          vehicleBodyStyle: inspectionData.vehicleBodyStyle || 'sedan',
+          status: 'completed',
+          damageAreas: inspectionData.damageAreas || [],
+          notes: inspectionData.notes
+        });
+        
+        if (newId) {
+          toast({
+            title: "Submitted",
+            description: "New inspection has been completed and submitted",
+            variant: "success",
+          });
+          navigate('/forms');
+        } else {
+          throw new Error("Failed to create inspection");
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting inspection:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit inspection",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-12 flex flex-col items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Loading inspection data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6">
@@ -63,7 +249,7 @@ export default function VehicleInspectionForm() {
           </Button>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Vehicle Inspection
+              {inspectionId ? "Edit Vehicle Inspection" : "New Vehicle Inspection"}
             </h1>
             <p className="text-muted-foreground mt-1">
               Complete all sections to submit the inspection form
@@ -74,19 +260,26 @@ export default function VehicleInspectionForm() {
         <div className="hidden md:flex gap-3">
           <Button 
             variant="outline" 
-            onClick={() => toast.info("Form saved as draft", {
-              description: "You can continue editing later"
-            })}
+            onClick={handleSaveDraft}
+            disabled={isSaving || !vehicleId}
             className="transition-all duration-200 hover:bg-blue-50"
           >
-            <Save className="h-4 w-4 mr-2" /> Save Draft
+            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Save Draft
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isSubmitting || progress < 85}
+            disabled={isSubmitting || progress < 85 || !vehicleId}
             className={`${progress >= 85 ? 'animate-pulse' : ''} transition-all duration-300`}
           >
-            {isSubmitting ? "Submitting..." : "Submit Inspection"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Inspection"
+            )}
           </Button>
         </div>
       </div>
@@ -106,6 +299,15 @@ export default function VehicleInspectionForm() {
           <div className={`h-3 w-1 bg-white rounded-full ${progress >= 85 ? 'opacity-100' : 'opacity-30'}`}></div>
         </div>
       </div>
+
+      {!vehicleId && (
+        <Card className="mb-6 border-yellow-200 bg-yellow-50">
+          <CardContent className="p-4 flex items-center text-yellow-700">
+            <CheckCircle2 className="h-5 w-5 mr-2 text-yellow-600" />
+            Please select a vehicle before proceeding with the inspection. Vehicle information is required.
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="overflow-auto mb-6">
@@ -157,11 +359,19 @@ export default function VehicleInspectionForm() {
         
         <div className="space-y-6">
           <TabsContent value="vehicle" className="space-y-4 mt-0 animate-fade-in">
-            <VehicleInfoTab />
+            <VehicleInfoTab 
+              vehicleId={vehicleId} 
+              initialBodyStyle={inspectionData.vehicleBodyStyle}
+              onBodyStyleChange={handleBodyStyleChange} 
+            />
           </TabsContent>
           
           <TabsContent value="exterior" className="space-y-4 mt-0 animate-fade-in">
-            <ExteriorCheckTab />
+            <ExteriorCheckTab 
+              vehicleBodyStyle={inspectionData.vehicleBodyStyle || 'sedan'}
+              damageAreas={inspectionData.damageAreas || []}
+              onDamageAreasChange={handleDamageAreaUpdate}
+            />
           </TabsContent>
           
           <TabsContent value="interior" className="space-y-4 mt-0 animate-fade-in">
@@ -217,8 +427,9 @@ export default function VehicleInspectionForm() {
           <div className="flex gap-3">
             <Button 
               variant="outline" 
-              onClick={() => toast.info("Form saved as PDF", {
-                description: "Download started"
+              onClick={() => toast({
+                title: "PDF Generated",
+                description: "Your inspection report PDF has been generated",
               })}
               className="shadow-sm hover:shadow transition-all duration-200"
             >
@@ -226,10 +437,17 @@ export default function VehicleInspectionForm() {
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isSubmitting}
+              disabled={isSubmitting || !vehicleId}
               className="md:hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-300"
             >
-              {isSubmitting ? "Submitting..." : "Submit"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit"
+              )}
             </Button>
           </div>
         )}

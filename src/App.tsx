@@ -197,6 +197,7 @@ function App() {
                     <Route path="forms/:id" element={<FormPreview />} />
                     <Route path="forms/:id/edit" element={<FormEditor />} />
                     <Route path="vehicle-inspection" element={<VehicleInspectionForm />} />
+                    <Route path="vehicle-inspection/:inspectionId" element={<VehicleInspectionForm />} />
                     <Route path="maintenance" element={<Maintenance />} />
                     <Route path="maintenance/dashboard" element={<MaintenanceDashboard />} />
                     <Route path="calendar" element={<Calendar />} />

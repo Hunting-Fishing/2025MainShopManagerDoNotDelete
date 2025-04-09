@@ -1,222 +1,267 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Car, AlertTriangle, ThumbsUp, ThumbsDown, PanelLeft, PanelRight } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import InspectionItem from "./shared/InspectionItem";
-import ImageUploadButton from './shared/ImageUploadButton';
-import InteractiveVehicle from './shared/InteractiveVehicle';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Check, AlertCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
+import VehicleInteractivePanel from '../customers/vehicles/VehicleInteractivePanel';
+import { DamageArea } from '@/services/vehicleInspectionService';
 
-const ExteriorCheckTab = () => {
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [activeVehicleTab, setActiveVehicleTab] = useState("interactive");
-  // Get the vehicle body style from the VehicleInfoTab form value (or URL parameter)
-  // For demo purposes, we'll use a state variable that can be updated later
-  const [vehicleBodyStyle, setVehicleBodyStyle] = useState<VehicleBodyStyle>("sedan");
+interface ExteriorCheckTabProps {
+  vehicleBodyStyle: VehicleBodyStyle;
+  damageAreas?: DamageArea[];
+  onDamageAreasChange?: (damageAreas: DamageArea[]) => void;
+}
+
+const ExteriorCheckTab: React.FC<ExteriorCheckTabProps> = ({ 
+  vehicleBodyStyle = 'sedan',
+  damageAreas = [],
+  onDamageAreasChange
+}) => {
+  // Initialize damage areas
+  const [localDamageAreas, setLocalDamageAreas] = useState<DamageArea[]>([
+    { id: 'front', name: 'Front', isDamaged: false, damageType: null, notes: '' },
+    { id: 'rear', name: 'Rear', isDamaged: false, damageType: null, notes: '' },
+    { id: 'driver_side', name: 'Driver Side', isDamaged: false, damageType: null, notes: '' },
+    { id: 'passenger_side', name: 'Passenger Side', isDamaged: false, damageType: null, notes: '' },
+    { id: 'hood', name: 'Hood', isDamaged: false, damageType: null, notes: '' },
+    { id: 'roof', name: 'Roof', isDamaged: false, damageType: null, notes: '' },
+    { id: 'windshield', name: 'Windshield', isDamaged: false, damageType: null, notes: '' },
+    { id: 'trunk', name: 'Trunk/Cargo', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_front_door', name: 'Left Front Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_front_door', name: 'Right Front Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_rear_door', name: 'Left Rear Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_rear_door', name: 'Right Rear Door', isDamaged: false, damageType: null, notes: '' },
+    { id: 'left_front_fender', name: 'Left Front Fender', isDamaged: false, damageType: null, notes: '' },
+    { id: 'right_front_fender', name: 'Right Front Fender', isDamaged: false, damageType: null, notes: '' },
+    { id: 'truck_bed', name: 'Truck Bed', isDamaged: false, damageType: null, notes: '' },
+  ]);
   
-  // Get the form vehicle body style from the hidden input in VehicleInfoTab
-  React.useEffect(() => {
-    const vehicleBodyStyleInput = document.querySelector('input[name="vehicleBodyStyle"]');
-    if (vehicleBodyStyleInput instanceof HTMLInputElement) {
-      const bodyStyle = vehicleBodyStyleInput.value as VehicleBodyStyle;
-      if (bodyStyle) {
-        setVehicleBodyStyle(bodyStyle);
-      }
+  // If provided with initial damage areas data, merge it with our default data
+  useEffect(() => {
+    if (damageAreas && damageAreas.length > 0) {
+      // Create a map of existing damage areas for quick lookup
+      const damageAreaMap = damageAreas.reduce((map, area) => {
+        map[area.id] = area;
+        return map;
+      }, {} as Record<string, DamageArea>);
+      
+      // Update local state with provided data
+      setLocalDamageAreas(prevAreas => 
+        prevAreas.map(area => {
+          if (damageAreaMap[area.id]) {
+            return {
+              ...area,
+              isDamaged: damageAreaMap[area.id].isDamaged,
+              damageType: damageAreaMap[area.id].damageType,
+              notes: damageAreaMap[area.id].notes
+            };
+          }
+          return area;
+        })
+      );
     }
-  }, []);
+  }, [damageAreas]);
+  
+  const [selectedArea, setSelectedArea] = useState<DamageArea | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [tempDamageType, setTempDamageType] = useState<string | null>(null);
+  const [tempNotes, setTempNotes] = useState('');
+  
+  const damageTypes = [
+    { id: 'scratch', label: 'Scratch' },
+    { id: 'dent', label: 'Dent' },
+    { id: 'crack', label: 'Crack' },
+    { id: 'rust', label: 'Rust' },
+  ];
+  
+  const handleAreaClick = (areaId: string) => {
+    const area = localDamageAreas.find(a => a.id === areaId) || null;
+    setSelectedArea(area);
+    
+    if (area) {
+      setTempDamageType(area.damageType);
+      setTempNotes(area.notes);
+    }
+    
+    setIsDialogOpen(true);
+  };
+  
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedArea(null);
+    setTempDamageType(null);
+    setTempNotes('');
+  };
+  
+  const handleSaveDamage = () => {
+    if (!selectedArea) return;
+    
+    const updatedAreas = localDamageAreas.map(area => {
+      if (area.id === selectedArea.id) {
+        return {
+          ...area,
+          isDamaged: !!tempDamageType,
+          damageType: tempDamageType,
+          notes: tempNotes
+        };
+      }
+      return area;
+    });
+    
+    setLocalDamageAreas(updatedAreas);
+    
+    // Notify parent component of changes
+    if (onDamageAreasChange) {
+      onDamageAreasChange(updatedAreas);
+    }
+    
+    toast({
+      title: "Damage recorded",
+      description: `Updated ${selectedArea.name} inspection information`,
+    });
+    
+    closeDialog();
+  };
+  
+  const handleClearDamage = () => {
+    if (!selectedArea) return;
+    
+    setTempDamageType(null);
+    setTempNotes('');
+  };
 
   return (
-    <div className="space-y-6">
-      <Card className="overflow-hidden border border-blue-100 shadow-md transition-all hover:shadow-lg rounded-xl">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 pb-4">
-          <CardTitle className="text-xl font-semibold flex items-center text-blue-900">
-            <Car className="mr-3 h-6 w-6 text-blue-700" />
-            Vehicle Damage Assessment
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <Tabs defaultValue={activeVehicleTab} onValueChange={setActiveVehicleTab} className="w-full">
-            <TabsList className="mb-6 w-full">
-              <TabsTrigger value="interactive" className="flex-1">
-                <PanelLeft className="h-4 w-4 mr-2" />
-                Interactive View
-              </TabsTrigger>
-              <TabsTrigger value="checklist" className="flex-1">
-                <PanelRight className="h-4 w-4 mr-2" />
-                Checklist View
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="interactive" className="space-y-4">
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h3 className="text-lg font-medium mb-4 text-blue-800">Click on any part of the vehicle to mark damage</h3>
-                <InteractiveVehicle vehicleType={vehicleBodyStyle} />
+    <Card className="overflow-hidden border border-blue-100 shadow-md transition-all hover:shadow-lg rounded-xl">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 pb-4">
+        <CardTitle className="text-xl font-semibold flex items-center text-blue-900">
+          <Check className="mr-3 h-6 w-6 text-blue-700" />
+          Exterior Condition Inspection
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm border">
+          <h3 className="text-lg font-medium mb-4 text-blue-800">Click on any view to mark damage</h3>
+          
+          <VehicleInteractivePanel
+            vehicleType={vehicleBodyStyle}
+            damageAreas={localDamageAreas}
+            onAreaClick={handleAreaClick}
+          />
+          
+          {/* Damage report */}
+          {localDamageAreas.some(area => area.isDamaged) && (
+            <div className="mt-6 border rounded-lg p-4 bg-white shadow-sm">
+              <h4 className="font-medium mb-3">Damage Report:</h4>
+              <div className="space-y-2">
+                {localDamageAreas
+                  .filter(area => area.isDamaged)
+                  .map(area => (
+                    <div key={area.id} className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-md">
+                      <div className="flex justify-between items-center">
+                        <h5 className="font-medium text-amber-900">{area.name}</h5>
+                        <Badge variant="outline" className="bg-white">
+                          {area.damageType}
+                        </Badge>
+                      </div>
+                      {area.notes && <p className="text-sm mt-1 text-gray-600">{area.notes}</p>}
+                    </div>
+                  ))
+                }
               </div>
-            </TabsContent>
-            
-            <TabsContent value="checklist" className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-                <InspectionItem 
-                  label="Front Bumper" 
-                  options={["Good", "Fair", "Poor", "Damaged"]}
-                  icon={<AlertTriangle className="h-4 w-4" />} 
-                />
-                <InspectionItem 
-                  label="Rear Bumper" 
-                  options={["Good", "Fair", "Poor", "Damaged"]}
-                  icon={<AlertTriangle className="h-4 w-4" />} 
-                />
-                <InspectionItem 
-                  label="Hood" 
-                  options={["Good", "Fair", "Poor", "Damaged"]}
-                  icon={<AlertTriangle className="h-4 w-4" />} 
-                />
-                <InspectionItem 
-                  label="Trunk" 
-                  options={["Good", "Fair", "Poor", "Damaged"]}
-                  icon={<AlertTriangle className="h-4 w-4" />} 
-                />
-                <InspectionItem 
-                  label="Driver's Side Panels" 
-                  options={["Good", "Fair", "Poor", "Damaged"]}
-                  icon={<AlertTriangle className="h-4 w-4" />} 
-                />
-                <InspectionItem 
-                  label="Passenger Side Panels" 
-                  options={["Good", "Fair", "Poor", "Damaged"]}
-                  icon={<AlertTriangle className="h-4 w-4" />} 
-                />
+            </div>
+          )}
+        </div>
+        
+        {/* Checklist view */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border space-y-4 mt-6">
+          <h3 className="text-lg font-medium mb-4 text-blue-800">Exterior Condition Checklist</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {localDamageAreas.map(area => (
+              <div 
+                key={area.id}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                onClick={() => handleAreaClick(area.id)}
+              >
+                <div>
+                  <h4 className="font-medium">{area.name}</h4>
+                  <p className="text-sm text-gray-500">
+                    {area.isDamaged 
+                      ? `${area.damageType || 'Damaged'} ${area.notes ? `- ${area.notes}` : ''}`
+                      : 'No issues reported'
+                    }
+                  </p>
+                </div>
+                {area.isDamaged ? (
+                  <AlertCircle className="h-5 w-5 text-amber-500" />
+                ) : (
+                  <Check className="h-5 w-5 text-green-500" />
+                )}
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      <Card className="overflow-hidden border border-blue-100 shadow-md transition-all hover:shadow-lg rounded-xl">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 pb-4">
-          <CardTitle className="text-xl font-semibold flex items-center text-blue-900">
-            <Car className="mr-3 h-6 w-6 text-blue-700" />
-            Exterior Inspection
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-            <InspectionItem 
-              label="Headlights" 
-              options={["Working", "Dim", "Not Working"]}
-              icon={<ThumbsUp className="h-4 w-4" />} 
-            />
-            <InspectionItem 
-              label="Tail Lights" 
-              options={["Working", "Dim", "Not Working"]}
-              icon={<ThumbsUp className="h-4 w-4" />} 
-            />
-            <InspectionItem 
-              label="Turn Signals" 
-              options={["Working", "Dim", "Not Working"]}
-              icon={<ThumbsUp className="h-4 w-4" />} 
-            />
-            <InspectionItem 
-              label="Brake Lights" 
-              options={["Working", "Dim", "Not Working"]}
-              icon={<ThumbsUp className="h-4 w-4" />} 
-            />
+            ))}
           </div>
-
-          <div className="space-y-4 mb-6">
-            <h3 className="font-medium text-lg">Glass & Mirrors</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <InspectionItem 
-                label="Windshield" 
-                options={["Clear", "Chipped", "Cracked"]}
-                icon={<AlertTriangle className="h-4 w-4" />} 
-              />
-              <InspectionItem 
-                label="Rear Window" 
-                options={["Clear", "Chipped", "Cracked"]}
-                icon={<AlertTriangle className="h-4 w-4" />} 
-              />
-              <InspectionItem 
-                label="Driver's Mirror" 
-                options={["Good", "Damaged", "Missing"]}
-                icon={<AlertTriangle className="h-4 w-4" />} 
-              />
-              <InspectionItem 
-                label="Passenger Mirror" 
-                options={["Good", "Damaged", "Missing"]}
-                icon={<AlertTriangle className="h-4 w-4" />} 
+        </div>
+      </CardContent>
+      
+      {/* Damage Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedArea?.name || 'Area'} Condition</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Damage Type</Label>
+              <RadioGroup value={tempDamageType || ''} onValueChange={setTempDamageType} className="flex flex-wrap gap-4">
+                {damageTypes.map(type => (
+                  <div key={type.id} className="flex items-center space-x-2">
+                    <RadioGroupItem value={type.id} id={`damage-${type.id}`} />
+                    <Label htmlFor={`damage-${type.id}`} className="cursor-pointer">{type.label}</Label>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="" id="damage-none" />
+                  <Label htmlFor="damage-none" className="cursor-pointer">No Damage</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="damage-notes">Notes</Label>
+              <Textarea 
+                id="damage-notes"
+                placeholder="Add details about the damage"
+                value={tempNotes}
+                onChange={(e) => setTempNotes(e.target.value)}
+                rows={4}
               />
             </div>
           </div>
           
-          <div className="space-y-4 mb-6">
-            <h3 className="font-medium text-lg">Other Checks</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-start space-x-3 bg-white p-4 rounded-xl border shadow-sm transition-all hover:shadow-md">
-                <Checkbox id="wipers" className="mt-1" />
-                <div className="grid gap-1.5 leading-none">
-                  <Label htmlFor="wipers" className="text-base font-medium leading-none">
-                    Wiper Blades
-                  </Label>
-                  <p className="text-sm text-muted-foreground">Check wiper condition and function</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3 bg-white p-4 rounded-xl border shadow-sm transition-all hover:shadow-md">
-                <Checkbox id="doorhandles" className="mt-1" />
-                <div className="grid gap-1.5 leading-none">
-                  <Label htmlFor="doorhandles" className="text-base font-medium leading-none">
-                    Door Handles & Locks
-                  </Label>
-                  <p className="text-sm text-muted-foreground">Verify all door handles and locks work</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3 bg-white p-4 rounded-xl border shadow-sm transition-all hover:shadow-md">
-                <Checkbox id="rust" className="mt-1" />
-                <div className="grid gap-1.5 leading-none">
-                  <Label htmlFor="rust" className="text-base font-medium leading-none">
-                    Rust Inspection
-                  </Label>
-                  <p className="text-sm text-muted-foreground">Check for visible rust areas</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3 bg-white p-4 rounded-xl border shadow-sm transition-all hover:shadow-md">
-                <Checkbox id="paint" className="mt-1" />
-                <div className="grid gap-1.5 leading-none">
-                  <Label htmlFor="paint" className="text-base font-medium leading-none">
-                    Paint Condition
-                  </Label>
-                  <p className="text-sm text-muted-foreground">Check for chips, scratches, or fading</p>
-                </div>
-              </div>
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+            <Button variant="outline" onClick={handleClearDamage} type="button">
+              Clear
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={closeDialog} type="button">
+                Cancel
+              </Button>
+              <Button onClick={handleSaveDamage} type="button">
+                Save
+              </Button>
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <Label htmlFor="exterior-notes" className="text-lg">Additional Notes on Exterior</Label>
-            <Textarea 
-              id="exterior-notes"
-              placeholder="Enter any additional notes about the exterior condition"
-              className="min-h-[100px] text-base"
-            />
-          </div>
-          
-          <div className="mt-6 space-y-4">
-            <h3 className="font-medium text-lg">Exterior Photos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <ImageUploadButton label="Front View" />
-              <ImageUploadButton label="Rear View" />
-              <ImageUploadButton label="Driver's Side" />
-              <ImageUploadButton label="Passenger Side" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };
 

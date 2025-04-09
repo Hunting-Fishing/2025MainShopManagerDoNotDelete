@@ -5,14 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Car, Search, AlertCircle } from "lucide-react";
+import { Car, Search, AlertCircle, Loader2 } from "lucide-react";
 import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
 import { useToast } from "@/hooks/use-toast";
 import { decodeVin } from "@/utils/vehicleUtils";
+import { supabase } from '@/lib/supabase';
 
-const VehicleInfoTab = () => {
+interface VehicleInfoTabProps {
+  vehicleId?: string | null;
+  initialBodyStyle?: VehicleBodyStyle;
+  onBodyStyleChange?: (bodyStyle: VehicleBodyStyle) => void;
+}
+
+const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({ 
+  vehicleId, 
+  initialBodyStyle,
+  onBodyStyleChange 
+}) => {
   const { toast } = useToast();
   const [isDecoding, setIsDecoding] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [vehicleInfo, setVehicleInfo] = useState({
     vin: "",
     make: "",
@@ -20,19 +32,77 @@ const VehicleInfoTab = () => {
     year: new Date().getFullYear().toString(),
     licensePlate: "",
     color: "",
-    bodyStyle: "sedan" as VehicleBodyStyle,
+    bodyStyle: (initialBodyStyle || "sedan") as VehicleBodyStyle,
     mileage: ""
   });
 
+  // Load vehicle data if vehicleId is provided
+  useEffect(() => {
+    async function loadVehicleData() {
+      if (!vehicleId) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('vehicles')
+          .select('*')
+          .eq('id', vehicleId)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setVehicleInfo({
+            vin: data.vin || '',
+            make: data.make || '',
+            model: data.model || '',
+            year: data.year ? data.year.toString() : new Date().getFullYear().toString(),
+            licensePlate: data.license_plate || '',
+            color: data.color || '',
+            bodyStyle: initialBodyStyle || "sedan",
+            mileage: ""  // Set mileage if available in your schema
+          });
+          
+          // If no body style was provided but we have a VIN, try to decode it
+          if (!initialBodyStyle && data.vin && data.vin.length === 17) {
+            handleVinDecode(data.vin);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching vehicle:", err);
+        toast({
+          title: "Error",
+          description: "Failed to load vehicle information",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadVehicleData();
+  }, [vehicleId, initialBodyStyle]);
+
   const handleChange = (field: string, value: string) => {
-    setVehicleInfo(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setVehicleInfo(prev => {
+      const newInfo = {
+        ...prev,
+        [field]: value
+      };
+      
+      // If changing body style, propagate to parent component
+      if (field === 'bodyStyle' && onBodyStyleChange) {
+        onBodyStyleChange(value as VehicleBodyStyle);
+      }
+      
+      return newInfo;
+    });
   };
 
-  const handleVinDecode = async () => {
-    if (!vehicleInfo.vin || vehicleInfo.vin.length !== 17) {
+  const handleVinDecode = async (vinToUse?: string) => {
+    const vinValue = vinToUse || vehicleInfo.vin;
+    
+    if (!vinValue || vinValue.length !== 17) {
       toast({
         title: "Invalid VIN",
         description: "Please enter a valid 17-character VIN",
@@ -43,16 +113,22 @@ const VehicleInfoTab = () => {
 
     setIsDecoding(true);
     try {
-      const decodedData = await decodeVin(vehicleInfo.vin);
+      const decodedData = await decodeVin(vinValue);
       if (decodedData) {
+        const newBodyStyle = (decodedData.body_style as VehicleBodyStyle) || vehicleInfo.bodyStyle;
+        
         setVehicleInfo(prev => ({
           ...prev,
           make: decodedData.make || prev.make,
           model: decodedData.model || prev.model,
           year: decodedData.year || prev.year,
-          // Use the body_style from the decoded data if available
-          bodyStyle: (decodedData.body_style as VehicleBodyStyle) || prev.bodyStyle
+          bodyStyle: newBodyStyle
         }));
+        
+        // Propagate body style change to parent component
+        if (onBodyStyleChange && newBodyStyle) {
+          onBodyStyleChange(newBodyStyle);
+        }
 
         toast({
           title: "VIN Decoded Successfully",
@@ -80,6 +156,15 @@ const VehicleInfoTab = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading vehicle information...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden border border-blue-100 shadow-md transition-all hover:shadow-lg rounded-xl">
@@ -102,6 +187,7 @@ const VehicleInfoTab = () => {
                     value={vehicleInfo.vin}
                     onChange={(e) => handleChange('vin', e.target.value)}
                     className="pr-10" 
+                    disabled={!!vehicleId} // Disable if vehicleId is provided
                   />
                   <Button 
                     size="icon" 
@@ -109,7 +195,7 @@ const VehicleInfoTab = () => {
                     className="absolute right-0 top-0 h-full px-3 text-muted-foreground" 
                     type="button"
                     onClick={() => handleChange('vin', '')}
-                    disabled={!vehicleInfo.vin}
+                    disabled={!vehicleInfo.vin || !!vehicleId}
                   >
                     {vehicleInfo.vin ? <AlertCircle className="h-4 w-4" /> : <Search className="h-4 w-4" />}
                   </Button>
@@ -119,10 +205,17 @@ const VehicleInfoTab = () => {
                 <Label className="text-sm font-medium mb-1.5 block opacity-0">Search</Label>
                 <Button 
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  onClick={handleVinDecode}
-                  disabled={isDecoding || !vehicleInfo.vin || vehicleInfo.vin.length !== 17}
+                  onClick={() => handleVinDecode()}
+                  disabled={isDecoding || !vehicleInfo.vin || vehicleInfo.vin.length !== 17 || !!vehicleId}
                 >
-                  {isDecoding ? "Decoding..." : "Decode VIN"}
+                  {isDecoding ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Decoding...
+                    </>
+                  ) : (
+                    "Decode VIN"
+                  )}
                 </Button>
               </div>
             </div>
@@ -136,6 +229,7 @@ const VehicleInfoTab = () => {
                   placeholder="e.g. Toyota" 
                   value={vehicleInfo.make}
                   onChange={(e) => handleChange('make', e.target.value)}
+                  disabled={!!vehicleId} // Disable if vehicleId is provided
                 />
               </div>
               <div>
@@ -145,6 +239,7 @@ const VehicleInfoTab = () => {
                   placeholder="e.g. Camry" 
                   value={vehicleInfo.model}
                   onChange={(e) => handleChange('model', e.target.value)}
+                  disabled={!!vehicleId} // Disable if vehicleId is provided
                 />
               </div>
               <div>
@@ -154,6 +249,7 @@ const VehicleInfoTab = () => {
                   placeholder="e.g. 2023" 
                   value={vehicleInfo.year}
                   onChange={(e) => handleChange('year', e.target.value)}
+                  disabled={!!vehicleId} // Disable if vehicleId is provided
                 />
               </div>
             </div>
@@ -167,6 +263,7 @@ const VehicleInfoTab = () => {
                   placeholder="e.g. ABC123" 
                   value={vehicleInfo.licensePlate}
                   onChange={(e) => handleChange('licensePlate', e.target.value)}
+                  disabled={!!vehicleId} // Disable if vehicleId is provided
                 />
               </div>
               <div>
@@ -176,6 +273,7 @@ const VehicleInfoTab = () => {
                   placeholder="e.g. Silver" 
                   value={vehicleInfo.color}
                   onChange={(e) => handleChange('color', e.target.value)}
+                  disabled={!!vehicleId} // Disable if vehicleId is provided
                 />
               </div>
             </div>
