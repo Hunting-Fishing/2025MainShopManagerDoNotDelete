@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare } from 'lucide-react';
 
-// Define a self-contained interface explicitly for this component to avoid circular dependencies
+// Define a standalone interface explicitly for this component
 interface VehicleInteraction {
   id: string;
   date: string;
@@ -15,7 +15,6 @@ interface VehicleInteraction {
 }
 
 export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId }) => {
-  // Explicitly type the state to avoid deep type instantiation
   const [interactions, setInteractions] = useState<VehicleInteraction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +24,7 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
         setLoading(true);
         const { data, error } = await supabase
           .from('customer_interactions')
-          .select('*')
+          .select('id, date, type, staff_member_name, description')
           .eq('vehicle_id', vehicleId)
           .order('date', { ascending: false });
         
@@ -33,16 +32,8 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
           console.error('Error fetching vehicle interactions:', error);
           setInteractions([]);
         } else {
-          // Create manually mapped objects to break the deep type instantiation
-          const mappedInteractions = (data || []).map(item => ({
-            id: item.id,
-            date: item.date,
-            type: item.type,
-            staff_member_name: item.staff_member_name,
-            description: item.description
-          }));
-          
-          setInteractions(mappedInteractions);
+          // Use type assertion to explicitly convert the data
+          setInteractions(data as VehicleInteraction[]);
         }
       } catch (error) {
         console.error('Error in fetchVehicleInteractions:', error);
