@@ -6,6 +6,7 @@ import { CustomerInteraction } from "@/types/interaction";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { getCustomerNotes } from "@/services/customers";
+import { getCustomerInteractions } from "@/services/customer/customerInteractionsService";
 
 export const useCustomerDetails = (id?: string) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -46,37 +47,10 @@ export const useCustomerDetails = (id?: string) => {
       if (workOrdersError) throw workOrdersError;
       setCustomerWorkOrders(workOrders || []);
 
-      // Fetch customer interactions from Supabase
+      // Fetch customer interactions using our service
       try {
-        const { data: interactions, error: interactionsError } = await supabase
-          .from('customer_interactions')
-          .select('*')
-          .eq('customer_id', customerId)
-          .order('date', { ascending: false });
-
-        if (interactionsError) {
-          console.error("Error fetching interactions:", interactionsError);
-          setCustomerInteractions([]);
-        } else {
-          // Convert the database format to match our CustomerInteraction type
-          const formattedInteractions = interactions?.map(item => ({
-            id: item.id,
-            customerId: item.customer_id,
-            customerName: customer?.name || `${customer?.first_name} ${customer?.last_name}`,
-            date: item.date,
-            type: item.type as any,
-            description: item.description,
-            staffMemberId: item.staff_member_id,
-            staffMemberName: item.staff_member_name,
-            status: item.status as any,
-            notes: item.notes,
-            relatedWorkOrderId: item.related_work_order_id,
-            followUpDate: item.follow_up_date,
-            followUpCompleted: item.follow_up_completed
-          })) || [];
-          
-          setCustomerInteractions(formattedInteractions);
-        }
+        const interactions = await getCustomerInteractions(customerId);
+        setCustomerInteractions(interactions || []);
       } catch (error) {
         console.error("Error handling interactions:", error);
         setCustomerInteractions([]);
