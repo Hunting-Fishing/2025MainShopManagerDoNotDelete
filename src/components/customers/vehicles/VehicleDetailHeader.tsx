@@ -18,7 +18,16 @@ import { Button } from "@/components/ui/button";
 import { CustomerVehicle } from "@/types/customer";
 
 interface VehicleDetailHeaderProps {
-  vehicle: CustomerVehicle;
+  vehicle: CustomerVehicle & {
+    transmission?: string;
+    transmission_type?: string;
+    drive_type?: string;
+    fuel_type?: string;
+    engine?: string;
+    body_style?: string;
+    country?: string;
+    gvwr?: string;
+  };
   customerName: string;
   customerId: string;
 }
@@ -49,13 +58,13 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
           <div className="flex items-center gap-2">
             <Car className="h-6 w-6 text-blue-600" />
             <h2 className="text-xl font-semibold text-blue-900">
-              {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim && <span className="text-slate-600">{vehicle.trim}</span>}
+              {vehicle.year ? vehicle.year : ''} {vehicle.make || 'Unknown'} {vehicle.model || 'Unknown'} {vehicle.trim && <span className="text-slate-600">{vehicle.trim}</span>}
             </h2>
           </div>
           <div className="flex items-center gap-2 text-slate-600 text-sm">
             <User className="h-4 w-4" />
             <Link to={`/customers/${customerId}`} className="hover:underline text-blue-600 font-medium">
-              {customerName}
+              {customerName || 'Unknown Customer'}
             </Link>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-600 text-sm mt-1">
@@ -161,7 +170,7 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
               )}
               {vehicle.country && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Origin:</span>
+                  <span className="text-slate-500">Country:</span>
                   <span className="font-medium">{vehicle.country}</span>
                 </div>
               )}

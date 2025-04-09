@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,7 +35,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
     mileage: ""
   });
 
-  // Load vehicle data if vehicleId is provided
   useEffect(() => {
     async function loadVehicleData() {
       if (!vehicleId) return;
@@ -52,6 +50,10 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
         if (error) throw error;
         
         if (data) {
+          console.log("Vehicle data loaded for inspection:", data);
+          
+          const bodyStyle = (data as any).body_style || initialBodyStyle || "sedan";
+          
           setVehicleInfo({
             vin: data.vin || '',
             make: data.make || '',
@@ -59,13 +61,11 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
             year: data.year ? String(data.year) : new Date().getFullYear().toString(),
             licensePlate: data.license_plate || '',
             color: data.color || '',
-            // Use initialBodyStyle if provided or default to "sedan"
-            bodyStyle: initialBodyStyle || ((data as any).body_style as VehicleBodyStyle || "sedan"),
+            bodyStyle: bodyStyle as VehicleBodyStyle,
             mileage: ""  // Set mileage if available in your schema
           });
           
-          // If no body style was provided but we have a VIN, try to decode it
-          if (!initialBodyStyle && data.vin && data.vin.length === 17) {
+          if (!bodyStyle && data.vin && data.vin.length === 17) {
             handleVinDecode(data.vin);
           }
         }
@@ -82,7 +82,7 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
     }
     
     loadVehicleData();
-  }, [vehicleId, initialBodyStyle]);
+  }, [vehicleId, initialBodyStyle, toast]);
 
   const handleChange = (field: string, value: string) => {
     setVehicleInfo(prev => {
@@ -91,7 +91,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
         [field]: value
       };
       
-      // If changing body style, propagate to parent component
       if (field === 'bodyStyle' && onBodyStyleChange) {
         onBodyStyleChange(value as VehicleBodyStyle);
       }
@@ -116,7 +115,8 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
     try {
       const decodedData = await decodeVin(vinValue);
       if (decodedData) {
-        // Use body_style from decoded data if present, otherwise keep existing bodyStyle
+        console.log("VIN decoded successfully:", decodedData);
+        
         const newBodyStyle = decodedData.body_style ? 
           (decodedData.body_style as VehicleBodyStyle) : 
           vehicleInfo.bodyStyle;
@@ -129,7 +129,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
           bodyStyle: newBodyStyle
         }));
         
-        // Propagate body style change to parent component
         if (onBodyStyleChange && newBodyStyle) {
           onBodyStyleChange(newBodyStyle);
         }
@@ -137,7 +136,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
         toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
-          variant: "success",
         });
         
         console.log("Decoded vehicle body style:", decodedData.body_style);
@@ -180,7 +178,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 gap-6">
-            {/* VIN and search */}
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <Label htmlFor="vin" className="text-sm font-medium mb-1.5 block">VIN</Label>
@@ -224,7 +221,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
               </div>
             </div>
             
-            {/* Basic vehicle info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="make" className="text-sm font-medium mb-1.5 block">Make</Label>
@@ -258,7 +254,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
               </div>
             </div>
             
-            {/* Additional vehicle details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="license" className="text-sm font-medium mb-1.5 block">License Plate</Label>
@@ -319,7 +314,6 @@ const VehicleInfoTab: React.FC<VehicleInfoTabProps> = ({
         </CardContent>
       </Card>
       
-      {/* Pass the updated vehicle body style to the parent component */}
       <input type="hidden" name="vehicleBodyStyle" value={vehicleInfo.bodyStyle} />
     </div>
   );

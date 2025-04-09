@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, MessageSquare, Calendar, Wrench, List, Info, FileSpreadsheet, BarChart3, ClipboardList } from "lucide-react";
+import { ArrowLeft, FileText, MessageSquare, Calendar, Wrench, List, Info, FileSpreadsheet, BarChart3, ClipboardList, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CustomerVehicle } from "@/types/customer";
 import { VehicleDetailHeader } from "@/components/customers/vehicles/VehicleDetailHeader";
@@ -16,6 +16,7 @@ import { VehicleInspections } from "@/components/customers/vehicles/VehicleInspe
 import { VehicleInvoices } from "@/components/customers/vehicles/VehicleInvoices";
 import { VehicleRecommendations } from "@/components/customers/vehicles/VehicleRecommendations";
 import { VehicleReports } from "@/components/customers/vehicles/VehicleReports";
+import { useToast } from "@/hooks/use-toast";
 
 export default function VehicleDetails() {
   const { customerId, vehicleId } = useParams<{ customerId: string, vehicleId: string }>();
@@ -24,12 +25,22 @@ export default function VehicleDetails() {
   const [customerName, setCustomerName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchVehicleDetails = async () => {
-      if (!vehicleId || !customerId) return;
+      if (!vehicleId || !customerId) {
+        setLoading(false);
+        toast({
+          title: "Missing information",
+          description: "Vehicle ID or Customer ID is missing",
+          variant: "destructive",
+        });
+        return;
+      }
       
       try {
+        console.log(`Fetching vehicle details for ID: ${vehicleId}`);
         // Fetch the vehicle details
         const { data: vehicleData, error: vehicleError } = await supabase
           .from('vehicles')
@@ -39,11 +50,24 @@ export default function VehicleDetails() {
 
         if (vehicleError) {
           console.error("Error fetching vehicle:", vehicleError);
+          toast({
+            title: "Error",
+            description: "Failed to load vehicle details",
+            variant: "destructive",
+          });
           return;
         }
 
         if (vehicleData) {
-          setVehicle(vehicleData);
+          console.log("Vehicle data loaded:", vehicleData);
+          setVehicle(vehicleData as CustomerVehicle);
+        } else {
+          console.log("No vehicle found with ID:", vehicleId);
+          toast({
+            title: "Vehicle Not Found",
+            description: "The requested vehicle could not be found",
+            variant: "destructive",
+          });
         }
 
         // Fetch customer name
@@ -55,18 +79,29 @@ export default function VehicleDetails() {
 
         if (customerError) {
           console.error("Error fetching customer:", customerError);
+          toast({
+            title: "Error",
+            description: "Failed to load customer information",
+            variant: "destructive",
+          });
         } else if (customerData) {
-          setCustomerName(`${customerData.first_name} ${customerData.last_name}`);
+          const fullName = `${customerData.first_name} ${customerData.last_name}`.trim();
+          setCustomerName(fullName);
         }
       } catch (error) {
         console.error("Error in fetchVehicleDetails:", error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred while loading vehicle details",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchVehicleDetails();
-  }, [vehicleId, customerId]);
+  }, [vehicleId, customerId, toast]);
 
   const handleBack = () => {
     navigate(`/customers/${customerId}`);
@@ -74,7 +109,8 @@ export default function VehicleDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-40">
+      <div className="flex flex-col items-center justify-center h-64">
+        <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
         <div className="text-lg text-slate-500">Loading vehicle details...</div>
       </div>
     );
@@ -82,7 +118,7 @@ export default function VehicleDetails() {
 
   if (!vehicle) {
     return (
-      <div className="flex flex-col space-y-4 items-center justify-center h-40">
+      <div className="flex flex-col space-y-4 items-center justify-center h-64">
         <div className="text-lg text-slate-500">Vehicle not found</div>
         <Button onClick={handleBack} variant="outline">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
@@ -91,26 +127,47 @@ export default function VehicleDetails() {
     );
   }
 
+  // Ensure vehicle has all required properties, even if they're empty
+  const safeVehicle = {
+    ...vehicle,
+    make: vehicle.make || 'Unknown',
+    model: vehicle.model || 'Unknown',
+    year: vehicle.year || null,
+    vin: vehicle.vin || '',
+    license_plate: vehicle.license_plate || '',
+    color: vehicle.color || '',
+    // Safely add additional properties that might be needed
+    transmission: (vehicle as any).transmission || '',
+    transmission_type: (vehicle as any).transmission_type || '',
+    drive_type: (vehicle as any).drive_type || '',
+    fuel_type: (vehicle as any).fuel_type || '',
+    engine: (vehicle as any).engine || '',
+    body_style: (vehicle as any).body_style || '',
+    country: (vehicle as any).country || '',
+    gvwr: (vehicle as any).gvwr || '',
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
         <Button onClick={handleBack} variant="ghost" className="mr-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
         </Button>
-        <h1 className="text-2xl font-bold flex-1">
-          {vehicle.year} {vehicle.make} {vehicle.model}
+        <h1 className="text-2xl font-bold flex-1 truncate">
+          {vehicle.year ? vehicle.year : ''} {vehicle.make} {vehicle.model}
         </h1>
         <Button 
           variant="default"
           asChild
+          className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
         >
-          <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(`${vehicle.year} ${vehicle.make} ${vehicle.model}`)}`}>
+          <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(`${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}`)}`}>
             <ClipboardList className="mr-2 h-4 w-4" /> Create Work Order
           </Link>
         </Button>
       </div>
 
-      <VehicleDetailHeader vehicle={vehicle} customerName={customerName} customerId={customerId} />
+      <VehicleDetailHeader vehicle={safeVehicle} customerName={customerName} customerId={customerId || ''} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
         <TabsList className="grid grid-cols-5 md:grid-cols-10 gap-2">
@@ -191,56 +248,56 @@ export default function VehicleDetails() {
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium mb-4">Vehicle Specifications</h3>
               <div className="space-y-3">
-                {vehicle.transmission && (
+                {safeVehicle.transmission && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Transmission:</span>
-                    <span className="font-medium">{vehicle.transmission}</span>
+                    <span className="font-medium">{safeVehicle.transmission}</span>
                   </div>
                 )}
-                {vehicle.transmission_type && vehicle.transmission_type !== vehicle.transmission && (
+                {safeVehicle.transmission_type && safeVehicle.transmission_type !== safeVehicle.transmission && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Transmission Type:</span>
-                    <span className="font-medium">{vehicle.transmission_type}</span>
+                    <span className="font-medium">{safeVehicle.transmission_type}</span>
                   </div>
                 )}
-                {vehicle.drive_type && (
+                {safeVehicle.drive_type && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Drive Type:</span>
-                    <span className="font-medium">{vehicle.drive_type}</span>
+                    <span className="font-medium">{safeVehicle.drive_type}</span>
                   </div>
                 )}
-                {vehicle.fuel_type && (
+                {safeVehicle.fuel_type && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Fuel Type:</span>
-                    <span className="font-medium">{vehicle.fuel_type}</span>
+                    <span className="font-medium">{safeVehicle.fuel_type}</span>
                   </div>
                 )}
-                {vehicle.engine && (
+                {safeVehicle.engine && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Engine:</span>
-                    <span className="font-medium">{vehicle.engine}</span>
+                    <span className="font-medium">{safeVehicle.engine}</span>
                   </div>
                 )}
-                {vehicle.body_style && (
+                {safeVehicle.body_style && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Body Style:</span>
-                    <span className="font-medium">{vehicle.body_style}</span>
+                    <span className="font-medium">{safeVehicle.body_style}</span>
                   </div>
                 )}
-                {vehicle.country && (
+                {safeVehicle.country && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Country of Origin:</span>
-                    <span className="font-medium">{vehicle.country}</span>
+                    <span className="font-medium">{safeVehicle.country}</span>
                   </div>
                 )}
-                {vehicle.gvwr && (
+                {safeVehicle.gvwr && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">GVWR:</span>
-                    <span className="font-medium">{vehicle.gvwr}</span>
+                    <span className="font-medium">{safeVehicle.gvwr}</span>
                   </div>
                 )}
-                {!vehicle.transmission && !vehicle.drive_type && !vehicle.fuel_type && 
-                 !vehicle.engine && !vehicle.body_style && !vehicle.country && !vehicle.gvwr && (
+                {!safeVehicle.transmission && !safeVehicle.drive_type && !safeVehicle.fuel_type && 
+                 !safeVehicle.engine && !safeVehicle.body_style && !safeVehicle.country && !safeVehicle.gvwr && (
                   <div className="text-gray-400 italic">No additional specifications available</div>
                 )}
               </div>
@@ -265,7 +322,7 @@ export default function VehicleDetails() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Customer:</span>
-                  <span className="font-medium">{customerName}</span>
+                  <span className="font-medium">{customerName || 'Unknown'}</span>
                 </div>
               </div>
             </div>
@@ -273,39 +330,39 @@ export default function VehicleDetails() {
         </TabsContent>
 
         <TabsContent value="service" className="mt-6">
-          <VehicleServiceHistory vehicleId={vehicleId} />
+          <VehicleServiceHistory vehicleId={vehicleId || ''} />
         </TabsContent>
 
         <TabsContent value="interactions" className="mt-6">
-          <VehicleInteractions vehicleId={vehicleId} />
+          <VehicleInteractions vehicleId={vehicleId || ''} />
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">
-          <VehicleNotes vehicleId={vehicleId} customerId={customerId} />
+          <VehicleNotes vehicleId={vehicleId || ''} customerId={customerId || ''} />
         </TabsContent>
 
         <TabsContent value="communications" className="mt-6">
-          <VehicleCommunications vehicleId={vehicleId} />
+          <VehicleCommunications vehicleId={vehicleId || ''} />
         </TabsContent>
 
         <TabsContent value="workOrders" className="mt-6">
-          <VehicleWorkOrders vehicleId={vehicleId} />
+          <VehicleWorkOrders vehicleId={vehicleId || ''} />
         </TabsContent>
 
         <TabsContent value="inspections" className="mt-6">
-          <VehicleInspections vehicleId={vehicleId} />
+          <VehicleInspections vehicleId={vehicleId || ''} />
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-6">
-          <VehicleInvoices vehicleId={vehicleId} />
+          <VehicleInvoices vehicleId={vehicleId || ''} />
         </TabsContent>
 
         <TabsContent value="recommendations" className="mt-6">
-          <VehicleRecommendations vehicle={vehicle} />
+          <VehicleRecommendations vehicle={safeVehicle} />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-6">
-          <VehicleReports vehicleId={vehicleId} />
+          <VehicleReports vehicleId={vehicleId || ''} />
         </TabsContent>
       </Tabs>
     </div>
