@@ -22,3 +22,4 @@ export * from './document';
 export * from './feedback';
 export * from './email';
 export * from './form';
+export * from './payment';

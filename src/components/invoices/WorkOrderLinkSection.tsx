@@ -1,4 +1,3 @@
-
 import React from "react";
 import { X, Check, LinkIcon, MessageSquare, Phone } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -13,18 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { SendSmsButton } from "@/components/calls/SendSmsButton";
 import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
-
-interface WorkOrder {
-  id: string;
-  customer: string;
-  description: string;
-  status: string;
-  date: string;
-  dueDate: string;
-  priority: string;
-  technician: string;
-  location: string;
-}
+import { WorkOrder } from "@/types/workOrder";
 
 interface WorkOrderLinkSectionProps {
   workOrderId: string;
@@ -45,7 +33,6 @@ export function WorkOrderLinkSection({
   showWorkOrderDialog,
   setShowWorkOrderDialog,
 }: WorkOrderLinkSectionProps) {
-  // This would come from customer data in a real app
   const phoneNumber = "";
   const customerId = "";
 

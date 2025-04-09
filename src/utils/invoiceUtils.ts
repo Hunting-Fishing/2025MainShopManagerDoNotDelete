@@ -39,6 +39,8 @@ export function createDefaultInvoice(initialWorkOrderId?: string): Invoice {
     items: [],
     subtotal: 0,
     tax: 0,
-    total: 0
+    total: 0,
+    paymentMethod: "", // Add the required paymentMethod property
+    customer_id: "" // Add customer_id for consistency
   };
 }

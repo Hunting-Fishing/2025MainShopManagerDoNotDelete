@@ -16,8 +16,9 @@ import { WorkOrderLinkSection } from "@/components/invoices/WorkOrderLinkSection
 import { InvoiceItemsTable } from "@/components/invoices/InvoiceItemsTable";
 import { InvoiceTemplateSelector } from "@/components/invoices/templates/InvoiceTemplateSelector";
 import { SaveTemplateDialog } from "@/components/invoices/templates/SaveTemplateDialog";
-import { Invoice, InvoiceItem, WorkOrder, InvoiceTemplate, createInvoiceUpdater } from "@/types/invoice";
+import { Invoice, InvoiceItem, InvoiceTemplate, createInvoiceUpdater } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
+import { WorkOrder } from "@/types/workOrder"; // Import WorkOrder from the workOrder types
 
 interface InvoiceLeftColumnProps {
   invoice: Invoice;

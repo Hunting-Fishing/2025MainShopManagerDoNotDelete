@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Invoice } from '@/types/invoice';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,6 @@ export function useInvoiceData() {
       if (error) throw error;
 
       if (data) {
-        // Format the data to match our Invoice type
         const formattedInvoices = data.map(invoice => {
           return {
             id: invoice.id,
@@ -41,6 +39,8 @@ export function useInvoiceData() {
             tax: invoice.tax,
             workOrderId: invoice.work_order_id,
             createdBy: invoice.created_by,
+            paymentMethod: invoice.payment_method || '',
+            customer_id: invoice.customer_id,
             items: invoice.invoice_items || []
           } as Invoice;
         });
@@ -58,7 +58,6 @@ export function useInvoiceData() {
   useEffect(() => {
     fetchInvoices();
 
-    // Setup real-time subscription if enabled
     if (isRealTimeEnabled) {
       const channel = supabase
         .channel('invoice_changes')
@@ -84,7 +83,6 @@ export function useInvoiceData() {
 
   const saveInvoice = async ({ invoice, items }: { invoice: Invoice, items: any[] }) => {
     try {
-      // Insert the invoice
       const { error: invoiceError } = await supabase
         .from('invoices')
         .insert({
@@ -107,7 +105,6 @@ export function useInvoiceData() {
 
       if (invoiceError) throw invoiceError;
 
-      // Insert the invoice items
       if (items && items.length > 0) {
         const invoiceItems = items.map(item => ({
           invoice_id: invoice.id,
@@ -125,7 +122,6 @@ export function useInvoiceData() {
         if (itemsError) throw itemsError;
       }
 
-      // Refresh invoices
       await fetchInvoices();
 
       return { success: true };
@@ -135,7 +131,6 @@ export function useInvoiceData() {
     }
   };
 
-  // Function to manually refetch invoices
   const refetch = async () => {
     await fetchInvoices();
   };
