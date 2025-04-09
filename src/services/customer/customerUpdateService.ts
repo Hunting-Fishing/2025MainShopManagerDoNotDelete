@@ -177,63 +177,8 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     return adaptCustomerForUI(data as Customer);
   }
 
-  // Check if we need to update preferred technician history
-  if (updates.preferred_technician_id) {
-    try {
-      const { data: prevTechnicianHistory } = await supabase
-        .from("preferred_technician_history")
-        .select("*")
-        .eq("customer_id", id)
-        .order("change_date", { ascending: false })
-        .limit(1);
-        
-      // If history entry exists and it's different, create a new entry
-      if (prevTechnicianHistory && prevTechnicianHistory.length > 0) {
-        const lastEntry = prevTechnicianHistory[0];
-        if (lastEntry.new_technician_id !== updates.preferred_technician_id) {
-          // Find technician name
-          const techInfo = technicians.find(t => t.id === updates.preferred_technician_id);
-          
-          await supabase.from("preferred_technician_history").insert({
-            customer_id: id,
-            previous_technician_id: lastEntry.new_technician_id,
-            previous_technician_name: lastEntry.new_technician_name,
-            new_technician_id: updates.preferred_technician_id,
-            new_technician_name: techInfo ? techInfo.name : "Unknown",
-            changed_by_id: "system", // Ideally we'd get the current user ID
-            changed_by_name: "System",
-            change_date: new Date().toISOString()
-          });
-        }
-      } else {
-        // No history yet, create first entry
-        const techInfo = technicians.find(t => t.id === updates.preferred_technician_id);
-        
-        await supabase.from("preferred_technician_history").insert({
-          customer_id: id,
-          new_technician_id: updates.preferred_technician_id,
-          new_technician_name: techInfo ? techInfo.name : "Unknown",
-          changed_by_id: "system", // Ideally we'd get the current user ID
-          changed_by_name: "System",
-          change_date: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error("Error updating technician history:", error);
-    }
-  }
-
   return adaptCustomerForUI(updatedCustomer as Customer);
 };
-
-// Get technician data for the system
-const technicians = [
-  { id: "TM001", name: "John Smith" },
-  { id: "TM002", name: "Sarah Johnson" },
-  { id: "TM003", name: "Michael Brown" },
-  { id: "TM004", name: "Emily Chen" },
-  { id: "TM005", name: "David Lee" },
-];
 
 // Delete a customer
 export const deleteCustomer = async (id: string): Promise<void> => {
