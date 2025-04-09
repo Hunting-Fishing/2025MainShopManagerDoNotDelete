@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { getCustomerNotes } from "@/services/customers";
 import { getCustomerInteractions } from "@/services/customer/customerInteractionsService";
+import { handleApiError } from "@/utils/errorHandling";
 
 export const useCustomerDetails = (id?: string) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -15,6 +16,7 @@ export const useCustomerDetails = (id?: string) => {
   const [customerCommunications, setCustomerCommunications] = useState<CustomerCommunication[]>([]);
   const [customerNotes, setCustomerNotes] = useState<CustomerNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
@@ -22,12 +24,21 @@ export const useCustomerDetails = (id?: string) => {
   useEffect(() => {
     if (id) {
       loadCustomerDetails(id);
+    } else {
+      setError("Missing customer ID");
+      setLoading(false);
     }
   }, [id]);
 
   const loadCustomerDetails = async (customerId: string) => {
     setLoading(true);
+    setError(null);
+    
     try {
+      if (!customerId) {
+        throw new Error("Invalid customer ID provided");
+      }
+      
       // Fetch customer data with vehicles included
       console.log("Loading customer details for ID:", customerId);
       const customerData = await getCustomerById(customerId);
@@ -35,6 +46,15 @@ export const useCustomerDetails = (id?: string) => {
       
       if (customerData) {
         setCustomer(customerData);
+      } else {
+        setError("Customer not found");
+        toast({
+          title: "Not Found",
+          description: "Customer could not be found",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
 
       // Load work orders from Supabase
@@ -44,15 +64,28 @@ export const useCustomerDetails = (id?: string) => {
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
 
-      if (workOrdersError) throw workOrdersError;
-      setCustomerWorkOrders(workOrders || []);
+      if (workOrdersError) {
+        console.error("Error fetching work orders:", workOrdersError);
+        toast({
+          title: "Warning", 
+          description: "Could not load customer work orders",
+          variant: "warning",
+        });
+      } else {
+        setCustomerWorkOrders(workOrders || []);
+      }
 
       // Fetch customer interactions using our service
       try {
         const interactions = await getCustomerInteractions(customerId);
         setCustomerInteractions(interactions || []);
-      } catch (error) {
-        console.error("Error handling interactions:", error);
+      } catch (interactionError) {
+        console.error("Error handling interactions:", interactionError);
+        toast({
+          title: "Warning", 
+          description: "Could not load customer interactions",
+          variant: "warning",
+        });
         setCustomerInteractions([]);
       }
 
@@ -64,11 +97,8 @@ export const useCustomerDetails = (id?: string) => {
 
     } catch (error) {
       console.error("Error loading customer details:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load customer details. Please try again.",
-        variant: "destructive",
-      });
+      setError("Failed to load customer details");
+      handleApiError(error, "Failed to load customer details. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -82,7 +112,15 @@ export const useCustomerDetails = (id?: string) => {
         .eq('customer_id', customerId)
         .order('date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching communications:", error);
+        toast({
+          title: "Warning", 
+          description: "Could not load customer communications",
+          variant: "warning",
+        });
+        return;
+      }
       
       // Convert the type to the correct enum type
       const typedCommunications = data?.map(comm => ({
@@ -95,6 +133,7 @@ export const useCustomerDetails = (id?: string) => {
       setCustomerCommunications(typedCommunications);
     } catch (error) {
       console.error("Error fetching communications:", error);
+      handleApiError(error, "Could not load customer communications");
     }
   };
 
@@ -104,6 +143,7 @@ export const useCustomerDetails = (id?: string) => {
       setCustomerNotes(notes);
     } catch (error) {
       console.error("Error fetching notes:", error);
+      handleApiError(error, "Could not load customer notes");
     }
   };
 
@@ -111,8 +151,15 @@ export const useCustomerDetails = (id?: string) => {
   const refreshCustomerData = useCallback(async () => {
     if (id) {
       loadCustomerDetails(id);
+    } else {
+      setError("Cannot refresh: Missing customer ID");
+      toast({
+        title: "Error",
+        description: "Cannot refresh customer data: Missing ID",
+        variant: "destructive",
+      });
     }
-  }, [id]);
+  }, [id, toast]);
 
   const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
@@ -134,6 +181,7 @@ export const useCustomerDetails = (id?: string) => {
     customerCommunications,
     customerNotes,
     loading,
+    error,
     addInteractionOpen,
     setAddInteractionOpen,
     activeTab,

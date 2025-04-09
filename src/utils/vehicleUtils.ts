@@ -1,6 +1,7 @@
 
 import { VinDecodeResult } from "@/types/vehicle";
 import { mockVinDatabase } from "@/data/vinDatabase";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Decodes a VIN using our mock VIN database
@@ -10,8 +11,21 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
   // For demo purposes, we're using a mock database with VIN prefixes
   try {
     console.log("Decoding VIN:", vin);
-    if (!vin || vin.length !== 17) {
-      console.error("Invalid VIN format");
+    
+    // Validate input
+    if (!vin) {
+      console.error("Missing VIN");
+      return null;
+    }
+    
+    // Check VIN format
+    if (vin.length !== 17) {
+      console.error("Invalid VIN format - must be 17 characters");
+      toast({
+        title: "Invalid VIN",
+        description: "VIN must be 17 characters long",
+        variant: "destructive",
+      });
       return null;
     }
     
@@ -23,15 +37,25 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
       console.log("VIN match found:", match);
       return {
         ...match
-        // Don't add the VIN property here as it's not in the VinDecodeResult type
+        // Note: we don't add the VIN property here as it's not in the VinDecodeResult type
       };
     }
     
     // No match found
     console.log("No VIN match found in database");
+    toast({
+      title: "VIN Not Found",
+      description: "No vehicle information was found for this VIN",
+      variant: "warning",
+    });
     return null;
   } catch (error) {
     console.error("Error in VIN decoding:", error);
+    toast({
+      title: "Decoding Error",
+      description: "An error occurred while processing the VIN",
+      variant: "destructive",
+    });
     return null;
   }
 };
@@ -40,6 +64,11 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
  * Enhance a vehicle with additional data from VIN decoding
  */
 export const enhanceVehicleWithVin = async (vehicle: any) => {
+  if (!vehicle) {
+    console.error("Cannot enhance undefined vehicle");
+    return vehicle;
+  }
+  
   if (vehicle.vin && (!vehicle.transmission || !vehicle.drive_type)) {
     try {
       const decoded = await decodeVin(vehicle.vin);
@@ -60,6 +89,11 @@ export const enhanceVehicleWithVin = async (vehicle: any) => {
       }
     } catch (error) {
       console.error("Error enhancing vehicle with VIN data:", error);
+      toast({
+        title: "Data Enhancement Failed",
+        description: "Could not add additional vehicle information",
+        variant: "warning",
+      });
     }
   }
   

@@ -2,11 +2,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Customer, CustomerVehicle } from '@/types/customer';
-import { Car, Plus, Pencil } from 'lucide-react';
+import { Car, Plus, Pencil, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { toast } from "@/hooks/use-toast";
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface CustomerVehiclesTabProps {
   customer: Customer;
@@ -17,6 +19,19 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
   const vehicles = customer.vehicles || [];
   
   console.log('Rendering CustomerVehiclesTab with vehicles:', vehicles);
+
+  // Validate customer ID exists
+  if (!customer.id) {
+    return (
+      <Alert variant="warning" className="my-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Missing Customer ID</AlertTitle>
+        <AlertDescription>
+          Cannot display vehicles - customer information is incomplete.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   const handleAddVehicle = () => {
     // Use the correct route pattern for edit customer with vehicles tab active
@@ -30,11 +45,11 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
   const handleVehicleClick = (vehicleId: string) => {
     if (!vehicleId) {
       console.error("Cannot navigate to vehicle details: missing vehicle ID");
-      return;
-    }
-    
-    if (!customer.id) {
-      console.error("Cannot navigate to vehicle details: missing customer ID");
+      toast({
+        title: "Error",
+        description: "Cannot access vehicle details: missing vehicle ID",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -88,7 +103,7 @@ export const CustomerVehiclesTab: React.FC<CustomerVehiclesTabProps> = ({ custom
               <TableRow 
                 key={vehicle.id || index} 
                 className="hover:bg-muted/50 cursor-pointer" 
-                onClick={() => vehicle.id && handleVehicleClick(vehicle.id)}
+                onClick={() => vehicle.id ? handleVehicleClick(vehicle.id) : null}
               >
                 <TableCell>{vehicle.year || 'N/A'}</TableCell>
                 <TableCell>{vehicle.make || 'N/A'}</TableCell>
