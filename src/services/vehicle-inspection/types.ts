@@ -2,6 +2,8 @@
 import { VehicleBodyStyle } from '@/types/vehicleBodyStyles';
 import { Json } from '@/integrations/supabase/types';
 
+export { VehicleBodyStyle };
+
 export interface DamageArea {
   id: string;
   name: string;
