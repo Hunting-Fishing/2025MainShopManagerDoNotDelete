@@ -165,7 +165,7 @@ const RecentInteractions: React.FC<RecentInteractionsProps> = ({
                 <div>
                   <p className="font-medium text-sm">{interaction.description}</p>
                   <p className="text-xs text-slate-500">
-                    {new Date(interaction.date).toLocaleDateString()} • {interaction.staffMemberName}
+                    {new Date(interaction.date).toLocaleDateString()} • {interaction.staff_member_name}
                   </p>
                 </div>
                 <Button 

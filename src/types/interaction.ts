@@ -28,6 +28,15 @@ export interface CustomerInteraction {
   follow_up_completed?: boolean;
   created_at?: string;
   updated_at?: string;
+  
+  // Backwards compatibility properties
+  customerId?: string;
+  customerName?: string;
+  staffMemberId?: string;
+  staffMemberName?: string;
+  relatedWorkOrderId?: string;
+  followUpDate?: string;
+  followUpCompleted?: boolean;
 }
 
 export interface InteractionFilters {

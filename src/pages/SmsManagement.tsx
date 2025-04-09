@@ -1,503 +1,179 @@
-import React, { useState } from 'react';
-import { ResponsiveContainer } from '@/components/ui/responsive-container';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PlusCircle, MessageSquare, History, FileText, Send, ExternalLink } from 'lucide-react';
-import { toast } from "@/hooks/use-toast";
-import { customers } from '@/data/customersData';
-import { Link } from 'react-router-dom';
-
-interface SmsTemplate {
-  id: string;
-  name: string;
-  content: string;
-  category: string;
-}
-
-interface SmsLogEntry {
-  id: string;
-  recipient: string;
-  message: string;
-  status: 'delivered' | 'failed' | 'pending';
-  timestamp: string;
-}
-
-const mockTemplates: SmsTemplate[] = [
-  {
-    id: "1",
-    name: "Appointment Reminder",
-    content: "Hi {firstName}, this is a reminder about your appointment tomorrow at {time}. Reply Y to confirm or call us to reschedule.",
-    category: "Reminders"
-  },
-  {
-    id: "2",
-    name: "Work Order Complete",
-    content: "Hi {firstName}, your work order #{workOrderId} has been completed. Thank you for choosing our services!",
-    category: "Notifications"
-  },
-  {
-    id: "3",
-    name: "Payment Received",
-    content: "Hi {firstName}, we've received your payment of ${amount} for invoice #{invoiceId}. Thank you!",
-    category: "Billing"
-  }
-];
-
-const mockLogs: SmsLogEntry[] = [
-  {
-    id: "log1",
-    recipient: "Acme Corporation",
-    message: "Hi John, this is a reminder about your appointment tomorrow at 2:00 PM. Reply Y to confirm or call us to reschedule.",
-    status: "delivered",
-    timestamp: "2023-09-15T14:30:00Z"
-  },
-  {
-    id: "log2",
-    recipient: "Johnson Residence",
-    message: "Hi Sarah, your work order #WO-2023-0011 has been completed. Thank you for choosing our services!",
-    status: "delivered",
-    timestamp: "2023-09-14T16:45:00Z"
-  },
-  {
-    id: "log3",
-    recipient: "City Hospital",
-    message: "Hi Michael, we've received your payment of $3200.00 for invoice #INV-2023-003. Thank you!",
-    status: "failed",
-    timestamp: "2023-09-13T09:15:00Z"
-  }
-];
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { Customer } from '@/types/customer';
+import { MessageSquare, Send, Trash, Check, X, Phone } from 'lucide-react';
 
 export default function SmsManagement() {
-  const [activeTab, setActiveTab] = useState("send");
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [messageText, setMessageText] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [templates, setTemplates] = useState(mockTemplates);
-  const [logs, setLogs] = useState(mockLogs);
-  
-  const [newTemplate, setNewTemplate] = useState<Omit<SmsTemplate, 'id'>>({
-    name: "",
-    content: "",
-    category: "Reminders"
-  });
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleTemplateSelect = (templateId: string) => {
-    setSelectedTemplate(templateId);
-    
-    if (templateId) {
-      const template = templates.find(t => t.id === templateId);
-      if (template) {
-        let content = template.content;
+  useEffect(() => {
+    // Fetch customers, templates and recent messages
+    const fetchData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Fetch customers
+        const { data: customersData, error: customersError } = await supabase
+          .from('customers')
+          .select('*')
+          .order('last_name', { ascending: true });
         
-        if (!selectedCustomer) {
-          content = content
-            .replace(/{firstName}/g, "Customer")
-            .replace(/{workOrderId}/g, "WO-XXXX")
-            .replace(/{invoiceId}/g, "INV-XXXX")
-            .replace(/{amount}/g, "0.00")
-            .replace(/{time}/g, "10:00 AM");
+        if (customersError) {
+          console.error('Error fetching customers:', customersError);
         } else {
-          const customer = customers.find(c => c.id === selectedCustomer);
-          if (customer) {
-            content = content
-              .replace(/{firstName}/g, customer.first_name)
-              .replace(/{workOrderId}/g, "WO-2023-XXXX")
-              .replace(/{invoiceId}/g, "INV-2023-XXXX")
-              .replace(/{amount}/g, "100.00")
-              .replace(/{time}/g, "10:00 AM");
-          }
+          setCustomers(customersData || []);
         }
         
-        setMessageText(content);
+        // Fetch SMS templates
+        const { data: templatesData, error: templatesError } = await supabase
+          .from('sms_templates')
+          .select('*');
+          
+        if (templatesError) {
+          console.error('Error fetching SMS templates:', templatesError);
+        } else {
+          setTemplates(templatesData || []);
+        }
+        
+        // Fetch recent messages
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('sms_logs')
+          .select('*')
+          .order('sent_at', { ascending: false })
+          .limit(10);
+          
+        if (messagesError) {
+          console.error('Error fetching SMS logs:', messagesError);
+        } else {
+          setRecentMessages(messagesData || []);
+        }
+        
+      } catch (error) {
+        console.error('Error in fetchData:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      setMessageText("");
-    }
-  };
-
-  const handleCustomerSelect = (customerId: string) => {
-    setSelectedCustomer(customerId);
-    
-    if (selectedTemplate) {
-      handleTemplateSelect(selectedTemplate);
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!selectedCustomer) {
-      toast({
-        title: "Error",
-        description: "Please select a recipient",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!messageText.trim()) {
-      toast({
-        title: "Error",
-        description: "Message cannot be empty",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSending(true);
-    
-    try {
-      console.log("Sending SMS:", {
-        recipient: selectedCustomer,
-        message: messageText
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const customer = customers.find(c => c.id === selectedCustomer);
-      const newLog: SmsLogEntry = {
-        id: `log${Date.now()}`,
-        recipient: customer ? customer.name : "Unknown",
-        message: messageText,
-        status: "delivered",
-        timestamp: new Date().toISOString()
-      };
-      
-      setLogs([newLog, ...logs]);
-      
-      setMessageText("");
-      setSelectedCustomer("");
-      setSelectedTemplate("");
-      
-      toast({
-        title: "Success",
-        description: "Message sent successfully",
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleCreateTemplate = () => {
-    if (!newTemplate.name || !newTemplate.content) {
-      toast({
-        title: "Error",
-        description: "Template name and content are required",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const template: SmsTemplate = {
-      ...newTemplate,
-      id: `template${Date.now()}`
     };
     
-    setTemplates([...templates, template]);
-    
-    setNewTemplate({
-      name: "",
-      content: "",
-      category: "Reminders"
-    });
-    
-    setShowTemplateDialog(false);
-    
-    toast({
-      title: "Success",
-      description: "Template created successfully",
-    });
-  };
+    fetchData();
+  }, []);
 
   return (
-    <ResponsiveContainer className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">SMS Management</h1>
-          <p className="text-muted-foreground">
-            Send SMS messages and manage templates
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/sms-templates">
-            <Button variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              Manage Templates
-            </Button>
-          </Link>
-          <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Create Template
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px]">
-              <DialogHeader>
-                <DialogTitle>Create SMS Template</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="templateName">Template Name</Label>
-                    <Input 
-                      id="templateName" 
-                      value={newTemplate.name}
-                      onChange={(e) => setNewTemplate({...newTemplate, name: e.target.value})}
-                      placeholder="e.g., Appointment Reminder" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="templateCategory">Category</Label>
-                    <Select 
-                      value={newTemplate.category}
-                      onValueChange={(value) => setNewTemplate({...newTemplate, category: value})}
-                    >
-                      <SelectTrigger id="templateCategory">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Reminders">Reminders</SelectItem>
-                        <SelectItem value="Notifications">Notifications</SelectItem>
-                        <SelectItem value="Billing">Billing</SelectItem>
-                        <SelectItem value="Marketing">Marketing</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="templateContent">Template Content</Label>
-                  <Textarea 
-                    id="templateContent" 
-                    value={newTemplate.content}
-                    onChange={(e) => setNewTemplate({...newTemplate, content: e.target.value})}
-                    placeholder="Message content with placeholders like {firstName}, {workOrderId}, etc." 
-                    className="h-40" 
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Available placeholders: {'{firstName}'}, {'{workOrderId}'}, {'{invoiceId}'}, {'{amount}'}, {'{time}'}
-                  </p>
-                </div>
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateTemplate}>
-                    Create Template
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">SMS Management</h1>
+        <Button>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          New Message
+        </Button>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="send">
-            <Send className="h-4 w-4 mr-2" />
-            Send Message
-          </TabsTrigger>
-          <TabsTrigger value="templates">
-            <FileText className="h-4 w-4 mr-2" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="history">
-            <History className="h-4 w-4 mr-2" />
-            Message History
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="send">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <MessageSquare className="h-5 w-5 mr-2" />
-                Send SMS Message
-              </CardTitle>
-              <CardDescription>
-                Send an SMS message to a customer
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="recipient">Recipient</Label>
-                  <Select 
-                    value={selectedCustomer}
-                    onValueChange={handleCustomerSelect}
-                  >
-                    <SelectTrigger id="recipient">
-                      <SelectValue placeholder="Select a customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="template">Template (Optional)</Label>
-                  <Select 
-                    value={selectedTemplate}
-                    onValueChange={handleTemplateSelect}
-                  >
-                    <SelectTrigger id="template">
-                      <SelectValue placeholder="Select a template or type a custom message" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">No template - custom message</SelectItem>
-                      {templates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>Recent Messages</CardTitle>
+            <CardDescription>
+              History of recently sent SMS messages
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <p className="text-center py-8 text-muted-foreground">Loading recent messages...</p>
+            ) : recentMessages.length === 0 ? (
+              <div className="text-center py-12">
+                <Phone className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+                <h3 className="mt-4 text-lg font-medium">No Messages Yet</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You haven't sent any SMS messages yet. Send your first message to see it here.
+                </p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea 
-                  id="message" 
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  placeholder="Type your message here" 
-                  className="h-[150px]" 
-                />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Character count: {messageText.length}</span>
-                  <span>Messages: {Math.ceil(messageText.length / 160) || 0}</span>
-                </div>
-              </div>
-              <div className="flex justify-end pt-4">
-                <Button onClick={handleSendMessage} disabled={isSending}>
-                  {isSending ? "Sending..." : "Send Message"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="templates">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <FileText className="h-5 w-5 mr-2" />
-                SMS Templates
-              </CardTitle>
-              <CardDescription>
-                Manage your SMS templates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            ) : (
               <div className="space-y-4">
-                {templates.map((template) => (
-                  <Card key={template.id} className="overflow-hidden">
-                    <div className="bg-muted px-4 py-2 flex justify-between items-center">
-                      <div>
-                        <span className="font-medium">{template.name}</span>
-                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          {template.category}
-                        </span>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">Edit</Button>
-                        <Button variant="outline" size="sm" onClick={() => handleTemplateSelect(template.id)}>
-                          Use
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm whitespace-pre-wrap">{template.content}</p>
-                    </div>
-                  </Card>
-                ))}
-                
-                {templates.length === 0 && (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                    <h3 className="text-lg font-medium mb-1">No templates found</h3>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-                      You don't have any SMS templates yet. Create your first template to get started.
-                    </p>
-                    <Button onClick={() => setShowTemplateDialog(true)}>
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Create Template
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <History className="h-5 w-5 mr-2" />
-                Message History
-              </CardTitle>
-              <CardDescription>
-                View your sent messages
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {logs.map((log) => (
-                  <Card key={log.id} className="overflow-hidden">
-                    <div className="bg-muted px-4 py-2 flex justify-between items-center">
-                      <div>
-                        <span className="font-medium">To: {log.recipient}</span>
-                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                          log.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                          log.status === 'failed' ? 'bg-red-100 text-red-800' :
+                {recentMessages.map((message) => (
+                  <div key={message.id} className="flex items-start border-b pb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{message.phone_number}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          message.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                          message.status === 'failed' ? 'bg-red-100 text-red-800' : 
                           'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {log.status}
+                          {message.status}
                         </span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{message.message}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(message.sent_at).toLocaleString()}
+                      </p>
                     </div>
-                    <div className="p-4">
-                      <p className="text-sm whitespace-pre-wrap">{log.message}</p>
+                    <div className="flex gap-2">
+                      {message.status === 'failed' && (
+                        <Button size="sm" variant="outline">Retry</Button>
+                      )}
                     </div>
-                  </Card>
-                ))}
-                
-                {logs.length === 0 && (
-                  <div className="text-center py-8">
-                    <History className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                    <h3 className="text-lg font-medium mb-1">No message history</h3>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      You haven't sent any SMS messages yet. Go to the Send Message tab to send your first message.
-                    </p>
                   </div>
-                )}
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Message Templates</CardTitle>
+            <CardDescription>
+              Create and manage SMS templates
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <p className="text-center py-4 text-muted-foreground">Loading templates...</p>
+            ) : templates.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">No templates found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {templates.map((template) => (
+                  <div key={template.id} className="border rounded-md p-3">
+                    <p className="font-medium">{template.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                      {template.content}
+                    </p>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <Button size="sm" variant="ghost">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm">
+                        <Send className="h-4 w-4 mr-1" /> Use
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button variant="outline" className="w-full">
+              Create New Template
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
   );
 }

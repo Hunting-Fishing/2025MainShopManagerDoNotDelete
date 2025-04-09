@@ -11,10 +11,29 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, you would fetch interactions specific to this vehicle
-    // For now, we'll just set an empty array
-    setInteractions([]);
-    setLoading(false);
+    const fetchVehicleInteractions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('customer_interactions')
+          .select('*')
+          .eq('related_work_order_id', vehicleId)
+          .order('date', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching vehicle interactions:', error);
+          setInteractions([]);
+        } else {
+          setInteractions(data || []);
+        }
+      } catch (error) {
+        console.error('Error in fetchVehicleInteractions:', error);
+        setInteractions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchVehicleInteractions();
   }, [vehicleId]);
 
   if (loading) {
@@ -47,7 +66,7 @@ export const VehicleInteractions: React.FC<{ vehicleId: string }> = ({ vehicleId
             <TableRow key={interaction.id}>
               <TableCell>{new Date(interaction.date).toLocaleDateString()}</TableCell>
               <TableCell>{interaction.type}</TableCell>
-              <TableCell>{interaction.staffMemberName}</TableCell>
+              <TableCell>{interaction.staff_member_name}</TableCell>
               <TableCell>{interaction.description}</TableCell>
             </TableRow>
           ))}

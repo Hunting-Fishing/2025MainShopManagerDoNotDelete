@@ -1,6 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
-import { CustomerInteraction } from "@/types/interaction";
+import { CustomerInteraction, InteractionType, InteractionStatus } from "@/types/interaction";
 
 // Get customer interactions
 export const getCustomerInteractions = async (customerId: string): Promise<CustomerInteraction[]> => {
@@ -20,7 +20,14 @@ export const getCustomerInteractions = async (customerId: string): Promise<Custo
     
     console.log("Retrieved customer interactions:", data);
     
-    return data || [];
+    // Ensure proper type casting
+    const interactions = data?.map(interaction => ({
+      ...interaction,
+      type: interaction.type as InteractionType,
+      status: interaction.status as InteractionStatus
+    })) || [];
+    
+    return interactions;
   } catch (error) {
     console.error("Error in getCustomerInteractions:", error);
     return [];
@@ -34,7 +41,11 @@ export const addCustomerInteraction = async (
   try {
     const { data, error } = await supabase
       .from("customer_interactions")
-      .insert(interaction)
+      .insert({
+        ...interaction,
+        type: interaction.type as InteractionType,
+        status: interaction.status as InteractionStatus
+      })
       .select()
       .single();
     
@@ -45,7 +56,12 @@ export const addCustomerInteraction = async (
     
     console.log("Added new interaction:", data);
     
-    return data;
+    // Ensure proper type casting
+    return {
+      ...data,
+      type: data.type as InteractionType,
+      status: data.status as InteractionStatus
+    };
   } catch (error) {
     console.error("Error in addCustomerInteraction:", error);
     return null;
@@ -60,7 +76,11 @@ export const updateCustomerInteraction = async (
   try {
     const { data, error } = await supabase
       .from("customer_interactions")
-      .update(updates)
+      .update({
+        ...updates,
+        type: updates.type as InteractionType,
+        status: updates.status as InteractionStatus
+      })
       .eq("id", id)
       .select()
       .single();
@@ -70,7 +90,11 @@ export const updateCustomerInteraction = async (
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      type: data.type as InteractionType,
+      status: data.status as InteractionStatus
+    };
   } catch (error) {
     console.error("Error in updateCustomerInteraction:", error);
     return null;
@@ -104,7 +128,7 @@ export const completeFollowUp = async (id: string): Promise<CustomerInteraction 
       .from("customer_interactions")
       .update({
         follow_up_completed: true,
-        status: "completed",
+        status: "completed" as InteractionStatus,
         updated_at: new Date().toISOString()
       })
       .eq("id", id)
@@ -116,7 +140,11 @@ export const completeFollowUp = async (id: string): Promise<CustomerInteraction 
       throw error;
     }
     
-    return data;
+    return {
+      ...data,
+      type: data.type as InteractionType,
+      status: data.status as InteractionStatus
+    };
   } catch (error) {
     console.error("Error in completeFollowUp:", error);
     return null;
@@ -139,7 +167,14 @@ export const getPendingFollowUps = async (): Promise<CustomerInteraction[]> => {
       throw error;
     }
     
-    return data || [];
+    // Ensure proper type casting
+    const interactions = data?.map(interaction => ({
+      ...interaction,
+      type: interaction.type as InteractionType,
+      status: interaction.status as InteractionStatus
+    })) || [];
+    
+    return interactions;
   } catch (error) {
     console.error("Error in getPendingFollowUps:", error);
     return [];

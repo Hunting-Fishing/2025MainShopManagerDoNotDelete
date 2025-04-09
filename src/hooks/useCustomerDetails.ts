@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { getCustomerById } from "@/services/customer";
@@ -165,7 +164,7 @@ export const useCustomerDetails = (id?: string) => {
 
   const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
-    setActiveTab("history");
+    setActiveTab("interactions");
   }, []);
 
   const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {
