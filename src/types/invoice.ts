@@ -1,4 +1,3 @@
-
 export interface Invoice {
   id: string;
   workOrderId?: string;
@@ -22,6 +21,8 @@ export interface Invoice {
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
   createdAt?: string;
+  // Make hours optional
+  hours?: boolean;
 }
 
 export interface InvoiceItem {
@@ -51,7 +52,7 @@ export interface InvoiceTemplate {
 export interface WorkOrder {
   id: string;
   customer: string;
-  description: string;
+  description?: string;
   status: string;
   date: string;
   dueDate: string;
@@ -62,6 +63,17 @@ export interface WorkOrder {
   inventoryItems?: WorkOrderInventoryItem[];
   timeEntries?: TimeEntry[];
   totalBillableTime?: number;
+  // Add any missing fields
+  service_type?: string;
+  customer_id?: string;
+  vehicle_id?: string;
+  vehicle_make?: string;
+  vehicle_model?: string;
+  created_at?: string;
+  updated_at?: string;
+  technician_id?: string;
+  total_cost?: number;
+  estimated_hours?: number;
 }
 
 export interface WorkOrderInventoryItem {

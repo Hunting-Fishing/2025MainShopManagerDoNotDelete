@@ -103,6 +103,12 @@ export default function InvoiceDetails() {
     );
   }
   
+  // Prepare invoice for header component by making sure paymentMethod is defined
+  const headerInvoice = {
+    ...invoice,
+    paymentMethod: invoice.paymentMethod || ''
+  };
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -110,7 +116,7 @@ export default function InvoiceDetails() {
         invoiceId={invoice.id}
         status={invoice.status}
         statusStyles={statusStyles}
-        invoice={invoice}
+        invoice={headerInvoice}
       />
       
       {/* Tabs for Invoice details and Payments */}

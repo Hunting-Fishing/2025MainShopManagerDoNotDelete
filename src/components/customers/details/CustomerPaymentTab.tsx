@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import { usePaymentHistory } from '@/hooks/usePaymentHistory';
 import { PaymentMethodsList } from '@/components/payments/PaymentMethodsList';
 import { PaymentHistoryList } from '@/components/payments/PaymentHistoryList';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +15,14 @@ interface CustomerPaymentTabProps {
 
 export function CustomerPaymentTab({ customer }: CustomerPaymentTabProps) {
   const { toast } = useToast();
+  const { 
+    paymentMethods, 
+    isLoading: isLoadingMethods, 
+    addPaymentMethod, 
+    updatePaymentMethod,
+    deletePaymentMethod,
+    refetch: refetchPaymentMethods
+  } = usePaymentMethods(customer.id);
   
   // Handle errors for when customer id is not available
   if (!customer.id) {
@@ -27,9 +37,39 @@ export function CustomerPaymentTab({ customer }: CustomerPaymentTabProps) {
     );
   }
   
+  const handlePaymentMethodAdded = () => {
+    refetchPaymentMethods();
+    toast({
+      title: "Payment method added",
+      description: "New payment method has been added successfully"
+    });
+  };
+
+  const handlePaymentMethodUpdated = () => {
+    refetchPaymentMethods();
+    toast({
+      title: "Payment method updated",
+      description: "Payment method has been updated successfully"
+    });
+  };
+
+  const handlePaymentMethodDeleted = () => {
+    refetchPaymentMethods();
+    toast({
+      title: "Payment method removed",
+      description: "Payment method has been removed successfully"
+    });
+  };
+  
   return (
     <div className="space-y-8">
-      <PaymentMethodsList customerId={customer.id} />
+      <PaymentMethodsList 
+        customerId={customer.id}
+        paymentMethods={paymentMethods}
+        onPaymentMethodAdded={handlePaymentMethodAdded}
+        onPaymentMethodUpdated={handlePaymentMethodUpdated}
+        onPaymentMethodDeleted={handlePaymentMethodDeleted}
+      />
       <PaymentHistoryList customerId={customer.id} />
     </div>
   );

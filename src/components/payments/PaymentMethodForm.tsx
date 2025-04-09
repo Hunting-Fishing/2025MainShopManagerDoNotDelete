@@ -81,8 +81,10 @@ export function PaymentMethodForm({ initialData, onSubmit }: PaymentMethodFormPr
         expiry_month: values.expiry_month ? parseInt(values.expiry_month) : undefined,
         expiry_year: values.expiry_year ? parseInt(values.expiry_year) : undefined,
         method_type: values.method_type as PaymentMethodType,
+        is_default: values.is_default
       };
-      await onSubmit(formattedValues);
+      
+      await onSubmit(formattedValues as Omit<PaymentMethod, 'id' | 'customer_id' | 'created_at' | 'updated_at'>);
     } finally {
       setIsSubmitting(false);
     }

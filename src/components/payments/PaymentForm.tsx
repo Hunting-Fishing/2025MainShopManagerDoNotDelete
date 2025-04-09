@@ -20,11 +20,15 @@ import { paymentTypeOptions, paymentStatusOptions, PaymentFormValues } from '@/t
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { format } from 'date-fns';
 
+// Define allowed values for payment_type and status
+type PaymentType = "full" | "partial" | "deposit" | "refund";
+type PaymentStatus = "pending" | "processed" | "failed" | "refunded";
+
 const formSchema = z.object({
   amount: z.coerce.number().positive("Amount must be positive"),
   payment_method_id: z.string().optional(),
-  payment_type: z.string(),
-  status: z.string(),
+  payment_type: z.string() as z.ZodType<PaymentType>,
+  status: z.string() as z.ZodType<PaymentStatus>,
   transaction_id: z.string().optional(),
   transaction_date: z.string().default(() => format(new Date(), 'yyyy-MM-dd')),
   notes: z.string().optional(),
@@ -45,8 +49,8 @@ export function PaymentForm({ customerId, invoiceId, initialData, onSubmit }: Pa
   const defaultValues = {
     amount: initialData?.amount || 0,
     payment_method_id: initialData?.payment_method_id || undefined,
-    payment_type: initialData?.payment_type || 'full',
-    status: initialData?.status || 'processed',
+    payment_type: (initialData?.payment_type as PaymentType) || 'full',
+    status: (initialData?.status as PaymentStatus) || 'processed',
     transaction_id: initialData?.transaction_id || '',
     transaction_date: initialData?.transaction_date || format(new Date(), 'yyyy-MM-dd'),
     notes: initialData?.notes || '',
@@ -62,11 +66,14 @@ export function PaymentForm({ customerId, invoiceId, initialData, onSubmit }: Pa
   const handleFormSubmit = async (values: FormSchemaType) => {
     setIsSubmitting(true);
     try {
-      // Ensure amount is included and not optional when passing to onSubmit
+      // Ensure we have the correct typing for PaymentFormValues
       const paymentValues: PaymentFormValues = {
         ...values,
         amount: values.amount,
+        payment_type: values.payment_type as "full" | "partial" | "deposit" | "refund",
+        status: values.status as "pending" | "processed" | "failed" | "refunded"
       };
+      
       await onSubmit(paymentValues);
     } finally {
       setIsSubmitting(false);
