@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { UserRound, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -45,9 +45,9 @@ export const useCustomers = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log("Fetching all customers in Customers component");
+        console.log("Fetching all customers in useCustomers hook");
         const data = await getAllCustomers();
-        console.log("Customer data received in component:", data);
+        console.log("Customer data received:", data);
         setCustomers(data);
         setFilteredCustomers(data);
       } catch (error) {
