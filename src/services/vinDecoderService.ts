@@ -1,6 +1,5 @@
 
 import { VinDecodeResult } from "@/types/vehicle";
-import { mockVinDatabase } from "@/data/vinDatabase";
 
 /**
  * Decode a VIN number using an external NHTSA API service
@@ -11,16 +10,8 @@ export const decodeVin = async (vin: string): Promise<VinDecodeResult | null> =>
   try {
     // Validate VIN format
     if (!vin || vin.length !== 17) {
+      console.error("Invalid VIN format - must be 17 characters");
       return null;
-    }
-    
-    // First check if we have it in our database for quick lookup
-    const vinPrefix = vin.substring(0, 8);
-    const localResult = mockVinDatabase[vinPrefix];
-    
-    if (localResult) {
-      console.log("Found VIN in local database");
-      return localResult;
     }
     
     // Call the real NHTSA VIN decoder API

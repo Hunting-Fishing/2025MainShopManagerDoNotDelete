@@ -36,12 +36,17 @@ export function VehicleModelSelector<T>({
           <SelectContent>
             {loading ? (
               <SelectItem value="loading">Loading models...</SelectItem>
-            ) : models.length > 0 ? (
-              models.map(model => model ? (
-                <SelectItem key={model} value={model}>
-                  {model || "Unknown Model"}
-                </SelectItem>
-              ) : null)
+            ) : models && models.length > 0 ? (
+              models.map(model => {
+                // Skip any empty values to avoid Radix UI error
+                if (!model) return null;
+                
+                return (
+                  <SelectItem key={model} value={model}>
+                    {model || "Unknown Model"}
+                  </SelectItem>
+                );
+              })
             ) : (
               <SelectItem value="no-models">No models available</SelectItem>
             )}

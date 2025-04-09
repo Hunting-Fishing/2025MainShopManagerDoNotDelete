@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
 import { decodeVin as decodeVinUtil } from '@/utils/vehicleUtils';
 import { supabase } from '@/lib/supabase';
+import { mockMakes } from '@/data/vehicleMakes';
+import { mockModelsByMake } from '@/data/vehicleModels';
 
 /**
  * Hook to provide vehicle data functionality including makes, models, years,
@@ -25,33 +27,19 @@ export const useVehicleData = () => {
     setYears(yearsList);
   }, []);
 
-  // Load makes on mount from Supabase
+  // Load makes from static data on mount
   useEffect(() => {
     setLoading(true);
     
-    const fetchMakes = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('vehicle_makes')
-          .select('*')
-          .order('make_display', { ascending: true });
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data) {
-          setMakes(data as CarMake[]);
-        }
-      } catch (err) {
-        console.error("Error fetching vehicle makes:", err);
-        setError("Could not load vehicle makes");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchMakes();
+    // Using the mock data directly instead of trying to query a non-existent table
+    try {
+      setMakes(mockMakes);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error loading vehicle makes:", err);
+      setError("Could not load vehicle makes");
+      setLoading(false);
+    }
   }, []);
 
   // Function to fetch models for a selected make
@@ -64,22 +52,9 @@ export const useVehicleData = () => {
     setSelectedModel('');
     
     try {
-      // Get models from Supabase
-      const { data, error } = await supabase
-        .from('vehicle_models')
-        .select('*')
-        .eq('model_make_id', make)
-        .order('model_name', { ascending: true });
-        
-      if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        setModels(data as CarModel[]);
-      } else {
-        setModels([]);
-      }
+      // Using the mock data directly instead of trying to query a non-existent table
+      const makeModels = mockModelsByMake[make] || [];
+      setModels(makeModels);
       
       setLoading(false);
       return Promise.resolve();
@@ -91,7 +66,7 @@ export const useVehicleData = () => {
     }
   }, []);
 
-  // Function to decode VIN and return vehicle information - now async
+  // Function to decode VIN and return vehicle information
   const decodeVin = useCallback(async (vin: string): Promise<VinDecodeResult | null> => {
     setLoading(true);
     try {

@@ -39,13 +39,18 @@ export function VehicleMakeSelector<T>({
           </SelectTrigger>
           <SelectContent>
             {makes.length > 0 ? (
-              makes.map(make => make ? (
-                <SelectItem key={make} value={make}>
-                  {make || "Unknown Make"}
-                </SelectItem>
-              ) : null)
+              makes.map(make => {
+                // Skip any empty values to avoid Radix UI error
+                if (!make) return null;
+                
+                return (
+                  <SelectItem key={make} value={make}>
+                    {make || "Unknown Make"}
+                  </SelectItem>
+                );
+              })
             ) : (
-              <SelectItem value="loading">Loading makes...</SelectItem>
+              <SelectItem value="no-makes-available">No makes available</SelectItem>
             )}
           </SelectContent>
         </Select>
