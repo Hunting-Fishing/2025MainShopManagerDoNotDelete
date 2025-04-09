@@ -3,7 +3,7 @@
 export * from './customer';
 // Import and re-export WorkOrder from workOrder.ts to avoid conflicts
 import { WorkOrder, WorkOrderTemplate, TimeEntry, WorkOrderInventoryItem } from './workOrder';
-export { WorkOrder, WorkOrderTemplate, TimeEntry, WorkOrderInventoryItem };
+export type { WorkOrder, WorkOrderTemplate, TimeEntry, WorkOrderInventoryItem };
 // Export other types from invoice.ts
 export type { 
   Invoice, 
