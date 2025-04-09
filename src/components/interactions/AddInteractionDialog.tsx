@@ -1,299 +1,241 @@
 
 import React, { useState } from "react";
-import { Customer, getCustomerFullName } from "@/types/customer";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { CustomerInteraction, InteractionType } from "@/types/interaction";
-import { addInteraction } from "@/data/interactionsData";
-import { toast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Customer } from "@/types/customer";
+import { CustomerInteraction, InteractionType, InteractionStatus } from "@/types/interaction";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { teamMembers } from "@/data/teamData";
+import { addCustomerInteraction } from "@/services/customer/customerInteractionsService";
 
 interface AddInteractionDialogProps {
   customer: Customer;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onInteractionAdded?: (interaction: CustomerInteraction) => void;
-  relatedWorkOrderId?: string;
+  onInteractionAdded: (interaction: CustomerInteraction) => void;
 }
-
-const interactionFormSchema = z.object({
-  type: z.enum(["work_order", "communication", "parts", "service", "follow_up"]),
-  description: z.string().min(5, {
-    message: "Description must be at least 5 characters.",
-  }),
-  staffMemberId: z.string().min(1, {
-    message: "Please select a staff member.",
-  }),
-  notes: z.string().optional(),
-  followUpDate: z.date().optional().nullable(),
-});
-
-type InteractionFormValues = z.infer<typeof interactionFormSchema>;
 
 export const AddInteractionDialog: React.FC<AddInteractionDialogProps> = ({
   customer,
   open,
   onOpenChange,
-  onInteractionAdded,
-  relatedWorkOrderId,
+  onInteractionAdded
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<InteractionType>("communication");
+  const [notes, setNotes] = useState("");
+  const [date, setDate] = useState<Date>(new Date());
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
+  const [followUpRequired, setFollowUpRequired] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [followUpDatePickerOpen, setFollowUpDatePickerOpen] = useState(false);
 
-  const form = useForm<InteractionFormValues>({
-    resolver: zodResolver(interactionFormSchema),
-    defaultValues: {
-      type: "communication",
-      description: "",
-      staffMemberId: "",
-      notes: "",
-      followUpDate: null,
-    },
-  });
-
-  const selectedType = form.watch("type");
-
-  const onSubmit = async (values: InteractionFormValues) => {
-    setIsSubmitting(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
     try {
-      // Find the selected staff member
-      const staffMember = teamMembers.find((member) => member.id === values.staffMemberId);
+      // Get current user info - in a real app this would come from your auth context
+      const staffMemberId = "current-user-id";
+      const staffMemberName = "Current User";
       
-      if (!staffMember) {
-        throw new Error("Staff member not found");
-      }
-
-      const today = new Date().toISOString().split("T")[0];
-      const customerName = customer.name || getCustomerFullName(customer);
-      
-      // Create interaction data
-      const interactionData: Omit<CustomerInteraction, "id"> = {
+      const newInteraction = {
         customerId: customer.id,
-        customerName: customerName,
-        date: today,
-        type: values.type as InteractionType,
-        description: values.description,
-        staffMemberId: staffMember.id,
-        staffMemberName: staffMember.name,
-        status: values.type === "follow_up" ? "pending" : "completed",
-        notes: values.notes,
-        followUpDate: values.followUpDate ? values.followUpDate.toISOString().split("T")[0] : undefined,
-        followUpCompleted: false,
-        relatedWorkOrderId,
+        customerName: customer.name || `${customer.first_name} ${customer.last_name}`,
+        date: date.toISOString(),
+        type,
+        description,
+        staffMemberId,
+        staffMemberName,
+        status: "completed" as InteractionStatus,
+        notes,
+        followUpDate: followUpRequired && followUpDate ? followUpDate.toISOString() : undefined,
+        followUpCompleted: false
       };
-
-      // Add new interaction
-      const newInteraction = addInteraction(interactionData);
       
-      toast({
-        title: "Interaction recorded",
-        description: "The customer interaction has been recorded successfully.",
-      });
+      const savedInteraction = await addCustomerInteraction(newInteraction);
       
-      // Call the callback if provided
-      if (onInteractionAdded) {
-        onInteractionAdded(newInteraction);
+      if (savedInteraction) {
+        toast({
+          title: "Interaction recorded",
+          description: "The customer interaction has been saved.",
+        });
+        
+        onInteractionAdded(savedInteraction);
+        onOpenChange(false);
+        resetForm();
+      } else {
+        throw new Error("Failed to save interaction");
       }
-      
-      // Close dialog and reset form
-      onOpenChange(false);
-      form.reset();
     } catch (error) {
       console.error("Error adding interaction:", error);
       toast({
         title: "Error",
-        description: "Failed to record customer interaction.",
+        description: "Failed to record the interaction. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
-
+  
+  const resetForm = () => {
+    setDescription("");
+    setType("communication");
+    setNotes("");
+    setDate(new Date());
+    setFollowUpDate(undefined);
+    setFollowUpRequired(false);
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Record Customer Interaction</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Interaction Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="interaction-date">Date</Label>
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="communication">Communication</SelectItem>
-                      <SelectItem value="service">Service</SelectItem>
-                      <SelectItem value="parts">Parts</SelectItem>
-                      <SelectItem value="work_order">Work Order</SelectItem>
-                      <SelectItem value="follow_up">Follow-up</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(date) => {
+                      date && setDate(date);
+                      setDatePickerOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="interaction-type">Type</Label>
+              <Select value={type} onValueChange={(value) => setType(value as InteractionType)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="communication">Communication</SelectItem>
+                  <SelectItem value="work_order">Work Order</SelectItem>
+                  <SelectItem value="parts">Parts</SelectItem>
+                  <SelectItem value="service">Service</SelectItem>
+                  <SelectItem value="follow_up">Follow-up</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="interaction-description">Description</Label>
+            <Input
+              id="interaction-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of the interaction"
+              required
             />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter interaction description" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="interaction-notes">Notes</Label>
+            <Textarea
+              id="interaction-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional notes or details"
+              className="min-h-[100px]"
             />
-
-            <FormField
-              control={form.control}
-              name="staffMemberId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Staff Member</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select staff member" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {teamMembers
-                        .filter((member) => member.status === "Active")
-                        .map((member) => (
-                          <SelectItem key={member.id} value={member.id}>
-                            {member.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {selectedType === "follow_up" && (
-              <FormField
-                control={form.control}
-                name="followUpDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Follow-up Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value || undefined}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="follow-up-required"
+                checked={followUpRequired}
+                onChange={(e) => setFollowUpRequired(e.target.checked)}
               />
-            )}
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Enter any additional notes"
-                      className="min-h-[100px]"
+              <Label htmlFor="follow-up-required">Follow-up required?</Label>
+            </div>
+            
+            {followUpRequired && (
+              <div className="pt-2">
+                <Label htmlFor="follow-up-date">Follow-up Date</Label>
+                <Popover open={followUpDatePickerOpen} onOpenChange={setFollowUpDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal mt-1",
+                        !followUpDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {followUpDate ? format(followUpDate, "PPP") : <span>Pick a follow-up date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={followUpDate}
+                      onSelect={(date) => {
+                        setFollowUpDate(date);
+                        setFollowUpDatePickerOpen(false);
+                      }}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Interaction"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                resetForm();
+                onOpenChange(false);
+              }}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading || !description}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Record Interaction
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

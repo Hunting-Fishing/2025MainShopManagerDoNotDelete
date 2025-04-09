@@ -39,7 +39,7 @@ export default function CustomerDetails() {
     if (id) {
       refreshCustomerData();
     }
-  }, [id]);
+  }, [id, refreshCustomerData]);
 
   if (loading) {
     return (
@@ -68,6 +68,8 @@ export default function CustomerDetails() {
         customer={customer}
         customerWorkOrders={customerWorkOrders}
         customerInteractions={customerInteractions}
+        customerCommunications={customerCommunications}
+        customerNotes={customerNotes}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         setAddInteractionOpen={setAddInteractionOpen}

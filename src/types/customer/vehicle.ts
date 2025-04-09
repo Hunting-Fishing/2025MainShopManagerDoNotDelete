@@ -2,7 +2,8 @@
 // Vehicle-related type definitions
 export interface CustomerVehicle {
   id?: string; // Making id optional for creation
-  year?: number;
+  customer_id?: string;
+  year?: number | string;
   make?: string;
   model?: string;
   vin?: string;
@@ -20,3 +21,19 @@ export interface CustomerVehicle {
   gvwr?: string;
   color?: string; // Adding color for backward compatibility with services
 }
+
+// Consistent conversion function to handle both string and number year values
+export const formatVehicleYear = (year: number | string | undefined): string => {
+  if (year === undefined || year === null) return '';
+  return year.toString();
+};
+
+// Format vehicle display name consistently
+export const getVehicleDisplayName = (vehicle: CustomerVehicle): string => {
+  const year = formatVehicleYear(vehicle.year);
+  const make = vehicle.make || '';
+  const model = vehicle.model || '';
+  const trim = vehicle.trim ? ` ${vehicle.trim}` : '';
+  
+  return `${year} ${make} ${model}${trim}`.trim();
+};

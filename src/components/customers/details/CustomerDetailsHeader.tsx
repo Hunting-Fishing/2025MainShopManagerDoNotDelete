@@ -56,7 +56,7 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
             variant="outline"
             asChild
           >
-            <Link to={`/work-orders/new?customer=${encodeURIComponent(customerName)}`}>
+            <Link to={`/work-orders/new?customer=${customer.id}&customerName=${encodeURIComponent(customerName)}`}>
               <ClipboardList className="mr-2 h-4 w-4" /> New Work Order
             </Link>
           </Button>

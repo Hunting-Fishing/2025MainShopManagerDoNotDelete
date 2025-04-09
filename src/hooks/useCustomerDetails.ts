@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { getCustomerById } from "@/services/customer";
 import { CustomerInteraction } from "@/types/interaction";
@@ -46,11 +46,37 @@ export const useCustomerDetails = (id?: string) => {
       if (workOrdersError) throw workOrdersError;
       setCustomerWorkOrders(workOrders || []);
 
-      // Custom interaction logic since the table might not exist yet
+      // Fetch customer interactions from Supabase
       try {
-        // Instead of querying a non-existent table, we'll generate mock data or handle differently
-        // For now, we'll just initialize with an empty array
-        setCustomerInteractions([]);
+        const { data: interactions, error: interactionsError } = await supabase
+          .from('customer_interactions')
+          .select('*')
+          .eq('customer_id', customerId)
+          .order('date', { ascending: false });
+
+        if (interactionsError) {
+          console.error("Error fetching interactions:", interactionsError);
+          setCustomerInteractions([]);
+        } else {
+          // Convert the database format to match our CustomerInteraction type
+          const formattedInteractions = interactions?.map(item => ({
+            id: item.id,
+            customerId: item.customer_id,
+            customerName: customer?.name || `${customer?.first_name} ${customer?.last_name}`,
+            date: item.date,
+            type: item.type as any,
+            description: item.description,
+            staffMemberId: item.staff_member_id,
+            staffMemberName: item.staff_member_name,
+            status: item.status as any,
+            notes: item.notes,
+            relatedWorkOrderId: item.related_work_order_id,
+            followUpDate: item.follow_up_date,
+            followUpCompleted: item.follow_up_completed
+          })) || [];
+          
+          setCustomerInteractions(formattedInteractions);
+        }
       } catch (error) {
         console.error("Error handling interactions:", error);
         setCustomerInteractions([]);
@@ -108,24 +134,24 @@ export const useCustomerDetails = (id?: string) => {
   };
 
   // Function to refresh customer data
-  const refreshCustomerData = async () => {
+  const refreshCustomerData = useCallback(async () => {
     if (id) {
       loadCustomerDetails(id);
     }
-  };
+  }, [id]);
 
-  const handleInteractionAdded = (interaction: CustomerInteraction) => {
+  const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
     setActiveTab("interactions");
-  };
+  }, []);
 
-  const handleCommunicationAdded = (communication: CustomerCommunication) => {
+  const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {
     setCustomerCommunications(prev => [communication, ...prev]);
-  };
+  }, []);
 
-  const handleNoteAdded = (note: CustomerNote) => {
+  const handleNoteAdded = useCallback((note: CustomerNote) => {
     setCustomerNotes(prev => [note, ...prev]);
-  };
+  }, []);
 
   return {
     customer,

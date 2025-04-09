@@ -14,11 +14,14 @@ import { CommunicationHistory } from "../communications/CommunicationHistory";
 import { CustomerVehiclesTab } from "../vehicles/CustomerVehiclesTab";
 import { getCustomerNotes } from "@/services/customers";
 import { Car } from "lucide-react";
+import { CustomerSummaryCard } from "../CustomerSummaryCard";
 
 interface CustomerDetailsTabsProps {
   customer: Customer & { name?: string, status?: string, lastServiceDate?: string };
   customerWorkOrders: any[];
   customerInteractions: CustomerInteraction[];
+  customerCommunications: CustomerCommunication[];
+  customerNotes: CustomerNote[];
   setAddInteractionOpen: (open: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -30,16 +33,15 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
   customer,
   customerWorkOrders,
   customerInteractions,
+  customerCommunications,
+  customerNotes,
   setAddInteractionOpen,
   activeTab,
   setActiveTab,
   onCommunicationAdded,
   onNoteAdded
 }) => {
-  // Initialize state with empty arrays
-  const [notes, setNotes] = useState<CustomerNote[]>([]);
-  const [communications, setCommunications] = useState<CustomerCommunication[]>([]);
-  const [isLoadingNotes, setIsLoadingNotes] = useState(true);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Check if there's a tab in the URL and use it
@@ -59,43 +61,12 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
     }
   }, [activeTab, setSearchParams]);
 
-  // Load notes when tab changes to notes or on initial load
-  useEffect(() => {
-    if (activeTab === 'notes' || activeTab === 'overview') {
-      loadNotes();
-    }
-  }, [activeTab, customer.id]);
-
-  const loadNotes = async () => {
-    try {
-      setIsLoadingNotes(true);
-      const loadedNotes = await getCustomerNotes(customer.id);
-      setNotes(loadedNotes);
-    } catch (error) {
-      console.error("Failed to load notes:", error);
-    } finally {
-      setIsLoadingNotes(false);
-    }
-  };
-
-  // Handle adding a new note
-  const handleNoteAdded = (newNote: CustomerNote) => {
-    setNotes([newNote, ...notes]);
-    onNoteAdded(newNote);
-  };
-
-  // Handle adding a new communication
-  const handleCommunicationAdded = (newCommunication: CustomerCommunication) => {
-    setCommunications([newCommunication, ...communications]);
-    onCommunicationAdded(newCommunication);
-  };
-
   // Calculate the number of vehicles for the badge
   const vehicleCount = customer.vehicles?.length || 0;
-
+  
   return (
     <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-      <TabsList>
+      <TabsList className="overflow-x-auto">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="vehicles">
           Vehicles
@@ -105,14 +76,14 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
         </TabsTrigger>
         <TabsTrigger value="notes">
           Notes
-          {notes.length > 0 && (
-            <Badge className="ml-2 bg-blue-100 text-blue-800">{notes.length}</Badge>
+          {customerNotes.length > 0 && (
+            <Badge className="ml-2 bg-blue-100 text-blue-800">{customerNotes.length}</Badge>
           )}
         </TabsTrigger>
         <TabsTrigger value="communications">
           Communications
-          {communications.length > 0 && (
-            <Badge className="ml-2 bg-green-100 text-green-800">{communications.length}</Badge>
+          {customerCommunications.length > 0 && (
+            <Badge className="ml-2 bg-green-100 text-green-800">{customerCommunications.length}</Badge>
           )}
         </TabsTrigger>
         <TabsTrigger value="interactions">
@@ -127,10 +98,11 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       <TabsContent value="overview" className="space-y-6 mt-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <CustomerInfoCard customer={customer} />
-          <EnhancedCustomerPreview 
+          <CustomerSummaryCard
             customer={customer}
-            workOrderCount={customerWorkOrders.length}
-            lastServiceDate={customer.lastServiceDate}
+            customerWorkOrders={customerWorkOrders}
+            customerInteractions={customerInteractions}
+            setActiveTab={setActiveTab}
           />
         </div>
       </TabsContent>
@@ -142,8 +114,8 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       <TabsContent value="notes" className="mt-6">
         <CustomerNotesTimeline
           customer={customer}
-          notes={notes}
-          onNoteAdded={handleNoteAdded}
+          notes={customerNotes}
+          onNoteAdded={onNoteAdded}
           isLoading={isLoadingNotes}
         />
       </TabsContent>
@@ -151,8 +123,8 @@ export const CustomerDetailsTabs: React.FC<CustomerDetailsTabsProps> = ({
       <TabsContent value="communications" className="mt-6">
         <CommunicationHistory
           customer={customer}
-          communications={communications}
-          onCommunicationAdded={handleCommunicationAdded}
+          communications={customerCommunications}
+          onCommunicationAdded={onCommunicationAdded}
         />
       </TabsContent>
       
