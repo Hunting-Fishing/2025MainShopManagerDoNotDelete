@@ -135,4 +135,3 @@ export const VEHICLE_BODY_STYLES: Record<string, VehicleStyleConfig> = {
     ]
   }
 };
-
