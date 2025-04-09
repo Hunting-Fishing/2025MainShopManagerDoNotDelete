@@ -75,7 +75,23 @@ export const getVehicleInteractions = async (vehicleId: string): Promise<Custome
     
     const { data, error } = await supabase
       .from("customer_interactions")
-      .select("*")
+      .select(`
+        id, 
+        customer_id, 
+        customer_name,
+        date, 
+        type, 
+        description,
+        staff_member_id,
+        staff_member_name,
+        status,
+        notes,
+        related_work_order_id,
+        follow_up_date,
+        follow_up_completed,
+        created_at,
+        updated_at
+      `)
       .eq("vehicle_id", vehicleId)
       .order("date", { ascending: false });
     
