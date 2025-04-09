@@ -10,6 +10,9 @@ export interface CustomerVehicle {
   license_plate?: string;
   trim?: string;
   last_service_date?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
   // Additional vehicle details
   transmission?: string;
   transmission_type?: string;
@@ -19,7 +22,7 @@ export interface CustomerVehicle {
   body_style?: string;
   country?: string;
   gvwr?: string;
-  color?: string; // Adding color for backward compatibility with services
+  color?: string;
 }
 
 // Consistent conversion function to handle both string and number year values

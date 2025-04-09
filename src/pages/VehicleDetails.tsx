@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, MessageSquare, Calendar, Wrench, List, Info, FileSpreadsheet, BarChart3, ClipboardList } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { CustomerVehicle } from "@/types/customer";
+import { CustomerVehicle } from "@/types/customer/vehicle";
 import { VehicleDetailHeader } from "@/components/customers/vehicles/VehicleDetailHeader";
 import { VehicleServiceHistory } from "@/components/customers/vehicles/VehicleServiceHistory";
 import { VehicleInteractions } from "@/components/customers/vehicles/VehicleInteractions";
@@ -16,6 +16,7 @@ import { VehicleInspections } from "@/components/customers/vehicles/VehicleInspe
 import { VehicleInvoices } from "@/components/customers/vehicles/VehicleInvoices";
 import { VehicleRecommendations } from "@/components/customers/vehicles/VehicleRecommendations";
 import { VehicleReports } from "@/components/customers/vehicles/VehicleReports";
+import { useToast } from "@/hooks/use-toast";
 
 export default function VehicleDetails() {
   const { customerId, vehicleId } = useParams<{ customerId: string, vehicleId: string }>();
@@ -23,13 +24,20 @@ export default function VehicleDetails() {
   const [vehicle, setVehicle] = useState<CustomerVehicle | null>(null);
   const [customerName, setCustomerName] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchVehicleDetails = async () => {
-      if (!vehicleId || !customerId) return;
+      if (!vehicleId || !customerId) {
+        setError("Missing vehicle or customer ID");
+        setLoading(false);
+        return;
+      }
       
       try {
+        console.log("Fetching vehicle details for:", vehicleId);
         // Fetch the vehicle details
         const { data: vehicleData, error: vehicleError } = await supabase
           .from('vehicles')
@@ -39,11 +47,25 @@ export default function VehicleDetails() {
 
         if (vehicleError) {
           console.error("Error fetching vehicle:", vehicleError);
+          setError("Could not load vehicle details. Please try again.");
+          toast({
+            title: "Error",
+            description: "Failed to load vehicle details",
+            variant: "destructive",
+          });
           return;
         }
 
         if (vehicleData) {
+          console.log("Vehicle data loaded:", vehicleData);
           setVehicle(vehicleData);
+        } else {
+          setError("Vehicle not found");
+          toast({
+            title: "Not Found",
+            description: "Vehicle details could not be found",
+            variant: "destructive",
+          });
         }
 
         // Fetch customer name
@@ -60,13 +82,19 @@ export default function VehicleDetails() {
         }
       } catch (error) {
         console.error("Error in fetchVehicleDetails:", error);
+        setError("An unexpected error occurred. Please try again.");
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred while loading vehicle details",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchVehicleDetails();
-  }, [vehicleId, customerId]);
+  }, [vehicleId, customerId, toast]);
 
   const handleBack = () => {
     navigate(`/customers/${customerId}`);
@@ -80,10 +108,10 @@ export default function VehicleDetails() {
     );
   }
 
-  if (!vehicle) {
+  if (error || !vehicle) {
     return (
       <div className="flex flex-col space-y-4 items-center justify-center h-40">
-        <div className="text-lg text-slate-500">Vehicle not found</div>
+        <div className="text-lg text-slate-500">{error || "Vehicle not found"}</div>
         <Button onClick={handleBack} variant="outline">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
         </Button>
@@ -110,7 +138,7 @@ export default function VehicleDetails() {
         </Button>
       </div>
 
-      <VehicleDetailHeader vehicle={vehicle} customerName={customerName} customerId={customerId} />
+      <VehicleDetailHeader vehicle={vehicle} customerName={customerName} customerId={customerId || ""} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
         <TabsList className="grid grid-cols-5 md:grid-cols-10 gap-2">
@@ -199,7 +227,7 @@ export default function VehicleDetails() {
                 )}
                 {vehicle.transmission_type && vehicle.transmission_type !== vehicle.transmission && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Transmission Type:</span>
+                    <span className="text-gray-500">Trans. Type:</span>
                     <span className="font-medium">{vehicle.transmission_type}</span>
                   </div>
                 )}
@@ -211,7 +239,7 @@ export default function VehicleDetails() {
                 )}
                 {vehicle.fuel_type && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Fuel Type:</span>
+                    <span className="text-gray-500">Fuel:</span>
                     <span className="font-medium">{vehicle.fuel_type}</span>
                   </div>
                 )}
@@ -223,13 +251,19 @@ export default function VehicleDetails() {
                 )}
                 {vehicle.body_style && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Body Style:</span>
+                    <span className="text-gray-500">Bodyclass:</span>
                     <span className="font-medium">{vehicle.body_style}</span>
+                  </div>
+                )}
+                {vehicle.trim && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Trim:</span>
+                    <span className="font-medium">{vehicle.trim}</span>
                   </div>
                 )}
                 {vehicle.country && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Country of Origin:</span>
+                    <span className="text-gray-500">Origin:</span>
                     <span className="font-medium">{vehicle.country}</span>
                   </div>
                 )}
@@ -273,31 +307,31 @@ export default function VehicleDetails() {
         </TabsContent>
 
         <TabsContent value="service" className="mt-6">
-          <VehicleServiceHistory vehicleId={vehicleId} />
+          <VehicleServiceHistory vehicleId={vehicleId || ""} />
         </TabsContent>
 
         <TabsContent value="interactions" className="mt-6">
-          <VehicleInteractions vehicleId={vehicleId} />
+          <VehicleInteractions vehicleId={vehicleId || ""} />
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">
-          <VehicleNotes vehicleId={vehicleId} customerId={customerId} />
+          <VehicleNotes vehicleId={vehicleId || ""} customerId={customerId || ""} />
         </TabsContent>
 
         <TabsContent value="communications" className="mt-6">
-          <VehicleCommunications vehicleId={vehicleId} />
+          <VehicleCommunications vehicleId={vehicleId || ""} />
         </TabsContent>
 
         <TabsContent value="workOrders" className="mt-6">
-          <VehicleWorkOrders vehicleId={vehicleId} />
+          <VehicleWorkOrders vehicleId={vehicleId || ""} />
         </TabsContent>
 
         <TabsContent value="inspections" className="mt-6">
-          <VehicleInspections vehicleId={vehicleId} />
+          <VehicleInspections vehicleId={vehicleId || ""} />
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-6">
-          <VehicleInvoices vehicleId={vehicleId} />
+          <VehicleInvoices vehicleId={vehicleId || ""} />
         </TabsContent>
 
         <TabsContent value="recommendations" className="mt-6">
@@ -305,7 +339,7 @@ export default function VehicleDetails() {
         </TabsContent>
 
         <TabsContent value="reports" className="mt-6">
-          <VehicleReports vehicleId={vehicleId} />
+          <VehicleReports vehicleId={vehicleId || ""} />
         </TabsContent>
       </Tabs>
     </div>

@@ -14,7 +14,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CustomerVehicle } from "@/types/customer";
+import { CustomerVehicle, formatVehicleYear } from "@/types/customer/vehicle";
 
 interface VehicleDetailHeaderProps {
   vehicle: CustomerVehicle;
@@ -35,6 +35,9 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
     </div>
   );
 
+  // Format year to handle both string and number types
+  const year = formatVehicleYear(vehicle.year);
+
   // Extract NHTSA information to display
   const hasNhtsaInfo = vehicle.transmission || vehicle.drive_type || 
                       vehicle.fuel_type || vehicle.engine || 
@@ -48,13 +51,13 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
           <div className="flex items-center gap-2">
             <Car className="h-5 w-5 text-slate-600" />
             <h2 className="text-xl font-semibold">
-              {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim && <span className="text-slate-600">{vehicle.trim}</span>}
+              {year} {vehicle.make || 'Unknown Make'} {vehicle.model || 'Unknown Model'} {vehicle.trim && <span className="text-slate-600">{vehicle.trim}</span>}
             </h2>
           </div>
           <div className="flex items-center gap-2 text-slate-600 text-sm">
             <User className="h-4 w-4" />
             <Link to={`/customers/${customerId}`} className="hover:underline">
-              {customerName}
+              {customerName || 'Unknown Customer'}
             </Link>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-600 text-sm">
@@ -98,7 +101,7 @@ export const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-2 mb-2 text-sm font-medium text-slate-700">
               <Info className="h-4 w-4" />
-              <span>Vehicle Specifications (NHTSA)</span>
+              <span>Vehicle Specifications</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1 text-sm">
               {vehicle.transmission && (
