@@ -3,9 +3,10 @@ import React from "react";
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
 import { InvoiceLeftColumn } from "@/components/invoices/layout/InvoiceLeftColumn";
 import { InvoiceRightColumn } from "@/components/invoices/layout/InvoiceRightColumn";
-import { Invoice, InvoiceTemplate, WorkOrder, StaffMember } from "@/types/invoice";
+import { Invoice, InvoiceTemplate, StaffMember } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 import { createInvoiceUpdater } from "@/types/invoice";
+import { WorkOrder } from "@/types/workOrder";
 
 interface InvoiceCreateLayoutProps {
   // Invoice data

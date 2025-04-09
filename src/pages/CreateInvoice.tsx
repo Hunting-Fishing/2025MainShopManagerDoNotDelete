@@ -6,10 +6,11 @@ import { useWorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
 import { supabase } from "@/lib/supabase"; 
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { WorkOrder } from "@/types/workOrder";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
-  const [workOrders, setWorkOrders] = useState([]);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [inventoryItems, setInventoryItems] = useState([]);
   const [staffMembers, setStaffMembers] = useState([]);
   
@@ -48,7 +49,29 @@ export default function InvoiceCreate() {
   });
 
   useEffect(() => {
-    if (workOrdersData) setWorkOrders(workOrdersData);
+    if (workOrdersData) {
+      // Format work orders to match the WorkOrder type
+      const formattedWorkOrders = workOrdersData.map((wo: any) => ({
+        id: wo.id,
+        customer: wo.customer || "",
+        description: wo.description || "No description", // Ensure description is never empty/undefined
+        status: wo.status || "",
+        date: wo.created_at || "",
+        dueDate: wo.due_date || "", // Ensure dueDate is never empty/undefined
+        priority: wo.priority || "medium",
+        technician: wo.technician || "Unassigned",
+        location: wo.location || "",
+        notes: wo.notes,
+        customer_id: wo.customer_id,
+        vehicle_id: wo.vehicle_id,
+        created_at: wo.created_at,
+        updated_at: wo.updated_at,
+        technician_id: wo.technician_id,
+        total_cost: wo.total_cost,
+        estimated_hours: wo.estimated_hours,
+      }));
+      setWorkOrders(formattedWorkOrders);
+    }
     if (inventoryData) setInventoryItems(inventoryData);
     if (staffData) setStaffMembers(staffData);
   }, [workOrdersData, inventoryData, staffData]);

@@ -1,5 +1,5 @@
 
-import { WorkOrder } from "@/types/invoice";
+import { WorkOrder } from "@/types/workOrder";
 import { useWorkOrderTimeEntries } from "@/hooks/invoice/useWorkOrderTimeEntries";
 import { createInvoiceUpdater } from "@/types/invoice";
 

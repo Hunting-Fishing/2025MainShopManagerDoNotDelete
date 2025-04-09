@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { WorkOrder } from "@/types/invoice";
+import { WorkOrder } from "@/types/workOrder";
 
 export function useInvoiceWorkOrder(initialWorkOrderId: string = "") {
   const [workOrderId, setWorkOrderId] = useState<string>(initialWorkOrderId);

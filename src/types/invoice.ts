@@ -49,53 +49,10 @@ export interface InvoiceTemplate {
   defaultItems: InvoiceItem[];
 }
 
-// Define a type for WorkOrder to prevent conflicts with other exports
-export interface WorkOrder {
-  id: string;
-  customer: string;
-  description?: string;
-  status: string;
-  date: string;
-  dueDate: string;
-  priority: string;
-  technician: string;
-  location: string;
-  notes?: string;
-  inventoryItems?: WorkOrderInventoryItem[];
-  timeEntries?: TimeEntry[];
-  totalBillableTime?: number;
-  // Add any missing fields
-  service_type?: string;
-  customer_id?: string;
-  vehicle_id?: string;
-  vehicle_make?: string;
-  vehicle_model?: string;
-  created_at?: string;
-  updated_at?: string;
-  technician_id?: string;
-  total_cost?: number;
-  estimated_hours?: number;
-}
-
-export interface WorkOrderInventoryItem {
-  id: string;
-  name: string;
-  sku?: string;
-  category?: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-export interface TimeEntry {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  startTime: string;
-  endTime: string;
-  duration: number;
-  notes?: string;
-  billable: boolean;
-}
+// Import WorkOrder from workOrder.ts instead of redefining it
+import { WorkOrder as WorkOrderType, WorkOrderInventoryItem, TimeEntry } from './workOrder';
+// Re-export the imported type
+export type WorkOrder = WorkOrderType;
 
 export interface StaffMember {
   id: number;

@@ -1,13 +1,21 @@
 
 // Export all types from the individual type files
 export * from './customer';
-export * from './invoice'; // Make sure this comes before conflicting types
+// Import and re-export WorkOrder from workOrder.ts to avoid conflicts
+import { WorkOrder, WorkOrderTemplate, TimeEntry, WorkOrderInventoryItem } from './workOrder';
+export { WorkOrder, WorkOrderTemplate, TimeEntry, WorkOrderInventoryItem };
+// Export other types from invoice.ts
+export type { 
+  Invoice, 
+  InvoiceItem, 
+  InvoiceTemplate, 
+  StaffMember, 
+  InvoiceUpdater 
+} from './invoice';
 // Re-export from inventory but exclude items that would conflict with invoice exports
 export type { InventoryItem } from './inventory';
 // Re-export from vehicle
 export * from './vehicle';
-// Re-export from workOrder but exclude items that would conflict with invoice exports
-export type { WorkOrderTemplate } from './workOrder'; 
 export * from './calendar';
 export * from './interaction';
 export * from './equipment';

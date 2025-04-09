@@ -43,17 +43,17 @@ export interface WorkOrderTemplate {
   inventoryItems?: WorkOrderInventoryItem[];
 }
 
-// Update the WorkOrder interface to ensure description is required
+// Define the WorkOrder interface - ensure all required fields are present
 export interface WorkOrder {
   id: string;
   customer: string;
-  description: string; // Make description required to avoid interface conflicts
+  description: string; // Required in both interfaces
   status: string;
-  date: string; // Make date required to avoid conflicts
-  dueDate?: string;
-  priority?: string;
+  date: string;
+  dueDate: string; // Make dueDate required to align with invoice.WorkOrder
+  priority: string;
   technician: string;
-  location?: string;
+  location: string;
   notes?: string;
   inventoryItems?: WorkOrderInventoryItem[];
   timeEntries?: TimeEntry[];
