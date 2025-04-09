@@ -1,20 +1,18 @@
+
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import ErrorPage from "./pages/error-page";
 import NotFound from "./pages/NotFound";
 import { VehicleDetailsPage } from "./components/customers/vehicles/VehicleDetailsPage";
-import { Dashboard } from "./pages/dashboard";
-import { Customers } from "./pages/customers";
-import { CustomerDetails } from "./pages/customer-details";
-import { CustomerCreate } from "./pages/customer-create";
-import { CustomerEdit } from "./pages/customer-edit";
-import { WorkOrders } from "./pages/work-orders";
-import { WorkOrderCreate } from "./pages/work-order-create";
-import { WorkOrderDetails } from "./pages/work-order-details";
-import { Invoices } from "./pages/invoices";
-import { InvoiceCreate } from "./pages/invoice-create";
-import { InvoiceDetails } from "./pages/invoice-details";
+import Dashboard from "./pages/Dashboard";
+import Customers from "./pages/Customers";
+import EditCustomer from "./pages/EditCustomer";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
+
+// Create a context provider component if it doesn't exist
+const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+};
 
 export const router = createBrowserRouter([
   {
@@ -36,19 +34,19 @@ export const router = createBrowserRouter([
       },
       {
         path: "customers/new",
-        element: <CustomerCreate />,
+        element: <>Create Customer</>,
       },
       {
         path: "customers/:customerId",
         element: (
-          <CustomerDataProvider>
-            <CustomerDetails />
-          </CustomerDataProvider>
+          <CustomerDataProviderWrapper>
+            <>Customer Details</>
+          </CustomerDataProviderWrapper>
         ),
       },
       {
         path: "customers/:customerId/edit",
-        element: <CustomerEdit />,
+        element: <EditCustomer />,
       },
       {
         path: "customers/:customerId/vehicles/:vehicleId",
@@ -56,27 +54,27 @@ export const router = createBrowserRouter([
       },
       {
         path: "work-orders",
-        element: <WorkOrders />,
+        element: <>Work Orders</>,
       },
       {
         path: "work-orders/new",
-        element: <WorkOrderCreate />,
+        element: <>Create Work Order</>,
       },
       {
         path: "work-orders/:workOrderId",
-        element: <WorkOrderDetails />,
+        element: <>Work Order Details</>,
       },
       {
         path: "invoices",
-        element: <Invoices />,
+        element: <>Invoices</>,
       },
       {
         path: "invoices/new",
-        element: <InvoiceCreate />,
+        element: <>Create Invoice</>,
       },
       {
         path: "invoices/:invoiceId",
-        element: <InvoiceDetails />,
+        element: <>Invoice Details</>,
       },
     ],
   },
