@@ -1,111 +1,78 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface AuthUser {
-  id: string;
-  email: string | null;
+// Define the return type for our hook
+interface UseAuthUserResult {
+  userId: string | null;
+  userEmail: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  error: string | null;
 }
 
-export function useAuthUser() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState<string>('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export function useAuthUser(): UseAuthUserResult {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkUser = async () => {
+    async function getUserSession() {
       try {
-        setLoading(true);
+        setIsLoading(true);
         
-        // Get current user
-        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+        // Get the current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // Convert Supabase user to our AuthUser type
-        if (supabaseUser) {
-          const authUser: AuthUser = {
-            id: supabaseUser.id,
-            email: supabaseUser.email
-          };
-          setUser(authUser);
-          setIsAuthenticated(true);
-          
-          // Get user profile if available
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('id', authUser.id)
-            .single();
-            
-          if (profile) {
-            setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim());
-          } else {
-            setUserName(authUser.email || 'User');
-          }
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-          setUserName('');
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          setError(sessionError.message);
+          return;
         }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        setUser(null);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkUser();
-    
-    // Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      
-      const currentUser = session?.user;
-      
-      if (currentUser) {
-        const authUser: AuthUser = {
-          id: currentUser.id,
-          email: currentUser.email
-        };
-        setUser(authUser);
-        setIsAuthenticated(true);
         
-        // Process async in next tick to avoid Supabase deadlocks
-        setTimeout(async () => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('id', currentUser.id)
-            .single();
-            
-          if (profile) {
-            setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim());
-          } else {
-            setUserName(currentUser.email || 'User');
+        if (session) {
+          setUserId(session.user.id);
+          setUserEmail(session.user.email);
+        } else {
+          // No session found
+          setUserId(null);
+          setUserEmail(null);
+        }
+        
+        // Set up auth state change listener
+        const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+          (event, newSession) => {
+            if (event === 'SIGNED_IN' && newSession) {
+              setUserId(newSession.user.id);
+              setUserEmail(newSession.user.email);
+            } else if (event === 'SIGNED_OUT') {
+              setUserId(null);
+              setUserEmail(null);
+            }
           }
-        }, 0);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-        setUserName('');
+        );
+        
+        // Clean up subscription on unmount
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (err) {
+        console.error('Error getting auth session:', err);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setIsLoading(false);
       }
-    });
-    
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    }
+
+    getUserSession();
   }, []);
 
   return {
-    user,
-    userId: user?.id || null,
-    loading,
-    isLoading: loading, // Add isLoading as an alias for loading for compatibility
-    userName,
-    isAuthenticated,
-    isAdmin: false, // Adding this for compatibility with code that expects it
+    userId,
+    userEmail,
+    isLoading,
+    isAuthenticated: !!userId,
+    error
   };
 }

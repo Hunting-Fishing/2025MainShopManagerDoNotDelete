@@ -1,6 +1,5 @@
 
 import { supabase } from '@/lib/supabase';
-import { Role } from '@/types/team';
 import { AppRole } from './roleMapping';
 
 /**

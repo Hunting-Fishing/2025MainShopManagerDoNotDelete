@@ -12,7 +12,6 @@ interface TeamMemberCardProps {
 
 export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
   const hasNoRole = member.role === "No Role Assigned";
-  const isCustomer = member.role === "Customer";
   const memberInitials = getInitials(member.name);
   
   return (
@@ -37,11 +36,6 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           {hasNoRole && (
             <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">
               No Role
-            </Badge>
-          )}
-          {isCustomer && (
-            <Badge variant="outline" className="border-blue-500 text-blue-700 bg-blue-50">
-              Customer
             </Badge>
           )}
           <Badge variant={member.status === "Active" ? "success" : "destructive"}>
@@ -95,7 +89,7 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           View Profile
         </Link>
 
-        {!hasNoRole && !isCustomer && (
+        {!hasNoRole && (
           <Link
             to={`/team/${member.id}?tab=permissions`}
             className="text-sm text-esm-blue-600 hover:text-esm-blue-800"

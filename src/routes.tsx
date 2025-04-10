@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import EditCustomer from "./pages/EditCustomer";
 import CreateCustomer from "./pages/CreateCustomer";
+import Team from "./pages/Team";
+import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 
 // Create a context provider component if it doesn't exist
@@ -52,6 +54,14 @@ export const router = createBrowserRouter([
       {
         path: "customers/:customerId/vehicles/:vehicleId",
         element: <VehicleDetailsPage />,
+      },
+      {
+        path: "team",
+        element: <Team />,
+      },
+      {
+        path: "team/create", 
+        element: <CreateTeamMember />,
       },
       {
         path: "work-orders",

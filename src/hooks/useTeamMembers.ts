@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { TeamMember } from "@/types/team";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useTeamMembers() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -73,7 +73,7 @@ export function useTeamMembers() {
                 userRoleData.roles !== null &&
                 'name' in userRoleData.roles) {
               // Map the database role value to a display name
-              const dbRoleName = userRoleData.roles.name as string; // Add type assertion here
+              const dbRoleName = userRoleData.roles.name as string;
               // Convert database role names to display names
               if (dbRoleName === 'owner') {
                 userRole = 'Owner';
@@ -142,20 +142,12 @@ export function useTeamMembers() {
           };
         });
 
-        // Log team member roles for debugging
-        console.log('Team members with roles:', mappedMembers.map(member => ({
-          name: member.name,
-          role: member.role
-        })));
-
         setTeamMembers(mappedMembers);
       } catch (err) {
         console.error('Error fetching team members:', err);
         setError('Failed to load team members. Please try again later.');
         
-        // If we can't fetch from Supabase, use data from teamData.ts as fallback
-        const { teamMembers: mockMembers } = await import('@/data/teamData');
-        setTeamMembers(mockMembers);
+        // We're not falling back to mock data anymore
       } finally {
         setIsLoading(false);
       }

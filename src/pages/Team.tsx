@@ -7,7 +7,7 @@ import { TeamFilters } from "@/components/team/TeamFilters";
 import { TeamViewToggle } from "@/components/team/TeamViewToggle";
 import { TeamMemberGrid } from "@/components/team/TeamMemberGrid";
 import { TeamMemberTable } from "@/components/team/TeamMemberTable";
-import { getInitials } from "@/data/teamData";
+import { getInitials } from "@/data/teamData"; // We'll keep this utility function
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { Button } from "@/components/ui/button";
@@ -27,10 +27,6 @@ export default function Team() {
   
   // Use our hook to get team members data from Supabase
   const { teamMembers, isLoading, error } = useTeamMembers();
-
-  // Log all roles for debugging
-  console.log("All available roles:", teamMembers.map(member => member.role));
-  console.log("Current user ID:", userId);
 
   // Get unique roles and departments for filters
   const roles = Array.from(new Set(teamMembers.map(member => member.role))).sort();
