@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { workOrders } from "@/data/workOrdersData";
+import { fetchWorkOrders, WorkOrder } from "@/data/workOrdersData";
 import { ChevronLeft, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,16 +9,16 @@ import { ServiceHistoryTable } from "@/components/service-history/ServiceHistory
 import { toast } from "@/hooks/use-toast";
 import { SendSmsButton } from "@/components/calls/SendSmsButton";
 import { VoiceCallButton } from "@/components/calls/VoiceCallButton";
-import { CallHistory } from "@/components/calls/CallHistory"; // Make sure this import is correct
+import { CallHistory } from "@/components/calls/CallHistory";
 
 export default function CustomerServiceHistory() {
   const { customer } = useParams<{ customer: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
-  const [customerWorkOrders, setCustomerWorkOrders] = useState([]);
+  const [customerWorkOrders, setCustomerWorkOrders] = useState<WorkOrder[]>([]);
 
   useEffect(() => {
-    const fetchCustomerWorkOrders = () => {
+    const fetchCustomerWorkOrders = async () => {
       setLoading(true);
       try {
         if (!customer) {
@@ -26,8 +26,11 @@ export default function CustomerServiceHistory() {
           return;
         }
 
+        // Fetch work orders
+        const allWorkOrders = await fetchWorkOrders();
+        
         // Filter work orders for this customer
-        const filteredOrders = workOrders.filter(
+        const filteredOrders = allWorkOrders.filter(
           (order) => order.customer.toLowerCase() === customer.toLowerCase()
         );
         

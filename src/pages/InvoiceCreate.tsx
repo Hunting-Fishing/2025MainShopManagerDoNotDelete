@@ -3,10 +3,40 @@ import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
 import { useWorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
-import { workOrders, inventoryItems, staffMembers } from "@/data/invoiceCreateMockData";
+import { fetchWorkOrders, fetchInventoryItems, fetchStaffMembers } from "@/data/invoiceCreateData";
+import { useState, useEffect } from "react";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
+  const [workOrders, setWorkOrders] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch real data
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [workOrdersData, inventoryData, staffData] = await Promise.all([
+          fetchWorkOrders(),
+          fetchInventoryItems(),
+          fetchStaffMembers()
+        ]);
+        
+        setWorkOrders(workOrdersData);
+        setInventoryItems(inventoryData);
+        setStaffMembers(staffData);
+      } catch (error) {
+        console.error("Error loading invoice data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
+
   const {
     invoice,
     subtotal,
@@ -41,6 +71,14 @@ export default function InvoiceCreate() {
     setInvoice,
     handleSelectWorkOrder,
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-slate-500">Loading invoice data...</div>
+      </div>
+    );
+  }
 
   return (
     <InvoiceCreateLayout

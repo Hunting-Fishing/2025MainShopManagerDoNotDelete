@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalendarFilters } from "@/components/calendar/CalendarFilters";
-import { workOrders } from "@/data/workOrdersData";
+import { fetchWorkOrders, WorkOrder } from "@/data/workOrdersData";
 import { CalendarEvent } from "@/types/calendar";
 import { CreateShiftChatButton } from "@/components/calendar/CreateShiftChatButton";
 import { useNavigate } from "react-router-dom";
@@ -15,20 +15,41 @@ export default function Calendar() {
   const [view, setView] = useState<"month" | "week" | "day">("month");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Create calendar events from work orders
-  const calendarEvents = workOrders.map(order => ({
-    id: order.id,
-    title: order.description,
-    start: new Date(order.date),
-    end: new Date(order.dueDate),
-    customer: order.customer,
-    status: order.status,
-    priority: order.priority,
-    technician: order.technician,
-    location: order.location,
-    type: 'work-order' as const
-  }));
+  // Fetch work orders
+  useEffect(() => {
+    const getWorkOrders = async () => {
+      try {
+        const data = await fetchWorkOrders();
+        setWorkOrders(data);
+        
+        // Create calendar events from work orders
+        const events = data.map(order => ({
+          id: order.id,
+          title: order.description,
+          start: new Date(order.date),
+          end: new Date(order.dueDate || order.date),
+          customer: order.customer,
+          status: order.status,
+          priority: order.priority,
+          technician: order.technician,
+          location: order.location,
+          type: 'work-order' as const
+        }));
+        
+        setCalendarEvents(events);
+      } catch (error) {
+        console.error("Error fetching work orders for calendar:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    getWorkOrders();
+  }, []);
 
   // Filter events based on technician and status
   const filteredEvents = calendarEvents.filter(event => {
@@ -51,6 +72,14 @@ export default function Calendar() {
       } 
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-slate-500">Loading calendar events...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

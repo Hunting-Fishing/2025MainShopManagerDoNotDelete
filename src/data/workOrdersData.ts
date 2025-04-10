@@ -68,9 +68,9 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
       .from('work_orders')
       .select(`
         *,
-        customers:customer_id (first_name, last_name),
-        profiles:technician_id (first_name, last_name),
-        work_order_time_entries (*)
+        customers(first_name, last_name),
+        profiles(first_name, last_name),
+        work_order_time_entries(*)
       `)
       .order('created_at', { ascending: false });
       
@@ -79,24 +79,35 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
       return [];
     }
     
-    return data.map(wo => ({
-      id: wo.id,
-      date: wo.created_at,
-      customer: `${wo.customers?.first_name || ''} ${wo.customers?.last_name || ''}`.trim(),
-      description: wo.description || '',
-      status: wo.status || 'pending',
-      priority: determinePriority(wo),
-      technician: `${wo.profiles?.first_name || ''} ${wo.profiles?.last_name || ''}`.trim() || 'Unassigned',
-      location: '', // Not available in schema yet
-      dueDate: wo.end_time || '',
-      notes: '',
-      totalBillableTime: wo.work_order_time_entries?.reduce((sum, entry) => 
-        sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
-      createdBy: 'System',
-      createdAt: wo.created_at,
-      lastUpdatedBy: '',
-      lastUpdatedAt: wo.updated_at
-    }));
+    return data.map(wo => {
+      const customers = wo.customers as any || {};
+      const profiles = wo.profiles as any || {};
+      const statusValue = wo.status || 'pending';
+      // Ensure status is one of the allowed values
+      let typedStatus: "pending" | "in-progress" | "completed" | "cancelled" = "pending";
+      if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
+        typedStatus = statusValue;
+      }
+      
+      return {
+        id: wo.id,
+        date: wo.created_at,
+        customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
+        description: wo.description || '',
+        status: typedStatus,
+        priority: determinePriority(wo),
+        technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
+        location: '', // Not available in schema yet
+        dueDate: wo.end_time || '',
+        notes: '',
+        totalBillableTime: wo.work_order_time_entries?.reduce((sum, entry) => 
+          sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
+        createdBy: 'System',
+        createdAt: wo.created_at,
+        lastUpdatedBy: '',
+        lastUpdatedAt: wo.updated_at
+      };
+    });
   } catch (err) {
     console.error("Error in fetchWorkOrders:", err);
     return [];
@@ -122,7 +133,7 @@ export const createWorkOrder = async (workOrder: Omit<WorkOrder, "id" | "date">)
       .from('work_orders')
       .insert({
         description: workOrder.description,
-        status: workOrder.status || 'pending',
+        status: workOrder.status,
         customer_id: typeof workOrder.customer === 'string' ? null : workOrder.customer,
         technician_id: typeof workOrder.technician === 'string' ? null : workOrder.technician,
         // Map other fields as needed
@@ -140,7 +151,7 @@ export const createWorkOrder = async (workOrder: Omit<WorkOrder, "id" | "date">)
       date: data.created_at,
       customer: workOrder.customer,
       description: data.description,
-      status: data.status,
+      status: data.status as "pending" | "in-progress" | "completed" | "cancelled",
       priority: workOrder.priority,
       technician: workOrder.technician,
       location: workOrder.location,
@@ -163,9 +174,9 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
       .from('work_orders')
       .select(`
         *,
-        customers:customer_id (first_name, last_name),
-        profiles:technician_id (first_name, last_name),
-        work_order_time_entries (*)
+        customers(first_name, last_name),
+        profiles(first_name, last_name),
+        work_order_time_entries(*)
       `)
       .eq('id', id)
       .single();
@@ -177,14 +188,23 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
     
     if (!data) return null;
     
+    const customers = data.customers as any || {};
+    const profiles = data.profiles as any || {};
+    const statusValue = data.status || 'pending';
+    // Ensure status is one of the allowed values
+    let typedStatus: "pending" | "in-progress" | "completed" | "cancelled" = "pending";
+    if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
+      typedStatus = statusValue;
+    }
+    
     return {
       id: data.id,
       date: data.created_at,
-      customer: `${data.customers?.first_name || ''} ${data.customers?.last_name || ''}`.trim(),
+      customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
       description: data.description || '',
-      status: data.status || 'pending',
+      status: typedStatus,
       priority: determinePriority(data),
-      technician: `${data.profiles?.first_name || ''} ${data.profiles?.last_name || ''}`.trim() || 'Unassigned',
+      technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
       location: '', // Not available in schema yet
       dueDate: data.end_time || '',
       notes: '',

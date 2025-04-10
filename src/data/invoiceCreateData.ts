@@ -2,6 +2,7 @@
 import { WorkOrder, StaffMember } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 import { supabase } from "@/lib/supabase";
+import { TimeEntry } from "@/types/workOrder";
 
 // Format time helper
 export const formatTimeInHoursAndMinutes = (minutes: number): string => {
@@ -31,15 +32,15 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
         created_at,
         technician_id,
         customer_id,
-        customers:customer_id (
+        customers(
           first_name,
           last_name
         ),
-        profiles:technician_id (
+        profiles(
           first_name,
           last_name
         ),
-        work_order_time_entries (
+        work_order_time_entries(
           id,
           employee_id,
           employee_name,
@@ -57,20 +58,40 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
       return [];
     }
     
-    return data.map(wo => ({
-      id: wo.id,
-      customer: `${wo.customers?.first_name || ''} ${wo.customers?.last_name || ''}`.trim(),
-      description: wo.description || '',
-      status: wo.status || 'pending',
-      date: wo.created_at,
-      dueDate: wo.end_time || '',
-      priority: 'medium', // Default priority
-      technician: `${wo.profiles?.first_name || ''} ${wo.profiles?.last_name || ''}`.trim() || 'Unassigned',
-      location: '', // Location is not in the database schema yet
-      timeEntries: wo.work_order_time_entries || [],
-      totalBillableTime: wo.work_order_time_entries?.reduce((sum, entry) => 
-        sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0
-    }));
+    return data.map(wo => {
+      // Map time entries to match TimeEntry interface
+      const timeEntries: TimeEntry[] = (wo.work_order_time_entries || []).map(entry => ({
+        id: entry.id,
+        employeeId: entry.employee_id,
+        employeeName: entry.employee_name,
+        startTime: entry.start_time,
+        endTime: entry.end_time || null,
+        duration: entry.duration || 0,
+        notes: entry.notes || '',
+        billable: entry.billable
+      }));
+      
+      // Build customer and technician names safely
+      const customers = wo.customers as any || {};
+      const profiles = wo.profiles as any || {};
+      const customerName = `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim();
+      const technicianName = `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim();
+      
+      return {
+        id: wo.id,
+        customer: customerName,
+        description: wo.description || '',
+        status: (wo.status || 'pending') as "pending" | "in-progress" | "completed" | "cancelled",
+        date: wo.created_at,
+        dueDate: wo.end_time || '',
+        priority: 'medium' as "low" | "medium" | "high", // Default priority
+        technician: technicianName || 'Unassigned',
+        location: '', // Location is not in the database schema yet
+        timeEntries,
+        totalBillableTime: timeEntries.reduce((sum, entry) => 
+          sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0
+      };
+    });
   } catch (err) {
     console.error("Error in fetchWorkOrders:", err);
     return [];
@@ -82,7 +103,7 @@ export const fetchInventoryItems = async (): Promise<InventoryItem[]> => {
   try {
     const { data, error } = await supabase
       .from('inventory_items')
-      .select('id, name, sku, category, unit_price as price, description');
+      .select('id, name, sku, category, unit_price, description');
       
     if (error) {
       console.error("Error fetching inventory items:", error);
@@ -94,7 +115,7 @@ export const fetchInventoryItems = async (): Promise<InventoryItem[]> => {
       name: item.name,
       sku: item.sku,
       category: item.category,
-      price: item.price,
+      price: item.unit_price,
       description: item.description || '',
     }));
   } catch (err) {
@@ -126,8 +147,8 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
       return [];
     }
     
-    return data.map((profile, index) => ({
-      id: profile.id,
+    return data.map((profile) => ({
+      id: parseInt(profile.id) || profile.id, // Convert to number if possible, otherwise keep as string
       name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
       role: profile.job_title || 'Technician'
     }));

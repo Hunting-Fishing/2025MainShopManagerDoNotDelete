@@ -1,6 +1,7 @@
 
 import { Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { getUniqueTechnicians } from "@/data/workOrdersData";
 import { statusMap } from "@/data/workOrdersData";
 import {
@@ -32,8 +33,25 @@ export function CalendarFilters({
   statusFilter,
   setStatusFilter,
 }: CalendarFiltersProps) {
-  // Get technicians from data
-  const technicians = getUniqueTechnicians();
+  // State to hold technicians once fetched
+  const [technicians, setTechnicians] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch technicians on component mount
+  useEffect(() => {
+    const loadTechnicians = async () => {
+      try {
+        const techData = await getUniqueTechnicians();
+        setTechnicians(techData);
+      } catch (error) {
+        console.error("Error loading technicians:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadTechnicians();
+  }, []);
 
   // Reset all filters
   const resetFilters = () => {
