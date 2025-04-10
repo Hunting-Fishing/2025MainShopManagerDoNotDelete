@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { findRoleByName, assignRoleToUser, detectRoleFromJobTitle } from '@/utils/roleUtils';
+import { findRoleByName, assignRoleToUser } from '@/utils/roleManagement';
 
 /**
  * Hook for handling role assignments
@@ -9,61 +9,58 @@ export function useRoleAssignment() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detectedRole, setDetectedRole] = useState<string | null>(null);
-
+  
+  /**
+   * Assigns a role to a user
+   */
   const assignRole = useCallback(async (
-    memberId: string,
-    roleName: string | null,
+    userId: string,
+    roleName: string,
     jobTitle?: string
-  ): Promise<{success: boolean, message: string}> => {
-    if (!roleName && !jobTitle) {
-      return { success: true, message: "" };
-    }
-
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // If no explicit role was provided, try to detect it from job title
-      const roleToAssign = roleName || (jobTitle ? detectRoleFromJobTitle(jobTitle) : null);
-      
-      if (!roleToAssign) {
-        return { success: true, message: "" };
-      }
-
-      // Store the auto-detected role if it was used
-      if (!roleName && jobTitle && roleToAssign) {
-        setDetectedRole(roleToAssign);
+      if (!roleName) {
+        return {
+          success: true,
+          message: "No role changes requested"
+        };
       }
       
-      // Find the role ID based on the role name
-      const { roleId, error: findRoleError } = await findRoleByName(roleToAssign);
+      console.log(`Assigning role ${roleName} to user ${userId}`);
+      setDetectedRole(roleName);
+      
+      // Use the utility to find the role ID from the role name
+      const { roleId, error: findRoleError } = await findRoleByName(roleName);
       
       if (findRoleError || !roleId) {
-        console.error("Error finding role:", findRoleError);
-        setError(findRoleError || "Could not find the requested role.");
-        return { success: false, message: "Could not find the requested role." };
+        throw new Error(findRoleError || "Role not found");
       }
       
-      // Attempt to assign the role to the user
-      const assignResult = await assignRoleToUser(memberId, roleId);
+      // Assign the role to the user
+      const result = await assignRoleToUser(userId, roleId);
       
-      // Handle duplicate role assignments gracefully
-      if (assignResult.message.includes("already assigned")) {
-        return { success: true, message: "User already has this role." };
+      if (!result.success) {
+        throw new Error(result.message);
       }
       
-      return { 
-        success: assignResult.success, 
-        message: assignResult.message
+      return {
+        success: true,
+        message: result.message || "Role assigned successfully"
       };
     } catch (err) {
       console.error('Error assigning role:', err);
       
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to assign role';
       setError(errorMessage);
       
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: errorMessage
       };
     } finally {
@@ -73,9 +70,9 @@ export function useRoleAssignment() {
   
   return {
     assignRole,
+    detectedRole,
     isLoading,
     error,
-    detectedRole,
     resetState: useCallback(() => {
       setError(null);
       setDetectedRole(null);
