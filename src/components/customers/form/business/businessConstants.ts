@@ -1,32 +1,16 @@
 
-// Business Type options
-export const businessTypes = [
-  { value: "sole_proprietor", label: "Sole Proprietor" },
-  { value: "llc", label: "LLC" },
-  { value: "corporation", label: "Corporation" },
-  { value: "partnership", label: "Partnership" },
-  { value: "non_profit", label: "Non-Profit" },
-  { value: "other", label: "Other" }
-];
+import { useBusinessConstants } from "@/hooks/useBusinessConstants";
 
-// Business Industry options
-export const businessIndustries = [
-  { value: "auto_repair", label: "Auto Repair" },
-  { value: "transportation", label: "Transportation" },
-  { value: "delivery", label: "Delivery" },
-  { value: "construction", label: "Construction" },
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "retail", label: "Retail" },
-  { value: "other", label: "Other" }
-];
+// This file now re-exports the hooks that fetch data from the database
+export { useBusinessConstants };
 
-// Payment method options
-export const paymentMethods = [
-  { value: "credit_card", label: "Credit Card" },
-  { value: "ach", label: "ACH/Bank Transfer" },
-  { value: "paypal", label: "PayPal" },
-  { value: "net30", label: "Net 30" },
-  { value: "net60", label: "Net 60" },
-  { value: "check", label: "Check" },
-  { value: "cash", label: "Cash" }
-];
+// Export types for backwards compatibility
+export type BusinessConstant = {
+  value: string;
+  label: string;
+};
+
+// For backwards compatibility with any code that imports directly from this file
+export const businessTypes: BusinessConstant[] = [];
+export const businessIndustries: BusinessConstant[] = [];
+export const paymentMethods: BusinessConstant[] = [];

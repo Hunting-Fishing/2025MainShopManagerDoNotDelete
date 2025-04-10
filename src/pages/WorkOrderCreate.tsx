@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
 import { WorkOrderTemplateSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
-import { workOrderTemplates, updateTemplateUsage } from "@/data/workOrderTemplatesData";
 import { WorkOrderTemplate } from "@/types/workOrder";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 
 export default function WorkOrderCreate() {
+  const { templates: workOrderTemplates, updateTemplateUsage } = useWorkOrderTemplates();
   const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplate | null>(null);
   const [searchParams] = useSearchParams();
   const [technicians, setTechnicians] = useState<string[]>([

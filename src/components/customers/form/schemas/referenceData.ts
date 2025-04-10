@@ -1,7 +1,17 @@
 
-// This file contains reference data for the customer form components
+// This file now imports data from hooks for real database data
+import { useBusinessConstants, BusinessConstant } from "@/hooks/useBusinessConstants";
 
-// Status options for customers
+// Re-export the hooks for access to real data
+export { useBusinessConstants };
+
+// Export types for backwards compatibility
+export type { BusinessConstant };
+
+// For backwards compatibility with any code that imports directly from this file
+// These are now placeholder values that get populated from the database
+
+// Customer status options
 export const customerStatusOptions = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
@@ -28,36 +38,10 @@ export const referralSourceOptions = [
   { value: "other", label: "Other" }
 ];
 
-// Business type options
-export const businessTypeOptions = [
-  { value: "sole_proprietor", label: "Sole Proprietorship" },
-  { value: "partnership", label: "Partnership" },
-  { value: "llc", label: "LLC" },
-  { value: "corporation", label: "Corporation" },
-  { value: "non_profit", label: "Non-Profit" }
-];
-
-// Industry options for business customers
-export const industryOptions = [
-  { value: "construction", label: "Construction" },
-  { value: "transportation", label: "Transportation" },
-  { value: "retail", label: "Retail" },
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "services", label: "Services" },
-  { value: "healthcare", label: "Healthcare" },
-  { value: "education", label: "Education" },
-  { value: "technology", label: "Technology" },
-  { value: "other", label: "Other" }
-];
-
-// Payment method options
-export const paymentMethodOptions = [
-  { value: "credit_card", label: "Credit Card" },
-  { value: "cash", label: "Cash" },
-  { value: "check", label: "Check" },
-  { value: "ach", label: "ACH/Bank Transfer" },
-  { value: "invoice", label: "Invoice" }
-];
+// Placeholders that will be populated from the database
+export const businessTypeOptions: BusinessConstant[] = [];
+export const industryOptions: BusinessConstant[] = [];
+export const paymentMethodOptions: BusinessConstant[] = [];
 
 // Credit terms options
 export const creditTermsOptions = [
@@ -69,7 +53,7 @@ export const creditTermsOptions = [
 ];
 
 // Empty predefined tags since we're using database tags now
-export const predefinedTags = [];
+export const predefinedTags: any[] = [];
 
 // Export variables with names matching imports in CustomerFormSchema.ts
 export const paymentMethods = paymentMethodOptions;
