@@ -23,13 +23,14 @@ export default function CreateTeamMember() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      // First, create or update the profile
+      // First, create the profile - no need to specify ID, it will be generated
+      // Using .upsert() to handle both insert and update cases
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
+          email: data.email,
           first_name: firstName,
           last_name: lastName,
-          email: data.email,
           phone: data.phone || null,
           job_title: data.jobTitle,
           department: data.department
