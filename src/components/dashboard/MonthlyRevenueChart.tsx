@@ -2,7 +2,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { getMonthlyRevenue } from "@/services/workOrderService";
+import { getMonthlyRevenue } from "@/services/dashboardService";
 
 export const MonthlyRevenueChart = () => {
   const [data, setData] = useState([]);

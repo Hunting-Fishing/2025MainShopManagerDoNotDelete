@@ -2,7 +2,7 @@
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { getServiceTypeDistribution } from "@/services/workOrderService";
+import { getServiceTypeDistribution } from "@/services/dashboardService";
 
 export const ServiceTypeDistributionChart = () => {
   const [data, setData] = useState([]);

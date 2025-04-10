@@ -10,12 +10,22 @@ import { TechnicianPerformanceChart } from "@/components/dashboard/TechnicianPer
 import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceTypeDistributionChart";
 import { EquipmentRecommendations } from "@/components/dashboard/EquipmentRecommendations";
 import { useEffect } from "react";
+import { checkSupabaseConnection } from "@/lib/supabase";
 
 export default function Dashboard() {
-  // Add error handling for dashboard components
+  // Verify Supabase connection on dashboard load
   useEffect(() => {
     console.log("Dashboard component mounted");
-    // Clear any previous error state if needed
+    const verifyConnection = async () => {
+      try {
+        const isConnected = await checkSupabaseConnection();
+        console.log("Supabase connection status:", isConnected ? "Connected" : "Failed");
+      } catch (error) {
+        console.error("Error checking Supabase connection:", error);
+      }
+    };
+    
+    verifyConnection();
   }, []);
 
   return (

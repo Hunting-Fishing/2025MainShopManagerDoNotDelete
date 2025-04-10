@@ -2,7 +2,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { getWorkOrderStatusCounts } from "@/services/workOrderService";
+import { getWorkOrderStatusCounts } from "@/services/dashboardService";
 
 export const WorkOrdersByStatusChart = () => {
   const [data, setData] = useState([
@@ -18,7 +18,7 @@ export const WorkOrdersByStatusChart = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Try to get actual data from the service
+        // Get actual data from the service
         const statusCounts = await getWorkOrderStatusCounts();
         
         if (statusCounts && Object.keys(statusCounts).length > 0) {
@@ -31,10 +31,10 @@ export const WorkOrdersByStatusChart = () => {
           ];
           setData(chartData);
         }
+        setError(null);
       } catch (err) {
         console.error("Error fetching work order status data:", err);
         setError("Failed to load chart data");
-        // Fallback to default mock data for development
       } finally {
         setLoading(false);
       }

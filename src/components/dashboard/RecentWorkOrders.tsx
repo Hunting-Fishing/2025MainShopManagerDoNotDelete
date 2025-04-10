@@ -1,8 +1,6 @@
-
 import { Link } from "react-router-dom";
-import { WorkOrderStatus } from "@/data/workOrdersData";
 import { useState, useEffect } from "react";
-import { getRecentWorkOrders } from "@/services/workOrderService";
+import { getRecentWorkOrders } from "@/services/dashboardService";
 
 interface RecentWorkOrder {
   id: string;

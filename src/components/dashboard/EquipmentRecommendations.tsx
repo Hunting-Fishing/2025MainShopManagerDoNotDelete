@@ -1,221 +1,163 @@
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, AlertTriangle, Settings, ShieldCheck, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { Equipment, MaintenanceRecord, MaintenanceSchedule } from "@/types/equipment";
-import { EquipmentRecommendation, getEquipmentRecommendations, getRecommendationTypeColor } from "@/utils/equipment/recommendations";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from "react";
+import { getEquipmentRecommendations } from "@/services/dashboardService";
 
-export function EquipmentRecommendations() {
-  const [loading, setLoading] = useState(true);
+interface EquipmentRecommendation {
+  id: string;
+  name: string;
+  model: string;
+  manufacturer: string;
+  maintenanceDate: string;
+  maintenanceType: string;
+  status: string;
+  priority: 'High' | 'Medium' | 'Low';
+}
+
+export const EquipmentRecommendations = () => {
   const [recommendations, setRecommendations] = useState<EquipmentRecommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEquipmentData = async () => {
-      setLoading(true);
+    const fetchRecommendations = async () => {
       try {
-        const { data, error } = await supabase
-          .from('equipment')
-          .select('*');
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (!data || data.length === 0) {
-          setRecommendations([]);
-          return;
-        }
-        
-        // Transform data to match Equipment type
-        const transformedData: Equipment[] = data.map(item => {
-          // Validate status
-          const validStatus = ["operational", "maintenance-required", "out-of-service", "decommissioned"].includes(item.status) 
-            ? item.status as Equipment["status"] 
-            : "operational";
-          
-          // Validate warranty status
-          const validWarrantyStatus = ["active", "expired", "not-applicable"].includes(item.warranty_status) 
-            ? item.warranty_status as Equipment["warrantyStatus"] 
-            : "not-applicable";
-          
-          // Validate maintenance frequency
-          const validMaintenanceFrequency = ["monthly", "quarterly", "bi-annually", "annually", "as-needed"].includes(item.maintenance_frequency) 
-            ? item.maintenance_frequency as Equipment["maintenanceFrequency"] 
-            : "as-needed";
-          
-          // Convert work_order_history to string array
-          const workOrderHistory = Array.isArray(item.work_order_history) 
-            ? item.work_order_history
-                .filter((id): id is string | number => id !== null && (typeof id === 'string' || typeof id === 'number'))
-                .map(String)
-            : [];
-          
-          // Convert maintenance_history to MaintenanceRecord array with proper type check
-          const maintenanceHistory: MaintenanceRecord[] = Array.isArray(item.maintenance_history)
-            ? item.maintenance_history
-                .filter((record): record is Record<string, any> => 
-                  typeof record === 'object' && 
-                  record !== null &&
-                  'id' in record &&
-                  'date' in record &&
-                  'technician' in record &&
-                  'description' in record
-                )
-                .map(record => ({
-                  id: String(record.id),
-                  date: String(record.date),
-                  technician: String(record.technician),
-                  description: String(record.description),
-                  cost: typeof record.cost === 'number' ? record.cost : undefined,
-                  notes: typeof record.notes === 'string' ? record.notes : undefined,
-                  workOrderId: typeof record.workOrderId === 'string' ? record.workOrderId : undefined
-                }))
-            : [];
-          
-          // Convert maintenance_schedules to MaintenanceSchedule array with proper type check
-          const maintenanceSchedules: MaintenanceSchedule[] = Array.isArray(item.maintenance_schedules) 
-            ? item.maintenance_schedules
-                .filter((schedule): schedule is Record<string, any> =>
-                  typeof schedule === 'object' &&
-                  schedule !== null &&
-                  'frequencyType' in schedule &&
-                  'nextDate' in schedule &&
-                  'description' in schedule &&
-                  'estimatedDuration' in schedule &&
-                  'isRecurring' in schedule &&
-                  'notificationsEnabled' in schedule &&
-                  'reminderDays' in schedule
-                )
-                .map(schedule => ({
-                  frequencyType: schedule.frequencyType as MaintenanceSchedule['frequencyType'],
-                  nextDate: String(schedule.nextDate),
-                  description: String(schedule.description),
-                  estimatedDuration: Number(schedule.estimatedDuration),
-                  technician: typeof schedule.technician === 'string' ? schedule.technician : undefined,
-                  isRecurring: Boolean(schedule.isRecurring),
-                  notificationsEnabled: Boolean(schedule.notificationsEnabled),
-                  reminderDays: Number(schedule.reminderDays)
-                }))
-            : [];
-          
-          return {
-            id: item.id,
-            name: item.name,
-            model: item.model,
-            serialNumber: item.serial_number,
-            manufacturer: item.manufacturer,
-            category: item.category,
-            purchaseDate: item.purchase_date,
-            installDate: item.install_date,
-            customer: item.customer,
-            location: item.location,
-            status: validStatus,
-            nextMaintenanceDate: item.next_maintenance_date,
-            maintenanceFrequency: validMaintenanceFrequency,
-            lastMaintenanceDate: item.last_maintenance_date,
-            warrantyExpiryDate: item.warranty_expiry_date,
-            warrantyStatus: validWarrantyStatus,
-            notes: item.notes,
-            workOrderHistory: workOrderHistory,
-            maintenanceHistory: maintenanceHistory,
-            maintenanceSchedules: maintenanceSchedules
-          };
-        });
-        
-        const equipmentRecommendations = getEquipmentRecommendations(transformedData);
-        setRecommendations(equipmentRecommendations);
-        
-      } catch (error: any) {
-        console.error("Error fetching equipment data:", error);
+        setLoading(true);
+        const data = await getEquipmentRecommendations();
+        setRecommendations(data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching equipment recommendations:", err);
+        setError("Failed to load equipment recommendations");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEquipmentData();
+    fetchRecommendations();
   }, []);
 
-  const getRecommendationIcon = (type: string) => {
-    switch (type) {
-      case 'urgent':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'soon':
-        return <Settings className="h-4 w-4 text-amber-500" />;
-      case 'normal':
-        return <ShieldCheck className="h-4 w-4 text-blue-500" />;
-      case 'good':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default:
-        return <AlertTriangle className="h-4 w-4" />;
-    }
-  };
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Equipment Maintenance Recommendations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-24 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-esm-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Equipment Maintenance Recommendations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-24 flex items-center justify-center">
+            <p className="text-red-500">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If no recommendations
+  if (recommendations.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Equipment Maintenance Recommendations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-24 flex items-center justify-center">
+            <p className="text-muted-foreground">No maintenance recommendations at this time</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Equipment Recommendations</CardTitle>
+      <CardHeader>
+        <CardTitle>Equipment Maintenance Recommendations</CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-          </div>
-        ) : recommendations.length === 0 ? (
-          <div className="text-center py-6">
-            <ShieldCheck className="h-8 w-8 text-green-500 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">No recommendations at this time</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {recommendations.slice(0, 5).map((recommendation) => (
-              <div 
-                key={recommendation.id} 
-                className={`p-3 border rounded-md ${getRecommendationTypeColor(recommendation.type)}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5">
-                    {getRecommendationIcon(recommendation.type)}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium">
-                      {recommendation.equipmentName}
-                    </h4>
-                    <p className="text-xs mt-1">{recommendation.reason}</p>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-xs font-medium">
-                        {recommendation.action}
-                      </span>
-                      <Link 
-                        to={`/equipment/${recommendation.equipmentId}`}
-                        className="flex items-center gap-1 text-xs font-medium hover:underline"
-                      >
-                        View details
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {recommendations.length > 5 && (
-              <div className="text-center">
-                <Link 
-                  to="/equipment"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-800"
-                >
-                  View {recommendations.length - 5} more recommendations
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Equipment
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Manufacturer
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Service Due
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Priority
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
+              {recommendations.slice(0, 3).map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {item.name} {item.model}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {item.manufacturer}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {new Date(item.maintenanceDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {item.maintenanceType}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                      ${item.priority === 'High' ? 'bg-red-100 text-red-800' : 
+                        item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-green-100 text-green-800'}`}>
+                      {item.priority}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Link to={`/equipment/${item.id}`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">
+                      View
+                    </Link>
+                    <Link to={`/work-orders/new?equipmentId=${item.id}`} className="text-esm-blue-600 hover:text-esm-blue-800">
+                      Schedule
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {recommendations.length > 3 && (
+            <div className="text-right mt-4">
+              <Link to="/maintenance" className="text-sm text-esm-blue-600 hover:text-esm-blue-800">
+                View all {recommendations.length} recommendations →
+              </Link>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
-}
+};

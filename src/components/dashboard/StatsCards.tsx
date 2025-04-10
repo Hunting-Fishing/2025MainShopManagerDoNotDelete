@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, Package, Clock, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getDashboardStats } from "@/services/workOrderService";
+import { getDashboardStats } from "@/services/dashboardService";
 
 // Stats card type
 interface StatCardProps {
@@ -37,14 +36,14 @@ export const StatsCards = () => {
             value: data.teamMembers,
             icon: Users,
             change: data.teamChange,
-            up: null,
+            up: data.teamChange.includes('+'),
           },
           {
             title: "Inventory Items",
             value: data.inventoryItems,
             icon: Package,
             change: data.inventoryChange,
-            up: true,
+            up: data.inventoryChange.includes('+'),
           },
           {
             title: "Avg. Completion Time",
