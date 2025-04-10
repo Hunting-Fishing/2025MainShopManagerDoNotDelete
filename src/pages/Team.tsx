@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { TeamHeader } from "@/components/team/TeamHeader";
@@ -7,7 +6,6 @@ import { TeamFilters } from "@/components/team/TeamFilters";
 import { TeamViewToggle } from "@/components/team/TeamViewToggle";
 import { TeamMemberGrid } from "@/components/team/TeamMemberGrid";
 import { TeamMemberTable } from "@/components/team/TeamMemberTable";
-import { getInitials } from "@/data/teamData"; // We'll keep just this utility function
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { Button } from "@/components/ui/button";
@@ -15,6 +13,7 @@ import { assignRoleToUser, findRoleByName } from "@/utils/roleManagement";
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { getInitials } from "@/utils/teamUtils";
 
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,10 +180,8 @@ export default function Team() {
         </Alert>
       )}
 
-      {/* Only show filters and content if we have no fetch error */}
       {!fetchError && (
         <>
-          {/* Filters and search */}
           <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
             <TeamSearch 
               searchQuery={searchQuery} 
@@ -204,20 +201,17 @@ export default function Team() {
             />
           </div>
 
-          {/* View toggle */}
           <TeamViewToggle 
             view={view} 
             onViewChange={setView} 
           />
 
-          {/* Loading state */}
           {isLoading ? (
             <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg border border-slate-200">
               <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
               <p className="text-slate-500">Loading team members...</p>
             </div>
           ) : (
-            /* Display team members in either grid or table view */
             view === 'grid' ? (
               <TeamMemberGrid 
                 members={filteredMembers} 
@@ -231,7 +225,6 @@ export default function Team() {
             )
           )}
 
-          {/* Empty state message */}
           {!isLoading && filteredMembers.length === 0 && (
             <div className="p-6 text-center bg-white rounded-lg border border-slate-200">
               <p className="text-slate-500">

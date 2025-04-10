@@ -1,12 +1,11 @@
-
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useRoleImportExport } from '../useRoleImportExport';
 import { Role } from '@/types/team';
 import { toast } from '@/hooks/use-toast';
-import * as roleUtils from '@/utils/roleUtils';
+import * as roleImportExport from '@/utils/roleImportExport';
 
 // Mock validateImportedRoles function
-jest.mock('@/utils/roleUtils', () => ({
+jest.mock('@/utils/roleImportExport', () => ({
   validateImportedRoles: jest.fn(),
 }));
 
@@ -65,7 +64,7 @@ describe('useRoleImportExport', () => {
     setRoles = jest.fn();
     
     // Default validation is successful
-    (roleUtils.validateImportedRoles as jest.Mock).mockReturnValue({ valid: true });
+    (roleImportExport.validateImportedRoles as jest.Mock).mockReturnValue({ valid: true });
   });
 
   it('should successfully import valid roles', () => {
@@ -88,7 +87,7 @@ describe('useRoleImportExport', () => {
 
   it('should reject invalid imported roles', () => {
     // Mock validation to fail
-    (roleUtils.validateImportedRoles as jest.Mock).mockReturnValue({ 
+    (roleImportExport.validateImportedRoles as jest.Mock).mockReturnValue({ 
       valid: false, 
       message: 'Invalid role data' 
     });

@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Role } from "@/types/team";
 import { PermissionSet } from "@/types/permissions";
 import { permissionPresets } from "@/data/permissionPresets";
-import { exportRolesToJson } from "@/utils/roleUtils";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
 import { toast } from "@/hooks/use-toast";
+import { exportRolesToJson } from "@/utils/roleImportExport";
 
 const initialRoles: Role[] = [
   {
@@ -182,7 +181,7 @@ export function useTeamRolesPage() {
     newRoleDescription,
     setNewRoleDescription,
     currentRole,
-    setCurrentRole,  // This was missing in the return object
+    setCurrentRole,
     rolePermissions,
     setRolePermissions,
     handleExportRoles,

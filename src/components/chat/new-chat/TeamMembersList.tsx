@@ -3,7 +3,7 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TeamMember } from "@/types/team";
-import { getInitials } from "@/data/teamData";
+import { getInitials } from "@/utils/teamUtils";
 
 interface TeamMembersListProps {
   teamMembers: TeamMember[];

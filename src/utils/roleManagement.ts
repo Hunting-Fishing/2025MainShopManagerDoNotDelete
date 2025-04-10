@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { AppRole } from './roleMapping';
+import { mapRoleToDbValue } from './roleMapping';
 
 /**
  * Checks if a user already has a specific role
@@ -106,7 +107,6 @@ export const findRoleByName = async (roleName: string): Promise<{
   error?: string;
 }> => {
   try {
-    const { mapRoleToDbValue } = await import('./roleMapping');
     const roleValue = mapRoleToDbValue(roleName);
     console.log(`Finding role for: ${roleName}, mapped to DB value: ${roleValue}`);
     

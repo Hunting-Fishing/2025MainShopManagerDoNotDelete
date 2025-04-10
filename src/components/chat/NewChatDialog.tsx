@@ -9,10 +9,11 @@ import { ChatNameInput } from './new-chat/ChatNameInput';
 import { SearchBar } from './new-chat/SearchBar';
 import { TeamMembersList } from './new-chat/TeamMembersList';
 import { ParticipantList } from './new-chat/ParticipantList';
-import { teamMembers } from '@/data/teamData';
 import { TeamMember } from '@/types/team';
 import { ShiftChatSettings } from './new-chat/ShiftChatSettings';
 import { useChatDialogState } from './new-chat/hooks/useChatDialogState';
+import { supabase } from '@/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
 
 interface NewChatDialogProps {
   open: boolean;
@@ -55,6 +56,29 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
     setShiftTimeEnd,
     resetState
   } = useChatDialogState();
+
+  // Fetch team members from Supabase
+  const { data: teamMembers = [], isLoading } = useQuery({
+    queryKey: ['teamMembers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, phone, job_title, department, roles:user_roles(role:roles(name))')
+        .order('last_name');
+
+      if (error) throw error;
+
+      return data.map(profile => ({
+        id: profile.id,
+        name: `${profile.first_name} ${profile.last_name}`,
+        email: profile.email,
+        phone: profile.phone || '',
+        jobTitle: profile.job_title || '',
+        department: profile.department || '',
+        role: profile.roles && profile.roles.length > 0 ? profile.roles[0].role.name : 'No Role'
+      })) as TeamMember[];
+    }
+  });
 
   // Filter team members based on search query
   const filteredTeamMembers = teamMembers.filter(member => 
@@ -159,11 +183,17 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
             )}
             
             <Label className="text-sm font-medium">Team members</Label>
-            <TeamMembersList 
-              teamMembers={filteredTeamMembers}
-              selectedParticipants={selectedParticipants}
-              onToggleParticipant={toggleParticipant}
-            />
+            {isLoading ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                Loading team members...
+              </div>
+            ) : (
+              <TeamMembersList 
+                teamMembers={filteredTeamMembers}
+                selectedParticipants={selectedParticipants}
+                onToggleParticipant={toggleParticipant}
+              />
+            )}
           </div>
           
           <div className="flex justify-end gap-2 mt-4">
