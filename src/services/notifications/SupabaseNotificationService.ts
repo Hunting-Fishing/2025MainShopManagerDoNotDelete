@@ -291,11 +291,11 @@ export class SupabaseNotificationService implements INotificationService {
       message: dbNotification.message,
       read: dbNotification.read,
       timestamp: dbNotification.timestamp,
-      type: dbNotification.type,
+      type: (dbNotification.type || 'info') as 'info' | 'warning' | 'success' | 'error',
       link: dbNotification.link,
       sender: dbNotification.sender,
       recipient: dbNotification.recipient,
-      category: dbNotification.category,
+      category: (dbNotification.category || 'system') as 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat',
       priority: dbNotification.priority,
       expiresAt: dbNotification.expires_at
     };

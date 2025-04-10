@@ -27,9 +27,11 @@ export async function fetchNotifications(userId: string): Promise<Notification[]
       message: notification.message,
       read: notification.read,
       timestamp: notification.timestamp,
+      // Ensure type is cast to the correct union type
       type: (notification.type || 'info') as 'info' | 'warning' | 'success' | 'error',
       link: notification.link,
-      category: notification.category,
+      // Ensure category is cast to the correct union type
+      category: (notification.category || 'system') as 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat',
       priority: notification.priority || 'medium'
     }));
   } catch (err) {
