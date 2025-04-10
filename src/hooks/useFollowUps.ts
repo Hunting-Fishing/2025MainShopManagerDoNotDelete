@@ -38,7 +38,7 @@ export const useFollowUps = () => {
           .select(`
             id,
             customer_id,
-            customers:customer_id(first_name, last_name),
+            customers(first_name, last_name),
             type,
             status,
             due_date,
@@ -63,7 +63,7 @@ export const useFollowUps = () => {
         }
 
         // Map the data to our FollowUp type
-        const mappedFollowUps = data.map(item => ({
+        const mappedFollowUps = data.map((item: any) => ({
           id: item.id,
           customerId: item.customer_id,
           customerName: item.customers 

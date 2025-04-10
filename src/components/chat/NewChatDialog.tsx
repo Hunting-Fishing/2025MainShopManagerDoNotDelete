@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -75,8 +74,7 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
         phone: profile.phone || '',
         jobTitle: profile.job_title || '',
         department: profile.department || '',
-        // Fixed access to role property
-        role: profile.roles && profile.roles.length > 0 && profile.roles[0].role 
+        role: profile.roles && profile.roles.length > 0 && profile.roles[0]?.role 
           ? profile.roles[0].role.name 
           : 'No Role'
       })) as TeamMember[];
