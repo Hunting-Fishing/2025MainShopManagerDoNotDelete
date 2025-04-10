@@ -1,92 +1,99 @@
 
 import { useState, useEffect } from 'react';
-import { Invoice, InvoiceStatus } from "@/types/invoice";
 import { supabase } from '@/lib/supabase';
+import { Invoice } from '@/types/invoice';
+import { toast } from '@/hooks/use-toast';
 
 export function useInvoiceData() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     fetchInvoices();
   }, []);
 
   const fetchInvoices = async () => {
-    setIsLoading(true);
-    setError(null);
-    
     try {
-      // Fetch invoices
-      const { data: invoiceData, error: invoiceError } = await supabase
+      setIsLoading(true);
+      setError('');
+
+      // Fetch all invoices
+      const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select('*')
         .order('created_at', { ascending: false });
-        
-      if (invoiceError) throw invoiceError;
-      
-      // For each invoice, fetch its items and assigned staff
-      const invoicesWithDetails = await Promise.all(invoiceData.map(async (invoice) => {
-        // Fetch invoice items
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('invoice_items')
-          .select('*')
-          .eq('invoice_id', invoice.id);
-          
-        if (itemsError) throw itemsError;
-        
-        // Fetch assigned staff
-        const { data: staffData, error: staffError } = await supabase
-          .from('invoice_staff')
-          .select('staff_name')
-          .eq('invoice_id', invoice.id);
-          
-        if (staffError) throw staffError;
-        
-        // Ensure status is a valid InvoiceStatus
-        let status: InvoiceStatus = "draft"; // Default
-        if (invoice.status === "draft" || 
-            invoice.status === "pending" || 
-            invoice.status === "paid" || 
-            invoice.status === "overdue" || 
-            invoice.status === "cancelled") {
-          status = invoice.status as InvoiceStatus;
-        }
-        
-        // Format to match Invoice type
-        return {
-          id: invoice.id,
-          workOrderId: invoice.work_order_id || '',
-          customer: invoice.customer || '',
-          customerAddress: invoice.customer_address || '',
-          customerEmail: invoice.customer_email || '',
-          description: invoice.description || '',
-          notes: invoice.notes || '',
-          total: invoice.total || 0,
-          subtotal: invoice.subtotal || 0,
-          tax: invoice.tax || 0,
-          status: status,
-          paymentMethod: invoice.payment_method || '',
-          date: invoice.date || new Date().toISOString().split('T')[0],
-          dueDate: invoice.due_date || '',
-          createdBy: invoice.created_by || '',
-          assignedStaff: staffData.map(staff => staff.staff_name),
-          items: itemsData.map(item => ({
-            id: item.id,
-            name: item.name,
-            description: item.description || '',
-            quantity: item.quantity,
-            price: item.price,
-            hours: item.hours || false,
-            total: item.total
-          }))
-        };
-      }));
-      
+
+      if (invoicesError) {
+        throw invoicesError;
+      }
+
+      // For each invoice, fetch its items and staff
+      const invoicesWithDetails = await Promise.all(
+        invoicesData.map(async (invoice) => {
+          // Fetch invoice items
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('invoice_items')
+            .select('*')
+            .eq('invoice_id', invoice.id);
+
+          if (itemsError) {
+            throw itemsError;
+          }
+
+          // Fetch assigned staff
+          const { data: staffData, error: staffError } = await supabase
+            .from('invoice_staff')
+            .select('*')
+            .eq('invoice_id', invoice.id);
+
+          if (staffError) {
+            throw staffError;
+          }
+
+          // Format the invoice object according to our type
+          const formattedInvoice: Invoice = {
+            id: invoice.id,
+            workOrderId: invoice.work_order_id || '',
+            customer: invoice.customer || 'Unknown Customer',
+            customerAddress: invoice.customer_address || '',
+            customerEmail: invoice.customer_email || '',
+            description: invoice.description || '',
+            notes: invoice.notes || '',
+            total: Number(invoice.total) || 0,
+            subtotal: Number(invoice.subtotal) || 0,
+            tax: Number(invoice.tax) || 0,
+            // Type-cast the status to make sure it conforms to InvoiceStatus
+            status: (invoice.status as Invoice['status']) || 'draft',
+            paymentMethod: invoice.payment_method || '',
+            date: invoice.date || new Date().toISOString().split('T')[0],
+            dueDate: invoice.due_date || '',
+            createdBy: invoice.created_by || '',
+            assignedStaff: staffData?.map(staff => staff.staff_name) || [],
+            items: itemsData?.map(item => ({
+              id: item.id,
+              name: item.name,
+              description: item.description || '',
+              quantity: Number(item.quantity),
+              price: Number(item.price),
+              hours: item.hours || false,
+              total: Number(item.total)
+            })) || []
+          };
+
+          return formattedInvoice;
+        })
+      );
+
       setInvoices(invoicesWithDetails);
     } catch (err) {
       console.error('Error fetching invoices:', err);
       setError('Failed to load invoices');
+      toast({
+        title: 'Error',
+        description: 'Failed to load invoices',
+        variant: 'destructive'
+      });
     } finally {
       setIsLoading(false);
     }

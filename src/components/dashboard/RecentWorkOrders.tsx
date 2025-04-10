@@ -1,15 +1,8 @@
-import { Link } from "react-router-dom";
+
 import { useState, useEffect } from "react";
 import { getRecentWorkOrders } from "@/services/dashboardService";
-
-interface RecentWorkOrder {
-  id: string;
-  customer: string;
-  service: string;
-  status: string;
-  date: string;
-  priority: string;
-}
+import { RecentWorkOrder } from "@/types/dashboard";
+import { Link } from "react-router-dom";
 
 // Map of status to text
 const statusMap = {
@@ -29,7 +22,18 @@ export const RecentWorkOrders = () => {
       try {
         setLoading(true);
         const data = await getRecentWorkOrders(5);
-        setRecentWorkOrders(data);
+        
+        // Format the data to match the RecentWorkOrder type
+        const formattedOrders: RecentWorkOrder[] = data.map(order => ({
+          id: order.id,
+          customer: order.customerName || 'Unknown Customer',
+          service: order.description || 'No description',
+          status: order.status || 'pending',
+          date: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : 'Unknown',
+          priority: order.priority || 'Medium'
+        }));
+        
+        setRecentWorkOrders(formattedOrders);
         setError(null);
       } catch (err) {
         console.error("Error fetching recent work orders:", err);

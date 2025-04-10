@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, Package, Clock, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getDashboardStats } from "@/services/dashboardService";
+import { DashboardStats } from "@/types/dashboard";
 
 // Stats card type
 interface StatCardProps {
@@ -23,33 +24,44 @@ export const StatsCards = () => {
         setLoading(true);
         const data = await getDashboardStats();
         
+        const statsData: DashboardStats = {
+          activeWorkOrders: data.activeOrders.toString(),
+          workOrderChange: data.activeOrdersChange || "0%",
+          teamMembers: data.teamMembersCount?.toString() || "0",
+          teamChange: data.teamMembersChange || "No change",
+          inventoryItems: data.inventoryItemsCount?.toString() || "0",
+          inventoryChange: data.inventoryItemsChange || "0%",
+          avgCompletionTime: data.averageCompletionTime || "N/A",
+          completionTimeChange: data.completionTimeChange || "0%"
+        };
+        
         setStats([
           {
             title: "Active Work Orders",
-            value: data.activeWorkOrders,
+            value: statsData.activeWorkOrders,
             icon: FileText,
-            change: data.workOrderChange,
-            up: data.workOrderChange.includes('+'),
+            change: statsData.workOrderChange,
+            up: statsData.workOrderChange.includes('+'),
           },
           {
             title: "Team Members",
-            value: data.teamMembers,
+            value: statsData.teamMembers,
             icon: Users,
-            change: data.teamChange,
-            up: data.teamChange.includes('+'),
+            change: statsData.teamChange,
+            up: statsData.teamChange.includes('+'),
           },
           {
             title: "Inventory Items",
-            value: data.inventoryItems,
+            value: statsData.inventoryItems,
             icon: Package,
-            change: data.inventoryChange,
-            up: data.inventoryChange.includes('+'),
+            change: statsData.inventoryChange,
+            up: statsData.inventoryChange.includes('+'),
           },
           {
             title: "Avg. Completion Time",
-            value: data.avgCompletionTime,
+            value: statsData.avgCompletionTime,
             icon: Clock,
-            change: data.completionTimeChange,
+            change: statsData.completionTimeChange,
             up: false,
           },
         ]);

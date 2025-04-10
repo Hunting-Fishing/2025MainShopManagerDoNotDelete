@@ -1,21 +1,13 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getEquipmentRecommendations } from "@/services/dashboardService";
+import { EquipmentRecommendation } from "@/types/dashboard";
 
-interface EquipmentRecommendation {
-  id: string;
-  name: string;
-  model: string;
-  manufacturer: string;
-  maintenanceDate: string;
-  maintenanceType: string;
-  status: string;
-  priority: 'High' | 'Medium' | 'Low';
-}
-
-export const EquipmentRecommendations = () => {
+export function EquipmentRecommendations() {
   const [recommendations, setRecommendations] = useState<EquipmentRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,16 +17,21 @@ export const EquipmentRecommendations = () => {
       try {
         setLoading(true);
         const data = await getEquipmentRecommendations();
-        // Ensure all items have a valid priority
-        const validatedData = data.map(item => ({
+        
+        // Format and validate the priority field matches expected type
+        const formattedRecommendations: EquipmentRecommendation[] = data.map(item => ({
           ...item,
-          priority: validatePriority(item.priority)
+          // Ensure priority is one of the allowed values
+          priority: (item.priority === 'High' || item.priority === 'Medium' || item.priority === 'Low') 
+            ? item.priority 
+            : 'Medium'
         }));
-        setRecommendations(validatedData);
+        
+        setRecommendations(formattedRecommendations);
         setError(null);
       } catch (err) {
         console.error("Error fetching equipment recommendations:", err);
-        setError("Failed to load equipment recommendations");
+        setError("Failed to load maintenance recommendations");
       } finally {
         setLoading(false);
       }
@@ -43,23 +40,14 @@ export const EquipmentRecommendations = () => {
     fetchRecommendations();
   }, []);
 
-  // Helper function to validate priority
-  const validatePriority = (priority: string): 'High' | 'Medium' | 'Low' => {
-    if (priority === 'High' || priority === 'Medium' || priority === 'Low') {
-      return priority as 'High' | 'Medium' | 'Low';
-    }
-    // Default to Medium if the priority is not valid
-    return 'Medium';
-  };
-
   if (loading) {
     return (
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Equipment Maintenance Recommendations</CardTitle>
+          <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-24 flex items-center justify-center">
+        <CardContent className="pt-0">
+          <div className="flex justify-center p-6">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-esm-blue-600"></div>
           </div>
         </CardContent>
@@ -69,12 +57,12 @@ export const EquipmentRecommendations = () => {
 
   if (error) {
     return (
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Equipment Maintenance Recommendations</CardTitle>
+          <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-24 flex items-center justify-center">
+        <CardContent className="pt-0">
+          <div className="text-center p-6">
             <p className="text-red-500">{error}</p>
           </div>
         </CardContent>
@@ -82,16 +70,15 @@ export const EquipmentRecommendations = () => {
     );
   }
 
-  // If no recommendations
   if (recommendations.length === 0) {
     return (
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Equipment Maintenance Recommendations</CardTitle>
+          <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-24 flex items-center justify-center">
-            <p className="text-muted-foreground">No maintenance recommendations at this time</p>
+        <CardContent className="pt-0">
+          <div className="text-center p-6 text-slate-500">
+            All equipment maintenance is up to date
           </div>
         </CardContent>
       </Card>
@@ -99,79 +86,48 @@ export const EquipmentRecommendations = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Equipment Maintenance Recommendations</CardTitle>
+    <Card className="mb-6">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/maintenance">
+            View All <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Equipment
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Manufacturer
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Service Due
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {recommendations.slice(0, 3).map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                    {item.name} {item.model}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {item.manufacturer}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {new Date(item.maintenanceDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {item.maintenanceType}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${item.priority === 'High' ? 'bg-red-100 text-red-800' : 
-                        item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-green-100 text-green-800'}`}>
-                      {item.priority}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Link to={`/equipment/${item.id}`} className="text-esm-blue-600 hover:text-esm-blue-800 mr-4">
-                      View
-                    </Link>
-                    <Link to={`/work-orders/new?equipmentId=${item.id}`} className="text-esm-blue-600 hover:text-esm-blue-800">
-                      Schedule
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {recommendations.length > 3 && (
-            <div className="text-right mt-4">
-              <Link to="/maintenance" className="text-sm text-esm-blue-600 hover:text-esm-blue-800">
-                View all {recommendations.length} recommendations →
-              </Link>
+      <CardContent className="pt-0">
+        <div className="space-y-4">
+          {recommendations.map((item) => (
+            <div 
+              key={item.id} 
+              className={`flex items-start p-3 rounded-md border ${
+                item.priority === 'High' ? 'border-red-200 bg-red-50' :
+                item.priority === 'Medium' ? 'border-amber-200 bg-amber-50' :
+                'border-green-200 bg-green-50'
+              }`}
+            >
+              <AlertTriangle className={`h-5 w-5 mr-3 flex-shrink-0 ${
+                item.priority === 'High' ? 'text-red-600' :
+                item.priority === 'Medium' ? 'text-amber-600' :
+                'text-green-600'
+              }`} />
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-medium">{item.name} ({item.model})</p>
+                <p className="text-xs text-slate-500">
+                  {item.maintenanceType} maintenance due on {new Date(item.maintenanceDate).toLocaleDateString()}
+                </p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                className="flex-shrink-0"
+              >
+                Schedule
+              </Button>
             </div>
-          )}
+          ))}
         </div>
       </CardContent>
     </Card>
   );
-};
+}

@@ -1,58 +1,50 @@
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { getWorkOrderStatusCounts } from "@/services/dashboardService";
 
-export const WorkOrdersByStatusChart = () => {
-  const [data, setData] = useState([
-    { name: "Pending", value: 0, color: "#FDB022" },
-    { name: "In Progress", value: 0, color: "#2563EB" },
-    { name: "Completed", value: 0, color: "#16A34A" },
-    { name: "Cancelled", value: 0, color: "#DC2626" },
-  ]);
+export function WorkOrdersByStatusChart() {
+  const [statusCounts, setStatusCounts] = useState<{ name: string; value: number; }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchStatusData = async () => {
       try {
         setLoading(true);
-        // Get actual data from the service
-        const statusCounts = await getWorkOrderStatusCounts();
-        
-        if (statusCounts && Object.keys(statusCounts).length > 0) {
-          // Transform the data into the format needed for the chart
-          const chartData = [
-            { name: "Pending", value: statusCounts.pending || 0, color: "#FDB022" },
-            { name: "In Progress", value: statusCounts.inProgress || 0, color: "#2563EB" },
-            { name: "Completed", value: statusCounts.completed || 0, color: "#16A34A" },
-            { name: "Cancelled", value: statusCounts.cancelled || 0, color: "#DC2626" },
-          ];
-          setData(chartData);
-        }
+        const data = await getWorkOrderStatusCounts();
+        setStatusCounts(data);
         setError(null);
       } catch (err) {
-        console.error("Error fetching work order status data:", err);
-        setError("Failed to load chart data");
+        console.error("Error fetching work order status counts:", err);
+        setError("Failed to load status data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchStatusData();
   }, []);
 
-  // Handle loading and error states
+  const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444"];
+  
+  // Derive status counts directly from the fetched data array
+  // Find values by looking for specific status names
+  const pendingCount = statusCounts.find(item => item.name === 'pending')?.value || 0;
+  const inProgressCount = statusCounts.find(item => item.name === 'in-progress')?.value || 0;
+  const completedCount = statusCounts.find(item => item.name === 'completed')?.value || 0;
+  const cancelledCount = statusCounts.find(item => item.name === 'cancelled')?.value || 0;
+
   if (loading) {
     return (
-      <Card className="col-span-1">
+      <Card>
         <CardHeader>
           <CardTitle>Work Orders by Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <p className="text-muted-foreground">Loading chart data...</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-esm-blue-600"></div>
           </div>
         </CardContent>
       </Card>
@@ -61,57 +53,91 @@ export const WorkOrdersByStatusChart = () => {
 
   if (error) {
     return (
-      <Card className="col-span-1">
+      <Card>
         <CardHeader>
           <CardTitle>Work Orders by Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <p className="text-red-500">{error}</p>
+          <div className="flex justify-center items-center h-64 text-red-500">
+            {error}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Filter out zero values to avoid empty segments
-  const filteredData = data.filter(item => item.value > 0);
-
   return (
-    <Card className="col-span-1">
+    <Card>
       <CardHeader>
         <CardTitle>Work Orders by Status</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
-          {filteredData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={filteredData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {filteredData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-muted-foreground">No work order data available</p>
-            </div>
-          )}
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={statusCounts}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({
+                  cx,
+                  cy,
+                  midAngle,
+                  innerRadius,
+                  outerRadius,
+                  percent,
+                  name,
+                }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                  
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill="#fff"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                    >
+                      {`${(percent * 100).toFixed(0)}%`}
+                    </text>
+                  );
+                }}
+              >
+                {statusCounts.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Legend />
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="flex flex-col items-center p-2 bg-blue-50 rounded">
+            <span className="text-sm text-blue-800 font-medium">Pending</span>
+            <span className="text-xl font-bold text-blue-800">{pendingCount}</span>
+          </div>
+          <div className="flex flex-col items-center p-2 bg-amber-50 rounded">
+            <span className="text-sm text-amber-800 font-medium">In Progress</span>
+            <span className="text-xl font-bold text-amber-800">{inProgressCount}</span>
+          </div>
+          <div className="flex flex-col items-center p-2 bg-green-50 rounded">
+            <span className="text-sm text-green-800 font-medium">Completed</span>
+            <span className="text-xl font-bold text-green-800">{completedCount}</span>
+          </div>
+          <div className="flex flex-col items-center p-2 bg-red-50 rounded">
+            <span className="text-sm text-red-800 font-medium">Cancelled</span>
+            <span className="text-xl font-bold text-red-800">{cancelledCount}</span>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
-};
+}

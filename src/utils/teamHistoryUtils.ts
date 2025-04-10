@@ -11,7 +11,7 @@ export interface TeamMemberHistoryRecord {
   details: any;
 }
 
-// Fetch team member history records
+// Fetch team member history records for a single profile
 export async function fetchTeamMemberHistory(profileId: string): Promise<TeamMemberHistoryRecord[]> {
   try {
     const { data, error } = await supabase
@@ -26,6 +26,53 @@ export async function fetchTeamMemberHistory(profileId: string): Promise<TeamMem
   } catch (error) {
     console.error('Error fetching team member history:', error);
     return [];
+  }
+}
+
+// Fetch all team member history records
+export async function fetchAllTeamHistory(): Promise<TeamMemberHistoryRecord[]> {
+  try {
+    const { data, error } = await supabase
+      .from('team_member_history')
+      .select('*')
+      .order('timestamp', { ascending: false });
+      
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching all team history:', error);
+    return [];
+  }
+}
+
+// Record a new team member history entry
+export async function recordTeamMemberHistory(
+  profileId: string,
+  actionType: string,
+  actionBy: string,
+  actionByName: string,
+  details: Record<string, any> = {}
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('team_member_history')
+      .insert({
+        profile_id: profileId,
+        action_type: actionType,
+        action_by: actionBy,
+        action_by_name: actionByName,
+        details
+      })
+      .select('id')
+      .single();
+      
+    if (error) throw error;
+    
+    return data?.id || null;
+  } catch (error) {
+    console.error('Error recording team member history:', error);
+    return null;
   }
 }
 

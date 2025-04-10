@@ -1,274 +1,173 @@
 
-import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DateRange } from 'react-day-picker';
-import { format, subMonths } from 'date-fns';
-import { ReportFilters } from '@/components/reports/ReportFilters';
-import { ReportExportMenu } from '@/components/reports/ReportExportMenu';
-import { SavedReportsDialog } from '@/components/reports/dialogs/SavedReportsDialog';
-import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
-import { SavedReport, ReportConfig } from '@/types/reports';
-import { toast } from "@/hooks/use-toast";
-import { SummaryTabContent } from '@/components/reports/tabs/SummaryTabContent';
-import { FinancialsTabContent } from '@/components/reports/tabs/FinancialsTabContent';
-import { PerformanceTabContent } from '@/components/reports/tabs/PerformanceTabContent';
-import { InventoryTabContent } from '@/components/reports/tabs/InventoryTabContent';
-import { CustomTabContent } from '@/components/reports/tabs/CustomTabContent';
-import { ReportStatusBadge } from '@/components/reports/ReportStatusBadge';
-import { RefreshButton } from '@/components/reports/RefreshButton';
-import { useReportData } from '@/hooks/useReportData';
+import { useState } from "react";
+import { useReportData } from "@/hooks/useReportData";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Card, CardContent } from "@/components/ui/card";
+import { addDays, format, subDays } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { DownloadIcon, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
-const Reports = () => {
-  const [timeframe, setTimeframe] = useState('monthly');
-  const [activeTab, setActiveTab] = useState('summary');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subMonths(new Date(), 1),
-    to: new Date()
+export default function Reports() {
+  const [timeRange, setTimeRange] = useState({
+    from: subDays(new Date(), 30),
+    to: new Date(),
   });
-  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
-  const [filters, setFilters] = useState<Record<string, any>>({
-    showComparison: false
-  });
-  const [showComparison, setShowComparison] = useState(false);
-  const [customReportConfig, setCustomReportConfig] = useState<ReportConfig | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  
-  // Use our custom hook to fetch and manage report data with showComparison in filters
-  const { 
-    data: reportData, 
-    isLoading, 
-    lastUpdated, 
-    error, 
-    refreshData 
-  } = useReportData({
-    timeframe,
-    dateRange,
-    filters: {
-      ...filters,
-      showComparison // Include showComparison in the filters
-    },
-    refreshInterval: autoRefresh ? 30000 : null // Auto refresh every 30 seconds if enabled
-  });
-  
-  const handleFilterChange = (newFilters: Record<string, any>) => {
-    setFilters({
-      ...newFilters,
-      showComparison // Make sure to preserve showComparison
-    });
-    console.log("Filters applied:", newFilters);
-  };
-  
-  const handleSaveReport = (report: SavedReport) => {
-    setSavedReports([...savedReports, report]);
-    toast({
-      title: "Report saved",
-      description: `"${report.name}" has been saved successfully`
-    });
-  };
-  
-  const handleLoadReport = (reportId: string) => {
-    const report = savedReports.find(r => r.id === reportId);
-    if (report) {
-      setTimeframe(report.type);
-      setFilters({
-        ...report.filters,
-        showComparison // Preserve showComparison when loading a report
-      });
-      toast({
-        title: "Report loaded",
-        description: `"${report.name}" has been loaded successfully`
-      });
-    }
-  };
-  
-  const handleDeleteReport = (reportId: string) => {
-    setSavedReports(savedReports.filter(r => r.id !== reportId));
-    toast({
-      title: "Report deleted",
-      description: "The report has been deleted successfully"
-    });
-  };
-  
-  const handleGenerateCustomReport = (config: ReportConfig) => {
-    setCustomReportConfig(config);
-    setActiveTab('custom');
+
+  // Initialize with current date range
+  const { reportData, isLoading, error, fetchReportData } = useReportData();
+
+  // Handle date range changes
+  const handleDateRangeChange = (range: { from: Date; to: Date }) => {
+    setTimeRange(range);
+    fetchReportData(range);
   };
 
-  const getDateRangeText = () => {
-    if (!dateRange?.from) return "";
-    if (!dateRange.to) return format(dateRange.from, "PP");
-    return `${format(dateRange.from, "PP")} - ${format(dateRange.to, "PP")}`;
-  };
-
-  const toggleAutoRefresh = () => {
-    setAutoRefresh(!autoRefresh);
-    toast({
-      title: autoRefresh ? "Auto refresh disabled" : "Auto refresh enabled",
-      description: autoRefresh 
-        ? "Reports will no longer refresh automatically" 
-        : "Reports will refresh automatically every 30 seconds"
-    });
-  };
-
-  const toggleComparison = () => {
-    const newShowComparison = !showComparison;
-    setShowComparison(newShowComparison);
+  // Generate PDF report
+  const generatePDF = () => {
+    const doc = new jsPDF();
     
-    // Update filters to include the new comparison state
-    setFilters(currentFilters => ({
-      ...currentFilters,
-      showComparison: newShowComparison
-    }));
+    // Add title
+    doc.setFontSize(18);
+    doc.text("Business Report", 14, 22);
+    
+    // Add date range
+    doc.setFontSize(12);
+    doc.text(
+      `Date Range: ${format(timeRange.from, "MMM d, yyyy")} - ${format(timeRange.to, "MMM d, yyyy")}`,
+      14, 32
+    );
+    
+    // Add Revenue summary
+    doc.text("Revenue Summary", 14, 42);
+    
+    // Add a table for revenue by service
+    // @ts-ignore - jspdf-autotable typing issue
+    doc.autoTable({
+      startY: 45,
+      head: [["Service Type", "Revenue", "Orders", "Avg Value"]],
+      body: reportData.revenueByService.map((item) => [
+        item.name,
+        `$${item.revenue.toFixed(2)}`,
+        item.count,
+        `$${item.averageValue.toFixed(2)}`
+      ]),
+    });
+    
+    // Save the PDF
+    doc.save("business-report.pdf");
   };
 
-  const topSellingColumns = [
-    { header: "Item Name", dataKey: "name" },
-    { header: "Quantity Sold", dataKey: "quantity" },
-    { header: "Revenue", dataKey: "revenue" }
-  ];
-  
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
-            <p className="text-muted-foreground">
-              View performance metrics and analyze business trends
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <SavedReportsDialog
-              savedReports={savedReports}
-              onSaveReport={handleSaveReport}
-              onLoadReport={handleLoadReport}
-              onDeleteReport={handleDeleteReport}
-              currentReport={{
-                title: "Performance Report",
-                type: timeframe,
-                filters: filters
-              }}
-            />
-            <CustomReportBuilder 
-              onGenerateReport={handleGenerateCustomReport}
-            />
-            <ReportExportMenu 
-              data={reportData.topSellingItems} 
-              title="Top Selling Items" 
-              columns={topSellingColumns}
-            />
-          </div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
+          <p className="text-muted-foreground">
+            Generate and export business reports
+          </p>
         </div>
-        
-        <ReportFilters 
-          timeframe={timeframe}
-          setTimeframe={setTimeframe}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          onFilterChange={handleFilterChange}
-        />
-        
-        {timeframe === 'custom' && dateRange?.from && (
-          <div className="text-sm text-muted-foreground">
-            Showing data for: {getDateRangeText()}
-          </div>
-        )}
-        
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <button 
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
-              onClick={toggleComparison}
-            >
-              {showComparison ? "Hide Comparison" : "Show Comparison"}
-            </button>
-            {showComparison && (
-              <span className="text-sm text-muted-foreground">
-                Comparing current period with previous period
-              </span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                checked={autoRefresh} 
-                onChange={toggleAutoRefresh}
-                className="h-4 w-4 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="text-sm">Auto refresh</span>
-            </label>
-            
-            <RefreshButton 
-              onClick={refreshData}
-              lastUpdated={lastUpdated}
-              isLoading={isLoading}
-            />
-            
-            <ReportStatusBadge 
-              status={isLoading ? "refreshing" : error ? "error" : "live"} 
-            />
-          </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => fetchReportData({ start: timeRange.from, end: timeRange.to })}
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            onClick={generatePDF}
+            disabled={isLoading || error !== ""}
+          >
+            <DownloadIcon className="h-4 w-4 mr-1" />
+            Export PDF
+          </Button>
+          <DateRangePicker 
+            date={{ from: timeRange.from, to: timeRange.to }}
+            onUpdate={handleDateRangeChange}
+          />
         </div>
       </div>
 
-      <Tabs 
-        value={activeTab} 
-        onValueChange={setActiveTab} 
-        className="space-y-6"
-      >
-        <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-5 md:grid-cols-none h-auto">
-          <TabsTrigger value="summary">Summary</TabsTrigger>
-          <TabsTrigger value="financials">Financials</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="custom">Custom</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="summary">
-          <SummaryTabContent 
-            showComparison={showComparison}
-            comparisonRevenueData={reportData.comparisonRevenueData}
-            comparisonServiceData={reportData.comparisonServiceData}
-            salesData={reportData.salesData}
-            workOrderStatusData={reportData.workOrderStatusData}
-            topSellingItems={reportData.topSellingItems}
-            isLoading={isLoading}
-          />
-        </TabsContent>
-        
-        <TabsContent value="financials">
-          <FinancialsTabContent 
-            salesData={reportData.salesData}
-            isLoading={isLoading}
-          />
-        </TabsContent>
-        
-        <TabsContent value="performance">
-          <PerformanceTabContent 
-            servicePerformance={reportData.servicePerformance}
-            isLoading={isLoading}
-          />
-        </TabsContent>
-        
-        <TabsContent value="inventory">
-          <InventoryTabContent 
-            inventoryData={reportData.inventoryData}
-            isLoading={isLoading}
-          />
-        </TabsContent>
-        
-        <TabsContent value="custom">
-          <CustomTabContent 
-            customReportConfig={customReportConfig}
-            onGenerateReport={handleGenerateCustomReport}
-            isLoading={isLoading}
-          />
-        </TabsContent>
-      </Tabs>
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid gap-6">
+        <Card>
+          <CardContent className="p-6">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : (
+              <div className="space-y-10">
+                {/* Revenue Summary Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Revenue Summary</h2>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-lg border p-4 flex items-center">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Revenue</p>
+                        <p className="text-2xl font-bold">${reportData.totalRevenue.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border p-4 flex items-center">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Average Order Value</p>
+                        <p className="text-2xl font-bold">${reportData.averageOrderValue.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border p-4 flex items-center">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Orders</p>
+                        <p className="text-2xl font-bold">{reportData.totalOrders}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Performance Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Service Performance</h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-muted">
+                          <th className="px-4 py-2 text-left">Service Type</th>
+                          <th className="px-4 py-2 text-left">Revenue</th>
+                          <th className="px-4 py-2 text-left">Orders</th>
+                          <th className="px-4 py-2 text-left">Avg Value</th>
+                          <th className="px-4 py-2 text-left">% of Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportData.revenueByService.map((service) => (
+                          <tr key={service.name} className="border-b">
+                            <td className="px-4 py-2 text-sm">{service.name}</td>
+                            <td className="px-4 py-2 text-sm">${service.revenue.toFixed(2)}</td>
+                            <td className="px-4 py-2 text-sm">{service.count}</td>
+                            <td className="px-4 py-2 text-sm">${service.averageValue.toFixed(2)}</td>
+                            <td className="px-4 py-2 text-sm">{service.percentage.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-};
-
-export default Reports;
+}
