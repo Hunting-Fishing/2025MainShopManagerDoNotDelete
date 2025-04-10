@@ -81,6 +81,50 @@ export type Database = {
         }
         Relationships: []
       }
+      branding_settings: {
+        Row: {
+          accent_color: string | null
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          shop_id: string
+          theme: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          shop_id: string
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          shop_id?: string
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branding_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
@@ -250,6 +294,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "communication_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          settings_key: string
+          settings_value: Json
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          settings_key: string
+          settings_value?: Json
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          settings_key?: string
+          settings_value?: Json
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -2093,6 +2172,51 @@ export type Database = {
           },
         ]
       }
+      inventory_settings: {
+        Row: {
+          auto_reorder_enabled: boolean | null
+          created_at: string | null
+          default_supplier_id: string | null
+          id: string
+          low_stock_threshold: number | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          auto_reorder_enabled?: boolean | null
+          created_at?: string | null
+          default_supplier_id?: string | null
+          id?: string
+          low_stock_threshold?: number | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          auto_reorder_enabled?: boolean | null
+          created_at?: string | null
+          default_supplier_id?: string | null
+          id?: string
+          low_stock_threshold?: number | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_settings_default_supplier_id_fkey"
+            columns: ["default_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_suppliers: {
         Row: {
           created_at: string
@@ -2434,6 +2558,47 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          created_at: string | null
+          email_enabled: boolean | null
+          id: string
+          in_app_enabled: boolean | null
+          profile_id: string
+          push_enabled: boolean | null
+          subscriptions: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          profile_id: string
+          push_enabled?: boolean | null
+          subscriptions?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          profile_id?: string
+          push_enabled?: boolean | null
+          subscriptions?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3471,6 +3636,7 @@ export type Database = {
       team_member_history: {
         Row: {
           action_by: string
+          action_by_name: string | null
           action_type: string
           details: Json
           id: string
@@ -3479,6 +3645,7 @@ export type Database = {
         }
         Insert: {
           action_by: string
+          action_by_name?: string | null
           action_type: string
           details?: Json
           id?: string
@@ -3487,6 +3654,7 @@ export type Database = {
         }
         Update: {
           action_by?: string
+          action_by_name?: string | null
           action_type?: string
           details?: Json
           id?: string
@@ -3496,6 +3664,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "team_member_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_member_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          language_preference: string | null
+          notification_preferences: Json | null
+          profile_id: string
+          theme_preference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language_preference?: string | null
+          notification_preferences?: Json | null
+          profile_id: string
+          theme_preference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language_preference?: string | null
+          notification_preferences?: Json | null
+          profile_id?: string
+          theme_preference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_settings_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"

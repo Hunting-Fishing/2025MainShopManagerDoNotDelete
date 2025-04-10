@@ -19,18 +19,20 @@ export const SettingsLayout = () => {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-10 w-full">
-        <TabsTrigger value="account">Account</TabsTrigger>
-        <TabsTrigger value="company">Company</TabsTrigger>
-        <TabsTrigger value="security">Security</TabsTrigger>
-        <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        <TabsTrigger value="branding">Branding</TabsTrigger>
-        <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
-        <TabsTrigger value="inventory">Inventory</TabsTrigger>
-        <TabsTrigger value="team">Team</TabsTrigger>
-        <TabsTrigger value="export">Export</TabsTrigger>
-        <TabsTrigger value="language">Language</TabsTrigger>
-      </TabsList>
+      <div className="overflow-x-auto pb-2">
+        <TabsList className="grid min-w-max grid-cols-10 w-full">
+          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="company">Company</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="branding">Branding</TabsTrigger>
+          <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsTrigger value="export">Export</TabsTrigger>
+          <TabsTrigger value="language">Language</TabsTrigger>
+        </TabsList>
+      </div>
       <div className="mt-6">
         <TabsContent value="account">
           <AccountTab />

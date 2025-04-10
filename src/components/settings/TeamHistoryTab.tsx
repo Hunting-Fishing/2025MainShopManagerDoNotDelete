@@ -2,49 +2,35 @@
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TeamMemberHistoryRecord, fetchTeamMemberHistory } from "@/utils/teamHistoryUtils";
+import { TeamMemberHistoryRecord, fetchAllTeamHistory } from "@/utils/teamHistoryUtils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow, format } from "date-fns";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { UserPlus, RefreshCw, UserX, Edit, Shield } from "lucide-react";
 
 export const TeamHistoryTab = () => {
   const [loading, setLoading] = useState(true);
   const [teamHistory, setTeamHistory] = useState<TeamMemberHistoryRecord[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<TeamMemberHistoryRecord[]>([]);
+  const [actionTypeFilter, setActionTypeFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchAllTeamHistory = async () => {
+    const loadTeamHistory = async () => {
       try {
         setLoading(true);
-        // First, get all profiles to know which team members to fetch history for
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id');
-
-        if (!profiles || profiles.length === 0) {
-          setTeamHistory([]);
-          return;
-        }
-
-        // Fetch history for each team member and combine results
-        const allHistory: TeamMemberHistoryRecord[] = [];
-        for (const profile of profiles) {
-          if (profile.id) {
-            const historyRecords = await fetchTeamMemberHistory(profile.id);
-            allHistory.push(...historyRecords);
-          }
-        }
-
-        // Sort by timestamp (newest first)
-        const sortedHistory = allHistory.sort((a, b) => {
-          const timeA = new Date(a.timestamp || new Date()).getTime();
-          const timeB = new Date(b.timestamp || new Date()).getTime();
-          return timeB - timeA;
-        });
-
-        setTeamHistory(sortedHistory);
+        const allHistory = await fetchAllTeamHistory();
+        setTeamHistory(allHistory);
+        setFilteredHistory(allHistory);
       } catch (error) {
         console.error("Failed to fetch team history:", error);
         toast({
@@ -57,8 +43,34 @@ export const TeamHistoryTab = () => {
       }
     };
 
-    fetchAllTeamHistory();
+    loadTeamHistory();
   }, [toast]);
+
+  // Apply filters when they change
+  useEffect(() => {
+    let result = teamHistory;
+    
+    // Apply action type filter
+    if (actionTypeFilter !== "all") {
+      result = result.filter(record => record.action_type === actionTypeFilter);
+    }
+    
+    // Apply search term filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      result = result.filter(record => {
+        // Search by action performer name
+        const actionByName = record.action_by_name?.toLowerCase() || '';
+        
+        // Search by details
+        const detailsStr = JSON.stringify(record.details).toLowerCase();
+        
+        return actionByName.includes(search) || detailsStr.includes(search);
+      });
+    }
+    
+    setFilteredHistory(result);
+  }, [teamHistory, actionTypeFilter, searchTerm]);
 
   // Function to get badge color for different action types
   const getActionColor = (actionType: string) => {
@@ -86,6 +98,24 @@ export const TeamHistoryTab = () => {
       .join(' ');
   };
 
+  // Helper to get icon for action types
+  const getActionIcon = (actionType: string) => {
+    switch (actionType) {
+      case 'creation':
+        return <UserPlus className="h-4 w-4 mr-1" />;
+      case 'update':
+        return <Edit className="h-4 w-4 mr-1" />;
+      case 'role_change':
+        return <Shield className="h-4 w-4 mr-1" />;
+      case 'status_change':
+        return <RefreshCw className="h-4 w-4 mr-1" />;
+      case 'deletion':
+        return <UserX className="h-4 w-4 mr-1" />;
+      default:
+        return null;
+    }
+  };
+
   // Helper to get details for display
   const getActionDetails = (record: TeamMemberHistoryRecord) => {
     switch(record.action_type) {
@@ -109,7 +139,10 @@ export const TeamHistoryTab = () => {
   if (loading) {
     return (
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Team History</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold">Team History</h2>
+          <Skeleton className="h-9 w-32" />
+        </div>
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center space-x-4 rounded-md border p-3">
@@ -125,60 +158,91 @@ export const TeamHistoryTab = () => {
     );
   }
 
-  if (teamHistory.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <h2 className="text-xl font-semibold mb-2">Team History</h2>
-        <p className="text-muted-foreground">No team history records found.</p>
-      </div>
-    );
-  }
-
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Team History</h2>
-      <p className="mb-4 text-muted-foreground">
-        Track all changes and activities related to your team members.
-      </p>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead>Details</TableHead>
-              <TableHead>By</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {teamHistory.map((record) => (
-              <TableRow key={record.id}>
-                <TableCell className="font-medium whitespace-nowrap">
-                  <div className="flex flex-col">
-                    <span>{format(new Date(record.timestamp || new Date()), 'MMM d, yyyy')}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(record.timestamp || new Date()), 'h:mm a')}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({formatDistanceToNow(new Date(record.timestamp || new Date()), { addSuffix: true })})
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge className={`${getActionColor(record.action_type)}`}>
-                    {formatActionType(record.action_type)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{getActionDetails(record)}</TableCell>
-                <TableCell className="whitespace-nowrap">
-                  <span className="text-sm">{record.action_by}</span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2">Team History</h2>
+          <p className="text-muted-foreground">
+            Track all changes and activities related to your team members.
+          </p>
+        </div>
+        
+        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mt-4 md:mt-0 w-full md:w-auto">
+          <div className="w-full md:w-auto">
+            <Input 
+              placeholder="Search history..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full md:w-auto"
+            />
+          </div>
+          <div className="w-full md:w-auto">
+            <Select value={actionTypeFilter} onValueChange={setActionTypeFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Actions</SelectItem>
+                <SelectItem value="creation">Creation</SelectItem>
+                <SelectItem value="update">Update</SelectItem>
+                <SelectItem value="role_change">Role Change</SelectItem>
+                <SelectItem value="status_change">Status Change</SelectItem>
+                <SelectItem value="deletion">Deletion</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
+
+      {filteredHistory.length === 0 ? (
+        <div className="text-center py-10 border rounded-lg bg-gray-50">
+          <p className="text-muted-foreground">No team history records found.</p>
+          {actionTypeFilter !== "all" || searchTerm ? (
+            <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters</p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Details</TableHead>
+                <TableHead>By</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredHistory.map((record) => (
+                <TableRow key={record.id}>
+                  <TableCell className="font-medium whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span>{record.timestamp ? format(new Date(record.timestamp), 'MMM d, yyyy') : 'Unknown'}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {record.timestamp ? format(new Date(record.timestamp), 'h:mm a') : ''}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {record.timestamp ? `(${formatDistanceToNow(new Date(record.timestamp), { addSuffix: true })})` : ''}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`flex items-center ${getActionColor(record.action_type)}`}>
+                      {getActionIcon(record.action_type)}
+                      {formatActionType(record.action_type)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">{getActionDetails(record)}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <span className="text-sm">{record.action_by_name || 'System'}</span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };

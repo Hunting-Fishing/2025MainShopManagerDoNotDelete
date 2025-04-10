@@ -9,6 +9,7 @@ export interface TeamMemberHistoryRecord {
   profile_id: string;
   action_type: 'creation' | 'update' | 'role_change' | 'deletion' | 'status_change';
   action_by: string;
+  action_by_name?: string;
   timestamp?: string;
   details: Record<string, any>;
 }
@@ -25,12 +26,24 @@ export const recordTeamMemberHistory = async (
     // Get the current user ID to track who made the change
     const { data: { user } } = await supabase.auth.getUser();
     
+    // Get user name from profiles table
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', user?.id)
+      .single();
+    
+    const userName = profileData ? 
+      `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() : 
+      'System';
+      
     // Using a more generic approach to avoid type errors with table name
     const { data, error } = await supabase
-      .from('team_member_history' as any)
+      .from('team_member_history')
       .insert({
         ...record,
         action_by: record.action_by || user?.id || 'system',
+        action_by_name: record.action_by_name || userName,
         timestamp: new Date().toISOString()
       })
       .select('id')
@@ -81,7 +94,7 @@ export const recordTeamMemberHistory = async (
 export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMemberHistoryRecord[]> => {
   try {
     const { data, error } = await supabase
-      .from('team_member_history' as any)
+      .from('team_member_history')
       .select('*')
       .eq('profile_id', profileId)
       .order('timestamp', { ascending: false });
@@ -121,6 +134,7 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
         // Make sure action_type is one of the allowed values
         action_type: validateActionType(safeItem.action_type as string),
         action_by: safeItem.action_by as string,
+        action_by_name: safeItem.action_by_name as string,
         timestamp: safeItem.timestamp as string,
         details: (safeItem.details as Record<string, any>) || {}
       };
@@ -129,6 +143,51 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
     return processedData;
   } catch (error) {
     console.error("Exception fetching team member history:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetch all team history records
+ * @returns Array of all team history records
+ */
+export const fetchAllTeamHistory = async (): Promise<TeamMemberHistoryRecord[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('team_member_history')
+      .select('*')
+      .order('timestamp', { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching team history:", error);
+      return [];
+    }
+    
+    // If no data, return empty array
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+    
+    // Process the data to ensure it matches our expected type
+    const processedData: TeamMemberHistoryRecord[] = data.map(item => {
+      // Type assert item after null check to safely access properties
+      const safeItem = item as Record<string, any>;
+      
+      // Safely access properties with default values as needed
+      return {
+        id: safeItem.id as string,
+        profile_id: safeItem.profile_id as string,
+        action_type: validateActionType(safeItem.action_type as string),
+        action_by: safeItem.action_by as string,
+        action_by_name: safeItem.action_by_name as string,
+        timestamp: safeItem.timestamp as string,
+        details: (safeItem.details as Record<string, any>) || {}
+      };
+    });
+    
+    return processedData;
+  } catch (error) {
+    console.error("Exception fetching all team history:", error);
     return [];
   }
 };
