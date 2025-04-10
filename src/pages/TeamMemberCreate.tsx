@@ -18,6 +18,11 @@ export default function TeamMemberCreate() {
     setIsSubmitting(true);
     
     try {
+      // Parse the name into first and last names for the API
+      const nameParts = data.name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+      
       // Generate a UUID for new profiles
       const newProfileId = crypto.randomUUID();
       
@@ -26,8 +31,8 @@ export default function TeamMemberCreate() {
         .upsert({
           id: newProfileId,
           email: data.email,
-          first_name: data.firstName,
-          last_name: data.lastName,
+          first_name: firstName,
+          last_name: lastName,
           phone: data.phone || null,
           job_title: data.jobTitle,
           department: data.department

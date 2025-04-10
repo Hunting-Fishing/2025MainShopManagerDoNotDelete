@@ -60,3 +60,35 @@ export function detectRoleFromJobTitle(jobTitle: string): string | null {
   
   return null;
 }
+
+/**
+ * Converts a role display name to its database value
+ * @param roleName The display name of the role
+ * @returns The database enum value for the role
+ */
+export function getRoleDbValue(roleName: string): string {
+  const roleMap: Record<string, string> = {
+    'Owner': 'owner',
+    'Administrator': 'admin',
+    'Manager': 'manager',
+    'Parts Manager': 'parts_manager',
+    'Service Advisor': 'service_advisor',
+    'Technician': 'technician',
+    'Reception': 'reception',
+    'Other Staff': 'other_staff'
+  };
+
+  // Check if the role is in our mapping
+  if (roleName in roleMap) {
+    return roleMap[roleName];
+  }
+  
+  // If not, normalize the role name (convert to lowercase, replace spaces with underscores)
+  const normalizedRole = roleName.toLowerCase().replace(/\s+/g, '_');
+  
+  // Return normalized or default to 'other_staff' if completely unknown
+  return ['owner', 'admin', 'manager', 'parts_manager', 'service_advisor', 
+         'technician', 'reception', 'other_staff'].includes(normalizedRole) 
+    ? normalizedRole 
+    : 'other_staff';
+}

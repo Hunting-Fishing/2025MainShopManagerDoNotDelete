@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -6,14 +5,14 @@ import { TeamMemberFormValues, teamMemberFormSchema } from './formValidation';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { availableRoles, availableDepartments } from './formConstants';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { JobInfoFields } from './JobInfoFields';
 import { PersonalInfoFields } from './PersonalInfoFields';
 import { StatusToggleField } from './StatusToggleField';
 import { NotesField } from './NotesField';
 import { FormActions } from './FormActions';
 import { detectRoleFromJobTitle } from '@/utils/roleDetectionUtils';
-import { Alert, AlertCircle, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TeamMemberFormProps {
   onSubmit: (data: TeamMemberFormValues) => void;
@@ -40,11 +39,9 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
     },
   });
 
-  // Watch for job title changes to auto-detect role
   const jobTitle = form.watch('jobTitle');
   const role = form.watch('role');
   
-  // Effect to detect role from job title
   if (jobTitle && !role && mode === 'create') {
     const detectedRole = detectRoleFromJobTitle(jobTitle);
     if (detectedRole && detectedRole !== autoDetectedRole) {
@@ -61,7 +58,6 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
   };
 
   const handleSubmit = (data: TeamMemberFormValues) => {
-    // Parse the name into first and last names for the API
     const nameParts = data.name.split(' ');
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ');

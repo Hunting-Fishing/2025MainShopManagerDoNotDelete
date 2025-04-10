@@ -7,8 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { handleApiError } from "@/utils/errorHandling";
 import { CreateMemberForm } from "@/components/team/CreateMemberForm";
-import { detectRoleFromJobTitle, getRoleDbValue } from "@/utils/roleDetectionUtils";
-import { AppRole } from "@/utils/roleUtils";
+import { detectRoleFromJobTitle } from "@/utils/roleDetectionUtils";
+import { mapRoleToDbValue } from "@/utils/roleMapping";
 
 export function CreateMemberCard() {
   const navigate = useNavigate();
@@ -20,12 +20,17 @@ export function CreateMemberCard() {
       // First, insert the profile data - generating UUID on the client side
       const newUserId = crypto.randomUUID();
       
+      // Parse the name into first and last name
+      const nameParts = data.name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+      
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: newUserId, // Providing the required ID field
-          first_name: data.firstName,
-          last_name: data.lastName,
+          first_name: firstName,
+          last_name: lastName,
           email: data.email,
           phone: data.phone,
           job_title: data.jobTitle,
@@ -44,7 +49,7 @@ export function CreateMemberCard() {
       if (roleDisplayName) {
         try {
           // Convert role display name to database value
-          const roleDbValue = getRoleDbValue(roleDisplayName);
+          const roleDbValue = mapRoleToDbValue(roleDisplayName);
           console.log(`Assigning role: ${roleDisplayName} (DB value: ${roleDbValue})`);
           
           // Get the role ID for the selected role
@@ -129,7 +134,7 @@ export function CreateMemberCard() {
 
       toast({
         title: "Team member created",
-        description: `${data.firstName} ${data.lastName} has been added to the team${roleAssigned ? ` with role: ${roleDisplayName}` : ''}`,
+        description: `${data.name} has been added to the team${roleAssigned ? ` with role: ${roleDisplayName}` : ''}`,
         variant: "default",
       });
 
