@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
+import { findRoleByName, assignRoleToUser } from "@/utils/roleManagement";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
@@ -50,27 +51,18 @@ export default function CreateTeamMember() {
       if (!profileData) {
         throw new Error('Failed to create team member profile');
       }
-
+      
       // Find the role ID for the selected role
-      const { data: roleData, error: roleError } = await supabase
-        .from('roles')
-        .select('id')
-        .ilike('name', data.role.toLowerCase())
-        .single();
-
-      if (roleError) {
+      const { roleId, error: roleError } = await findRoleByName(data.role);
+      
+      if (roleError || !roleId) {
         console.warn(`Role not found for ${data.role}, will skip role assignment:`, roleError);
-      } else if (roleData) {
+      } else {
         // Assign the role to the user
-        const { error: roleAssignError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: profileData.id,
-            role_id: roleData.id
-          });
-
-        if (roleAssignError) {
-          console.error('Error assigning role:', roleAssignError);
+        const { success, message } = await assignRoleToUser(profileData.id, roleId);
+        
+        if (!success) {
+          console.error('Error assigning role:', message);
           // Continue without throwing, as the user was created successfully
         }
       }

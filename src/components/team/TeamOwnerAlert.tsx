@@ -4,7 +4,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { assignRoleToUser, findRoleByName } from "@/utils/roleUtils";
+import { findRoleByName, assignRoleToUser } from "@/utils/roleManagement";
 
 interface TeamOwnerAlertProps {
   userId: string;

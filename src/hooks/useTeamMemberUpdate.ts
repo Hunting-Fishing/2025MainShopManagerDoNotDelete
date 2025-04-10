@@ -27,7 +27,6 @@ export function useTeamMemberUpdate() {
       
       // Step 1: Update the user's profile information
       // Make sure we're passing required fields as required
-      // The updateProfile function expects name and email to be required
       const profileData = {
         name: values.name, // Required field
         email: values.email, // Required field
