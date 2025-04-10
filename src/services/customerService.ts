@@ -195,16 +195,3 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
   // For now, we'll adapt the customer data for UI
   return adaptCustomerForUI(data);
 };
-
-// Delete a customer
-export const deleteCustomer = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from("customers")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    console.error("Error deleting customer:", error);
-    throw error;
-  }
-};
