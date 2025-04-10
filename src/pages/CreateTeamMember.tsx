@@ -23,11 +23,13 @@ export default function CreateTeamMember() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      // Using upsert instead of insert to avoid the id requirement
-      // We'll add the onConflict option to specify how to handle conflicts
+      // Generate a UUID for new profiles (will be ignored if profile already exists)
+      const newProfileId = crypto.randomUUID();
+      
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .upsert({
+          id: newProfileId, // Include ID for new profiles
           email: data.email,
           first_name: firstName,
           last_name: lastName,
