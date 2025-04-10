@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { TeamMember } from "@/types/team";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export function useTeamMembers() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -30,6 +30,12 @@ export function useTeamMembers() {
 
         if (profilesError) {
           throw profilesError;
+        }
+
+        if (!profiles || profiles.length === 0) {
+          setTeamMembers([]);
+          setIsLoading(false);
+          return;
         }
 
         // Then fetch user_roles to identify who has assigned roles
@@ -143,11 +149,10 @@ export function useTeamMembers() {
         });
 
         setTeamMembers(mappedMembers);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching team members:', err);
-        setError('Failed to load team members. Please try again later.');
-        
-        // We're not falling back to mock data anymore
+        setError(err?.message || 'Failed to load team members. Please try again later.');
+        setTeamMembers([]);
       } finally {
         setIsLoading(false);
       }
