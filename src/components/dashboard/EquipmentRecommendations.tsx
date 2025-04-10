@@ -25,7 +25,12 @@ export const EquipmentRecommendations = () => {
       try {
         setLoading(true);
         const data = await getEquipmentRecommendations();
-        setRecommendations(data);
+        // Ensure all items have a valid priority
+        const validatedData = data.map(item => ({
+          ...item,
+          priority: validatePriority(item.priority)
+        }));
+        setRecommendations(validatedData);
         setError(null);
       } catch (err) {
         console.error("Error fetching equipment recommendations:", err);
@@ -37,6 +42,15 @@ export const EquipmentRecommendations = () => {
 
     fetchRecommendations();
   }, []);
+
+  // Helper function to validate priority
+  const validatePriority = (priority: string): 'High' | 'Medium' | 'Low' => {
+    if (priority === 'High' || priority === 'Medium' || priority === 'Low') {
+      return priority as 'High' | 'Medium' | 'Low';
+    }
+    // Default to Medium if the priority is not valid
+    return 'Medium';
+  };
 
   if (loading) {
     return (

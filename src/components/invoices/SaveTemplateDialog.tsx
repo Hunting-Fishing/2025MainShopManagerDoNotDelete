@@ -1,4 +1,5 @@
 
+// Copy from the existing file
 import { useState } from "react";
 import { 
   Dialog, 
@@ -52,7 +53,8 @@ export function SaveTemplateDialog({
       defaultTaxRate: taxRate,
       defaultDueDateDays: dueDateDays,
       defaultItems: includeItems ? currentInvoice.items : [],
-      defaultNotes: includeNotes ? currentInvoice.notes : ""
+      defaultNotes: includeNotes ? currentInvoice.notes : "",
+      lastUsed: null
     };
 
     onSaveTemplate(newTemplate);

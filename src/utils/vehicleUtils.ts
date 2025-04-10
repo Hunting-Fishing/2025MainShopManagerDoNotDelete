@@ -3,6 +3,29 @@ import { supabase } from '@/lib/supabase';
 import { VinDecodeResult } from '@/types/vehicle';
 
 /**
+ * Get a vehicle by its ID
+ */
+export async function getVehicleById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching vehicle:", error);
+      throw new Error('Failed to fetch vehicle data');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in getVehicleById:", error);
+    throw error;
+  }
+}
+
+/**
  * Decode a Vehicle Identification Number (VIN) 
  * Will try to use an external API first, then fall back to local database
  */
@@ -34,8 +57,7 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
         body_style: data[0].body_style,
         country: data[0].country,
         engine: data[0].engine,
-        gvwr: data[0].gvwr,
-        valid: true
+        gvwr: data[0].gvwr
       };
     }
 

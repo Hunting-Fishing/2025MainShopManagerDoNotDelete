@@ -1,6 +1,6 @@
 
-import { InvoiceTemplateDialog } from "./InvoiceTemplateDialog";
-import { SaveTemplateDialog } from "./SaveTemplateDialog";
+import { InvoiceTemplateDialog } from "../invoices/InvoiceTemplateDialog";
+import { SaveTemplateDialog } from "../invoices/SaveTemplateDialog";
 import { Invoice, InvoiceTemplate } from "@/types/invoice";
 import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
 

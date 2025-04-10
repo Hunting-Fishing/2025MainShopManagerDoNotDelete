@@ -1,97 +1,18 @@
 
 import { supabase } from '@/lib/supabase';
 
-/**
- * Types for team member history records
- */
 export interface TeamMemberHistoryRecord {
-  id?: string;
+  id: string;
   profile_id: string;
-  action_type: 'creation' | 'update' | 'role_change' | 'deletion' | 'status_change';
+  action_type: string;
   action_by: string;
   action_by_name?: string;
-  timestamp?: string;
-  details: Record<string, any>;
+  timestamp: string;
+  details: any;
 }
 
-/**
- * Records a history event for team member changes
- * @param record The history record to create
- * @returns Object with success status and message
- */
-export const recordTeamMemberHistory = async (
-  record: Omit<TeamMemberHistoryRecord, 'timestamp'>
-): Promise<{success: boolean, message: string, id?: string}> => {
-  try {
-    // Get the current user ID to track who made the change
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Get user name from profiles table
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('first_name, last_name')
-      .eq('id', user?.id)
-      .single();
-    
-    const userName = profileData ? 
-      `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() : 
-      'System';
-      
-    // Using a more generic approach to avoid type errors with table name
-    const { data, error } = await supabase
-      .from('team_member_history')
-      .insert({
-        ...record,
-        action_by: record.action_by || user?.id || 'system',
-        action_by_name: record.action_by_name || userName,
-        timestamp: new Date().toISOString()
-      })
-      .select('id')
-      .single();
-      
-    if (error) {
-      console.error("Error recording team member history:", error);
-      return {
-        success: false,
-        message: "Failed to record history"
-      };
-    }
-    
-    // Define base response object
-    const response = {
-      success: true,
-      message: "History recorded"
-    };
-    
-    // Fix null handling: First ensure data exists, then check if it's an object with an id property
-    // Use type assertions to help TypeScript understand our checks
-    if (data !== null && typeof data === 'object') {
-      const recordData = data as { id?: string };
-      if ('id' in recordData && recordData.id) {
-        return {
-          ...response,
-          id: recordData.id
-        };
-      }
-    }
-    
-    // Return just the success response if no ID is available
-    return response;
-  } catch (error) {
-    console.error("Exception recording team member history:", error);
-    return {
-      success: false,
-      message: "An error occurred while recording history"
-    };
-  }
-};
-
-/**
- * Fetch history records for a specific team member
- * @param profileId The ID of the team member
- * @returns Array of history records
- */
-export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMemberHistoryRecord[]> => {
+// Fetch team member history records
+export async function fetchTeamMemberHistory(profileId: string): Promise<TeamMemberHistoryRecord[]> {
   try {
     const { data, error } = await supabase
       .from('team_member_history')
@@ -99,132 +20,43 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
       .eq('profile_id', profileId)
       .order('timestamp', { ascending: false });
       
-    if (error) {
-      console.error("Error fetching team member history:", error);
-      return [];
-    }
+    if (error) throw error;
     
-    // If no data, return empty array
-    if (!data || !Array.isArray(data)) {
-      return [];
-    }
-    
-    // Process the data to ensure it matches our expected type
-    // Use type assertion after validation to assure TypeScript
-    const processedData: TeamMemberHistoryRecord[] = data.map(item => {
-      // Ensure item is an object with the properties we need
-      if (!item || typeof item !== 'object') {
-        // Return a default object if item is not valid
-        return {
-          profile_id: profileId,
-          action_type: 'update',
-          action_by: 'system',
-          timestamp: new Date().toISOString(),
-          details: {}
-        };
-      }
-      
-      // Type assert item after null check to safely access properties
-      const safeItem = item as Record<string, any>;
-      
-      // Safely access properties with default values as needed
-      return {
-        id: safeItem.id as string,
-        profile_id: safeItem.profile_id as string,
-        // Make sure action_type is one of the allowed values
-        action_type: validateActionType(safeItem.action_type as string),
-        action_by: safeItem.action_by as string,
-        action_by_name: safeItem.action_by_name as string,
-        timestamp: safeItem.timestamp as string,
-        details: (safeItem.details as Record<string, any>) || {}
-      };
-    });
-    
-    return processedData;
+    return data || [];
   } catch (error) {
-    console.error("Exception fetching team member history:", error);
+    console.error('Error fetching team member history:', error);
     return [];
   }
-};
-
-/**
- * Fetch all team history records
- * @returns Array of all team history records
- */
-export const fetchAllTeamHistory = async (): Promise<TeamMemberHistoryRecord[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('team_member_history')
-      .select('*')
-      .order('timestamp', { ascending: false });
-      
-    if (error) {
-      console.error("Error fetching team history:", error);
-      return [];
-    }
-    
-    // If no data, return empty array
-    if (!data || !Array.isArray(data)) {
-      return [];
-    }
-    
-    // Process the data to ensure it matches our expected type
-    const processedData: TeamMemberHistoryRecord[] = data.map(item => {
-      // Type assert item after null check to safely access properties
-      const safeItem = item as Record<string, any>;
-      
-      // Safely access properties with default values as needed
-      return {
-        id: safeItem.id as string,
-        profile_id: safeItem.profile_id as string,
-        action_type: validateActionType(safeItem.action_type as string),
-        action_by: safeItem.action_by as string,
-        action_by_name: safeItem.action_by_name as string,
-        timestamp: safeItem.timestamp as string,
-        details: (safeItem.details as Record<string, any>) || {}
-      };
-    });
-    
-    return processedData;
-  } catch (error) {
-    console.error("Exception fetching all team history:", error);
-    return [];
-  }
-};
-
-/**
- * Validates that action_type is one of the allowed values
- */
-function validateActionType(actionType: string): TeamMemberHistoryRecord['action_type'] {
-  const validTypes: TeamMemberHistoryRecord['action_type'][] = [
-    'creation', 'update', 'role_change', 'deletion', 'status_change'
-  ];
-  
-  return validTypes.includes(actionType as any) 
-    ? actionType as TeamMemberHistoryRecord['action_type'] 
-    : 'update'; // Default to 'update' if invalid
 }
 
-/**
- * Formats a history record for display
- * @param record The history record to format
- * @returns A formatted string describing the change
- */
-export const formatHistoryRecord = (record: TeamMemberHistoryRecord): string => {
-  const timestamp = new Date(record.timestamp || new Date()).toLocaleString();
+// Format history record for display
+export function formatHistoryRecord(record: TeamMemberHistoryRecord): string {
+  const date = new Date(record.timestamp).toLocaleDateString();
+  const time = new Date(record.timestamp).toLocaleTimeString();
   
-  switch(record.action_type) {
-    case 'creation':
-      return `Created on ${timestamp}`;
-    case 'update':
-      return `Profile updated on ${timestamp}${record.details.fields ? ` (${record.details.fields.join(', ')})` : ''}`;
-    case 'role_change':
-      return `Role changed from "${record.details.previous_role || 'None'}" to "${record.details.new_role}" on ${timestamp}`;
-    case 'status_change':
-      return `Status changed from "${record.details.previous_status || 'Active'}" to "${record.details.new_status}" on ${timestamp}`;
-    case 'deletion':
-      return `Team member removed on ${timestamp}`;
-    default:
-      return `Profile modified on ${timestamp}`;
+  let message = `${date} at ${time}`;
+  
+  if (record.action_by_name) {
+    message += ` by ${record.action_by_name}`;
   }
-};
+  
+  // Add specific details based on action type
+  if (record.action_type === 'role_change') {
+    const { from, to } = record.details || {};
+    message += `: Role changed from ${from || 'None'} to ${to || 'None'}`;
+  } else if (record.action_type === 'profile_update') {
+    message += `: Profile information updated`;
+  } else if (record.action_type === 'permission_change') {
+    message += `: Permissions were modified`;
+  } else if (record.action_type === 'account_created') {
+    message += `: Account was created`;
+  } else if (record.action_type === 'status_change') {
+    const { from, to } = record.details || {};
+    message += `: Status changed from ${from || 'Active'} to ${to || 'Inactive'}`;
+  } else {
+    // Generic message for other action types
+    message += `: ${record.action_type.replace(/_/g, ' ')}`;
+  }
+  
+  return message;
+}

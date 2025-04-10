@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Invoice } from "@/types/invoice";
+import { Invoice, InvoiceStatus } from "@/types/invoice";
 import { supabase } from '@/lib/supabase';
 
 export function useInvoiceData() {
@@ -43,6 +43,16 @@ export function useInvoiceData() {
           
         if (staffError) throw staffError;
         
+        // Ensure status is a valid InvoiceStatus
+        let status: InvoiceStatus = "draft"; // Default
+        if (invoice.status === "draft" || 
+            invoice.status === "pending" || 
+            invoice.status === "paid" || 
+            invoice.status === "overdue" || 
+            invoice.status === "cancelled") {
+          status = invoice.status as InvoiceStatus;
+        }
+        
         // Format to match Invoice type
         return {
           id: invoice.id,
@@ -55,7 +65,7 @@ export function useInvoiceData() {
           total: invoice.total || 0,
           subtotal: invoice.subtotal || 0,
           tax: invoice.tax || 0,
-          status: invoice.status || 'draft',
+          status: status,
           paymentMethod: invoice.payment_method || '',
           date: invoice.date || new Date().toISOString().split('T')[0],
           dueDate: invoice.due_date || '',
