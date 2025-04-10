@@ -86,10 +86,10 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
     return data.map(wo => {
       // Map time entries to match TimeEntry interface
       const timeEntries: TimeEntry[] = (wo.work_order_time_entries || []).map((entry: TimeEntryRecord) => ({
-        id: entry.id,
-        employeeId: entry.employee_id,
-        employeeName: entry.employee_name,
-        startTime: entry.start_time,
+        id: String(entry.id), // Ensure ID is a string
+        employeeId: entry.employee_id ? String(entry.employee_id) : '', // Ensure employeeId is a string
+        employeeName: entry.employee_name || '',
+        startTime: entry.start_time || '',
         endTime: entry.end_time || null,
         duration: entry.duration || 0,
         notes: entry.notes || '',
@@ -178,16 +178,18 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
     }
     
     return data.map((profile: ProfileRecord) => {
-      // Parse ID to number if needed
-      const id = typeof profile.id === 'number' ? profile.id : 
-                 typeof profile.id === 'string' ? parseInt(profile.id, 10) || 0 : 0;
+      // Parse ID to number if needed and then convert to string
+      const id = profile.id ? (
+        typeof profile.id === 'number' ? profile.id : 
+        typeof profile.id === 'string' ? parseInt(profile.id, 10) || 0 : 0
+      ) : 0;
       
       // Access properties safely
       const firstName = profile.first_name || '';
       const lastName = profile.last_name || '';
       
       return {
-        id, // This will be either the parsed number or 0
+        id, // This will be a number as required by StaffMember interface
         name: `${firstName} ${lastName}`.trim() || 'Unknown Staff',
         role: profile.job_title || 'Technician'
       };
