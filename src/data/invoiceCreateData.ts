@@ -71,18 +71,18 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
         billable: entry.billable
       }));
       
-      // Safely access nested objects
+      // Handle customers and profiles safely - they might be null or empty objects
       const customers = wo.customers || {};
       const profiles = wo.profiles || {};
       
       // Use optional chaining and nullish coalescing for safer access
       const firstName = customers?.first_name ?? '';
       const lastName = customers?.last_name ?? '';
-      const customerName = `${firstName} ${lastName}`.trim();
+      const customerName = `${firstName} ${lastName}`.trim() || 'Unknown Customer';
       
       const techFirstName = profiles?.first_name ?? '';
       const techLastName = profiles?.last_name ?? '';
-      const technicianName = `${techFirstName} ${techLastName}`.trim();
+      const technicianName = `${techFirstName} ${techLastName}`.trim() || 'Unassigned';
       
       // Cast status to the expected type
       const status = (wo.status || 'pending') as "pending" | "in-progress" | "completed" | "cancelled";
@@ -153,16 +153,17 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
     }
     
     return data.map((profile) => {
-      // Parse ID to number if possible
+      // Parse ID to number if needed
       const id = typeof profile.id === 'number' ? profile.id : 
-                 typeof profile.id === 'string' ? parseInt(profile.id, 10) : 0;
+                 typeof profile.id === 'string' ? parseInt(profile.id, 10) || 0 : 0;
       
+      // Access properties safely
       const firstName = profile.first_name || '';
       const lastName = profile.last_name || '';
       
       return {
-        id: isNaN(id) ? 0 : id, // Convert to 0 if parsing fails to match StaffMember type
-        name: `${firstName} ${lastName}`.trim(),
+        id, // This will be either the parsed number or 0
+        name: `${firstName} ${lastName}`.trim() || 'Unknown Staff',
         role: profile.job_title || 'Technician'
       };
     });

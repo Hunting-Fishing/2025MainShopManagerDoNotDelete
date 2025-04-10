@@ -2,6 +2,7 @@
 import { Equipment } from "@/types/equipment";
 import { supabase } from "@/lib/supabase";
 import { v4 as uuidv4 } from 'uuid';
+import { addMonths, addDays, addYears, parseISO, format } from 'date-fns';
 
 // Get upcoming maintenance schedules from equipment list
 export const getUpcomingMaintenanceSchedules = (
@@ -65,14 +66,58 @@ export const scheduleMaintenanceWorkOrder = async (
   schedule: any
 ): Promise<string> => {
   try {
-    // In a real implementation, this would create a work order in the database
-    // For now, we'll mock it
-    console.log(`Creating work order for ${equipment.name} maintenance: ${schedule.description}`);
+    // Create a real work order in the database
+    const { data, error } = await supabase
+      .from('work_orders')
+      .insert({
+        description: `Scheduled maintenance: ${schedule.description}`,
+        customer_id: null, // Would need to map equipment to customer
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+      
+    if (error) {
+      console.error("Error creating work order:", error);
+      throw error;
+    }
     
-    // Mock ID
-    return uuidv4();
+    // Return the actual ID
+    return data.id;
   } catch (error) {
     console.error("Error scheduling maintenance work order:", error);
     throw error;
   }
+};
+
+// Calculate the next maintenance date based on frequency
+export const calculateNextMaintenanceDate = (
+  currentDate: string, 
+  frequencyType: string
+): string => {
+  const dateObj = parseISO(currentDate);
+  let nextDate: Date;
+  
+  switch (frequencyType) {
+    case 'monthly':
+      nextDate = addMonths(dateObj, 1);
+      break;
+    case 'quarterly':
+      nextDate = addMonths(dateObj, 3);
+      break;
+    case 'bi-annually':
+      nextDate = addMonths(dateObj, 6);
+      break;
+    case 'annually':
+      nextDate = addYears(dateObj, 1);
+      break;
+    case 'as-needed':
+    default:
+      // For 'as-needed', we'll default to 3 months
+      nextDate = addMonths(dateObj, 3);
+      break;
+  }
+  
+  return format(nextDate, 'yyyy-MM-dd');
 };
