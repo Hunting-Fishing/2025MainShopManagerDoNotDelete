@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 // Define the valid role types that match the database enum
@@ -185,8 +186,24 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
       };
     }
     
-    // Insert the role assignment directly rather than using RPC
-    // This is more reliable for the initial user setup
+    // First, remove any existing roles to prevent multiple role assignments
+    // This ensures clean role management, especially for exclusive roles like 'owner'
+    try {
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+        
+      if (deleteError) {
+        console.warn("Warning: Could not clear existing roles", deleteError);
+        // Continue anyway - might be a new user with no roles
+      }
+    } catch (deleteErr) {
+      console.warn("Exception clearing existing roles:", deleteErr);
+      // Continue with the assignment anyway
+    }
+    
+    // Insert the role assignment directly
     const { error } = await supabase
       .from('user_roles')
       .insert({

@@ -40,9 +40,15 @@ export default function Team() {
     resetFilters
   } = useTeamFilters(teamMembers);
   
-  // Check if the current user has no role
+  // Check if the current user has no role or should be an owner
   const currentUser = userId ? teamMembers.find(member => member.id === userId) : null;
-  const currentUserHasNoRole = currentUser && currentUser.role === "No Role Assigned";
+  const currentUserHasNoRole = currentUser && (currentUser.role === "No Role Assigned" || currentUser.role !== "Owner");
+  
+  // Log current user role info for debugging
+  if (currentUser) {
+    console.log("Current user:", currentUser);
+    console.log("Current user role:", currentUser.role);
+  }
 
   // Helper function to get initials from name
   const getInitials = (name: string): string => {

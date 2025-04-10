@@ -24,6 +24,8 @@ export function useRoleAssignment() {
     setError(null);
     
     try {
+      console.log(`Assigning role "${roleName}" to user ${userId}`);
+      
       // Get previous role for history tracking
       const { data: previousRoles } = await findUserCurrentRole(userId);
       const previousRole = previousRoles?.length > 0 ? previousRoles[0].roles.name : null;
@@ -32,23 +34,29 @@ export function useRoleAssignment() {
       const { roleId, error: findError } = await findRoleByName(roleName);
       
       if (findError || !roleId) {
-        throw new Error(findError || "Role not found");
+        throw new Error(findError || `Role "${roleName}" not found`);
       }
       
-      // Assign the role to the user
+      // Assign the role to the user - this function handles duplicate checks
       const result = await assignRoleToUser(userId, roleId);
       
-      // Record the role change in history
-      await recordTeamMemberHistory({
-        profile_id: userId,
-        action_type: 'role_change',
-        action_by: 'current_user', // Will be replaced with actual user ID
-        details: {
-          previous_role: previousRole,
-          new_role: roleName,
-          timestamp: new Date().toISOString()
-        }
-      });
+      if (result.success) {
+        console.log(`Successfully assigned role "${roleName}" to user ${userId}`);
+        
+        // Record the role change in history
+        await recordTeamMemberHistory({
+          profile_id: userId,
+          action_type: 'role_change',
+          action_by: 'current_user', // Will be replaced with actual user ID
+          details: {
+            previous_role: previousRole,
+            new_role: roleName,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } else {
+        console.error(`Failed to assign role: ${result.message}`);
+      }
       
       return result;
     } catch (err) {
@@ -97,6 +105,10 @@ export function useRoleAssignment() {
         `)
         .eq('user_id', userId);
         
+      if (error) {
+        console.error("Error finding current role:", error);
+      }
+      
       return { data, error };
     } catch (err) {
       console.error('Error finding current role:', err);
