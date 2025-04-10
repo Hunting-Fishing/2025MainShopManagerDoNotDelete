@@ -72,16 +72,19 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
       }));
       
       // Build customer and technician names safely
-      const customers = wo.customers as any || {};
-      const profiles = wo.profiles as any || {};
-      const customerName = `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim();
-      const technicianName = `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim();
+      const customers = wo.customers || {};
+      const profiles = wo.profiles || {};
+      const customerName = `${customers.first_name || ''} ${customers.last_name || ''}`.trim();
+      const technicianName = `${profiles.first_name || ''} ${profiles.last_name || ''}`.trim();
+      
+      // Cast status to the expected type
+      const status = (wo.status || 'pending') as "pending" | "in-progress" | "completed" | "cancelled";
       
       return {
         id: wo.id,
         customer: customerName,
         description: wo.description || '',
-        status: (wo.status || 'pending') as "pending" | "in-progress" | "completed" | "cancelled",
+        status: status,
         date: wo.created_at,
         dueDate: wo.end_time || '',
         priority: 'medium' as "low" | "medium" | "high", // Default priority
@@ -147,11 +150,15 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
       return [];
     }
     
-    return data.map((profile) => ({
-      id: parseInt(profile.id) || profile.id, // Convert to number if possible, otherwise keep as string
-      name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-      role: profile.job_title || 'Technician'
-    }));
+    return data.map((profile) => {
+      // Parse ID to number if possible
+      const id = parseInt(profile.id);
+      return {
+        id: isNaN(id) ? 0 : id, // Convert to 0 if parsing fails to match StaffMember type
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+        role: profile.job_title || 'Technician'
+      };
+    });
   } catch (err) {
     console.error("Error in fetchStaffMembers:", err);
     return [];

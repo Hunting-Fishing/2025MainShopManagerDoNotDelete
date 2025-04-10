@@ -17,7 +17,6 @@ import { maintenanceFrequencyMap } from "@/data/equipmentData";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
-import { notificationService } from "@/services/notificationService";
 
 interface MaintenanceSchedulerProps {
   equipmentList: Equipment[];
@@ -74,11 +73,6 @@ export function MaintenanceScheduler({ equipmentList }: MaintenanceSchedulerProp
         title: "Schedule Created",
         description: "The maintenance schedule has been created successfully.",
       });
-      
-      // Trigger a test notification if notifications are enabled
-      if (enableNotifications) {
-        notificationService.triggerDemoNotification();
-      }
       
       // Reset form
       setDescription("");

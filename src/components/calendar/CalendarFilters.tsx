@@ -70,7 +70,7 @@ export function CalendarFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Technicians</SelectItem>
-          {technicians.map((tech) => (
+          {technicians && technicians.map((tech) => (
             <SelectItem key={tech} value={tech}>
               {tech}
             </SelectItem>

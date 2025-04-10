@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, addDays, parseISO, isBefore } from "date-fns";
-import { equipment, getOverdueMaintenanceEquipment } from "@/data/equipmentData";
+import { fetchEquipment, getOverdueMaintenanceEquipment } from "@/data/equipmentData";
 import { MaintenanceHeader } from "@/components/maintenance/MaintenanceHeader";
 import { MaintenanceAlerts } from "@/components/maintenance/MaintenanceAlerts";
 import { UpcomingMaintenanceTable } from "@/components/maintenance/UpcomingMaintenanceTable";
@@ -15,30 +15,64 @@ import { Equipment, MaintenanceRecord } from "@/types/equipment";
 export default function MaintenanceDashboard() {
   const [timeframe, setTimeframe] = useState<"upcoming" | "all">("upcoming");
   const [filterStatus, setFilterStatus] = useState<"all" | "overdue" | "scheduled">("all");
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [overdueEquipment, setOverdueEquipment] = useState<Equipment[]>([]);
+  const [upcomingMaintenance, setUpcomingMaintenance] = useState<any[]>([]);
+  const [allMaintenanceHistory, setAllMaintenanceHistory] = useState<Array<MaintenanceRecord & { equipmentName: string }>>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
-  // Get equipment requiring maintenance
-  const overdueEquipment = getOverdueMaintenanceEquipment();
-  
-  // Get upcoming maintenance schedules (next 30 days)
-  const upcomingMaintenance = getUpcomingMaintenanceSchedules(equipment, 30);
-  
-  // Collect all maintenance history from all equipment
-  const allMaintenanceHistory: Array<MaintenanceRecord & { equipmentName: string }> = [];
-  equipment.forEach(item => {
-    if (item.maintenanceHistory) {
-      item.maintenanceHistory.forEach(record => {
-        allMaintenanceHistory.push({
-          ...record,
-          equipmentName: item.name
+  // Load equipment data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [equipmentData, overdueData] = await Promise.all([
+          fetchEquipment(),
+          getOverdueMaintenanceEquipment()
+        ]);
+        
+        setEquipment(equipmentData);
+        setOverdueEquipment(overdueData);
+        
+        // Get upcoming maintenance schedules (next 30 days)
+        const upcoming = getUpcomingMaintenanceSchedules(equipmentData, 30);
+        setUpcomingMaintenance(upcoming);
+        
+        // Collect all maintenance history from all equipment
+        const history: Array<MaintenanceRecord & { equipmentName: string }> = [];
+        equipmentData.forEach(item => {
+          if (item.maintenanceHistory) {
+            item.maintenanceHistory.forEach(record => {
+              history.push({
+                ...record,
+                equipmentName: item.name
+              });
+            });
+          }
         });
-      });
-    }
-  });
-  
-  // Sort maintenance history by date (most recent first)
-  const sortedMaintenanceHistory = [...allMaintenanceHistory].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
-  });
+        
+        // Sort maintenance history by date (most recent first)
+        const sortedHistory = [...history].sort((a, b) => {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
+        
+        setAllMaintenanceHistory(sortedHistory);
+      } catch (error) {
+        console.error("Error loading maintenance dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-slate-500">Loading maintenance data...</div>
+      </div>
+    );
+  }
 
   // Calculate maintenance statistics
   const today = new Date();
@@ -94,7 +128,7 @@ export default function MaintenanceDashboard() {
         
         <TabsContent value="history" className="space-y-4">
           <MaintenanceHistoryTable 
-            maintenanceHistory={sortedMaintenanceHistory}
+            maintenanceHistory={allMaintenanceHistory}
             timeframe={timeframe}
             setTimeframe={setTimeframe}
           />

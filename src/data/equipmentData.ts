@@ -1,6 +1,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { fetchWorkOrders } from "./workOrdersData";
+import { Equipment, MaintenanceFrequency, MaintenanceRecord } from "@/types/equipment";
 
 // Equipment data types
 export interface Equipment {
@@ -19,6 +20,51 @@ export interface Equipment {
   location: string;
   notes?: string;
 }
+
+// Equipment status mapping
+export const equipmentStatusMap = {
+  "operational": {
+    label: "Operational",
+    classes: "bg-green-100 text-green-800"
+  },
+  "maintenance-required": {
+    label: "Maintenance Required",
+    classes: "bg-amber-100 text-amber-800"
+  },
+  "out-of-service": {
+    label: "Out of Service",
+    classes: "bg-red-100 text-red-800"
+  },
+  "decommissioned": {
+    label: "Decommissioned",
+    classes: "bg-slate-100 text-slate-800"
+  }
+};
+
+// Warranty status mapping
+export const warrantyStatusMap = {
+  "active": {
+    label: "Active",
+    classes: "bg-green-100 text-green-800"
+  },
+  "expired": {
+    label: "Expired",
+    classes: "bg-red-100 text-red-800"
+  },
+  "not-applicable": {
+    label: "N/A",
+    classes: "bg-slate-100 text-slate-800"
+  }
+};
+
+// Maintenance frequency mapping
+export const maintenanceFrequencyMap = {
+  "monthly": "Monthly",
+  "quarterly": "Quarterly",
+  "bi-annually": "Bi-Annually",
+  "annually": "Annually",
+  "as-needed": "As Needed"
+};
 
 // Fetch equipment data from Supabase
 export const fetchEquipment = async (): Promise<Equipment[]> => {
@@ -70,6 +116,39 @@ export const fetchEquipmentCategories = async (): Promise<string[]> => {
     return [...new Set(categories)].sort();
   } catch (err) {
     console.error("Error fetching equipment categories:", err);
+    return [];
+  }
+};
+
+// Get equipment requiring maintenance
+export const getOverdueMaintenanceEquipment = async (): Promise<Equipment[]> => {
+  try {
+    const equipment = await fetchEquipment();
+    const today = new Date();
+    
+    return equipment.filter(item => 
+      new Date(item.nextMaintenanceDate) < today
+    );
+  } catch (err) {
+    console.error("Error getting overdue maintenance equipment:", err);
+    return [];
+  }
+};
+
+// Get equipment with maintenance due soon (next 30 days)
+export const getMaintenanceDueEquipment = async (): Promise<Equipment[]> => {
+  try {
+    const equipment = await fetchEquipment();
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    
+    return equipment.filter(item => {
+      const nextDate = new Date(item.nextMaintenanceDate);
+      return nextDate >= today && nextDate <= thirtyDaysFromNow;
+    });
+  } catch (err) {
+    console.error("Error getting maintenance due equipment:", err);
     return [];
   }
 };

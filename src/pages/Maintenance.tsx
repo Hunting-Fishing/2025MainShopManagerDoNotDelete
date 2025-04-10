@@ -1,19 +1,55 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { ResponsiveStack } from '@/components/ui/responsive-stack';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Wrench, AlertTriangle, CheckCircle } from 'lucide-react';
-import { equipment, getMaintenanceDueEquipment, getOverdueMaintenanceEquipment } from '@/data/equipmentData';
+import { fetchEquipment, getMaintenanceDueEquipment, getOverdueMaintenanceEquipment } from '@/data/equipmentData';
+import { Equipment } from '@/types/equipment';
 
 export default function Maintenance() {
-  const maintenanceDueEquipment = getMaintenanceDueEquipment();
-  const overdueEquipment = getOverdueMaintenanceEquipment();
-  const completedMaintenance = equipment.filter(item => 
-    item.lastMaintenanceDate && new Date(item.lastMaintenanceDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  );
+  const [maintenanceDueEquipment, setMaintenanceDueEquipment] = useState<Equipment[]>([]);
+  const [overdueEquipment, setOverdueEquipment] = useState<Equipment[]>([]);
+  const [completedMaintenance, setCompletedMaintenance] = useState<Equipment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load equipment data
+  useEffect(() => {
+    const loadEquipmentData = async () => {
+      try {
+        const [equipment, maintenanceDue, overdue] = await Promise.all([
+          fetchEquipment(),
+          getMaintenanceDueEquipment(),
+          getOverdueMaintenanceEquipment()
+        ]);
+
+        // Filter completed maintenance in the last 30 days
+        const completed = equipment.filter(item => 
+          item.lastMaintenanceDate && new Date(item.lastMaintenanceDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        );
+
+        setMaintenanceDueEquipment(maintenanceDue);
+        setOverdueEquipment(overdue);
+        setCompletedMaintenance(completed);
+      } catch (error) {
+        console.error("Error loading equipment data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadEquipmentData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-slate-500">Loading maintenance data...</div>
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer className="space-y-6">
