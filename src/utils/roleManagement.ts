@@ -1,7 +1,12 @@
 
 import { supabase } from '@/lib/supabase';
-import { AppRole } from './roleMapping';
-import { mapRoleToDbValue } from './roleMapping';
+import { AppRole } from './roleUtils';
+
+// Define the valid role types that match the database enum
+export type { AppRole } from './roleUtils';
+
+// Map display roles to database enum values - imported from roleUtils
+export { roleValueMapping, mapRoleToDbValue, detectRoleFromJobTitle } from './roleUtils';
 
 /**
  * Checks if a user already has a specific role
@@ -46,6 +51,8 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
   message: string;
 }> => {
   try {
+    console.log(`Attempting to assign role ${roleId} to user ${userId}`);
+    
     // First check if user already has this role to avoid duplicate key errors
     const hasRole = await checkExistingRole(userId, roleId);
     
@@ -56,11 +63,13 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
       };
     }
     
-    // Use the RPC function to assign the role
-    const { data, error } = await supabase
-      .rpc('assign_role_to_user', { 
-        user_id_param: userId, 
-        role_id_param: roleId 
+    // Insert the role assignment directly rather than using RPC
+    // This is more reliable for the initial user setup
+    const { error } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userId,
+        role_id: roleId
       });
       
     if (error) {
@@ -86,6 +95,7 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
       }
     }
     
+    console.log(`Successfully assigned role ${roleId} to user ${userId}`);
     return {
       success: true,
       message: "Role assigned successfully."
@@ -107,12 +117,13 @@ export const findRoleByName = async (roleName: string): Promise<{
   error?: string;
 }> => {
   try {
+    const { mapRoleToDbValue } = await import('./roleUtils');
     const roleValue = mapRoleToDbValue(roleName);
     console.log(`Finding role for: ${roleName}, mapped to DB value: ${roleValue}`);
     
     const { data, error } = await supabase
       .from('roles')
-      .select('id')
+      .select('id, name')
       .eq('name', roleValue)
       .single();
       
@@ -121,9 +132,32 @@ export const findRoleByName = async (roleName: string): Promise<{
       return { error: "Could not find the requested role." };
     }
     
+    console.log("Found role:", data);
     return { roleId: data.id };
   } catch (error) {
     console.error("Exception in findRoleByName:", error);
     return { error: "An unexpected error occurred while finding the role." };
+  }
+};
+
+/**
+ * Retrieves all roles available in the system
+ */
+export const fetchAllRoles = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .order('priority', { ascending: true });
+      
+    if (error) {
+      console.error("Error fetching roles:", error);
+      return { roles: [], error: error.message };
+    }
+    
+    return { roles: data, error: null };
+  } catch (error) {
+    console.error("Exception in fetchAllRoles:", error);
+    return { roles: [], error: "Failed to fetch roles" };
   }
 };

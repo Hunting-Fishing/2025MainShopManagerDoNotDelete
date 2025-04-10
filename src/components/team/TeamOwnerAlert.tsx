@@ -28,6 +28,7 @@ export function TeamOwnerAlert({ userId, hasNoRole }: TeamOwnerAlertProps) {
     
     setIsAssigningRole(true);
     try {
+      console.log("Finding Owner role...");
       const { roleId, error: findError } = await findRoleByName("Owner");
       
       if (findError || !roleId) {
@@ -40,6 +41,7 @@ export function TeamOwnerAlert({ userId, hasNoRole }: TeamOwnerAlertProps) {
         return;
       }
       
+      console.log("Found Owner role ID:", roleId);
       const { success, message } = await assignRoleToUser(userId, roleId);
       
       if (success) {
