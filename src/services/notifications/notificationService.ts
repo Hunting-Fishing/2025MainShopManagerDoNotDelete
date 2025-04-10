@@ -27,7 +27,7 @@ export async function fetchNotifications(userId: string): Promise<Notification[]
       message: notification.message,
       read: notification.read,
       timestamp: notification.timestamp,
-      type: notification.type,
+      type: (notification.type || 'info') as 'info' | 'warning' | 'success' | 'error',
       link: notification.link,
       category: notification.category,
       priority: notification.priority || 'medium'
@@ -52,7 +52,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<bo
   }
 }
 
-export async function createNotification(notification: Omit<Notification, 'id' | 'timestamp'>): Promise<boolean> {
+export async function createNotification(notification: Omit<Notification, 'id' | 'timestamp' | 'read'> & { userId: string }): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('notifications')
@@ -76,7 +76,7 @@ export async function createNotification(notification: Omit<Notification, 'id' |
 // Remove demo/mock data - use this function instead of the demo file
 export function getNotificationData(type: string) {
   // Real notification templates based on type
-  const templates = {
+  const templates: Record<string, Omit<Notification, 'id' | 'timestamp' | 'read'>> = {
     workOrder: {
       title: "Work Order Update",
       message: "A work order status has changed",
