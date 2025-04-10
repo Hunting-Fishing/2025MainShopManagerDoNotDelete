@@ -2,9 +2,7 @@
 import { useState, useCallback } from 'react';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
 import { updateUserProfile, showProfileUpdateToast } from '@/utils/profileUtils';
-import { findRoleByName, assignRoleToUser } from '@/utils/roleUtils';
-import { detectRoleFromJobTitle } from '@/utils/roleDetectionUtils';
-import { mapRoleToDbValue } from '@/utils/roleMapping';
+import { findRoleByName, assignRoleToUser, detectRoleFromJobTitle } from '@/utils/roleUtils';
 
 /**
  * Hook for managing team member profile updates including role assignments

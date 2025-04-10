@@ -1,16 +1,16 @@
 
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
 import { Helmet } from "react-helmet-async";
-import { Card } from "@/components/ui/card";
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { TeamMemberForm } from "@/components/team/form/TeamMemberForm";
-import { TeamMemberFormValues } from "@/components/team/form/formValidation";
-import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
+import { TeamMemberFormValues } from "@/components/team/form/formValidation";
 
-export default function TeamMemberCreate() {
+export default function CreateTeamMember() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,13 +23,13 @@ export default function TeamMemberCreate() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      // Generate a UUID for new profiles
+      // Generate a UUID for new profiles (will be ignored if profile already exists)
       const newProfileId = crypto.randomUUID();
       
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: newProfileId,
+          id: newProfileId, // Include ID for new profiles
           email: data.email,
           first_name: firstName,
           last_name: lastName,
@@ -37,14 +37,18 @@ export default function TeamMemberCreate() {
           job_title: data.jobTitle,
           department: data.department
         }, { 
-          onConflict: 'email',
-          ignoreDuplicates: false
+          onConflict: 'email',  // Handle conflict based on email column
+          ignoreDuplicates: false // Update the row if it already exists
         })
         .select('id, email')
         .single();
 
       if (profileError) {
         throw profileError;
+      }
+
+      if (!profileData) {
+        throw new Error('Failed to create team member profile');
       }
 
       // Find the role ID for the selected role
@@ -54,22 +58,31 @@ export default function TeamMemberCreate() {
         .ilike('name', data.role.toLowerCase())
         .single();
 
-      if (!roleError && roleData) {
+      if (roleError) {
+        console.warn(`Role not found for ${data.role}, will skip role assignment:`, roleError);
+      } else if (roleData) {
         // Assign the role to the user
-        await supabase
+        const { error: roleAssignError } = await supabase
           .from('user_roles')
           .insert({
             user_id: profileData.id,
             role_id: roleData.id
           });
+
+        if (roleAssignError) {
+          console.error('Error assigning role:', roleAssignError);
+          // Continue without throwing, as the user was created successfully
+        }
       }
       
+      // Show success message
       toast({
         title: "Team member created",
         description: `${data.name} has been added to your team.`,
         variant: "success",
       });
       
+      // Redirect to team page
       navigate('/team');
       
     } catch (error: any) {
@@ -84,12 +97,13 @@ export default function TeamMemberCreate() {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
     <div className="container mx-auto p-6">
       <Helmet>
         <title>Create Team Member</title>
         <meta name="description" content="Add a new team member to your organization" />
+        <meta name="keywords" content="team management, create team member, add user" />
       </Helmet>
       
       <div className="mb-6 flex items-center justify-between">
@@ -108,7 +122,7 @@ export default function TeamMemberCreate() {
 
       <Card className="p-6">
         <p className="text-muted-foreground mb-6">
-          Fill out the form below to add a new team member to your organization.
+          Fill out the form below to invite a new team member. They will receive an email invitation to join your organization.
         </p>
         
         <TeamMemberForm 

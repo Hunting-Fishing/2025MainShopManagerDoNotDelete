@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -5,14 +6,15 @@ import { TeamMemberFormValues, teamMemberFormSchema } from './formValidation';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { availableRoles, availableDepartments } from './formConstants';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { JobInfoFields } from './JobInfoFields';
 import { PersonalInfoFields } from './PersonalInfoFields';
 import { StatusToggleField } from './StatusToggleField';
 import { NotesField } from './NotesField';
 import { FormActions } from './FormActions';
-import { detectRoleFromJobTitle } from '@/utils/roleDetectionUtils';
+import { detectRoleFromJobTitle } from '@/utils/roleUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface TeamMemberFormProps {
   onSubmit: (data: TeamMemberFormValues) => void;
@@ -58,21 +60,8 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
   };
 
   const handleSubmit = (data: TeamMemberFormValues) => {
-    const nameParts = data.name.split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ');
-
-    const submitData = {
-      ...data,
-      firstName,
-      lastName
-    };
-
-    onSubmit(submitData);
+    onSubmit(data);
   };
-
-  const buttonLabel = mode === 'create' ? 'Create Team Member' : 'Update Team Member';
-  const loadingLabel = mode === 'create' ? 'Creating...' : 'Updating...';
 
   return (
     <Form {...form}>
