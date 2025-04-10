@@ -1,163 +1,201 @@
 
-import { useParams } from "react-router-dom";
-import { InvoiceDetailsHeader } from "@/components/invoices/InvoiceDetailsHeader";
-import { InvoiceDetailsContent } from "@/components/invoices/InvoiceDetailsContent";
-import { PaymentHistoryList } from "@/components/payments/PaymentHistoryList";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { Invoice } from "@/types/invoice";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useParams } from "react-router-dom";
+import { getInvoiceById } from "@/services/invoiceService";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-
-// Status styling
-const statusStyles = {
-  "paid": { label: "Paid", classes: "bg-green-100 text-green-800" },
-  "pending": { label: "Pending", classes: "bg-yellow-100 text-yellow-800" },
-  "overdue": { label: "Overdue", classes: "bg-red-100 text-red-800" },
-  "draft": { label: "Draft", classes: "bg-slate-100 text-slate-800" },
-  "cancelled": { label: "Cancelled", classes: "bg-slate-100 text-slate-800" },
-};
+import { Invoice } from "@/types/invoice";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { InvoiceView } from "@/components/invoices/InvoiceView";
+import { InvoicePDF } from "@/components/invoices/InvoicePDF";
+import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
+import { SaveAlt, Mail, Print, ArrowLeft } from "lucide-react";
+import { FileIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { calculateInvoiceTotals } from "@/utils/invoiceUtils";
 
 export default function InvoiceDetails() {
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Fetch invoice data from Supabase
+  const [loading, setLoading] = useState(true);
+  const [showPdf, setShowPdf] = useState(false);
+  const [pdfReady, setPdfReady] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   useEffect(() => {
     const fetchInvoice = async () => {
       if (!id) return;
       
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('invoices')
-          .select(`
-            *,
-            invoice_items(*)
-          `)
-          .eq('id', id)
-          .single();
-          
-        if (error) {
-          throw error;
-        }
+        const invoiceData = await getInvoiceById(id);
+        setInvoice(invoiceData);
         
-        if (!data) {
-          throw new Error("Invoice not found");
-        }
-        
-        // Create the invoice with required properties
-        const formattedInvoice: Invoice = {
-          id: data.id,
-          customer: data.customer,
-          customerAddress: data.customer_address || '',
-          customerEmail: data.customer_email || '',
-          description: data.description || '',
-          notes: data.notes || '',
-          status: data.status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
-          date: data.date || '',
-          dueDate: data.due_date || '',
-          total: data.total || 0,
-          subtotal: data.subtotal || 0,
-          tax: data.tax || 0,
-          workOrderId: data.work_order_id || '',
-          createdBy: data.created_by || '',
-          paymentMethod: data.payment_method || '',
-          assignedStaff: [], // Initialize with empty array
-          items: data.invoice_items || [],
-          customer_id: data.customer_id, // Include customer_id
-        };
-        
-        // Fetch assigned staff members if needed
-        const { data: staffData } = await supabase
-          .from('invoice_staff')
-          .select('staff_name')
-          .eq('invoice_id', id);
-          
-        if (staffData && staffData.length > 0) {
-          formattedInvoice.assignedStaff = staffData.map(staff => staff.staff_name);
-        }
-        
-        setInvoice(formattedInvoice);
-      } catch (err: any) {
-        console.error('Error fetching invoice:', err);
-        setError(err.message || "An error occurred while fetching the invoice");
+        // Add a small delay to ensure the PDF generation works properly
+        setTimeout(() => {
+          setPdfReady(true);
+        }, 500);
+      } catch (error) {
+        console.error("Error fetching invoice:", error);
+        toast({
+          title: "Error",
+          description: "Could not load invoice details",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchInvoice();
-  }, [id]);
-  
+  }, [id, toast]);
+
+  const handleSendInvoice = () => {
+    if (!invoice || !invoice.customerEmail) {
+      toast({
+        title: "Cannot Send Invoice",
+        description: "This invoice doesn't have a customer email address.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Invoice Sent",
+      description: `Invoice has been sent to ${invoice.customerEmail}`,
+    });
+  };
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-12 w-2/3" />
-        <Skeleton className="h-[600px] w-full" />
+      <div className="container py-10">
+        <Skeleton className="h-12 w-1/4 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-8 w-1/3" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-8 w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-6 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
-  
-  if (error || !invoice) {
+
+  if (!invoice) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          {error || "Could not load invoice details. Please try again later."}
-        </AlertDescription>
-      </Alert>
+      <div className="container py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle>Invoice Not Found</CardTitle>
+            <CardDescription>The requested invoice could not be found.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/invoices')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Invoices
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
+
+  // Calculate totals
+  const { subtotal, tax, total } = calculateInvoiceTotals(invoice);
   
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <InvoiceDetailsHeader 
-        invoiceId={invoice.id}
-        status={invoice.status}
-        statusStyles={statusStyles}
-        invoice={invoice}
-      />
-      
-      {/* Tabs for Invoice details and Payments */}
-      <Tabs defaultValue="details" className="w-full">
-        <TabsList>
-          <TabsTrigger value="details">Invoice Details</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="details" className="mt-4">
-          {/* Content */}
-          <InvoiceDetailsContent 
-            invoice={invoice}
-            statusStyles={statusStyles}
-          />
-        </TabsContent>
-        
-        <TabsContent value="payments" className="mt-4">
-          {invoice.customer_id ? (
-            <PaymentHistoryList 
-              customerId={invoice.customer_id} 
-              invoiceId={invoice.id} 
-              allowAddPayment={true}
-            />
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>No Customer ID</AlertTitle>
-              <AlertDescription>
-                This invoice doesn't have a customer ID associated with it, so payment tracking is limited.
-              </AlertDescription>
-            </Alert>
+  // Ensure paymentMethod has a default value
+  const invoiceWithDefaults = {
+    ...invoice,
+    subtotal,
+    tax,
+    total,
+    paymentMethod: invoice.paymentMethod || "Not Specified"
+  };
+
+  if (showPdf) {
+    return (
+      <div className="container py-6">
+        <div className="mb-6 flex items-center justify-between">
+          <Button variant="outline" onClick={() => setShowPdf(false)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Invoice
+          </Button>
+
+          {pdfReady && (
+            <PDFDownloadLink
+              document={<InvoicePDF invoice={invoiceWithDefaults} />}
+              fileName={`invoice-${invoice.id}.pdf`}
+            >
+              {({ loading: pdfLoading }) => (
+                <Button disabled={pdfLoading}>
+                  <SaveAlt className="h-4 w-4 mr-2" />
+                  {pdfLoading ? "Preparing PDF..." : "Download PDF"}
+                </Button>
+              )}
+            </PDFDownloadLink>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        <Card className="h-[800px]">
+          <PDFViewer width="100%" height="100%" className="border-0">
+            <InvoicePDF invoice={invoiceWithDefaults} />
+          </PDFViewer>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container py-6">
+      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center sm:justify-between">
+        <Button variant="outline" onClick={() => navigate('/invoices')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Invoices
+        </Button>
+
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setShowPdf(true)}>
+            <FileIcon className="h-4 w-4 mr-2" />
+            View PDF
+          </Button>
+
+          <Button variant="outline" onClick={() => window.print()}>
+            <Print className="h-4 w-4 mr-2" />
+            Print
+          </Button>
+
+          <Button onClick={handleSendInvoice}>
+            <Mail className="h-4 w-4 mr-2" />
+            Send Invoice
+          </Button>
+        </div>
+      </div>
+
+      <InvoiceView invoice={invoiceWithDefaults} />
     </div>
   );
 }

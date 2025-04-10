@@ -1,41 +1,43 @@
 
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, ResponsiveContainer } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { getServiceTypeDistribution } from "@/services/dashboardService";
+import { ServiceTypeData } from "@/types/dashboard";
 
-export const ServiceTypeDistributionChart = () => {
-  const [data, setData] = useState([]);
+export function ServiceTypeDistributionChart() {
+  const [data, setData] = useState<ServiceTypeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchServiceTypeDistribution = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const serviceData = await getServiceTypeDistribution();
         setData(serviceData);
-        setError(null);
       } catch (err) {
-        console.error("Error fetching service type distribution:", err);
+        console.error("Error fetching service type data:", err);
         setError("Failed to load service type data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchServiceTypeDistribution();
+    fetchData();
   }, []);
+
+  const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#6366F1", "#EC4899", "#8B5CF6"];
 
   if (loading) {
     return (
-      <Card className="col-span-1">
+      <Card>
         <CardHeader>
           <CardTitle>Service Type Distribution</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-esm-blue-600"></div>
+        <CardContent className="h-80">
+          <div className="flex justify-center items-center h-full">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
           </div>
         </CardContent>
       </Card>
@@ -44,29 +46,13 @@ export const ServiceTypeDistributionChart = () => {
 
   if (error) {
     return (
-      <Card className="col-span-1">
+      <Card>
         <CardHeader>
           <CardTitle>Service Type Distribution</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center flex-col">
-            <p className="text-red-500">{error}</p>
-            <p className="text-sm text-slate-500 mt-2">Please try again later</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <Card className="col-span-1">
-        <CardHeader>
-          <CardTitle>Service Type Distribution</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <p className="text-muted-foreground">No service type data available</p>
+        <CardContent className="h-80">
+          <div className="flex justify-center items-center h-full text-red-500">
+            {error}
           </div>
         </CardContent>
       </Card>
@@ -74,23 +60,38 @@ export const ServiceTypeDistributionChart = () => {
   }
 
   return (
-    <Card className="col-span-1">
+    <Card>
       <CardHeader>
         <CardTitle>Service Type Distribution</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-80">
+      <CardContent className="h-80">
+        {data.length === 0 ? (
+          <div className="flex justify-center items-center h-full text-muted-foreground">
+            No data available
+          </div>
+        ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="subject" />
-              <PolarRadiusAxis />
-              <Radar name="Service Count" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-              <Legend />
-            </RadarChart>
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => [`${value}`, "Count"]} />
+              <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+            </PieChart>
           </ResponsiveContainer>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
-};
+}

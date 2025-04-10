@@ -1,46 +1,37 @@
 
-import { Invoice, InvoiceItem } from "@/types/invoice";
+import { Invoice } from "@/types/invoice";
 
-// Generate a new invoice ID
-export function generateInvoiceId(): string {
-  return `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
-}
-
-// Calculate invoice subtotal
-export function calculateSubtotal(items: InvoiceItem[]): number {
-  return items.reduce((sum, item) => sum + item.total, 0);
-}
-
-// Calculate tax amount
-export function calculateTax(subtotal: number, taxRate: number): number {
-  return subtotal * taxRate;
-}
-
-// Calculate total amount
-export function calculateTotal(subtotal: number, tax: number): number {
-  return subtotal + tax;
-}
-
-// Create a new default invoice
-export function createDefaultInvoice(initialWorkOrderId?: string): Invoice {
+/**
+ * Calculate subtotal, tax and total for an invoice
+ */
+export function calculateInvoiceTotals(invoice: Invoice) {
+  const subtotal = invoice.items.reduce((sum, item) => sum + (item.total || 0), 0);
+  const tax = subtotal * (invoice.tax || 0);
+  const total = subtotal + tax;
+  
   return {
-    id: generateInvoiceId(),
-    customer: "",
-    customerAddress: "",
-    customerEmail: "",
-    description: "",
-    notes: "",
-    date: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    status: "draft",
-    workOrderId: initialWorkOrderId || "",
-    createdBy: "",
-    assignedStaff: [],
-    items: [],
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-    paymentMethod: "", // Add the required paymentMethod property
-    customer_id: "" // Add customer_id for consistency
+    subtotal,
+    tax,
+    total
   };
+}
+
+/**
+ * Get display color based on invoice status
+ */
+export function getInvoiceStatusColor(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'draft':
+      return 'text-slate-500 bg-slate-100';
+    case 'pending':
+      return 'text-amber-500 bg-amber-50';
+    case 'paid':
+      return 'text-emerald-500 bg-emerald-50';
+    case 'overdue':
+      return 'text-red-500 bg-red-50';
+    case 'cancelled':
+      return 'text-gray-500 bg-gray-100';
+    default:
+      return 'text-slate-500 bg-slate-100';
+  }
 }

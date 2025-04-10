@@ -1,185 +1,201 @@
-import { supabase } from '@/lib/supabase';
-import { DashboardStats, EquipmentRecommendation, ServiceTypeData, TechnicianPerformance, MonthlyRevenueData } from '@/types/dashboard';
-import { safeQueryTable } from '@/utils/schemaUtils';
 
+import { supabase } from '@/lib/supabase';
+import { 
+  DashboardStats, 
+  EquipmentRecommendation, 
+  MonthlyRevenueData, 
+  RecentWorkOrder,
+  ServiceTypeData, 
+  TechnicianPerformanceData 
+} from '@/types/dashboard';
+import { formatCurrency } from '@/utils/formatters';
+
+// Get dashboard overview statistics
 export async function getDashboardStats(): Promise<DashboardStats> {
   try {
-    // Mock data for demonstration purposes
+    // In a real implementation, these would be fetched from Supabase
+    // For now, use mock data that matches the type
     const stats: DashboardStats = {
-      revenue: 52345,
-      activeOrders: 78,
-      customers: 234,
+      revenue: 125350,
+      activeOrders: 24,
+      customers: 847,
       lowStockParts: 12,
-      activeWorkOrders: "+12%",
-      workOrderChange: "+3",
-      teamMembers: "+5%",
+      activeWorkOrders: "24",
+      workOrderChange: "+12%",
+      teamMembers: "8",
       teamChange: "+1",
-      inventoryItems: "-3%",
-      inventoryChange: "-2",
-      avgCompletionTime: "-10%",
-      completionTimeChange: "-5"
+      inventoryItems: "342",
+      inventoryChange: "-5%",
+      avgCompletionTime: "2.4 days",
+      completionTimeChange: "-8%"
     };
+    
     return stats;
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
-    // Return default values in case of an error
-    return {
-      revenue: 0,
-      activeOrders: 0,
-      customers: 0,
-      lowStockParts: 0,
-      activeWorkOrders: "",
-      workOrderChange: "",
-      teamMembers: "",
-      teamChange: "",
-      inventoryItems: "",
-      inventoryChange: "",
-      avgCompletionTime: "",
-      completionTimeChange: ""
-    };
+    throw error;
   }
 }
 
-export async function getRevenueData(): Promise<any[]> {
+// Get work orders by status for the pie chart
+export async function getWorkOrderStatusCounts(): Promise<{ name: string; value: number; }[]> {
   try {
-    // Mock data for demonstration purposes
-    const revenueData = [
-      { date: "2024-01-01", revenue: 1500 },
-      { date: "2024-01-02", revenue: 1800 },
-      { date: "2024-01-03", revenue: 2000 },
-      { date: "2024-01-04", revenue: 2200 },
-      { date: "2024-01-05", revenue: 2500 },
-      { date: "2024-01-06", revenue: 2300 },
-      { date: "2024-01-07", revenue: 2600 },
-      { date: "2024-01-08", revenue: 2800 },
-      { date: "2024-01-09", revenue: 3000 },
-      { date: "2024-01-10", revenue: 3200 },
-      { date: "2024-01-11", revenue: 3500 },
-      { date: "2024-01-12", revenue: 3300 },
-      { date: "2024-01-13", revenue: 3600 },
-      { date: "2024-01-14", revenue: 3800 },
-      { date: "2024-01-15", revenue: 4000 },
-      { date: "2024-01-16", revenue: 4200 },
-      { date: "2024-01-17", revenue: 4500 },
-      { date: "2024-01-18", revenue: 4300 },
-      { date: "2024-01-19", revenue: 4600 },
-      { date: "2024-01-20", revenue: 4800 },
-      { date: "2024-01-21", revenue: 5000 },
-      { date: "2024-01-22", revenue: 5200 },
-      { date: "2024-01-23", revenue: 5500 },
-      { date: "2024-01-24", revenue: 5300 },
-      { date: "2024-01-25", revenue: 5600 },
-      { date: "2024-01-26", revenue: 5800 },
-      { date: "2024-01-27", revenue: 6000 },
-      { date: "2024-01-28", revenue: 6200 },
-      { date: "2024-01-29", revenue: 6500 },
-      { date: "2024-01-30", revenue: 6300 }
-    ];
-    return revenueData;
-  } catch (error) {
-    console.error("Error fetching revenue data:", error);
-    return [];
-  }
-}
-
-export async function getWorkOrderStatusCounts() {
-  try {
-    const { data, error } = await safeQueryTable('work_orders')
-      .select('status, count(*)')
-      .group('status');
-      
-    if (error) {
-      console.error('Error fetching work order status counts:', error);
-      return [];
-    }
+    // In a production environment, we'd use a real query like:
+    // const { data, error } = await supabase
+    //   .from('work_orders')
+    //   .select('status, count(*)')
+    //   .groupBy('status');
     
-    // Fix the mapping to convert to the correct format
-    const formattedData = data.map(item => ({
-      name: item.status,
-      value: parseInt(item.count)
-    }));
-    
-    return formattedData;
-  } catch (error) {
-    console.error('Error fetching work order status counts:', error);
-    return [];
-  }
-}
-
-export async function getTechnicianStats() {
-  try {
-    const { data: workOrders, error: workOrdersError } = await safeQueryTable('work_orders')
-      .select('technician_id, count(*)')
-      .group('technician_id');
-      
-    if (workOrdersError) {
-      console.error('Error fetching work orders:', workOrdersError);
-      return null;
-    }
-    
-    const { data: profiles, error: profilesError } = await safeQueryTable('profiles')
-      .select('first_name, last_name');
-      
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      return null;
-    }
-
-    // Make sure we're accessing individual profiles correctly
-    if (profiles && Array.isArray(profiles) && profiles.length > 0) {
-      const profileData = profiles;
-      const technicianName = profileData?.[0]?.first_name && profileData?.[0]?.last_name ? 
-        `${profileData[0].first_name} ${profileData[0].last_name}` : "Unknown";
-      
-      return {
-        technicianName: technicianName,
-        completedOrders: workOrders.length
-      };
-    }
-    
-    return {
-      technicianName: "Unknown",
-      completedOrders: 0
-    };
-  } catch (error) {
-    console.error('Error fetching technician stats:', error);
-    return null;
-  }
-}
-
-export async function getEquipmentRecommendations(): Promise<EquipmentRecommendation[]> {
-  try {
-    // In a real implementation, we would fetch from the database
-    // For now, return mock data that matches our type
+    // For now, return mock data
     return [
+      { name: "Pending", value: 14 },
+      { name: "In Progress", value: 24 },
+      { name: "Completed", value: 38 },
+      { name: "Cancelled", value: 8 }
+    ];
+  } catch (error) {
+    console.error("Error fetching work order status counts:", error);
+    return [];
+  }
+}
+
+// Get service type distribution data
+export async function getServiceTypeDistribution(): Promise<ServiceTypeData[]> {
+  try {
+    // In a production environment, we'd use a real query with groupBy
+    
+    // For now, return mock data
+    return [
+      { subject: "Oil Change", value: 35 },
+      { subject: "Brake Service", value: 25 },
+      { subject: "Tire Replacement", value: 18 },
+      { subject: "A/C Service", value: 15 },
+      { subject: "Engine Repair", value: 12 },
+      { subject: "Other", value: 7 }
+    ];
+  } catch (error) {
+    console.error("Error fetching service type distribution:", error);
+    return [];
+  }
+}
+
+// Get monthly revenue data for chart
+export async function getMonthlyRevenue(): Promise<MonthlyRevenueData[]> {
+  try {
+    // In a production environment, we'd use a real query with time-based grouping
+    
+    // For now, return mock data
+    return [
+      { month: "Jan", revenue: 42500 },
+      { month: "Feb", revenue: 38900 },
+      { month: "Mar", revenue: 56700 },
+      { month: "Apr", revenue: 78500 },
+      { month: "May", revenue: 89200 },
+      { month: "Jun", revenue: 74800 },
+      { month: "Jul", revenue: 62300 },
+      { month: "Aug", revenue: 58100 },
+      { month: "Sep", revenue: 68400 },
+      { month: "Oct", revenue: 72700 },
+      { month: "Nov", revenue: 76800 },
+      { month: "Dec", revenue: 91500 }
+    ];
+  } catch (error) {
+    console.error("Error fetching monthly revenue data:", error);
+    return [];
+  }
+}
+
+// Get technician performance data for the bar chart
+export async function getTechnicianPerformance(): Promise<TechnicianPerformanceData> {
+  try {
+    // In a production environment, we'd use a real query to get performance data
+    
+    // Return mock data in the correct format
+    const technicians = ["John Smith", "Maria Garcia", "Alex Lee", "Sarah Johnson"];
+    
+    const chartData = [
       {
-        id: "eq-1",
-        name: "Alignment Machine",
-        model: "XTS-4000",
-        manufacturer: "TechAlign",
-        status: "Due",
-        maintenanceType: "Calibration",
-        maintenanceDate: "2025-05-15",
-        priority: "High"
+        month: "Jan",
+        john_smith: 12,
+        maria_garcia: 15,
+        alex_lee: 8,
+        sarah_johnson: 10
       },
       {
-        id: "eq-2",
-        name: "Tire Balancer",
-        model: "TB-360",
-        manufacturer: "WheelPro",
-        status: "Upcoming",
-        maintenanceType: "Preventative",
-        maintenanceDate: "2025-05-25",
+        month: "Feb",
+        john_smith: 15,
+        maria_garcia: 13,
+        alex_lee: 10,
+        sarah_johnson: 12
+      },
+      {
+        month: "Mar",
+        john_smith: 18,
+        maria_garcia: 17,
+        alex_lee: 12,
+        sarah_johnson: 15
+      },
+      {
+        month: "Apr",
+        john_smith: 20,
+        maria_garcia: 19,
+        alex_lee: 14,
+        sarah_johnson: 16
+      }
+    ];
+    
+    return { technicians, chartData };
+  } catch (error) {
+    console.error("Error fetching technician performance data:", error);
+    return { technicians: [], chartData: [] };
+  }
+}
+
+// Get equipment recommendations for maintenance
+export async function getEquipmentRecommendations(): Promise<EquipmentRecommendation[]> {
+  try {
+    // In a production environment, we'd use a real query
+    
+    // Return mock data
+    return [
+      {
+        id: "equip-1",
+        name: "Wheel Balancer",
+        model: "WB-5000",
+        manufacturer: "TechTools",
+        status: "Operational",
+        maintenanceType: "Calibration Check",
+        maintenanceDate: "2023-06-15",
         priority: "Medium"
       },
       {
-        id: "eq-3",
+        id: "equip-2",
         name: "Diagnostic Scanner",
-        model: "DS-9000",
+        model: "DiagPro X",
         manufacturer: "AutoDiag",
-        status: "Upcoming",
+        status: "Warning",
         maintenanceType: "Software Update",
-        maintenanceDate: "2025-06-05",
+        maintenanceDate: "2023-06-10",
+        priority: "High"
+      },
+      {
+        id: "equip-3",
+        name: "Hydraulic Lift",
+        model: "HL-2000",
+        manufacturer: "LiftMaster",
+        status: "Maintenance Due",
+        maintenanceType: "Hydraulic Fluid Change",
+        maintenanceDate: "2023-06-25",
+        priority: "Medium"
+      },
+      {
+        id: "equip-4",
+        name: "AC Recovery Machine",
+        model: "ACR-750",
+        manufacturer: "CoolSystems",
+        status: "Operational",
+        maintenanceType: "Filter Replacement",
+        maintenanceDate: "2023-07-05",
         priority: "Low"
       }
     ];
@@ -189,53 +205,55 @@ export async function getEquipmentRecommendations(): Promise<EquipmentRecommenda
   }
 }
 
-export async function getServiceTypeDistribution(): Promise<ServiceTypeData[]> {
+// Get recent work orders for dashboard
+export async function getRecentWorkOrders(): Promise<RecentWorkOrder[]> {
   try {
-    // In a real implementation, we would fetch from the database
-    // For now, return mock data
+    // This would normally fetch from Supabase
+    // For testing, we'll use mock data
     return [
-      { subject: "Oil Change", value: 35 },
-      { subject: "Brake Service", value: 25 },
-      { subject: "Tire Service", value: 20 },
-      { subject: "Engine Repair", value: 12 },
-      { subject: "Electrical", value: 8 }
+      {
+        id: "wo-1234",
+        customer: "John Doe",
+        service: "Oil Change & Filter",
+        status: "Completed",
+        date: "2023-06-01",
+        priority: "Medium"
+      },
+      {
+        id: "wo-1235",
+        customer: "Jane Smith",
+        service: "Brake Pad Replacement",
+        status: "In-Progress",
+        date: "2023-06-02",
+        priority: "High"
+      },
+      {
+        id: "wo-1236",
+        customer: "Robert Johnson",
+        service: "A/C Repair",
+        status: "Pending",
+        date: "2023-06-03",
+        priority: "Medium"
+      },
+      {
+        id: "wo-1237",
+        customer: "Sarah Williams",
+        service: "Transmission Fluid Change",
+        status: "Completed",
+        date: "2023-06-03",
+        priority: "Low"
+      },
+      {
+        id: "wo-1238",
+        customer: "Michael Brown",
+        service: "Tire Rotation",
+        status: "Pending",
+        date: "2023-06-04",
+        priority: "Low"
+      }
     ];
   } catch (error) {
-    console.error("Error fetching service type distribution:", error);
-    return [];
-  }
-}
-
-export async function getTechnicianPerformance(): Promise<TechnicianPerformance[]> {
-  try {
-    // In a real implementation, we would fetch from the database
-    // For now, return mock data
-    return [
-      { name: "John Smith", completedOrders: 42, averageTime: 75, customerRating: 4.8 },
-      { name: "Sarah Johnson", completedOrders: 36, averageTime: 65, customerRating: 4.9 },
-      { name: "Mike Davis", completedOrders: 39, averageTime: 70, customerRating: 4.7 },
-      { name: "Emma Wilson", completedOrders: 28, averageTime: 85, customerRating: 4.6 }
-    ];
-  } catch (error) {
-    console.error("Error fetching technician performance data:", error);
-    return [];
-  }
-}
-
-export async function getMonthlyRevenue(): Promise<MonthlyRevenueData[]> {
-  try {
-    // In a real implementation, we would fetch from the database
-    // For now, return mock data
-    return [
-      { month: "Jan", revenue: 42000 },
-      { month: "Feb", revenue: 38000 },
-      { month: "Mar", revenue: 45000 },
-      { month: "Apr", revenue: 48000 },
-      { month: "May", revenue: 52000 },
-      { month: "Jun", revenue: 58000 }
-    ];
-  } catch (error) {
-    console.error("Error fetching monthly revenue data:", error);
+    console.error("Error fetching recent work orders:", error);
     return [];
   }
 }

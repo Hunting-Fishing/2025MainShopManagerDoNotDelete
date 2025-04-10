@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { getTechnicianPerformance } from "@/services/dashboardService";
-import { TechnicianPerformance } from "@/types/dashboard";
+import { TechnicianPerformanceData } from "@/types/dashboard";
 
 export function TechnicianPerformanceChart() {
-  const [performance, setPerformance] = useState<TechnicianPerformance>({ chartData: [], technicians: [] });
+  const [performance, setPerformance] = useState<TechnicianPerformanceData>({ chartData: [], technicians: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

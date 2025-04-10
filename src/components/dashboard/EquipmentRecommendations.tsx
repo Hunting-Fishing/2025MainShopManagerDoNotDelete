@@ -1,11 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import { getEquipmentRecommendations } from "@/services/dashboardService";
 import { EquipmentRecommendation } from "@/types/dashboard";
+import { Loader2, AlertCircle, Calendar, Tool } from "lucide-react";
 
 export function EquipmentRecommendations() {
   const [recommendations, setRecommendations] = useState<EquipmentRecommendation[]>([]);
@@ -17,21 +15,11 @@ export function EquipmentRecommendations() {
       try {
         setLoading(true);
         const data = await getEquipmentRecommendations();
-        
-        // Format and validate the priority field matches expected type
-        const formattedRecommendations: EquipmentRecommendation[] = data.map(item => ({
-          ...item,
-          // Ensure priority is one of the allowed values
-          priority: (item.priority === 'High' || item.priority === 'Medium' || item.priority === 'Low') 
-            ? item.priority 
-            : 'Medium'
-        }));
-        
-        setRecommendations(formattedRecommendations);
+        setRecommendations(data);
         setError(null);
       } catch (err) {
         console.error("Error fetching equipment recommendations:", err);
-        setError("Failed to load maintenance recommendations");
+        setError("Failed to load equipment recommendations");
       } finally {
         setLoading(false);
       }
@@ -40,15 +28,24 @@ export function EquipmentRecommendations() {
     fetchRecommendations();
   }, []);
 
+  const getPriorityColor = (priority: string): string => {
+    switch (priority) {
+      case 'High': return 'text-red-500';
+      case 'Medium': return 'text-amber-500';
+      case 'Low': return 'text-blue-500';
+      default: return 'text-gray-500';
+    }
+  };
+
   if (loading) {
     return (
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
+          <CardTitle>Equipment Maintenance</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex justify-center p-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-esm-blue-600"></div>
+        <CardContent>
+          <div className="flex justify-center items-center h-48">
+            <Loader2 className="animate-spin h-8 w-8 text-gray-400" />
           </div>
         </CardContent>
       </Card>
@@ -57,28 +54,14 @@ export function EquipmentRecommendations() {
 
   if (error) {
     return (
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
+          <CardTitle>Equipment Maintenance</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="text-center p-6">
-            <p className="text-red-500">{error}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (recommendations.length === 0) {
-    return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="text-center p-6 text-slate-500">
-            All equipment maintenance is up to date
+        <CardContent>
+          <div className="flex justify-center items-center h-48 text-red-500">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {error}
           </div>
         </CardContent>
       </Card>
@@ -86,46 +69,40 @@ export function EquipmentRecommendations() {
   }
 
   return (
-    <Card className="mb-6">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold">Equipment Maintenance Due</CardTitle>
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/maintenance">
-            View All <ArrowRight className="ml-1 h-4 w-4" />
-          </Link>
-        </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>Equipment Maintenance</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent>
         <div className="space-y-4">
-          {recommendations.map((item) => (
-            <div 
-              key={item.id} 
-              className={`flex items-start p-3 rounded-md border ${
-                item.priority === 'High' ? 'border-red-200 bg-red-50' :
-                item.priority === 'Medium' ? 'border-amber-200 bg-amber-50' :
-                'border-green-200 bg-green-50'
-              }`}
-            >
-              <AlertTriangle className={`h-5 w-5 mr-3 flex-shrink-0 ${
-                item.priority === 'High' ? 'text-red-600' :
-                item.priority === 'Medium' ? 'text-amber-600' :
-                'text-green-600'
-              }`} />
-              <div className="flex-1 space-y-1">
-                <p className="text-sm font-medium">{item.name} ({item.model})</p>
-                <p className="text-xs text-slate-500">
-                  {item.maintenanceType} maintenance due on {new Date(item.maintenanceDate).toLocaleDateString()}
-                </p>
-              </div>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className="flex-shrink-0"
-              >
-                Schedule
-              </Button>
+          {recommendations.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No maintenance recommendations
             </div>
-          ))}
+          ) : (
+            recommendations.map((recommendation) => (
+              <div key={recommendation.id} className="flex items-start space-x-3 border-b pb-3 last:border-0">
+                <Tool className="h-5 w-5 mt-1 text-slate-500" />
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <p className="font-medium">{recommendation.name} ({recommendation.model})</p>
+                    <p className={`text-sm font-medium ${getPriorityColor(recommendation.priority)}`}>
+                      {recommendation.priority}
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {recommendation.manufacturer} - {recommendation.status}
+                  </p>
+                  <div className="flex items-center mt-1 text-sm">
+                    <Calendar className="h-3.5 w-3.5 mr-1" />
+                    <span>
+                      {recommendation.maintenanceType} - {recommendation.maintenanceDate}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </CardContent>
     </Card>

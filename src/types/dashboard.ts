@@ -37,7 +37,24 @@ export interface TechnicianPerformance {
   customerRating: number;
 }
 
+export interface TechnicianPerformanceData {
+  technicians: string[];
+  chartData: Array<{
+    month: string;
+    [key: string]: string | number;
+  }>;
+}
+
 export interface MonthlyRevenueData {
   month: string;
   revenue: number;
+}
+
+export interface RecentWorkOrder {
+  id: string;
+  customer: string;
+  service: string;
+  status: string;
+  date: string;
+  priority: string;
 }

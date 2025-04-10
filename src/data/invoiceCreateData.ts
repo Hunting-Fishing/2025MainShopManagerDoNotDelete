@@ -30,7 +30,7 @@ export const fetchWorkOrders = async () => {
         : "Unknown Customer";
       
       const vehicleInfo = vehicle.make && vehicle.model 
-        ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+        ? `${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}`
         : "Vehicle information not available";
         
       return {

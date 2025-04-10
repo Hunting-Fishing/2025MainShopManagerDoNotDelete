@@ -4,15 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRecentWorkOrders } from "@/services/dashboardService";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
-
-type RecentWorkOrder = {
-  id: string;
-  customer: string;
-  service: string;
-  status: string;
-  date: string;
-  priority: string;
-};
+import { RecentWorkOrder } from "@/types/dashboard";
 
 export function RecentWorkOrders() {
   const [workOrders, setWorkOrders] = useState<RecentWorkOrder[]>([]);
