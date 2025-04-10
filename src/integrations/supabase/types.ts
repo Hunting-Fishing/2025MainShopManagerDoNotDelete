@@ -3468,6 +3468,41 @@ export type Database = {
         }
         Relationships: []
       }
+      team_member_history: {
+        Row: {
+          action_by: string
+          action_type: string
+          details: Json
+          id: string
+          profile_id: string
+          timestamp: string
+        }
+        Insert: {
+          action_by: string
+          action_type: string
+          details?: Json
+          id?: string
+          profile_id: string
+          timestamp?: string
+        }
+        Update: {
+          action_by?: string
+          action_type?: string
+          details?: Json
+          id?: string
+          profile_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technician_breaks: {
         Row: {
           created_at: string
