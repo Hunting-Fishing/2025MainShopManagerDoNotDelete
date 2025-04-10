@@ -18,20 +18,22 @@ export default function CreateTeamMember() {
     setIsSubmitting(true);
     
     try {
+      // Parse the name into first and last names for the API
+      const nameParts = data.name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+      
       // First, create or update the profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert([
-          {
-            first_name: data.firstName,
-            last_name: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            job_title: data.jobTitle,
-            department: data.department,
-            // Additional fields can be included here as needed
-          }
-        ])
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          email: data.email,
+          phone: data.phone || null,
+          job_title: data.jobTitle,
+          department: data.department
+        })
         .select('id, email')
         .single();
 
@@ -56,12 +58,10 @@ export default function CreateTeamMember() {
         // Assign the role to the user
         const { error: roleAssignError } = await supabase
           .from('user_roles')
-          .insert([
-            {
-              user_id: profileData.id,
-              role_id: roleData.id
-            }
-          ]);
+          .insert({
+            user_id: profileData.id,
+            role_id: roleData.id
+          });
 
         if (roleAssignError) {
           console.error('Error assigning role:', roleAssignError);
