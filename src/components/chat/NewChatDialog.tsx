@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -67,17 +68,30 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
 
       if (error) throw error;
 
-      return data.map(profile => ({
-        id: profile.id,
-        name: `${profile.first_name} ${profile.last_name}`,
-        email: profile.email,
-        phone: profile.phone || '',
-        jobTitle: profile.job_title || '',
-        department: profile.department || '',
-        role: profile.roles && profile.roles.length > 0 && profile.roles[0]?.role 
-          ? profile.roles[0].role.name 
-          : 'No Role'
-      })) as TeamMember[];
+      return data.map(profile => {
+        // Extract role name safely with proper type checking
+        let roleName = 'No Role';
+        
+        if (profile.roles && 
+            Array.isArray(profile.roles) && 
+            profile.roles.length > 0 && 
+            profile.roles[0]?.role && 
+            typeof profile.roles[0].role === 'object' &&
+            profile.roles[0].role !== null &&
+            'name' in profile.roles[0].role) {
+          roleName = profile.roles[0].role.name;
+        }
+        
+        return {
+          id: profile.id,
+          name: `${profile.first_name} ${profile.last_name}`,
+          email: profile.email,
+          phone: profile.phone || '',
+          jobTitle: profile.job_title || '',
+          department: profile.department || '',
+          role: roleName
+        };
+      }) as TeamMember[];
     }
   });
 
