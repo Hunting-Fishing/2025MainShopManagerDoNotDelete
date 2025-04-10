@@ -44,10 +44,12 @@ export const recordTeamMemberHistory = async (
       };
     }
     
+    // Handle the possibility that data might be null or undefined
+    // by using optional chaining and providing a type assertion
     return {
       success: true,
       message: "History recorded",
-      id: data.id
+      id: data?.id as string | undefined
     };
   } catch (error) {
     console.error("Exception recording team member history:", error);

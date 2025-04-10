@@ -52,11 +52,17 @@ export function useFetchProfiles() {
         .filter(profile => {
           // Check metadata for deletion status
           const profileMetadata = profile.profile_metadata?.[0];
-          const metadata = profileMetadata?.metadata;
-          // If no metadata or is_active is true (or not set), include profile
-          return !metadata || 
-                 typeof metadata.is_active === 'undefined' || 
-                 metadata.status !== 'deleted';
+          // If metadata is available, safely check its properties
+          if (profileMetadata && profileMetadata.metadata) {
+            const metadata = profileMetadata.metadata;
+            // Check if metadata is an object and has the required properties
+            if (typeof metadata === 'object' && metadata !== null) {
+              // Only filter out if status is explicitly 'deleted' or is_active is explicitly false
+              return metadata.status !== 'deleted';
+            }
+          }
+          // If no metadata or structure is different, include the profile (default behavior)
+          return true;
         })
         .map(profile => ({
           id: profile.id,
@@ -67,7 +73,13 @@ export function useFetchProfiles() {
           job_title: profile.job_title || null,
           department: profile.department || null,
           created_at: profile.created_at,
-          is_active: profile.profile_metadata?.[0]?.metadata?.is_active !== false // Default to true if not set
+          is_active: (() => {
+            const metadata = profile.profile_metadata?.[0]?.metadata;
+            if (typeof metadata === 'object' && metadata !== null) {
+              return metadata.is_active !== false; // Default to true if not explicitly set to false
+            }
+            return true; // Default to active if no metadata or wrong format
+          })()
         }));
     } catch (err) {
       console.error('Error fetching profiles:', err);
