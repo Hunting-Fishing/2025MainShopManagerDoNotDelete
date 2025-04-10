@@ -66,12 +66,27 @@ export function useTeamMembers() {
                 
               if (statusData && statusData.length > 0) {
                 const latestStatusChange = statusData[0];
-                // Safely access the details by casting to our interface
-                const details = latestStatusChange.details as StatusChangeDetails;
+                
+                // Safely cast the details JSON to our interface using a two-step process
+                // First cast to unknown, then to our interface type
+                const rawDetails = latestStatusChange.details;
+                let details: StatusChangeDetails;
+                
+                // Handle different possible formats of the details field
+                if (typeof rawDetails === 'object' && rawDetails !== null) {
+                  details = rawDetails as unknown as StatusChangeDetails;
+                } else {
+                  // Fallback if details is not in the expected format
+                  details = { new_status: 'Active' };
+                }
+                
+                // Validate that the status is one of the allowed TeamMember status values
+                const statusValue = details.new_status || 'Active';
+                const validStatus = validateStatus(statusValue);
                 
                 return {
                   ...member,
-                  status: details.new_status || 'Active',
+                  status: validStatus,
                   statusChangeDate: latestStatusChange.timestamp,
                   statusChangeReason: details.reason || ''
                 };
@@ -83,7 +98,13 @@ export function useTeamMembers() {
           })
         );
         
-        setTeamMembers(membersWithStatus);
+        // Ensure all members have valid status values before setting state
+        const validatedMembers = membersWithStatus.map(member => ({
+          ...member,
+          status: member.status || 'Active' as const
+        }));
+        
+        setTeamMembers(validatedMembers as TeamMember[]);
       } catch (err: any) {
         console.error('Error fetching team members:', err);
         setError(err?.message || 'Failed to load team members. Please try again later.');
@@ -95,6 +116,14 @@ export function useTeamMembers() {
 
     fetchTeamMembers();
   }, []);
+
+  // Helper function to validate that status is one of the allowed values in TeamMember type
+  function validateStatus(status: string): TeamMember['status'] {
+    const validStatuses: TeamMember['status'][] = ['Active', 'Inactive', 'On Leave', 'Terminated'];
+    return validStatuses.includes(status as TeamMember['status']) 
+      ? (status as TeamMember['status']) 
+      : 'Active';
+  }
 
   return { teamMembers, isLoading, error };
 }
