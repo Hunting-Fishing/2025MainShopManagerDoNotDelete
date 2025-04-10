@@ -52,7 +52,7 @@ export const recordTeamMemberHistory = async (
     };
     
     // Only add the id property if data exists and has an id
-    if (data && 'id' in data) {
+    if (data && typeof data === 'object' && data !== null && 'id' in data) {
       return {
         ...response,
         id: data.id as string
@@ -88,20 +88,35 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
     }
     
     // If no data, return empty array
-    if (!data) {
+    if (!data || !Array.isArray(data)) {
       return [];
     }
     
     // Process the data to ensure it matches our expected type
-    const processedData: TeamMemberHistoryRecord[] = data.map(item => ({
-      id: item.id,
-      profile_id: item.profile_id,
-      // Make sure action_type is one of the allowed values
-      action_type: validateActionType(item.action_type),
-      action_by: item.action_by,
-      timestamp: item.timestamp,
-      details: item.details || {}
-    }));
+    // Use type assertion after validation to assure TypeScript
+    const processedData: TeamMemberHistoryRecord[] = data.map(item => {
+      // Ensure item is an object with the properties we need
+      if (typeof item !== 'object' || item === null) {
+        // Return a default object if item is not valid
+        return {
+          profile_id: profileId,
+          action_type: 'update',
+          action_by: 'system',
+          timestamp: new Date().toISOString(),
+          details: {}
+        };
+      }
+      
+      return {
+        id: item.id as string,
+        profile_id: item.profile_id as string,
+        // Make sure action_type is one of the allowed values
+        action_type: validateActionType(item.action_type as string),
+        action_by: item.action_by as string,
+        timestamp: item.timestamp as string,
+        details: (item.details as Record<string, any>) || {}
+      };
+    });
     
     return processedData;
   } catch (error) {
