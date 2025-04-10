@@ -52,7 +52,8 @@ export const recordTeamMemberHistory = async (
     };
     
     // Only add the id property if data exists and has an id
-    if (data && typeof data === 'object' && data !== null && 'id' in data) {
+    // Added null check for data before accessing its properties
+    if (data !== null && typeof data === 'object' && 'id' in data) {
       return {
         ...response,
         id: data.id as string
@@ -96,7 +97,7 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
     // Use type assertion after validation to assure TypeScript
     const processedData: TeamMemberHistoryRecord[] = data.map(item => {
       // Ensure item is an object with the properties we need
-      if (typeof item !== 'object' || item === null) {
+      if (!item || typeof item !== 'object') {
         // Return a default object if item is not valid
         return {
           profile_id: profileId,
@@ -107,6 +108,7 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
         };
       }
       
+      // Use non-null assertion after checking item is not null
       return {
         id: item.id as string,
         profile_id: item.profile_id as string,
