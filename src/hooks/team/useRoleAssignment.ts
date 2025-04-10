@@ -93,8 +93,8 @@ export function useRoleAssignment() {
           action_by: currentUserId,
           action_by_name: userName,
           details: {
-            previous_role: previousRole,
-            new_role: roleName,
+            from: previousRole,
+            to: roleName,
             timestamp: new Date().toISOString()
           }
         });

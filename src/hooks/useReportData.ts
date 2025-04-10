@@ -1,195 +1,166 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export interface ReportData {
-  salesData: {
-    month: string;
+  // General metrics
+  totalRevenue: number;
+  averageOrderValue: number;
+  totalOrders: number;
+  
+  // Revenue by period
+  revenueByPeriod: Array<{
+    period: string;
     revenue: number;
-    expenses: number;
-  }[];
-  workOrderStatusData: {
+    target?: number;
+  }>;
+  
+  // Service data
+  revenueByService: Array<{
     name: string;
+    revenue: number;
+    count: number;
+  }>;
+  
+  // Customer data
+  customerRetention: Array<{
+    month: string;
+    rate: number;
+  }>;
+  customersBySource: Array<{
+    source: string;
     value: number;
-    color: string;
-  }[];
-  topSellingItems: {
-    id: number;
+  }>;
+  topCustomers: Array<{
+    id: string;
     name: string;
-    quantity: number;
+    email: string;
     revenue: number;
-  }[];
-  servicePerformance: {
-    month: string;
-    completedOnTime: number;
-    delayed: number;
-  }[];
-  comparisonRevenueData: {
-    name: string;
-    current: number;
-    previous: number;
-    change: number;
-  }[];
-  comparisonServiceData: {
-    name: string;
-    current: number;
-    previous: number;
-    change: number;
-  }[];
-  inventoryData: {
-    statusData: {
-      name: string;
-      value: number;
-      color: string;
-    }[];
-    turnoverData: {
-      month: string;
-      turnover: number;
-    }[];
-    lowStockItems: {
-      name: string;
-      currentStock: number;
-      reorderLevel: number;
-      status: string;
-    }[];
-  };
+  }>;
 }
 
-export function useReportData(dateRange: { start: Date; end: Date } = {
-  start: new Date(new Date().setDate(1)),  // First day of current month
-  end: new Date()                          // Today
-}) {
-  const [reportData, setReportData] = useState<ReportData | null>(null);
+export function useReportData() {
+  const [reportData, setReportData] = useState<ReportData>({
+    totalRevenue: 0,
+    averageOrderValue: 0,
+    totalOrders: 0,
+    revenueByPeriod: [],
+    revenueByService: [],
+    customerRetention: [],
+    customersBySource: [],
+    topCustomers: []
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchReportData(dateRange);
-  }, [dateRange]);
-
-  const fetchReportData = async (range: { start: Date; end: Date }) => {
+  const fetchReportData = useCallback(async (range: { start: Date; end: Date }) => {
     setIsLoading(true);
-    setError(null);
-    
+    setError('');
+
     try {
-      // Get work order status counts
-      const { data: workOrderStatusData, error: workOrderStatusError } = await supabase
-        .from('work_orders')
-        .select('status, count')
-        .select('status')
-        .gte('created_at', range.start.toISOString())
-        .lte('created_at', range.end.toISOString());
+      // Get invoice data for the specified date range
+      const { data: invoiceData, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('*')
+        .filter('date', '>=', range.start.toISOString().split('T')[0])
+        .filter('date', '<=', range.end.toISOString().split('T')[0]);
+
+      if (invoiceError) {
+        throw new Error(invoiceError.message);
+      }
+
+      // Calculate total revenue
+      const totalRevenue = invoiceData?.reduce((sum, invoice) => sum + (Number(invoice.total) || 0), 0) || 0;
+      
+      // Calculate total orders and average order value
+      const totalOrders = invoiceData?.length || 0;
+      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+      // Group revenue by period (month)
+      const revenueByMonth = {};
+      invoiceData?.forEach(invoice => {
+        const date = new Date(invoice.date);
+        const month = date.toLocaleString('default', { month: 'short', year: 'numeric' });
         
-      if (workOrderStatusError) throw workOrderStatusError;
-      
-      // Count the different statuses
-      const statusCounts: Record<string, number> = {};
-      workOrderStatusData.forEach(wo => {
-        statusCounts[wo.status] = (statusCounts[wo.status] || 0) + 1;
-      });
-      
-      // Format the status data for display
-      const statusColors: Record<string, string> = {
-        'completed': '#0ea5e9',
-        'in_progress': '#f97316',
-        'pending': '#8b5cf6',
-        'cancelled': '#ef4444',
-        'on_hold': '#84cc16'
-      };
-      
-      const workOrderStatusChartData = Object.entries(statusCounts).map(([name, value]) => ({
-        name: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' '),
-        value,
-        color: statusColors[name] || '#9ca3af'
-      }));
-
-      // Get inventory status
-      const { data: inventoryData, error: inventoryError } = await supabase
-        .from('inventory_items')
-        .select('*');
-
-      if (inventoryError) throw inventoryError;
-      
-      // Process inventory data
-      const inStockCount = inventoryData.filter(item => item.quantity > item.reorder_point).length;
-      const lowStockCount = inventoryData.filter(item => item.quantity <= item.reorder_point && item.quantity > 0).length;
-      const outOfStockCount = inventoryData.filter(item => item.quantity <= 0).length;
-      
-      const inventoryStatusData = [
-        { name: 'In Stock', value: inStockCount, color: '#10b981' },
-        { name: 'Low Stock', value: lowStockCount, color: '#f97316' },
-        { name: 'Out of Stock', value: outOfStockCount, color: '#ef4444' },
-      ];
-      
-      // Get low stock items
-      const lowStockItems = inventoryData
-        .filter(item => item.quantity <= item.reorder_point)
-        .map(item => ({
-          name: item.name,
-          currentStock: item.quantity,
-          reorderLevel: item.reorder_point,
-          status: item.quantity <= 0 ? 'Out of Stock' : 'Low Stock'
-        }))
-        .slice(0, 5);  // Get top 5
-
-      // Generate monthly sales data (simulated from invoices)
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const salesData = months.map(month => ({
-        month,
-        // Placeholder values - in a real app, this would come from invoice data
-        revenue: Math.floor(Math.random() * 5000) + 1000,
-        expenses: Math.floor(Math.random() * 3000) + 500
-      }));
-
-      // Top selling items/services (placeholder)
-      const topItems = [
-        { id: 1, name: 'Oil Change Service', quantity: 120, revenue: 3600 },
-        { id: 2, name: 'Brake Pad Replacement', quantity: 85, revenue: 8500 },
-        { id: 3, name: 'Tire Rotation', quantity: 78, revenue: 1950 },
-        { id: 4, name: 'Engine Tune-up', quantity: 65, revenue: 9750 },
-        { id: 5, name: 'Air Filter Replacement', quantity: 62, revenue: 1240 },
-      ];
-
-      // Assemble the report data
-      const reportData: ReportData = {
-        salesData,
-        workOrderStatusData: workOrderStatusChartData,
-        topSellingItems: topItems,
-        servicePerformance: months.slice(0, 6).map(month => ({
-          month,
-          completedOnTime: Math.floor(Math.random() * 30) + 40,
-          delayed: Math.floor(Math.random() * 5) + 2
-        })),
-        comparisonRevenueData: [
-          { name: 'Total Revenue', current: 35890, previous: 30450, change: 18 },
-          { name: 'Service Revenue', current: 28500, previous: 24100, change: 18 },
-          { name: 'Parts Revenue', current: 7390, previous: 6350, change: 16 },
-          { name: 'Average Ticket', current: 450, previous: 410, change: 10 }
-        ],
-        comparisonServiceData: [
-          { name: 'Work Orders', current: workOrderStatusData.length, previous: Math.floor(workOrderStatusData.length * 0.9), change: 10 },
-          { name: 'Completion Rate', current: 92, previous: 88, change: 5 },
-          { name: 'On-Time Rate', current: 85, previous: 82, change: 4 },
-          { name: 'Customer Satisfaction', current: 4.8, previous: 4.6, change: 4 }
-        ],
-        inventoryData: {
-          statusData: inventoryStatusData,
-          turnoverData: months.slice(0, 6).map(month => ({
-            month,
-            turnover: Math.random() * 1 + 3  // Random value between 3-4
-          })),
-          lowStockItems
+        if (!revenueByMonth[month]) {
+          revenueByMonth[month] = 0;
         }
-      };
+        
+        revenueByMonth[month] += Number(invoice.total) || 0;
+      });
+
+      const revenueByPeriod = Object.entries(revenueByMonth).map(([period, revenue]) => ({
+        period,
+        revenue: Number(revenue),
+        target: Number(revenue) * 1.1 // 10% higher than actual as a mock target
+      }));
+
+      // Mock data for service revenue
+      const serviceTypes = [
+        'Oil Change',
+        'Brake Service',
+        'Tire Replacement',
+        'Engine Repair',
+        'Transmission',
+        'Electrical',
+        'Diagnostics',
+        'General Maintenance'
+      ];
       
-      setReportData(reportData);
+      const revenueByService = serviceTypes.map(service => ({
+        name: service,
+        revenue: Math.floor(Math.random() * 10000) + 1000,
+        count: Math.floor(Math.random() * 50) + 10
+      })).sort((a, b) => b.revenue - a.revenue);
+
+      // Mock data for customer retention
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const customerRetention = months.map(month => ({
+        month,
+        rate: Math.floor(Math.random() * 30) + 70 // 70-99%
+      }));
+
+      // Mock data for customers by source
+      const sources = ['Referral', 'Google', 'Social Media', 'Direct', 'Other'];
+      const customersBySource = sources.map(source => ({
+        source,
+        value: Math.floor(Math.random() * 100) + 20
+      }));
+
+      // Mock data for top customers
+      const topCustomers = Array.from({ length: 5 }, (_, i) => ({
+        id: `cust-${i + 1}`,
+        name: `Customer ${i + 1}`,
+        email: `customer${i + 1}@example.com`,
+        revenue: Math.floor(Math.random() * 10000) + 1000
+      })).sort((a, b) => b.revenue - a.revenue);
+
+      setReportData({
+        totalRevenue,
+        averageOrderValue,
+        totalOrders,
+        revenueByPeriod,
+        revenueByService,
+        customerRetention,
+        customersBySource,
+        topCustomers
+      });
     } catch (err) {
       console.error('Error fetching report data:', err);
       setError('Failed to load report data');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Initialize with current month
+  useEffect(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1); // First day of current month
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
+    
+    fetchReportData({ start, end });
+  }, [fetchReportData]);
 
   return { reportData, isLoading, error, fetchReportData };
 }

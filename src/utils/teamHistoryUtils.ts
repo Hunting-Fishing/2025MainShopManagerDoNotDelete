@@ -47,21 +47,27 @@ export async function fetchAllTeamHistory(): Promise<TeamMemberHistoryRecord[]> 
 }
 
 // Record a new team member history entry
-export async function recordTeamMemberHistory(
-  profileId: string,
-  actionType: string,
-  actionBy: string,
-  actionByName: string,
-  details: Record<string, any> = {}
-): Promise<string | null> {
+export async function recordTeamMemberHistory({
+  profile_id,
+  action_type,
+  action_by,
+  action_by_name,
+  details = {}
+}: {
+  profile_id: string;
+  action_type: string;
+  action_by: string;
+  action_by_name?: string;
+  details?: Record<string, any>;
+}): Promise<string | null> {
   try {
     const { data, error } = await supabase
       .from('team_member_history')
       .insert({
-        profile_id: profileId,
-        action_type: actionType,
-        action_by: actionBy,
-        action_by_name: actionByName,
+        profile_id,
+        action_type,
+        action_by,
+        action_by_name,
         details
       })
       .select('id')

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { createTemplate } from "@/data/workOrderTemplatesData";
+import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
 import { WorkOrderTemplate, WorkOrderInventoryItem } from "@/types/workOrder";
 
@@ -22,8 +22,9 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
   const [open, setOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateDescription, setTemplateDescription] = useState("");
+  const { createTemplate } = useWorkOrderTemplates();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!templateName.trim()) {
       toast({
         title: "Template name required",
@@ -44,11 +45,9 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
     }));
 
     // Create the template with values from the form
-    const newTemplate = createTemplate({
+    const result = await createTemplate({
       name: templateName,
       description: templateDescription || `Template for ${formValues.customer}`,
-      customer: formValues.customer,
-      location: formValues.location,
       status: formValues.status,
       priority: formValues.priority,
       technician: formValues.technician,
@@ -56,18 +55,24 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
       inventoryItems: inventoryItems
     });
 
-    onSave(newTemplate);
-    
-    toast({
-      title: "Template Saved",
-      description: `"${templateName}" has been saved as a template.`,
-      variant: "success",
-    });
-    
-    // Reset and close
-    setTemplateName("");
-    setTemplateDescription("");
-    setOpen(false);
+    if (result.success) {
+      toast({
+        title: "Template Saved",
+        description: `"${templateName}" has been saved as a template.`,
+        variant: "success",
+      });
+      
+      // Reset and close
+      setTemplateName("");
+      setTemplateDescription("");
+      setOpen(false);
+    } else {
+      toast({
+        title: "Error Saving Template",
+        description: result.message || "An error occurred while saving the template.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -1,135 +1,121 @@
 
-import { useState, useCallback } from 'react';
-import { TeamMemberFormValues } from '@/components/team/form/formValidation';
-import { showProfileUpdateToast } from '@/utils/profileUtils';
-import { useProfileUpdate } from './team/useProfileUpdate';
-import { useRoleAssignment } from './team/useRoleAssignment';
-import { recordTeamMemberHistory } from '@/utils/teamHistoryUtils';
-import { useToast } from '@/components/ui/use-toast';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { TeamMemberFormValues } from '@/components/team/form/formValidation';
+import { recordTeamMemberHistory } from '@/utils/teamHistoryUtils';
+import { toast } from '@/hooks/use-toast';
 
-/**
- * Hook for managing team member profile updates including role assignments
- */
 export function useTeamMemberUpdate() {
   const [isLoading, setIsLoading] = useState(false);
-  const { updateProfile, error: profileError } = useProfileUpdate();
-  const { assignRole, detectedRole, error: roleError } = useRoleAssignment();
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Updates a team member's profile information and role
-   */
-  const updateTeamMember = useCallback(async (
-    memberId: string, 
-    values: TeamMemberFormValues
-  ): Promise<boolean> => {
+  const updateTeamMember = async (
+    memberId: string,
+    formData: TeamMemberFormValues,
+    originalData?: TeamMemberFormValues
+  ) => {
     setIsLoading(true);
-    
+    setError(null);
+
     try {
-      console.log("Updating team member with ID:", memberId);
-      console.log("Update values:", values);
-      
-      // Get current user for history tracking
+      // Update the profile record
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: formData.name.split(' ')[0],
+          last_name: formData.name.split(' ').slice(1).join(' '),
+          email: formData.email,
+          phone: formData.phone,
+          job_title: formData.jobTitle,
+          department: formData.department,
+        })
+        .eq('id', memberId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Get user info for history record
       const { data: { user } } = await supabase.auth.getUser();
-      const currentUserId = user?.id || 'system';
       
-      // Get user name for better history records
-      const { data: userData } = await supabase
+      // Get the current user's name from profiles
+      const { data: currentUserProfile } = await supabase
         .from('profiles')
         .select('first_name, last_name')
-        .eq('id', currentUserId)
+        .eq('id', user?.id)
         .single();
-        
-      const userName = userData ? 
-        `${userData.first_name || ''} ${userData.last_name || ''}`.trim() : 
-        'System';
-      
-      // Step 1: Update the user's profile information
-      const profileData = {
-        name: values.name,
-        email: values.email, 
-        phone: values.phone,
-        jobTitle: values.jobTitle,
-        department: values.department,
-        notes: values.notes
-      };
-      
-      // Track which fields were updated
-      const updatedFields: string[] = [];
-      Object.entries(profileData).forEach(([key, value]) => {
-        if (value) updatedFields.push(key);
-      });
-      
-      const profileUpdateSuccess = await updateProfile(memberId, profileData);
-      
-      if (!profileUpdateSuccess) {
-        throw new Error(profileError || "Failed to update profile");
-      }
-      
-      // Record profile update in history
+
+      const currentUserName = currentUserProfile 
+        ? `${currentUserProfile.first_name || ''} ${currentUserProfile.last_name || ''}`.trim() 
+        : 'Unknown User';
+
+      // Record the profile update in history
       await recordTeamMemberHistory({
         profile_id: memberId,
-        action_type: 'update',
-        action_by: currentUserId,
-        action_by_name: userName,
+        action_type: 'profile_update',
+        action_by: user?.id || 'unknown',
+        action_by_name: currentUserName,
         details: {
-          fields: updatedFields,
+          changes: getChanges(originalData, formData),
           timestamp: new Date().toISOString()
         }
       });
-      
-      // Step 2: Handle role updates if needed
-      console.log("Assigning role:", values.role);
-      const roleResult = await assignRole(memberId, values.role, values.jobTitle);
-      
-      if (!roleResult.success) {
-        // We'll show a warning but not fail the whole update
-        console.warn("Role assignment issue:", roleResult.message);
-        toast({
-          title: "Profile Updated",
-          description: `Profile updated but role could not be changed: ${roleResult.message}`,
-          variant: "warning"
+
+      // If the status changed, record that separately
+      if (originalData && originalData.status !== formData.status) {
+        await recordTeamMemberHistory({
+          profile_id: memberId,
+          action_type: 'status_change',
+          action_by: user?.id || 'unknown',
+          action_by_name: currentUserName,
+          details: {
+            from: originalData.status ? 'Active' : 'Inactive',
+            to: formData.status ? 'Active' : 'Inactive',
+            timestamp: new Date().toISOString()
+          }
         });
-        return true;
       }
-      
-      // Show the appropriate toast message based on results
+
       toast({
-        title: "Success",
-        description: `Team member profile and role updated successfully to ${values.role}`,
-        variant: "default"
+        title: "Team member updated",
+        description: "Team member information has been updated successfully."
       });
-      
+
       return true;
     } catch (err) {
       console.error('Error updating team member:', err);
-      
-      // Show error toast but don't let the UI freeze
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+
       toast({
         title: "Update failed",
         description: errorMessage,
         variant: "destructive"
       });
-      
+
       return false;
     } finally {
-      // Always reset loading state to prevent UI from being stuck
       setIsLoading(false);
     }
-  }, [updateProfile, assignRole, profileError, toast]);
-  
-  return {
-    updateTeamMember,
-    isLoading,
-    error: profileError || roleError,
-    detectedRole,
-    // Add a reset function to clear errors and state
-    resetError: useCallback(() => {
-      // This will call both reset functions internally
-      useProfileUpdate().resetError();
-      useRoleAssignment().resetState();
-    }, [])
   };
+
+  // Helper function to track what changed between original and new data
+  const getChanges = (originalData?: TeamMemberFormValues, newData?: TeamMemberFormValues) => {
+    if (!originalData || !newData) return {};
+    
+    const changes: Record<string, { from: any, to: any }> = {};
+    
+    (Object.keys(newData) as Array<keyof TeamMemberFormValues>).forEach(key => {
+      if (originalData[key] !== newData[key]) {
+        changes[key] = {
+          from: originalData[key],
+          to: newData[key]
+        };
+      }
+    });
+    
+    return changes;
+  };
+
+  return { updateTeamMember, isLoading, error };
 }

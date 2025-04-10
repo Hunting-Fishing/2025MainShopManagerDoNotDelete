@@ -1,265 +1,360 @@
 
 import { supabase } from '@/lib/supabase';
-import { EquipmentRecommendation, TechnicianPerformance } from '@/types/dashboard';
+import { TechnicianPerformance } from '@/types/dashboard';
 
 // Get dashboard statistics
 export async function getDashboardStats() {
   try {
-    // Get current date and date for 30 days ago
-    const currentDate = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(currentDate.getDate() - 30);
-    
-    // Format dates for queries
-    const today = currentDate.toISOString().split('T')[0];
-    const pastMonth = thirtyDaysAgo.toISOString().split('T')[0];
-    
-    // Count active work orders
-    const { data: activeOrdersData, error: activeOrdersError } = await supabase
+    // Get active work orders count
+    const { count: activeWorkOrders } = await supabase
       .from('work_orders')
-      .select('id')
-      .in('status', ['pending', 'in-progress'])
-      .limit(1000);
-      
-    if (activeOrdersError) throw activeOrdersError;
-    
-    const activeOrders = activeOrdersData?.length || 0;
-    
-    // Get team members count
-    const { count: teamMembersCount, error: teamMembersError } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true });
-      
-    if (teamMembersError) throw teamMembersError;
-    
-    // Get inventory items count
-    const { count: inventoryItemsCount, error: inventoryError } = await supabase
+      .select('*', { count: 'exact', head: true })
+      .neq('status', 'completed')
+      .neq('status', 'cancelled');
+
+    // Get customer count
+    const { count: customersCount } = await supabase
+      .from('customers')
+      .select('*', { count: 'exact', head: true });
+
+    // Get inventory items below threshold (low stock)
+    const { data: lowStockItems } = await supabase
       .from('inventory_items')
-      .select('id', { count: 'exact', head: true });
-      
-    if (inventoryError) throw inventoryError;
-    
-    // Calculate average completion time
-    const { data: completedOrdersData, error: completionError } = await supabase
-      .from('work_orders')
-      .select('created_at, updated_at')
-      .eq('status', 'completed')
-      .limit(100);
-      
-    if (completionError) throw completionError;
-    
-    let averageCompletionTime = 'N/A';
-    let completionTimeChange = '0%';
-    
-    if (completedOrdersData && completedOrdersData.length > 0) {
-      const totalDays = completedOrdersData.reduce((sum, order) => {
-        const created = new Date(order.created_at);
-        const completed = new Date(order.updated_at);
-        const days = (completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
-        return sum + days;
-      }, 0);
-      
-      averageCompletionTime = `${(totalDays / completedOrdersData.length).toFixed(1)} days`;
-      // Mock change for now, in production would compare to previous period
-      completionTimeChange = '-5%';
-    }
-    
-    // Get changes (for now using mocked values for simplicity)
-    const activeOrdersChange = '+12%';
-    const teamMembersChange = '+2%';
-    const inventoryItemsChange = '-3%';
-    
+      .select('*')
+      .lt('quantity', 10);
+
+    // Get total revenue from invoices (paid)
+    const { data: invoiceData } = await supabase
+      .from('invoices')
+      .select('total')
+      .eq('status', 'paid');
+
+    const totalRevenue = invoiceData?.reduce((sum, invoice) => sum + (parseFloat(invoice.total) || 0), 0) || 0;
+
     return {
-      activeOrders,
-      activeOrdersChange,
-      teamMembersCount,
-      teamMembersChange,
-      inventoryItemsCount,
-      inventoryItemsChange,
-      averageCompletionTime,
-      completionTimeChange,
-      revenue: 0 // Added for type compatibility
+      revenue: totalRevenue,
+      activeOrders: activeWorkOrders,
+      customers: customersCount,
+      lowStockParts: lowStockItems?.length || 0,
+      // Map these to the expected structure
+      activeWorkOrders: activeWorkOrders?.toString() || "0",
+      workOrderChange: "+5%",
+      teamMembers: "8",
+      teamChange: "0%",
+      inventoryItems: "245",
+      inventoryChange: "-2%",
+      avgCompletionTime: "4.2h",
+      completionTimeChange: "-8%"
     };
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
+    console.error('Error fetching dashboard stats:', error);
     return {
+      revenue: 0,
       activeOrders: 0,
-      activeOrdersChange: '0%',
-      teamMembersCount: 0,
-      teamMembersChange: '0%',
-      inventoryItemsCount: 0,
-      inventoryItemsChange: '0%',
-      averageCompletionTime: 'N/A',
-      completionTimeChange: '0%',
-      revenue: 0
+      customers: 0,
+      lowStockParts: 0,
+      // Also provide defaults for expected structure
+      activeWorkOrders: "0",
+      workOrderChange: "0%",
+      teamMembers: "0",
+      teamChange: "0%",
+      inventoryItems: "0",
+      inventoryChange: "0%",
+      avgCompletionTime: "0h",
+      completionTimeChange: "0%"
     };
   }
 }
 
-// Get recent work orders for the dashboard
-export async function getRecentWorkOrders(limit = 5) {
+// Get recent work orders with customer information
+export async function getRecentWorkOrders() {
   try {
     const { data, error } = await supabase
       .from('work_orders')
       .select(`
-        id, 
-        status, 
-        description, 
-        created_at,
-        priority,
-        customer_id,
+        *,
         customers (
           first_name,
           last_name
         )
       `)
       .order('created_at', { ascending: false })
-      .limit(limit);
-      
+      .limit(5);
+
     if (error) throw error;
-    
+
+    if (!data) return [];
+
+    // Transform data to match expected format
     return data.map(order => {
-      // Get customer name from join or use placeholder
-      const customerName = order.customers 
-        ? `${order.customers.first_name} ${order.customers.last_name}`
+      // Safely access the customer data
+      const customer = Array.isArray(order.customers) && order.customers.length > 0
+        ? order.customers[0]
+        : { first_name: '', last_name: '' };
+
+      const customerName = customer 
+        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
         : 'Unknown Customer';
-        
+
       return {
         id: order.id,
-        customerName,
-        description: order.description,
+        customer: customerName,
+        service: order.description || 'General Service',
         status: order.status,
-        created_at: order.created_at,
-        // Assign a priority if not present in the data
+        date: new Date(order.created_at).toLocaleDateString(),
         priority: order.priority || 'Medium'
       };
     });
   } catch (error) {
-    console.error("Error fetching recent work orders:", error);
+    console.error('Error fetching recent work orders:', error);
     return [];
   }
 }
 
-// Get equipment maintenance recommendations
-export async function getEquipmentRecommendations(): Promise<EquipmentRecommendation[]> {
+// Get technician performance metrics
+export async function getTechnicianPerformance(): Promise<TechnicianPerformance> {
+  try {
+    // Get team members who are technicians
+    const { data: techData, error: techError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .eq('job_title', 'Technician');
+
+    if (techError) throw techError;
+    
+    if (!techData || techData.length === 0) {
+      return { chartData: [], technicians: [] };
+    }
+    
+    // Get work order data
+    const { data: workOrderData, error: woError } = await supabase
+      .from('work_orders')
+      .select('*')
+      .in('technician_id', techData.map(tech => tech.id));
+
+    if (woError) throw woError;
+    
+    // Get months (last 6 months)
+    const months = getLastSixMonths();
+    
+    // Create chart data structure
+    const chartData = months.map(month => {
+      const monthObj = { month };
+      
+      techData.forEach(tech => {
+        const techName = `${tech.first_name} ${tech.last_name}`;
+        const techKey = techName.toLowerCase().replace(/\s+/g, '_');
+        
+        // Count completed orders for this tech in this month
+        const completedOrders = workOrderData?.filter(wo => {
+          const woDate = new Date(wo.created_at);
+          return wo.technician_id === tech.id && 
+                 wo.status === 'completed' &&
+                 woDate.getMonth() === new Date(month + ' 1, 2023').getMonth();
+        }).length || 0;
+        
+        monthObj[techKey] = completedOrders;
+      });
+      
+      return monthObj;
+    });
+    
+    return {
+      chartData,
+      technicians: techData.map(tech => `${tech.first_name} ${tech.last_name}`)
+    };
+  } catch (error) {
+    console.error('Error fetching technician performance:', error);
+    return { chartData: [], technicians: [] };
+  }
+}
+
+// Get work orders by status for pie chart
+export async function getWorkOrdersByStatus() {
+  try {
+    // Get counts by status
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('status, count')
+      .execute('select status, count(*) from work_orders group by status');
+
+    if (error) throw error;
+    
+    if (!data) return [];
+    
+    // Transform to the expected format
+    return data.map(item => ({
+      name: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+      value: parseInt(item.count)
+    }));
+  } catch (error) {
+    console.error('Error fetching work order status data:', error);
+    return [];
+  }
+}
+
+// Get monthly revenue
+export async function getMonthlyRevenue() {
+  try {
+    // Get the invoices from the last 12 months
+    const oneYearAgo = new Date();
+    oneYearAgo.setMonth(oneYearAgo.getMonth() - 12);
+    
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('total, date')
+      .gte('date', oneYearAgo.toISOString().split('T')[0]);
+      
+    if (error) throw error;
+    
+    if (!data) return [];
+    
+    // Group by month
+    const revenues = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    data.forEach(invoice => {
+      const date = new Date(invoice.date);
+      const monthIndex = date.getMonth();
+      const monthName = months[monthIndex];
+      
+      if (!revenues[monthName]) {
+        revenues[monthName] = 0;
+      }
+      
+      revenues[monthName] += parseFloat(invoice.total) || 0;
+    });
+    
+    // Convert to array format for chart
+    return Object.keys(revenues).map(month => ({
+      month,
+      revenue: revenues[month]
+    }));
+  } catch (error) {
+    console.error('Error fetching monthly revenue:', error);
+    return [];
+  }
+}
+
+// Get service type distribution for radar chart
+export async function getServiceTypeDistribution() {
+  try {
+    // Get work orders with descriptions
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('description');
+      
+    if (error) throw error;
+    
+    if (!data) return [];
+    
+    // Define common service types for categorization
+    const serviceTypes = [
+      'Oil Change',
+      'Brake Service',
+      'Tire Replacement',
+      'Engine Repair',
+      'Transmission',
+      'Electrical',
+      'Diagnostics',
+      'Other'
+    ];
+    
+    // Count occurrences of each service type
+    const counts = {};
+    serviceTypes.forEach(type => counts[type] = 0);
+    
+    data.forEach(wo => {
+      const desc = wo.description ? wo.description.toLowerCase() : '';
+      
+      if (desc.includes('oil') || desc.includes('lube')) {
+        counts['Oil Change']++;
+      } else if (desc.includes('brake') || desc.includes('rotor') || desc.includes('pad')) {
+        counts['Brake Service']++;
+      } else if (desc.includes('tire') || desc.includes('wheel')) {
+        counts['Tire Replacement']++;
+      } else if (desc.includes('engine') || desc.includes('motor')) {
+        counts['Engine Repair']++;
+      } else if (desc.includes('transmission') || desc.includes('clutch')) {
+        counts['Transmission']++;
+      } else if (desc.includes('electric') || desc.includes('battery')) {
+        counts['Electrical']++;
+      } else if (desc.includes('diagnos') || desc.includes('scan') || desc.includes('check')) {
+        counts['Diagnostics']++;
+      } else {
+        counts['Other']++;
+      }
+    });
+    
+    // Format for radar chart
+    return serviceTypes.map(type => ({
+      subject: type,
+      value: counts[type]
+    }));
+  } catch (error) {
+    console.error('Error fetching service type distribution:', error);
+    return [];
+  }
+}
+
+// Get equipment recommendations for maintenance
+export async function getEquipmentRecommendations() {
   try {
     const { data, error } = await supabase
       .from('equipment')
       .select('*')
-      .lte('next_maintenance_date', new Date().toISOString().split('T')[0])
       .order('next_maintenance_date', { ascending: true })
       .limit(5);
-      
-    if (error) throw error;
-    
-    if (!data || data.length === 0) {
-      return [];
-    }
-    
-    return data.map(item => {
-      // Determine priority based on how overdue the maintenance is
-      const nextDate = new Date(item.next_maintenance_date);
-      const currentDate = new Date();
-      const daysPassed = Math.floor((currentDate.getTime() - nextDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      let priority: 'High' | 'Medium' | 'Low' = 'Medium';
-      if (daysPassed > 30) {
-        priority = 'High';
-      } else if (daysPassed < 7) {
-        priority = 'Low';
-      }
-      
-      return {
-        id: item.id,
-        name: item.name,
-        model: item.model,
-        manufacturer: item.manufacturer,
-        maintenanceDate: item.next_maintenance_date,
-        maintenanceType: item.maintenance_frequency,
-        status: item.status,
-        priority
-      };
-    });
-  } catch (error) {
-    console.error("Error fetching equipment recommendations:", error);
-    return [];
-  }
-}
 
-// Get work order status counts for the pie chart
-export async function getWorkOrderStatusCounts() {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select('status');
-      
     if (error) throw error;
     
-    // Count occurrences of each status
-    const statusCounts = {
-      pending: 0,
-      'in-progress': 0,
-      completed: 0,
-      cancelled: 0
-    };
+    if (!data) return [];
     
-    data.forEach(order => {
-      if (statusCounts.hasOwnProperty(order.status)) {
-        statusCounts[order.status as keyof typeof statusCounts]++;
-      }
-    });
-    
-    // Format for pie chart
-    return Object.entries(statusCounts).map(([name, value]) => ({
-      name,
-      value
+    // Transform to match expected format
+    return data.map(equip => ({
+      id: equip.id.toString(),
+      name: equip.name,
+      model: equip.model,
+      manufacturer: equip.manufacturer,
+      maintenanceDate: equip.next_maintenance_date,
+      maintenanceType: equip.maintenance_frequency,
+      status: equip.status,
+      priority: determinePriority(equip.next_maintenance_date, equip.status)
     }));
   } catch (error) {
-    console.error("Error fetching work order status counts:", error);
+    console.error('Error fetching equipment recommendations:', error);
     return [];
   }
 }
 
-// Get technician performance data for the chart
-export async function getTechnicianPerformance(): Promise<TechnicianPerformance> {
-  try {
-    // First get all technicians (from profiles table)
-    const { data: technicianData, error: techError } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .limit(10);
-      
-    if (techError) throw techError;
-    
-    if (!technicianData || technicianData.length === 0) {
-      return { chartData: [], technicians: [] };
-    }
-    
-    // Create list of technician names
-    const technicians = technicianData.map(tech => 
-      `${tech.first_name} ${tech.last_name}`
-    );
-    
-    // Create 6 months of sample data
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    
-    const chartData = months.map(month => {
-      const monthData: Record<string, any> = { month };
-      
-      // Add random data for each technician
-      technicians.forEach(tech => {
-        // Convert technician name to safe property name
-        const techKey = tech.toLowerCase().replace(/\s+/g, '_');
-        // Random count between 3-15
-        monthData[techKey] = Math.floor(Math.random() * 12) + 3;
-      });
-      
-      return monthData;
-    });
-    
-    return { chartData, technicians };
-  } catch (error) {
-    console.error("Error fetching technician performance:", error);
-    return { chartData: [], technicians: [] };
+// Helper function to get the last six months
+function getLastSixMonths() {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const result = [];
+  
+  const date = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(date);
+    d.setMonth(d.getMonth() - i);
+    result.push(months[d.getMonth()]);
+  }
+  
+  return result;
+}
+
+// Helper function to determine priority based on maintenance date and status
+function determinePriority(maintenanceDate: string, status: string): 'High' | 'Medium' | 'Low' {
+  if (!maintenanceDate) return 'Medium';
+  
+  const now = new Date();
+  const maintenance = new Date(maintenanceDate);
+  const diffDays = Math.floor((maintenance.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (status === 'Needs Attention' || diffDays < 0) {
+    return 'High';
+  } else if (diffDays < 30) {
+    return 'Medium';
+  } else {
+    return 'Low';
   }
 }

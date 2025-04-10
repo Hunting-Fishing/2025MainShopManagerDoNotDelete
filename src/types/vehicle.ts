@@ -1,29 +1,38 @@
 
-// Define types for vehicle data
-export interface CarMake {
-  make_id: string;
-  make_display: string;
-  make_is_common: string;
-  make_country: string;
-}
-
-export interface CarModel {
-  model_name: string;
-  model_make_id: string;
-}
-
-// Define type for VIN decode result
 export interface VinDecodeResult {
-  year: string;
+  year?: string;
+  make?: string;
+  model?: string;
+  transmission?: string;
+  transmission_type?: string;
+  drive_type?: string;
+  fuel_type?: string;
+  body_style?: string;
+  country?: string;
+  engine?: string;
+  gvwr?: string;
+}
+
+export interface Vehicle {
+  id: string;
+  vin?: string;
   make: string;
   model: string;
+  year?: number;
+  color?: string;
+  license_plate?: string;
+  customer_id: string;
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+  last_service_date?: string;
+  transmission?: string;
+  transmission_type?: string; 
+  drive_type?: string;
+  fuel_type?: string;
+  body_style?: string;
+  country?: string;
+  engine?: string;
+  gvwr?: string;
   trim?: string;
-  drive_type?: string;      // AWD, FWD, 4x4, etc.
-  fuel_type?: string;       // Gasoline, Diesel, Electric, etc.
-  transmission?: string;    // Automatic, Manual, etc.
-  transmission_type?: string; // More specific transmission details
-  body_style?: string;      // Sedan, SUV, Truck, etc.
-  country?: string;         // Country of manufacture
-  engine?: string;          // Engine size/configuration
-  gvwr?: string;            // Gross Vehicle Weight Rating
 }

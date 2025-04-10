@@ -23,32 +23,48 @@ export function useBusinessConstants() {
     setError(null);
     
     try {
-      // Fetch business types
-      const { data: typesData, error: typesError } = await supabase
-        .from('business_types')
-        .select('value, label')
-        .order('label');
-        
-      if (typesError) throw typesError;
-      setBusinessTypes(typesData);
+      // Since the actual tables don't exist yet, create mock data
+      // In a real implementation, these would come from separate database tables
       
-      // Fetch business industries
-      const { data: industriesData, error: industriesError } = await supabase
-        .from('business_industries')
-        .select('value, label')
-        .order('label');
-        
-      if (industriesError) throw industriesError;
-      setBusinessIndustries(industriesData);
+      // Mock business types
+      const mockBusinessTypes: BusinessConstant[] = [
+        { value: 'sole_proprietorship', label: 'Sole Proprietorship' },
+        { value: 'partnership', label: 'Partnership' },
+        { value: 'llc', label: 'Limited Liability Company (LLC)' },
+        { value: 'corporation', label: 'Corporation' },
+        { value: 's_corporation', label: 'S Corporation' },
+        { value: 'nonprofit', label: 'Nonprofit Organization' }
+      ];
+      setBusinessTypes(mockBusinessTypes);
       
-      // Fetch payment methods
-      const { data: paymentData, error: paymentError } = await supabase
-        .from('payment_methods')
-        .select('value, label')
-        .order('label');
-        
-      if (paymentError) throw paymentError;
-      setPaymentMethods(paymentData);
+      // Mock business industries
+      const mockBusinessIndustries: BusinessConstant[] = [
+        { value: 'automotive', label: 'Automotive' },
+        { value: 'construction', label: 'Construction' },
+        { value: 'retail', label: 'Retail' },
+        { value: 'healthcare', label: 'Healthcare' },
+        { value: 'hospitality', label: 'Hospitality' },
+        { value: 'manufacturing', label: 'Manufacturing' },
+        { value: 'technology', label: 'Technology' },
+        { value: 'transportation', label: 'Transportation' },
+        { value: 'other', label: 'Other' }
+      ];
+      setBusinessIndustries(mockBusinessIndustries);
+      
+      // Mock payment methods
+      const mockPaymentMethods: BusinessConstant[] = [
+        { value: 'cash', label: 'Cash' },
+        { value: 'check', label: 'Check' },
+        { value: 'credit_card', label: 'Credit Card' },
+        { value: 'debit_card', label: 'Debit Card' },
+        { value: 'bank_transfer', label: 'Bank Transfer' },
+        { value: 'paypal', label: 'PayPal' },
+        { value: 'venmo', label: 'Venmo' },
+        { value: 'apple_pay', label: 'Apple Pay' },
+        { value: 'google_pay', label: 'Google Pay' },
+        { value: 'cryptocurrency', label: 'Cryptocurrency' }
+      ];
+      setPaymentMethods(mockPaymentMethods);
     } catch (err) {
       console.error('Error fetching business constants:', err);
       setError('Failed to load business data');

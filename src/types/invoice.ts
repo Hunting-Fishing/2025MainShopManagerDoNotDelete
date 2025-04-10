@@ -1,30 +1,7 @@
 
-export interface Invoice {
-  id: string;
-  workOrderId?: string;
-  customer: string;
-  customerAddress?: string;
-  customerEmail?: string;
-  customer_id?: string;
-  description?: string;
-  notes?: string;
-  total: number;
-  subtotal: number;
-  tax: number;
-  status: "draft" | "pending" | "paid" | "overdue" | "cancelled";
-  paymentMethod: string; // Changed from optional to required
-  date: string;
-  dueDate: string;
-  createdBy?: string;
-  assignedStaff?: string[];
-  items: InvoiceItem[];
-  // Additional fields needed by components
-  lastUpdatedBy?: string;
-  lastUpdatedAt?: string;
-  createdAt?: string;
-  // Make hours optional
-  hours?: boolean;
-}
+import { Dispatch, SetStateAction } from 'react';
+
+export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
 
 export interface InvoiceItem {
   id: string;
@@ -32,8 +9,33 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
+  hours?: boolean; // Is this a labor/time entry
   total: number;
-  hours?: boolean;
+}
+
+export type StaffMember = {
+  id: string;
+  name: string;
+};
+
+export interface Invoice {
+  id: string;
+  workOrderId?: string;
+  customer: string;
+  customerAddress?: string;
+  customerEmail?: string;
+  description?: string;
+  notes?: string;
+  total: number;
+  subtotal: number;
+  tax: number;
+  status: InvoiceStatus;
+  paymentMethod?: string;
+  date: string;
+  dueDate: string;
+  createdBy: string;
+  assignedStaff: string[];
+  items: InvoiceItem[];
 }
 
 export interface InvoiceTemplate {
@@ -41,31 +43,20 @@ export interface InvoiceTemplate {
   name: string;
   description: string;
   createdAt: string;
-  lastUsed?: string;
+  lastUsed: string | null;
   usageCount: number;
   defaultTaxRate: number;
   defaultDueDateDays: number;
-  defaultNotes?: string;
+  defaultNotes: string;
   defaultItems: InvoiceItem[];
-}
-
-// Import WorkOrder from workOrder.ts instead of redefining it
-import { WorkOrder as WorkOrderType, WorkOrderInventoryItem, TimeEntry } from './workOrder';
-// Re-export the imported type
-export type WorkOrder = WorkOrderType;
-
-export interface StaffMember {
-  id: number;
-  name: string;
-  role: string;
 }
 
 export type InvoiceUpdater = (prev: Invoice) => Invoice;
 
-// Helper function to create an invoice updater function
-export function createInvoiceUpdater(updates: Partial<Invoice>): InvoiceUpdater {
+// Helper function to create an invoice updater
+export const createInvoiceUpdater = (updates: Partial<Invoice>): InvoiceUpdater => {
   return (prev: Invoice) => ({
     ...prev,
     ...updates
   });
-}
+};

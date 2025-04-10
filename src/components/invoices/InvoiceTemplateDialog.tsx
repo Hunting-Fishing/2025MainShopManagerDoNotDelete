@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { InvoiceTemplate } from "@/types/invoice";
-import { FileTemplate, Calendar, User, Clock } from "lucide-react";
+import { Calendar, User, Clock, FileText } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface InvoiceTemplateDialogProps {
@@ -26,7 +26,7 @@ export function InvoiceTemplateDialog({ templates, onSelectTemplate }: InvoiceTe
         onClick={() => setOpen(true)}
         className="flex items-center gap-2"
       >
-        <FileTemplate size={16} />
+        <FileText size={16} />
         Load Template
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -37,7 +37,7 @@ export function InvoiceTemplateDialog({ templates, onSelectTemplate }: InvoiceTe
           <div className="py-4">
             {templates.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
-                <FileTemplate size={48} className="mx-auto mb-4 text-slate-300" />
+                <FileText size={48} className="mx-auto mb-4 text-slate-300" />
                 <p>No templates found</p>
                 <p className="text-sm mt-1">Create a new template by saving an invoice</p>
               </div>
@@ -52,7 +52,7 @@ export function InvoiceTemplateDialog({ templates, onSelectTemplate }: InvoiceTe
                     <div className="flex justify-between items-start">
                       <div className="flex items-start gap-3">
                         <div className="bg-slate-100 rounded-md p-2 text-slate-600">
-                          <FileTemplate size={20} />
+                          <FileText size={20} />
                         </div>
                         <div>
                           <h3 className="font-medium">{template.name}</h3>
