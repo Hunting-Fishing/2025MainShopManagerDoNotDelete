@@ -10,6 +10,7 @@ import { TeamError } from "@/components/team/TeamError";
 import { TeamContent } from "@/components/team/TeamContent";
 import { TeamFilterToolbar } from "@/components/team/TeamFilterToolbar";
 import { useTeamFilters } from "@/hooks/useTeamFilters";
+import { TeamLoading } from "@/components/team/TeamLoading";
 
 export default function Team() {
   const [view, setView] = useState<"grid" | "list">("grid");
