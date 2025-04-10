@@ -1,8 +1,7 @@
 
-import { v4 as uuidv4 } from 'uuid';
-import { format, addDays } from 'date-fns';
+import { supabase } from '@/lib/supabase';
 
-// Mock data for Work Orders
+// Define work order type
 export interface WorkOrder {
   id: string;
   date: string;
@@ -25,7 +24,6 @@ export interface WorkOrder {
     odometer?: string;
     licensePlate?: string;
   };
-  // Add missing fields
   totalBillableTime?: number;
   createdBy?: string;
   createdAt?: string;
@@ -63,177 +61,174 @@ export const priorityMap: Record<
   }
 };
 
-// Generate a realistic list of work orders
-const generateWorkOrders = (): WorkOrder[] => {
-  // Generate mock data with various statuses and priorities
-  return [
-    {
-      id: "WO-2023-001",
-      date: "2023-09-15T10:30:00",
-      customer: "John Smith",
-      description: "Oil change and tire rotation",
-      status: "completed",
-      priority: "medium",
-      technician: "Michael Brown",
-      location: "Bay 3",
-      dueDate: format(addDays(new Date(), -5), "yyyy-MM-dd"),
-      totalBillableTime: 60, // Add totalBillableTime in minutes
-      createdBy: "System",
-      createdAt: "2023-09-15T10:00:00",
-      lastUpdatedBy: "Michael Brown",
-      lastUpdatedAt: "2023-09-15T11:30:00",
-    },
-    {
-      id: "WO-2023-002",
-      date: "2023-09-17T14:15:00",
-      customer: "Sarah Johnson",
-      description: "Check engine light diagnosis and repair",
-      status: "in-progress",
-      priority: "high",
-      technician: "David Lee",
-      location: "Bay 1",
-      dueDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
-      notes: "Customer reported intermittent stalling at highway speeds.",
-      totalBillableTime: 120,
-      createdBy: "System",
-      createdAt: "2023-09-17T14:00:00",
-      lastUpdatedBy: "David Lee",
-      lastUpdatedAt: "2023-09-17T16:30:00",
-    },
-    {
-      id: "WO-2023-003",
-      date: "2023-09-18T09:00:00",
-      customer: "Robert Davis",
-      description: "Replace brake pads and rotors",
-      status: "pending",
-      priority: "medium",
-      technician: "Emily Chen",
-      location: "Bay 2",
-      dueDate: format(addDays(new Date(), 2), "yyyy-MM-dd"),
-      totalBillableTime: 0,
-      createdBy: "System",
-      createdAt: "2023-09-18T08:45:00",
-    },
-    {
-      id: "WO-2023-004",
-      date: "2023-09-14T11:45:00",
-      customer: "Jennifer Wilson",
-      description: "A/C system not cooling properly",
-      status: "completed",
-      priority: "medium",
-      technician: "Michael Brown",
-      location: "Bay 4",
-      dueDate: format(addDays(new Date(), -3), "yyyy-MM-dd"),
-      notes: "Recharged refrigerant and replaced cabin air filter.",
-      totalBillableTime: 90,
-      createdBy: "System",
-      createdAt: "2023-09-14T11:30:00",
-      lastUpdatedBy: "Michael Brown",
-      lastUpdatedAt: "2023-09-14T13:15:00",
-    },
-    {
-      id: "WO-2023-005",
-      date: "2023-09-16T16:30:00",
-      customer: "Michael Thomas",
-      description: "Alignment and suspension check",
-      status: "cancelled",
-      priority: "low",
-      technician: "David Lee",
-      location: "Bay 2",
-      dueDate: format(addDays(new Date(), -1), "yyyy-MM-dd"),
-      notes: "Customer called to cancel - rescheduling for next week.",
-      totalBillableTime: 0,
-      createdBy: "System",
-      createdAt: "2023-09-16T16:15:00",
-      lastUpdatedBy: "System",
-      lastUpdatedAt: "2023-09-16T17:00:00",
-    },
-    {
-      id: "WO-2023-006",
-      date: "2023-09-19T13:00:00",
-      customer: "Lisa Anderson",
-      description: "30,000 mile maintenance service",
-      status: "pending",
-      priority: "medium",
-      technician: "Emily Chen",
-      location: "Bay 3",
-      dueDate: format(addDays(new Date(), 3), "yyyy-MM-dd"),
-      totalBillableTime: 0,
-      createdBy: "System",
-      createdAt: "2023-09-19T12:45:00",
-    },
-    {
-      id: "WO-2023-007",
-      date: "2023-09-16T10:00:00",
-      customer: "James Martinez",
-      description: "Replace serpentine belt and tensioner",
-      status: "in-progress",
-      priority: "high",
-      technician: "Michael Brown",
-      location: "Bay 1",
-      dueDate: format(addDays(new Date(), 0), "yyyy-MM-dd"),
-      notes: "Parts are on backorder, expected arrival tomorrow.",
-      totalBillableTime: 45,
-      createdBy: "System",
-      createdAt: "2023-09-16T09:45:00",
-      lastUpdatedBy: "Michael Brown",
-      lastUpdatedAt: "2023-09-16T10:30:00",
-    },
-    {
-      id: "WO-2023-008",
-      date: "2023-09-20T09:30:00",
-      customer: "Patricia Taylor",
-      description: "Transmission fluid flush",
-      status: "pending",
-      priority: "low",
-      technician: "David Lee",
-      location: "Bay 4",
-      dueDate: format(addDays(new Date(), 4), "yyyy-MM-dd"),
-      totalBillableTime: 0,
-      createdBy: "System",
-      createdAt: "2023-09-20T09:15:00",
+// Fetch work orders from Supabase
+export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select(`
+        *,
+        customers:customer_id (first_name, last_name),
+        profiles:technician_id (first_name, last_name),
+        work_order_time_entries (*)
+      `)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching work orders:", error);
+      return [];
     }
-  ];
+    
+    return data.map(wo => ({
+      id: wo.id,
+      date: wo.created_at,
+      customer: `${wo.customers?.first_name || ''} ${wo.customers?.last_name || ''}`.trim(),
+      description: wo.description || '',
+      status: wo.status || 'pending',
+      priority: determinePriority(wo),
+      technician: `${wo.profiles?.first_name || ''} ${wo.profiles?.last_name || ''}`.trim() || 'Unassigned',
+      location: '', // Not available in schema yet
+      dueDate: wo.end_time || '',
+      notes: '',
+      totalBillableTime: wo.work_order_time_entries?.reduce((sum, entry) => 
+        sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
+      createdBy: 'System',
+      createdAt: wo.created_at,
+      lastUpdatedBy: '',
+      lastUpdatedAt: wo.updated_at
+    }));
+  } catch (err) {
+    console.error("Error in fetchWorkOrders:", err);
+    return [];
+  }
 };
 
-export const workOrders = generateWorkOrders();
+// Helper function to determine priority based on work order properties
+const determinePriority = (workOrder: any): "low" | "medium" | "high" => {
+  // Logic to determine priority - could be enhanced based on business rules
+  const hoursSinceCreation = Math.floor(
+    (new Date().getTime() - new Date(workOrder.created_at).getTime()) / (1000 * 60 * 60)
+  );
+  
+  if (hoursSinceCreation > 48) return "high";
+  if (hoursSinceCreation > 24) return "medium";
+  return "low";
+};
 
 // Create a new work order
 export const createWorkOrder = async (workOrder: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
-  const newWorkOrder: WorkOrder = {
-    id: `WO-${new Date().getFullYear()}-${String(workOrders.length + 1).padStart(3, '0')}`,
-    date: new Date().toISOString(),
-    ...workOrder,
-  };
-  
-  // Add to the list (in a real app, this would be saved to a database)
-  workOrders.unshift(newWorkOrder);
-  
-  // For demo purposes, pretend this is an async API call
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(newWorkOrder), 300);
-  });
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .insert({
+        description: workOrder.description,
+        status: workOrder.status || 'pending',
+        customer_id: typeof workOrder.customer === 'string' ? null : workOrder.customer,
+        technician_id: typeof workOrder.technician === 'string' ? null : workOrder.technician,
+        // Map other fields as needed
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error creating work order:", error);
+      throw new Error(error.message);
+    }
+    
+    return {
+      id: data.id,
+      date: data.created_at,
+      customer: workOrder.customer,
+      description: data.description,
+      status: data.status,
+      priority: workOrder.priority,
+      technician: workOrder.technician,
+      location: workOrder.location,
+      dueDate: data.end_time || '',
+      notes: workOrder.notes,
+      totalBillableTime: 0,
+      createdBy: 'System',
+      createdAt: data.created_at,
+    };
+  } catch (err) {
+    console.error("Error in createWorkOrder:", err);
+    throw err;
+  }
 };
 
 // Find a work order by ID
-export const findWorkOrderById = (id: string): Promise<WorkOrder | null> => {
-  return new Promise((resolve) => {
-    const workOrder = workOrders.find((wo) => wo.id === id);
-    setTimeout(() => resolve(workOrder || null), 300);
-  });
+export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select(`
+        *,
+        customers:customer_id (first_name, last_name),
+        profiles:technician_id (first_name, last_name),
+        work_order_time_entries (*)
+      `)
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      console.error("Error finding work order:", error);
+      return null;
+    }
+    
+    if (!data) return null;
+    
+    return {
+      id: data.id,
+      date: data.created_at,
+      customer: `${data.customers?.first_name || ''} ${data.customers?.last_name || ''}`.trim(),
+      description: data.description || '',
+      status: data.status || 'pending',
+      priority: determinePriority(data),
+      technician: `${data.profiles?.first_name || ''} ${data.profiles?.last_name || ''}`.trim() || 'Unassigned',
+      location: '', // Not available in schema yet
+      dueDate: data.end_time || '',
+      notes: '',
+      timeEntries: data.work_order_time_entries || [],
+      totalBillableTime: data.work_order_time_entries?.reduce((sum, entry) => 
+        sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
+      createdBy: 'System',
+      createdAt: data.created_at,
+      lastUpdatedBy: '',
+      lastUpdatedAt: data.updated_at
+    };
+  } catch (err) {
+    console.error("Error in findWorkOrderById:", err);
+    return null;
+  }
 };
 
 // Update a work order
 export const updateWorkOrder = async (updatedWorkOrder: WorkOrder): Promise<WorkOrder> => {
-  return new Promise((resolve, reject) => {
-    const index = workOrders.findIndex((wo) => wo.id === updatedWorkOrder.id);
-    if (index !== -1) {
-      workOrders[index] = { ...updatedWorkOrder };
-      setTimeout(() => resolve(workOrders[index]), 300);
-    } else {
-      setTimeout(() => reject(new Error("Work order not found")), 300);
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .update({
+        description: updatedWorkOrder.description,
+        status: updatedWorkOrder.status,
+        // Map other fields as needed
+      })
+      .eq('id', updatedWorkOrder.id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error updating work order:", error);
+      throw new Error(error.message);
     }
-  });
+    
+    return {
+      ...updatedWorkOrder,
+      lastUpdatedAt: data.updated_at
+    };
+  } catch (err) {
+    console.error("Error in updateWorkOrder:", err);
+    throw err;
+  }
 };
 
 // Add missing utility functions
@@ -251,7 +246,24 @@ export const formatTimeInHoursAndMinutes = (minutes: number): string => {
 };
 
 // Get unique technicians for filtering
-export const getUniqueTechnicians = (): string[] => {
-  return Array.from(new Set(workOrders.map(order => order.technician))).sort();
+export const getUniqueTechnicians = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`id, first_name, last_name`)
+      .order('first_name');
+      
+    if (error) {
+      console.error("Error fetching technicians:", error);
+      return [];
+    }
+    
+    return data
+      .map(profile => `${profile.first_name || ''} ${profile.last_name || ''}`.trim())
+      .filter(name => name.length > 0)
+      .sort();
+  } catch (err) {
+    console.error("Error in getUniqueTechnicians:", err);
+    return [];
+  }
 };
-

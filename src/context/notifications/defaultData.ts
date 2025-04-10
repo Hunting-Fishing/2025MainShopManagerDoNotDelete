@@ -1,6 +1,6 @@
 
 // Clean implementation without mock data
-import { Notification, NotificationPreferences } from '@/types/notification';
+import { NotificationPreferences } from '@/types/notification';
 
 // Default notification preferences - no mock data
 export const defaultPreferences: NotificationPreferences = {
@@ -18,5 +18,5 @@ export const defaultPreferences: NotificationPreferences = {
   ]
 };
 
-// Empty array - will be populated from Supabase
-export const sampleNotifications: Notification[] = [];
+// Empty array - all notifications will be loaded from Supabase
+export const sampleNotifications = [];
