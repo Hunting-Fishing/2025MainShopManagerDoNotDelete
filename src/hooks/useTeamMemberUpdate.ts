@@ -6,6 +6,7 @@ import { useProfileUpdate } from './team/useProfileUpdate';
 import { useRoleAssignment } from './team/useRoleAssignment';
 import { recordTeamMemberHistory } from '@/utils/teamHistoryUtils';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Hook for managing team member profile updates including role assignments
@@ -28,6 +29,21 @@ export function useTeamMemberUpdate() {
     try {
       console.log("Updating team member with ID:", memberId);
       console.log("Update values:", values);
+      
+      // Get current user for history tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = user?.id || 'system';
+      
+      // Get user name for better history records
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', currentUserId)
+        .single();
+        
+      const userName = userData ? 
+        `${userData.first_name || ''} ${userData.last_name || ''}`.trim() : 
+        'System';
       
       // Step 1: Update the user's profile information
       const profileData = {
@@ -55,7 +71,8 @@ export function useTeamMemberUpdate() {
       await recordTeamMemberHistory({
         profile_id: memberId,
         action_type: 'update',
-        action_by: 'current_user', // Will be replaced with actual user ID
+        action_by: currentUserId,
+        action_by_name: userName,
         details: {
           fields: updatedFields,
           timestamp: new Date().toISOString()

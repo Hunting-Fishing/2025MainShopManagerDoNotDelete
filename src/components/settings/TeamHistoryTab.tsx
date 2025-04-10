@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { UserPlus, RefreshCw, UserX, Edit, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const TeamHistoryTab = () => {
   const [loading, setLoading] = useState(true);
@@ -24,45 +24,40 @@ export const TeamHistoryTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadTeamHistory = async () => {
-      try {
-        setLoading(true);
-        const allHistory = await fetchAllTeamHistory();
-        setTeamHistory(allHistory);
-        setFilteredHistory(allHistory);
-      } catch (error) {
-        console.error("Failed to fetch team history:", error);
-        toast({
-          variant: "destructive",
-          title: "Error fetching team history",
-          description: "There was an issue retrieving the team history. Please try again."
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadTeamHistory = async () => {
+    try {
+      setLoading(true);
+      const allHistory = await fetchAllTeamHistory();
+      setTeamHistory(allHistory);
+      setFilteredHistory(allHistory);
+    } catch (error) {
+      console.error("Failed to fetch team history:", error);
+      toast({
+        variant: "destructive",
+        title: "Error fetching team history",
+        description: "There was an issue retrieving the team history. Please try again."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadTeamHistory();
   }, [toast]);
 
-  // Apply filters when they change
   useEffect(() => {
     let result = teamHistory;
     
-    // Apply action type filter
     if (actionTypeFilter !== "all") {
       result = result.filter(record => record.action_type === actionTypeFilter);
     }
     
-    // Apply search term filter
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       result = result.filter(record => {
-        // Search by action performer name
         const actionByName = record.action_by_name?.toLowerCase() || '';
         
-        // Search by details
         const detailsStr = JSON.stringify(record.details).toLowerCase();
         
         return actionByName.includes(search) || detailsStr.includes(search);
@@ -72,7 +67,6 @@ export const TeamHistoryTab = () => {
     setFilteredHistory(result);
   }, [teamHistory, actionTypeFilter, searchTerm]);
 
-  // Function to get badge color for different action types
   const getActionColor = (actionType: string) => {
     switch (actionType) {
       case 'creation':
@@ -90,7 +84,6 @@ export const TeamHistoryTab = () => {
     }
   };
 
-  // Helper to format action type for display
   const formatActionType = (actionType: string) => {
     return actionType
       .split('_')
@@ -98,7 +91,6 @@ export const TeamHistoryTab = () => {
       .join(' ');
   };
 
-  // Helper to get icon for action types
   const getActionIcon = (actionType: string) => {
     switch (actionType) {
       case 'creation':
@@ -116,7 +108,6 @@ export const TeamHistoryTab = () => {
     }
   };
 
-  // Helper to get details for display
   const getActionDetails = (record: TeamMemberHistoryRecord) => {
     switch(record.action_type) {
       case 'role_change':
@@ -134,6 +125,15 @@ export const TeamHistoryTab = () => {
       default:
         return JSON.stringify(record.details);
     }
+  };
+
+  const handleRefresh = () => {
+    loadTeamHistory();
+    toast({
+      title: "Refreshed",
+      description: "Team history has been refreshed",
+      duration: 2000
+    });
   };
 
   if (loading) {
@@ -192,6 +192,14 @@ export const TeamHistoryTab = () => {
               </SelectContent>
             </Select>
           </div>
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh} 
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
         </div>
       </div>
 
