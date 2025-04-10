@@ -46,11 +46,16 @@ export function useDeleteMember() {
       
       if (existingMetadata) {
         // Update existing metadata to mark user as inactive
+        // Make sure we safely handle the metadata object
+        const currentMetadata = typeof existingMetadata.metadata === 'object' && existingMetadata.metadata !== null 
+          ? existingMetadata.metadata 
+          : {};
+          
         const { error: updateError } = await supabase
           .from('profile_metadata')
           .update({
             metadata: {
-              ...existingMetadata.metadata,
+              ...currentMetadata,
               status: 'inactive',
               deactivated_at: new Date().toISOString(),
               is_active: false
