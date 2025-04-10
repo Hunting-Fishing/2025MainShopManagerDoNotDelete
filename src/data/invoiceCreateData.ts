@@ -74,8 +74,15 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
       // Build customer and technician names safely
       const customers = wo.customers || {};
       const profiles = wo.profiles || {};
-      const customerName = `${customers.first_name || ''} ${customers.last_name || ''}`.trim();
-      const technicianName = `${profiles.first_name || ''} ${profiles.last_name || ''}`.trim();
+      
+      // Safe access to potentially undefined properties using optional chaining
+      const firstName = customers?.first_name || '';
+      const lastName = customers?.last_name || '';
+      const customerName = `${firstName} ${lastName}`.trim();
+      
+      const techFirstName = profiles?.first_name || '';
+      const techLastName = profiles?.last_name || '';
+      const technicianName = `${techFirstName} ${techLastName}`.trim();
       
       // Cast status to the expected type
       const status = (wo.status || 'pending') as "pending" | "in-progress" | "completed" | "cancelled";
@@ -136,12 +143,7 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
         id, 
         first_name, 
         last_name, 
-        job_title,
-        user_roles!inner (
-          roles:role_id (
-            name
-          )
-        )
+        job_title
       `)
       .order('first_name');
       
@@ -152,10 +154,13 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
     
     return data.map((profile) => {
       // Parse ID to number if possible
-      const id = parseInt(profile.id);
+      const id = typeof profile.id === 'number' ? profile.id : parseInt(profile.id, 10);
+      const firstName = profile.first_name || '';
+      const lastName = profile.last_name || '';
+      
       return {
         id: isNaN(id) ? 0 : id, // Convert to 0 if parsing fails to match StaffMember type
-        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+        name: `${firstName} ${lastName}`.trim(),
         role: profile.job_title || 'Technician'
       };
     });
