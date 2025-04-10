@@ -17,7 +17,7 @@ export default function TeamMemberProfile() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const { member, loading } = useTeamMemberProfile(id);
-  const { deleteDialogOpen, setDeleteDialogOpen, handleDeleteMember } = useDeleteMember();
+  const { deleteDialogOpen, setDeleteDialogOpen, handleDeleteMember, isDeleting } = useDeleteMember();
 
   // Check URL query parameters for tab selection
   useEffect(() => {
@@ -111,7 +111,9 @@ export default function TeamMemberProfile() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         memberName={member.name}
+        memberId={member.id}
         onDelete={handleDeleteMember}
+        isDeleting={isDeleting}
       />
     </div>
   );

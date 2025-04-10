@@ -8,15 +8,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 interface DeleteMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   memberName: string;
-  onDelete: () => void;
+  memberId: string;
+  onDelete: (memberId: string) => void;
+  isDeleting?: boolean;
 }
 
-export function DeleteMemberDialog({ open, onOpenChange, memberName, onDelete }: DeleteMemberDialogProps) {
+export function DeleteMemberDialog({ 
+  open, 
+  onOpenChange, 
+  memberName, 
+  memberId,
+  onDelete,
+  isDeleting = false
+}: DeleteMemberDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -31,14 +41,21 @@ export function DeleteMemberDialog({ open, onOpenChange, memberName, onDelete }:
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
+            disabled={isDeleting}
           >
             Cancel
           </Button>
           <Button 
             variant="destructive" 
-            onClick={onDelete}
+            onClick={() => onDelete(memberId)}
+            disabled={isDeleting}
           >
-            Delete Member
+            {isDeleting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : "Delete Member"}
           </Button>
         </DialogFooter>
       </DialogContent>
