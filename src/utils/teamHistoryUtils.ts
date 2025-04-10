@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -49,14 +50,14 @@ export const recordTeamMemberHistory = async (
       message: "History recorded"
     };
     
-    // Properly handle the data with type checking
-    // The data should be an object with an id property if the query was successful
-    if (data && typeof data === 'object' && 'id' in data) {
-      const recordId = data.id as string;
-      if (recordId) {
+    // Fix null handling: First ensure data exists, then check if it's an object with an id property
+    // Use type assertions to help TypeScript understand our checks
+    if (data !== null && typeof data === 'object') {
+      const recordData = data as { id?: string };
+      if ('id' in recordData && recordData.id) {
         return {
           ...response,
-          id: recordId
+          id: recordData.id
         };
       }
     }
