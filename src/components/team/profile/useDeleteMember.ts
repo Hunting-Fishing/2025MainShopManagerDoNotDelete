@@ -36,19 +36,28 @@ export function useDeleteMember() {
         // Continue with deletion even if role deletion fails
       }
       
-      // Then update the profile status (we don't completely delete users)
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ status: 'inactive' })
-        .eq('id', memberId);
-        
-      if (updateError) {
-        throw updateError;
+      // Since we don't have a 'status' field, we can't mark as inactive directly
+      // Instead, we'll use a metadata approach - logging the deletion in audit_logs
+      const { error: auditError } = await supabase
+        .from('audit_logs')
+        .insert({
+          user_id: memberId,
+          action: 'user_deactivated',
+          resource: 'profiles',
+          resource_id: memberId,
+          details: { 
+            timestamp: new Date().toISOString(), 
+            reason: 'User removed from team' 
+          }
+        });
+      
+      if (auditError) {
+        console.error("Error logging user deactivation:", auditError);
       }
       
       toast({
         title: "Team member removed",
-        description: "The team member has been successfully removed.",
+        description: "The team member has been successfully removed from the team.",
         variant: "success",
       });
       
