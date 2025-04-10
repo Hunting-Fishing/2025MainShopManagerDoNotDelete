@@ -2,6 +2,7 @@
 import { WorkOrder } from "@/types/workOrder";
 import { useWorkOrderTimeEntries } from "@/hooks/invoice/useWorkOrderTimeEntries";
 import { createInvoiceUpdater } from "@/types/invoice";
+import { useState } from "react";
 
 interface WorkOrderSelectorProps {
   invoice: any;
@@ -14,10 +15,14 @@ export function useWorkOrderSelector({
   setInvoice,
   handleSelectWorkOrder
 }: WorkOrderSelectorProps) {
-  const { addTimeEntriesToInvoiceItems } = useWorkOrderTimeEntries();
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
+  const { addTimeEntriesToInvoiceItems } = useWorkOrderTimeEntries(selectedWorkOrder || {} as WorkOrder);
 
   // Custom handler to select work order and include time entries
   const handleSelectWorkOrderWithTime = (workOrder: WorkOrder) => {
+    // Update the selected work order
+    setSelectedWorkOrder(workOrder);
+    
     // First handle basic work order selection
     handleSelectWorkOrder(workOrder);
     

@@ -14,7 +14,7 @@ export interface InvoiceItem {
 }
 
 export interface StaffMember {
-  id: string;
+  id: string; // Using string type to ensure compatibility across components
   name: string;
   role?: string; // Added role property
 }
@@ -38,6 +38,8 @@ export interface Invoice {
   assignedStaff: string[];
   items: InvoiceItem[];
   customer_id?: string; // Added for backward compatibility
+  lastUpdatedBy?: string; // Add this missing property
+  lastUpdatedAt?: string; // Add this missing property
 }
 
 export interface InvoiceTemplate {

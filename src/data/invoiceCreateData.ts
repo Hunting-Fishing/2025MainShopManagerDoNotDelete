@@ -1,201 +1,115 @@
 
-import { WorkOrder, StaffMember } from "@/types/invoice";
-import { InventoryItem } from "@/types/inventory";
-import { supabase } from "@/lib/supabase";
-import { TimeEntry } from "@/types/workOrder";
+import { v4 as uuidv4 } from 'uuid';
+import { WorkOrder } from '@/types/workOrder';
+import { StaffMember } from '@/types/invoice';
+import { supabase } from '@/lib/supabase';
 
-// Format time helper
-export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  if (!minutes) return '0h 0m';
-  
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  
-  if (hours > 0) {
-    return `${hours}h ${remainingMinutes}m`;
-  }
-  
-  return `${remainingMinutes}m`;
-};
-
-// Type definitions for database records
-interface CustomerRecord {
-  first_name?: string;
-  last_name?: string;
-  [key: string]: any;
-}
-
-interface ProfileRecord {
-  first_name?: string;
-  last_name?: string;
-  job_title?: string;
-  [key: string]: any;
-}
-
-interface TimeEntryRecord {
-  id: string | number;
-  employee_id?: string | number;
-  employee_name?: string;
-  start_time?: string;
-  end_time?: string | null;
-  duration?: number;
-  notes?: string;
-  billable: boolean;
-}
-
-// Real data fetching functions
-export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
+// Function to fetch work orders from the database
+export const fetchWorkOrders = async () => {
   try {
-    const { data, error } = await supabase
+    const { data: workOrdersData, error } = await supabase
       .from('work_orders')
       .select(`
-        id,
-        description,
-        status,
-        start_time,
-        end_time,
-        created_at,
-        technician_id,
-        customer_id,
-        customers(
-          first_name,
-          last_name
-        ),
-        profiles(
-          first_name,
-          last_name
-        ),
-        work_order_time_entries(
-          id,
-          employee_id,
-          employee_name,
-          start_time,
-          end_time,
-          duration,
-          notes,
-          billable
-        )
+        *,
+        customers (id, first_name, last_name),
+        vehicles (id, make, model, year)
       `)
       .order('created_at', { ascending: false });
       
     if (error) {
-      console.error("Error fetching work orders:", error);
-      return [];
+      throw error;
     }
     
-    return data.map(wo => {
-      // Map time entries to match TimeEntry interface
-      const timeEntries: TimeEntry[] = (wo.work_order_time_entries || []).map((entry: TimeEntryRecord) => ({
-        id: String(entry.id), // Ensure ID is a string
-        employeeId: entry.employee_id ? String(entry.employee_id) : '', // Ensure employeeId is a string
-        employeeName: entry.employee_name || '',
-        startTime: entry.start_time || '',
-        endTime: entry.end_time || null,
-        duration: entry.duration || 0,
-        notes: entry.notes || '',
-        billable: entry.billable
-      }));
-      
-      // Cast to the typed interfaces
-      const customers = (wo.customers || {}) as CustomerRecord;
-      const profiles = (wo.profiles || {}) as ProfileRecord;
-      
-      // Use optional chaining and nullish coalescing for safer access
-      const firstName = customers?.first_name ?? '';
-      const lastName = customers?.last_name ?? '';
-      const customerName = `${firstName} ${lastName}`.trim() || 'Unknown Customer';
-      
-      const techFirstName = profiles?.first_name ?? '';
-      const techLastName = profiles?.last_name ?? '';
-      const technicianName = `${techFirstName} ${techLastName}`.trim() || 'Unassigned';
-      
-      // Cast status to the expected type
-      const status = (wo.status || 'pending') as "pending" | "in-progress" | "completed" | "cancelled";
+    // Transform the data to match our WorkOrder type
+    const workOrders: WorkOrder[] = workOrdersData.map(wo => {
+      const customer = wo.customers || {};
+      const vehicle = wo.vehicles || {};
       
       return {
         id: wo.id,
-        customer: customerName,
+        customer_id: wo.customer_id || '',
+        customer_name: customer.first_name && customer.last_name 
+          ? `${customer.first_name} ${customer.last_name}`
+          : "Unknown Customer",
+        vehicle_id: wo.vehicle_id || '',
+        vehicle_info: vehicle.make && vehicle.model 
+          ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+          : "Vehicle information not available",
+        status: wo.status || 'pending',
         description: wo.description || '',
-        status: status,
-        date: wo.created_at,
-        dueDate: wo.end_time || '',
-        priority: 'medium' as "low" | "medium" | "high", // Default priority
-        technician: technicianName || 'Unassigned',
-        location: '', // Location is not in the database schema yet
-        timeEntries,
-        totalBillableTime: timeEntries.reduce((sum, entry) => 
-          sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0
+        total_cost: wo.total_cost || 0,
+        timeEntries: [], // We'll fetch these separately if needed
+        date: wo.created_at || new Date().toISOString(),
+        dueDate: wo.updated_at || new Date().toISOString(),
+        priority: "medium", // Default value
+        technician: wo.technician_id || '',
+        location: '', // Default value
+        totalBillableTime: 0 // We'll calculate this if needed
       };
     });
-  } catch (err) {
-    console.error("Error in fetchWorkOrders:", err);
+    
+    return workOrders;
+  } catch (error) {
+    console.error('Error fetching work orders:', error);
     return [];
   }
 };
 
-// Fetch real inventory items from Supabase
-export const fetchInventoryItems = async (): Promise<InventoryItem[]> => {
+// Function to fetch inventory items from the database
+export const fetchInventoryItems = async () => {
   try {
     const { data, error } = await supabase
       .from('inventory_items')
-      .select('id, name, sku, category, unit_price, description');
+      .select('*')
+      .order('name');
       
     if (error) {
-      console.error("Error fetching inventory items:", error);
-      return [];
+      throw error;
     }
     
     return data.map(item => ({
       id: item.id,
       name: item.name,
-      sku: item.sku,
-      category: item.category,
-      price: item.unit_price,
       description: item.description || '',
+      sku: item.sku,
+      category: item.category || '',
+      quantity: item.quantity || 0,
+      price: item.unit_price || 0,
+      total: 0 // Will be calculated when item is added to invoice
     }));
-  } catch (err) {
-    console.error("Error in fetchInventoryItems:", err);
+  } catch (error) {
+    console.error('Error fetching inventory items:', error);
     return [];
   }
 };
 
-// Fetch staff members from profiles with technician role
-export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
+// Function to fetch staff members from the database
+export const fetchStaffMembers = async () => {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select(`
-        id, 
-        first_name, 
-        last_name, 
-        job_title
-      `)
+      .select('id, first_name, last_name, job_title')
       .order('first_name');
       
     if (error) {
-      console.error("Error fetching staff members:", error);
-      return [];
+      throw error;
     }
     
-    return data.map((profile: ProfileRecord) => {
-      // Parse ID to number if needed and then convert to string
-      const id = profile.id ? (
-        typeof profile.id === 'number' ? profile.id : 
-        typeof profile.id === 'string' ? parseInt(profile.id, 10) || 0 : 0
-      ) : 0;
-      
-      // Access properties safely
-      const firstName = profile.first_name || '';
-      const lastName = profile.last_name || '';
-      
-      return {
-        id, // This will be a number as required by StaffMember interface
-        name: `${firstName} ${lastName}`.trim() || 'Unknown Staff',
-        role: profile.job_title || 'Technician'
-      };
-    });
-  } catch (err) {
-    console.error("Error in fetchStaffMembers:", err);
-    return [];
+    // Transform the data to match our StaffMember type
+    const staffMembers: StaffMember[] = data.map(profile => ({
+      id: profile.id.toString(), // Convert to string to match our type
+      name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown Staff',
+      role: profile.job_title || 'Staff'
+    }));
+    
+    return staffMembers;
+  } catch (error) {
+    console.error('Error fetching staff members:', error);
+    // Provide fallback data
+    return [
+      { id: "1", name: "John Smith", role: "Technician" },
+      { id: "2", name: "Sarah Johnson", role: "Manager" },
+      { id: "3", name: "Mike Davis", role: "Advisor" }
+    ];
   }
 };

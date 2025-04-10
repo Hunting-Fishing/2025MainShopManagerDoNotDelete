@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { InvoiceTemplate } from "@/types/invoice";
+import { InvoiceTemplate, Invoice } from "@/types/invoice";
 
 interface SaveTemplateDialogProps {
   open: boolean;
@@ -14,6 +14,7 @@ interface SaveTemplateDialogProps {
   items: any[];
   defaultTaxRate: number;
   defaultNotes: string;
+  invoice?: Invoice; // Add optional invoice property
 }
 
 export function SaveTemplateDialog({ 
@@ -22,7 +23,8 @@ export function SaveTemplateDialog({
   onSave, 
   items,
   defaultTaxRate,
-  defaultNotes
+  defaultNotes,
+  invoice
 }: SaveTemplateDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");

@@ -69,7 +69,7 @@ export default function InvoiceDetails() {
           paymentMethod: data.payment_method || '',
           assignedStaff: [], // Initialize with empty array
           items: data.invoice_items || [],
-          customer_id: data.customer_id, // Include optional customer_id
+          customer_id: data.customer_id, // Include customer_id
         };
         
         // Fetch assigned staff members if needed
@@ -115,12 +115,6 @@ export default function InvoiceDetails() {
     );
   }
   
-  // Ensure data has the necessary properties for the components
-  const headerInvoice = {
-    ...invoice,
-    paymentMethod: invoice.paymentMethod || ''
-  };
-  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -128,7 +122,7 @@ export default function InvoiceDetails() {
         invoiceId={invoice.id}
         status={invoice.status}
         statusStyles={statusStyles}
-        invoice={headerInvoice}
+        invoice={invoice}
       />
       
       {/* Tabs for Invoice details and Payments */}

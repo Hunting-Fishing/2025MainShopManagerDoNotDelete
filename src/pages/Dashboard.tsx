@@ -1,119 +1,75 @@
 
-import { useEffect, useState } from "react";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { RevenueChart } from "@/components/dashboard/RevenueChart";
-import { WorkOrdersByStatusChart } from "@/components/dashboard/WorkOrdersByStatusChart";
 import { RecentWorkOrders } from "@/components/dashboard/RecentWorkOrders";
-import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceTypeDistributionChart";
-import { getDashboardStats, getRevenueData } from "@/services/dashboardService";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { WorkOrdersByStatusChart } from "@/components/dashboard/WorkOrdersByStatusChart";
+import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { MonthlyRevenueChart } from "@/components/dashboard/MonthlyRevenueChart";
+import { TechnicianPerformanceChart } from "@/components/dashboard/TechnicianPerformanceChart";
+import { EquipmentRecommendations } from "@/components/dashboard/EquipmentRecommendations";
+import { useEffect, useState } from "react";
+import { getDashboardStats } from "@/services/dashboardService";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year">("month");
   const [stats, setStats] = useState({
     revenue: 0,
     activeOrders: 0,
     customers: 0,
     lowStockParts: 0,
-    activeWorkOrders: "0",
-    workOrderChange: "+0%",
-    teamMembers: "0",
-    teamChange: "+0%",
-    inventoryItems: "0",
-    inventoryChange: "+0%",
-    avgCompletionTime: "0h",
-    completionTimeChange: "+0%"
+    activeWorkOrders: "",
+    workOrderChange: "",
+    teamMembers: "",
+    teamChange: "",
+    inventoryItems: "",
+    inventoryChange: "",
+    avgCompletionTime: "",
+    completionTimeChange: ""
   });
-  const [revenueData, setRevenueData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
-    const loadDashboardData = async () => {
-      setIsLoading(true);
+    const loadDashboardStats = async () => {
       try {
-        // Load dashboard stats
+        setIsLoading(true);
         const dashboardStats = await getDashboardStats();
         setStats(dashboardStats);
-        
-        // Load revenue data for the chart
-        const revenue = await getRevenueData(timeRange);
-        setRevenueData(revenue);
       } catch (error) {
-        console.error("Error loading dashboard data:", error);
+        console.error("Error loading dashboard stats:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    loadDashboardData();
-  }, [timeRange]);
-  
-  // Handle changing the time range for charts
-  const handleTimeRangeChange = (range: "day" | "week" | "month" | "year") => {
-    setTimeRange(range);
-  };
-  
+
+    loadDashboardStats();
+  }, []);
+
   return (
-    <div className="flex flex-col gap-5 w-full">
+    <div className="space-y-6">
       <DashboardHeader />
       
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4">
-          <StatsCards stats={stats} />
-          
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <RevenueChart 
-              data={revenueData}
-              isLoading={isLoading}
-              timeRange={timeRange}
-              onTimeRangeChange={handleTimeRangeChange}
-            />
-            <WorkOrdersByStatusChart />
-          </div>
-          
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <RecentWorkOrders />
-            <ServiceTypeDistributionChart />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="sales" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Overview</CardTitle>
-              <CardDescription>Detailed sales performance metrics</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Sales dashboard content coming soon
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="operations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Operations Overview</CardTitle>
-              <CardDescription>Workflow and operational metrics</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Operations dashboard content coming soon
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <StatsCards stats={stats} isLoading={isLoading} />
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <RevenueChart />
+        <WorkOrdersByStatusChart />
+      </div>
+      
+      <div className="grid grid-cols-1 gap-6">
+        <MonthlyRevenueChart />
+      </div>
+      
+      <div className="grid grid-cols-1 gap-6">
+        <TechnicianPerformanceChart />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <EquipmentRecommendations />
+        </div>
+        <div className="md:col-span-2">
+          <RecentWorkOrders />
+        </div>
+      </div>
     </div>
   );
 }

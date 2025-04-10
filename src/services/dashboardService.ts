@@ -146,9 +146,9 @@ export const getRevenueData = async (timeRange: "day" | "week" | "month" | "year
     });
     
     // Convert to array and format for the chart
-    const revenueData = Array.from(revenueByDate, ([date, value]) => ({
+    const revenueData = Array.from(revenueByDate, ([date, revenue]) => ({
       date,
-      revenue: value
+      revenue
     }));
     
     return revenueData;
@@ -186,13 +186,14 @@ export const getRecentWorkOrders = async () => {
 
     // Process work orders to include customer names
     const workOrders = data.map(wo => {
-      const customer = wo.customers?.[0] || {};
+      let customerName = "Unknown Customer";
+      if (wo.customers && wo.customers.first_name && wo.customers.last_name) {
+        customerName = `${wo.customers.first_name} ${wo.customers.last_name}`;
+      }
       
       return {
         id: wo.id,
-        customer: customer.first_name && customer.last_name 
-          ? `${customer.first_name} ${customer.last_name}`
-          : "Unknown Customer",
+        customer: customerName,
         service: wo.description || "General Service",
         status: wo.status || "pending",
         date: format(parseISO(wo.created_at), "MMM d, yyyy"),
@@ -213,10 +214,10 @@ export const getRecentWorkOrders = async () => {
  */
 export const getWorkOrderStatusCounts = async () => {
   try {
-    // Using the SQL execute method to run a group by query
+    // Get work orders from the database
     const { data, error } = await supabase
       .from('work_orders')
-      .select('status')
+      .select('status');
       
     if (error) throw error;
     
@@ -227,10 +228,10 @@ export const getWorkOrderStatusCounts = async () => {
       return acc;
     }, {});
     
-    // Format data for charts
+    // Format data for charts - convert to the expected format { name: string, value: number }
     const chartData = Object.entries(statusCounts).map(([status, count]) => ({
-      status,
-      count: String(count) // Convert to string for formatting in chart
+      name: status,
+      value: Number(count)
     }));
     
     return chartData;
@@ -241,56 +242,181 @@ export const getWorkOrderStatusCounts = async () => {
 };
 
 /**
- * Get service type distribution data
+ * Get monthly revenue data
  */
-export const getServiceTypeDistribution = async () => {
+export const getMonthlyRevenue = async () => {
   try {
-    // Using a more abstract query since we don't have a dedicated service type field yet
+    // Get the date boundaries for the last 12 months
+    const endDate = new Date();
+    const startDate = new Date(endDate);
+    startDate.setMonth(startDate.getMonth() - 11); // 12 months including current
+    
+    // Format dates for the database query
+    const startDateString = format(startDate, "yyyy-MM-dd");
+    
+    // Get invoice data from the database
     const { data, error } = await supabase
-      .from("work_orders")
-      .select("description");
+      .from("invoices")
+      .select("date, total")
+      .gte("date", startDateString)
+      .order("date", { ascending: true });
       
     if (error) throw error;
     
-    // In a real app, you would categorize orders based on a service_type field
-    // Here we're creating mock categories based on the descriptions
-    const serviceTypes: Record<string, number> = {
-      "Oil Change": 0,
-      "Brake Service": 0,
-      "Tire Replacement": 0,
-      "Engine Repair": 0,
-      "Transmission": 0,
-      "Other": 0
-    };
+    // Create a map for each month with initial zero values
+    const monthlyRevenue: Record<string, number> = {};
+    for (let i = 0; i < 12; i++) {
+      const monthDate = new Date(startDate);
+      monthDate.setMonth(monthDate.getMonth() + i);
+      const monthKey = format(monthDate, "MMM yyyy");
+      monthlyRevenue[monthKey] = 0;
+    }
     
-    // Assign orders to service types based on keywords in the description
-    data.forEach((order: any) => {
-      const description = order.description?.toLowerCase() || "";
-      
-      if (description.includes("oil") || description.includes("lube")) {
-        serviceTypes["Oil Change"]++;
-      } else if (description.includes("brake") || description.includes("rotor")) {
-        serviceTypes["Brake Service"]++;
-      } else if (description.includes("tire") || description.includes("wheel")) {
-        serviceTypes["Tire Replacement"]++;
-      } else if (description.includes("engine") || description.includes("motor")) {
-        serviceTypes["Engine Repair"]++;
-      } else if (description.includes("transmission")) {
-        serviceTypes["Transmission"]++;
-      } else {
-        serviceTypes["Other"]++;
+    // Aggregate revenue by month
+    data?.forEach(invoice => {
+      if (invoice.date) {
+        const date = new Date(invoice.date);
+        const monthKey = format(date, "MMM yyyy");
+        if (monthlyRevenue[monthKey] !== undefined) {
+          monthlyRevenue[monthKey] += Number(invoice.total) || 0;
+        }
       }
     });
     
-    // Format data for charts
-    const chartData = Object.entries(serviceTypes).map(([type, count]) => ({
-      type,
-      count
+    // Format for chart
+    const chartData = Object.entries(monthlyRevenue).map(([month, revenue]) => ({
+      month,
+      revenue
     }));
     
     return chartData;
   } catch (error) {
-    console.error("Error fetching service type distribution:", error);
+    console.error("Error fetching monthly revenue:", error);
     return [];
   }
 };
+
+/**
+ * Get technician performance data
+ */
+export const getTechnicianPerformance = async () => {
+  try {
+    // Fetch completed work orders with technician information
+    const { data, error } = await supabase
+      .from("work_orders")
+      .select(`
+        id,
+        technician_id,
+        created_at,
+        end_time,
+        profiles(first_name, last_name)
+      `)
+      .eq("status", "completed");
+      
+    if (error) throw error;
+    
+    // Process technician data
+    const technicianStats = new Map();
+    const lastSixMonths = Array(6).fill(0).map((_, idx) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - idx);
+      return format(d, "MMM");
+    }).reverse();
+    
+    // Process each work order
+    data?.forEach(order => {
+      // Extract technician name
+      const firstName = order.profiles?.first_name || 'Unknown';
+      const lastName = order.profiles?.last_name || 'Tech';
+      const techName = `${firstName} ${lastName}`;
+      
+      // Get the month of the work order
+      const orderMonth = format(new Date(order.created_at), "MMM");
+      
+      // Only include work orders from the last 6 months
+      if (lastSixMonths.includes(orderMonth)) {
+        // Initialize technician data if not present
+        if (!technicianStats.has(techName)) {
+          const monthlyData = Object.fromEntries(
+            lastSixMonths.map(month => [month, 0])
+          );
+          technicianStats.set(techName, monthlyData);
+        }
+        
+        // Increment work order count for the technician in that month
+        const techData = technicianStats.get(techName);
+        techData[orderMonth] = (techData[orderMonth] || 0) + 1;
+      }
+    });
+    
+    // Create the response format
+    const technicians = Array.from(technicianStats.keys());
+    
+    // Create chart data
+    const chartData = lastSixMonths.map(month => {
+      const monthData: Record<string, any> = { month };
+      
+      // Add data for each technician
+      technicians.forEach(tech => {
+        // Convert spaces to underscores for safe property names
+        const techKey = tech.toLowerCase().replace(/\s+/g, '_');
+        monthData[techKey] = technicianStats.get(tech)[month];
+      });
+      
+      return monthData;
+    });
+    
+    return {
+      technicians,
+      chartData
+    };
+  } catch (error) {
+    console.error("Error fetching technician performance data:", error);
+    return { technicians: [], chartData: [] };
+  }
+};
+
+/**
+ * Get equipment recommendations
+ */
+export const getEquipmentRecommendations = async () => {
+  try {
+    // Fetch equipment that needs maintenance soon
+    const { data, error } = await supabase
+      .from("equipment")
+      .select("*")
+      .lte("next_maintenance_date", new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Within next 30 days
+      .order("next_maintenance_date", { ascending: true })
+      .limit(5);
+      
+    if (error) throw error;
+    
+    // Process and format the equipment data
+    const recommendations = data?.map(item => ({
+      id: item.id,
+      name: item.name,
+      model: item.model,
+      maintenanceType: item.maintenance_frequency || 'Regular',
+      maintenanceDate: item.next_maintenance_date,
+      priority: determinePriority(item.next_maintenance_date)
+    })) || [];
+    
+    return recommendations;
+  } catch (error) {
+    console.error("Error fetching equipment recommendations:", error);
+    return [];
+  }
+};
+
+/**
+ * Helper to determine maintenance priority based on date
+ */
+function determinePriority(dateString: string): 'High' | 'Medium' | 'Low' {
+  const today = new Date();
+  const maintenanceDate = new Date(dateString);
+  const daysUntilMaintenance = Math.floor((maintenanceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (daysUntilMaintenance <= 7) return 'High';
+  if (daysUntilMaintenance <= 14) return 'Medium';
+  return 'Low';
+}
