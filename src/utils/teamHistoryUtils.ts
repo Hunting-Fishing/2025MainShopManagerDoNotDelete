@@ -52,8 +52,8 @@ export const recordTeamMemberHistory = async (
     };
     
     // Only add the id property if data exists and has an id
-    // Added null check for data before accessing its properties
-    if (data !== null && typeof data === 'object' && 'id' in data) {
+    // Use explicit null check before accessing properties
+    if (data !== null && typeof data === 'object' && 'id' in data && data.id !== null) {
       return {
         ...response,
         id: data.id as string
@@ -108,15 +108,18 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
         };
       }
       
-      // Use non-null assertion after checking item is not null
+      // Type assert item after null check to safely access properties
+      const safeItem = item as Record<string, any>;
+      
+      // Safely access properties with default values as needed
       return {
-        id: item.id as string,
-        profile_id: item.profile_id as string,
+        id: safeItem.id as string,
+        profile_id: safeItem.profile_id as string,
         // Make sure action_type is one of the allowed values
-        action_type: validateActionType(item.action_type as string),
-        action_by: item.action_by as string,
-        timestamp: item.timestamp as string,
-        details: (item.details as Record<string, any>) || {}
+        action_type: validateActionType(safeItem.action_type as string),
+        action_by: safeItem.action_by as string,
+        timestamp: safeItem.timestamp as string,
+        details: (safeItem.details as Record<string, any>) || {}
       };
     });
     
