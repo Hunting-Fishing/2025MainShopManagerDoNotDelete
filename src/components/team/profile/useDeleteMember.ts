@@ -36,23 +36,49 @@ export function useDeleteMember() {
         // Continue with deletion even if role deletion fails
       }
       
-      // Since we don't have a 'status' field, we can't mark as inactive directly
-      // Instead, we'll use a metadata approach - logging the deletion in audit_logs
-      const { error: auditError } = await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: memberId,
-          action: 'user_deactivated',
-          resource: 'profiles',
-          resource_id: memberId,
-          details: { 
-            timestamp: new Date().toISOString(), 
-            reason: 'User removed from team' 
-          }
-        });
+      // Create a profile_metadata record for this user with inactive status
+      // First check if metadata exists
+      const { data: existingMetadata } = await supabase
+        .from('profile_metadata')
+        .select('*')
+        .eq('profile_id', memberId)
+        .single();
       
-      if (auditError) {
-        console.error("Error logging user deactivation:", auditError);
+      if (existingMetadata) {
+        // Update existing metadata to mark user as inactive
+        const { error: updateError } = await supabase
+          .from('profile_metadata')
+          .update({
+            metadata: {
+              ...existingMetadata.metadata,
+              status: 'inactive',
+              deactivated_at: new Date().toISOString(),
+              is_active: false
+            }
+          })
+          .eq('profile_id', memberId);
+          
+        if (updateError) {
+          console.error("Error updating profile metadata:", updateError);
+          throw updateError;
+        }
+      } else {
+        // Create new metadata entry with inactive status
+        const { error: insertError } = await supabase
+          .from('profile_metadata')
+          .insert({
+            profile_id: memberId,
+            metadata: {
+              status: 'inactive',
+              deactivated_at: new Date().toISOString(),
+              is_active: false
+            }
+          });
+          
+        if (insertError) {
+          console.error("Error creating profile metadata:", insertError);
+          throw insertError;
+        }
       }
       
       toast({
