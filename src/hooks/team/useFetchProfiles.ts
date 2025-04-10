@@ -47,7 +47,7 @@ export function useFetchProfiles() {
         throw profilesError;
       }
 
-      // Filter out deleted/inactive profiles
+      // Process profiles and map them with status from metadata
       return (profiles || [])
         .filter(profile => {
           // Check metadata for deletion status

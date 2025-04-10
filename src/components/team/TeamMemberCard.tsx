@@ -14,6 +14,22 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
   const hasNoRole = member.role === "No Role Assigned";
   const memberInitials = getInitials(member.name);
   
+  // Determine badge variant based on status
+  const getStatusVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'success';
+      case 'inactive':
+        return 'secondary';
+      case 'on leave':
+        return 'warning';
+      case 'terminated':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+  
   return (
     <article className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
       <header className="flex items-center justify-between p-4 border-b border-slate-100">
@@ -38,7 +54,7 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
               No Role
             </Badge>
           )}
-          <Badge variant={member.status === "Active" ? "success" : "destructive"}>
+          <Badge variant={getStatusVariant(member.status)}>
             {member.status}
           </Badge>
         </div>
@@ -52,18 +68,22 @@ export function TeamMemberCard({ member, getInitials }: TeamMemberCardProps) {
           <p className="text-sm text-slate-700">
             <span className="font-medium">Department:</span> {member.department}
           </p>
-          <div className="flex items-center gap-3 text-sm text-slate-700">
-            <Mail className="h-4 w-4 text-slate-400" aria-hidden="true" />
-            <a href={`mailto:${member.email}`} className="text-esm-blue-600 hover:underline">
-              {member.email}
-            </a>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-slate-700">
-            <Phone className="h-4 w-4 text-slate-400" aria-hidden="true" />
-            <a href={`tel:${member.phone}`} className="text-esm-blue-600 hover:underline">
-              {member.phone || "Not available"}
-            </a>
-          </div>
+          {member.email && (
+            <div className="flex items-center gap-3 text-sm text-slate-700">
+              <Mail className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              <a href={`mailto:${member.email}`} className="text-esm-blue-600 hover:underline">
+                {member.email}
+              </a>
+            </div>
+          )}
+          {member.phone && (
+            <div className="flex items-center gap-3 text-sm text-slate-700">
+              <Phone className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              <a href={`tel:${member.phone}`} className="text-esm-blue-600 hover:underline">
+                {member.phone || "Not available"}
+              </a>
+            </div>
+          )}
         </div>
 
         {member.role === "Technician" && (

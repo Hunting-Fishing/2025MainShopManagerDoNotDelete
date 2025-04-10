@@ -11,9 +11,11 @@ import { TeamContent } from "@/components/team/TeamContent";
 import { TeamFilterToolbar } from "@/components/team/TeamFilterToolbar";
 import { useTeamFilters } from "@/hooks/useTeamFilters";
 import { TeamLoading } from "@/components/team/TeamLoading";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Team() {
   const [view, setView] = useState<"grid" | "list">("grid");
+  const { toast } = useToast();
   
   // Get current user
   const { userId, isLoading: authLoading } = useAuthUser();
@@ -42,13 +44,30 @@ export default function Team() {
   const currentUser = userId ? teamMembers.find(member => member.id === userId) : null;
   const currentUserHasNoRole = currentUser && currentUser.role === "No Role Assigned";
 
+  // Helper function to get initials from name
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 2);
+  };
+
   // Main rendering logic with error handling
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <TeamLoading />
       </div>
     );
+  }
+
+  if (fetchError) {
+    toast({
+      variant: "destructive",
+      title: "Error loading team data",
+      description: fetchError
+    });
   }
 
   return (
@@ -91,6 +110,7 @@ export default function Team() {
             members={filteredMembers}
             isLoading={isLoading}
             view={view}
+            getInitials={getInitials}
           />
         </>
       )}

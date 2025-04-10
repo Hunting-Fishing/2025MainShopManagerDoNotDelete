@@ -1,4 +1,3 @@
-
 import { TeamMember } from "@/types/team";
 import { Profile } from "./useFetchProfiles";
 import { UserRole } from "./useFetchUserRoles";
@@ -26,8 +25,12 @@ export function useTeamDataTransformer() {
       (dbRoleName.charAt(0).toUpperCase() + dbRoleName.slice(1));
   };
 
-  // Helper function to determine job title based on role
-  const determineJobTitle = (role: string, firstName?: string): string => {
+  // Helper function to determine job title based on role and profile data
+  const determineJobTitle = (role: string, jobTitle: string | null, firstName?: string): string => {
+    // If job title is provided in the profile, use it
+    if (jobTitle) return jobTitle;
+    
+    // Otherwise determine based on role
     switch (role) {
       case 'Owner':
         return 'Chief Executive Officer';
@@ -41,6 +44,27 @@ export function useTeamDataTransformer() {
         return 'New User';
       default:
         return role;
+    }
+  };
+
+  // Helper function to determine department based on role and profile data
+  const determineDepartment = (department: string | null, role: string): string => {
+    // If department is provided in the profile, use it
+    if (department) return department;
+    
+    // Otherwise determine based on role
+    if (role === 'Technician') {
+      return 'Field Service';
+    } else if (role === 'Owner' || role === 'Administrator') {
+      return 'Management';
+    } else if (role === 'Customer Service') {
+      return 'Customer Support';
+    } else if (role === 'Service Advisor') {
+      return 'Service Department';
+    } else if (role === 'Parts Manager') {
+      return 'Parts';
+    } else {
+      return 'General';
     }
   };
 
@@ -69,7 +93,7 @@ export function useTeamDataTransformer() {
       let assignedWorkOrders = 0;
       let completedWorkOrders = 0;
       
-      if (workOrders.length > 0 && userRole === 'Technician') {
+      if (workOrders.length > 0) {
         assignedWorkOrders = workOrders.filter(wo => 
           wo.technician_id === profile.id && 
           ['assigned', 'in_progress'].includes(wo.status)
@@ -81,15 +105,8 @@ export function useTeamDataTransformer() {
         ).length;
       }
       
-      // Determine department based on role
-      let department = profile.department || 'General';
-      if (!department && userRole === 'Technician') {
-        department = 'Field Service';
-      } else if (!department && (userRole === 'Owner' || userRole === 'Administrator')) {
-        department = 'Management';
-      } else if (!department && userRole === 'Customer Service') {
-        department = 'Customer Support';
-      }
+      // Determine department based on profile data and role
+      const department = determineDepartment(profile.department, userRole);
       
       // Create and return a TeamMember object
       return {
@@ -98,9 +115,9 @@ export function useTeamDataTransformer() {
         role: userRole,
         email: profile.email || '',
         phone: profile.phone || '',
-        jobTitle: profile.job_title || determineJobTitle(userRole, profile.first_name), 
+        jobTitle: determineJobTitle(userRole, profile.job_title, profile.first_name), 
         department: department,
-        status: "Active", // Default status
+        status: profile.is_active ? "Active" : "Inactive", // Default status from profile
         joinDate: profile.created_at,
         workOrders: {
           assigned: assignedWorkOrders,

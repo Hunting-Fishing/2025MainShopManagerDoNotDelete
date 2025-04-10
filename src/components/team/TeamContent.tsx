@@ -4,15 +4,15 @@ import { TeamMemberGrid } from "./TeamMemberGrid";
 import { TeamMemberTable } from "./TeamMemberTable";
 import { TeamLoading } from "./TeamLoading";
 import { TeamEmpty } from "./TeamEmpty";
-import { getInitials } from "@/utils/teamUtils";
 
 interface TeamContentProps {
   members: TeamMember[];
   isLoading: boolean;
   view: "grid" | "list";
+  getInitials: (name: string) => string;
 }
 
-export function TeamContent({ members, isLoading, view }: TeamContentProps) {
+export function TeamContent({ members, isLoading, view, getInitials }: TeamContentProps) {
   if (isLoading) {
     return <TeamLoading />;
   }
