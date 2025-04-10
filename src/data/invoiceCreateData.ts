@@ -71,9 +71,20 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
         billable: entry.billable
       }));
       
-      // Handle customers and profiles safely - they might be null or empty objects
-      const customers = wo.customers || {};
-      const profiles = wo.profiles || {};
+      // Properly type customers and profiles with explicit interface
+      interface CustomerData {
+        first_name?: string;
+        last_name?: string;
+      }
+      
+      interface ProfileData {
+        first_name?: string;
+        last_name?: string;
+      }
+      
+      // Cast to the typed interfaces
+      const customers = (wo.customers || {}) as CustomerData;
+      const profiles = (wo.profiles || {}) as ProfileData;
       
       // Use optional chaining and nullish coalescing for safer access
       const firstName = customers?.first_name ?? '';
@@ -152,7 +163,15 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
       return [];
     }
     
-    return data.map((profile) => {
+    // Define explicit interface for profile data
+    interface ProfileData {
+      id: string | number;
+      first_name?: string;
+      last_name?: string;
+      job_title?: string;
+    }
+    
+    return data.map((profile: ProfileData) => {
       // Parse ID to number if needed
       const id = typeof profile.id === 'number' ? profile.id : 
                  typeof profile.id === 'string' ? parseInt(profile.id, 10) || 0 : 0;
