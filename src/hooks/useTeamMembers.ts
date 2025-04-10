@@ -8,6 +8,15 @@ import { useTeamDataTransformer } from './team/useTeamDataTransformer';
 import { supabase } from '@/lib/supabase';
 
 /**
+ * Interface for the status change details from team_member_history
+ */
+interface StatusChangeDetails {
+  new_status: string;
+  previous_status?: string;
+  reason?: string;
+}
+
+/**
  * Hook for fetching and combining team member data
  */
 export function useTeamMembers() {
@@ -57,11 +66,14 @@ export function useTeamMembers() {
                 
               if (statusData && statusData.length > 0) {
                 const latestStatusChange = statusData[0];
+                // Safely access the details by casting to our interface
+                const details = latestStatusChange.details as StatusChangeDetails;
+                
                 return {
                   ...member,
-                  status: latestStatusChange.details.new_status || 'Active',
+                  status: details.new_status || 'Active',
                   statusChangeDate: latestStatusChange.timestamp,
-                  statusChangeReason: latestStatusChange.details.reason || ''
+                  statusChangeReason: details.reason || ''
                 };
               }
             } catch (err) {
