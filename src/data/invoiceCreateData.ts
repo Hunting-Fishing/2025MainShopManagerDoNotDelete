@@ -71,17 +71,17 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
         billable: entry.billable
       }));
       
-      // Build customer and technician names safely
+      // Safely access nested objects
       const customers = wo.customers || {};
       const profiles = wo.profiles || {};
       
-      // Safe access to potentially undefined properties using optional chaining
-      const firstName = customers?.first_name || '';
-      const lastName = customers?.last_name || '';
+      // Use optional chaining and nullish coalescing for safer access
+      const firstName = customers?.first_name ?? '';
+      const lastName = customers?.last_name ?? '';
       const customerName = `${firstName} ${lastName}`.trim();
       
-      const techFirstName = profiles?.first_name || '';
-      const techLastName = profiles?.last_name || '';
+      const techFirstName = profiles?.first_name ?? '';
+      const techLastName = profiles?.last_name ?? '';
       const technicianName = `${techFirstName} ${techLastName}`.trim();
       
       // Cast status to the expected type
@@ -154,7 +154,9 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
     
     return data.map((profile) => {
       // Parse ID to number if possible
-      const id = typeof profile.id === 'number' ? profile.id : parseInt(profile.id, 10);
+      const id = typeof profile.id === 'number' ? profile.id : 
+                 typeof profile.id === 'string' ? parseInt(profile.id, 10) : 0;
+      
       const firstName = profile.first_name || '';
       const lastName = profile.last_name || '';
       

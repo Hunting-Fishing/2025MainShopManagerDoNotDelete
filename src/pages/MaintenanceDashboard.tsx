@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, addDays, parseISO, isBefore } from "date-fns";
@@ -25,10 +24,8 @@ export default function MaintenanceDashboard() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [equipmentData, overdueData] = await Promise.all([
-          fetchEquipment(),
-          getOverdueMaintenanceEquipment()
-        ]);
+        const equipmentData = await fetchEquipment();
+        const overdueData = await getOverdueMaintenanceEquipment();
         
         setEquipment(equipmentData);
         setOverdueEquipment(overdueData);
@@ -39,8 +36,9 @@ export default function MaintenanceDashboard() {
         
         // Collect all maintenance history from all equipment
         const history: Array<MaintenanceRecord & { equipmentName: string }> = [];
+        
         equipmentData.forEach(item => {
-          if (item.maintenanceHistory) {
+          if (item.maintenanceHistory && Array.isArray(item.maintenanceHistory)) {
             item.maintenanceHistory.forEach(record => {
               history.push({
                 ...record,

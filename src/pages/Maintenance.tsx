@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { ResponsiveStack } from '@/components/ui/responsive-stack';
@@ -19,11 +18,9 @@ export default function Maintenance() {
   useEffect(() => {
     const loadEquipmentData = async () => {
       try {
-        const [equipment, maintenanceDue, overdue] = await Promise.all([
-          fetchEquipment(),
-          getMaintenanceDueEquipment(),
-          getOverdueMaintenanceEquipment()
-        ]);
+        const equipment = await fetchEquipment();
+        const maintenanceDue = await getMaintenanceDueEquipment();
+        const overdue = await getOverdueMaintenanceEquipment();
 
         // Filter completed maintenance in the last 30 days
         const completed = equipment.filter(item => 
