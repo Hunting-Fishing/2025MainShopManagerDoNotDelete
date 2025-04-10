@@ -51,9 +51,10 @@ export const recordTeamMemberHistory = async (
       message: "History recorded"
     };
     
-    // Only add the id property if data exists and has an id
-    // Use explicit null check before accessing properties
+    // Add additional null check for data before accessing id property
+    // This is a safer approach to handle potential null values
     if (data !== null && typeof data === 'object' && 'id' in data && data.id !== null) {
+      // Now TypeScript knows data.id is safe to access
       return {
         ...response,
         id: data.id as string
