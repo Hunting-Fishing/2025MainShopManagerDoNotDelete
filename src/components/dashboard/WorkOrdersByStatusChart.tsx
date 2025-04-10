@@ -29,12 +29,11 @@ export function WorkOrdersByStatusChart() {
 
   const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444"];
   
-  // Derive status counts directly from the fetched data array
-  // Find values by looking for specific status names
-  const pendingCount = statusCounts.find(item => item.name === 'pending')?.value || 0;
-  const inProgressCount = statusCounts.find(item => item.name === 'in-progress')?.value || 0;
-  const completedCount = statusCounts.find(item => item.name === 'completed')?.value || 0;
-  const cancelledCount = statusCounts.find(item => item.name === 'cancelled')?.value || 0;
+  // Find status counts by name
+  const pendingCount = statusCounts.find(item => item.name.toLowerCase() === 'pending')?.value || 0;
+  const inProgressCount = statusCounts.find(item => item.name.toLowerCase() === 'in-progress')?.value || 0;
+  const completedCount = statusCounts.find(item => item.name.toLowerCase() === 'completed')?.value || 0;
+  const cancelledCount = statusCounts.find(item => item.name.toLowerCase() === 'cancelled')?.value || 0;
 
   if (loading) {
     return (

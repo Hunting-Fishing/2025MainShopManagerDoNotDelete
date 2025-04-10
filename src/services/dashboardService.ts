@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { TechnicianPerformance } from '@/types/dashboard';
 
@@ -189,6 +188,30 @@ export async function getWorkOrdersByStatus() {
     }));
   } catch (error) {
     console.error('Error fetching work order status data:', error);
+    return [];
+  }
+}
+
+// Get work order status counts specifically for the WorkOrdersByStatusChart
+export async function getWorkOrderStatusCounts() {
+  try {
+    // Get counts by status
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('status, count(*)', { count: 'exact', head: false })
+      .groupBy('status');
+      
+    if (error) throw error;
+    
+    if (!data) return [];
+    
+    // Transform to the expected format
+    return data.map(item => ({
+      name: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+      value: parseInt(item.count)
+    }));
+  } catch (error) {
+    console.error('Error fetching work order status counts:', error);
     return [];
   }
 }
