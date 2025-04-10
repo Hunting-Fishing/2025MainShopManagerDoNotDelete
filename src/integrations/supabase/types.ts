@@ -1637,6 +1637,80 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_ups: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          due_date: string
+          id: string
+          notes: string | null
+          status: string
+          type: string
+          updated_at: string
+          vehicle_id: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          status: string
+          type: string
+          updated_at?: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_categories: {
         Row: {
           count: number | null

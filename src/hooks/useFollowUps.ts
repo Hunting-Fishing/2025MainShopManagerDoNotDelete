@@ -57,6 +57,11 @@ export const useFollowUps = () => {
           throw error;
         }
 
+        if (!data) {
+          setFollowUps([]);
+          return;
+        }
+
         // Map the data to our FollowUp type
         const mappedFollowUps = data.map(item => ({
           id: item.id,
@@ -77,9 +82,9 @@ export const useFollowUps = () => {
           completedAt: item.completed_at,
           workOrderId: item.work_order_id,
           vehicleId: item.vehicle_id
-        })) as FollowUp[];
+        }));
 
-        setFollowUps(mappedFollowUps);
+        setFollowUps(mappedFollowUps as FollowUp[]);
       } catch (err: any) {
         console.error('Error fetching follow-ups:', err);
         setError(err.message || 'Failed to load follow-ups');

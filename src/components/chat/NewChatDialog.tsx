@@ -75,9 +75,9 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
         phone: profile.phone || '',
         jobTitle: profile.job_title || '',
         department: profile.department || '',
-        // Fix the role property access - ensure we're accessing the role name correctly
-        role: profile.roles && profile.roles.length > 0 
-          ? (profile.roles[0].role?.name || 'No Role') 
+        // Fixed access to role property
+        role: profile.roles && profile.roles.length > 0 && profile.roles[0].role 
+          ? profile.roles[0].role.name 
           : 'No Role'
       })) as TeamMember[];
     }

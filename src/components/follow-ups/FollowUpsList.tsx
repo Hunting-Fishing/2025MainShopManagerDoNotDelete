@@ -92,6 +92,15 @@ export const FollowUpsList: React.FC<FollowUpsListProps> = ({
     }
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Invalid date:', dateString);
+      return 'Invalid Date';
+    }
+  };
+
   return (
     <div className="space-y-4">
       {followUps.map(followUp => (
@@ -109,7 +118,7 @@ export const FollowUpsList: React.FC<FollowUpsListProps> = ({
               <div>
                 <h3 className="font-medium">{followUp.customerName}</h3>
                 <p className="text-sm text-muted-foreground mb-2">
-                  {followUp.type} - Due {format(new Date(followUp.dueDate), 'MMM d, yyyy')}
+                  {followUp.type} - Due {formatDate(followUp.dueDate)}
                 </p>
                 
                 {followUp.notes && (
