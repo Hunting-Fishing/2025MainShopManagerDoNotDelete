@@ -4,23 +4,27 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { TeamMemberFormValues, teamMemberFormSchema } from './formValidation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { availableRoles, availableDepartments } from './formConstants';
 import { Loader2 } from 'lucide-react';
 import { JobInfoFields } from './JobInfoFields';
+import { PersonalInfoFields } from './PersonalInfoFields';
+import { StatusToggleField } from './StatusToggleField';
+import { NotesField } from './NotesField';
+import { FormActions } from './FormActions';
+import { detectRoleFromJobTitle } from '@/utils/roleDetectionUtils';
+import { Alert, AlertCircle, AlertDescription } from '@/components/ui/alert';
 
 interface TeamMemberFormProps {
-  onSubmit?: (data: TeamMemberFormValues) => void;
+  onSubmit: (data: TeamMemberFormValues) => void;
   isSubmitting?: boolean;
   initialData?: Partial<TeamMemberFormValues>;
   mode?: 'create' | 'edit';
 }
 
 export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mode = 'create' }: TeamMemberFormProps) {
-  const [formStage, setFormStage] = useState<'details' | 'permissions'>('details');
+  const [autoDetectedRole, setAutoDetectedRole] = useState<string | null>(null);
+  const [showRoleAlert, setShowRoleAlert] = useState(false);
 
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberFormSchema),
@@ -36,9 +40,27 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
     },
   });
 
-  const handleSubmit = (data: TeamMemberFormValues) => {
-    if (!onSubmit) return;
+  // Watch for job title changes to auto-detect role
+  const jobTitle = form.watch('jobTitle');
+  const role = form.watch('role');
+  
+  // Effect to detect role from job title
+  if (jobTitle && !role && mode === 'create') {
+    const detectedRole = detectRoleFromJobTitle(jobTitle);
+    if (detectedRole && detectedRole !== autoDetectedRole) {
+      setAutoDetectedRole(detectedRole);
+      setShowRoleAlert(true);
+    }
+  }
 
+  const handleApplyDetectedRole = () => {
+    if (autoDetectedRole) {
+      form.setValue('role', autoDetectedRole);
+      setShowRoleAlert(false);
+    }
+  };
+
+  const handleSubmit = (data: TeamMemberFormValues) => {
     // Parse the name into first and last names for the API
     const nameParts = data.name.split(' ');
     const firstName = nameParts[0];
@@ -59,56 +81,33 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {showRoleAlert && autoDetectedRole && (
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="flex justify-between items-center">
+              <span>
+                Based on the job title, we recommend the role: <strong>{autoDetectedRole}</strong>
+              </span>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={handleApplyDetectedRole}
+              >
+                Apply Role
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
             <h3 className="text-lg font-medium">Personal Information</h3>
-            
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="john.doe@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="(555) 123-4567" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <PersonalInfoFields control={form.control} />
           </div>
           
           <div className="space-y-6">
             <h3 className="text-lg font-medium">Work Information</h3>
-            
             <JobInfoFields 
               control={form.control}
               availableRoles={availableRoles}
@@ -119,62 +118,11 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
         
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Additional Information</h3>
-          
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>Active Status</FormLabel>
-                  <FormDescription>
-                    Set whether this team member is active and can use the system
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Notes</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Add any additional notes about this team member"
-                    className="resize-none"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <StatusToggleField control={form.control} />
+          <NotesField control={form.control} />
         </div>
         
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => window.history.back()}>
-            Cancel
-          </Button>
-          <Button type="submit" className="bg-esm-blue-600 hover:bg-esm-blue-700" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {loadingLabel}
-              </>
-            ) : (
-              buttonLabel
-            )}
-          </Button>
-        </div>
+        <FormActions isSubmitting={isSubmitting} mode={mode} />
       </form>
     </Form>
   );
