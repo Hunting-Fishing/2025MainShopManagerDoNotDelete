@@ -27,7 +27,7 @@ export function useDeleteMember() {
       
       // First create a history record of this deletion action
       const { error: historyError } = await supabase
-        .from('team_member_history')
+        .from('team_member_history' as any)
         .insert({
           profile_id: memberId,
           action_type: 'deletion',

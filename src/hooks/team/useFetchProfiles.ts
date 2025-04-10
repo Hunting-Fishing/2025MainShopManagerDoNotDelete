@@ -51,7 +51,8 @@ export function useFetchProfiles() {
       return (profiles || [])
         .filter(profile => {
           // Check metadata for deletion status
-          const metadata = profile.profile_metadata?.metadata;
+          const profileMetadata = profile.profile_metadata?.[0];
+          const metadata = profileMetadata?.metadata;
           // If no metadata or is_active is true (or not set), include profile
           return !metadata || 
                  typeof metadata.is_active === 'undefined' || 
@@ -66,7 +67,7 @@ export function useFetchProfiles() {
           job_title: profile.job_title || null,
           department: profile.department || null,
           created_at: profile.created_at,
-          is_active: profile.profile_metadata?.metadata?.is_active !== false // Default to true if not set
+          is_active: profile.profile_metadata?.[0]?.metadata?.is_active !== false // Default to true if not set
         }));
     } catch (err) {
       console.error('Error fetching profiles:', err);

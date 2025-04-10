@@ -25,8 +25,9 @@ export const recordTeamMemberHistory = async (
     // Get the current user ID to track who made the change
     const { data: { user } } = await supabase.auth.getUser();
     
+    // Using a more generic approach to avoid type errors with table name
     const { data, error } = await supabase
-      .from('team_member_history')
+      .from('team_member_history' as any)
       .insert({
         ...record,
         action_by: record.action_by || user?.id || 'system',
@@ -64,8 +65,17 @@ export const recordTeamMemberHistory = async (
  */
 export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMemberHistoryRecord[]> => {
   try {
+    type HistoryRecord = {
+      id: string;
+      profile_id: string;
+      action_type: string;
+      action_by: string;
+      timestamp: string;
+      details: Record<string, any>;
+    };
+
     const { data, error } = await supabase
-      .from('team_member_history')
+      .from('team_member_history' as any)
       .select('*')
       .eq('profile_id', profileId)
       .order('timestamp', { ascending: false });
@@ -75,7 +85,8 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
       return [];
     }
     
-    return data;
+    // Convert the generic data to our expected type
+    return (data || []) as unknown as TeamMemberHistoryRecord[];
   } catch (error) {
     console.error("Exception fetching team member history:", error);
     return [];
