@@ -26,7 +26,18 @@ export function useTeamMemberUpdate() {
       console.log("Updating team member with ID:", memberId);
       
       // Step 1: Update the user's profile information
-      const profileUpdateSuccess = await updateProfile(memberId, values);
+      // Make sure we're passing required fields as required
+      // The updateProfile function expects name and email to be required
+      const profileData = {
+        name: values.name, // Required field
+        email: values.email, // Required field
+        phone: values.phone,
+        jobTitle: values.jobTitle,
+        department: values.department,
+        notes: values.notes
+      };
+      
+      const profileUpdateSuccess = await updateProfile(memberId, profileData);
       
       if (!profileUpdateSuccess) {
         throw new Error(profileError || "Failed to update profile");
