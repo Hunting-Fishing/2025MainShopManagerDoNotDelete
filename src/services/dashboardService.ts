@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { TechnicianPerformance } from '@/types/dashboard';
 
@@ -32,8 +33,8 @@ export async function getDashboardStats() {
 
     return {
       revenue: totalRevenue,
-      activeOrders: activeWorkOrders,
-      customers: customersCount,
+      activeOrders: activeWorkOrders || 0,
+      customers: customersCount || 0,
       lowStockParts: lowStockItems?.length || 0,
       // Map these to the expected structure
       activeWorkOrders: activeWorkOrders?.toString() || "0",
@@ -87,8 +88,9 @@ export async function getRecentWorkOrders() {
     // Transform data to match expected format
     return data.map(order => {
       // Safely access the customer data
-      const customer = Array.isArray(order.customers) && order.customers.length > 0
-        ? order.customers[0]
+      const customers = order.customers;
+      const customer = Array.isArray(customers) && customers.length > 0
+        ? customers[0]
         : { first_name: '', last_name: '' };
 
       const customerName = customer 
@@ -99,9 +101,10 @@ export async function getRecentWorkOrders() {
         id: order.id,
         customer: customerName,
         service: order.description || 'General Service',
-        status: order.status,
+        status: order.status || 'pending',
         date: new Date(order.created_at).toLocaleDateString(),
-        priority: order.priority || 'Medium'
+        priority: order.status === 'pending' ? 'High' : 
+                 order.status === 'in-progress' ? 'Medium' : 'Low'
       };
     });
   } catch (error) {
@@ -174,18 +177,33 @@ export async function getWorkOrdersByStatus() {
     // Get counts by status
     const { data, error } = await supabase
       .from('work_orders')
-      .select('status, count')
-      .execute('select status, count(*) from work_orders group by status');
+      .select('status')
+      .then(result => {
+        if (result.error) throw result.error;
+        
+        // Count occurrences of each status
+        const counts = {};
+        result.data?.forEach(order => {
+          const status = order.status;
+          counts[status] = (counts[status] || 0) + 1;
+        });
+        
+        // Convert to array format
+        return {
+          data: Object.keys(counts).map(status => ({
+            name: status.charAt(0).toUpperCase() + status.slice(1),
+            value: counts[status]
+          })),
+          error: null
+        };
+      });
 
     if (error) throw error;
     
     if (!data) return [];
     
-    // Transform to the expected format
-    return data.map(item => ({
-      name: item.status.charAt(0).toUpperCase() + item.status.slice(1),
-      value: parseInt(item.count)
-    }));
+    return data;
+    
   } catch (error) {
     console.error('Error fetching work order status data:', error);
     return [];
@@ -198,18 +216,32 @@ export async function getWorkOrderStatusCounts() {
     // Get counts by status
     const { data, error } = await supabase
       .from('work_orders')
-      .select('status, count(*)', { count: 'exact', head: false })
-      .groupBy('status');
+      .select('status')
+      .then(result => {
+        if (result.error) throw result.error;
+        
+        // Count occurrences of each status
+        const counts = {};
+        result.data?.forEach(order => {
+          const status = order.status;
+          counts[status] = (counts[status] || 0) + 1;
+        });
+        
+        // Convert to array format
+        return {
+          data: Object.keys(counts).map(status => ({
+            name: status.charAt(0).toUpperCase() + status.slice(1),
+            value: counts[status]
+          })),
+          error: null
+        };
+      });
       
     if (error) throw error;
     
     if (!data) return [];
     
-    // Transform to the expected format
-    return data.map(item => ({
-      name: item.status.charAt(0).toUpperCase() + item.status.slice(1),
-      value: parseInt(item.count)
-    }));
+    return data;
   } catch (error) {
     console.error('Error fetching work order status counts:', error);
     return [];

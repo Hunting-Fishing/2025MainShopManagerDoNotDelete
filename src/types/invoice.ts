@@ -13,10 +13,10 @@ export interface InvoiceItem {
   total: number;
 }
 
-export type StaffMember = {
+export interface StaffMember {
   id: string;
   name: string;
-};
+}
 
 export interface Invoice {
   id: string;
@@ -36,6 +36,7 @@ export interface Invoice {
   createdBy: string;
   assignedStaff: string[];
   items: InvoiceItem[];
+  customer_id?: string; // Added for backward compatibility
 }
 
 export interface InvoiceTemplate {
@@ -51,6 +52,17 @@ export interface InvoiceTemplate {
   defaultItems: InvoiceItem[];
 }
 
+export interface WorkOrder {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  vehicle_id: string;
+  vehicle_info: string;
+  status: string;
+  description: string;
+  total_cost: number;
+}
+
 export type InvoiceUpdater = (prev: Invoice) => Invoice;
 
 // Helper function to create an invoice updater
@@ -60,3 +72,16 @@ export const createInvoiceUpdater = (updates: Partial<Invoice>): InvoiceUpdater 
     ...updates
   });
 };
+
+export interface InvoiceFiltersProps {
+  filters: {
+    status: string;
+    customer: string;
+    dateRange: {
+      from: Date | null;
+      to: Date | null;
+    };
+  };
+  setFilters: (filters: any) => void;
+  resetFilters: () => void;
+}

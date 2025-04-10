@@ -1,39 +1,30 @@
 
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRecentWorkOrders } from "@/services/dashboardService";
-import { RecentWorkOrder } from "@/types/dashboard";
-import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
-// Map of status to text
-const statusMap = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-  "cancelled": "Cancelled",
+type RecentWorkOrder = {
+  id: string;
+  customer: string;
+  service: string;
+  status: string;
+  date: string;
+  priority: string;
 };
 
-export const RecentWorkOrders = () => {
-  const [recentWorkOrders, setRecentWorkOrders] = useState<RecentWorkOrder[]>([]);
+export function RecentWorkOrders() {
+  const [workOrders, setWorkOrders] = useState<RecentWorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchRecentWorkOrders = async () => {
+    const fetchWorkOrders = async () => {
       try {
         setLoading(true);
-        const data = await getRecentWorkOrders(5);
-        
-        // Format the data to match the RecentWorkOrder type
-        const formattedOrders: RecentWorkOrder[] = data.map(order => ({
-          id: order.id,
-          customer: order.customerName || 'Unknown Customer',
-          service: order.description || 'No description',
-          status: order.status || 'pending',
-          date: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : 'Unknown',
-          priority: order.priority || 'Medium'
-        }));
-        
-        setRecentWorkOrders(formattedOrders);
+        const data = await getRecentWorkOrders();
+        setWorkOrders(data);
         setError(null);
       } catch (err) {
         console.error("Error fetching recent work orders:", err);
@@ -43,100 +34,90 @@ export const RecentWorkOrders = () => {
       }
     };
 
-    fetchRecentWorkOrders();
+    fetchWorkOrders();
   }, []);
+
+  const getStatusColor = (status: string): string => {
+    switch (status.toLowerCase()) {
+      case 'pending': return 'bg-blue-100 text-blue-800';
+      case 'in-progress': return 'bg-amber-100 text-amber-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority: string): string => {
+    switch (priority.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-amber-100 text-amber-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   if (loading) {
     return (
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Recent Work Orders</h2>
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-esm-blue-600"></div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Work Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="animate-spin h-8 w-8 text-gray-400" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Recent Work Orders</h2>
-        <div className="p-8 text-center">
-          <p className="text-red-500">{error}</p>
-          <p className="text-sm text-slate-500 mt-2">Please try again later</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (recentWorkOrders.length === 0) {
-    return (
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Recent Work Orders</h2>
-        <div className="p-8 text-center border rounded-lg border-slate-200">
-          <p className="text-slate-500">No recent work orders found</p>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Work Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center h-64 text-red-500">
+            {error}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">Recent Work Orders</h2>
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                ID
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Customer
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Description
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-200">
-            {recentWorkOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                  {order.id.substring(0, 8)}...
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {order.customer}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {order.service}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`status-badge status-${order.status}`}>
-                    {statusMap[order.status as keyof typeof statusMap] || order.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {order.date}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link to={`/work-orders/${order.id}`} className="text-esm-blue-600 hover:text-esm-blue-800">
-                    View
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Work Orders</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {workOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No recent work orders
+            </div>
+          ) : (
+            workOrders.map((order) => (
+              <div key={order.id} className="flex items-center justify-between border-b py-3 last:border-0">
+                <div className="flex flex-col">
+                  <span className="font-medium">{order.customer}</span>
+                  <span className="text-sm text-muted-foreground">{order.service}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={getStatusColor(order.status)}>
+                    {order.status}
+                  </Badge>
+                  <Badge variant="outline" className={getPriorityColor(order.priority)}>
+                    {order.priority}
+                  </Badge>
+                  <span className="text-sm">{order.date}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
-};
+}

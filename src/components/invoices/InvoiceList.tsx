@@ -1,121 +1,161 @@
 
-import { useState } from "react";
-import { useInvoiceData } from "@/hooks/useInvoiceData";
-import { InvoiceTable } from "@/components/invoices/InvoiceTable";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
+import { InvoiceTable } from "@/components/invoices/InvoiceTable";
+import { useInvoiceData } from "@/hooks/useInvoiceData";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Invoice } from "@/types/invoice";
+import { PlusCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface InvoiceListProps {
-  limit?: number;
-}
+export function InvoiceList() {
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const { invoices, isLoading, error } = useInvoiceData();
+  const [creators, setCreators] = useState<string[]>([]);
 
-export function InvoiceList({ limit }: InvoiceListProps) {
-  const { invoices, isLoading, error, fetchInvoices } = useInvoiceData();
-  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(false);
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [filters, setFilters] = useState({
-    status: "",
+    status: "all",
     customer: "",
     dateRange: {
-      from: undefined,
-      to: undefined
-    }
+      from: null as Date | null,
+      to: null as Date | null,
+    },
   });
 
-  // Handle refetching manually
-  const refetch = () => {
-    fetchInvoices();
+  // Extract list of invoice creators
+  useEffect(() => {
+    if (invoices?.length) {
+      const creatorsList = Array.from(
+        new Set(
+          invoices
+            .filter((inv) => inv.createdBy)
+            .map((inv) => inv.createdBy)
+        )
+      );
+      setCreators(creatorsList);
+    }
+  }, [invoices]);
+
+  const resetFilters = () => {
+    setFilters({
+      status: "all",
+      customer: "",
+      dateRange: {
+        from: null,
+        to: null,
+      },
+    });
   };
 
-  const handleFilter = (newFilters: typeof filters) => {
-    setFilters(newFilters);
-    
-    // Apply filters
-    let result = [...invoices];
-    
-    if (newFilters.status) {
-      result = result.filter(invoice => invoice.status === newFilters.status);
+  const filteredInvoices = invoices?.filter((invoice) => {
+    // Filter by status
+    if (filters.status !== "all" && invoice.status !== filters.status) {
+      return false;
     }
-    
-    if (newFilters.customer) {
-      const search = newFilters.customer.toLowerCase();
-      result = result.filter(invoice => 
-        invoice.customer.toLowerCase().includes(search)
-      );
-    }
-    
-    if (newFilters.dateRange.from) {
-      result = result.filter(invoice => 
-        new Date(invoice.date) >= new Date(newFilters.dateRange.from!)
-      );
-    }
-    
-    if (newFilters.dateRange.to) {
-      result = result.filter(invoice => 
-        new Date(invoice.date) <= new Date(newFilters.dateRange.to!)
-      );
-    }
-    
-    setFilteredInvoices(result);
-  };
 
-  const displayInvoices = filters.status || filters.customer || 
-    filters.dateRange.from || filters.dateRange.to ? 
-    filteredInvoices : invoices;
+    // Filter by customer name
+    if (
+      filters.customer &&
+      !invoice.customer
+        .toLowerCase()
+        .includes(filters.customer.toLowerCase())
+    ) {
+      return false;
+    }
 
-  // Limit the number of invoices if specified
-  const limitedInvoices = limit ? displayInvoices.slice(0, limit) : displayInvoices;
+    // Filter by date range
+    if (filters.dateRange.from || filters.dateRange.to) {
+      const invoiceDate = new Date(invoice.date);
+      
+      if (
+        filters.dateRange.from &&
+        invoiceDate < filters.dateRange.from
+      ) {
+        return false;
+      }
+      
+      if (
+        filters.dateRange.to &&
+        invoiceDate > filters.dateRange.to
+      ) {
+        return false;
+      }
+    }
 
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          {error}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refetch}
-            className="ml-2"
-          >
-            Retry
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
-  }
+    return true;
+  });
 
   return (
-    <div className="space-y-4">
-      {!limit && (
-        <div className="flex justify-between items-center">
-          <InvoiceFilters onFilterChange={handleFilter} />
-          <div className="flex items-center gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={refetch}
-            >
-              Refresh
-            </Button>
-          </div>
-        </div>
-      )}
-      
-      <InvoiceTable 
-        invoices={limitedInvoices} 
-        isLoading={isLoading} 
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Invoices</h1>
+        <Link to="/invoices/create">
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Invoice
+          </Button>
+        </Link>
+      </div>
+
+      <InvoiceFilters 
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
       />
-      
-      {limit && displayInvoices.length > limit && (
-        <div className="flex justify-center mt-4">
-          <Button variant="outline">View All Invoices</Button>
-        </div>
-      )}
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Invoice List</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="all">All Invoices</TabsTrigger>
+              <TabsTrigger value="draft">Draft</TabsTrigger>
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="paid">Paid</TabsTrigger>
+              <TabsTrigger value="overdue">Overdue</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all">
+              <InvoiceTable invoices={filteredInvoices} isLoading={isLoading} error={error} />
+            </TabsContent>
+            
+            <TabsContent value="draft">
+              <InvoiceTable
+                invoices={filteredInvoices?.filter((inv) => inv.status === "draft")}
+                isLoading={isLoading}
+                error={error}
+              />
+            </TabsContent>
+            
+            <TabsContent value="pending">
+              <InvoiceTable
+                invoices={filteredInvoices?.filter((inv) => inv.status === "pending")}
+                isLoading={isLoading}
+                error={error}
+              />
+            </TabsContent>
+            
+            <TabsContent value="paid">
+              <InvoiceTable
+                invoices={filteredInvoices?.filter((inv) => inv.status === "paid")}
+                isLoading={isLoading}
+                error={error}
+              />
+            </TabsContent>
+            
+            <TabsContent value="overdue">
+              <InvoiceTable
+                invoices={filteredInvoices?.filter((inv) => inv.status === "overdue")}
+                isLoading={isLoading}
+                error={error}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

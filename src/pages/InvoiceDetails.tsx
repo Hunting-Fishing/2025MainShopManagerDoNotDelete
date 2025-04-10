@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { InvoiceDetailsHeader } from "@/components/invoices/InvoiceDetailsHeader";
 import { InvoiceDetailsContent } from "@/components/invoices/InvoiceDetailsContent";
@@ -25,6 +24,28 @@ export default function InvoiceDetails() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Create the invoice initial data
+  const invoiceData: Invoice = {
+    id: params.id || '',
+    workOrderId: '',
+    customer: '',
+    customerAddress: '',
+    customerEmail: '',
+    description: '',
+    notes: '',
+    total: 0,
+    subtotal: 0,
+    tax: 0,
+    status: 'draft',
+    paymentMethod: '',
+    date: '',
+    dueDate: '',
+    createdBy: '',
+    assignedStaff: [],
+    items: [],
+    // No need to add customer_id here, it's optional and included in the Invoice type
+  };
   
   // Fetch invoice data from Supabase
   useEffect(() => {
