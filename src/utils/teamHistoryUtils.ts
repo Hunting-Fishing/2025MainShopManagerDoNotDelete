@@ -46,11 +46,20 @@ export const recordTeamMemberHistory = async (
     
     // Handle the possibility that data might be null or undefined
     // Using type assertion to avoid TypeScript errors
-    return {
+    const response = {
       success: true,
-      message: "History recorded",
-      id: data?.id as string | undefined
+      message: "History recorded"
     };
+    
+    // Only add the id property if data exists and has an id
+    if (data && 'id' in data) {
+      return {
+        ...response,
+        id: data.id as string
+      };
+    }
+    
+    return response;
   } catch (error) {
     console.error("Exception recording team member history:", error);
     return {
@@ -67,16 +76,6 @@ export const recordTeamMemberHistory = async (
  */
 export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMemberHistoryRecord[]> => {
   try {
-    // Define a type that matches the expected result structure
-    type HistoryRecord = {
-      id: string;
-      profile_id: string;
-      action_type: string;
-      action_by: string;
-      timestamp: string;
-      details: Record<string, any>;
-    };
-
     const { data, error } = await supabase
       .from('team_member_history' as any)
       .select('*')
@@ -88,13 +87,41 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
       return [];
     }
     
-    // Convert the generic data to our expected type and handle null case
-    return (data || []) as HistoryRecord[];
+    // If no data, return empty array
+    if (!data) {
+      return [];
+    }
+    
+    // Process the data to ensure it matches our expected type
+    const processedData: TeamMemberHistoryRecord[] = data.map(item => ({
+      id: item.id,
+      profile_id: item.profile_id,
+      // Make sure action_type is one of the allowed values
+      action_type: validateActionType(item.action_type),
+      action_by: item.action_by,
+      timestamp: item.timestamp,
+      details: item.details || {}
+    }));
+    
+    return processedData;
   } catch (error) {
     console.error("Exception fetching team member history:", error);
     return [];
   }
 };
+
+/**
+ * Validates that action_type is one of the allowed values
+ */
+function validateActionType(actionType: string): TeamMemberHistoryRecord['action_type'] {
+  const validTypes: TeamMemberHistoryRecord['action_type'][] = [
+    'creation', 'update', 'role_change', 'deletion', 'status_change'
+  ];
+  
+  return validTypes.includes(actionType as any) 
+    ? actionType as TeamMemberHistoryRecord['action_type'] 
+    : 'update'; // Default to 'update' if invalid
+}
 
 /**
  * Formats a history record for display
