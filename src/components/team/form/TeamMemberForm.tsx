@@ -13,12 +13,13 @@ import { Loader2 } from 'lucide-react';
 import { JobInfoFields } from './JobInfoFields';
 
 interface TeamMemberFormProps {
-  onSubmit: (data: TeamMemberFormValues) => void;
-  isSubmitting: boolean;
+  onSubmit?: (data: TeamMemberFormValues) => void;
+  isSubmitting?: boolean;
   initialData?: Partial<TeamMemberFormValues>;
+  mode?: 'create' | 'edit';
 }
 
-export function TeamMemberForm({ onSubmit, isSubmitting, initialData }: TeamMemberFormProps) {
+export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mode = 'create' }: TeamMemberFormProps) {
   const [formStage, setFormStage] = useState<'details' | 'permissions'>('details');
 
   const form = useForm<TeamMemberFormValues>({
@@ -36,6 +37,8 @@ export function TeamMemberForm({ onSubmit, isSubmitting, initialData }: TeamMemb
   });
 
   const handleSubmit = (data: TeamMemberFormValues) => {
+    if (!onSubmit) return;
+
     // Parse the name into first and last names for the API
     const nameParts = data.name.split(' ');
     const firstName = nameParts[0];
@@ -49,6 +52,9 @@ export function TeamMemberForm({ onSubmit, isSubmitting, initialData }: TeamMemb
 
     onSubmit(submitData);
   };
+
+  const buttonLabel = mode === 'create' ? 'Create Team Member' : 'Update Team Member';
+  const loadingLabel = mode === 'create' ? 'Creating...' : 'Updating...';
 
   return (
     <Form {...form}>
@@ -162,10 +168,10 @@ export function TeamMemberForm({ onSubmit, isSubmitting, initialData }: TeamMemb
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                {loadingLabel}
               </>
             ) : (
-              'Create Team Member'
+              buttonLabel
             )}
           </Button>
         </div>

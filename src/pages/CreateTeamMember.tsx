@@ -1,14 +1,96 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { TeamMemberForm } from "@/components/team/form/TeamMemberForm";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
+import { TeamMemberFormValues } from "@/components/team/form/formValidation";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (data: TeamMemberFormValues) => {
+    setIsSubmitting(true);
+    
+    try {
+      // First, create or update the profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            job_title: data.jobTitle,
+            department: data.department,
+            // Additional fields can be included here as needed
+          }
+        ])
+        .select('id, email')
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      if (!profileData) {
+        throw new Error('Failed to create team member profile');
+      }
+
+      // Find the role ID for the selected role
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .ilike('name', data.role.toLowerCase())
+        .single();
+
+      if (roleError) {
+        console.warn(`Role not found for ${data.role}, will skip role assignment:`, roleError);
+      } else if (roleData) {
+        // Assign the role to the user
+        const { error: roleAssignError } = await supabase
+          .from('user_roles')
+          .insert([
+            {
+              user_id: profileData.id,
+              role_id: roleData.id
+            }
+          ]);
+
+        if (roleAssignError) {
+          console.error('Error assigning role:', roleAssignError);
+          // Continue without throwing, as the user was created successfully
+        }
+      }
+      
+      // Show success message
+      toast({
+        title: "Team member created",
+        description: `${data.name} has been added to your team.`,
+        variant: "success",
+      });
+      
+      // Redirect to team page
+      navigate('/team');
+      
+    } catch (error: any) {
+      console.error('Error creating team member:', error);
+      
+      toast({
+        title: "Error creating team member",
+        description: error.message || "There was a problem creating the team member. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   return (
     <div className="container mx-auto p-6">
@@ -37,7 +119,11 @@ export default function CreateTeamMember() {
           Fill out the form below to invite a new team member. They will receive an email invitation to join your organization.
         </p>
         
-        <TeamMemberForm mode="create" />
+        <TeamMemberForm 
+          mode="create" 
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+        />
       </Card>
     </div>
   );
