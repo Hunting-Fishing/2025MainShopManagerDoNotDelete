@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { SeoHead } from "@/components/common/SeoHead";
 import { TeamHeader } from "@/components/team/TeamHeader";
 import { TeamSearch } from "@/components/team/TeamSearch";
 import { TeamFilters } from "@/components/team/TeamFilters";
@@ -9,7 +9,7 @@ import { TeamMemberTable } from "@/components/team/TeamMemberTable";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { Button } from "@/components/ui/button";
-import { assignRoleToUser, findRoleByName } from "@/utils/roleManagement";
+import { assignRoleToUser, findRoleByName } from "@/utils/roleUtils";
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -75,7 +75,6 @@ export default function Team() {
     
     setIsAssigningRole(true);
     try {
-      // Find the owner role ID
       const { roleId, error: findError } = await findRoleByName("Owner");
       
       if (findError || !roleId) {
@@ -88,7 +87,6 @@ export default function Team() {
         return;
       }
       
-      // Assign the role
       const { success, message } = await assignRoleToUser(userId, roleId);
       
       if (success) {
@@ -96,7 +94,6 @@ export default function Team() {
           title: "Role assigned",
           description: "You are now an Owner. The page will refresh in 3 seconds.",
         });
-        // Refresh the page after a short delay to show the updated role
         setTimeout(() => window.location.reload(), 3000);
       } else {
         toast({
@@ -133,17 +130,11 @@ export default function Team() {
 
   return (
     <div className="space-y-6">
-      <Helmet>
-        <title>Team Management</title>
-        <meta 
-          name="description" 
-          content="Manage your team members, assign roles and permissions, and track their performance in Easy Shop Manager." 
-        />
-        <meta 
-          name="keywords" 
-          content="team management, role assignment, technician management, staff management" 
-        />
-      </Helmet>
+      <SeoHead 
+        title="Team Management | Easy Shop Manager" 
+        description="Manage your team members, assign roles and permissions, and track their performance."
+        keywords="team management, role assignment, technician management, staff management"
+      />
       
       <TeamHeader />
       
