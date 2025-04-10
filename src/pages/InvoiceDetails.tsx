@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { InvoiceDetailsHeader } from "@/components/invoices/InvoiceDetailsHeader";
 import { InvoiceDetailsContent } from "@/components/invoices/InvoiceDetailsContent";
@@ -25,28 +26,6 @@ export default function InvoiceDetails() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Create the invoice initial data
-  const invoiceData: Invoice = {
-    id: params.id || '',
-    workOrderId: '',
-    customer: '',
-    customerAddress: '',
-    customerEmail: '',
-    description: '',
-    notes: '',
-    total: 0,
-    subtotal: 0,
-    tax: 0,
-    status: 'draft',
-    paymentMethod: '',
-    date: '',
-    dueDate: '',
-    createdBy: '',
-    assignedStaff: [],
-    items: [],
-    // No need to add customer_id here, it's optional and included in the Invoice type
-  };
-  
   // Fetch invoice data from Supabase
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -71,25 +50,37 @@ export default function InvoiceDetails() {
           throw new Error("Invoice not found");
         }
         
+        // Create the invoice with required properties
         const formattedInvoice: Invoice = {
           id: data.id,
           customer: data.customer,
-          customerAddress: data.customer_address,
-          customerEmail: data.customer_email,
-          customer_id: data.customer_id,
-          description: data.description,
-          notes: data.notes,
+          customerAddress: data.customer_address || '',
+          customerEmail: data.customer_email || '',
+          description: data.description || '',
+          notes: data.notes || '',
           status: data.status as "draft" | "pending" | "paid" | "overdue" | "cancelled",
-          date: data.date,
-          dueDate: data.due_date,
-          total: data.total,
-          subtotal: data.subtotal,
-          tax: data.tax,
-          workOrderId: data.work_order_id,
-          createdBy: data.created_by,
-          paymentMethod: data.payment_method || '', // Ensure paymentMethod is always defined
+          date: data.date || '',
+          dueDate: data.due_date || '',
+          total: data.total || 0,
+          subtotal: data.subtotal || 0,
+          tax: data.tax || 0,
+          workOrderId: data.work_order_id || '',
+          createdBy: data.created_by || '',
+          paymentMethod: data.payment_method || '',
+          assignedStaff: [], // Initialize with empty array
           items: data.invoice_items || [],
+          customer_id: data.customer_id, // Include optional customer_id
         };
+        
+        // Fetch assigned staff members if needed
+        const { data: staffData } = await supabase
+          .from('invoice_staff')
+          .select('staff_name')
+          .eq('invoice_id', id);
+          
+        if (staffData && staffData.length > 0) {
+          formattedInvoice.assignedStaff = staffData.map(staff => staff.staff_name);
+        }
         
         setInvoice(formattedInvoice);
       } catch (err: any) {
@@ -124,7 +115,7 @@ export default function InvoiceDetails() {
     );
   }
   
-  // Prepare invoice for header component by making sure paymentMethod is defined
+  // Ensure data has the necessary properties for the components
   const headerInvoice = {
     ...invoice,
     paymentMethod: invoice.paymentMethod || ''

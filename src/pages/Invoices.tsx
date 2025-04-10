@@ -9,52 +9,79 @@ import { Invoice } from "@/types/invoice";
 
 export default function Invoices() {
   const { invoices, isLoading } = useInvoiceData();
+  const [filters, setFilters] = useState({
+    status: 'all',
+    customer: '',
+    dateRange: {
+      from: null as Date | null,
+      to: null as Date | null,
+    },
+  });
+
+  // Filtered invoices based on the current filters
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   
-  const {
-    searchQuery,
-    setSearchQuery,
-    statusFilter,
-    setStatusFilter,
-    createdByFilter,
-    setCreatedByFilter,
-    creators,
-    filteredInvoices,
-    resetFilters
-  } = useInvoiceFilters(invoices);
-
-  // When invoices data changes, reapply the filters
-  useEffect(() => {
-    // The useInvoiceFilters hook will automatically refilter when invoices change
-  }, [invoices]);
-
-  // Convert the status filter array to a string for the UI component
-  const statusFilterString = statusFilter.length === 1 ? statusFilter[0] : "all";
-  const handleStatusFilterChange = (status: string) => {
-    if (status === "all") {
-      setStatusFilter([]);
-    } else {
-      setStatusFilter([status]);
-    }
+  // Reset filters function
+  const resetFilters = () => {
+    setFilters({
+      status: 'all',
+      customer: '',
+      dateRange: {
+        from: null,
+        to: null,
+      },
+    });
   };
+
+  // Filter invoices when data or filters change
+  useEffect(() => {
+    if (!invoices) {
+      setFilteredInvoices([]);
+      return;
+    }
+    
+    const filtered = invoices.filter(invoice => {
+      // Filter by status
+      if (filters.status !== 'all' && invoice.status !== filters.status) {
+        return false;
+      }
+      
+      // Filter by customer name
+      if (filters.customer && !invoice.customer.toLowerCase().includes(filters.customer.toLowerCase())) {
+        return false;
+      }
+      
+      // Filter by date range
+      if (filters.dateRange.from || filters.dateRange.to) {
+        const invoiceDate = new Date(invoice.date);
+        
+        if (filters.dateRange.from && invoiceDate < filters.dateRange.from) {
+          return false;
+        }
+        
+        if (filters.dateRange.to && invoiceDate > filters.dateRange.to) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    setFilteredInvoices(filtered);
+  }, [invoices, filters]);
 
   return (
     <div className="space-y-6">
       <InvoiceListHeader />
 
-      {/* Filters and search */}
+      {/* Filters using the correct props structure */}
       <InvoiceFilters
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        statusFilter={statusFilterString}
-        setStatusFilter={handleStatusFilterChange}
-        createdByFilter={createdByFilter}
-        setCreatedByFilter={setCreatedByFilter}
-        creators={creators}
-        onResetFilters={resetFilters}
-        isLoading={isLoading}
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
       />
 
-      {/* Invoices table with export functionality */}
+      {/* Invoices list component */}
       <InvoiceList />
     </div>
   );

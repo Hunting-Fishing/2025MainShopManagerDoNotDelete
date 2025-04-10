@@ -1,58 +1,54 @@
 
-import { WorkOrder } from "@/types/invoice";
-import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
-import { v4 as uuidv4 } from "uuid";
+import { useState } from 'react';
+import { WorkOrder } from '@/types/workOrder';
+import { TimeEntry } from '@/types/workOrder';
 
-export function useWorkOrderTimeEntries() {
-  // Custom handler to add time entries from work order to invoice items
-  const addTimeEntriesToInvoiceItems = (workOrder: WorkOrder, currentItems: any[] = []) => {
-    // Return early if no time entries
-    if (!workOrder.timeEntries || workOrder.timeEntries.length === 0) {
-      return currentItems;
-    }
+export const useWorkOrderTimeEntries = (workOrder: WorkOrder) => {
+  // Initialize with work order time entries if they exist, or empty array
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.timeEntries || []);
+  
+  // Calculate total billable hours
+  const totalBillableHours = timeEntries
+    .filter(entry => entry.billable)
+    .reduce((total, entry) => total + (entry.duration / 60), 0); // Convert minutes to hours
+  
+  // Format for display: "X hours Y minutes"
+  const formatDuration = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
     
-    // Get billable entries and group by employee
-    const billableEntries = workOrder.timeEntries.filter(entry => entry.billable);
+    if (hours === 0) return `${mins} minutes`;
+    if (mins === 0) return `${hours} hour${hours > 1 ? 's' : ''}`;
     
-    if (billableEntries.length === 0) {
-      return currentItems;
-    }
-    
-    // Group entries by employee
-    const employeeTimeMap: Record<string, number> = {};
-    
-    billableEntries.forEach(entry => {
-      if (!employeeTimeMap[entry.employeeName]) {
-        employeeTimeMap[entry.employeeName] = 0;
-      }
-      employeeTimeMap[entry.employeeName] += entry.duration;
-    });
-    
-    // Create labor items for each employee
-    const laborItems = Object.entries(employeeTimeMap).map(([employee, minutes]) => {
-      // Convert minutes to hours for billing
-      const hours = minutes / 60;
-      
-      // Standard labor rate of $75/hour
-      const laborRate = 75;
-      
-      // Create labor item
-      return {
-        id: uuidv4(),
-        name: `Labor - ${employee}`,
-        description: `Service labor (${formatTimeInHoursAndMinutes(minutes)})`,
-        quantity: parseFloat(hours.toFixed(2)),
-        price: laborRate,
-        total: parseFloat((hours * laborRate).toFixed(2)),
-        hours: true
-      };
-    });
-    
-    // Return combined items array
-    return [...currentItems, ...laborItems];
+    return `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}`;
+  };
+  
+  // Add a new time entry
+  const addTimeEntry = (entry: TimeEntry) => {
+    setTimeEntries(prev => [...prev, entry]);
+  };
+  
+  // Remove a time entry
+  const removeTimeEntry = (entryId: string) => {
+    setTimeEntries(prev => prev.filter(entry => entry.id !== entryId));
+  };
+  
+  // Update an existing time entry
+  const updateTimeEntry = (entryId: string, updates: Partial<TimeEntry>) => {
+    setTimeEntries(prev => prev.map(entry => 
+      entry.id === entryId ? { ...entry, ...updates } : entry
+    ));
   };
 
   return {
-    addTimeEntriesToInvoiceItems
+    timeEntries,
+    setTimeEntries,
+    totalBillableHours,
+    formatDuration,
+    addTimeEntry,
+    removeTimeEntry,
+    updateTimeEntry
   };
-}
+};
+
+export default useWorkOrderTimeEntries;

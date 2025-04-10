@@ -51,9 +51,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     console.log("Populating form with decoded VIN info:", vehicleInfo);
     
     try {
-      // First set the year
+      // First set the year - ensure it's a string
       if (vehicleInfo.year) {
-        form.setValue(`vehicles.${index}.year`, vehicleInfo.year);
+        form.setValue(`vehicles.${index}.year`, String(vehicleInfo.year));
       }
       
       // Then set the make and fetch models for this make
@@ -148,43 +148,29 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           await populateVehicleFromVin(vehicleInfo);
         } else {
           setVinProcessing(false);
-          setVinDecodeSuccess(false);
           toast({
-            title: "Invalid VIN",
-            description: "Could not decode the provided VIN. Please check and try again.",
+            title: "VIN Decode Failed",
+            description: "Could not decode the VIN. Please check and try again.",
             variant: "destructive",
           });
         }
       } catch (error) {
-        console.error("VIN decode error:", error);
+        console.error("Error decoding VIN:", error);
         setVinProcessing(false);
-        setVinDecodeSuccess(false);
         toast({
-          title: "VIN Decode Error",
-          description: "An error occurred while decoding the VIN.",
+          title: "Error",
+          description: "Failed to decode VIN. Please try again.",
           variant: "destructive",
         });
       }
-    }, 800); // Increased debounce time for better UX
+    }, 1000);
     
     setVinDecodeTimeout(timeoutId);
     
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [vin, populateVehicleFromVin, lastProcessedVin, vinProcessing, decodeVin, toast]);
-
-  const handleMakeChange = (value: string) => {
-    // Make sure value is never empty
-    if (!value) return;
-    
-    // Update the form
-    form.setValue(`vehicles.${index}.make`, value);
-    // Clear the model since it depends on make
-    form.setValue(`vehicles.${index}.model`, '');
-    // Fetch models for this make
-    fetchModels(value);
-  };
+  }, [vin, lastProcessedVin, vinProcessing, decodeVin, populateVehicleFromVin]);
 
   return {
     makes,
@@ -192,11 +178,10 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     years,
     loading: dataLoading,
     error,
-    selectedMake,
     vinProcessing,
     modelsLoaded,
     vinDecodeSuccess,
     decodedVehicleInfo,
-    handleMakeChange
+    fetchModels
   };
 };

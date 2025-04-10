@@ -1,54 +1,78 @@
 
-import React from 'react';
-import { InvoiceStatus, Invoice } from '@/types/invoice';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Eye, FileEdit, Printer, MoreHorizontal } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Invoice } from "@/types/invoice";
 import { formatCurrency } from "@/utils/formatters";
-import { Link } from 'react-router-dom';
-import { Eye, FileText, Printer } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
-interface InvoiceTableProps {
-  invoices: Invoice[];
+export interface InvoiceTableProps {
+  invoices?: Invoice[];
   isLoading?: boolean;
+  error?: string; // Add error prop
 }
 
-export const InvoiceTable: React.FC<InvoiceTableProps> = ({ invoices, isLoading }) => {
-  // Status badge helper
-  const renderStatusBadge = (status: InvoiceStatus) => {
-    const statusStyles = {
-      draft: "bg-gray-200 text-gray-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      paid: "bg-green-100 text-green-800",
-      overdue: "bg-red-100 text-red-800",
-      cancelled: "bg-gray-100 text-gray-800"
-    };
-
-    return (
-      <Badge className={statusStyles[status]}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
+export function InvoiceTable({ invoices, isLoading = false, error }: InvoiceTableProps) {
+  // Determine status styling based on invoice status
+  const getStatusStyle = (status: string): string => {
+    switch (status) {
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'overdue':
+        return 'bg-red-100 text-red-800';
+      case 'draft':
+        return 'bg-gray-100 text-gray-800';
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
+  // If there's an error
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Display loading state
   if (isLoading) {
     return (
-      <div className="py-24 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="flex items-center space-x-4 pb-4">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-4 w-1/6" />
+            <Skeleton className="h-4 w-1/6" />
+            <Skeleton className="h-4 w-1/6" />
+          </div>
+        ))}
       </div>
     );
   }
 
-  if (invoices.length === 0) {
+  // Display empty state
+  if (!invoices || invoices.length === 0) {
     return (
-      <div className="py-24 text-center">
-        <FileText className="h-12 w-12 mx-auto text-gray-400" />
-        <h3 className="mt-2 text-lg font-medium text-gray-900">No invoices found</h3>
-        <p className="mt-1 text-gray-500">Create a new invoice to get started</p>
+      <div className="text-center py-10">
+        <p className="text-muted-foreground">No invoices found</p>
       </div>
     );
   }
 
+  // Render the invoice list
   return (
     <div className="rounded-md border">
       <Table>
@@ -57,32 +81,42 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({ invoices, isLoading 
             <TableHead>Invoice #</TableHead>
             <TableHead>Customer</TableHead>
             <TableHead>Date</TableHead>
-            <TableHead>Due Date</TableHead>
-            <TableHead>Amount</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Total</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {invoices.map((invoice) => (
             <TableRow key={invoice.id}>
-              <TableCell>{invoice.id.substring(0, 8)}</TableCell>
+              <TableCell className="font-medium">{invoice.id}</TableCell>
               <TableCell>{invoice.customer}</TableCell>
               <TableCell>{invoice.date}</TableCell>
-              <TableCell>{invoice.dueDate}</TableCell>
+              <TableCell>
+                <Badge className={getStatusStyle(invoice.status)} variant="outline">
+                  {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                </Badge>
+              </TableCell>
               <TableCell>{formatCurrency(invoice.total)}</TableCell>
-              <TableCell>{renderStatusBadge(invoice.status)}</TableCell>
-              <TableCell className="text-right space-x-1">
-                <Button size="icon" variant="ghost" asChild>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
                   <Link to={`/invoices/${invoice.id}`}>
-                    <Eye className="h-4 w-4" />
-                    <span className="sr-only">View</span>
+                    <Button variant="ghost" size="icon">
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </Link>
-                </Button>
-                <Button size="icon" variant="ghost">
-                  <Printer className="h-4 w-4" />
-                  <span className="sr-only">Print</span>
-                </Button>
+                  <Link to={`/invoices/${invoice.id}/edit`}>
+                    <Button variant="ghost" size="icon">
+                      <FileEdit className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Button variant="ghost" size="icon">
+                    <Printer className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
@@ -90,6 +124,4 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({ invoices, isLoading 
       </Table>
     </div>
   );
-};
-
-export default InvoiceTable;
+}

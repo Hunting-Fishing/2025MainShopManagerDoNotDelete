@@ -1,77 +1,119 @@
 
-import { Button } from "@/components/ui/button";
-import { Plus, BarChart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { RecentWorkOrders } from "@/components/dashboard/RecentWorkOrders";
+import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { WorkOrdersByStatusChart } from "@/components/dashboard/WorkOrdersByStatusChart";
-import { MonthlyRevenueChart } from "@/components/dashboard/MonthlyRevenueChart";
-import { TechnicianPerformanceChart } from "@/components/dashboard/TechnicianPerformanceChart";
+import { RecentWorkOrders } from "@/components/dashboard/RecentWorkOrders";
 import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceTypeDistributionChart";
-import { EquipmentRecommendations } from "@/components/dashboard/EquipmentRecommendations";
-import { useEffect } from "react";
-import { checkSupabaseConnection } from "@/lib/supabase";
+import { getDashboardStats, getRevenueData } from "@/services/dashboardService";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Dashboard() {
-  // Verify Supabase connection on dashboard load
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year">("month");
+  const [stats, setStats] = useState({
+    revenue: 0,
+    activeOrders: 0,
+    customers: 0,
+    lowStockParts: 0,
+    activeWorkOrders: "0",
+    workOrderChange: "+0%",
+    teamMembers: "0",
+    teamChange: "+0%",
+    inventoryItems: "0",
+    inventoryChange: "+0%",
+    avgCompletionTime: "0h",
+    completionTimeChange: "+0%"
+  });
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
-    console.log("Dashboard component mounted");
-    const verifyConnection = async () => {
+    const loadDashboardData = async () => {
+      setIsLoading(true);
       try {
-        const isConnected = await checkSupabaseConnection();
-        console.log("Supabase connection status:", isConnected ? "Connected" : "Failed");
+        // Load dashboard stats
+        const dashboardStats = await getDashboardStats();
+        setStats(dashboardStats);
+        
+        // Load revenue data for the chart
+        const revenue = await getRevenueData(timeRange);
+        setRevenueData(revenue);
       } catch (error) {
-        console.error("Error checking Supabase connection:", error);
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    verifyConnection();
-  }, []);
-
+    loadDashboardData();
+  }, [timeRange]);
+  
+  // Handle changing the time range for charts
+  const handleTimeRangeChange = (range: "day" | "week" | "month" | "year") => {
+    setTimeRange(range);
+  };
+  
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here's an overview of your business.
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button variant="outline" className="flex items-center gap-2" asChild>
-            <Link to="/reports">
-              <BarChart className="h-4 w-4" />
-              Reports
-            </Link>
-          </Button>
-          <Button asChild className="flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700">
-            <Link to="/work-orders/new">
-              <Plus className="h-4 w-4" />
-              New Work Order
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats cards */}
-      <StatsCards />
-
-      {/* Equipment Recommendations Section */}
-      <EquipmentRecommendations />
+    <div className="flex flex-col gap-5 w-full">
+      <DashboardHeader />
       
-      {/* Data Visualization Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MonthlyRevenueChart />
-        <WorkOrdersByStatusChart />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <TechnicianPerformanceChart />
-        <ServiceTypeDistributionChart />
-      </div>
-
-      {/* Recent Work Orders */}
-      <RecentWorkOrders />
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="sales">Sales</TabsTrigger>
+          <TabsTrigger value="operations">Operations</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-4">
+          <StatsCards stats={stats} />
+          
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <RevenueChart 
+              data={revenueData}
+              isLoading={isLoading}
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
+            <WorkOrdersByStatusChart />
+          </div>
+          
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <RecentWorkOrders />
+            <ServiceTypeDistributionChart />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="sales" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales Overview</CardTitle>
+              <CardDescription>Detailed sales performance metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Sales dashboard content coming soon
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="operations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Operations Overview</CardTitle>
+              <CardDescription>Workflow and operational metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Operations dashboard content coming soon
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

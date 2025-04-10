@@ -16,6 +16,7 @@ export interface InvoiceItem {
 export interface StaffMember {
   id: string;
   name: string;
+  role?: string; // Added role property
 }
 
 export interface Invoice {

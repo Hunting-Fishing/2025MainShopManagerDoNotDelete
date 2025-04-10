@@ -3,167 +3,112 @@ import { Customer } from "@/types/customer";
 import { formatPhoneNumber } from "@/utils/formatters";
 
 /**
- * Converts a customer object to vCard format (VCF)
- * @param customer The customer object to convert
- * @returns String in vCard format
+ * Converts a customer record to vCard format
+ * @param customer Customer data
+ * @returns vCard formatted string
  */
 export const customerToVcard = (customer: Customer): string => {
-  // Build the vCard data
-  const vcardLines = [
-    'BEGIN:VCARD',
-    'VERSION:3.0',
-    `FN:${customer.first_name} ${customer.last_name}`,
-    `N:${customer.last_name};${customer.first_name};;;`,
-  ];
-
-  // Add optional fields if they exist
-  if (customer.company) {
-    vcardLines.push(`ORG:${customer.company}`);
-  }
-
-  if (customer.email) {
-    vcardLines.push(`EMAIL;type=INTERNET;type=WORK:${customer.email}`);
-  }
-
-  if (customer.phone) {
-    // Format the phone number without any special characters for vCard
-    const cleanPhone = customer.phone.replace(/\D/g, '');
-    vcardLines.push(`TEL;type=CELL:${cleanPhone}`);
-  }
-
-  if (customer.address) {
-    // For simplicity, we're just using the full address string
-    // In a real implementation, you might want to parse the address into components
-    vcardLines.push(`ADR;type=WORK:;;${customer.address};;;;`);
-  }
-
-  // Add notes if present
-  if (customer.notes) {
-    vcardLines.push(`NOTE:${customer.notes.replace(/\n/g, '\\n')}`);
-  }
-
-  // Add a unique identifier and closing tag
-  vcardLines.push(`UID:${customer.id}`);
-  vcardLines.push('END:VCARD');
-
-  // Join with CRLF as required by the vCard spec
-  return vcardLines.join('\r\n');
-};
-
-/**
- * Prepares customer data for CSV export
- * @param customers Array of customer objects
- * @returns Array of objects ready for CSV conversion
- */
-export const prepareCustomersForCsv = (customers: Customer[]): any[] => {
-  return customers.map(customer => ({
-    'First Name': customer.first_name,
-    'Last Name': customer.last_name,
-    'Email': customer.email || '',
-    'Phone': customer.phone ? formatPhoneNumber(customer.phone) : '',
-    'Address': customer.address || '',
-    'Company': customer.company || '',
-    'Tags': customer.tags ? customer.tags.join(', ') : '',
-    'Notes': customer.notes || '',
-    'Created At': customer.created_at ? new Date(customer.created_at).toLocaleDateString() : '',
-  }));
-};
-
-/**
- * Converts a single customer to a printable HTML format
- * @param customer The customer to convert
- * @returns HTML string representing the customer details
- */
-export const customerToPrintableHtml = (customer: Customer): string => {
+  // Start vCard
+  let vcard = "BEGIN:VCARD\r\n";
+  vcard += "VERSION:3.0\r\n";
+  
+  // Name
   const fullName = `${customer.first_name} ${customer.last_name}`;
+  vcard += `FN:${fullName}\r\n`;
+  vcard += `N:${customer.last_name};${customer.first_name};;;\r\n`;
   
-  let html = `
-    <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-      <h1 style="color: #333;">${fullName}</h1>
-  `;
-  
+  // Organization if available
   if (customer.company) {
-    html += `<p><strong>Company:</strong> ${customer.company}</p>`;
+    vcard += `ORG:${customer.company}\r\n`;
   }
   
-  html += `<div style="margin-top: 20px;">
-    <h2 style="color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px;">Contact Information</h2>
-  `;
-  
+  // Contact info - phone
   if (customer.phone) {
-    html += `<p><strong>Phone:</strong> ${formatPhoneNumber(customer.phone)}</p>`;
+    vcard += `TEL;type=CELL:${customer.phone}\r\n`;
   }
   
+  // Email
   if (customer.email) {
-    html += `<p><strong>Email:</strong> ${customer.email}</p>`;
+    vcard += `EMAIL:${customer.email}\r\n`;
   }
   
+  // Address
   if (customer.address) {
-    html += `<p><strong>Address:</strong> ${customer.address}</p>`;
+    // Format: ADR:PO Box;Extended Address;Street;City;State;Postal Code;Country
+    vcard += `ADR:;;${customer.address};${customer.city || ""};${customer.state || ""};${customer.postal_code || ""};${customer.country || ""}\r\n`;
   }
   
-  html += `</div>`;
-  
-  if (customer.tags && customer.tags.length > 0) {
-    html += `
-      <div style="margin-top: 20px;">
-        <h2 style="color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px;">Tags</h2>
-        <p>${customer.tags.join(', ')}</p>
-      </div>
-    `;
-  }
-  
-  if (customer.vehicles && customer.vehicles.length > 0) {
-    html += `
-      <div style="margin-top: 20px;">
-        <h2 style="color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px;">Vehicles</h2>
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: #f2f2f2;">
-              <th style="text-align: left; padding: 8px; border: 1px solid #ddd;">Year</th>
-              <th style="text-align: left; padding: 8px; border: 1px solid #ddd;">Make</th>
-              <th style="text-align: left; padding: 8px; border: 1px solid #ddd;">Model</th>
-              <th style="text-align: left; padding: 8px; border: 1px solid #ddd;">VIN</th>
-              <th style="text-align: left; padding: 8px; border: 1px solid #ddd;">License Plate</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-    
-    customer.vehicles.forEach(vehicle => {
-      html += `
-        <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">${vehicle.year || ''}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${vehicle.make || ''}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${vehicle.model || ''}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${vehicle.vin || ''}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${vehicle.license_plate || ''}</td>
-        </tr>
-      `;
-    });
-    
-    html += `
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-  
+  // Notes if available
   if (customer.notes) {
-    html += `
-      <div style="margin-top: 20px;">
-        <h2 style="color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px;">Notes</h2>
-        <p style="white-space: pre-wrap;">${customer.notes}</p>
-      </div>
-    `;
+    // Escape any semicolons, commas, and newlines
+    const sanitizedNotes = customer.notes
+      .replace(/\n/g, "\\n")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,");
+    vcard += `NOTE:${sanitizedNotes}\r\n`;
   }
   
-  html += `
-      <div style="margin-top: 30px; text-align: center; color: #888; font-size: 12px;">
-        <p>Printed on ${new Date().toLocaleString()}</p>
-      </div>
-    </div>
-  `;
+  // End vCard
+  vcard += "END:VCARD\r\n";
   
-  return html;
+  return vcard;
+};
+
+/**
+ * Generate a CSV string for customer data export
+ * @param customers Array of customer data
+ * @returns CSV formatted string
+ */
+export const customersToCSV = (customers: Customer[]): string => {
+  // CSV header
+  const headers = [
+    "First Name",
+    "Last Name",
+    "Email",
+    "Phone",
+    "Company",
+    "Address",
+    "City",
+    "State",
+    "Postal Code",
+    "Country",
+    "Tags"
+  ];
+  
+  let csv = headers.join(",") + "\r\n";
+  
+  // Process each customer
+  customers.forEach(customer => {
+    // Escape fields with quotes if they contain commas
+    const escapedFields = [
+      escapeCsvField(customer.first_name),
+      escapeCsvField(customer.last_name),
+      escapeCsvField(customer.email || ""),
+      escapeCsvField(formatPhoneNumber(customer.phone || "")),
+      escapeCsvField(customer.company || ""),
+      escapeCsvField(customer.address || ""),
+      escapeCsvField(customer.city || ""),
+      escapeCsvField(customer.state || ""),
+      escapeCsvField(customer.postal_code || ""),
+      escapeCsvField(customer.country || ""),
+      escapeCsvField(customer.tags ? customer.tags.join(", ") : "")
+    ];
+    
+    csv += escapedFields.join(",") + "\r\n";
+  });
+  
+  return csv;
+};
+
+/**
+ * Escape CSV field according to RFC 4180
+ * @param field Field content
+ * @returns Escaped field
+ */
+const escapeCsvField = (field: string): string => {
+  // If field contains commas, double quotes, or newlines, wrap in quotes and escape any double quotes
+  if (/[",\n\r]/.test(field)) {
+    return `"${field.replace(/"/g, '""')}"`;
+  }
+  return field;
 };
