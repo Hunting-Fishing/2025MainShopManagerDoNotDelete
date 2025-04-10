@@ -4,95 +4,72 @@ import { WorkOrder, TimeEntry } from '@/types/workOrder';
 import { InvoiceItem } from '@/types/invoice';
 import { v4 as uuidv4 } from 'uuid';
 
-export const useWorkOrderTimeEntries = (workOrder: WorkOrder) => {
-  // Initialize with work order time entries if they exist, or empty array
+export function useWorkOrderTimeEntries(workOrder: WorkOrder) {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.timeEntries || []);
-  
-  // Calculate total billable hours
-  const totalBillableHours = timeEntries
-    .filter(entry => entry.billable)
-    .reduce((total, entry) => total + (entry.duration / 60), 0); // Convert minutes to hours
-  
-  // Format for display: "X hours Y minutes"
-  const formatDuration = (minutes: number): string => {
+  const totalBillableHours = calculateTotalBillableHours(timeEntries);
+
+  const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    
-    if (hours === 0) return `${mins} minutes`;
-    if (mins === 0) return `${hours} hour${hours > 1 ? 's' : ''}`;
-    
-    return `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}`;
+    return `${hours}h ${mins}m`;
   };
-  
-  // Add time entries to invoice items
-  const addTimeEntriesToInvoiceItems = (workOrder: WorkOrder, existingItems: InvoiceItem[]): InvoiceItem[] => {
+
+  const addTimeEntry = (entry: TimeEntry) => {
+    setTimeEntries([...timeEntries, entry]);
+  };
+
+  const removeTimeEntry = (entryId: string) => {
+    setTimeEntries(timeEntries.filter(entry => entry.id !== entryId));
+  };
+
+  const updateTimeEntry = (entryId: string, updates: Partial<TimeEntry>) => {
+    setTimeEntries(timeEntries.map(entry => 
+      entry.id === entryId ? { ...entry, ...updates } : entry
+    ));
+  };
+
+  const addTimeEntriesToInvoiceItems = (workOrder: WorkOrder, currentItems: InvoiceItem[] = []): InvoiceItem[] => {
+    // If the workOrder doesn't have timeEntries, return the current items
     if (!workOrder.timeEntries || workOrder.timeEntries.length === 0) {
-      return existingItems;
+      return currentItems;
     }
+
+    // Create a copy of the current items
+    const updatedItems = [...currentItems];
     
-    const newItems = [...existingItems];
-    
-    // Group billable entries by employee
-    const employeeEntries = workOrder.timeEntries
+    // Group billable time entries by employee
+    const billableEntriesByEmployee: Record<string, TimeEntry[]> = {};
+    workOrder.timeEntries
       .filter(entry => entry.billable)
-      .reduce((acc, entry) => {
-        const employeeName = entry.employeeName;
-        if (!acc[employeeName]) {
-          acc[employeeName] = { totalMinutes: 0, entries: [] };
+      .forEach(entry => {
+        if (!billableEntriesByEmployee[entry.employeeName]) {
+          billableEntriesByEmployee[entry.employeeName] = [];
         }
-        
-        acc[employeeName].totalMinutes += entry.duration;
-        acc[employeeName].entries.push(entry);
-        
-        return acc;
-      }, {} as Record<string, { totalMinutes: number; entries: TimeEntry[] }>);
+        billableEntriesByEmployee[entry.employeeName].push(entry);
+      });
     
-    // Convert each employee's time to an invoice item
-    Object.entries(employeeEntries).forEach(([employeeName, data]) => {
-      const hours = data.totalMinutes / 60; // Convert minutes to hours
-      const roundedHours = Math.round(hours * 100) / 100; // Round to 2 decimal places
+    // Create invoice items for each employee's billable time
+    Object.entries(billableEntriesByEmployee).forEach(([employeeName, entries]) => {
+      // Calculate total minutes
+      const totalMinutes = entries.reduce((sum, entry) => sum + entry.duration, 0);
+      // Convert to hours for billing (round to 2 decimal places)
+      const hours = Math.round(totalMinutes / 60 * 100) / 100;
       
-      // Create description from entries
-      const description = data.entries
-        .map(entry => {
-          const startTime = new Date(entry.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const endTime = entry.endTime 
-            ? new Date(entry.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : 'In Progress';
-          return `${startTime} - ${endTime}: ${entry.notes || 'Labor'}`;
-        })
-        .join('\n');
+      // Default hourly rate - in a real app, this would be retrieved from employee/service settings
+      const hourlyRate = 95;
       
-      // Add labor item to invoice
-      newItems.push({
+      updatedItems.push({
         id: uuidv4(),
         name: `Labor - ${employeeName}`,
-        description: description,
-        quantity: roundedHours,
-        price: 85.00, // Default labor rate - in a real app this would be configurable
+        description: `Service labor (${entries.length} entries, ${formatDuration(totalMinutes)})`,
+        quantity: hours,
+        price: hourlyRate,
         hours: true,
-        total: roundedHours * 85.00
+        total: hours * hourlyRate
       });
     });
     
-    return newItems;
-  };
-  
-  // Add a new time entry
-  const addTimeEntry = (entry: TimeEntry) => {
-    setTimeEntries(prev => [...prev, entry]);
-  };
-  
-  // Remove a time entry
-  const removeTimeEntry = (entryId: string) => {
-    setTimeEntries(prev => prev.filter(entry => entry.id !== entryId));
-  };
-  
-  // Update an existing time entry
-  const updateTimeEntry = (entryId: string, updates: Partial<TimeEntry>) => {
-    setTimeEntries(prev => prev.map(entry => 
-      entry.id === entryId ? { ...entry, ...updates } : entry
-    ));
+    return updatedItems;
   };
 
   return {
@@ -105,6 +82,10 @@ export const useWorkOrderTimeEntries = (workOrder: WorkOrder) => {
     updateTimeEntry,
     addTimeEntriesToInvoiceItems
   };
-};
+}
 
-export default useWorkOrderTimeEntries;
+function calculateTotalBillableHours(entries: TimeEntry[]): number {
+  return entries
+    .filter(entry => entry.billable)
+    .reduce((total, entry) => total + entry.duration, 0);
+}

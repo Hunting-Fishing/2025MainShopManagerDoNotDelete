@@ -7,91 +7,104 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { InvoiceTemplate, Invoice } from "@/types/invoice";
 
-interface SaveTemplateDialogProps {
+export interface SaveTemplateDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
-  items: any[];
-  defaultTaxRate: number;
-  defaultNotes: string;
-  invoice?: Invoice; // Add optional invoice property
+  invoice: Invoice;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
 }
 
-export function SaveTemplateDialog({ 
-  open, 
-  onClose, 
-  onSave, 
-  items,
-  defaultTaxRate,
-  defaultNotes,
-  invoice
-}: SaveTemplateDialogProps) {
+export function SaveTemplateDialog({ open, onClose, invoice, onSaveTemplate }: SaveTemplateDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [taxRate, setTaxRate] = useState(8);
   const [dueDays, setDueDays] = useState(30);
+  const [saving, setSaving] = useState(false);
   
   const handleSave = () => {
-    onSave({
+    setSaving(true);
+    
+    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
       name,
       description,
-      defaultTaxRate,
+      defaultTaxRate: taxRate / 100,
       defaultDueDateDays: dueDays,
-      defaultNotes,
-      defaultItems: items,
-      lastUsed: null // Add the missing property
-    });
+      defaultNotes: invoice.notes || "",
+      defaultItems: invoice.items,
+      lastUsed: null
+    };
     
-    // Reset form
+    onSaveTemplate(template);
+    setSaving(false);
+    resetForm();
+    onClose();
+  };
+  
+  const resetForm = () => {
     setName("");
     setDescription("");
+    setTaxRate(8);
     setDueDays(30);
-    onClose();
   };
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Save as Template</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="template-name">Template Name</Label>
-            <Input
-              id="template-name"
+        <div className="space-y-4 py-2">
+          <div>
+            <Label htmlFor="name">Template Name</Label>
+            <Input 
+              id="name" 
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Standard Oil Change"
+              placeholder="e.g. Standard Oil Change" 
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="template-description">Description (Optional)</Label>
+          <div>
+            <Label htmlFor="description">Description (optional)</Label>
             <Textarea
-              id="template-description"
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe what this template is used for"
+              placeholder="Describe when to use this template"
+              rows={2}
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="template-due-days">Default Due Days</Label>
-            <Input
-              id="template-due-days"
-              type="number"
-              min="1"
-              max="90"
-              value={dueDays}
-              onChange={(e) => setDueDays(parseInt(e.target.value))}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+              <Input
+                id="taxRate"
+                type="number"
+                value={taxRate}
+                onChange={(e) => setTaxRate(Number(e.target.value))}
+                min={0}
+                max={100}
+              />
+            </div>
+            <div>
+              <Label htmlFor="dueDays">Default Due Days</Label>
+              <Input
+                id="dueDays"
+                type="number"
+                value={dueDays}
+                onChange={(e) => setDueDays(Number(e.target.value))}
+                min={1}
+              />
+            </div>
           </div>
         </div>
-        
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="button" onClick={handleSave} disabled={!name}>Save Template</Button>
+          <Button 
+            onClick={handleSave}
+            disabled={saving || !name.trim()}
+          >
+            Save Template
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

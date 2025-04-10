@@ -25,16 +25,21 @@ export const fetchWorkOrders = async () => {
       const customer = wo.customers || {};
       const vehicle = wo.vehicles || {};
       
+      const customerName = customer.first_name && customer.last_name 
+        ? `${customer.first_name} ${customer.last_name}`
+        : "Unknown Customer";
+      
+      const vehicleInfo = vehicle.make && vehicle.model 
+        ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+        : "Vehicle information not available";
+        
       return {
         id: wo.id,
         customer_id: wo.customer_id || '',
-        customer_name: customer.first_name && customer.last_name 
-          ? `${customer.first_name} ${customer.last_name}`
-          : "Unknown Customer",
+        customer_name: customerName,
+        customer: customerName, // Add this to match WorkOrder interface
         vehicle_id: wo.vehicle_id || '',
-        vehicle_info: vehicle.make && vehicle.model 
-          ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
-          : "Vehicle information not available",
+        vehicle_info: vehicleInfo,
         status: wo.status || 'pending',
         description: wo.description || '',
         total_cost: wo.total_cost || 0,
@@ -51,6 +56,7 @@ export const fetchWorkOrders = async () => {
     return workOrders;
   } catch (error) {
     console.error('Error fetching work orders:', error);
+    // Return empty array with typed objects to avoid type errors
     return [];
   }
 };
@@ -105,7 +111,7 @@ export const fetchStaffMembers = async () => {
     return staffMembers;
   } catch (error) {
     console.error('Error fetching staff members:', error);
-    // Provide fallback data
+    // Provide fallback data with string IDs to match StaffMember interface
     return [
       { id: "1", name: "John Smith", role: "Technician" },
       { id: "2", name: "Sarah Johnson", role: "Manager" },

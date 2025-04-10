@@ -16,7 +16,8 @@ export function useWorkOrderSelector({
   handleSelectWorkOrder
 }: WorkOrderSelectorProps) {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
-  const { addTimeEntriesToInvoiceItems } = useWorkOrderTimeEntries(selectedWorkOrder || {} as WorkOrder);
+  const workOrderTimeEntriesHook = useWorkOrderTimeEntries(selectedWorkOrder || {} as WorkOrder);
+  const { addTimeEntriesToInvoiceItems } = workOrderTimeEntriesHook;
 
   // Custom handler to select work order and include time entries
   const handleSelectWorkOrderWithTime = (workOrder: WorkOrder) => {

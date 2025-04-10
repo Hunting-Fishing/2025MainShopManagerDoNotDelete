@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -18,7 +17,7 @@ import { InvoiceTemplateSelector } from "@/components/invoices/templates/Invoice
 import { SaveTemplateDialog } from "@/components/invoices/templates/SaveTemplateDialog";
 import { Invoice, InvoiceItem, InvoiceTemplate, createInvoiceUpdater } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
-import { WorkOrder } from "@/types/workOrder"; // Import WorkOrder from the workOrder types
+import { WorkOrder } from "@/types/workOrder";
 
 interface InvoiceLeftColumnProps {
   invoice: Invoice;
@@ -61,7 +60,6 @@ export function InvoiceLeftColumn({
   handleApplyTemplate,
   handleSaveTemplate,
 }: InvoiceLeftColumnProps) {
-  // Handle clearing the work order reference
   const handleClearWorkOrder = () => {
     setInvoice(createInvoiceUpdater({ 
       workOrderId: undefined,
@@ -69,7 +67,6 @@ export function InvoiceLeftColumn({
     }));
   };
 
-  // Handle date selection
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
       setInvoice(createInvoiceUpdater({ 
@@ -78,7 +75,6 @@ export function InvoiceLeftColumn({
     }
   };
 
-  // Handle due date selection
   const handleDueDateChange = (date: Date | undefined) => {
     if (date) {
       setInvoice(createInvoiceUpdater({ 
@@ -97,7 +93,6 @@ export function InvoiceLeftColumn({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Work Order Link Section */}
           <WorkOrderLinkSection
             workOrderId={invoice.workOrderId || ""}
             description={invoice.description || ""}
@@ -108,7 +103,6 @@ export function InvoiceLeftColumn({
             setShowWorkOrderDialog={setShowWorkOrderDialog}
           />
 
-          {/* Customer Information */}
           <div className="space-y-4">
             <div>
               <Label htmlFor="customer">Customer Name*</Label>
@@ -153,7 +147,6 @@ export function InvoiceLeftColumn({
             </div>
           </div>
 
-          {/* Invoice Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="invoiceDate">Invoice Date*</Label>
@@ -207,7 +200,6 @@ export function InvoiceLeftColumn({
             </div>
           </div>
 
-          {/* Invoice Description */}
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea 
@@ -220,7 +212,6 @@ export function InvoiceLeftColumn({
         </CardContent>
       </Card>
 
-      {/* Invoice Items */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Invoice Items</CardTitle>
@@ -230,8 +221,10 @@ export function InvoiceLeftColumn({
               onSelectTemplate={handleApplyTemplate}
             />
             <SaveTemplateDialog 
-              invoice={invoice}
-              onSaveTemplate={handleSaveTemplate}
+              open={false} 
+              onClose={() => {}} 
+              invoice={invoice} 
+              onSaveTemplate={handleSaveTemplate} 
             />
           </div>
         </CardHeader>
@@ -315,7 +308,6 @@ export function InvoiceLeftColumn({
         </CardContent>
       </Card>
 
-      {/* Notes */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Notes</CardTitle>

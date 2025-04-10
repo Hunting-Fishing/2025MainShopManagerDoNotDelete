@@ -1,98 +1,90 @@
 
 /**
- * Format a number as currency
- * @param value Amount to format as currency
- * @param currency Currency code (default: 'USD')
+ * Formats a number as currency
+ * @param value The number to format
+ * @param currency The currency code (default: USD)
  * @returns Formatted currency string
  */
-export const formatCurrency = (value: number | string | null | undefined, currency = 'USD'): string => {
-  if (value === null || value === undefined) return '';
-  
-  // Convert to number if it's a string
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  
-  // Check if it's a valid number
-  if (isNaN(numValue)) return '';
-  
-  // Format the number as currency
+export function formatCurrency(value: number, currency: string = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numValue);
-};
+    currency: currency,
+  }).format(value);
+}
 
 /**
- * Format a date using Intl.DateTimeFormat
- * @param date Date to format
- * @param format Format options
- * @returns Formatted date string
- */
-export const formatDate = (date: Date | string | number | null | undefined, format: 'short' | 'medium' | 'long' = 'medium'): string => {
-  if (!date) return '';
-  
-  const dateObj = date instanceof Date ? date : new Date(date);
-  
-  if (isNaN(dateObj.getTime())) return '';
-  
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: format === 'short' ? '2-digit' : format === 'medium' ? 'short' : 'long',
-    day: 'numeric'
-  };
-  
-  return new Intl.DateTimeFormat('en-US', options).format(dateObj);
-};
-
-/**
- * Format a time duration (in minutes) to hours and minutes
- * @param minutes Number of minutes
- * @returns Formatted time string (e.g. "2h 30m")
- */
-export const formatDuration = (minutes: number | null | undefined): string => {
-  if (minutes === null || minutes === undefined) return '';
-  
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  
-  return `${hours}h ${mins}m`;
-};
-
-/**
- * Format a percentage
- * @param value Value to format as percentage
- * @param decimals Number of decimal places (default: 1)
- * @returns Formatted percentage string
- */
-export const formatPercent = (value: number | null | undefined, decimals = 1): string => {
-  if (value === null || value === undefined) return '';
-  
-  return `${value.toFixed(decimals)}%`;
-};
-
-/**
- * Format a phone number to standard US format (XXX) XXX-XXXX
- * @param phone Phone number to format
+ * Formats a phone number to standard US format (XXX) XXX-XXXX
+ * @param phoneNumber The phone number to format
  * @returns Formatted phone number
  */
-export const formatPhoneNumber = (phone: string | null | undefined): string => {
-  if (!phone) return '';
+export function formatPhoneNumber(phoneNumber: string | undefined): string {
+  if (!phoneNumber) return '';
   
-  // Strip all non-numeric characters
-  const cleaned = phone.replace(/\D/g, '');
+  // Remove all non-digit characters
+  const cleaned = phoneNumber.replace(/\D/g, '');
   
-  // Check if it's a valid US phone number (10 digits)
-  if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  } else if (cleaned.length === 11 && cleaned[0] === '1') {
-    // Handle numbers with country code
-    return `(${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  // Check if the input is of correct length
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  
+  if (match) {
+    return '(' + match[1] + ') ' + match[2] + '-' + match[3];
   }
   
-  // If not a standard format, return the original
-  return phone;
-};
+  // If input is not 10 digits, just return original with hyphens
+  return phoneNumber;
+}
+
+/**
+ * Formats a date to a readable string
+ * @param date The date to format
+ * @param format The format to use (default: MM/dd/yyyy)
+ * @returns Formatted date string
+ */
+export function formatDate(date: Date | string): string {
+  if (!date) return '';
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(d);
+}
+
+/**
+ * Truncates text to a specific length and adds ellipsis
+ * @param text The text to truncate
+ * @param maxLength Maximum length before truncation
+ * @returns Truncated text with ellipsis if needed
+ */
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+}
+
+/**
+ * Formats a file size in bytes to a human-readable string
+ * @param bytes File size in bytes
+ * @returns Formatted file size string
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Formats percentage values
+ * @param value The percentage value (0-100)
+ * @param decimals Number of decimal places
+ * @returns Formatted percentage string
+ */
+export function formatPercentage(value: number, decimals: number = 1): string {
+  return `${value.toFixed(decimals)}%`;
+}
