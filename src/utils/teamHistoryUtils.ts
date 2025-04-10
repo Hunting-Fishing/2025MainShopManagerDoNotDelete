@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -50,12 +49,10 @@ export const recordTeamMemberHistory = async (
       message: "History recorded"
     };
     
-    // Use type assertion with null guard to handle data safely
-    // This approach explicitly tells TypeScript that we've checked 
-    // data is not null before accessing its properties
-    if (data) {
-      // Safe to access data.id now because we've verified data exists
-      const recordId = data.id;
+    // Properly handle the data with type checking
+    // The data should be an object with an id property if the query was successful
+    if (data && typeof data === 'object' && 'id' in data) {
+      const recordId = data.id as string;
       if (recordId) {
         return {
           ...response,
