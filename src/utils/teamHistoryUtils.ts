@@ -45,7 +45,7 @@ export const recordTeamMemberHistory = async (
     }
     
     // Handle the possibility that data might be null or undefined
-    // by using optional chaining and providing a type assertion
+    // Using type assertion to avoid TypeScript errors
     return {
       success: true,
       message: "History recorded",
@@ -67,6 +67,7 @@ export const recordTeamMemberHistory = async (
  */
 export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMemberHistoryRecord[]> => {
   try {
+    // Define a type that matches the expected result structure
     type HistoryRecord = {
       id: string;
       profile_id: string;
@@ -87,8 +88,8 @@ export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMem
       return [];
     }
     
-    // Convert the generic data to our expected type
-    return (data || []) as unknown as TeamMemberHistoryRecord[];
+    // Convert the generic data to our expected type and handle null case
+    return (data || []) as HistoryRecord[];
   } catch (error) {
     console.error("Exception fetching team member history:", error);
     return [];

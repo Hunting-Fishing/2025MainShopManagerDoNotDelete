@@ -57,8 +57,10 @@ export function useFetchProfiles() {
             const metadata = profileMetadata.metadata;
             // Check if metadata is an object and has the required properties
             if (typeof metadata === 'object' && metadata !== null) {
-              // Only filter out if status is explicitly 'deleted' or is_active is explicitly false
-              return metadata.status !== 'deleted';
+              // Use type assertion to access properties safely
+              const typedMetadata = metadata as Record<string, any>;
+              // Only filter out if status is explicitly 'deleted'
+              return typedMetadata.status !== 'deleted';
             }
           }
           // If no metadata or structure is different, include the profile (default behavior)
@@ -76,7 +78,9 @@ export function useFetchProfiles() {
           is_active: (() => {
             const metadata = profile.profile_metadata?.[0]?.metadata;
             if (typeof metadata === 'object' && metadata !== null) {
-              return metadata.is_active !== false; // Default to true if not explicitly set to false
+              // Use type assertion to access properties safely
+              const typedMetadata = metadata as Record<string, any>;
+              return typedMetadata.is_active !== false; // Default to true if not explicitly set to false
             }
             return true; // Default to active if no metadata or wrong format
           })()
