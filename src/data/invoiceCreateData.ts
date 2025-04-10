@@ -18,6 +18,31 @@ export const formatTimeInHoursAndMinutes = (minutes: number): string => {
   return `${remainingMinutes}m`;
 };
 
+// Type definitions for database records
+interface CustomerRecord {
+  first_name?: string;
+  last_name?: string;
+  [key: string]: any;
+}
+
+interface ProfileRecord {
+  first_name?: string;
+  last_name?: string;
+  job_title?: string;
+  [key: string]: any;
+}
+
+interface TimeEntryRecord {
+  id: string | number;
+  employee_id?: string | number;
+  employee_name?: string;
+  start_time?: string;
+  end_time?: string | null;
+  duration?: number;
+  notes?: string;
+  billable: boolean;
+}
+
 // Real data fetching functions
 export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
   try {
@@ -60,7 +85,7 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
     
     return data.map(wo => {
       // Map time entries to match TimeEntry interface
-      const timeEntries: TimeEntry[] = (wo.work_order_time_entries || []).map(entry => ({
+      const timeEntries: TimeEntry[] = (wo.work_order_time_entries || []).map((entry: TimeEntryRecord) => ({
         id: entry.id,
         employeeId: entry.employee_id,
         employeeName: entry.employee_name,
@@ -71,20 +96,9 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
         billable: entry.billable
       }));
       
-      // Properly type customers and profiles with explicit interface
-      interface CustomerData {
-        first_name?: string;
-        last_name?: string;
-      }
-      
-      interface ProfileData {
-        first_name?: string;
-        last_name?: string;
-      }
-      
       // Cast to the typed interfaces
-      const customers = (wo.customers || {}) as CustomerData;
-      const profiles = (wo.profiles || {}) as ProfileData;
+      const customers = (wo.customers || {}) as CustomerRecord;
+      const profiles = (wo.profiles || {}) as ProfileRecord;
       
       // Use optional chaining and nullish coalescing for safer access
       const firstName = customers?.first_name ?? '';
@@ -163,15 +177,7 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
       return [];
     }
     
-    // Define explicit interface for profile data
-    interface ProfileData {
-      id: string | number;
-      first_name?: string;
-      last_name?: string;
-      job_title?: string;
-    }
-    
-    return data.map((profile: ProfileData) => {
+    return data.map((profile: ProfileRecord) => {
       // Parse ID to number if needed
       const id = typeof profile.id === 'number' ? profile.id : 
                  typeof profile.id === 'string' ? parseInt(profile.id, 10) || 0 : 0;

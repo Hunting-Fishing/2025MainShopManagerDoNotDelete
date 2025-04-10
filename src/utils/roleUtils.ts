@@ -131,19 +131,6 @@ export const validateRoleName = (role: string): AppRole => {
 };
 
 /**
- * Converts a role display name to its database value
- */
-export const getRoleDbValue = (roleName: string): AppRole => {
-  // First check if it's in our mapping
-  if (roleName in roleValueMapping) {
-    return roleValueMapping[roleName] as AppRole;
-  }
-  
-  // If not, validate and normalize the role name
-  return validateRoleName(roleName);
-};
-
-/**
  * Checks if a user already has a specific role
  * Uses error handling for the case where no role is found
  */
@@ -186,6 +173,8 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
   message: string;
 }> => {
   try {
+    console.log(`Attempting to assign role ${roleId} to user ${userId}`);
+    
     // First check if user already has this role to avoid duplicate key errors
     const hasRole = await checkExistingRole(userId, roleId);
     
@@ -196,11 +185,13 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
       };
     }
     
-    // Use the RPC function to assign the role
-    const { data, error } = await supabase
-      .rpc('assign_role_to_user', { 
-        user_id_param: userId, 
-        role_id_param: roleId 
+    // Insert the role assignment directly rather than using RPC
+    // This is more reliable for the initial user setup
+    const { error } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userId,
+        role_id: roleId
       });
       
     if (error) {
@@ -226,6 +217,7 @@ export const assignRoleToUser = async (userId: string, roleId: string): Promise<
       }
     }
     
+    console.log(`Successfully assigned role ${roleId} to user ${userId}`);
     return {
       success: true,
       message: "Role assigned successfully."
@@ -252,7 +244,7 @@ export const findRoleByName = async (roleName: string): Promise<{
     
     const { data, error } = await supabase
       .from('roles')
-      .select('id')
+      .select('id, name')
       .eq('name', roleValue)
       .single();
       
@@ -261,6 +253,7 @@ export const findRoleByName = async (roleName: string): Promise<{
       return { error: "Could not find the requested role." };
     }
     
+    console.log("Found role:", data);
     return { roleId: data.id };
   } catch (error) {
     console.error("Exception in findRoleByName:", error);
@@ -268,8 +261,32 @@ export const findRoleByName = async (roleName: string): Promise<{
   }
 };
 
-// Helper function to get initials from name (moved from teamData.ts)
+/**
+ * Retrieves all roles available in the system
+ */
+export const fetchAllRoles = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .order('priority', { ascending: true });
+      
+    if (error) {
+      console.error("Error fetching roles:", error);
+      return { roles: [], error: error.message };
+    }
+    
+    return { roles: data, error: null };
+  } catch (error) {
+    console.error("Exception in fetchAllRoles:", error);
+    return { roles: [], error: "Failed to fetch roles" };
+  }
+};
+
+// Helper function to get initials from name
 export const getInitials = (name: string) => {
+  if (!name) return '';
+  
   return name
     .split(' ')
     .map((n) => n[0])
