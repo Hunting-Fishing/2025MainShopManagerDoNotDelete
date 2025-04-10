@@ -45,22 +45,26 @@ export const recordTeamMemberHistory = async (
     }
     
     // Handle the possibility that data might be null or undefined
-    // Using type assertion to avoid TypeScript errors
+    // Define a response object first without the id
     const response = {
       success: true,
       message: "History recorded"
     };
     
-    // Add additional null check for data before accessing id property
-    // This is a safer approach to handle potential null values
-    if (data !== null && typeof data === 'object' && 'id' in data && data.id !== null) {
-      // Now TypeScript knows data.id is safe to access
-      return {
-        ...response,
-        id: data.id as string
-      };
+    // Safely access data.id with proper null checks
+    // First check if data exists at all
+    if (data !== null && typeof data === 'object') {
+      // Then check if it has an id property that's not null
+      if ('id' in data && data.id !== null) {
+        // TypeScript now knows data.id is safe to access
+        return {
+          ...response,
+          id: data.id as string
+        };
+      }
     }
     
+    // If we couldn't safely get an id, return just the response without id
     return response;
   } catch (error) {
     console.error("Exception recording team member history:", error);
