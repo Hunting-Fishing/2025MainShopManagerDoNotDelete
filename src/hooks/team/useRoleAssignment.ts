@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { mapRoleToDbValue } from '@/utils/roleUtils';
+import { assignRoleToUser, findRoleByName, detectRoleFromJobTitle } from '@/utils/roleUtils';
+import { recordTeamMemberHistory } from '@/utils/teamHistoryUtils';
 
 /**
  * Hook for handling role assignments
@@ -10,7 +10,7 @@ export function useRoleAssignment() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detectedRole, setDetectedRole] = useState<string | null>(null);
-  
+
   /**
    * Assigns a role to a user
    */
@@ -18,69 +18,42 @@ export function useRoleAssignment() {
     userId: string,
     roleName: string,
     jobTitle?: string
-  ): Promise<{
-    success: boolean;
-    message?: string;
-  }> => {
+  ) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      if (!roleName) {
-        return {
-          success: true,
-          message: "No role changes requested"
-        };
+      // Get previous role for history tracking
+      const { data: previousRoles } = await findUserCurrentRole(userId);
+      const previousRole = previousRoles?.length > 0 ? previousRoles[0].roles.name : null;
+      
+      // Find the role by name
+      const { roleId, error: findError } = await findRoleByName(roleName);
+      
+      if (findError || !roleId) {
+        throw new Error(findError || "Role not found");
       }
       
-      console.log(`Assigning role ${roleName} to user ${userId}`);
-      setDetectedRole(roleName);
+      // Assign the role to the user
+      const result = await assignRoleToUser(userId, roleId);
       
-      // Use the utility to convert the display role name to database role name
-      const dbRoleName = mapRoleToDbValue(roleName);
-      console.log(`Role mapping: ${roleName} -> ${dbRoleName}`);
-      
-      // Find the role ID using the database role name
-      const { data: roleData, error: roleError } = await supabase
-        .from('roles')
-        .select('id')
-        .eq('name', dbRoleName)
-        .single();
-      
-      if (roleError || !roleData) {
-        throw new Error(roleError?.message || "Role not found");
-      }
-      
-      const roleId = roleData.id;
-      
-      // Insert the user role directly
-      const { error: insertError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role_id: roleId
-        });
-      
-      if (insertError) {
-        // Check if the error is due to duplicate key (role already assigned)
-        if (insertError.message?.includes('duplicate key value')) {
-          return {
-            success: true,
-            message: "Role is already assigned to this user"
-          };
-        } else {
-          throw new Error(insertError.message || "Failed to assign role");
+      // Record the role change in history
+      await recordTeamMemberHistory({
+        profile_id: userId,
+        action_type: 'role_change',
+        action_by: 'current_user', // Will be replaced with actual user ID
+        details: {
+          previous_role: previousRole,
+          new_role: roleName,
+          timestamp: new Date().toISOString()
         }
-      }
+      });
       
-      return {
-        success: true,
-        message: "Role assigned successfully"
-      };
+      return result;
     } catch (err) {
       console.error('Error assigning role:', err);
       
-      const errorMessage = err instanceof Error ? err.message : 'Failed to assign role';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(errorMessage);
       
       return {
@@ -91,12 +64,51 @@ export function useRoleAssignment() {
       setIsLoading(false);
     }
   }, []);
-  
+
+  /**
+   * Detect a role from a job title
+   */
+  const detectRole = useCallback((jobTitle: string) => {
+    try {
+      const detected = detectRoleFromJobTitle(jobTitle);
+      setDetectedRole(detected);
+      return detected;
+    } catch (err) {
+      console.error('Error detecting role:', err);
+      return null;
+    }
+  }, []);
+
+  /**
+   * Find a user's current role for history tracking
+   */
+  const findUserCurrentRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          role_id,
+          roles:role_id(
+            id,
+            name
+          )
+        `)
+        .eq('user_id', userId);
+        
+      return { data, error };
+    } catch (err) {
+      console.error('Error finding current role:', err);
+      return { data: null, error: err };
+    }
+  };
+
   return {
     assignRole,
-    detectedRole,
+    detectRole,
     isLoading,
     error,
+    detectedRole,
     resetState: useCallback(() => {
       setError(null);
       setDetectedRole(null);

@@ -23,7 +23,7 @@ export default function TeamMemberProfile() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['overview', 'permissions', 'activity', 'edit'].includes(tabParam)) {
+    if (tabParam && ['overview', 'permissions', 'activity', 'edit', 'history'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -92,6 +92,12 @@ export default function TeamMemberProfile() {
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-esm-blue-600 py-2 px-4"
               >
                 Activity
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-esm-blue-600 py-2 px-4"
+              >
+                History
               </TabsTrigger>
               <TabsTrigger 
                 value="edit" 

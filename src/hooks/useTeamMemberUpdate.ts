@@ -4,6 +4,7 @@ import { TeamMemberFormValues } from '@/components/team/form/formValidation';
 import { showProfileUpdateToast } from '@/utils/profileUtils';
 import { useProfileUpdate } from './team/useProfileUpdate';
 import { useRoleAssignment } from './team/useRoleAssignment';
+import { recordTeamMemberHistory } from '@/utils/teamHistoryUtils';
 
 /**
  * Hook for managing team member profile updates including role assignments
@@ -36,11 +37,28 @@ export function useTeamMemberUpdate() {
         notes: values.notes
       };
       
+      // Track which fields were updated
+      const updatedFields: string[] = [];
+      Object.entries(profileData).forEach(([key, value]) => {
+        if (value) updatedFields.push(key);
+      });
+      
       const profileUpdateSuccess = await updateProfile(memberId, profileData);
       
       if (!profileUpdateSuccess) {
         throw new Error(profileError || "Failed to update profile");
       }
+      
+      // Record profile update in history
+      await recordTeamMemberHistory({
+        profile_id: memberId,
+        action_type: 'update',
+        action_by: 'current_user', // Will be replaced with actual user ID
+        details: {
+          fields: updatedFields,
+          timestamp: new Date().toISOString()
+        }
+      });
       
       // Step 2: Handle role updates if needed
       const roleResult = await assignRole(memberId, values.role, values.jobTitle);
