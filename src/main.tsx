@@ -6,6 +6,9 @@ import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { NotificationsProvider } from '@/context/notifications';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -22,7 +25,13 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
+          <ThemeProvider>
+            <LanguageProvider>
+              <NotificationsProvider>
+                <App />
+              </NotificationsProvider>
+            </LanguageProvider>
+          </ThemeProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </HelmetProvider>

@@ -1,5 +1,6 @@
+
 import React, { Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import WorkOrders from './pages/WorkOrders';
@@ -162,110 +163,108 @@ function App() {
       <ThemeProvider>
         <LanguageProvider>
           <NotificationsProvider>
-            <Router>
-              <Suspense fallback={<PageLoading />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
+            <Suspense fallback={<PageLoading />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="work-orders" element={<WorkOrders />} />
+                  <Route path="work-orders/create" element={<WorkOrderCreate />} />
+                  <Route path="work-orders/:id" element={<WorkOrderDetails />} />
+                  <Route path="invoices" element={<Invoices />} />
+                  <Route path="invoices/create" element={<InvoiceCreate />} />
+                  <Route path="invoices/:id" element={<InvoiceDetails />} />
+                  <Route path="customers" element={<Customers />} />
+                  <Route path="customers/create" element={<CreateCustomer />} />
                   
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <Layout />
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<Navigate to="/dashboard" replace />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="work-orders" element={<WorkOrders />} />
-                    <Route path="work-orders/create" element={<WorkOrderCreate />} />
-                    <Route path="work-orders/:id" element={<WorkOrderDetails />} />
-                    <Route path="invoices" element={<Invoices />} />
-                    <Route path="invoices/create" element={<InvoiceCreate />} />
-                    <Route path="invoices/:id" element={<InvoiceDetails />} />
-                    <Route path="customers" element={<Customers />} />
-                    <Route path="customers/create" element={<CreateCustomer />} />
-                    
-                    <Route path="customers/undefined" element={<Navigate to="/customers" replace />} />
-                    <Route path="customers/:id" element={
-                      <>
-                        <CustomerRedirect />
-                        <CustomerDetails />
-                      </>
-                    } />
-                    <Route path="customers/:id/edit" element={
-                      <>
-                        <CustomerRedirect />
-                        <EditCustomer />
-                      </>
-                    } />
-                    <Route path="customers/:id/service-history" element={
-                      <>
-                        <CustomerRedirect />
-                        <CustomerServiceHistory />
-                      </>
-                    } />
-                    <Route path="customers/:id/follow-ups" element={
-                      <>
-                        <CustomerRedirect />
-                        <CustomerFollowUps />
-                      </>
-                    } />
-                    <Route path="customers/:id/analytics" element={
-                      <>
-                        <CustomerRedirect />
-                        <CustomerAnalytics />
-                      </>
-                    } />
-                    <Route path="customers/:id/vehicles/:vehicleId" element={
-                      <>
-                        <CustomerRedirect />
-                        <VehicleDetails />
-                      </>
-                    } />
-                    
-                    <Route path="equipment" element={<Equipment />} />
-                    <Route path="equipment/:id" element={<EquipmentDetails />} />
-                    <Route path="inventory" element={<Inventory />} />
-                    <Route path="inventory/add" element={<InventoryAdd />} />
-                    <Route path="forms" element={<Forms />} />
-                    <Route path="forms/create" element={<FormBuilder />} />
-                    <Route path="forms/:id" element={<FormPreview />} />
-                    <Route path="forms/:id/edit" element={<FormEditor />} />
-                    <Route path="vehicle-inspection" element={<VehicleInspectionForm />} />
-                    <Route path="vehicle-inspection/:inspectionId" element={<VehicleInspectionForm />} />
-                    <Route path="maintenance" element={<Maintenance />} />
-                    <Route path="maintenance/dashboard" element={<MaintenanceDashboard />} />
-                    <Route path="calendar" element={<Calendar />} />
-                    <Route path="reminders" element={<Reminders />} />
-                    <Route path="chat" element={<Chat />} />
-                    <Route path="shopping" element={<Shopping />} />
-                    <Route path="shopping/admin" element={<ShoppingAdmin />} />
-                    <Route path="reports" element={<Reports />} />
-                    <Route path="analytics" element={<Analytics />} />
-                    <Route path="team" element={<Team />} />
-                    <Route path="team/create" element={<TeamMemberCreate />} />
-                    <Route path="team/roles" element={<TeamRoles />} />
-                    <Route path="team/:id" element={<TeamMemberProfile />} />
-                    <Route path="marketing/email-templates" element={<EmailTemplates />} />
-                    <Route path="marketing/email-campaigns" element={<EmailCampaigns />} />
-                    <Route path="marketing/email-campaigns/:id" element={<EmailCampaignAnalytics />} />
-                    <Route path="marketing/email-sequences" element={<EmailSequences />} />
-                    <Route path="marketing/email-sequences/:id" element={<EmailSequenceDetails />} />
-                    <Route path="marketing/sms-templates" element={<SmsTemplates />} />
-                    <Route path="marketing/sms-management" element={<SmsManagement />} />
-                    <Route path="repair-plans" element={<RepairPlans />} />
-                    <Route path="repair-plans/create" element={<CreateRepairPlan />} />
-                    <Route path="repair-plans/:id" element={<RepairPlanDetails />} />
-                    <Route path="feedback" element={<FeedbackFormsPage />} />
-                    <Route path="feedback/:id/editor" element={<FeedbackFormEditorPage />} />
-                    <Route path="feedback/:id/analytics" element={<FeedbackAnalyticsPage />} />
-                    <Route path="settings" element={<Settings />} />
-                  </Route>
+                  <Route path="customers/undefined" element={<Navigate to="/customers" replace />} />
+                  <Route path="customers/:id" element={
+                    <>
+                      <CustomerRedirect />
+                      <CustomerDetails />
+                    </>
+                  } />
+                  <Route path="customers/:id/edit" element={
+                    <>
+                      <CustomerRedirect />
+                      <EditCustomer />
+                    </>
+                  } />
+                  <Route path="customers/:id/service-history" element={
+                    <>
+                      <CustomerRedirect />
+                      <CustomerServiceHistory />
+                    </>
+                  } />
+                  <Route path="customers/:id/follow-ups" element={
+                    <>
+                      <CustomerRedirect />
+                      <CustomerFollowUps />
+                    </>
+                  } />
+                  <Route path="customers/:id/analytics" element={
+                    <>
+                      <CustomerRedirect />
+                      <CustomerAnalytics />
+                    </>
+                  } />
+                  <Route path="customers/:id/vehicles/:vehicleId" element={
+                    <>
+                      <CustomerRedirect />
+                      <VehicleDetails />
+                    </>
+                  } />
                   
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <Toaster />
-              </Suspense>
-            </Router>
+                  <Route path="equipment" element={<Equipment />} />
+                  <Route path="equipment/:id" element={<EquipmentDetails />} />
+                  <Route path="inventory" element={<Inventory />} />
+                  <Route path="inventory/add" element={<InventoryAdd />} />
+                  <Route path="forms" element={<Forms />} />
+                  <Route path="forms/create" element={<FormBuilder />} />
+                  <Route path="forms/:id" element={<FormPreview />} />
+                  <Route path="forms/:id/edit" element={<FormEditor />} />
+                  <Route path="vehicle-inspection" element={<VehicleInspectionForm />} />
+                  <Route path="vehicle-inspection/:inspectionId" element={<VehicleInspectionForm />} />
+                  <Route path="maintenance" element={<Maintenance />} />
+                  <Route path="maintenance/dashboard" element={<MaintenanceDashboard />} />
+                  <Route path="calendar" element={<Calendar />} />
+                  <Route path="reminders" element={<Reminders />} />
+                  <Route path="chat" element={<Chat />} />
+                  <Route path="shopping" element={<Shopping />} />
+                  <Route path="shopping/admin" element={<ShoppingAdmin />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="team" element={<Team />} />
+                  <Route path="team/create" element={<TeamMemberCreate />} />
+                  <Route path="team/roles" element={<TeamRoles />} />
+                  <Route path="team/:id" element={<TeamMemberProfile />} />
+                  <Route path="marketing/email-templates" element={<EmailTemplates />} />
+                  <Route path="marketing/email-campaigns" element={<EmailCampaigns />} />
+                  <Route path="marketing/email-campaigns/:id" element={<EmailCampaignAnalytics />} />
+                  <Route path="marketing/email-sequences" element={<EmailSequences />} />
+                  <Route path="marketing/email-sequences/:id" element={<EmailSequenceDetails />} />
+                  <Route path="marketing/sms-templates" element={<SmsTemplates />} />
+                  <Route path="marketing/sms-management" element={<SmsManagement />} />
+                  <Route path="repair-plans" element={<RepairPlans />} />
+                  <Route path="repair-plans/create" element={<CreateRepairPlan />} />
+                  <Route path="repair-plans/:id" element={<RepairPlanDetails />} />
+                  <Route path="feedback" element={<FeedbackFormsPage />} />
+                  <Route path="feedback/:id/editor" element={<FeedbackFormEditorPage />} />
+                  <Route path="feedback/:id/analytics" element={<FeedbackAnalyticsPage />} />
+                  <Route path="settings" element={<Settings />} />
+                </Route>
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
+            </Suspense>
           </NotificationsProvider>
         </LanguageProvider>
       </ThemeProvider>

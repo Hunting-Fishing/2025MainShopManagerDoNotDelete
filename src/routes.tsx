@@ -12,12 +12,17 @@ import Team from "./pages/Team";
 import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 
+// The router exported from this file is not currently being used
+// since we're defining routes in App.tsx directly.
+// This file is kept for reference or future use if needed.
+
 // Create a context provider component if it doesn't exist
 const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return <CustomerDataProvider>{children}</CustomerDataProvider>;
 };
 
-export const router = createBrowserRouter([
+// Define routes but don't create router instance here
+export const routeDefinitions = [
   {
     path: "/",
     element: <App />,
@@ -89,4 +94,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+
+// This is commented out to avoid creating another router instance
+// export const router = createBrowserRouter(routeDefinitions);
