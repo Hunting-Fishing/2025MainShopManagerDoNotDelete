@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
-import { findRoleByName, assignRoleToUser } from '@/utils/roleManagement';
+import { supabase } from '@/lib/supabase';
+import { mapRoleToDbValue } from '@/utils/roleUtils';
 
 /**
  * Hook for handling role assignments
@@ -35,23 +36,46 @@ export function useRoleAssignment() {
       console.log(`Assigning role ${roleName} to user ${userId}`);
       setDetectedRole(roleName);
       
-      // Use the utility to find the role ID from the role name
-      const { roleId, error: findRoleError } = await findRoleByName(roleName);
+      // Use the utility to convert the display role name to database role name
+      const dbRoleName = mapRoleToDbValue(roleName);
+      console.log(`Role mapping: ${roleName} -> ${dbRoleName}`);
       
-      if (findRoleError || !roleId) {
-        throw new Error(findRoleError || "Role not found");
+      // Find the role ID using the database role name
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', dbRoleName)
+        .single();
+      
+      if (roleError || !roleData) {
+        throw new Error(roleError?.message || "Role not found");
       }
       
-      // Assign the role to the user
-      const result = await assignRoleToUser(userId, roleId);
+      const roleId = roleData.id;
       
-      if (!result.success) {
-        throw new Error(result.message);
+      // Insert the user role directly
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role_id: roleId
+        });
+      
+      if (insertError) {
+        // Check if the error is due to duplicate key (role already assigned)
+        if (insertError.message?.includes('duplicate key value')) {
+          return {
+            success: true,
+            message: "Role is already assigned to this user"
+          };
+        } else {
+          throw new Error(insertError.message || "Failed to assign role");
+        }
       }
       
       return {
         success: true,
-        message: result.message || "Role assigned successfully"
+        message: "Role assigned successfully"
       };
     } catch (err) {
       console.error('Error assigning role:', err);

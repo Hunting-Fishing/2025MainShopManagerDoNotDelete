@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
-import { findRoleByName, assignRoleToUser } from "@/utils/roleManagement";
+import { mapRoleToDbValue } from "@/utils/roleUtils";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
@@ -51,17 +52,30 @@ export default function CreateTeamMember() {
         throw new Error('Failed to create team member profile');
       }
       
-      // Find the role ID for the selected role
-      const { roleId, error: roleError } = await findRoleByName(data.role);
+      // Get the database role name from the display role name
+      const dbRoleName = mapRoleToDbValue(data.role);
+      console.log(`Role mapping: ${data.role} -> ${dbRoleName}`);
       
-      if (roleError || !roleId) {
-        console.warn(`Role not found for ${data.role}, will skip role assignment:`, roleError);
-      } else {
+      // Find the role ID for the selected role
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', dbRoleName)
+        .single();
+      
+      if (roleError) {
+        console.warn(`Role not found for ${data.role} (${dbRoleName}):`, roleError);
+      } else if (roleData) {
         // Assign the role to the user
-        const { success, message } = await assignRoleToUser(profileData.id, roleId);
-        
-        if (!success) {
-          console.error('Error assigning role:', message);
+        const { error: roleAssignError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: profileData.id,
+            role_id: roleData.id
+          });
+
+        if (roleAssignError) {
+          console.error('Error assigning role:', roleAssignError);
           // Continue without throwing, as the user was created successfully
         }
       }

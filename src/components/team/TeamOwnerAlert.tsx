@@ -4,7 +4,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { findRoleByName, assignRoleToUser } from "@/utils/roleManagement";
+import { supabase } from "@/lib/supabase";
 
 interface TeamOwnerAlertProps {
   userId: string;
@@ -29,10 +29,16 @@ export function TeamOwnerAlert({ userId, hasNoRole }: TeamOwnerAlertProps) {
     setIsAssigningRole(true);
     try {
       console.log("Finding Owner role...");
-      const { roleId, error: findError } = await findRoleByName("Owner");
       
-      if (findError || !roleId) {
-        console.error("Could not find Owner role:", findError);
+      // First, find the role ID for the 'owner' role directly from the database
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', 'owner')
+        .single();
+      
+      if (roleError || !roleData) {
+        console.error("Could not find Owner role:", roleError);
         toast({
           title: "Error",
           description: "Could not find the Owner role. Please contact support.",
@@ -41,22 +47,41 @@ export function TeamOwnerAlert({ userId, hasNoRole }: TeamOwnerAlertProps) {
         return;
       }
       
+      const roleId = roleData.id;
       console.log("Found Owner role ID:", roleId);
-      const { success, message } = await assignRoleToUser(userId, roleId);
       
-      if (success) {
-        toast({
-          title: "Role assigned",
-          description: "You are now an Owner. The page will refresh in 3 seconds.",
+      // Now insert the user role relationship directly
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role_id: roleId
         });
-        setTimeout(() => window.location.reload(), 3000);
-      } else {
-        toast({
-          title: "Error",
-          description: message || "Failed to assign role. Please try again.",
-          variant: "destructive",
-        });
+        
+      if (insertError) {
+        // Check if the error is due to duplicate key (role already assigned)
+        if (insertError.message?.includes('duplicate key value')) {
+          toast({
+            title: "Role already assigned",
+            description: "You already have the Owner role.",
+          });
+        } else {
+          console.error("Error assigning role:", insertError);
+          toast({
+            title: "Error",
+            description: insertError.message || "Failed to assign role. Please try again.",
+            variant: "destructive",
+          });
+        }
+        return;
       }
+      
+      toast({
+        title: "Role assigned",
+        description: "You are now an Owner. The page will refresh in 3 seconds.",
+      });
+      setTimeout(() => window.location.reload(), 3000);
+      
     } catch (err) {
       console.error("Error assigning role:", err);
       toast({
