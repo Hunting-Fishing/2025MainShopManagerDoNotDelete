@@ -1,3 +1,4 @@
+
 import { StaffMember } from "@/types/invoice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StaffSelector } from "../StaffSelector";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, X } from "lucide-react";
+import { Box, Plus, User, X } from "lucide-react";
 
 export interface InvoiceRightColumnProps {
   createdBy: string;
@@ -48,7 +49,6 @@ export function InvoiceRightColumn({
           <Button
             variant="outline"
             className="w-full justify-start"
-            onClick={() => setShowWorkOrderDialog(true)}
           >
             <Box className="mr-2 h-4 w-4" />
             Select Work Order
@@ -57,7 +57,6 @@ export function InvoiceRightColumn({
           <Button
             variant="outline"
             className="w-full justify-start"
-            onClick={() => setShowInventoryDialog(true)}
           >
             <Box className="mr-2 h-4 w-4" />
             Add Inventory Items
@@ -96,16 +95,42 @@ export function InvoiceRightColumn({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleRemoveStaffMember(staffMember.id)}
+                  onClick={() => onRemoveStaffMember(staffMember.id)}
                 >
                   <span className="sr-only">Remove</span>
-                  <span aria-hidden="true">&times;</span>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Summary Section */}
+      <div className="bg-white shadow rounded-md p-4">
+        <h3 className="font-medium mb-4">Invoice Summary</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Subtotal</span>
+            <span>{formatCurrency(subtotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Tax ({(taxRate * 100).toFixed(1)}%)</span>
+            <span>{formatCurrency(tax)}</span>
+          </div>
+          <div className="border-t pt-2 mt-2 flex justify-between font-medium">
+            <span>Total</span>
+            <span>{formatCurrency(total)}</span>
+          </div>
+        </div>
+      </div>
+
+      <StaffSelector
+        open={showStaffDialog}
+        staffMembers={staffMembers}
+        onClose={() => setShowStaffDialog(false)}
+        onSelect={onAddStaffMember}
+      />
     </div>
   );
 }

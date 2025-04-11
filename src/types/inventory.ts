@@ -2,10 +2,11 @@
 export interface InventoryItem {
   id: string;
   name: string;
-  sku: string;
-  category: string;
+  sku?: string; // Made optional to match InvoiceItem
+  category?: string; // Made optional to match InvoiceItem
   price: number;
-  description: string;
+  description?: string;
+  quantity?: number;
 }
 
 export interface InventoryItemExtended {

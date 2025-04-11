@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VehicleInfoTab } from "@/components/inspection-form/VehicleInfoTab";
 import { DamageAssessmentTab } from "@/components/inspection-form/DamageAssessmentTab";
 import { AdditionalNotesTab } from "@/components/inspection-form/AdditionalNotesTab";
-import { VehicleBodyStyle } from "@/types/vehicleBodyStyles";
+import { VehicleBodyStyle } from "@/types/vehicle";
 
 interface InspectionFormData {
   vin: string;

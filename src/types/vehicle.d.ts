@@ -1,5 +1,4 @@
 
-// Re-export VehicleBodyStyle from vehicleBodyStyles for consistency
 import { VehicleBodyStyle, VEHICLE_BODY_STYLES } from './vehicleBodyStyles';
 
 export interface VinDecodeResult {

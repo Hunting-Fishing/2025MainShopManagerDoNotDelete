@@ -1,10 +1,14 @@
 
-import { useInvoiceFormState, UseInvoiceFormStateProps } from "@/hooks/invoice/useInvoiceFormState";
+import { useInvoiceFormState } from "@/hooks/invoice/useInvoiceFormState";
 import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
 import { useInvoiceTotals } from "@/hooks/invoice/useInvoiceTotals";
 import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
-import { StaffMember, Invoice } from "@/types/invoice";
+import { StaffMember, Invoice, InvoiceTemplate } from "@/types/invoice";
+
+export interface UseInvoiceFormStateProps {
+  initialWorkOrderId?: string;
+}
 
 export function useInvoiceForm(initialWorkOrderId?: string) {
   // Use form state hook with correct typing
@@ -79,7 +83,15 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
       workOrderId: workOrderUpdates.workOrderId,
       customer: workOrderUpdates.customer,
       description: workOrderUpdates.description,
-      assignedStaff: workOrderUpdates.assignedStaff
+      // Convert string assignments to StaffMember objects if needed
+      assignedStaff: Array.isArray(workOrderUpdates.assignedStaff) 
+        ? workOrderUpdates.assignedStaff.map((staff: string | StaffMember) => {
+            if (typeof staff === 'string') {
+              return { id: crypto.randomUUID(), name: staff };
+            }
+            return staff;
+          })
+        : prev.assignedStaff
     }));
     
     setShowWorkOrderDialog(false);

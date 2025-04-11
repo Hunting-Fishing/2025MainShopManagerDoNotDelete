@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -7,7 +6,12 @@ import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { WorkOrder } from "@/types/workOrder";
-import { InventoryItem, InvoiceItem, StaffMember, InvoiceTemplate } from "@/types/invoice";
+import { 
+  InvoiceItem, 
+  StaffMember, 
+  InvoiceTemplate 
+} from "@/types/invoice";
+import { InventoryItem } from "@/types/inventory";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -190,10 +194,9 @@ export default function InvoiceCreate() {
     handleAddLaborItem(laborItem);
   };
 
-  const handleSaveTemplateAdapter = (name: string) => {
-    // Create a template object from the name
+  const handleSaveTemplateAdapter = (templateName: string) => {
     const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
-      name,
+      name: templateName,
       description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
       lastUsed: null,
       defaultTaxRate: taxRate,

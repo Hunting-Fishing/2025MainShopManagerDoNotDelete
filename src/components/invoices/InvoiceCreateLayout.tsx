@@ -41,7 +41,7 @@ interface InvoiceCreateLayoutProps {
   handleAddLaborItem: () => void;
   handleSaveInvoice: (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => void;
   handleApplyTemplate: (template: InvoiceTemplate) => void;
-  handleSaveTemplate: (templateName: string) => void;
+  handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
 }
 
 export function InvoiceCreateLayout({

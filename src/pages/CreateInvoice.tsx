@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -192,8 +191,18 @@ export default function InvoiceCreate() {
     handleAddLaborItem(laborItem);
   };
 
-  const handleSaveTemplateAdapter = (name: string) => {
-    handleSaveTemplate(name);
+  const handleSaveTemplateAdapter = (templateName: string) => {
+    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+      name: templateName,
+      description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
+      lastUsed: null,
+      defaultTaxRate: taxRate,
+      defaultDueDateDays: 30,
+      defaultNotes: invoice.notes || "",
+      defaultItems: invoice.items
+    };
+    
+    handleSaveTemplate(template);
   };
 
   return (

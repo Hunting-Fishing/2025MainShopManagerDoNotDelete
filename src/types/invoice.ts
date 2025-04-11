@@ -1,6 +1,5 @@
 
 import { Dispatch, SetStateAction } from 'react';
-import { InventoryItem as InventoryBaseItem } from '@/types/inventory';
 
 export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
 
@@ -16,11 +15,17 @@ export interface InvoiceItem {
   category?: string;
 }
 
-// Extend the base InventoryItem to include additional props needed for invoices
-export interface InventoryItem extends InventoryBaseItem {
+// Interface for InventoryItem in invoice context
+export interface InventoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
   quantity: number;
   status?: string;
   supplier?: string;
+  sku?: string;
+  category?: string;
 }
 
 export interface StaffMember {
