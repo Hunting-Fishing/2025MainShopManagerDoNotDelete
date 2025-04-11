@@ -89,8 +89,11 @@ export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
     
     // Map to required format
     return data.map(order => {
+      // Safe check for customer data - handle as single object, not array
       const customer = order.customers || { first_name: 'Unknown', last_name: 'Customer' };
-      const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
+      const customerName = customer && typeof customer === 'object' && 'first_name' in customer ? 
+        `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : 
+        'Unknown Customer';
         
       // Determine priority based on status
       let priority = 'normal';
