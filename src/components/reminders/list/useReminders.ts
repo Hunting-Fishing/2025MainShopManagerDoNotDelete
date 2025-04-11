@@ -72,7 +72,7 @@ export function useReminders({
     tagIds,
     search,
     sortBy,
-    sortOrder,
+    sortOrder: sortOrder as "asc" | "desc",
     limit
   };
 

@@ -68,7 +68,7 @@ export function AssignmentField({ form }: AssignmentFieldProps) {
           <FormLabel>Assigned To</FormLabel>
           <Select
             onValueChange={field.onChange}
-            value={field.value || ""}
+            value={field.value || "unassigned"}
           >
             <FormControl>
               <SelectTrigger

@@ -1,15 +1,45 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ServiceReminder } from "@/types/reminder";
+import { mapReminderFromDb } from "./reminderMapper";
 import { toast } from "@/hooks/use-toast";
 
 /**
- * Send a notification for a reminder
- * @param reminderId The ID of the reminder to send a notification for
+ * Get reminders that need notifications sent
+ * This would typically be used by a background job or cron task
  */
-export const sendReminderNotification = async (reminderId: string): Promise<boolean> => {
+export const getRemindersForNotification = async (): Promise<ServiceReminder[]> => {
   try {
-    // Mark the reminder as having had a notification sent
+    // Get current date
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Query for pending reminders due soon that haven't had notifications sent
+    const { data, error } = await supabase
+      .from('service_reminders')
+      .select(`
+        *,
+        categories:category_id(*),
+        tags:service_reminder_tags(tag_id(*))
+      `)
+      .eq('status', 'pending')
+      .eq('notification_sent', false)
+      .lte('due_date', today) // Due today or in the past
+      .order('due_date', { ascending: true });
+    
+    if (error) throw error;
+    
+    return (data || []).map(mapReminderFromDb);
+  } catch (error) {
+    console.error("Error getting reminders for notification:", error);
+    return [];
+  }
+};
+
+/**
+ * Mark a reminder as having a notification sent
+ */
+export const markNotificationSent = async (reminderId: string): Promise<boolean> => {
+  try {
     const { error } = await supabase
       .from('service_reminders')
       .update({
@@ -18,127 +48,65 @@ export const sendReminderNotification = async (reminderId: string): Promise<bool
       })
       .eq('id', reminderId);
     
-    if (error) {
-      console.error("Error updating reminder notification status:", error);
-      throw error;
-    }
-    
-    // In a real implementation, this would also trigger an email, SMS, or other notification
-    toast({
-      title: "Notification sent",
-      description: "The reminder notification has been sent successfully."
-    });
+    if (error) throw error;
     
     return true;
   } catch (error) {
-    console.error("Error sending reminder notification:", error);
-    
-    toast({
-      variant: "destructive",
-      title: "Notification failed",
-      description: "Failed to send the reminder notification. Please try again."
-    });
-    
+    console.error(`Error marking notification sent for reminder ${reminderId}:`, error);
     return false;
   }
 };
 
 /**
- * Check for reminders that need notifications
- * This would typically be run on a schedule or when the app loads
+ * Send notifications for all due reminders
+ * This is a demo function that would be replaced with actual notification logic
  */
-export const checkForDueReminders = async (): Promise<void> => {
+export const sendReminderNotifications = async (): Promise<void> => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    // Get reminders that need notifications
+    const reminders = await getRemindersForNotification();
     
-    // Find reminders that are due soon and haven't had notifications sent
-    const { data, error } = await supabase
-      .from('service_reminders')
-      .select('*')
-      .eq('status', 'pending')
-      .eq('notification_sent', false)
-      .lte('due_date', today);
-    
-    if (error) {
-      console.error("Error checking for due reminders:", error);
+    if (reminders.length === 0) {
+      console.log("No reminders needing notifications");
       return;
     }
     
-    // Process each reminder that needs notifications
-    for (const reminder of data) {
-      await sendReminderNotification(reminder.id);
+    // In a real application, this would integrate with email/SMS/push notification services
+    for (const reminder of reminders) {
+      console.log(`Sending notification for reminder: ${reminder.title} (${reminder.id})`);
+      
+      // Demo: Just mark the notification as sent
+      await markNotificationSent(reminder.id);
+      
+      // Show a toast for demo purposes
+      toast({
+        title: "Reminder notification sent",
+        description: `For: ${reminder.title} (due: ${reminder.dueDate})`,
+      });
     }
+    
+    console.log(`Processed ${reminders.length} reminder notifications`);
   } catch (error) {
-    console.error("Error in reminder notification check:", error);
+    console.error("Error sending reminder notifications:", error);
+    throw error;
   }
 };
 
 /**
- * Process recurring reminders to create new instances
+ * Check if a reminder is due for notification
  */
-export const processRecurringReminders = async (): Promise<void> => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Find completed recurring reminders that need new instances created
-    const { data, error } = await supabase
-      .from('service_reminders')
-      .select('*')
-      .eq('status', 'completed')
-      .eq('is_recurring', true)
-      .is('next_occurrence_date', null);
-    
-    if (error) {
-      console.error("Error checking for recurring reminders:", error);
-      return;
-    }
-    
-    // For each completed recurring reminder, create a new instance
-    for (const reminder of data) {
-      try {
-        // Calculate next occurrence date
-        let nextDate = new Date();
-        if (reminder.recurrence_unit === 'days') {
-          nextDate.setDate(nextDate.getDate() + (reminder.recurrence_interval || 0));
-        } else if (reminder.recurrence_unit === 'weeks') {
-          nextDate.setDate(nextDate.getDate() + ((reminder.recurrence_interval || 0) * 7));
-        } else if (reminder.recurrence_unit === 'months') {
-          nextDate.setMonth(nextDate.getMonth() + (reminder.recurrence_interval || 0));
-        } else if (reminder.recurrence_unit === 'years') {
-          nextDate.setFullYear(nextDate.getFullYear() + (reminder.recurrence_interval || 0));
-        }
-        
-        const nextDateStr = nextDate.toISOString().split('T')[0];
-        
-        // Update this reminder with the next occurrence date
-        await supabase
-          .from('service_reminders')
-          .update({ next_occurrence_date: nextDateStr, last_occurred_at: today })
-          .eq('id', reminder.id);
-        
-        // Create new reminder instance
-        const newReminder = {
-          ...reminder,
-          id: undefined, // Let DB generate a new ID
-          status: 'pending',
-          due_date: nextDateStr,
-          notification_sent: false,
-          notification_date: null,
-          completed_at: null,
-          completed_by: null,
-          created_at: new Date().toISOString(),
-          parent_reminder_id: reminder.id
-        };
-        
-        await supabase
-          .from('service_reminders')
-          .insert(newReminder);
-          
-      } catch (err) {
-        console.error(`Error processing recurring reminder ${reminder.id}:`, err);
-      }
-    }
-  } catch (error) {
-    console.error("Error processing recurring reminders:", error);
+export const isReminderDueForNotification = (reminder: ServiceReminder): boolean => {
+  if (reminder.status !== 'pending' || reminder.notificationSent) {
+    return false;
   }
+  
+  const dueDate = new Date(reminder.dueDate);
+  const today = new Date();
+  
+  // Set hours/minutes/seconds to 0 for date comparison
+  today.setHours(0, 0, 0, 0);
+  dueDate.setHours(0, 0, 0, 0);
+  
+  // Due today or in the past
+  return dueDate <= today;
 };

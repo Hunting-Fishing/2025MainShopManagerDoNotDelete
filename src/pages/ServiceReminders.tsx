@@ -17,8 +17,8 @@ import { ReminderTemplatesList } from "@/components/reminders/templates/Reminder
 
 export default function ServiceReminders() {
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [priorityFilter, setPriorityFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("reminders");
   
@@ -70,7 +70,7 @@ export default function ServiceReminders() {
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -82,7 +82,7 @@ export default function ServiceReminders() {
                       <SelectValue placeholder="Filter by priority" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Priorities</SelectItem>
+                      <SelectItem value="all">All Priorities</SelectItem>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
@@ -112,9 +112,9 @@ export default function ServiceReminders() {
             </CardHeader>
             <CardContent className="p-0">
               <RemindersList 
-                statusFilter={statusFilter} 
+                statusFilter={statusFilter === "all" ? undefined : statusFilter}
+                priorityFilter={priorityFilter === "all" ? undefined : priorityFilter}
                 dateRange={dateRange}
-                priorityFilter={priorityFilter}
               />
             </CardContent>
           </Card>
