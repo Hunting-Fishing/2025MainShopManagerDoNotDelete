@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -154,8 +153,9 @@ export const EmailAnalyticsDashboard = () => {
                       stroke="#3b82f6" 
                       strokeWidth={2} 
                     />
-                  </ResponsiveContainer>
-                )}
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
