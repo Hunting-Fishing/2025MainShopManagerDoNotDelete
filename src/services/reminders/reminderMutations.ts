@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { ServiceReminder, CreateReminderParams, ReminderStatus } from "@/types/reminder";
+import { ServiceReminder, CreateReminderParams, ReminderStatus, ReminderTag } from "@/types/reminder";
 import { mapReminderToDb, mapReminderFromDb } from "./reminderMapper";
 
 /**
@@ -12,9 +11,9 @@ export const createReminder = async (reminderData: CreateReminderParams): Promis
     const dbData = mapReminderToDb(reminderData);
     
     // Add created_by field if user info is available
-    const user = supabase.auth.getUser();
-    if (user) {
-      dbData.created_by = user.data?.user?.id || 'unknown';
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData?.user) {
+      dbData.created_by = userData.user.id || 'unknown';
     }
     
     // Insert the reminder
@@ -73,9 +72,9 @@ export const updateReminderStatus = async (
       updateData.completed_at = new Date().toISOString();
       
       // Add completed_by if user info is available
-      const user = supabase.auth.getUser();
-      if (user) {
-        updateData.completed_by = user.data?.user?.id || 'unknown';
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        updateData.completed_by = userData.user.id || 'unknown';
       }
     }
     
@@ -122,6 +121,37 @@ export const deleteReminder = async (reminderId: string): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error("Error deleting reminder:", error);
+    throw error;
+  }
+};
+
+/**
+ * Create a new reminder tag
+ * @param tagName Name of the tag to create
+ * @param color Optional color for the tag
+ */
+export const createReminderTag = async (tagName: string, color?: string): Promise<ReminderTag> => {
+  try {
+    const tagData = {
+      name: tagName,
+      color: color || '#' + Math.floor(Math.random()*16777215).toString(16) // Generate random color if not provided
+    };
+    
+    const { data, error } = await supabase
+      .from('reminder_tags')
+      .insert(tagData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      color: data.color
+    };
+  } catch (error) {
+    console.error("Error creating reminder tag:", error);
     throw error;
   }
 };

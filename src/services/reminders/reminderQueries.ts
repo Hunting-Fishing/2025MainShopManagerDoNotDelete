@@ -1,7 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { ServiceReminder, ReminderCategory, ReminderTag } from "@/types/reminder";
+import { ServiceReminder, ReminderCategory, ReminderTag, ReminderTemplate } from "@/types/reminder";
 import { DateRange } from "react-day-picker";
-import { mapReminderFromDb, mapCategoryFromDb } from "./reminderMapper";
+import { mapReminderFromDb, mapCategoryFromDb, mapTemplateFromDb } from "./reminderMapper";
 
 interface ReminderFilters {
   status?: string;
@@ -307,7 +308,7 @@ export const getUpcomingReminders = async (
       ...filters,
       status: filters.status || 'pending',
       sortBy: 'due_date',
-      sortOrder: 'asc',
+      sortOrder: 'asc' as 'asc',
       limit
     };
     
@@ -359,7 +360,7 @@ export const getReminderTags = async (): Promise<ReminderTag[]> => {
 };
 
 // Get reminder templates with optional filters
-export const getReminderTemplates = async () => {
+export const getReminderTemplates = async (): Promise<ReminderTemplate[]> => {
   try {
     const { data, error } = await supabase
       .from('reminder_templates')
@@ -374,7 +375,7 @@ export const getReminderTemplates = async () => {
       throw error;
     }
 
-    return data;
+    return data.map((template: any) => mapTemplateFromDb(template));
   } catch (error) {
     console.error("Error fetching reminder templates:", error);
     throw error;
