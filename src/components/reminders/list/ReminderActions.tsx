@@ -33,14 +33,24 @@ export function ReminderActions({ reminder, onStatusUpdate }: ReminderActionsPro
 
   const handleSendNotification = async (reminderId: string) => {
     try {
-      const updatedReminder = await sendReminderNotification(reminderId);
+      // Send notification and then refetch the updated reminder
+      const success = await sendReminderNotification(reminderId);
       
-      onStatusUpdate(reminderId, updatedReminder);
-      
-      toast({
-        title: "Notification Sent",
-        description: "The service reminder notification has been sent.",
-      });
+      if (success) {
+        // If notification was sent successfully, fetch updated reminder with new status
+        const updatedReminder = await updateReminderStatus(
+          reminderId, 
+          reminder.status, // Keep the same status, just to get updated reminder data
+          reminder.notes
+        );
+        
+        onStatusUpdate(reminderId, updatedReminder);
+        
+        toast({
+          title: "Notification Sent",
+          description: "The service reminder notification has been sent.",
+        });
+      }
     } catch (error) {
       console.error("Error sending notification:", error);
       toast({
