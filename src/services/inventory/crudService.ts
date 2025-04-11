@@ -1,7 +1,9 @@
+
 import { supabase } from "@/lib/supabase";
 import { InventoryItemExtended } from "@/types/inventory";
 import { mapDbItemToInventoryItem, mapInventoryItemToDbFormat, getInventoryStatus } from "./utils";
 import { handleApiError } from "@/utils/errorHandling";
+import { createInventoryTransaction } from "./transactionService";
 
 // Fetch all inventory items
 export async function getAllInventoryItems(): Promise<InventoryItemExtended[]> {
@@ -77,7 +79,19 @@ export async function createInventoryItem(item: Omit<InventoryItemExtended, "id"
 
     if (error) throw error;
 
-    return mapDbItemToInventoryItem(data);
+    const createdItem = mapDbItemToInventoryItem(data);
+    
+    // Create an initial inventory transaction for the item
+    if (item.quantity > 0) {
+      await createInventoryTransaction({
+        inventory_item_id: createdItem.id,
+        transaction_type: "adjustment",
+        quantity: item.quantity,
+        notes: "Initial inventory setup"
+      });
+    }
+
+    return createdItem;
   } catch (error) {
     handleApiError(error, "Failed to create inventory item");
     throw error;
@@ -133,6 +147,33 @@ export async function updateInventoryItem(id: string, updates: Partial<Inventory
 // Delete an inventory item
 export async function deleteInventoryItem(id: string): Promise<void> {
   try {
+    // Check if there are any transactions for this item
+    const { data: transactions, error: transError } = await supabase
+      .from("inventory_transactions")
+      .select("id")
+      .eq("inventory_item_id", id)
+      .limit(1);
+      
+    if (transError) throw transError;
+    
+    if (transactions && transactions.length > 0) {
+      throw new Error("Cannot delete item with existing transactions");
+    }
+    
+    // Check if this item is used in any purchase orders
+    const { data: poItems, error: poError } = await supabase
+      .from("inventory_purchase_order_items")
+      .select("id")
+      .eq("inventory_item_id", id)
+      .limit(1);
+      
+    if (poError) throw poError;
+    
+    if (poItems && poItems.length > 0) {
+      throw new Error("Cannot delete item that is used in purchase orders");
+    }
+    
+    // Proceed with deletion if no dependencies
     const { error } = await supabase
       .from("inventory_items")
       .delete()
@@ -176,6 +217,31 @@ export async function updateInventoryQuantity(itemId: string, quantityChange: nu
 // Clear all inventory items
 export async function clearAllInventoryItems(): Promise<void> {
   try {
+    // First check if there are any dependencies
+    const { data: transactions, error: transError } = await supabase
+      .from("inventory_transactions")
+      .select("id")
+      .limit(1);
+      
+    if (transError) throw transError;
+    
+    if (transactions && transactions.length > 0) {
+      throw new Error("Cannot clear inventory with existing transactions");
+    }
+    
+    // Check for purchase order items
+    const { data: poItems, error: poError } = await supabase
+      .from("inventory_purchase_order_items")
+      .select("id")
+      .limit(1);
+      
+    if (poError) throw poError;
+    
+    if (poItems && poItems.length > 0) {
+      throw new Error("Cannot clear inventory with existing purchase orders");
+    }
+    
+    // Proceed with deletion if no dependencies
     const { error } = await supabase
       .from("inventory_items")
       .delete()
