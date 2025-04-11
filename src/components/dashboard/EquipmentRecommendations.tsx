@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEquipmentRecommendations } from "@/services/dashboardService";
 import { EquipmentRecommendation } from "@/types/dashboard";
-import { Loader2, AlertCircle, Calendar, Tool } from "lucide-react";
+import { Loader2, AlertCircle, Calendar, Wrench } from "lucide-react";
 
 export function EquipmentRecommendations() {
   const [recommendations, setRecommendations] = useState<EquipmentRecommendation[]>([]);
@@ -82,7 +82,7 @@ export function EquipmentRecommendations() {
           ) : (
             recommendations.map((recommendation) => (
               <div key={recommendation.id} className="flex items-start space-x-3 border-b pb-3 last:border-0">
-                <Tool className="h-5 w-5 mt-1 text-slate-500" />
+                <Wrench className="h-5 w-5 mt-1 text-slate-500" />
                 <div className="flex-1">
                   <div className="flex justify-between">
                     <p className="font-medium">{recommendation.name} ({recommendation.model})</p>

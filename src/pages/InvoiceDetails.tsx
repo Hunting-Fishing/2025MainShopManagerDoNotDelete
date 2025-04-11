@@ -1,201 +1,160 @@
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { getInvoiceById } from "@/services/invoiceService";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Invoice } from "@/types/invoice";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { InvoiceView } from "@/components/invoices/InvoiceView";
-import { InvoicePDF } from "@/components/invoices/InvoicePDF";
-import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
-import { SaveAlt, Mail, Print, ArrowLeft } from "lucide-react";
-import { FileIcon } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { fetchInvoiceById } from "@/services/invoiceService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import InvoiceView from "@/components/invoices/InvoiceView";
+import InvoicePDF from "@/components/invoices/InvoicePDF";
+import { saveAs } from "file-saver";
+import { Printer, Download } from "lucide-react";
 import { calculateInvoiceTotals } from "@/utils/invoiceUtils";
 
 export default function InvoiceDetails() {
   const { id } = useParams<{ id: string }>();
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showPdf, setShowPdf] = useState(false);
-  const [pdfReady, setPdfReady] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("view");
+  const [invoice, setInvoice] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchInvoice = async () => {
+    const loadInvoice = async () => {
       if (!id) return;
       
       try {
         setLoading(true);
-        const invoiceData = await getInvoiceById(id);
-        setInvoice(invoiceData);
-        
-        // Add a small delay to ensure the PDF generation works properly
-        setTimeout(() => {
-          setPdfReady(true);
-        }, 500);
-      } catch (error) {
-        console.error("Error fetching invoice:", error);
+        const data = await fetchInvoiceById(id);
+        if (!data) {
+          setError("Invoice not found");
+        } else {
+          // Calculate totals if not present
+          if (!data.subtotal || !data.total) {
+            const totals = calculateInvoiceTotals(data);
+            setInvoice({
+              ...data,
+              subtotal: totals.subtotal,
+              tax: totals.tax,
+              total: totals.total,
+              paymentMethod: data.paymentMethod || "Credit Card"
+            });
+          } else {
+            setInvoice({
+              ...data,
+              paymentMethod: data.paymentMethod || "Credit Card"
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading invoice:', err);
+        setError("Failed to load invoice data");
         toast({
           title: "Error",
-          description: "Could not load invoice details",
-          variant: "destructive"
+          description: "There was a problem loading the invoice.",
+          variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchInvoice();
-  }, [id, toast]);
+    loadInvoice();
+  }, [id]);
 
-  const handleSendInvoice = () => {
-    if (!invoice || !invoice.customerEmail) {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownload = () => {
+    // Placeholder for PDF download functionality
+    // In a real app, this would generate a PDF using a library like react-pdf
+    try {
+      // Create a Blob with invoice data
+      const blob = new Blob(
+        [JSON.stringify(invoice, null, 2)],
+        { type: 'application/json' }
+      );
+      
+      // Use file-saver to download the blob
+      saveAs(blob, `invoice-${invoice.id}.json`);
+      
       toast({
-        title: "Cannot Send Invoice",
-        description: "This invoice doesn't have a customer email address.",
-        variant: "destructive"
+        title: "Invoice Downloaded",
+        description: "The invoice has been downloaded successfully.",
       });
-      return;
+    } catch (err) {
+      console.error('Error downloading invoice:', err);
+      toast({
+        title: "Download Failed",
+        description: "There was a problem downloading the invoice.",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "Invoice Sent",
-      description: `Invoice has been sent to ${invoice.customerEmail}`,
-    });
   };
 
   if (loading) {
     return (
-      <div className="container py-10">
-        <Skeleton className="h-12 w-1/4 mb-6" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-8 w-1/3" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-32 w-full" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-8 w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+      <div className="container py-8 flex items-center justify-center">
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+        <span>Loading invoice...</span>
       </div>
     );
   }
 
-  if (!invoice) {
+  if (error || !invoice) {
     return (
-      <div className="container py-10">
-        <Card>
-          <CardHeader>
-            <CardTitle>Invoice Not Found</CardTitle>
-            <CardDescription>The requested invoice could not be found.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate('/invoices')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Invoices
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Calculate totals
-  const { subtotal, tax, total } = calculateInvoiceTotals(invoice);
-  
-  // Ensure paymentMethod has a default value
-  const invoiceWithDefaults = {
-    ...invoice,
-    subtotal,
-    tax,
-    total,
-    paymentMethod: invoice.paymentMethod || "Not Specified"
-  };
-
-  if (showPdf) {
-    return (
-      <div className="container py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <Button variant="outline" onClick={() => setShowPdf(false)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Invoice
-          </Button>
-
-          {pdfReady && (
-            <PDFDownloadLink
-              document={<InvoicePDF invoice={invoiceWithDefaults} />}
-              fileName={`invoice-${invoice.id}.pdf`}
-            >
-              {({ loading: pdfLoading }) => (
-                <Button disabled={pdfLoading}>
-                  <SaveAlt className="h-4 w-4 mr-2" />
-                  {pdfLoading ? "Preparing PDF..." : "Download PDF"}
-                </Button>
-              )}
-            </PDFDownloadLink>
-          )}
-        </div>
-
-        <Card className="h-[800px]">
-          <PDFViewer width="100%" height="100%" className="border-0">
-            <InvoicePDF invoice={invoiceWithDefaults} />
-          </PDFViewer>
+      <div className="container py-8">
+        <Card className="p-6">
+          <h1 className="text-2xl font-bold mb-4">Invoice Not Found</h1>
+          <p className="text-muted-foreground mb-6">{error || "The requested invoice could not be found."}</p>
+          <Button onClick={() => navigate("/invoices")}>Back to Invoices</Button>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="container py-6">
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center sm:justify-between">
-        <Button variant="outline" onClick={() => navigate('/invoices')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Invoices
-        </Button>
-
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setShowPdf(true)}>
-            <FileIcon className="h-4 w-4 mr-2" />
-            View PDF
-          </Button>
-
-          <Button variant="outline" onClick={() => window.print()}>
-            <Print className="h-4 w-4 mr-2" />
+    <div className="container py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Invoice #{invoice.id}</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>
-
-          <Button onClick={handleSendInvoice}>
-            <Mail className="h-4 w-4 mr-2" />
-            Send Invoice
+          <Button onClick={handleDownload}>
+            <Download className="mr-2 h-4 w-4" />
+            Download
           </Button>
         </div>
       </div>
 
-      <InvoiceView invoice={invoiceWithDefaults} />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="view">View</TabsTrigger>
+          <TabsTrigger value="pdf">PDF Preview</TabsTrigger>
+        </TabsList>
+        <TabsContent value="view">
+          <InvoiceView invoice={invoice} />
+        </TabsContent>
+        <TabsContent value="pdf">
+          <Card className="p-6">
+            <InvoicePDF invoice={invoice} />
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <div className="mt-6 flex space-x-2 justify-end">
+        <Button variant="outline" onClick={() => navigate("/invoices")}>
+          Back to Invoices
+        </Button>
+        <Button variant="outline" onClick={() => navigate(`/invoices/${id}/edit`)}>
+          Edit Invoice
+        </Button>
+      </div>
     </div>
   );
 }
