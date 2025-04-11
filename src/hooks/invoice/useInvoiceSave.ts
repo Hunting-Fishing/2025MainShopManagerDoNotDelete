@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { Invoice } from "@/types/invoice";
+import { Invoice, StaffMember } from "@/types/invoice";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthUser } from '@/hooks/useAuthUser';
 
@@ -16,7 +16,7 @@ export function useInvoiceSave() {
   const handleSaveInvoice = async (
     invoice: Invoice, 
     items: any[], 
-    assignedStaff: string[], 
+    assignedStaff: StaffMember[], 
     subtotal: number, 
     tax: number, 
     total: number,
@@ -86,11 +86,13 @@ export function useInvoiceSave() {
         if (itemsError) throw itemsError;
       }
       
-      // Add assigned staff
+      // Add assigned staff - now using StaffMember objects
       if (assignedStaff && assignedStaff.length > 0) {
         const staffEntries = assignedStaff.map(staff => ({
           invoice_id: invoice.id,
-          staff_name: staff
+          staff_id: staff.id,
+          staff_name: staff.name,
+          staff_role: staff.role || null
         }));
         
         const { error: staffError } = await supabase
