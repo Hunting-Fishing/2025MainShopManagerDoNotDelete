@@ -291,6 +291,63 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_segment_performance: {
+        Row: {
+          campaign_id: string
+          clicks_count: number
+          conversions_count: number
+          created_at: string
+          id: string
+          metrics: Json | null
+          opens_count: number
+          recipients_count: number
+          revenue: number | null
+          segment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          clicks_count?: number
+          conversions_count?: number
+          created_at?: string
+          id?: string
+          metrics?: Json | null
+          opens_count?: number
+          recipients_count?: number
+          revenue?: number | null
+          segment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          clicks_count?: number
+          conversions_count?: number
+          created_at?: string
+          id?: string
+          metrics?: Json | null
+          opens_count?: number
+          recipients_count?: number
+          revenue?: number | null
+          segment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_segment_performance_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_segment_performance_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           cart_id: string
@@ -1125,6 +1182,57 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_touchpoints: {
+        Row: {
+          action: string
+          campaign_id: string | null
+          channel: string
+          created_at: string
+          customer_id: string
+          id: string
+          metadata: Json | null
+          occurred_at: string
+          touchpoint_type: string
+        }
+        Insert: {
+          action: string
+          campaign_id?: string | null
+          channel: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          touchpoint_type: string
+        }
+        Update: {
+          action?: string
+          campaign_id?: string | null
+          channel?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          touchpoint_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_touchpoints_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_touchpoints_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -1339,6 +1447,65 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "customer_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_ab_test_results: {
+        Row: {
+          campaign_id: string
+          clicks_count: number
+          confidence_level: number | null
+          conversions_count: number
+          created_at: string
+          id: string
+          is_winner: boolean | null
+          metrics: Json | null
+          opens_count: number
+          recipients_count: number
+          revenue: number | null
+          updated_at: string
+          variant_id: string
+          variant_name: string
+        }
+        Insert: {
+          campaign_id: string
+          clicks_count?: number
+          confidence_level?: number | null
+          conversions_count?: number
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          metrics?: Json | null
+          opens_count?: number
+          recipients_count?: number
+          revenue?: number | null
+          updated_at?: string
+          variant_id: string
+          variant_name: string
+        }
+        Update: {
+          campaign_id?: string
+          clicks_count?: number
+          confidence_level?: number | null
+          conversions_count?: number
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          metrics?: Json | null
+          opens_count?: number
+          recipients_count?: number
+          revenue?: number | null
+          updated_at?: string
+          variant_id?: string
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_ab_test_results_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
             referencedColumns: ["id"]
           },
         ]
@@ -3689,6 +3856,207 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketing_assets: {
+        Row: {
+          asset_type: string
+          content: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_path: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          asset_type: string
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          asset_type?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketing_automation_executions: {
+        Row: {
+          customer_id: string | null
+          executed_at: string
+          execution_details: Json | null
+          execution_status: string
+          id: string
+          rule_id: string
+          triggered_by: string | null
+        }
+        Insert: {
+          customer_id?: string | null
+          executed_at?: string
+          execution_details?: Json | null
+          execution_status?: string
+          id?: string
+          rule_id: string
+          triggered_by?: string | null
+        }
+        Update: {
+          customer_id?: string | null
+          executed_at?: string
+          execution_details?: Json | null
+          execution_status?: string
+          id?: string
+          rule_id?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_automation_executions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_automation_executions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_automation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_automation_rules: {
+        Row: {
+          action_details: Json
+          action_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          trigger_criteria: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          action_details: Json
+          action_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          trigger_criteria: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          action_details?: Json
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          trigger_criteria?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketing_segment_members: {
+        Row: {
+          added_at: string
+          customer_id: string
+          id: string
+          score: number | null
+          segment_id: string
+        }
+        Insert: {
+          added_at?: string
+          customer_id: string
+          id?: string
+          score?: number | null
+          segment_id: string
+        }
+        Update: {
+          added_at?: string
+          customer_id?: string
+          id?: string
+          score?: number | null
+          segment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_segment_members_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_segment_members_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_segments: {
+        Row: {
+          created_at: string
+          criteria: Json
+          description: string | null
+          id: string
+          is_dynamic: boolean
+          last_calculated_at: string | null
+          name: string
+          segment_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          id?: string
+          is_dynamic?: boolean
+          last_calculated_at?: string | null
+          name: string
+          segment_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          id?: string
+          is_dynamic?: boolean
+          last_calculated_at?: string | null
+          name?: string
+          segment_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_settings: {
         Row: {

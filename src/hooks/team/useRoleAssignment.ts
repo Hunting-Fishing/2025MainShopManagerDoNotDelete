@@ -1,148 +1,92 @@
 
-import { useState, useCallback } from 'react';
-import { assignRoleToUser, findRoleByName, detectRoleFromJobTitle } from '@/utils/roleUtils';
-import { recordTeamMemberHistory } from '@/utils/team/history';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { recordTeamMemberHistory } from '@/utils/team/history/recordHistory';
 
-/**
- * Hook for handling role assignments
- */
-export function useRoleAssignment() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [detectedRole, setDetectedRole] = useState<string | null>(null);
-
-  /**
-   * Find a user's current role for history tracking
-   */
-  const findUserCurrentRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          role_id,
-          roles:role_id(
-            id,
-            name
-          )
-        `)
-        .eq('user_id', userId);
-        
-      if (error) {
-        console.error("Error finding current role:", error);
-      }
-      
-      return { data, error };
-    } catch (err) {
-      console.error('Error finding current role:', err);
-      return { data: null, error: err };
-    }
-  };
-
-  /**
-   * Assigns a role to a user
-   */
-  const assignRole = useCallback(async (
-    userId: string,
-    roleName: string,
-    jobTitle?: string
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      console.log(`Assigning role "${roleName}" to user ${userId}`);
-      
-      // Get previous role for history tracking
-      const { data: previousRoles } = await findUserCurrentRole(userId);
-      const previousRole = previousRoles?.length > 0 ? previousRoles[0].roles.name : null;
-      
-      // Find the role by name
-      const { roleId, error: findError } = await findRoleByName(roleName);
-      
-      if (findError || !roleId) {
-        throw new Error(findError || `Role "${roleName}" not found`);
-      }
-      
-      // Assign the role to the user - this function handles duplicate checks
-      const result = await assignRoleToUser(userId, roleId);
-      
-      if (result.success) {
-        console.log(`Successfully assigned role "${roleName}" to user ${userId}`);
-        
-        // Get user info to include in history record
-        const { data: { user } } = await supabase.auth.getUser();
-        const currentUserId = user?.id || 'system';
-        
-        // Get user name from profiles for better history display
-        const { data: userData } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', currentUserId)
-          .single();
-          
-        const userName = userData ? 
-          `${userData.first_name || ''} ${userData.last_name || ''}`.trim() : 
-          'System';
-        
-        // Record the role change in history
-        await recordTeamMemberHistory({
-          profile_id: userId,
-          action_type: 'role_change',
-          action_by: currentUserId,
-          action_by_name: userName,
-          details: {
-            from: previousRole,
-            to: roleName,
-            timestamp: new Date().toISOString()
-          }
-        });
-        
-        console.log('Role change recorded in history');
-      } else {
-        console.error(`Failed to assign role: ${result.message}`);
-      }
-      
-      return result;
-    } catch (err) {
-      console.error('Error assigning role:', err);
-      
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
-      
-      return {
-        success: false,
-        message: errorMessage
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  /**
-   * Detect a role from a job title
-   */
-  const detectRole = useCallback((jobTitle: string) => {
-    try {
-      const detected = detectRoleFromJobTitle(jobTitle);
-      setDetectedRole(detected);
-      return detected;
-    } catch (err) {
-      console.error('Error detecting role:', err);
-      return null;
-    }
-  }, []);
-
-  return {
-    assignRole,
-    detectRole,
-    isLoading,
-    error,
-    detectedRole,
-    resetState: useCallback(() => {
-      setError(null);
-      setDetectedRole(null);
-    }, [])
-  };
+interface RoleAssignmentProps {
+  currentUserName: string;
+  currentUserId: string;
 }
+
+export const useRoleAssignment = ({ currentUserName, currentUserId }: RoleAssignmentProps) => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const assignRole = async (userId: string, roleId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('assign_role_to_user', {
+        user_id_param: userId,
+        role_id_param: roleId,
+      });
+      
+      if (error) throw error;
+      
+      // Record the action in history
+      await recordTeamMemberHistory({
+        profile_id: userId,
+        action_type: 'role_assigned',
+        action_by: currentUserId,
+        action_by_name: currentUserName,
+        details: { role_id: roleId }
+      });
+      
+      toast({
+        title: "Role assigned successfully",
+        description: "The user's role has been updated.",
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Error assigning role:", error);
+      toast({
+        title: "Error assigning role",
+        description: error.message || "An error occurred while assigning the role.",
+        variant: "destructive",
+      });
+      return { success: false, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const removeRole = async (userRoleId: string, userId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('remove_role_from_user', {
+        user_role_id_param: userRoleId,
+      });
+      
+      if (error) throw error;
+      
+      // Record the action in history
+      await recordTeamMemberHistory({
+        profile_id: userId,
+        action_type: 'role_removed',
+        action_by: currentUserId,
+        action_by_name: currentUserName,
+        details: { user_role_id: userRoleId }
+      });
+      
+      toast({
+        title: "Role removed successfully",
+        description: "The user's role has been updated.",
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Error removing role:", error);
+      toast({
+        title: "Error removing role",
+        description: error.message || "An error occurred while removing the role.",
+        variant: "destructive",
+      });
+      return { success: false, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { assignRole, removeRole, loading };
+};

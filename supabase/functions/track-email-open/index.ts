@@ -10,13 +10,13 @@ serve(async (req) => {
     const recipientId = url.searchParams.get("r");
     const variantId = url.searchParams.get("v");
     
-    if (!trackingId || !campaignId || !recipientId) {
+    if (!trackingId || !campaignId) {
       return new Response("Invalid tracking parameters", { status: 400 });
     }
     
-    console.log(`Email opened: tracking_id=${trackingId}, campaign=${campaignId}, recipient=${recipientId}, variant=${variantId || 'none'}`);
+    console.log(`Email open tracked: tracking_id=${trackingId}, campaign=${campaignId}, recipient=${recipientId || 'unknown'}, variant=${variantId || 'none'}`);
     
-    // Record the open event
+    // Record the open event in the email_events table
     const { error: eventError } = await req.supabaseClient
       .from("email_events")
       .insert({
@@ -81,9 +81,9 @@ serve(async (req) => {
       0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
       0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04, 0x01, 0x00,
       0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
-      0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b
+      0x00, 0x02, 0x01, 0x44, 0x00, 0x3b
     ]);
-    
+
     return new Response(transparentPixel, {
       headers: {
         "Content-Type": "image/gif",
@@ -95,14 +95,14 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error processing email open:", error);
     
-    // Still return the pixel to avoid errors in the email client
+    // Return a transparent pixel even if there was an error
     const transparentPixel = new Uint8Array([
       0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
       0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04, 0x01, 0x00,
       0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
-      0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b
+      0x00, 0x02, 0x01, 0x44, 0x00, 0x3b
     ]);
-    
+
     return new Response(transparentPixel, {
       headers: {
         "Content-Type": "image/gif",
