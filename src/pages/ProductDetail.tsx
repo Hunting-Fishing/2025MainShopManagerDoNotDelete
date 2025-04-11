@@ -134,27 +134,6 @@ export default function ProductDetail() {
     }
   };
 
-  const renderStarRating = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={`full-${i}`} className="fill-yellow-400 text-yellow-400" />);
-    }
-    
-    if (hasHalfStar) {
-      stars.push(<StarHalf key="half" className="fill-yellow-400 text-yellow-400" />);
-    }
-    
-    const emptyStars = 5 - stars.length;
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<Star key={`empty-${i}`} className="text-gray-300" />);
-    }
-    
-    return stars;
-  };
-
   if (isLoading) {
     return (
       <ResponsiveContainer className="py-6">
@@ -309,14 +288,12 @@ export default function ProductDetail() {
               </div>
               
               <div className="flex gap-2 flex-grow">
-                <Button 
-                  onClick={handleAddToCart}
-                  disabled={isAddingToCart || inventoryStatus === 'Out of Stock'} 
+                <AddToCartButton 
+                  productId={product.id}
+                  quantity={quantity}
+                  disabled={inventoryStatus === 'Out of Stock'}
                   className="flex-grow"
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  {isAddingToCart ? "Adding..." : "Add to Cart"}
-                </Button>
+                />
                 
                 <Button 
                   variant="outline" 
@@ -403,4 +380,3 @@ const renderStarRating = (rating: number) => {
   
   return stars;
 };
-

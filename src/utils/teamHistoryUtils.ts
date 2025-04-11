@@ -11,8 +11,45 @@ export interface TeamMemberHistoryRecord {
   details: any;
 }
 
-// Fetch team member history records for a single profile
-export async function fetchTeamMemberHistory(profileId: string): Promise<TeamMemberHistoryRecord[]> {
+/**
+ * Records a history event for a team member
+ */
+export const recordTeamMemberHistory = async (data: {
+  profile_id: string;
+  action_type: string;
+  action_by: string;
+  action_by_name?: string;
+  details: any;
+}): Promise<TeamMemberHistoryRecord | null> => {
+  try {
+    const { data: historyRecord, error } = await supabase
+      .from('team_member_history')
+      .insert({
+        profile_id: data.profile_id,
+        action_type: data.action_type,
+        action_by: data.action_by,
+        action_by_name: data.action_by_name,
+        details: data.details
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error recording team member history:", error);
+      return null;
+    }
+    
+    return historyRecord;
+  } catch (err) {
+    console.error("Exception recording team member history:", err);
+    return null;
+  }
+};
+
+/**
+ * Fetches history records for a specific team member
+ */
+export const fetchTeamMemberHistory = async (profileId: string): Promise<TeamMemberHistoryRecord[]> => {
   try {
     const { data, error } = await supabase
       .from('team_member_history')
@@ -20,96 +57,72 @@ export async function fetchTeamMemberHistory(profileId: string): Promise<TeamMem
       .eq('profile_id', profileId)
       .order('timestamp', { ascending: false });
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching team member history:", error);
+      return [];
+    }
     
     return data || [];
-  } catch (error) {
-    console.error('Error fetching team member history:', error);
+  } catch (err) {
+    console.error("Exception fetching team member history:", err);
     return [];
   }
-}
+};
 
-// Fetch all team member history records
-export async function fetchAllTeamHistory(): Promise<TeamMemberHistoryRecord[]> {
+/**
+ * Fetches all team history records
+ */
+export const fetchAllTeamHistory = async (): Promise<TeamMemberHistoryRecord[]> => {
   try {
     const { data, error } = await supabase
       .from('team_member_history')
       .select('*')
       .order('timestamp', { ascending: false });
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching all team history:", error);
+      return [];
+    }
     
     return data || [];
-  } catch (error) {
-    console.error('Error fetching all team history:', error);
+  } catch (err) {
+    console.error("Exception fetching all team history:", err);
     return [];
   }
-}
+};
 
-// Record a new team member history entry
-export async function recordTeamMemberHistory({
-  profile_id,
-  action_type,
-  action_by,
-  action_by_name,
-  details = {}
-}: {
-  profile_id: string;
-  action_type: string;
-  action_by: string;
-  action_by_name?: string;
-  details?: Record<string, any>;
-}): Promise<string | null> {
+/**
+ * Formats a history record for display
+ */
+export const formatHistoryRecord = (record: TeamMemberHistoryRecord): string => {
   try {
-    const { data, error } = await supabase
-      .from('team_member_history')
-      .insert({
-        profile_id,
-        action_type,
-        action_by,
-        action_by_name,
-        details
-      })
-      .select('id')
-      .single();
+    switch (record.action_type) {
+      case 'creation':
+        return `Team member was created${record.action_by_name ? ' by ' + record.action_by_name : ''}.`;
       
-    if (error) throw error;
-    
-    return data?.id || null;
+      case 'update':
+        if (record.details?.fields) {
+          const fields = Array.isArray(record.details.fields) 
+            ? record.details.fields.join(', ') 
+            : record.details.fields;
+          return `Profile updated: ${fields}${record.action_by_name ? ' by ' + record.action_by_name : ''}.`;
+        }
+        return `Profile was updated${record.action_by_name ? ' by ' + record.action_by_name : ''}.`;
+      
+      case 'role_change':
+        return `Role changed from "${record.details?.previous_role || 'None'}" to "${record.details?.new_role}"${record.action_by_name ? ' by ' + record.action_by_name : ''}.`;
+      
+      case 'status_change':
+        return `Status changed from "${record.details?.previous_status || 'Active'}" to "${record.details?.new_status}"${record.action_by_name ? ' by ' + record.action_by_name : ''}.`;
+      
+      case 'deletion':
+        return `Team member was removed${record.action_by_name ? ' by ' + record.action_by_name : ''}.`;
+        
+      default:
+        return `${record.action_type.replace('_', ' ')} action performed${record.action_by_name ? ' by ' + record.action_by_name : ''}.`;
+    }
   } catch (error) {
-    console.error('Error recording team member history:', error);
-    return null;
+    console.error('Error formatting history record:', error);
+    return 'Action details unavailable';
   }
-}
-
-// Format history record for display
-export function formatHistoryRecord(record: TeamMemberHistoryRecord): string {
-  const date = new Date(record.timestamp).toLocaleDateString();
-  const time = new Date(record.timestamp).toLocaleTimeString();
-  
-  let message = `${date} at ${time}`;
-  
-  if (record.action_by_name) {
-    message += ` by ${record.action_by_name}`;
-  }
-  
-  // Add specific details based on action type
-  if (record.action_type === 'role_change') {
-    const { from, to } = record.details || {};
-    message += `: Role changed from ${from || 'None'} to ${to || 'None'}`;
-  } else if (record.action_type === 'profile_update') {
-    message += `: Profile information updated`;
-  } else if (record.action_type === 'permission_change') {
-    message += `: Permissions were modified`;
-  } else if (record.action_type === 'account_created') {
-    message += `: Account was created`;
-  } else if (record.action_type === 'status_change') {
-    const { from, to } = record.details || {};
-    message += `: Status changed from ${from || 'Active'} to ${to || 'Inactive'}`;
-  } else {
-    // Generic message for other action types
-    message += `: ${record.action_type.replace(/_/g, ' ')}`;
-  }
-  
-  return message;
-}
+};

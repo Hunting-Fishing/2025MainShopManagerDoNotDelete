@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -43,7 +44,7 @@ export function useAuthUser(): UseAuthUserResult {
           // Fetch user profile to get name
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('first_name, last_name')
+            .select('first_name, last_name, department, job_title')
             .eq('id', session.user.id)
             .single();
             
@@ -57,7 +58,7 @@ export function useAuthUser(): UseAuthUserResult {
             setUserName(session.user.email?.split('@')[0] || 'User');
           }
           
-          // Check if user has admin role
+          // Check if user has admin role - using the proper table join
           const { data: roleData } = await supabase
             .from('user_roles')
             .select('roles:role_id(name)')
@@ -91,7 +92,7 @@ export function useAuthUser(): UseAuthUserResult {
               // Fetch user profile for name on sign in
               const { data: profileData } = await supabase
                 .from('profiles')
-                .select('first_name, last_name')
+                .select('first_name, last_name, department, job_title')
                 .eq('id', newSession.user.id)
                 .single();
                 
@@ -104,7 +105,7 @@ export function useAuthUser(): UseAuthUserResult {
                 setUserName(newSession.user.email?.split('@')[0] || 'User');
               }
               
-              // Check admin status on sign in
+              // Check admin status on sign in - using the proper table join
               const { data: roleData } = await supabase
                 .from('user_roles')
                 .select('roles:role_id(name)')
@@ -152,6 +153,7 @@ export function useAuthUser(): UseAuthUserResult {
     loading: isLoading, // Alias for backward compatibility
     isAuthenticated: !!userId,
     isAdmin,
-    error
+    error,
+    user: userId ? { id: userId, email: userEmail, name: userName } : null // For backward compatibility
   };
 }

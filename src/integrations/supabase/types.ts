@@ -1224,6 +1224,30 @@ export type Database = {
           },
         ]
       }
+      departments: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       document_categories: {
         Row: {
           created_at: string
@@ -4473,6 +4497,7 @@ export type Database = {
         Row: {
           created_at: string
           department: string | null
+          department_id: string | null
           email: string
           first_name: string | null
           id: string
@@ -4485,6 +4510,7 @@ export type Database = {
         Insert: {
           created_at?: string
           department?: string | null
+          department_id?: string | null
           email: string
           first_name?: string | null
           id: string
@@ -4497,6 +4523,7 @@ export type Database = {
         Update: {
           created_at?: string
           department?: string | null
+          department_id?: string | null
           email?: string
           first_name?: string | null
           id?: string
@@ -4507,6 +4534,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_shop_id_fkey"
             columns: ["shop_id"]
@@ -4773,6 +4807,55 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "reminder_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["role_action_type"]
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          profile_id: string | null
+          role_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["role_action_type"]
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          profile_id?: string | null
+          role_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["role_action_type"]
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          profile_id?: string | null
+          role_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_audit_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_audit_log_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
             referencedColumns: ["id"]
           },
         ]
@@ -5473,6 +5556,120 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "team_member_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          profile_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          profile_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          profile_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_notifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_schedules: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          profile_id: string | null
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          profile_id?: string | null
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          profile_id?: string | null
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_schedules_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_skills: {
+        Row: {
+          certification_date: string | null
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          profile_id: string | null
+          skill_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          certification_date?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          profile_id?: string | null
+          skill_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          certification_date?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          profile_id?: string | null
+          skill_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_skills_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -6346,6 +6543,7 @@ export type Database = {
         | "appointments"
         | "reports"
         | "customers"
+      role_action_type: "added" | "removed" | "modified"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6496,6 +6694,7 @@ export const Constants = {
         "reports",
         "customers",
       ],
+      role_action_type: ["added", "removed", "modified"],
     },
   },
 } as const
