@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Bell, CheckCircle2, ChevronRight } from "lucide-react";
 import { ServiceReminder, ReminderStatus } from "@/types/reminder";
-import { updateReminderStatus, sendReminderNotification } from "@/services/reminderService";
+import { updateReminderStatus, sendReminderNotifications } from "@/services/reminderService";
 import { toast } from "@/hooks/use-toast";
 
 interface ReminderActionsProps {
@@ -33,24 +33,23 @@ export function ReminderActions({ reminder, onStatusUpdate }: ReminderActionsPro
 
   const handleSendNotification = async (reminderId: string) => {
     try {
-      // Send notification and then refetch the updated reminder
-      const success = await sendReminderNotification(reminderId);
+      // Since we're using the sendReminderNotifications function which handles multiple reminders,
+      // we'll need to adapt our approach here
+      await sendReminderNotifications();
       
-      if (success) {
-        // If notification was sent successfully, fetch updated reminder with new status
-        const updatedReminder = await updateReminderStatus(
-          reminderId, 
-          reminder.status, // Keep the same status, just to get updated reminder data
-          reminder.notes
-        );
-        
-        onStatusUpdate(reminderId, updatedReminder);
-        
-        toast({
-          title: "Notification Sent",
-          description: "The service reminder notification has been sent.",
-        });
-      }
+      // After sending the notification, fetch the updated reminder
+      const updatedReminder = await updateReminderStatus(
+        reminderId, 
+        reminder.status, // Keep the same status, just to get updated reminder data
+        reminder.notes
+      );
+      
+      onStatusUpdate(reminderId, updatedReminder);
+      
+      toast({
+        title: "Notification Sent",
+        description: "The service reminder notification has been sent.",
+      });
     } catch (error) {
       console.error("Error sending notification:", error);
       toast({
