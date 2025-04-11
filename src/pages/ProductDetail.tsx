@@ -191,7 +191,7 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Image */}
         <div className="bg-white rounded-lg overflow-hidden shadow-sm">
-          {product.image_url ? (
+          {product?.image_url ? (
             <img 
               src={product.image_url} 
               alt={product.title} 
@@ -207,20 +207,20 @@ export default function ProductDetail() {
         {/* Product Info */}
         <div className="flex flex-col">
           <div>
-            {product.product_type === 'suggested' && (
+            {product?.product_type === 'suggested' && (
               <Badge variant="outline" className="mb-2 bg-purple-50 text-purple-700 border-purple-200">
                 Community Suggested
               </Badge>
             )}
-            {product.is_bestseller && (
+            {product?.is_bestseller && (
               <Badge variant="secondary" className="mb-2 mr-2 bg-amber-50 text-amber-700 border-amber-200">
                 Bestseller
               </Badge>
             )}
-            <h1 className="text-3xl font-bold">{product.title}</h1>
+            <h1 className="text-3xl font-bold">{product?.title}</h1>
             
             {/* Rating */}
-            {product.average_rating > 0 && (
+            {product?.average_rating > 0 && (
               <div className="flex items-center mt-2">
                 <div className="flex mr-2">
                   {renderStarRating(product.average_rating)}
@@ -233,7 +233,7 @@ export default function ProductDetail() {
             
             {/* Price */}
             <div className="mt-4">
-              {product.sale_price ? (
+              {product?.sale_price ? (
                 <div className="flex items-center">
                   <span className="text-2xl font-bold text-green-600 mr-2">
                     {formatCurrency(product.sale_price)}
@@ -244,7 +244,7 @@ export default function ProductDetail() {
                 </div>
               ) : (
                 <span className="text-2xl font-bold">
-                  {formatCurrency(product.price || 0)}
+                  {formatCurrency(product?.price || 0)}
                 </span>
               )}
             </div>
@@ -265,21 +265,21 @@ export default function ProductDetail() {
             
             {/* Description */}
             <div className="mt-4 text-gray-700">
-              <p>{product.description}</p>
+              <p>{product?.description}</p>
             </div>
 
             {/* Additional Product Info */}
-            {(product.sku || product.weight || product.dimensions) && (
+            {(product?.sku || product?.weight || product?.dimensions) && (
               <div className="mt-6 border-t pt-4">
                 <h3 className="font-medium mb-2">Product Specifications</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {product.sku && (
+                  {product?.sku && (
                     <>
                       <div className="text-muted-foreground">SKU:</div>
                       <div>{product.sku}</div>
                     </>
                   )}
-                  {product.weight && (
+                  {product?.weight && (
                     <>
                       <div className="text-muted-foreground">Weight:</div>
                       <div>{product.weight} kg</div>
@@ -344,9 +344,9 @@ export default function ProductDetail() {
             <CardContent className="pt-6">
               <div className="prose max-w-none">
                 <h3>Product Details</h3>
-                <p>{product.description}</p>
+                <p>{product?.description}</p>
                 
-                {product.suggestion_reason && (
+                {product?.suggestion_reason && (
                   <>
                     <h4>Why This Product Was Suggested</h4>
                     <p>{product.suggestion_reason}</p>
@@ -370,7 +370,7 @@ export default function ProductDetail() {
                 <div className="text-center py-8">
                   <h3 className="text-lg font-medium">No Reviews Yet</h3>
                   <p className="text-muted-foreground mt-1">Be the first to review this product!</p>
-                  {user && (
+                  {isAuthenticated && (
                     <Button className="mt-4">Write a Review</Button>
                   )}
                 </div>
@@ -382,3 +382,25 @@ export default function ProductDetail() {
     </ResponsiveContainer>
   );
 }
+
+const renderStarRating = (rating: number) => {
+  const stars = [];
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  
+  for (let i = 0; i < fullStars; i++) {
+    stars.push(<Star key={`full-${i}`} className="fill-yellow-400 text-yellow-400" />);
+  }
+  
+  if (hasHalfStar) {
+    stars.push(<StarHalf key="half" className="fill-yellow-400 text-yellow-400" />);
+  }
+  
+  const emptyStars = 5 - stars.length;
+  for (let i = 0; i < emptyStars; i++) {
+    stars.push(<Star key={`empty-${i}`} className="text-gray-300" />);
+  }
+  
+  return stars;
+};
+
