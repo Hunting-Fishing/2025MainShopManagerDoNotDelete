@@ -46,14 +46,22 @@ export function useFetchUserRoles() {
       }
       
       // Convert to proper format with single role object
-      const userRoles: UserRole[] = userRolesData.map(item => ({
-        user_id: item.user_id,
-        role_id: item.role_id,
-        roles: {
-          id: item.roles && typeof item.roles === 'object' ? item.roles.id || '' : '',
-          name: item.roles && typeof item.roles === 'object' ? item.roles.name || '' : ''
-        }
-      }));
+      const userRoles: UserRole[] = userRolesData.map(item => {
+        // Check if roles exists and is an object (not an array)
+        const roleObject = item.roles && 
+          typeof item.roles === 'object' && 
+          !Array.isArray(item.roles) ? 
+          item.roles : { id: '', name: '' };
+          
+        return {
+          user_id: item.user_id,
+          role_id: item.role_id,
+          roles: {
+            id: roleObject.id || '',
+            name: roleObject.name || ''
+          }
+        };
+      });
 
       return userRoles;
     } catch (err) {
