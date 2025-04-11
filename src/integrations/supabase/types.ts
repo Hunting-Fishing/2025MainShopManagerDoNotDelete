@@ -1865,6 +1865,136 @@ export type Database = {
         }
         Relationships: []
       }
+      form_conditional_rules: {
+        Row: {
+          condition_field_id: string
+          condition_operator: string
+          condition_type: string
+          condition_value: string
+          created_at: string | null
+          form_field_id: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          condition_field_id: string
+          condition_operator: string
+          condition_type: string
+          condition_value: string
+          created_at?: string | null
+          form_field_id: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          condition_field_id?: string
+          condition_operator?: string
+          condition_type?: string
+          condition_value?: string
+          created_at?: string | null
+          form_field_id?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_conditional_rules_condition_field_id_fkey"
+            columns: ["condition_field_id"]
+            isOneToOne: false
+            referencedRelation: "form_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_conditional_rules_form_field_id_fkey"
+            columns: ["form_field_id"]
+            isOneToOne: false
+            referencedRelation: "form_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_drafts: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          draft_data: Json
+          expires_at: string | null
+          id: string
+          template_id: string
+          updated_at: string | null
+          user_id: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          draft_data: Json
+          expires_at?: string | null
+          id?: string
+          template_id: string
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          draft_data?: Json
+          expires_at?: string | null
+          id?: string
+          template_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_drafts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_field_options: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          field_id: string
+          id: string
+          label: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order: number
+          field_id: string
+          id?: string
+          label: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          field_id?: string
+          id?: string
+          label?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_field_options_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "form_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_fields: {
         Row: {
           created_at: string | null
@@ -1959,6 +2089,41 @@ export type Database = {
           },
         ]
       }
+      form_submission_metadata: {
+        Row: {
+          browser_info: Json | null
+          completed_time: number | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          submission_id: string
+        }
+        Insert: {
+          browser_info?: Json | null
+          completed_time?: number | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          submission_id: string
+        }
+        Update: {
+          browser_info?: Json | null
+          completed_time?: number | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submission_metadata_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_submissions: {
         Row: {
           created_at: string | null
@@ -1993,6 +2158,162 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "form_submissions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_template_permissions: {
+        Row: {
+          can_delete: boolean | null
+          can_edit: boolean | null
+          can_view: boolean | null
+          created_at: string | null
+          id: string
+          role_id: string | null
+          template_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_view?: boolean | null
+          created_at?: string | null
+          id?: string
+          role_id?: string | null
+          template_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_view?: boolean | null
+          created_at?: string | null
+          id?: string
+          role_id?: string | null
+          template_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_template_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_template_permissions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_template_stats: {
+        Row: {
+          avg_completion_time: number | null
+          completion_rate: number | null
+          created_at: string | null
+          id: string
+          last_used: string | null
+          template_id: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          avg_completion_time?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          id?: string
+          last_used?: string | null
+          template_id: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          avg_completion_time?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          id?: string
+          last_used?: string | null
+          template_id?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_template_stats_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_template_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          tag: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          tag: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          tag?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_template_tags_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_template_versions: {
+        Row: {
+          content: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_current: boolean | null
+          template_id: string
+          version_number: number
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_current?: boolean | null
+          template_id: string
+          version_number: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_current?: boolean | null
+          template_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_template_versions_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "form_templates"
