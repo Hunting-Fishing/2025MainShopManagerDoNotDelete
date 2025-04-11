@@ -5,21 +5,22 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { createReminder } from "@/services/reminderService";
-import { ReminderType, CreateReminderParams } from "@/types/reminder";
-import { reminderFormSchema, ReminderFormValues } from "../schemas/reminderFormSchema";
+import { ReminderType, ReminderPriority, RecurrenceUnit, ReminderCategory, CreateReminderParams } from "@/types/reminder";
+import { reminderFormSchemaWithValidation, ReminderFormValues } from "../schemas/reminderFormSchema";
 
 interface UseReminderFormProps {
   customerId?: string;
   vehicleId?: string;
   onSuccess?: () => void;
+  categories?: ReminderCategory[];
 }
 
-export function useReminderForm({ customerId, vehicleId, onSuccess }: UseReminderFormProps) {
+export function useReminderForm({ customerId, vehicleId, onSuccess, categories = [] }: UseReminderFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize the form with default values
   const form = useForm<ReminderFormValues>({
-    resolver: zodResolver(reminderFormSchema),
+    resolver: zodResolver(reminderFormSchemaWithValidation),
     defaultValues: {
       customerId: customerId || "",
       vehicleId: vehicleId || "",
@@ -27,10 +28,24 @@ export function useReminderForm({ customerId, vehicleId, onSuccess }: UseReminde
       title: "",
       description: "",
       notes: "",
+      priority: "medium",
+      isRecurring: false,
+      tagIds: [],
+      categories,
     },
   });
 
   const onSubmit = async (values: ReminderFormValues) => {
+    // Validate recurring fields if recurring is enabled
+    if (values.isRecurring && (!values.recurrenceInterval || !values.recurrenceUnit)) {
+      toast({
+        title: "Validation Error",
+        description: "Recurrence interval and unit are required for recurring reminders.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       const formattedDate = format(values.dueDate, "yyyy-MM-dd");
@@ -43,6 +58,16 @@ export function useReminderForm({ customerId, vehicleId, onSuccess }: UseReminde
         description: values.description,
         dueDate: formattedDate,
         notes: values.notes,
+        
+        // New advanced properties
+        priority: values.priority as ReminderPriority,
+        categoryId: values.categoryId,
+        assignedTo: values.assignedTo,
+        templateId: values.templateId,
+        isRecurring: values.isRecurring,
+        recurrenceInterval: values.recurrenceInterval,
+        recurrenceUnit: values.recurrenceUnit as RecurrenceUnit | undefined,
+        tagIds: values.tagIds,
       };
       
       await createReminder(reminderParams);

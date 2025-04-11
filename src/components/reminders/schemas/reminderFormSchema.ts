@@ -1,6 +1,6 @@
 
 import { z } from "zod";
-import { ReminderType } from "@/types/reminder";
+import { ReminderType, ReminderPriority, RecurrenceUnit, ReminderCategory } from "@/types/reminder";
 
 // Schema for reminder form validation
 export const reminderFormSchema = z.object({
@@ -21,6 +21,31 @@ export const reminderFormSchema = z.object({
     required_error: "Due date is required",
   }),
   notes: z.string().optional(),
+  
+  // New advanced properties
+  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+  categoryId: z.string().optional(),
+  categories: z.array(z.any()).optional(), // For dropdown options
+  assignedTo: z.string().optional(),
+  templateId: z.string().optional(),
+  isRecurring: z.boolean().default(false),
+  recurrenceInterval: z.number().optional(),
+  recurrenceUnit: z.enum(["days", "weeks", "months", "years"]).optional(),
+  tagIds: z.array(z.string()).optional(),
 });
+
+// Add a refine check for recurring reminders
+export const reminderFormSchemaWithValidation = reminderFormSchema.refine(
+  (data) => {
+    if (data.isRecurring) {
+      return !!data.recurrenceInterval && !!data.recurrenceUnit;
+    }
+    return true;
+  },
+  {
+    message: "Recurrence interval and unit are required for recurring reminders",
+    path: ["recurrenceInterval"],
+  }
+);
 
 export type ReminderFormValues = z.infer<typeof reminderFormSchema>;

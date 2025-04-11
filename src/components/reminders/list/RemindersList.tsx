@@ -14,7 +14,13 @@ interface RemindersListProps {
   vehicleId?: string;
   limit?: number;
   statusFilter?: string;
+  priorityFilter?: string;
+  categoryId?: string;
+  assignedTo?: string;
+  isRecurring?: boolean;
   dateRange?: DateRange;
+  tagIds?: string[];
+  search?: string;
 }
 
 // Use memo to prevent unnecessary re-renders
@@ -22,15 +28,27 @@ export const RemindersList = memo(function RemindersList({
   customerId, 
   vehicleId, 
   limit, 
-  statusFilter, 
-  dateRange 
+  statusFilter,
+  priorityFilter,
+  categoryId,
+  assignedTo,
+  isRecurring,
+  dateRange,
+  tagIds,
+  search
 }: RemindersListProps) {
   const { reminders, loading, refetch } = useReminders({ 
     customerId, 
     vehicleId, 
     limit,
     statusFilter,
-    dateRange
+    priorityFilter,
+    categoryId,
+    assignedTo,
+    isRecurring,
+    dateRange,
+    tagIds,
+    search
   });
 
   // Memoize the callback to prevent recreation on every render

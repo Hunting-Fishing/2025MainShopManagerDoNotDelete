@@ -4169,6 +4169,113 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reminder_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      reminder_templates: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          created_by: string
+          default_days_until_due: number | null
+          description: string | null
+          id: string
+          is_recurring: boolean | null
+          notification_days_before: number | null
+          priority: string | null
+          recurrence_interval: number | null
+          recurrence_unit: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          default_days_until_due?: number | null
+          description?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notification_days_before?: number | null
+          priority?: string | null
+          recurrence_interval?: number | null
+          recurrence_unit?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          default_days_until_due?: number | null
+          description?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notification_days_before?: number | null
+          priority?: string | null
+          recurrence_interval?: number | null
+          recurrence_unit?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "reminder_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -4279,8 +4386,43 @@ export type Database = {
           },
         ]
       }
+      service_reminder_tags: {
+        Row: {
+          created_at: string
+          reminder_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          reminder_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          reminder_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_reminder_tags_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "service_reminders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reminder_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "reminder_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_reminders: {
         Row: {
+          assigned_to: string | null
+          category_id: string | null
           completed_at: string | null
           completed_by: string | null
           created_at: string
@@ -4289,15 +4431,25 @@ export type Database = {
           description: string
           due_date: string
           id: string
+          is_recurring: boolean | null
+          last_occurred_at: string | null
+          next_occurrence_date: string | null
           notes: string | null
           notification_date: string | null
           notification_sent: boolean
+          parent_reminder_id: string | null
+          priority: string | null
+          recurrence_interval: number | null
+          recurrence_unit: string | null
           status: string
+          template_id: string | null
           title: string
           type: string
           vehicle_id: string | null
         }
         Insert: {
+          assigned_to?: string | null
+          category_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -4306,15 +4458,25 @@ export type Database = {
           description: string
           due_date: string
           id?: string
+          is_recurring?: boolean | null
+          last_occurred_at?: string | null
+          next_occurrence_date?: string | null
           notes?: string | null
           notification_date?: string | null
           notification_sent?: boolean
+          parent_reminder_id?: string | null
+          priority?: string | null
+          recurrence_interval?: number | null
+          recurrence_unit?: string | null
           status?: string
+          template_id?: string | null
           title: string
           type: string
           vehicle_id?: string | null
         }
         Update: {
+          assigned_to?: string | null
+          category_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -4323,20 +4485,49 @@ export type Database = {
           description?: string
           due_date?: string
           id?: string
+          is_recurring?: boolean | null
+          last_occurred_at?: string | null
+          next_occurrence_date?: string | null
           notes?: string | null
           notification_date?: string | null
           notification_sent?: boolean
+          parent_reminder_id?: string | null
+          priority?: string | null
+          recurrence_interval?: number | null
+          recurrence_unit?: string | null
           status?: string
+          template_id?: string | null
           title?: string
           type?: string
           vehicle_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "service_reminders_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "reminder_categories"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "service_reminders_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reminders_parent_reminder_id_fkey"
+            columns: ["parent_reminder_id"]
+            isOneToOne: false
+            referencedRelation: "service_reminders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reminders_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "reminder_templates"
             referencedColumns: ["id"]
           },
           {
@@ -5414,6 +5605,10 @@ export type Database = {
       delete_work_order_time_entries: {
         Args: { work_order_id: string }
         Returns: undefined
+      }
+      generate_recurring_reminder: {
+        Args: { parent_id: string }
+        Returns: string
       }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
