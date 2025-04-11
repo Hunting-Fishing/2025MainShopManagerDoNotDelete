@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ServiceReminder, ReminderCategory, ReminderTag, ReminderTemplate } from "@/types/reminder";
 import { DateRange } from "react-day-picker";
