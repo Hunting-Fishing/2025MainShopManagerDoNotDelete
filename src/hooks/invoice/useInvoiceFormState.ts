@@ -15,7 +15,16 @@ export function useInvoiceFormState(initialWorkOrderId?: string) {
   // Initialize items and assignedStaff from invoice when it changes
   useEffect(() => {
     setItems(invoice.items || []);
-    setAssignedStaff(invoice.assignedStaff || []);
+    // Convert string IDs to StaffMember objects if needed
+    if (Array.isArray(invoice.assignedStaff)) {
+      const staffMembers = invoice.assignedStaff.map(staff => {
+        if (typeof staff === 'string') {
+          return { id: staff, name: staff } as StaffMember;
+        }
+        return staff as StaffMember;
+      });
+      setAssignedStaff(staffMembers);
+    }
   }, [invoice]);
 
   // Add inventory item
@@ -99,19 +108,32 @@ export function useInvoiceFormState(initialWorkOrderId?: string) {
   const handleAddStaffMember = (staffMember: StaffMember) => {
     const staffExists = assignedStaff.some(staff => staff.id === staffMember.id);
     if (!staffExists) {
-      setInvoice(prev => ({
-        ...prev,
-        assignedStaff: [...prev.assignedStaff, staffMember]
-      }));
+      setInvoice(prev => {
+        // Ensure staff member is a proper StaffMember object
+        const updatedStaff = [...prev.assignedStaff, staffMember];
+        return {
+          ...prev,
+          assignedStaff: updatedStaff
+        };
+      });
     }
   };
 
   // Remove staff member
   const handleRemoveStaffMember = (staffId: string) => {
-    setInvoice(prev => ({
-      ...prev,
-      assignedStaff: prev.assignedStaff.filter(staff => staff.id !== staffId)
-    }));
+    setInvoice(prev => {
+      const updatedStaff = prev.assignedStaff.filter(staff => {
+        if (typeof staff === 'string') {
+          return staff !== staffId;
+        } else {
+          return staff.id !== staffId;
+        }
+      });
+      return {
+        ...prev,
+        assignedStaff: updatedStaff
+      };
+    });
   };
 
   return {

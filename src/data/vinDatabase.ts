@@ -1,4 +1,5 @@
-import { VinDecodeResult } from "@/types/vehicle";
+
+import { VinDecodeResult } from '@/types/vehicle';
 
 // This file contains a limited set of VIN prefixes for fallback purposes
 // when external API calls fail or are rate-limited

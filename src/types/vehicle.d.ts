@@ -20,7 +20,6 @@ export interface Vehicle {
   model: string;
   year: number;
   vin?: string;
-  color?: string;
   license_plate?: string;
   customer_id: string;
   created_at: string;
@@ -36,6 +35,7 @@ export interface Vehicle {
   gvwr?: string;
   trim?: string;
   last_service_date?: string;
+  color?: string;
 }
 
 export interface CarMake {
@@ -49,15 +49,3 @@ export interface CarModel {
   model_name: string;
   model_make_id: string;
 }
-
-export type VehicleBodyStyle = 
-  | 'sedan'
-  | 'suv'
-  | 'truck'
-  | 'coupe'
-  | 'hatchback'
-  | 'wagon'
-  | 'van'
-  | 'convertible'
-  | 'minivan'
-  | 'other';

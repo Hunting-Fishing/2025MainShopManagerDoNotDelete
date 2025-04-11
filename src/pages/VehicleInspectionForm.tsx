@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VehicleInfoTab } from "@/components/inspection-form/VehicleInfoTab";
 import { DamageAssessmentTab } from "@/components/inspection-form/DamageAssessmentTab";
 import { AdditionalNotesTab } from "@/components/inspection-form/AdditionalNotesTab";
-import { VehicleBodyStyle } from "@/types/vehicle";
+import { VehicleBodyStyle } from "@/types/vehicleBodyStyles";
 
 interface InspectionFormData {
   vin: string;
@@ -54,6 +55,11 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
+  
+  // Create a specific handler for body style changes that accepts a string value directly
+  const handleBodyStyleChange = (style: VehicleBodyStyle) => {
+    setFormData(prev => ({ ...prev, bodyStyle: style }));
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -98,7 +104,7 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
                 vehicleInfo={formData}
                 onVehicleInfoChange={handleVehicleInfoChange}
                 initialBodyStyle={formData.bodyStyle}
-                onBodyStyleChange={handleChange}
+                onBodyStyleChange={handleBodyStyleChange}
               />
             </TabsContent>
             <TabsContent value="damage-assessment">

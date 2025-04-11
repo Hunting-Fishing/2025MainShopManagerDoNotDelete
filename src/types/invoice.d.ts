@@ -17,6 +17,9 @@ export interface Invoice {
   workOrderId?: string;
   assignedStaff: StaffMember[];
   createdBy: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
+  customer_id?: string;
 }
 
 export interface InvoiceItem {
@@ -32,6 +35,7 @@ export interface InvoiceItem {
 export interface StaffMember {
   id: string;
   name: string;
+  role?: string;
 }
 
 export interface InventoryItem {
@@ -45,3 +49,24 @@ export interface InventoryItem {
   status?: string;
   quantity?: number;
 }
+
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  lastUsed: string | null;
+  usageCount: number;
+  defaultTaxRate: number;
+  defaultDueDateDays: number;
+  defaultNotes: string;
+  defaultItems: InvoiceItem[];
+}
+
+// Helper function to create an invoice updater
+export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
+  return (prev: Invoice) => ({
+    ...prev,
+    ...updates
+  });
+};

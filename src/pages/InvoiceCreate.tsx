@@ -3,40 +3,98 @@ import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
 import { useWorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
-import { fetchWorkOrders, fetchInventoryItems, fetchStaffMembers } from "@/data/invoiceCreateData";
+import { supabase } from "@/lib/supabase"; 
+import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { InvoiceItem, InventoryItem } from "@/types/invoice";
+import { WorkOrder } from "@/types/workOrder";
+import { InventoryItem, InvoiceItem, StaffMember, InvoiceTemplate } from "@/types/invoice";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
-  const [workOrders, setWorkOrders] = useState([]);
-  const [inventoryItems, setInventoryItems] = useState([]);
-  const [staffMembers, setStaffMembers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   
-  // Fetch real data
+  // Fetch real data from Supabase
+  const { data: workOrdersData } = useQuery({
+    queryKey: ['workOrders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: inventoryData } = useQuery({
+    queryKey: ['inventoryItems'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: staffData } = useQuery({
+    queryKey: ['staffMembers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, job_title');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const [workOrdersData, inventoryData, staffData] = await Promise.all([
-          fetchWorkOrders(),
-          fetchInventoryItems(),
-          fetchStaffMembers()
-        ]);
-        
-        setWorkOrders(workOrdersData);
-        setInventoryItems(inventoryData);
-        setStaffMembers(staffData);
-      } catch (error) {
-        console.error("Error loading invoice data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadData();
-  }, []);
+    if (workOrdersData) {
+      // Format work orders to match the WorkOrder type
+      const formattedWorkOrders = workOrdersData.map((wo: any) => ({
+        id: wo.id,
+        customer: wo.customer || "",
+        description: wo.description || "No description",
+        status: wo.status || "",
+        date: wo.created_at || "",
+        dueDate: wo.due_date || "",
+        priority: wo.priority || "medium",
+        technician: wo.technician || "Unassigned",
+        location: wo.location || "",
+        notes: wo.notes,
+        customer_id: wo.customer_id,
+        vehicle_id: wo.vehicle_id,
+        created_at: wo.created_at,
+        updated_at: wo.updated_at,
+        technician_id: wo.technician_id,
+        total_cost: wo.total_cost,
+        estimated_hours: wo.estimated_hours,
+      }));
+      setWorkOrders(formattedWorkOrders);
+    }
+    if (inventoryData) {
+      const formattedInventory = inventoryData.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku || "",
+        description: item.description || "",
+        price: Number(item.unit_price) || 0,
+        category: item.category || "",
+        supplier: item.supplier || "",
+        status: item.status || "",
+        quantity: Number(item.quantity) || 0
+      }));
+      setInventoryItems(formattedInventory);
+    }
+    if (staffData) {
+      const formattedStaff = staffData.map((staff: any) => ({
+        id: staff.id || "",
+        name: getStaffName(staff)
+      }));
+      setStaffMembers(formattedStaff);
+    }
+  }, [workOrdersData, inventoryData, staffData]);
 
   const {
     invoice,
@@ -73,23 +131,23 @@ export default function InvoiceCreate() {
     handleSelectWorkOrder,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-slate-500">Loading invoice data...</div>
-      </div>
-    );
-  }
+  // Format staff names correctly
+  const getStaffName = (staff: any) => {
+    if (staff && staff.first_name && staff.last_name) {
+      return `${staff.first_name} ${staff.last_name}`;
+    }
+    return "Unknown Staff";
+  };
 
   // Adapter functions to match expected types
   const handleAddInventoryItemAdapter = (item: InventoryItem) => {
     const invoiceItem: InvoiceItem = {
-      id: item.id || crypto.randomUUID(),
+      id: item.id,
       name: item.name,
       description: item.description || "",
       quantity: 1,
-      price: item.price || 0,
-      total: item.price || 0
+      price: item.price,
+      total: item.price
     };
     handleAddInventoryItem(invoiceItem);
   };
@@ -135,6 +193,21 @@ export default function InvoiceCreate() {
     handleAddLaborItem(laborItem);
   };
 
+  // Adapt template handler
+  const handleSaveTemplateAdapter = (name: string) => {
+    // Create a simplified template object from the name
+    const template = {
+      name,
+      description: `Template created on ${new Date().toLocaleDateString()}`,
+      defaultTaxRate: taxRate,
+      defaultDueDateDays: 30,
+      defaultNotes: invoice.notes || "",
+      defaultItems: invoice.items || []
+    };
+    
+    handleSaveTemplate(name);
+  };
+
   return (
     <InvoiceCreateLayout
       invoice={invoice}
@@ -164,7 +237,7 @@ export default function InvoiceCreate() {
       handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
-      handleSaveTemplate={handleSaveTemplate}
+      handleSaveTemplate={handleSaveTemplateAdapter}
     />
   );
 }

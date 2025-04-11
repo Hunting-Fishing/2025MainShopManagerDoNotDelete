@@ -1,8 +1,9 @@
+
 import React from "react";
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
 import { InvoiceLeftColumn } from "@/components/invoices/layout/InvoiceLeftColumn";
 import { InvoiceRightColumn } from "@/components/invoices/layout/InvoiceRightColumn";
-import { Invoice, StaffMember, InventoryItem } from "@/types/invoice";
+import { Invoice, StaffMember, InventoryItem, InvoiceTemplate, createInvoiceUpdater } from "@/types/invoice";
 import { WorkOrder } from "@/types/workOrder";
 
 interface InvoiceCreateLayoutProps {
