@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { ChatRoom, ChatMessage as ChatMessageType } from '@/types/chat';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -119,7 +118,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
   
-  // Get parent message for thread view
   const getParentMessage = () => {
     if (!activeThreadId) return null;
     return messages.find(msg => msg.id === activeThreadId) || null;
@@ -141,17 +139,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
 
-  // Wrapper for thread operations to make them return promises
   const handleSendReply = async (content: string, threadId: string) => {
     setMessageText(content);
-    onSendMessage(threadId);
+    await onSendMessage(threadId);
     setMessageText('');
+    return Promise.resolve();
   };
   
   const handleThreadEditMessage = async (messageId: string, content: string) => {
     if (onEditMessage) {
-      onEditMessage(messageId, content);
+      await onEditMessage(messageId, content);
     }
+    return Promise.resolve();
   };
 
   return (
@@ -225,7 +224,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </CardHeader>
       
       <CardContent className="flex-grow p-0 overflow-hidden grid grid-cols-1 md:grid-cols-3 relative">
-        {/* Main message area */}
         <div className={`md:col-span-${activeThreadId ? '2' : '3'} overflow-y-auto p-4 h-full`}>
           {messages.length === 0 ? (
             <div className="h-full flex items-center justify-center">
@@ -270,7 +268,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           )}
         </div>
         
-        {/* Thread panel */}
         {activeThreadId && onCloseThread && (
           <div className="md:col-span-1 border-l h-full">
             <ChatThread
