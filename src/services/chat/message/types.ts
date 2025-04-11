@@ -1,116 +1,73 @@
 
-import { ChatMessage } from "@/types/chat";
-import { DatabaseChatMessage } from "../supabaseClient";
+import { DatabaseChatMessage } from '../supabaseClient';
+import { ChatMessage } from '@/types/chat';
 
-export type MessageSendParams = Omit<ChatMessage, "id" | "is_read" | "created_at">;
+export interface MessageSendParams {
+  room_id: string;
+  sender_id: string;
+  sender_name: string;
+  content: string;
+  message_type?: string;
+  thread_parent_id?: string;
+}
 
-export type MessageFlagParams = {
-  messageId: string;
-  reason: string;
-  userId: string;
-};
-
-export type MessageEditParams = {
+export interface MessageEditParams {
   messageId: string;
   content: string;
   userId: string;
-};
-
-// Helper function to determine the message type based on content
-export const getMessageType = (content: string): ChatMessage['message_type'] => {
-  if (content.startsWith('audio:')) return 'audio';
-  if (content.startsWith('image:')) return 'image';
-  if (content.startsWith('video:')) return 'video';
-  if (content.startsWith('file:') || content.startsWith('document:')) return 'file';
-  if (content.startsWith('system:')) return 'system';
-  if (content.startsWith('work_order:')) return 'work_order';
-  return 'text';
-};
-
-// Helper function to transform a DatabaseChatMessage into a ChatMessage
-export function transformDatabaseMessage(message: DatabaseChatMessage): ChatMessage {
-  return {
-    ...message,
-    message_type: message.message_type as ChatMessage['message_type'] || 'text',
-    is_read: message.is_read || false,
-    is_flagged: message.is_flagged || false,
-    flag_reason: message.flag_reason || undefined,
-    metadata: message.metadata || null,
-    is_edited: message.is_edited || false,
-    edited_at: message.edited_at || undefined,
-    original_content: message.original_content || undefined,
-    thread_parent_id: message.thread_parent_id || undefined,
-    thread_count: message.thread_count || 0
-  };
 }
+
+export interface MessageFlagParams {
+  messageId: string;
+  reason: string;
+  userId: string;
+}
+
+// Convert database message to frontend message
+export const mapDatabaseMessageToMessage = (dbMessage: DatabaseChatMessage): ChatMessage => {
+  return {
+    id: dbMessage.id,
+    room_id: dbMessage.room_id,
+    sender_id: dbMessage.sender_id,
+    sender_name: dbMessage.sender_name,
+    content: dbMessage.content,
+    created_at: dbMessage.created_at,
+    is_read: dbMessage.is_read || false,
+    message_type: dbMessage.message_type as any || 'text',
+    file_url: dbMessage.file_url,
+    reply_to_id: dbMessage.reply_to_id,
+    is_flagged: dbMessage.is_flagged || false,
+    flag_reason: dbMessage.flag_reason,
+    metadata: dbMessage.metadata,
+    is_edited: dbMessage.is_edited || false,
+    edited_at: dbMessage.edited_at,
+    original_content: dbMessage.original_content,
+    thread_parent_id: dbMessage.thread_parent_id,
+    thread_count: dbMessage.thread_count || 0
+  };
+};
 
 // Parse tagged items from message content
-export function parseTaggedItems(content: string): { 
+export const parseTaggedItems = (content: string): { 
   workOrderIds: string[], 
   partIds: string[], 
-  warrantyIds: string[], 
+  warrantyIds: string[],
   jobIds: string[] 
-} {
-  const result = {
-    workOrderIds: [] as string[],
-    partIds: [] as string[],
-    warrantyIds: [] as string[],
-    jobIds: [] as string[]
+} => {
+  const workOrderPattern = /#WO-([a-zA-Z0-9-]+)/g;
+  const partPattern = /#PART-([a-zA-Z0-9-]+)/g;
+  const warrantyPattern = /#WARRANTY-([a-zA-Z0-9-]+)/g;
+  const jobPattern = /#JOB-([a-zA-Z0-9-]+)/g;
+  
+  const workOrderMatches = [...content.matchAll(workOrderPattern)];
+  const partMatches = [...content.matchAll(partPattern)];
+  const warrantyMatches = [...content.matchAll(warrantyPattern)];
+  const jobMatches = [...content.matchAll(jobPattern)];
+  
+  return {
+    workOrderIds: workOrderMatches.map(match => match[1]),
+    partIds: partMatches.map(match => match[1]),
+    warrantyIds: warrantyMatches.map(match => match[1]),
+    jobIds: jobMatches.map(match => match[1])
   };
-  
-  // Match work order tags: #WO-1234 or #WorkOrder-1234
-  const workOrderRegex = /#(?:WO|WorkOrder)-(\w+)/g;
-  let match;
-  while ((match = workOrderRegex.exec(content)) !== null) {
-    if (match[1]) result.workOrderIds.push(match[1]);
-  }
-  
-  // Match part tags: #Part-5678
-  const partRegex = /#Part-(\w+)/g;
-  while ((match = partRegex.exec(content)) !== null) {
-    if (match[1]) result.partIds.push(match[1]);
-  }
-  
-  // Match warranty tags: #Warranty-999
-  const warrantyRegex = /#Warranty-(\w+)/g;
-  while ((match = warrantyRegex.exec(content)) !== null) {
-    if (match[1]) result.warrantyIds.push(match[1]);
-  }
-  
-  // Match job line tags: #Job-3
-  const jobRegex = /#Job-(\w+)/g;
-  while ((match = jobRegex.exec(content)) !== null) {
-    if (match[1]) result.jobIds.push(match[1]);
-  }
-  
-  return result;
-}
-
-// Format message content with clickable links for tagged items
-export function formatMessageWithTags(content: string): string {
-  // Replace work order tags with clickable links
-  let formattedContent = content.replace(
-    /#(WO|WorkOrder)-(\w+)/g,
-    '<a href="/work-orders/$2" class="tag-link work-order-tag">#$1-$2</a>'
-  );
-  
-  // Replace part tags with clickable links
-  formattedContent = formattedContent.replace(
-    /#Part-(\w+)/g,
-    '<a href="/inventory/parts/$1" class="tag-link part-tag">#Part-$1</a>'
-  );
-  
-  // Replace warranty tags with clickable links
-  formattedContent = formattedContent.replace(
-    /#Warranty-(\w+)/g,
-    '<a href="/warranties/$1" class="tag-link warranty-tag">#Warranty-$1</a>'
-  );
-  
-  // Replace job line tags with clickable links
-  formattedContent = formattedContent.replace(
-    /#Job-(\w+)/g,
-    '<a href="/jobs/$1" class="tag-link job-tag">#Job-$1</a>'
-  );
-  
-  return formattedContent;
-}
+};

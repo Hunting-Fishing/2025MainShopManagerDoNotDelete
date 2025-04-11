@@ -177,7 +177,7 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         sender_id: userId,
         sender_name: userName,
         content: newMessageText,
-        message_type: threadParentId ? 'text' : undefined, // Changed from 'thread' to 'text'
+        message_type: 'text',
         thread_parent_id: threadParentId
       };
       

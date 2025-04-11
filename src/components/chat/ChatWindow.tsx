@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { ChatRoom, ChatMessage as ChatMessageType } from '@/types/chat';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Send, Info, Users, MoreVertical, MessageSquare } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { AudioRecorder } from './AudioRecorder';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatFileMessage } from '@/services/chat/fileService';
+import { formatFileMessage, ChatFileInfo } from '@/services/chat/fileService';
 import { FileUploadButton } from './file/FileUploadButton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChatThread } from './ChatThread';

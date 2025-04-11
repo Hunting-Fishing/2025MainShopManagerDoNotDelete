@@ -42,110 +42,46 @@ export interface DatabaseChatParticipant {
   joined_at: string;
 }
 
-// Update the ChatPageLayout component to fix the setMessageText error:
-<lov-write file_path="src/components/chat/ChatPageLayout.tsx">
-import React from 'react';
-import { ChatSidebar } from './ChatSidebar';
-import { ChatWindow } from './ChatWindow';
-import { ChatRoom, ChatMessage } from '@/types/chat';
+// Update the following exports to fix the file-related functions
 
-interface ChatPageLayoutProps {
-  chatRooms: ChatRoom[];
-  currentRoom: ChatRoom | null;
-  messages: ChatMessage[];
-  userId: string;
-  userName: string;
-  newMessageText: string;
-  setNewMessageText: (text: string) => void;
-  onSelectRoom: (room: ChatRoom) => void;
-  onSendMessage: (threadParentId?: string) => void;
-  onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => void;
-  onSendFileMessage?: (fileUrl: string, threadParentId?: string) => void;
-  onPinRoom?: () => void;
-  onArchiveRoom?: () => void;
-  onFlagMessage?: (messageId: string, reason: string) => void;
-  onEditMessage?: (messageId: string, content: string) => void;
-  isTyping?: boolean;
-  typingUsers?: {id: string, name: string}[];
-  threadMessages?: {[key: string]: ChatMessage[]};
-  activeThreadId?: string | null;
-  onOpenThread?: (messageId: string) => void;
-  onCloseThread?: () => void;
-  onViewWorkOrderDetails?: () => void;
-  navigateToRoom: (roomId: string) => void;
-  onNewChat: () => void;
-}
-
-export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
-  chatRooms,
-  currentRoom,
-  messages,
-  userId,
-  userName,
-  newMessageText,
-  setNewMessageText,
-  onSelectRoom,
-  onSendMessage,
-  onSendVoiceMessage,
-  onSendFileMessage,
-  onPinRoom,
-  onArchiveRoom,
-  onFlagMessage,
-  onEditMessage,
-  isTyping,
-  typingUsers,
-  threadMessages,
-  activeThreadId,
-  onOpenThread,
-  onCloseThread,
-  onViewWorkOrderDetails,
-  navigateToRoom,
-  onNewChat
-}) => {
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Chat</h1>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
-        <div className="md:col-span-1">
-          <ChatSidebar
-            rooms={chatRooms}
-            selectedRoom={currentRoom}
-            onSelectRoom={(room) => {
-              onSelectRoom(room);
-              navigateToRoom(room.id);
-            }}
-            onNewChat={onNewChat}
-          />
-        </div>
-        
-        <div className="md:col-span-2">
-          <ChatWindow
-            room={currentRoom}
-            messages={messages}
-            userId={userId}
-            userName={userName}
-            messageText={newMessageText}
-            setMessageText={setNewMessageText}
-            onSendMessage={onSendMessage}
-            onSendVoiceMessage={onSendVoiceMessage}
-            onSendFileMessage={onSendFileMessage}
-            onPinRoom={onPinRoom}
-            onArchiveRoom={onArchiveRoom}
-            onFlagMessage={onFlagMessage}
-            onEditMessage={onEditMessage}
-            isTyping={isTyping}
-            typingUsers={typingUsers}
-            threadMessages={threadMessages}
-            activeThreadId={activeThreadId}
-            onOpenThread={onOpenThread}
-            onCloseThread={onCloseThread}
-            onViewInfo={currentRoom?.work_order_id ? onViewWorkOrderDetails : undefined}
-          />
-        </div>
-      </div>
-    </div>
-  );
+export const uploadChatFile = async (roomId: string, file: File): Promise<any> => {
+  try {
+    // Create a unique file path using roomId and timestamp
+    const timestamp = new Date().getTime();
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${timestamp}-${file.name.replace(/\s+/g, '_')}`;
+    const filePath = `chat/${roomId}/${fileName}`;
+    
+    // For this implementation, we'll create a temporary URL
+    // In a real app, you would upload the file to Supabase storage
+    const url = URL.createObjectURL(file);
+    
+    // Determine file type
+    let type: 'image' | 'video' | 'audio' | 'file' | 'document' = 'file';
+    if (file.type.startsWith('image/')) {
+      type = 'image';
+    } else if (file.type.startsWith('video/')) {
+      type = 'video';
+    } else if (file.type.startsWith('audio/')) {
+      type = 'audio';
+    } else if (
+      file.type === 'application/pdf' || 
+      file.type === 'application/msword' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ) {
+      type = 'document';
+    }
+    
+    // Return file info
+    return {
+      url,
+      type,
+      name: file.name,
+      size: file.size,
+      contentType: file.type
+    };
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw new Error('File upload failed');
+  }
 };
