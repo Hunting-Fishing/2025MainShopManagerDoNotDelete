@@ -6,9 +6,12 @@ import { RecentWorkOrders } from "@/components/dashboard/RecentWorkOrders";
 import { TechnicianPerformanceChart } from "@/components/dashboard/TechnicianPerformanceChart";
 import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceTypeDistributionChart";
 import { EquipmentRecommendations } from "@/components/dashboard/EquipmentRecommendations";
-import { getDashboardStats } from "@/services/dashboardService";
+import { getDashboardStats, getPhaseProgressData, getChecklistStats, getTechnicianEfficiency } from "@/services/dashboardService";
 import { DashboardStats } from "@/types/dashboard";
 import { supabase } from '@/lib/supabase';
+import { WorkOrderPhaseProgress } from "@/components/dashboard/WorkOrderPhaseProgress";
+import { QualityControlStats } from "@/components/dashboard/QualityControlStats";
+import { TechnicianEfficiencyTable } from "@/components/dashboard/TechnicianEfficiencyTable";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -23,8 +26,15 @@ export default function Dashboard() {
     inventoryItems: "0",
     inventoryChange: "0%",
     avgCompletionTime: "0 days",
-    completionTimeChange: "0%"
+    completionTimeChange: "0%",
+    customerSatisfaction: "0",
+    phaseCompletionRate: "0%",
+    schedulingEfficiency: "0%",
+    qualityControlPassRate: "0%"
   });
+  const [phaseProgressData, setPhaseProgressData] = useState([]);
+  const [checklistStats, setChecklistStats] = useState([]);
+  const [technicianEfficiency, setTechnicianEfficiency] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +49,18 @@ export default function Dashboard() {
         // Fetch dashboard statistics
         const statsData = await getDashboardStats();
         setStats(statsData);
+        
+        // Fetch phase progress data for multi-phase work orders
+        const phaseData = await getPhaseProgressData();
+        setPhaseProgressData(phaseData);
+        
+        // Fetch checklist completion statistics
+        const checklists = await getChecklistStats();
+        setChecklistStats(checklists);
+        
+        // Fetch technician efficiency metrics
+        const efficiency = await getTechnicianEfficiency();
+        setTechnicianEfficiency(efficiency);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -72,25 +94,38 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <StatsCards stats={stats} isLoading={isLoading} />
 
+        {/* Multi-phase Work Order Progress */}
+        <div className="grid grid-cols-1 gap-6">
+          <WorkOrderPhaseProgress data={phaseProgressData} isLoading={isLoading} />
+        </div>
+
         {/* Charts Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <WorkOrdersByStatusChart />
           <ServiceTypeDistributionChart />
         </div>
 
-        {/* Other Dashboard Components */}
+        {/* Quality Control and Technician Efficiency */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="col-span-2">
             <TechnicianPerformanceChart />
           </div>
           <div>
-            <EquipmentRecommendations />
+            <QualityControlStats stats={stats} checklistData={checklistStats} isLoading={isLoading} />
           </div>
+        </div>
+
+        {/* Technician Efficiency Table */}
+        <div className="grid grid-cols-1 gap-6">
+          <TechnicianEfficiencyTable data={technicianEfficiency} isLoading={isLoading} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <RecentWorkOrders />
+          </div>
+          <div>
+            <EquipmentRecommendations />
           </div>
         </div>
       </div>

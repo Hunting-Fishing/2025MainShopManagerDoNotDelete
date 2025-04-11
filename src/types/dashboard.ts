@@ -12,49 +12,32 @@ export interface DashboardStats {
   inventoryChange: string;
   avgCompletionTime: string;
   completionTimeChange: string;
+  customerSatisfaction?: string;
+  phaseCompletionRate?: string;
+  schedulingEfficiency?: string;
+  qualityControlPassRate?: string;
 }
 
-export interface EquipmentRecommendation {
+export interface PhaseProgressItem {
   id: string;
   name: string;
-  model: string;
-  manufacturer: string;
-  status: string;
-  maintenanceType: string;
-  maintenanceDate: string;
-  priority: "High" | "Medium" | "Low";
+  totalPhases: number;
+  completedPhases: number;
+  progress: number;
 }
 
-export interface ServiceTypeData {
-  subject: string;
-  value: number;
+export interface ChecklistStat {
+  work_order_id: string;
+  checklist_id: string;
+  requiredItems: number;
+  completedRequiredItems: number;
+  completionRate: number;
 }
 
-export interface TechnicianPerformance {
-  name: string;
-  completedOrders: number;
-  averageTime: number;
-  customerRating: number;
-}
-
-export interface TechnicianPerformanceData {
-  technicians: string[];
-  chartData: Array<{
-    month: string;
-    [key: string]: string | number;
-  }>;
-}
-
-export interface MonthlyRevenueData {
-  month: string;
-  revenue: number;
-}
-
-export interface RecentWorkOrder {
+export interface TechnicianEfficiencyData {
   id: string;
-  customer: string;
-  service: string;
-  status: string;
-  date: string;
-  priority: string;
+  name: string;
+  totalHours: number;
+  billableHours: number;
+  efficiency: number;
 }
