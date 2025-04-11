@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { 
   DashboardStats, 
@@ -55,6 +54,9 @@ export async function getWorkOrdersByStatus(): Promise<{ name: string; value: nu
     return [];
   }
 }
+
+// This is an alias for getWorkOrdersByStatus to match what the component is expecting
+export const getWorkOrderStatusCounts = getWorkOrdersByStatus;
 
 // Fetches data for the service type distribution chart
 export async function getServiceTypeDistribution(): Promise<ServiceTypeData[]> {

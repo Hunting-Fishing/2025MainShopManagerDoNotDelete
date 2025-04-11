@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getWorkOrderStatusCounts } from "@/services/dashboardService";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { getWorkOrdersByStatus } from "@/services/dashboardService";
 
 interface StatusData {
   name: string;
@@ -20,7 +20,7 @@ export function WorkOrdersByStatusChart() {
     const fetchStatusData = async () => {
       try {
         setLoading(true);
-        const statusData = await getWorkOrderStatusCounts();
+        const statusData = await getWorkOrdersByStatus();
         setData(statusData);
         setError(null);
       } catch (err) {
