@@ -125,6 +125,54 @@ export type Database = {
           },
         ]
       }
+      business_industries: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
+      business_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -2311,6 +2359,92 @@ export type Database = {
           },
         ]
       }
+      invoice_template_items: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          hours: boolean | null
+          id: string
+          name: string
+          price: number
+          quantity: number | null
+          sku: string | null
+          template_id: string | null
+          total: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          hours?: boolean | null
+          id?: string
+          name: string
+          price: number
+          quantity?: number | null
+          sku?: string | null
+          template_id?: string | null
+          total?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          hours?: boolean | null
+          id?: string
+          name?: string
+          price?: number
+          quantity?: number | null
+          sku?: string | null
+          template_id?: string | null
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_templates: {
+        Row: {
+          created_at: string | null
+          default_due_date_days: number | null
+          default_notes: string | null
+          default_tax_rate: number | null
+          description: string | null
+          id: string
+          last_used: string | null
+          name: string
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_due_date_days?: number | null
+          default_notes?: string | null
+          default_tax_rate?: number | null
+          description?: string | null
+          id?: string
+          last_used?: string | null
+          name: string
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          default_due_date_days?: number | null
+          default_notes?: string | null
+          default_tax_rate?: number | null
+          description?: string | null
+          id?: string
+          last_used?: string | null
+          name?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           created_at: string | null
@@ -2785,6 +2919,30 @@ export type Database = {
           },
         ]
       }
+      payment_methods_options: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -3196,6 +3354,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      relationship_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       role_permissions: {
         Row: {
@@ -4135,6 +4317,86 @@ export type Database = {
           },
         ]
       }
+      work_order_template_items: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          name: string
+          quantity: number | null
+          sku: string | null
+          template_id: string | null
+          unit_price: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          quantity?: number | null
+          sku?: string | null
+          template_id?: string | null
+          unit_price?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          quantity?: number | null
+          sku?: string | null
+          template_id?: string | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          last_used: string | null
+          name: string
+          notes: string | null
+          priority: string | null
+          status: string | null
+          technician: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_used?: string | null
+          name: string
+          notes?: string | null
+          priority?: string | null
+          status?: string | null
+          technician?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_used?: string | null
+          name?: string
+          notes?: string | null
+          priority?: string | null
+          status?: string | null
+          technician?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       work_order_time_entries: {
         Row: {
           billable: boolean | null
@@ -4357,6 +4619,14 @@ export type Database = {
       increment_campaign_opens: {
         Args: { campaign_id: string }
         Returns: undefined
+      }
+      increment_template_usage: {
+        Args: { template_id: string }
+        Returns: undefined
+      }
+      increment_usage_count: {
+        Args: { template_id: string }
+        Returns: number
       }
       insert_work_order_inventory_item: {
         Args: {

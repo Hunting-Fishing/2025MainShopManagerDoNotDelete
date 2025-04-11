@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { WorkOrdersByStatusChart } from "@/components/dashboard/WorkOrdersByStatusChart";
@@ -7,6 +8,7 @@ import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceType
 import { EquipmentRecommendations } from "@/components/dashboard/EquipmentRecommendations";
 import { getDashboardStats } from "@/services/dashboardService";
 import { DashboardStats } from "@/types/dashboard";
+import { supabase } from '@/lib/supabase';
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -29,6 +31,12 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
+        
+        // Check connection to Supabase
+        const isConnected = await checkSupabaseConnection();
+        console.log("Supabase connection status:", isConnected ? "Connected" : "Not connected");
+        
+        // Fetch dashboard statistics
         const statsData = await getDashboardStats();
         setStats(statsData);
       } catch (error) {
@@ -40,6 +48,21 @@ export default function Dashboard() {
 
     fetchDashboardData();
   }, []);
+  
+  // Function to check Supabase connection
+  const checkSupabaseConnection = async () => {
+    try {
+      const { data, error } = await supabase.from('customers').select('count').limit(1);
+      if (error) {
+        console.error("Supabase connection error:", error);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error checking Supabase connection:", error);
+      return false;
+    }
+  };
 
   return (
     <div className="container py-8">
