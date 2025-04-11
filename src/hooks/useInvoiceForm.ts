@@ -57,15 +57,10 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
 
   // Wrap the save invoice function to include all required data
   const saveInvoice = (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => {
-    // Convert assignedStaff to string[] as expected by handleSaveInvoice
-    const staffIds = assignedStaff.map(staff => 
-      typeof staff === 'string' ? staff : staff.id
-    );
-    
     handleSaveInvoice(
       invoice,
       items,
-      staffIds,
+      assignedStaff,
       subtotal,
       tax,
       total,

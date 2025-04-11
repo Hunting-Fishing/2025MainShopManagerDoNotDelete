@@ -1,5 +1,6 @@
 
 import { Dispatch, SetStateAction } from 'react';
+import { InventoryItem as InventoryBaseItem } from '@/types/inventory';
 
 export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
 
@@ -13,16 +14,11 @@ export interface InvoiceItem {
   total: number;
 }
 
-export interface InventoryItem {
-  id: string;
-  name: string;
-  sku?: string;
-  description?: string;
-  price: number;
-  category?: string;
-  supplier?: string;
-  status?: string;
+// Extend the base InventoryItem to include additional props needed for invoices
+export interface InventoryItem extends InventoryBaseItem {
   quantity: number;
+  status?: string;
+  supplier?: string;
 }
 
 export interface StaffMember {
@@ -47,7 +43,7 @@ export interface Invoice {
   date: string;
   dueDate: string;
   createdBy: string;
-  assignedStaff: (string | StaffMember)[]; // Updated to accept both string and StaffMember
+  assignedStaff: StaffMember[]; // Using StaffMember type instead of mixed types
   items: InvoiceItem[];
   customer_id?: string; // Added for backward compatibility
   lastUpdatedBy?: string;

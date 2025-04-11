@@ -3,7 +3,14 @@ import React from "react";
 import { InvoiceHeader } from "@/components/invoices/InvoiceHeader";
 import { InvoiceLeftColumn } from "@/components/invoices/layout/InvoiceLeftColumn";
 import { InvoiceRightColumn } from "@/components/invoices/layout/InvoiceRightColumn";
-import { Invoice, StaffMember, InventoryItem, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
+import { 
+  Invoice, 
+  StaffMember, 
+  InventoryItem, 
+  InvoiceTemplate, 
+  InvoiceItem,
+  createInvoiceUpdater
+} from "@/types/invoice";
 import { WorkOrder } from "@/types/workOrder";
 
 interface InvoiceCreateLayoutProps {
@@ -67,14 +74,6 @@ export function InvoiceCreateLayout({
   handleApplyTemplate,
   handleSaveTemplate,
 }: InvoiceCreateLayoutProps) {
-  // Helper to create invoice updater
-  const createInvoiceUpdater = (updates: Partial<Invoice>) => {
-    return (prev: Invoice) => ({
-      ...prev,
-      ...updates
-    });
-  };
-  
   return (
     <div className="space-y-6">
       <InvoiceHeader 

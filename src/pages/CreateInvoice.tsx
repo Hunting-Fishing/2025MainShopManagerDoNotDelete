@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -7,7 +6,12 @@ import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { WorkOrder } from "@/types/workOrder";
-import { InventoryItem, InvoiceItem, StaffMember, InvoiceTemplate } from "@/types/invoice";
+import { 
+  InventoryItem, 
+  InvoiceItem, 
+  StaffMember, 
+  InvoiceTemplate 
+} from "@/types/invoice";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -128,7 +132,9 @@ export default function InvoiceCreate() {
     handleSelectWorkOrder,
   });
 
-  const handleSelectWorkOrderWithTime = workOrderSelector.handleSelectWorkOrderWithTime;
+  const handleSelectWorkOrderWithTime = (workOrder: WorkOrder) => {
+    workOrderSelector.handleSelectWorkOrderWithTime(workOrder);
+  };
 
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
@@ -191,8 +197,7 @@ export default function InvoiceCreate() {
   };
 
   const handleSaveTemplateAdapter = (name: string) => {
-    // Create a template object from the name
-    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+    const template: Partial<InvoiceTemplate> = {
       name,
       description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
       lastUsed: null,
@@ -202,7 +207,7 @@ export default function InvoiceCreate() {
       defaultItems: invoice.items
     };
     
-    handleSaveTemplate(template);
+    handleSaveTemplate(name);
   };
 
   return (

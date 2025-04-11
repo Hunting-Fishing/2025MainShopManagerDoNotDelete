@@ -1,4 +1,7 @@
 
+// Re-export VehicleBodyStyle from vehicleBodyStyles for consistency
+import { VehicleBodyStyle, VEHICLE_BODY_STYLES } from './vehicleBodyStyles';
+
 export interface VinDecodeResult {
   year: string | number;
   make: string;
@@ -50,6 +53,5 @@ export interface CarModel {
   model_make_id: string;
 }
 
-// Import and re-export VehicleBodyStyle from vehicleBodyStyles for consistency
-import { VehicleBodyStyle, VEHICLE_BODY_STYLES } from './vehicleBodyStyles';
+// Re-export vehicle body style types
 export { VehicleBodyStyle, VEHICLE_BODY_STYLES };

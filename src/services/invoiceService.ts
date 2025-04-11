@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { Invoice, InvoiceItem } from "@/types/invoice";
+import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
 import { toast } from "@/hooks/use-toast";
 
 /**
@@ -152,15 +153,15 @@ export async function saveInvoice(invoice: Invoice, items: any[]) {
         .delete()
         .eq('invoice_id', invoice.id);
       
-      // Then insert new ones
+      // Then insert new ones, making sure to extract just the string name from the StaffMember objects
+      const staffData = invoice.assignedStaff.map(staff => ({
+        invoice_id: invoice.id,
+        staff_name: typeof staff === 'string' ? staff : staff.name
+      }));
+      
       const { error: staffError } = await supabase
         .from('invoice_staff')
-        .insert(
-          invoice.assignedStaff.map(staff => ({
-            invoice_id: invoice.id,
-            staff_name: staff
-          }))
-        );
+        .insert(staffData);
         
       if (staffError) {
         throw staffError;

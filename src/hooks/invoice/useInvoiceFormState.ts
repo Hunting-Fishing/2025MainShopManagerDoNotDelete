@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Invoice, InvoiceItem, StaffMember, InventoryItem } from "@/types/invoice";
 import { toast } from "@/hooks/use-toast";
@@ -22,7 +21,7 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
     total: 0,
     status: "draft",
     items: [],
-    assignedStaff: [],
+    assignedStaff: [], // Initialize as empty array of StaffMember
     createdBy: ""
   });
 
@@ -32,18 +31,25 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
   const [showStaffDialog, setShowStaffDialog] = useState<boolean>(false);
 
   // Item management handlers
-  const handleAddInventoryItem = (item: InvoiceItem) => {
+  const handleAddInventoryItem = (item: InventoryItem) => {
+    // Create a new InvoiceItem from the InventoryItem
+    const invoiceItem: InvoiceItem = {
+      id: item.id,
+      name: item.name,
+      description: item.description || "",
+      quantity: 1,
+      price: item.price,
+      total: item.price
+    };
+    
     setInvoice((prev) => ({
       ...prev,
       items: [
         ...prev.items,
-        {
-          ...item,
-          quantity: 1,
-          total: item.price
-        }
+        invoiceItem
       ]
     }));
+    
     setShowInventoryDialog(false);
     toast({
       title: "Item Added",
@@ -121,12 +127,7 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
   // Staff management handlers
   const handleAddStaffMember = (staff: StaffMember) => {
     // Check if the staff member is already assigned
-    const isAssigned = invoice.assignedStaff.some(existing => {
-      if (typeof existing === 'string') {
-        return existing === staff.id;
-      }
-      return existing.id === staff.id;
-    });
+    const isAssigned = invoice.assignedStaff.some(existing => existing.id === staff.id);
 
     if (isAssigned) {
       toast({
@@ -152,13 +153,9 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
   const handleRemoveStaffMember = (staffId: string) => {
     setInvoice((prev) => ({
       ...prev,
-      assignedStaff: prev.assignedStaff.filter(staff => {
-        if (typeof staff === 'string') {
-          return staff !== staffId;
-        }
-        return staff.id !== staffId;
-      })
+      assignedStaff: prev.assignedStaff.filter(staff => staff.id !== staffId)
     }));
+    
     toast({
       title: "Staff Removed",
       description: "Staff member has been removed from the invoice.",
