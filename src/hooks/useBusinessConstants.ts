@@ -23,48 +23,82 @@ export function useBusinessConstants() {
     setError(null);
     
     try {
-      // Since the actual tables don't exist yet, create mock data
-      // In a real implementation, these would come from separate database tables
+      // Fetch business types
+      const { data: typesData, error: typesError } = await supabase
+        .from('business_types')
+        .select('*');
       
-      // Mock business types
-      const mockBusinessTypes: BusinessConstant[] = [
-        { value: 'sole_proprietorship', label: 'Sole Proprietorship' },
-        { value: 'partnership', label: 'Partnership' },
-        { value: 'llc', label: 'Limited Liability Company (LLC)' },
-        { value: 'corporation', label: 'Corporation' },
-        { value: 's_corporation', label: 'S Corporation' },
-        { value: 'nonprofit', label: 'Nonprofit Organization' }
-      ];
-      setBusinessTypes(mockBusinessTypes);
+      if (typesError) throw typesError;
       
-      // Mock business industries
-      const mockBusinessIndustries: BusinessConstant[] = [
-        { value: 'automotive', label: 'Automotive' },
-        { value: 'construction', label: 'Construction' },
-        { value: 'retail', label: 'Retail' },
-        { value: 'healthcare', label: 'Healthcare' },
-        { value: 'hospitality', label: 'Hospitality' },
-        { value: 'manufacturing', label: 'Manufacturing' },
-        { value: 'technology', label: 'Technology' },
-        { value: 'transportation', label: 'Transportation' },
-        { value: 'other', label: 'Other' }
-      ];
-      setBusinessIndustries(mockBusinessIndustries);
+      if (typesData && typesData.length > 0) {
+        setBusinessTypes(typesData.map(item => ({
+          value: item.value || item.id,
+          label: item.label || item.name
+        })));
+      } else {
+        // Fallback defaults if no data exists
+        const defaultBusinessTypes: BusinessConstant[] = [
+          { value: 'sole_proprietorship', label: 'Sole Proprietorship' },
+          { value: 'partnership', label: 'Partnership' },
+          { value: 'llc', label: 'Limited Liability Company (LLC)' },
+          { value: 'corporation', label: 'Corporation' },
+          { value: 's_corporation', label: 'S Corporation' },
+          { value: 'nonprofit', label: 'Nonprofit Organization' }
+        ];
+        setBusinessTypes(defaultBusinessTypes);
+      }
       
-      // Mock payment methods
-      const mockPaymentMethods: BusinessConstant[] = [
-        { value: 'cash', label: 'Cash' },
-        { value: 'check', label: 'Check' },
-        { value: 'credit_card', label: 'Credit Card' },
-        { value: 'debit_card', label: 'Debit Card' },
-        { value: 'bank_transfer', label: 'Bank Transfer' },
-        { value: 'paypal', label: 'PayPal' },
-        { value: 'venmo', label: 'Venmo' },
-        { value: 'apple_pay', label: 'Apple Pay' },
-        { value: 'google_pay', label: 'Google Pay' },
-        { value: 'cryptocurrency', label: 'Cryptocurrency' }
-      ];
-      setPaymentMethods(mockPaymentMethods);
+      // Fetch business industries
+      const { data: industriesData, error: industriesError } = await supabase
+        .from('business_industries')
+        .select('*');
+      
+      if (industriesError) throw industriesError;
+      
+      if (industriesData && industriesData.length > 0) {
+        setBusinessIndustries(industriesData.map(item => ({
+          value: item.value || item.id,
+          label: item.label || item.name
+        })));
+      } else {
+        // Fallback defaults if no data exists
+        const defaultIndustries: BusinessConstant[] = [
+          { value: 'automotive', label: 'Automotive' },
+          { value: 'construction', label: 'Construction' },
+          { value: 'retail', label: 'Retail' },
+          { value: 'healthcare', label: 'Healthcare' },
+          { value: 'hospitality', label: 'Hospitality' },
+          { value: 'manufacturing', label: 'Manufacturing' },
+          { value: 'technology', label: 'Technology' },
+          { value: 'transportation', label: 'Transportation' },
+          { value: 'other', label: 'Other' }
+        ];
+        setBusinessIndustries(defaultIndustries);
+      }
+      
+      // Fetch payment methods
+      const { data: methodsData, error: methodsError } = await supabase
+        .from('payment_methods_options')
+        .select('*');
+      
+      if (methodsError) throw methodsError;
+      
+      if (methodsData && methodsData.length > 0) {
+        setPaymentMethods(methodsData.map(item => ({
+          value: item.value || item.id,
+          label: item.label || item.name
+        })));
+      } else {
+        // Fallback defaults if no data exists
+        const defaultPaymentMethods: BusinessConstant[] = [
+          { value: 'cash', label: 'Cash' },
+          { value: 'check', label: 'Check' },
+          { value: 'credit_card', label: 'Credit Card' },
+          { value: 'debit_card', label: 'Debit Card' },
+          { value: 'bank_transfer', label: 'Bank Transfer' }
+        ];
+        setPaymentMethods(defaultPaymentMethods);
+      }
     } catch (err) {
       console.error('Error fetching business constants:', err);
       setError('Failed to load business data');

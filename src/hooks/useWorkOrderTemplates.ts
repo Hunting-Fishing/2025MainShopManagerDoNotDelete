@@ -2,70 +2,7 @@
 import { useState, useEffect } from 'react';
 import { WorkOrderTemplate } from '@/types/workOrder';
 import { v4 as uuidv4 } from 'uuid';
-
-// Mock templates data
-const mockTemplates: WorkOrderTemplate[] = [
-  {
-    id: "template-1",
-    name: "Standard Oil Change",
-    description: "Regular oil change service with filter replacement",
-    createdAt: "2023-03-15T10:30:00Z",
-    lastUsed: "2023-05-10T14:20:00Z",
-    usageCount: 42,
-    status: "pending",
-    priority: "medium",
-    technician: "John Smith",
-    notes: "Standard 5W-30 synthetic oil and OEM filter",
-    inventoryItems: [
-      { 
-        id: "item-1", 
-        name: "Synthetic Oil (1 quart)", 
-        sku: "OIL-5W30", 
-        category: "Fluids", 
-        quantity: 5, 
-        unitPrice: 9.99 
-      },
-      { 
-        id: "item-2", 
-        name: "Oil Filter", 
-        sku: "FIL-1234", 
-        category: "Filters", 
-        quantity: 1, 
-        unitPrice: 12.99 
-      }
-    ]
-  },
-  {
-    id: "template-2",
-    name: "Brake Service",
-    description: "Front brake pad replacement",
-    createdAt: "2023-02-20T09:15:00Z",
-    lastUsed: "2023-05-05T11:45:00Z",
-    usageCount: 28,
-    status: "pending",
-    priority: "high",
-    technician: "Sarah Johnson",
-    notes: "Inspect rotors and calipers during service",
-    inventoryItems: [
-      { 
-        id: "item-3", 
-        name: "Front Brake Pads", 
-        sku: "BRK-2244", 
-        category: "Brakes", 
-        quantity: 1, 
-        unitPrice: 89.99 
-      },
-      { 
-        id: "item-4", 
-        name: "Brake Cleaner", 
-        sku: "CLE-5678", 
-        category: "Chemicals", 
-        quantity: 1, 
-        unitPrice: 7.99 
-      }
-    ]
-  }
-];
+import { supabase } from '@/lib/supabase';
 
 export function useWorkOrderTemplates() {
   const [templates, setTemplates] = useState<WorkOrderTemplate[]>([]);
@@ -81,11 +18,47 @@ export function useWorkOrderTemplates() {
     setError(null);
     
     try {
-      // Instead of querying Supabase, we'll use our mock data
-      // This simulates a delay in data fetching
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Fetch templates from the database
+      const { data, error: fetchError } = await supabase
+        .from('work_order_templates')
+        .select(`
+          *,
+          inventory_items:work_order_template_items(*)
+        `);
       
-      setTemplates(mockTemplates);
+      if (fetchError) throw fetchError;
+      
+      if (data && data.length > 0) {
+        const formattedTemplates = data.map(template => {
+          return {
+            id: template.id,
+            name: template.name,
+            description: template.description,
+            createdAt: template.created_at,
+            lastUsed: template.last_used || null,
+            usageCount: template.usage_count || 0,
+            status: template.status,
+            priority: template.priority,
+            technician: template.technician,
+            notes: template.notes,
+            inventoryItems: Array.isArray(template.inventory_items) 
+              ? template.inventory_items.map(item => ({
+                  id: item.id,
+                  name: item.name,
+                  sku: item.sku,
+                  category: item.category,
+                  quantity: item.quantity,
+                  unitPrice: item.unit_price
+                }))
+              : []
+          };
+        });
+        
+        setTemplates(formattedTemplates);
+      } else {
+        // If no templates in database, set empty array
+        setTemplates([]);
+      }
     } catch (err) {
       console.error('Error fetching work order templates:', err);
       setError('Failed to load templates');
@@ -96,7 +69,18 @@ export function useWorkOrderTemplates() {
 
   const updateTemplateUsage = async (templateId: string) => {
     try {
-      // Update the last_used timestamp and increment the usage count in our local state
+      // Update the last_used timestamp and increment the usage count in database
+      const { error: updateError } = await supabase
+        .from('work_order_templates')
+        .update({ 
+          last_used: new Date().toISOString(),
+          usage_count: supabase.rpc('increment_usage_count', { template_id: templateId })
+        })
+        .eq('id', templateId);
+
+      if (updateError) throw updateError;
+      
+      // Update local state as well
       setTemplates(prev => 
         prev.map(t => 
           t.id === templateId 
@@ -112,10 +96,47 @@ export function useWorkOrderTemplates() {
   const createTemplate = async (template: Omit<WorkOrderTemplate, 'id' | 'createdAt' | 'usageCount'>) => {
     setIsLoading(true);
     try {
-      // Create a new template object
+      const newTemplateId = uuidv4();
+      
+      // Insert the new template into the database
+      const { error: templateError } = await supabase
+        .from('work_order_templates')
+        .insert({
+          id: newTemplateId,
+          name: template.name,
+          description: template.description,
+          status: template.status,
+          priority: template.priority,
+          technician: template.technician,
+          notes: template.notes,
+          created_at: new Date().toISOString(),
+          usage_count: 0
+        });
+      
+      if (templateError) throw templateError;
+      
+      // Insert inventory items for this template if they exist
+      if (template.inventoryItems && template.inventoryItems.length > 0) {
+        const inventoryItems = template.inventoryItems.map(item => ({
+          template_id: newTemplateId,
+          name: item.name,
+          sku: item.sku,
+          category: item.category,
+          quantity: item.quantity,
+          unit_price: item.unitPrice
+        }));
+        
+        const { error: itemsError } = await supabase
+          .from('work_order_template_items')
+          .insert(inventoryItems);
+        
+        if (itemsError) throw itemsError;
+      }
+      
+      // Create a new template object for state
       const newTemplate: WorkOrderTemplate = {
         ...template,
-        id: uuidv4(),
+        id: newTemplateId,
         createdAt: new Date().toISOString(),
         usageCount: 0,
       };

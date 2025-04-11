@@ -17,20 +17,33 @@ export function useRelationshipData() {
     const fetchRelationshipTypes = async () => {
       setIsLoading(true);
       try {
-        // Instead of querying a table that doesn't exist, return mock data
-        // In a real app, we would fetch from the database
+        // Query the database for relationship types
+        const { data, error } = await supabase
+          .from('relationship_types')
+          .select('*');
+
+        if (error) throw error;
+
+        // If no data, use some defaults to ensure functionality
+        if (!data || data.length === 0) {
+          const defaults: RelationshipType[] = [
+            { id: '1', label: 'Spouse' },
+            { id: '2', label: 'Child' },
+            { id: '3', label: 'Parent' },
+            { id: '4', label: 'Sibling' },
+            { id: '5', label: 'Friend' },
+            { id: '6', label: 'Other' }
+          ];
+          setRelationshipTypes(defaults);
+        } else {
+          // Map database data to RelationshipType format
+          const formattedData = data.map((item): RelationshipType => ({
+            id: item.id,
+            label: item.name || item.label
+          }));
+          setRelationshipTypes(formattedData);
+        }
         
-        // Mock data
-        const mockData: RelationshipType[] = [
-          { id: '1', label: 'Spouse' },
-          { id: '2', label: 'Child' },
-          { id: '3', label: 'Parent' },
-          { id: '4', label: 'Sibling' },
-          { id: '5', label: 'Friend' },
-          { id: '6', label: 'Other' }
-        ];
-        
-        setRelationshipTypes(mockData);
         setError(null);
       } catch (err) {
         console.error('Error fetching relationship types:', err);
