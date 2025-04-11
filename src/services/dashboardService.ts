@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { DashboardStats } from "@/types/dashboard";
 
@@ -297,6 +296,43 @@ export const getTechnicianEfficiency = async () => {
     });
   } catch (error) {
     console.error("Error fetching technician efficiency:", error);
+    return [];
+  }
+};
+
+// Get work orders breakdown by status
+export const getWorkOrdersByStatus = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select('status, id')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    // Count work orders by status
+    const statusCounts = {
+      pending: 0,
+      'in-progress': 0,
+      completed: 0,
+      cancelled: 0
+    };
+    
+    // Group by status
+    data.forEach(order => {
+      const status = order.status || 'pending';
+      if (statusCounts[status] !== undefined) {
+        statusCounts[status]++;
+      }
+    });
+    
+    // Convert to chart format
+    return Object.entries(statusCounts).map(([status, count]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' '),
+      value: count
+    }));
+  } catch (error) {
+    console.error("Error fetching work orders by status:", error);
     return [];
   }
 };
