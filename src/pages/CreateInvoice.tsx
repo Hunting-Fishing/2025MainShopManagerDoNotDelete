@@ -153,34 +153,6 @@ export default function InvoiceCreate() {
     handleAddInventoryItem(invoiceItem);
   };
 
-  const handleRemoveItemAdapter = (id: string) => {
-    const index = invoice.items.findIndex(item => item.id === id);
-    if (index !== -1) {
-      handleRemoveItem(index);
-    }
-  };
-
-  const handleUpdateItemQuantityAdapter = (id: string, quantity: number) => {
-    const index = invoice.items.findIndex(item => item.id === id);
-    if (index !== -1) {
-      handleUpdateItemQuantity(index, quantity);
-    }
-  };
-
-  const handleUpdateItemDescriptionAdapter = (id: string, description: string) => {
-    const index = invoice.items.findIndex(item => item.id === id);
-    if (index !== -1) {
-      handleUpdateItemDescription(index, description);
-    }
-  };
-
-  const handleUpdateItemPriceAdapter = (id: string, price: number) => {
-    const index = invoice.items.findIndex(item => item.id === id);
-    if (index !== -1) {
-      handleUpdateItemPrice(index, price);
-    }
-  };
-
   const handleAddLaborItemAdapter = () => {
     const laborItem: InvoiceItem = {
       id: crypto.randomUUID(),
@@ -194,10 +166,6 @@ export default function InvoiceCreate() {
       category: "Services"
     };
     handleAddLaborItem(laborItem);
-  };
-
-  const handleSaveTemplateAdapter = (templateData: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
-    handleSaveTemplate(templateData);
   };
 
   return (
@@ -222,14 +190,14 @@ export default function InvoiceCreate() {
       handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
-      handleRemoveItem={handleRemoveItemAdapter}
-      handleUpdateItemQuantity={handleUpdateItemQuantityAdapter}
-      handleUpdateItemDescription={handleUpdateItemDescriptionAdapter}
-      handleUpdateItemPrice={handleUpdateItemPriceAdapter}
+      handleRemoveItem={handleRemoveItem}
+      handleUpdateItemQuantity={handleUpdateItemQuantity}
+      handleUpdateItemDescription={handleUpdateItemDescription}
+      handleUpdateItemPrice={handleUpdateItemPrice}
       handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
-      handleSaveTemplate={handleSaveTemplateAdapter}
+      handleSaveTemplate={handleSaveTemplate}
     />
   );
 }

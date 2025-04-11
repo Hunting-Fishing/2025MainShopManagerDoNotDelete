@@ -132,8 +132,6 @@ export default function InvoiceCreate() {
     handleSelectWorkOrder,
   });
 
-  const handleSelectWorkOrderWithTime = workOrderSelector.handleSelectWorkOrderWithTime;
-
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
       return `${staff.first_name} ${staff.last_name}`;
@@ -149,8 +147,8 @@ export default function InvoiceCreate() {
       quantity: 1,
       price: item.price,
       total: item.price,
-      sku: item.sku || "",
-      category: item.category || ""
+      sku: item.sku || "",  // Handle potentially undefined sku
+      category: item.category || "" // Handle potentially undefined category
     };
     handleAddInventoryItem(invoiceItem);
   };
@@ -220,7 +218,7 @@ export default function InvoiceCreate() {
       setShowWorkOrderDialog={setShowWorkOrderDialog}
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
-      handleSelectWorkOrder={handleSelectWorkOrderWithTime}
+      handleSelectWorkOrder={workOrderSelector.handleSelectWorkOrderWithTime}
       handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}

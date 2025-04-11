@@ -3,7 +3,7 @@ import React from "react";
 import { InvoiceItemsHeader } from "./InvoiceItemsHeader";
 import { InvoiceItemsTable } from "./InvoiceItemsTable";
 import { InvoiceItem } from "@/types/invoice";
-import { InventoryItem } from "@/types/inventory";
+import { InventoryItem } from "@/types/inventory"; // Update import to use inventory type
 
 interface InvoiceItemsManagerProps {
   items: InvoiceItem[];

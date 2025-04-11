@@ -79,22 +79,19 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     const workOrderUpdates = handleSelectWorkOrder(workOrder);
     
     setInvoice((prev: Invoice) => {
-      // Convert string staff entries to StaffMember objects if needed
-      const updatedAssignedStaff: StaffMember[] = Array.isArray(workOrderUpdates.assignedStaff) 
-        ? workOrderUpdates.assignedStaff.map((staff: any) => {
-            if (typeof staff === 'string') {
-              return { id: crypto.randomUUID(), name: staff, role: '' };
-            }
-            return staff as StaffMember;
-          })
-        : prev.assignedStaff;
-      
       return {
         ...prev,
         workOrderId: workOrderUpdates.workOrderId,
         customer: workOrderUpdates.customer,
         description: workOrderUpdates.description,
-        assignedStaff: updatedAssignedStaff
+        assignedStaff: Array.isArray(workOrderUpdates.assignedStaff) 
+          ? workOrderUpdates.assignedStaff.map((staff: any) => {
+              if (typeof staff === 'string') {
+                return { id: crypto.randomUUID(), name: staff, role: '' };
+              }
+              return staff as StaffMember;
+            })
+          : prev.assignedStaff
       };
     });
     

@@ -1,5 +1,6 @@
 
 import { Dispatch, SetStateAction } from 'react';
+import { InventoryItem as BaseInventoryItem } from '@/types/inventory';
 
 export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
 
@@ -11,22 +12,12 @@ export interface InvoiceItem {
   price: number;
   hours?: boolean; // Is this a labor/time entry
   total: number;
-  sku: string; // Changed from optional to required to match inventory.ts
-  category: string; // Changed from optional to required to match inventory.ts
+  sku: string;
+  category: string;
 }
 
-// Interface for InventoryItem in invoice context
-export interface InventoryItem {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  quantity?: number;
-  status?: string;
-  supplier?: string;
-  sku: string; // Required to match InvoiceItem
-  category: string; // Required to match InvoiceItem
-}
+// Use inventory type directly to avoid conflicts
+export type InventoryItem = BaseInventoryItem;
 
 export interface StaffMember {
   id: string;
