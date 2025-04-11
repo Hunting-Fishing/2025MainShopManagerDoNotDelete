@@ -1,4 +1,3 @@
-
 import React, { Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
@@ -238,6 +237,7 @@ function App() {
                   <Route path="reminders" element={<Reminders />} />
                   <Route path="chat" element={<Chat />} />
                   <Route path="shopping" element={<Shopping />} />
+                  <Route path="shopping/product/:productId" element={<ProductDetail />} />
                   <Route path="shopping/admin" element={<ShoppingAdmin />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="analytics" element={<Analytics />} />

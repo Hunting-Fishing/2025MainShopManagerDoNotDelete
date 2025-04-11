@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFilterOptions } from "@/types/shopping";
 
@@ -174,4 +173,43 @@ export async function approveProductSuggestion(id: string): Promise<Product> {
   }
 
   return data;
+}
+
+export async function getProductReviews(productId: string): Promise<any[]> {
+  try {
+    const { data, error } = await (supabase as any)
+      .from('product_reviews')
+      .select(`
+        id,
+        rating,
+        review_title,
+        review_text,
+        is_verified_purchase,
+        helpful_votes,
+        created_at,
+        profiles:user_id (
+          first_name,
+          last_name
+        )
+      `)
+      .eq('product_id', productId)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching product reviews:", error);
+      throw error;
+    }
+
+    // Format the reviews data
+    return data.map((review: any) => ({
+      ...review,
+      user_name: review.profiles ? 
+        `${review.profiles.first_name || ''} ${review.profiles.last_name ? review.profiles.last_name[0] + '.' : ''}` : 
+        'Anonymous'
+    })) || [];
+  } catch (error) {
+    console.error("Error in getProductReviews:", error);
+    return [];
+  }
 }
