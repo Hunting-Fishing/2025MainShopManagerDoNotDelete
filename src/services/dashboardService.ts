@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { DashboardStats } from "@/types/dashboard";
+import { DashboardStats, RecentWorkOrder } from "@/types/dashboard";
 
 // Get dashboard statistics including advanced work order metrics
 export const getDashboardStats = async (): Promise<DashboardStats> => {
@@ -333,6 +333,54 @@ export const getWorkOrdersByStatus = async () => {
     }));
   } catch (error) {
     console.error("Error fetching work orders by status:", error);
+    return [];
+  }
+};
+
+// Get recent work orders for the dashboard
+export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select(`
+        id,
+        status,
+        priority,
+        created_at,
+        description,
+        customers(first_name, last_name),
+        service_type
+      `)
+      .order('created_at', { ascending: false })
+      .limit(5); // Get only the 5 most recent orders
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) return [];
+    
+    return data.map(order => {
+      const customer = order.customers ? 
+        `${order.customers.first_name || ''} ${order.customers.last_name || ''}`.trim() : 
+        'Unknown Customer';
+      
+      // Format the date as a string
+      const orderDate = new Date(order.created_at);
+      const formattedDate = orderDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      return {
+        id: order.id,
+        customer: customer,
+        service: order.service_type || order.description?.substring(0, 30) || 'General Service',
+        status: order.status || 'pending',
+        date: formattedDate,
+        priority: order.priority || 'medium'
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching recent work orders:", error);
     return [];
   }
 };

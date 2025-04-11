@@ -41,3 +41,12 @@ export interface TechnicianEfficiencyData {
   billableHours: number;
   efficiency: number;
 }
+
+export interface RecentWorkOrder {
+  id: string;
+  customer: string;
+  service: string;
+  status: string;
+  date: string;
+  priority: string;
+}
