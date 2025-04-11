@@ -50,3 +50,13 @@ export interface RecentWorkOrder {
   date: string;
   priority: string;
 }
+
+export interface TechnicianPerformance {
+  month: string;
+  [technician: string]: string | number;
+}
+
+export interface TechnicianPerformanceData {
+  technicians: string[];
+  chartData: TechnicianPerformance[];
+}

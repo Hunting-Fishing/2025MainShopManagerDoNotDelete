@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { DashboardStats, RecentWorkOrder } from "@/types/dashboard";
+import { DashboardStats, RecentWorkOrder, TechnicianPerformanceData } from "@/types/dashboard";
 
 // Get dashboard statistics including advanced work order metrics
 export const getDashboardStats = async (): Promise<DashboardStats> => {
@@ -382,5 +382,87 @@ export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
   } catch (error) {
     console.error("Error fetching recent work orders:", error);
     return [];
+  }
+};
+
+// Get technician performance data for charts
+export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceData> => {
+  try {
+    // Fetch work order time entries to calculate technician performance
+    const { data: entries, error } = await supabase
+      .from('work_order_time_entries')
+      .select(`
+        id,
+        employee_id,
+        employee_name,
+        billable,
+        duration,
+        created_at
+      `)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    
+    if (!entries || entries.length === 0) {
+      return { technicians: [], chartData: [] };
+    }
+    
+    // Extract unique technicians
+    const technicianSet = new Set<string>();
+    entries.forEach(entry => {
+      if (entry.employee_name) {
+        technicianSet.add(entry.employee_name);
+      }
+    });
+    const technicians = Array.from(technicianSet);
+    
+    // Group entries by month
+    const monthlyData = new Map<string, Record<string, number>>();
+    
+    entries.forEach(entry => {
+      if (!entry.created_at) return;
+      
+      const date = new Date(entry.created_at);
+      const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+      const techKey = entry.employee_name?.toLowerCase().replace(/\s+/g, '_') || 'unknown';
+      const hours = entry.duration / 60; // Convert minutes to hours
+      
+      if (!monthlyData.has(monthYear)) {
+        monthlyData.set(monthYear, {});
+      }
+      
+      const monthData = monthlyData.get(monthYear)!;
+      monthData[techKey] = (monthData[techKey] || 0) + hours;
+    });
+    
+    // Convert to chart data format
+    const chartData = Array.from(monthlyData.entries()).map(([month, data]) => {
+      return {
+        month,
+        ...data
+      };
+    });
+    
+    // Sort chartData by month chronologically
+    chartData.sort((a, b) => {
+      const [aMonth, aYear] = a.month.split(' ');
+      const [bMonth, bYear] = b.month.split(' ');
+      
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      if (aYear !== bYear) {
+        return parseInt(aYear) - parseInt(bYear);
+      }
+      
+      return months.indexOf(aMonth) - months.indexOf(bMonth);
+    });
+    
+    return {
+      technicians,
+      chartData
+    };
+  } catch (error) {
+    console.error("Error fetching technician performance data:", error);
+    return { technicians: [], chartData: [] };
   }
 };
