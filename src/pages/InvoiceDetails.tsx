@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Changed from card to button
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchInvoiceById } from "@/services/invoiceService";
 import { Loader2, Mail, Download, Printer, ArrowLeft } from "lucide-react";

@@ -49,3 +49,15 @@ export interface CarModel {
   model_name: string;
   model_make_id: string;
 }
+
+export type VehicleBodyStyle = 
+  | 'Sedan'
+  | 'SUV'
+  | 'Truck'
+  | 'Coupe'
+  | 'Hatchback'
+  | 'Wagon'
+  | 'Van'
+  | 'Convertible'
+  | 'Minivan'
+  | 'Other';

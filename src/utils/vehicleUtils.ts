@@ -1,53 +1,76 @@
 
 import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle } from '@/types/vehicle';
 
 /**
- * Decode a VIN and return vehicle information from a VIN decoding service
+ * Fetches vehicle details by ID from the database
  */
-export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
+export async function getVehicleById(vehicleId: string): Promise<Vehicle | null> {
   try {
-    // For development purposes, we'll use mock data
-    // In production, this would call a real VIN decoding API
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('id', vehicleId)
+      .single();
     
-    // Simulate API call with a timeout
-    await new Promise(resolve => setTimeout(resolve, 500));
+    if (error) {
+      throw error;
+    }
     
-    // Return mock data
-    return {
-      year: 2019,
-      make: "Toyota",
-      model: "Camry",
-      transmission: "Automatic",
-      drive_type: "FWD",
-      fuel_type: "Gasoline",
-      body_style: "sedan",
-      engine: "2.5L I4",
-      country: "Japan"
-    };
+    return data;
   } catch (error) {
-    console.error("Error decoding VIN:", error);
+    console.error('Error fetching vehicle:', error);
+    toast({
+      title: 'Error',
+      description: 'Could not fetch vehicle details',
+      variant: 'destructive',
+    });
     return null;
   }
 }
 
 /**
- * Get all vehicles for a specific customer
+ * Formats vehicle information for display
  */
-export async function getCustomerVehicles(customerId: string): Promise<Vehicle[]> {
-  try {
-    const { data, error } = await supabase
-      .from('vehicles')
-      .select('*')
-      .eq('customer_id', customerId);
-      
-    if (error) {
-      throw error;
-    }
-    
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching customer vehicles:", error);
-    return [];
-  }
+export function formatVehicleInfo(vehicle: Vehicle | null): string {
+  if (!vehicle) return 'Unknown Vehicle';
+  
+  return `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.color ? ` - ${vehicle.color}` : ''}`;
+}
+
+/**
+ * Gets descriptive text for vehicle transmission type
+ */
+export function getTransmissionTypeText(type?: string): string {
+  if (!type) return 'Unknown';
+  
+  const transmissionTypes: Record<string, string> = {
+    'automatic': 'Automatic',
+    'manual': 'Manual',
+    'cvt': 'CVT',
+    'auto-manual': 'Automated Manual',
+    'dual-clutch': 'Dual Clutch',
+  };
+  
+  return transmissionTypes[type.toLowerCase()] || type;
+}
+
+/**
+ * Gets descriptive text for vehicle fuel type
+ */
+export function getFuelTypeText(type?: string): string {
+  if (!type) return 'Unknown';
+  
+  const fuelTypes: Record<string, string> = {
+    'gasoline': 'Gasoline',
+    'diesel': 'Diesel',
+    'electric': 'Electric',
+    'hybrid': 'Hybrid',
+    'plugin_hybrid': 'Plug-in Hybrid',
+    'cng': 'CNG',
+    'lpg': 'LPG',
+  };
+  
+  return fuelTypes[type.toLowerCase()] || type;
 }
