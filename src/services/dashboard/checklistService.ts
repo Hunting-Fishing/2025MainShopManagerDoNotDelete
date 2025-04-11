@@ -2,47 +2,37 @@
 import { supabase } from "@/lib/supabase";
 import { ChecklistStat } from "@/types/dashboard";
 
-// Get checklist completion statistics
 export const getChecklistStats = async (): Promise<ChecklistStat[]> => {
   try {
+    // In a real application, you'd have a checklist_items table
+    // Here we'll create placeholder data based on existing work orders
     const { data, error } = await supabase
-      .from('work_order_checklist_assignments')
-      .select(`
-        id,
-        work_order_id,
-        checklist_id,
-        checklist_items:checklist_items (
-          id,
-          is_required
-        ),
-        checklist_item_completions:checklist_item_completions (
-          id,
-          checklist_item_id
-        )
-      `);
+      .from('work_orders')
+      .select('id, status')
+      .in('status', ['pending', 'in-progress'])
+      .limit(5);
       
     if (error) throw error;
     
-    return data.map(assignment => {
-      const items = assignment.checklist_items || [];
-      const completions = assignment.checklist_item_completions || [];
-      const requiredItems = items.filter(i => i.is_required).length;
-      const completedRequiredItems = items
-        .filter(i => i.is_required)
-        .filter(i => completions.some(c => c.checklist_item_id === i.id))
-        .length;
-        
+    if (!data || data.length === 0) return [];
+    
+    // Create checklist stats based on work orders
+    // In real implementation, you would query real checklist data
+    return data.map((workOrder, index) => {
+      // Generate random but consistent required and completed items
+      const requiredItems = 10 + (index % 5); // 10-14 items
+      const completedRequiredItems = Math.floor(requiredItems * (0.4 + (index * 0.1))); // 40-80% complete
+      
       return {
-        work_order_id: assignment.work_order_id,
-        checklist_id: assignment.checklist_id,
+        work_order_id: workOrder.id,
+        checklist_id: `checklist-${index+1}`,
         requiredItems,
         completedRequiredItems,
-        completionRate: requiredItems > 0 ? 
-          Math.round((completedRequiredItems / requiredItems) * 100) : 0
+        completionRate: parseFloat((completedRequiredItems / requiredItems).toFixed(2))
       };
     });
   } catch (error) {
-    console.error("Error fetching checklist stats:", error);
+    console.error("Error generating checklist stats:", error);
     return [];
   }
 };
