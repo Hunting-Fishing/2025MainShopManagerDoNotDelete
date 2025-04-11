@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { 
   ServiceReminder, 
@@ -101,12 +102,12 @@ export const createReminderFromTemplate = async (
       description: template.description || "",
       type: "service", // Default type
       dueDate: calculatedDueDate,
-      priority: template.priority,
+      priority: template.priority as ReminderPriority,
       categoryId: template.category_id,
       templateId,
       isRecurring: template.is_recurring,
       recurrenceInterval: template.recurrence_interval,
-      recurrenceUnit: template.recurrence_unit
+      recurrenceUnit: template.recurrence_unit as RecurrenceUnit
     };
     
     return await createReminder(params);
