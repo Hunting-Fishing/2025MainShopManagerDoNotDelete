@@ -32,8 +32,15 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     handleSendVoiceMessage,
     handleSendFileMessage,
     flagMessage,
+    handleEditMessage,
     isTyping,
-    handleTyping
+    typingUsers,
+    handleTyping,
+    threadMessages,
+    activeThreadId,
+    handleThreadOpen,
+    handleThreadClose,
+    fetchThreadReplies
   } = useChatMessages({ 
     userId, 
     userName, 
@@ -74,7 +81,15 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     handlePinRoom,
     handleArchiveRoom,
     flagMessage,
+    handleEditMessage,
     isTyping,
+    typingUsers,
+    handleTyping,
+    threadMessages,
+    activeThreadId,
+    handleThreadOpen,
+    handleThreadClose,
+    fetchThreadReplies,
     refreshRooms
   };
 };

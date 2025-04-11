@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
 import { formatDistanceToNow } from 'date-fns';
 import { parseFileFromMessage } from '@/services/chat/fileService';
@@ -8,21 +8,38 @@ import { cn } from "@/lib/utils";
 import { TaggedItem } from './TaggedItem';
 import { parseTaggedItems } from '@/services/chat/message/types';
 import { Button } from '@/components/ui/button';
-import { Save, AlertCircle } from 'lucide-react';
+import { Save, AlertCircle, MessageSquare, Edit2, Trash2, ThumbsUp, Heart, Smile } from 'lucide-react';
 import { saveMessageToRecord } from '@/services/chat/message/mutations';
 import { toast } from '@/hooks/use-toast';
+import { 
+  addMessageReaction, 
+  removeMessageReaction, 
+  getMessageReactions 
+} from '@/services/chat/message/reactions';
+import { useEffect } from 'react';
+import { markMessageAsRead } from '@/services/chat/message/readReceipts';
 
 interface ChatMessageProps {
   message: ChatMessageType;
   isCurrentUser: boolean;
   onFlagMessage?: (messageId: string, reason: string) => void;
+  onReply?: (messageId: string) => void;
+  onEdit?: (messageId: string, content: string) => void;
+  userId: string;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ 
   message, 
   isCurrentUser,
-  onFlagMessage 
+  onFlagMessage,
+  onReply,
+  onEdit,
+  userId
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
+  const [reactions, setReactions] = useState<{type: string, count: number, userReacted: boolean}[]>([]);
+
   // Parse the message content for file references
   const { fileInfo, text } = parseFileFromMessage(message.content);
   
@@ -35,6 +52,53 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   // Check if this message has been saved already
   const isSavedToWorkOrder = message.metadata?.saved_to?.work_order ? true : false;
   const isSavedToVehicle = message.metadata?.saved_to?.vehicle ? true : false;
+
+  // Mark message as read when it appears
+  useEffect(() => {
+    if (message.sender_id !== userId && !message.is_read) {
+      markMessageAsRead(message.id, userId).catch(console.error);
+    }
+  }, [message.id, message.sender_id, message.is_read, userId]);
+
+  // Load reactions
+  useEffect(() => {
+    const loadReactions = async () => {
+      try {
+        const messageReactions = await getMessageReactions(message.id);
+        
+        // Count reactions by type
+        const reactionCounts: {[key: string]: {count: number, userReacted: boolean}} = {};
+        
+        messageReactions.forEach(reaction => {
+          if (!reactionCounts[reaction.reaction_type]) {
+            reactionCounts[reaction.reaction_type] = {
+              count: 0,
+              userReacted: false
+            };
+          }
+          
+          reactionCounts[reaction.reaction_type].count++;
+          
+          if (reaction.user_id === userId) {
+            reactionCounts[reaction.reaction_type].userReacted = true;
+          }
+        });
+        
+        // Convert to array for rendering
+        const reactionArray = Object.entries(reactionCounts).map(([type, data]) => ({
+          type,
+          count: data.count,
+          userReacted: data.userReacted
+        }));
+        
+        setReactions(reactionArray);
+      } catch (error) {
+        console.error("Error loading reactions:", error);
+      }
+    };
+    
+    loadReactions();
+  }, [message.id, userId]);
   
   // Handle saving to work order
   const handleSaveToWorkOrder = async () => {
@@ -109,6 +173,71 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     }
   };
   
+  // Handle edit message
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditContent(message.content);
+  };
+  
+  // Save edited message
+  const handleSaveEdit = () => {
+    if (onEdit) {
+      onEdit(message.id, editContent);
+      setIsEditing(false);
+    }
+  };
+  
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  // Handle reactions
+  const handleReaction = async (reactionType: string) => {
+    try {
+      // Check if user already reacted with this emoji
+      const existingReaction = reactions.find(r => r.type === reactionType && r.userReacted);
+      
+      if (existingReaction) {
+        // Remove reaction
+        await removeMessageReaction(message.id, userId, reactionType);
+        
+        // Update local state
+        setReactions(prev => prev.map(r => 
+          r.type === reactionType 
+            ? { ...r, count: r.count - 1, userReacted: false }
+            : r
+        ).filter(r => r.count > 0));
+      } else {
+        // Add reaction
+        await addMessageReaction(message.id, userId, reactionType);
+        
+        // Update local state
+        const existingType = reactions.find(r => r.type === reactionType);
+        if (existingType) {
+          setReactions(prev => prev.map(r => 
+            r.type === reactionType
+              ? { ...r, count: r.count + 1, userReacted: true }
+              : r
+          ));
+        } else {
+          setReactions(prev => [...prev, {
+            type: reactionType,
+            count: 1,
+            userReacted: true
+          }]);
+        }
+      }
+    } catch (error) {
+      console.error("Error managing reaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update reaction",
+        variant: "destructive"
+      });
+    }
+  };
+  
   return (
     <div className={cn(
       "flex mb-2",
@@ -135,7 +264,53 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             <ChatFileMessage fileInfo={fileInfo} caption={text} />
           ) : (
             <div>
-              <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+              {isEditing ? (
+                <div className="flex flex-col space-y-2">
+                  <textarea 
+                    className="p-2 border border-gray-300 rounded w-full text-slate-900"
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    rows={3}
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={handleSaveEdit}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                  
+                  {message.is_edited && (
+                    <div className="text-xs italic mt-1">
+                      (edited)
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Display thread count if there are replies */}
+              {message.thread_count && message.thread_count > 0 && (
+                <div 
+                  className="flex items-center mt-1 text-xs cursor-pointer text-blue-600 hover:underline"
+                  onClick={() => onReply && onReply(message.id)}
+                >
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  {message.thread_count} {message.thread_count === 1 ? 'reply' : 'replies'}
+                </div>
+              )}
               
               {/* Render tagged items if there are any */}
               {(taggedItems.workOrderIds.length > 0 || 
@@ -158,42 +333,129 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 </div>
               )}
               
-              {/* Show message action buttons */}
-              {!isCurrentUser && (
-                <div className="mt-2 flex gap-1 justify-end">
-                  <Button 
-                    variant="outline"
-                    size="xs"
-                    className="text-xs h-6 px-2 py-0 bg-white"
-                    onClick={handleSaveToWorkOrder}
-                    disabled={isSavedToWorkOrder}
-                  >
-                    <Save className="h-3 w-3 mr-1" />
-                    Work Order
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    size="xs"
-                    className="text-xs h-6 px-2 py-0 bg-white"
-                    onClick={handleSaveToVehicleHistory}
-                    disabled={isSavedToVehicle}
-                  >
-                    <Save className="h-3 w-3 mr-1" />
-                    Vehicle
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    size="xs"
-                    className="text-xs h-6 px-2 py-0 bg-white"
-                    onClick={handleFlagMessage}
-                  >
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Flag
-                  </Button>
+              {/* Display reactions */}
+              {reactions.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {reactions.map(reaction => (
+                    <Button 
+                      key={reaction.type} 
+                      variant={reaction.userReacted ? "default" : "outline"}
+                      size="xs"
+                      className={cn(
+                        "text-xs h-6 px-2 py-0",
+                        reaction.userReacted ? "bg-blue-100 text-blue-800" : "bg-white"
+                      )}
+                      onClick={() => handleReaction(reaction.type)}
+                    >
+                      {reaction.type} {reaction.count}
+                    </Button>
+                  ))}
                 </div>
               )}
+              
+              {/* Show message action buttons */}
+              <div className="mt-2 flex flex-wrap gap-1 justify-end">
+                {/* Message actions */}
+                <div className="flex gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="xs"
+                    className="text-xs h-6 px-2 py-0 bg-white"
+                    onClick={() => handleReaction('👍')}
+                  >
+                    <ThumbsUp className="h-3 w-3" />
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="xs"
+                    className="text-xs h-6 px-2 py-0 bg-white"
+                    onClick={() => handleReaction('❤️')}
+                  >
+                    <Heart className="h-3 w-3" />
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="xs"
+                    className="text-xs h-6 px-2 py-0 bg-white"
+                    onClick={() => handleReaction('😊')}
+                  >
+                    <Smile className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                {/* Save actions for messages from others */}
+                {!isCurrentUser && (
+                  <>
+                    <Button 
+                      variant="outline"
+                      size="xs"
+                      className="text-xs h-6 px-2 py-0 bg-white"
+                      onClick={handleSaveToWorkOrder}
+                      disabled={isSavedToWorkOrder}
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      Work Order
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      size="xs"
+                      className="text-xs h-6 px-2 py-0 bg-white"
+                      onClick={handleSaveToVehicleHistory}
+                      disabled={isSavedToVehicle}
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      Vehicle
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      size="xs"
+                      className="text-xs h-6 px-2 py-0 bg-white"
+                      onClick={handleFlagMessage}
+                    >
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Flag
+                    </Button>
+                  </>
+                )}
+                
+                {/* Edit/Delete for own messages */}
+                {isCurrentUser && (
+                  <>
+                    <Button 
+                      variant="outline"
+                      size="xs"
+                      className="text-xs h-6 px-2 py-0 bg-white"
+                      onClick={handleEdit}
+                    >
+                      <Edit2 className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      size="xs"
+                      className="text-xs h-6 px-2 py-0 bg-white text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </>
+                )}
+                
+                {/* Reply button for all messages */}
+                <Button 
+                  variant="outline"
+                  size="xs"
+                  className="text-xs h-6 px-2 py-0 bg-white"
+                  onClick={() => onReply && onReply(message.id)}
+                >
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  Reply
+                </Button>
+              </div>
             </div>
           )}
         </div>

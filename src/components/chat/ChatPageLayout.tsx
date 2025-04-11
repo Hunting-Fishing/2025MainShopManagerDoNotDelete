@@ -2,24 +2,30 @@
 import React from 'react';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
-import { ChatRoom } from '@/types/chat';
+import { ChatRoom, ChatMessage } from '@/types/chat';
 
 interface ChatPageLayoutProps {
   chatRooms: ChatRoom[];
   currentRoom: ChatRoom | null;
-  messages: any[];
+  messages: ChatMessage[];
   userId: string;
   userName: string;
   newMessageText: string;
   setNewMessageText: (text: string) => void;
   onSelectRoom: (room: ChatRoom) => void;
-  onSendMessage: () => void;
-  onSendVoiceMessage?: (audioUrl: string) => void;
-  onSendFileMessage?: (fileUrl: string) => void;
+  onSendMessage: (threadParentId?: string) => void;
+  onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => void;
+  onSendFileMessage?: (fileUrl: string, threadParentId?: string) => void;
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
   onFlagMessage?: (messageId: string, reason: string) => void;
+  onEditMessage?: (messageId: string, content: string) => void;
   isTyping?: boolean;
+  typingUsers?: {id: string, name: string}[];
+  threadMessages?: {[key: string]: ChatMessage[]};
+  activeThreadId?: string | null;
+  onOpenThread?: (messageId: string) => void;
+  onCloseThread?: () => void;
   onViewWorkOrderDetails?: () => void;
   navigateToRoom: (roomId: string) => void;
   onNewChat: () => void;
@@ -40,7 +46,13 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   onPinRoom,
   onArchiveRoom,
   onFlagMessage,
+  onEditMessage,
   isTyping,
+  typingUsers,
+  threadMessages,
+  activeThreadId,
+  onOpenThread,
+  onCloseThread,
   onViewWorkOrderDetails,
   navigateToRoom,
   onNewChat
@@ -71,14 +83,20 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
             userId={userId}
             userName={userName}
             messageText={newMessageText}
-            setMessageText={setNewMessageText}
+            setMessageText={setMessageText}
             onSendMessage={onSendMessage}
             onSendVoiceMessage={onSendVoiceMessage}
             onSendFileMessage={onSendFileMessage}
             onPinRoom={onPinRoom}
             onArchiveRoom={onArchiveRoom}
             onFlagMessage={onFlagMessage}
+            onEditMessage={onEditMessage}
             isTyping={isTyping}
+            typingUsers={typingUsers}
+            threadMessages={threadMessages}
+            activeThreadId={activeThreadId}
+            onOpenThread={onOpenThread}
+            onCloseThread={onCloseThread}
             onViewInfo={currentRoom?.work_order_id ? onViewWorkOrderDetails : undefined}
           />
         </div>

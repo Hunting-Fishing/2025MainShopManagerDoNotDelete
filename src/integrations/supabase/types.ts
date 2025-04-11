@@ -291,51 +291,127 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_message_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_message_read_receipts: {
+        Row: {
+          id: string
+          message_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_read_receipts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
           created_at: string
+          edited_at: string | null
           file_url: string | null
           flag_reason: string | null
           id: string
+          is_edited: boolean | null
           is_flagged: boolean | null
           is_read: boolean | null
           message_type: string | null
           metadata: Json | null
+          original_content: string | null
           reply_to_id: string | null
           room_id: string
           sender_id: string
           sender_name: string
+          thread_count: number | null
+          thread_parent_id: string | null
         }
         Insert: {
           content: string
           created_at?: string
+          edited_at?: string | null
           file_url?: string | null
           flag_reason?: string | null
           id?: string
+          is_edited?: boolean | null
           is_flagged?: boolean | null
           is_read?: boolean | null
           message_type?: string | null
           metadata?: Json | null
+          original_content?: string | null
           reply_to_id?: string | null
           room_id: string
           sender_id: string
           sender_name: string
+          thread_count?: number | null
+          thread_parent_id?: string | null
         }
         Update: {
           content?: string
           created_at?: string
+          edited_at?: string | null
           file_url?: string | null
           flag_reason?: string | null
           id?: string
+          is_edited?: boolean | null
           is_flagged?: boolean | null
           is_read?: boolean | null
           message_type?: string | null
           metadata?: Json | null
+          original_content?: string | null
           reply_to_id?: string | null
           room_id?: string
           sender_id?: string
           sender_name?: string
+          thread_count?: number | null
+          thread_parent_id?: string | null
         }
         Relationships: [
           {
@@ -343,6 +419,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_thread_parent_id_fkey"
+            columns: ["thread_parent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
             referencedColumns: ["id"]
           },
         ]
@@ -384,6 +467,8 @@ export type Database = {
           is_pinned: boolean | null
           metadata: Json | null
           name: string
+          retention_period: number | null
+          retention_type: string | null
           type: string
           updated_at: string
           work_order_id: string | null
@@ -395,6 +480,8 @@ export type Database = {
           is_pinned?: boolean | null
           metadata?: Json | null
           name: string
+          retention_period?: number | null
+          retention_type?: string | null
           type: string
           updated_at?: string
           work_order_id?: string | null
@@ -406,6 +493,8 @@ export type Database = {
           is_pinned?: boolean | null
           metadata?: Json | null
           name?: string
+          retention_period?: number | null
+          retention_type?: string | null
           type?: string
           updated_at?: string
           work_order_id?: string | null
@@ -416,6 +505,38 @@ export type Database = {
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_typing_indicators: {
+        Row: {
+          id: string
+          room_id: string
+          started_at: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          id?: string
+          room_id: string
+          started_at?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          id?: string
+          room_id?: string
+          started_at?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_typing_indicators_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
             referencedColumns: ["id"]
           },
         ]

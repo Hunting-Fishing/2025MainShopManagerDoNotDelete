@@ -30,7 +30,14 @@ export default function Chat() {
     handlePinRoom,
     handleArchiveRoom,
     flagMessage,
+    handleEditMessage,
     isTyping,
+    typingUsers,
+    handleTyping,
+    threadMessages,
+    activeThreadId,
+    handleThreadOpen,
+    handleThreadClose,
     selectRoom,
     refreshRooms
   } = useChat({
@@ -126,7 +133,13 @@ export default function Chat() {
         onPinRoom={handlePinRoom}
         onArchiveRoom={handleArchiveRoom}
         onFlagMessage={flagMessage}
+        onEditMessage={handleEditMessage}
         isTyping={isTyping}
+        typingUsers={typingUsers}
+        threadMessages={threadMessages}
+        activeThreadId={activeThreadId}
+        onOpenThread={handleThreadOpen}
+        onCloseThread={handleThreadClose}
         onViewWorkOrderDetails={() => currentRoom?.work_order_id && handleViewWorkOrderDetails(currentRoom.work_order_id)}
         navigateToRoom={(roomId) => navigate(`/chat/${roomId}`)}
         onNewChat={() => setShowNewChatDialog(true)}

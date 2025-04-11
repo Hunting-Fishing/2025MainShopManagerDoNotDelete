@@ -6,11 +6,18 @@ import {
   markMessagesAsRead,
   subscribeToMessages,
   sendMessage,
-  flagChatMessage
+  flagChatMessage,
+  editMessage,
+  getThreadReplies
 } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
 import { MessageSendParams } from '@/services/chat/message/types';
 import { parseFileFromMessage } from '@/services/chat/fileService';
+import { 
+  setTypingIndicator, 
+  clearTypingIndicator, 
+  subscribeToTypingIndicators 
+} from '@/services/chat/message/typingIndicator';
 
 interface UseChatMessagesProps {
   userId: string;
@@ -25,6 +32,9 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
   const [newMessageText, setNewMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimer, setTypingTimer] = useState<NodeJS.Timeout | null>(null);
+  const [typingUsers, setTypingUsers] = useState<{id: string, name: string}[]>([]);
+  const [threadMessages, setThreadMessages] = useState<{[key: string]: ChatMessage[]}>({});
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 
   // Fetch messages for a selected room
   const fetchMessages = useCallback(async (roomId: string) => {
@@ -52,6 +62,44 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     }
   }, [userId]);
 
+  // Fetch thread replies
+  const fetchThreadReplies = useCallback(async (messageId: string) => {
+    if (!messageId) return;
+    
+    try {
+      const replies = await getThreadReplies(messageId);
+      
+      setThreadMessages(prev => ({
+        ...prev,
+        [messageId]: replies
+      }));
+      
+      return replies;
+    } catch (err) {
+      console.error('Failed to load thread replies:', err);
+      toast({
+        title: "Error",
+        description: "Couldn't load message replies.",
+        variant: "destructive",
+      });
+      return [];
+    }
+  }, []);
+
+  // Handle opening/closing threads
+  const handleThreadOpen = useCallback(async (messageId: string) => {
+    setActiveThreadId(messageId);
+    
+    // Load thread replies if not already loaded
+    if (!threadMessages[messageId]) {
+      await fetchThreadReplies(messageId);
+    }
+  }, [threadMessages, fetchThreadReplies]);
+
+  const handleThreadClose = useCallback(() => {
+    setActiveThreadId(null);
+  }, []);
+
   // Subscribe to new messages when a room is selected
   useEffect(() => {
     if (!currentRoomId || !userId) return;
@@ -65,6 +113,25 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         const isDuplicate = prevMessages.some(msg => msg.id === newMessage.id);
         if (isDuplicate) return prevMessages;
         
+        // If it's a thread reply, add it to the thread messages
+        if (newMessage.thread_parent_id) {
+          setThreadMessages(prev => ({
+            ...prev,
+            [newMessage.thread_parent_id!]: [
+              ...(prev[newMessage.thread_parent_id!] || []),
+              newMessage
+            ]
+          }));
+          
+          // Also update the thread count on the parent message
+          return prevMessages.map(msg => 
+            msg.id === newMessage.thread_parent_id
+              ? { ...msg, thread_count: (msg.thread_count || 0) + 1 }
+              : msg
+          );
+        }
+        
+        // For regular messages, add to the main list
         return [...prevMessages, newMessage];
       });
       
@@ -74,13 +141,31 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
       }
     });
 
+    // Subscribe to typing indicators
+    const unsubscribeTyping = subscribeToTypingIndicators(currentRoomId, (indicators) => {
+      // Filter out current user and convert to simpler format
+      const typingUserList = indicators
+        .filter(indicator => indicator.user_id !== userId)
+        .map(indicator => ({ 
+          id: indicator.user_id, 
+          name: indicator.user_name 
+        }));
+        
+      setTypingUsers(typingUserList);
+      setIsTyping(typingUserList.length > 0);
+    });
+
     return () => {
       unsubscribe();
+      unsubscribeTyping();
+      if (typingTimer) {
+        clearTimeout(typingTimer);
+      }
     };
-  }, [currentRoomId, userId, fetchMessages]);
+  }, [currentRoomId, userId, fetchMessages, typingTimer]);
 
   // Send a new text message
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(async (threadParentId?: string) => {
     if (!currentRoomId || !newMessageText.trim() || !userId) return;
     
     try {
@@ -88,10 +173,15 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
-        content: newMessageText
+        content: newMessageText,
+        thread_parent_id: threadParentId,
+        message_type: threadParentId ? 'thread' : undefined
       };
       
       await sendMessage(messageParams);
+      
+      // Clear typing indicator
+      await clearTypingIndicator(currentRoomId, userId);
       
       // Clear the input after sending (the subscription will catch the new message)
       setNewMessageText('');
@@ -107,7 +197,7 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
   }, [currentRoomId, newMessageText, userId, userName]);
 
   // Send a voice message
-  const handleSendVoiceMessage = useCallback(async (audioUrl: string) => {
+  const handleSendVoiceMessage = useCallback(async (audioUrl: string, threadParentId?: string) => {
     if (!currentRoomId || !userId) return;
     
     try {
@@ -115,7 +205,9 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
-        content: audioUrl
+        content: audioUrl,
+        thread_parent_id: threadParentId,
+        message_type: 'audio'
       };
       
       await sendMessage(messageParams);
@@ -131,7 +223,7 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
   }, [currentRoomId, userId, userName]);
 
   // Send a file message
-  const handleSendFileMessage = useCallback(async (fileMessage: string) => {
+  const handleSendFileMessage = useCallback(async (fileMessage: string, threadParentId?: string) => {
     if (!currentRoomId || !userId) return;
     
     try {
@@ -139,7 +231,9 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
-        content: fileMessage
+        content: fileMessage,
+        thread_parent_id: threadParentId,
+        message_type: 'file'
       };
       
       await sendMessage(messageParams);
@@ -188,16 +282,68 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     }
   }, [userId]);
 
+  // Edit a message
+  const handleEditMessage = useCallback(async (messageId: string, newContent: string) => {
+    if (!messageId || !userId || !newContent.trim()) return;
+    
+    try {
+      const updatedMessage = await editMessage({
+        messageId,
+        content: newContent,
+        userId
+      });
+      
+      // Update the message in the local state
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId ? updatedMessage : msg
+        )
+      );
+      
+      // Also update in thread messages if needed
+      if (updatedMessage.thread_parent_id) {
+        setThreadMessages(prev => {
+          const parentId = updatedMessage.thread_parent_id!;
+          if (!prev[parentId]) return prev;
+          
+          return {
+            ...prev,
+            [parentId]: prev[parentId].map(msg => 
+              msg.id === messageId ? updatedMessage : msg
+            )
+          };
+        });
+      }
+      
+      toast({
+        title: "Message updated",
+        description: "Your message has been edited.",
+      });
+    } catch (err) {
+      console.error('Failed to edit message:', err);
+      toast({
+        title: "Error",
+        description: "Failed to edit message. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [userId]);
+
   // Simulate typing indicator
   const handleTyping = useCallback(() => {
-    setIsTyping(true);
+    if (!currentRoomId || !userId) return;
+    
+    // Update typing indicator in database
+    setTypingIndicator(currentRoomId, userId, userName)
+      .catch(console.error);
     
     if (typingTimer) {
       clearTimeout(typingTimer);
     }
     
-    const timer = setTimeout(() => {
-      setIsTyping(false);
+    // Clear typing indicator after 3 seconds of inactivity
+    const timer = setTimeout(async () => {
+      await clearTypingIndicator(currentRoomId, userId);
     }, 3000);
     
     setTypingTimer(timer);
@@ -207,7 +353,7 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         clearTimeout(typingTimer);
       }
     };
-  }, [typingTimer]);
+  }, [currentRoomId, typingTimer, userId, userName]);
 
   return {
     messages,
@@ -219,7 +365,14 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     handleSendVoiceMessage,
     handleSendFileMessage,
     flagMessage,
+    handleEditMessage,
     isTyping,
-    handleTyping
+    typingUsers,
+    handleTyping,
+    threadMessages,
+    activeThreadId,
+    handleThreadOpen,
+    handleThreadClose,
+    fetchThreadReplies
   };
 };

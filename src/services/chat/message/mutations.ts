@@ -1,7 +1,7 @@
 
 import { ChatMessage } from "@/types/chat";
 import { supabase, DatabaseChatMessage } from "../supabaseClient";
-import { MessageSendParams, MessageFlagParams, getMessageType, transformDatabaseMessage, parseTaggedItems } from "./types";
+import { MessageSendParams, MessageFlagParams, MessageEditParams, getMessageType, transformDatabaseMessage, parseTaggedItems } from "./types";
 
 // Send a message to a chat room
 export const sendMessage = async (message: MessageSendParams): Promise<ChatMessage> => {
@@ -95,6 +95,59 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
     if (error) throw error;
   } catch (error) {
     console.error("Error deleting message:", error);
+    throw error;
+  }
+};
+
+// Edit a message
+export const editMessage = async ({ messageId, content, userId }: MessageEditParams): Promise<ChatMessage> => {
+  try {
+    // First get the original message
+    const { data: originalMessage, error: fetchError } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('id', messageId)
+      .single();
+      
+    if (fetchError) throw fetchError;
+    
+    // Make sure the user can edit this message
+    if (originalMessage.sender_id !== userId) {
+      throw new Error("You can only edit your own messages");
+    }
+    
+    // Parse tagged items from the new content
+    const taggedItems = parseTaggedItems(content);
+    
+    // Update the message
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .update({
+        content: content,
+        is_edited: true,
+        edited_at: new Date().toISOString(),
+        original_content: originalMessage.original_content || originalMessage.content,
+        metadata: {
+          ...originalMessage.metadata,
+          taggedItems: taggedItems,
+          edit_history: [
+            ...(originalMessage.metadata?.edit_history || []),
+            {
+              previous_content: originalMessage.content,
+              edited_at: new Date().toISOString()
+            }
+          ]
+        }
+      } as Partial<DatabaseChatMessage>)
+      .eq('id', messageId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    return transformDatabaseMessage(data as DatabaseChatMessage);
+  } catch (error) {
+    console.error("Error editing message:", error);
     throw error;
   }
 };

@@ -1,15 +1,17 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { ChatRoom, ChatMessage as ChatMessageType } from '@/types/chat';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Info, Users, Smile, TagIcon, MoreVertical, AlertCircle, Bookmark } from 'lucide-react';
+import { Send, Info, Users, MoreVertical, MessageSquare } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { AudioRecorder } from './AudioRecorder';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { uploadVoiceRecording, formatFileMessage } from '@/services/chat/fileService';
+import { formatFileMessage } from '@/services/chat/fileService';
 import { FileUploadButton } from './file/FileUploadButton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ChatThread } from './ChatThread';
 
 interface ChatWindowProps {
   room: ChatRoom | null;
@@ -18,15 +20,21 @@ interface ChatWindowProps {
   userName: string;
   messageText: string;
   setMessageText: (text: string) => void;
-  onSendMessage: () => void;
-  onSendVoiceMessage?: (audioUrl: string) => void;
-  onSendFileMessage?: (fileMessage: string) => void;
+  onSendMessage: (threadParentId?: string) => void;
+  onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => void;
+  onSendFileMessage?: (fileMessage: string, threadParentId?: string) => void;
   onViewInfo?: () => void;
   onViewParticipants?: () => void;
   onFlagMessage?: (messageId: string, reason: string) => void;
+  onEditMessage?: (messageId: string, content: string) => void;
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
   isTyping?: boolean;
+  typingUsers?: {id: string, name: string}[];
+  threadMessages?: {[key: string]: ChatMessageType[]};
+  activeThreadId?: string | null;
+  onOpenThread?: (messageId: string) => void;
+  onCloseThread?: () => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -42,13 +50,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onViewInfo,
   onViewParticipants,
   onFlagMessage,
+  onEditMessage,
   onPinRoom,
   onArchiveRoom,
-  isTyping = false
+  isTyping = false,
+  typingUsers = [],
+  threadMessages = {},
+  activeThreadId = null,
+  onOpenThread,
+  onCloseThread
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showWorkOrderMenu, setShowWorkOrderMenu] = useState(false);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -64,15 +77,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleVoiceMessage = async (audioBlob: Blob) => {
-    if (!room) return;
+    if (!room || !onSendFileMessage) return;
     
     try {
       setIsUploading(true);
-      const fileInfo = await uploadVoiceRecording(room.id, audioBlob);
+      // Create a unique filename
+      const filename = `voice-${Date.now()}.mp3`;
       
-      if (fileInfo && onSendFileMessage) {
-        onSendFileMessage(formatFileMessage(fileInfo));
-      }
+      // Create a File from the Blob
+      const file = new File([audioBlob], filename, { type: 'audio/mp3' });
+      
+      // Create a temporary URL for the file
+      const audioUrl = URL.createObjectURL(file);
+      
+      // Format audio message
+      const fileMessage = formatFileMessage({
+        url: audioUrl,
+        type: 'audio',
+        name: filename
+      });
+      
+      // Send the voice message
+      onSendFileMessage(fileMessage, activeThreadId || undefined);
+    } catch (error) {
+      console.error("Error with voice message:", error);
     } finally {
       setIsUploading(false);
     }
@@ -80,36 +108,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleFileUploaded = (fileUrl: string, fileType: string, caption?: string) => {
     if (onSendFileMessage) {
-      onSendFileMessage(fileUrl + (caption ? `|${caption}` : ''));
+      onSendFileMessage(fileUrl + (caption ? `|${caption}` : ''), activeThreadId || undefined);
     }
   };
-
-  const renderWorkOrderOptions = () => {
-    if (!room?.work_order_id) return null;
-    
-    return (
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => setShowWorkOrderMenu(!showWorkOrderMenu)}
-        className="relative"
-      >
-        <TagIcon className="h-5 w-5" />
-        {showWorkOrderMenu && (
-          <div className="absolute top-full right-0 mt-1 p-2 bg-white shadow-lg rounded-md z-10 w-64">
-            <div className="text-sm font-medium mb-2">Work Order Actions</div>
-            <Button variant="outline" size="sm" className="w-full justify-start mb-1">
-              <AlertCircle className="h-4 w-4 mr-2" />
-              Flag for Attention
-            </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start mb-1">
-              <Bookmark className="h-4 w-4 mr-2" />
-              Save to Vehicle History
-            </Button>
-          </div>
-        )}
-      </Button>
-    );
+  
+  // Get parent message for thread view
+  const getParentMessage = () => {
+    if (!activeThreadId) return null;
+    return messages.find(msg => msg.id === activeThreadId) || null;
   };
 
   if (!room) {
@@ -117,7 +123,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <Card className="h-full flex flex-col items-center justify-center">
         <CardContent className="text-center p-6">
           <div className="bg-slate-100 rounded-full p-6 inline-block mx-auto mb-4">
-            <Send className="h-8 w-8 text-slate-400" />
+            <MessageSquare className="h-8 w-8 text-slate-400" />
           </div>
           <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
           <p className="text-slate-500 text-sm max-w-md">
@@ -198,36 +204,68 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent className="flex-grow p-4 overflow-y-auto">
-        {messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center text-slate-500">
-              <p>No messages yet</p>
-              <p className="text-sm">Start the conversation!</p>
+      <CardContent className="flex-grow p-0 overflow-hidden grid grid-cols-1 md:grid-cols-3 relative">
+        {/* Main message area */}
+        <div className={`md:col-span-${activeThreadId ? '2' : '3'} overflow-y-auto p-4 h-full`}>
+          {messages.length === 0 ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-slate-500">
+                <p>No messages yet</p>
+                <p className="text-sm">Start the conversation!</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {messages.map(message => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                isCurrentUser={message.sender_id === userId}
-                onFlagMessage={onFlagMessage}
-              />
-            ))}
-            {isTyping && (
-              <div className="flex ml-2 mb-4">
-                <div className="bg-slate-200 text-slate-900 px-4 py-2 rounded-lg">
-                  <div className="flex gap-1 items-center">
-                    <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                    <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce [animation-delay:0.3s]"></div>
-                    <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce [animation-delay:0.5s]"></div>
+          ) : (
+            <div className="space-y-1">
+              {messages.map(message => (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  isCurrentUser={message.sender_id === userId}
+                  onFlagMessage={onFlagMessage}
+                  onReply={onOpenThread}
+                  onEdit={onEditMessage}
+                  userId={userId}
+                />
+              ))}
+              {isTyping && typingUsers.length > 0 && (
+                <div className="flex ml-2 mb-4">
+                  <div className="bg-slate-200 text-slate-900 px-4 py-2 rounded-lg">
+                    <div className="flex items-center">
+                      <span className="text-xs mr-2">
+                        {typingUsers.length === 1 
+                          ? `${typingUsers[0].name} is typing...` 
+                          : `${typingUsers.length} people are typing...`}
+                      </span>
+                      <div className="flex gap-1 items-center">
+                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce [animation-delay:0.3s]"></div>
+                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce [animation-delay:0.5s]"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+        
+        {/* Thread panel */}
+        {activeThreadId && onCloseThread && (
+          <div className="md:col-span-1 border-l h-full">
+            <ChatThread
+              threadId={activeThreadId}
+              messages={threadMessages[activeThreadId] || []}
+              onClose={onCloseThread}
+              onSendReply={(content, threadId) => {
+                setMessageText(content);
+                onSendMessage(threadId);
+                setMessageText('');
+              }}
+              userId={userId}
+              parentMessage={getParentMessage() || undefined}
+              onEditMessage={onEditMessage || (() => {})}
+            />
           </div>
         )}
       </CardContent>
@@ -249,15 +287,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             disabled={isUploading}
           />
           
-          {renderWorkOrderOptions()}
-          
           <AudioRecorder 
             onAudioRecorded={handleVoiceMessage}
             isDisabled={isUploading} 
           />
           
           <Button 
-            onClick={onSendMessage} 
+            onClick={() => onSendMessage(activeThreadId || undefined)} 
             disabled={!messageText.trim() || isUploading}
             className="px-3"
           >

@@ -10,6 +10,12 @@ export type MessageFlagParams = {
   userId: string;
 };
 
+export type MessageEditParams = {
+  messageId: string;
+  content: string;
+  userId: string;
+};
+
 // Helper function to determine the message type based on content
 export const getMessageType = (content: string): ChatMessage['message_type'] => {
   if (content.startsWith('audio:')) return 'audio';

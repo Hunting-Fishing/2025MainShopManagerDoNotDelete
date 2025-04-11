@@ -10,6 +10,7 @@ export const getChatMessages = async (roomId: string): Promise<ChatMessage[]> =>
       .from('chat_messages')
       .select('*')
       .eq('room_id', roomId)
+      .is('thread_parent_id', null) // Get top-level messages only
       .order('created_at', { ascending: true });
     
     if (error) throw error;
@@ -19,6 +20,26 @@ export const getChatMessages = async (roomId: string): Promise<ChatMessage[]> =>
     return messages;
   } catch (error) {
     console.error("Error fetching chat messages:", error);
+    throw error;
+  }
+};
+
+// Get thread replies for a parent message
+export const getThreadReplies = async (parentMessageId: string): Promise<ChatMessage[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('thread_parent_id', parentMessageId)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    
+    // Transform messages to ensure proper types
+    const messages = data ? data.map(msg => transformDatabaseMessage(msg as DatabaseChatMessage)) : [];
+    return messages;
+  } catch (error) {
+    console.error("Error fetching thread replies:", error);
     throw error;
   }
 };
