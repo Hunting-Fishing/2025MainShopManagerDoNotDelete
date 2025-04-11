@@ -79,7 +79,7 @@ export function AssignmentField({ form }: AssignmentFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">Unassigned</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
               {teamMembers.map((member) => (
                 <SelectItem key={member.id} value={member.id}>
                   {member.full_name || `${member.first_name} ${member.last_name}`}
