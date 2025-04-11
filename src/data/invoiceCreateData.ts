@@ -1,8 +1,68 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { WorkOrder } from '@/types/workOrder';
 import { StaffMember } from '@/types/invoice';
 import { supabase } from '@/lib/supabase';
+
+// Helper function to safely access properties
+const safeProp = <T extends Record<string, any>>(obj: T | null | undefined, key: keyof T): any => {
+  if (!obj) return '';
+  return obj[key] || '';
+};
+
+// Helper function to safely check if an object is an array
+const isArray = (obj: any): obj is Array<any> => {
+  return Array.isArray(obj);
+};
+
+// Function to generate a customer name from customer data
+export function getCustomerName(customer: any): string {
+  if (!customer) return '';
+  
+  // If it's an array, we need to handle it differently
+  if (isArray(customer)) {
+    if (customer.length > 0) {
+      return `${safeProp(customer[0], 'first_name')} ${safeProp(customer[0], 'last_name')}`;
+    }
+    return '';
+  }
+  
+  // Otherwise it's an object
+  return `${safeProp(customer, 'first_name')} ${safeProp(customer, 'last_name')}`;
+}
+
+// Function to generate a vehicle description
+export function getVehicleDescription(vehicle: any): string {
+  if (!vehicle) return '';
+  
+  // If it's an array, handle it differently
+  if (isArray(vehicle)) {
+    if (vehicle.length > 0) {
+      return `${safeProp(vehicle[0], 'year')} ${safeProp(vehicle[0], 'make')} ${safeProp(vehicle[0], 'model')}`;
+    }
+    return '';
+  }
+  
+  // Otherwise it's an object
+  return `${safeProp(vehicle, 'year')} ${safeProp(vehicle, 'make')} ${safeProp(vehicle, 'model')}`;
+}
+
+// Define work order statuses
+export const workOrderStatuses = [
+  'New',
+  'In Progress',
+  'On Hold',
+  'Completed',
+  'Cancelled'
+];
+
+// Define invoice statuses
+export const invoiceStatuses = [
+  'Draft',
+  'Pending',
+  'Paid',
+  'Overdue',
+  'Cancelled'
+];
 
 // Function to fetch work orders from the database
 export const fetchWorkOrders = async () => {
@@ -25,13 +85,9 @@ export const fetchWorkOrders = async () => {
       const customer = wo.customers || { first_name: "Unknown", last_name: "Customer" };
       const vehicle = wo.vehicles || { make: "", model: "", year: "" };
       
-      const customerName = customer.first_name && customer.last_name 
-        ? `${customer.first_name} ${customer.last_name}`
-        : "Unknown Customer";
+      const customerName = getCustomerName(customer);
       
-      const vehicleInfo = vehicle.make && vehicle.model 
-        ? `${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}`
-        : "Vehicle information not available";
+      const vehicleInfo = getVehicleDescription(vehicle);
         
       return {
         id: wo.id,

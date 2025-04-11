@@ -11,6 +11,7 @@ export interface VinDecodeResult {
   country?: string;
   engine?: string;
   gvwr?: string;
+  trim?: string;
 }
 
 export interface Vehicle {
@@ -35,4 +36,16 @@ export interface Vehicle {
   gvwr?: string;
   trim?: string;
   last_service_date?: string;
+}
+
+export interface CarMake {
+  make_id: string;
+  make_display: string;
+  make_is_common?: string;
+  make_country?: string;
+}
+
+export interface CarModel {
+  model_name: string;
+  model_make_id: string;
 }

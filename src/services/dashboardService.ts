@@ -233,39 +233,63 @@ export async function getRevenueData(): Promise<MonthlyRevenueData[]> {
   try {
     // In a real implementation, we'd fetch this from the database
     return [
-      { date: "2023-04-01", revenue: 5200 },
-      { date: "2023-04-02", revenue: 4800 },
-      { date: "2023-04-03", revenue: 5500 },
-      { date: "2023-04-04", revenue: 6000 },
-      { date: "2023-04-05", revenue: 5700 },
-      { date: "2023-04-06", revenue: 5900 },
-      { date: "2023-04-07", revenue: 6200 },
-      { date: "2023-04-08", revenue: 5800 },
-      { date: "2023-04-09", revenue: 5400 },
-      { date: "2023-04-10", revenue: 5600 },
-      { date: "2023-04-11", revenue: 6100 },
-      { date: "2023-04-12", revenue: 6300 },
-      { date: "2023-04-13", revenue: 6000 },
-      { date: "2023-04-14", revenue: 5800 },
-      { date: "2023-04-15", revenue: 6500 },
-      { date: "2023-04-16", revenue: 6200 },
-      { date: "2023-04-17", revenue: 5900 },
-      { date: "2023-04-18", revenue: 6100 },
-      { date: "2023-04-19", revenue: 6400 },
-      { date: "2023-04-20", revenue: 6300 },
-      { date: "2023-04-21", revenue: 6600 },
-      { date: "2023-04-22", revenue: 6200 },
-      { date: "2023-04-23", revenue: 5900 },
-      { date: "2023-04-24", revenue: 6100 },
-      { date: "2023-04-25", revenue: 6300 },
-      { date: "2023-04-26", revenue: 6500 },
-      { date: "2023-04-27", revenue: 6400 },
-      { date: "2023-04-28", revenue: 6200 },
-      { date: "2023-04-29", revenue: 6700 },
-      { date: "2023-04-30", revenue: 7000 }
+      { month: "Apr 01", revenue: 5200 },
+      { month: "Apr 02", revenue: 4800 },
+      { month: "Apr 03", revenue: 5500 },
+      { month: "Apr 04", revenue: 6000 },
+      { month: "Apr 05", revenue: 5700 },
+      { month: "Apr 06", revenue: 5900 },
+      { month: "Apr 07", revenue: 6200 },
+      { month: "Apr 08", revenue: 5800 },
+      { month: "Apr 09", revenue: 5400 },
+      { month: "Apr 10", revenue: 5600 },
+      { month: "Apr 11", revenue: 6100 },
+      { month: "Apr 12", revenue: 6300 },
+      { month: "Apr 13", revenue: 6000 },
+      { month: "Apr 14", revenue: 5800 },
+      { month: "Apr 15", revenue: 6500 },
+      { month: "Apr 16", revenue: 6200 },
+      { month: "Apr 17", revenue: 5900 },
+      { month: "Apr 18", revenue: 6100 },
+      { month: "Apr 19", revenue: 6400 },
+      { month: "Apr 20", revenue: 6300 },
+      { month: "Apr 21", revenue: 6600 },
+      { month: "Apr 22", revenue: 6200 },
+      { month: "Apr 23", revenue: 5900 },
+      { month: "Apr 24", revenue: 6100 },
+      { month: "Apr 25", revenue: 6300 },
+      { month: "Apr 26", revenue: 6500 },
+      { month: "Apr 27", revenue: 6400 },
+      { month: "Apr 28", revenue: 6200 },
+      { month: "Apr 29", revenue: 6700 },
+      { month: "Apr 30", revenue: 7000 }
     ];
   } catch (error) {
     console.error('Error fetching revenue data:', error);
+    return [];
+  }
+}
+
+// Function to get monthly revenue data (aggregated by month)
+export async function getMonthlyRevenue(): Promise<MonthlyRevenueData[]> {
+  try {
+    // In a real implementation, we'd fetch this from the database with proper aggregation
+    return [
+      { month: "Jan", revenue: 45000 },
+      { month: "Feb", revenue: 52000 },
+      { month: "Mar", revenue: 48000 },
+      { month: "Apr", revenue: 61000 },
+      { month: "May", revenue: 55000 },
+      { month: "Jun", revenue: 67000 },
+      { month: "Jul", revenue: 72000 },
+      { month: "Aug", revenue: 70000 },
+      { month: "Sep", revenue: 65000 },
+      { month: "Oct", revenue: 59000 },
+      { month: "Nov", revenue: 67000 },
+      { month: "Dec", revenue: 78000 }
+    ];
+  } catch (error) {
+    console.error('Error fetching monthly revenue data:', error);
     return [];
   }
 }

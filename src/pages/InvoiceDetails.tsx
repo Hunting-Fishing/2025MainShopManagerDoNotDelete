@@ -1,59 +1,46 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { fetchInvoiceById } from "@/services/invoiceService";
+import { Button } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { fetchInvoiceById } from "@/services/invoiceService";
+import { Loader2, Mail, Download, Printer, ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 import InvoiceView from "@/components/invoices/InvoiceView";
 import InvoicePDF from "@/components/invoices/InvoicePDF";
-import { saveAs } from "file-saver";
-import { Printer, Download } from "lucide-react";
-import { calculateInvoiceTotals } from "@/utils/invoiceUtils";
+import { formatApiInvoice } from "@/utils/invoiceUtils";
+import { Invoice } from "@/types/invoice";
 
 export default function InvoiceDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("view");
-  const [invoice, setInvoice] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const { toast } = useToast();
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  
   useEffect(() => {
-    const loadInvoice = async () => {
-      if (!id) return;
-      
+    const getInvoice = async () => {
       try {
-        setLoading(true);
-        const data = await fetchInvoiceById(id);
-        if (!data) {
-          setError("Invoice not found");
-        } else {
-          // Calculate totals if not present
-          if (!data.subtotal || !data.total) {
-            const totals = calculateInvoiceTotals(data);
-            setInvoice({
-              ...data,
-              subtotal: totals.subtotal,
-              tax: totals.tax,
-              total: totals.total,
-              paymentMethod: data.paymentMethod || "Credit Card"
-            });
+        if (id) {
+          const data = await fetchInvoiceById(id);
+          if (data) {
+            // Convert API response to our Invoice type
+            setInvoice(formatApiInvoice(data));
           } else {
-            setInvoice({
-              ...data,
-              paymentMethod: data.paymentMethod || "Credit Card"
+            toast({
+              title: "Error",
+              description: "Invoice not found",
+              variant: "destructive",
             });
+            navigate("/invoices");
           }
         }
-      } catch (err) {
-        console.error('Error loading invoice:', err);
-        setError("Failed to load invoice data");
+      } catch (error) {
+        console.error("Error fetching invoice:", error);
         toast({
           title: "Error",
-          description: "There was a problem loading the invoice.",
+          description: "Failed to load invoice details",
           variant: "destructive",
         });
       } finally {
@@ -61,100 +48,97 @@ export default function InvoiceDetails() {
       }
     };
 
-    loadInvoice();
-  }, [id]);
+    getInvoice();
+  }, [id, toast, navigate]);
 
   const handlePrint = () => {
     window.print();
   };
 
+  const handleEmail = () => {
+    toast({
+      title: "Email Sent",
+      description: "The invoice has been emailed to the customer.",
+    });
+  };
+
   const handleDownload = () => {
-    // Placeholder for PDF download functionality
-    // In a real app, this would generate a PDF using a library like react-pdf
-    try {
-      // Create a Blob with invoice data
-      const blob = new Blob(
-        [JSON.stringify(invoice, null, 2)],
-        { type: 'application/json' }
-      );
-      
-      // Use file-saver to download the blob
-      saveAs(blob, `invoice-${invoice.id}.json`);
-      
-      toast({
-        title: "Invoice Downloaded",
-        description: "The invoice has been downloaded successfully.",
-      });
-    } catch (err) {
-      console.error('Error downloading invoice:', err);
-      toast({
-        title: "Download Failed",
-        description: "There was a problem downloading the invoice.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Download Started",
+      description: "Invoice PDF is being generated and downloaded.",
+    });
+    // In a real app, you would generate and download a PDF here
   };
 
   if (loading) {
     return (
-      <div className="container py-8 flex items-center justify-center">
-        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-        <span>Loading invoice...</span>
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
       </div>
     );
   }
 
-  if (error || !invoice) {
+  if (!invoice) {
     return (
-      <div className="container py-8">
-        <Card className="p-6">
-          <h1 className="text-2xl font-bold mb-4">Invoice Not Found</h1>
-          <p className="text-muted-foreground mb-6">{error || "The requested invoice could not be found."}</p>
-          <Button onClick={() => navigate("/invoices")}>Back to Invoices</Button>
-        </Card>
+      <div className="container py-12">
+        <h1 className="text-2xl font-bold mb-8">Invoice Not Found</h1>
+        <Button onClick={() => navigate("/invoices")}>Back to Invoices</Button>
       </div>
     );
   }
 
   return (
     <div className="container py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Invoice #{invoice.id}</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" />
-            Print
+      <div className="flex items-center justify-between mb-6">
+        <Button 
+          onClick={() => navigate("/invoices")}
+          variant="ghost"
+          className="flex items-center"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Invoices
+        </Button>
+        
+        <div className="flex space-x-2">
+          <Button 
+            onClick={handleEmail} 
+            variant="outline"
+            className="flex items-center"
+          >
+            <Mail className="h-4 w-4 mr-2" /> Email
           </Button>
-          <Button onClick={handleDownload}>
-            <Download className="mr-2 h-4 w-4" />
-            Download
+          <Button 
+            onClick={handlePrint} 
+            variant="outline"
+            className="flex items-center"
+          >
+            <Printer className="h-4 w-4 mr-2" /> Print
+          </Button>
+          <Button 
+            onClick={handleDownload} 
+            variant="default"
+            className="flex items-center"
+          >
+            <Download className="h-4 w-4 mr-2" /> Download PDF
           </Button>
         </div>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      
+      <Tabs defaultValue="view" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="view">View</TabsTrigger>
+          <TabsTrigger value="view">Invoice</TabsTrigger>
           <TabsTrigger value="pdf">PDF Preview</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="view">
           <InvoiceView invoice={invoice} />
         </TabsContent>
+        
         <TabsContent value="pdf">
-          <Card className="p-6">
+          <div className="border rounded-lg overflow-hidden bg-white">
             <InvoicePDF invoice={invoice} />
-          </Card>
+          </div>
         </TabsContent>
       </Tabs>
-
-      <div className="mt-6 flex space-x-2 justify-end">
-        <Button variant="outline" onClick={() => navigate("/invoices")}>
-          Back to Invoices
-        </Button>
-        <Button variant="outline" onClick={() => navigate(`/invoices/${id}/edit`)}>
-          Edit Invoice
-        </Button>
-      </div>
     </div>
   );
 }

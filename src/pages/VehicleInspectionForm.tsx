@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +26,7 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
     year: "",
     licensePlate: "",
     color: "",
-    bodyStyle: "sedan",
+    bodyStyle: "sedan" as VehicleBodyStyle,
     mileage: ""
   });
   const [bodyStyle, setBodyStyle] = useState<VehicleBodyStyle>('sedan');

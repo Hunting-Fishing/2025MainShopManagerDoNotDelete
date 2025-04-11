@@ -1,5 +1,25 @@
 
-export type InvoiceStatus = "draft" | "pending" | "paid" | "overdue" | "cancelled";
+export interface Invoice {
+  id: string;
+  customer: string;
+  customerEmail?: string;
+  customerAddress?: string;
+  date: string;
+  dueDate: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+  items?: InvoiceItem[];
+  notes?: string;
+  description?: string;
+  paymentMethod?: string;
+  customer_id?: string;
+  createdBy?: string;
+  lastUpdatedBy?: string;
+  workOrderId?: string;
+  assignedStaff?: StaffMember[];
+}
 
 export interface InvoiceItem {
   id: string;
@@ -7,41 +27,11 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
+  total: number;
   hours?: boolean;
-  total: number;
 }
 
-export interface Invoice {
-  id: string;
-  workOrderId: string;
-  customer: string;
-  customerAddress: string;
-  customerEmail?: string;
-  description?: string;
-  notes?: string;
-  total: number;
-  subtotal: number;
-  tax: number;
-  status: InvoiceStatus;
-  paymentMethod?: string;
-  date: string;
-  dueDate: string;
-  createdBy?: string;
-  assignedStaff: string[];
-  items: InvoiceItem[];
-}
-
-export type InvoiceUpdater = (prev: Invoice) => Invoice;
-
-export interface InvoiceTemplate {
+export interface StaffMember {
   id: string;
   name: string;
-  description: string;
-  createdAt: string;
-  lastUsed: string | null;
-  usageCount: number;
-  defaultTaxRate: number;
-  defaultDueDateDays: number;
-  defaultNotes: string;
-  defaultItems: InvoiceItem[];
 }

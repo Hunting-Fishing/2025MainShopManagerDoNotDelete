@@ -27,8 +27,8 @@ export default function InvoiceView({ invoice }: InvoiceViewProps) {
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Customer</h3>
             <p className="text-base font-semibold">{invoice.customer}</p>
-            <p className="text-sm">{invoice.customer_email}</p>
-            <p className="text-sm whitespace-pre-line">{invoice.customer_address}</p>
+            <p className="text-sm">{invoice.customerEmail}</p>
+            <p className="text-sm whitespace-pre-line">{invoice.customerAddress}</p>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between">
@@ -37,7 +37,7 @@ export default function InvoiceView({ invoice }: InvoiceViewProps) {
             </div>
             <div className="flex justify-between">
               <h3 className="text-sm font-medium text-muted-foreground">Due Date</h3>
-              <p className="text-sm">{invoice.due_date}</p>
+              <p className="text-sm">{invoice.dueDate}</p>
             </div>
             <div className="flex justify-between">
               <h3 className="text-sm font-medium text-muted-foreground">Payment Method</h3>
@@ -89,8 +89,8 @@ export default function InvoiceView({ invoice }: InvoiceViewProps) {
             <span>{formatCurrency(invoice.subtotal)}</span>
           </div>
           <div className="flex w-full max-w-[200px] justify-between">
-            <span className="text-muted-foreground">Tax ({(invoice.tax * 100).toFixed(0)}%)</span>
-            <span>{formatCurrency(invoice.tax * invoice.subtotal)}</span>
+            <span className="text-muted-foreground">Tax ({(invoice.tax / invoice.subtotal * 100).toFixed(0)}%)</span>
+            <span>{formatCurrency(invoice.tax)}</span>
           </div>
           <div className="flex w-full max-w-[200px] justify-between font-bold text-lg">
             <span>Total</span>

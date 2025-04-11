@@ -51,3 +51,23 @@ export function formatNumber(value: number, decimalPlaces: number = 0): string {
     maximumFractionDigits: decimalPlaces
   });
 }
+
+/**
+ * Format a phone number into (xxx) xxx-xxxx format
+ */
+export function formatPhoneNumber(phone: string): string {
+  if (!phone) return '';
+  
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Check the length and format accordingly
+  if (cleaned.length === 10) {
+    return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 10)}`;
+  } else if (cleaned.length === 11 && cleaned[0] === '1') {
+    return `(${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 11)}`;
+  }
+  
+  // Return the original value if it doesn't fit the standard patterns
+  return phone;
+}

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 // Define relationship type
 export interface RelationshipType {
@@ -18,11 +19,6 @@ export function useRelationshipData() {
       try {
         // Instead of querying a table that doesn't exist, return mock data
         // In a real app, we would fetch from the database
-        // const { data, error } = await supabase
-        //   .from('relationship_types')
-        //   .select('id, label');
-        
-        // if (error) throw error;
         
         // Mock data
         const mockData: RelationshipType[] = [

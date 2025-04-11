@@ -1,85 +1,84 @@
+import { Invoice, InvoiceItem, StaffMember } from '@/types/invoice';
 
-import { Invoice, InvoiceItem } from "@/types/invoice";
+// Calculate subtotal for an invoice
+export const calculateSubtotal = (items: InvoiceItem[]): number => {
+  return items.reduce((sum, item) => sum + item.total, 0);
+};
 
-/**
- * Calculate subtotal (sum of all items)
- */
-export function calculateSubtotal(items: InvoiceItem[]): number {
-  return items.reduce((sum, item) => sum + (item.total || 0), 0);
-}
-
-/**
- * Calculate tax based on subtotal and tax rate
- */
-export function calculateTax(subtotal: number, taxRate: number): number {
+// Calculate tax for an invoice
+export const calculateTax = (subtotal: number, taxRate: number): number => {
   return subtotal * taxRate;
-}
+};
 
-/**
- * Calculate total (subtotal + tax)
- */
-export function calculateTotal(subtotal: number, tax: number): number {
+// Calculate total for an invoice
+export const calculateTotal = (subtotal: number, tax: number): number => {
   return subtotal + tax;
-}
+};
 
-/**
- * Calculate subtotal, tax and total for an invoice
- */
-export function calculateInvoiceTotals(invoice: Invoice) {
-  const subtotal = calculateSubtotal(invoice.items || []);
-  const tax = calculateTax(subtotal, invoice.tax || 0);
-  const total = calculateTotal(subtotal, tax);
-  
-  return {
-    subtotal,
-    tax,
-    total
-  };
-}
-
-/**
- * Get display color based on invoice status
- */
-export function getInvoiceStatusColor(status: string): string {
-  switch (status.toLowerCase()) {
-    case 'draft':
-      return 'text-slate-500 bg-slate-100';
-    case 'pending':
-      return 'text-amber-500 bg-amber-50';
-    case 'paid':
-      return 'text-emerald-500 bg-emerald-50';
-    case 'overdue':
-      return 'text-red-500 bg-red-50';
-    case 'cancelled':
-      return 'text-gray-500 bg-gray-100';
-    default:
-      return 'text-slate-500 bg-slate-100';
-  }
-}
-
-/**
- * Create a default invoice object
- */
-export function createDefaultInvoice(): Invoice {
+// Create a default invoice
+export const createDefaultInvoice = (workOrderId?: string): Invoice => {
   const today = new Date();
   const dueDate = new Date();
-  dueDate.setDate(today.getDate() + 30); // Default due date is 30 days from now
-  
+  dueDate.setDate(today.getDate() + 30);  // Default to 30 days from now
+
   return {
-    id: '',
+    id: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
     customer: '',
-    customer_id: '',
-    customer_email: '',
-    customer_address: '',
+    customerEmail: '',
+    customerAddress: '',
     date: today.toISOString().split('T')[0],
-    due_date: dueDate.toISOString().split('T')[0],
+    dueDate: dueDate.toISOString().split('T')[0],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
     status: 'draft',
+    items: [],
     notes: '',
     description: '',
-    items: [],
-    tax: 0.0,
-    subtotal: 0,
-    total: 0,
-    paymentMethod: 'Credit Card'
+    paymentMethod: 'card',
+    workOrderId: workOrderId || '',
+    assignedStaff: []
   };
-}
+};
+
+// Get color class for invoice status
+export const getInvoiceStatusColor = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'draft':
+      return 'bg-gray-500 hover:bg-gray-600';
+    case 'pending':
+      return 'bg-yellow-500 hover:bg-yellow-600';
+    case 'paid':
+      return 'bg-green-500 hover:bg-green-600';
+    case 'overdue':
+      return 'bg-red-500 hover:bg-red-600';
+    case 'cancelled':
+      return 'bg-gray-500 hover:bg-gray-600';
+    default:
+      return 'bg-blue-500 hover:bg-blue-600';
+  }
+};
+
+// Function to convert API snake_case invoice to camelCase Invoice type
+export const formatApiInvoice = (apiInvoice: any): Invoice => {
+  return {
+    id: apiInvoice.id,
+    customer: apiInvoice.customer,
+    customerEmail: apiInvoice.customer_email,
+    customerAddress: apiInvoice.customer_address,
+    date: apiInvoice.date,
+    dueDate: apiInvoice.due_date,
+    subtotal: apiInvoice.subtotal || 0,
+    tax: apiInvoice.tax || 0,
+    total: apiInvoice.total || 0,
+    status: apiInvoice.status as 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled',
+    notes: apiInvoice.notes,
+    description: apiInvoice.description,
+    paymentMethod: apiInvoice.payment_method,
+    customer_id: apiInvoice.customer_id,
+    createdBy: apiInvoice.created_by,
+    lastUpdatedBy: apiInvoice.last_updated_by,
+    workOrderId: apiInvoice.work_order_id,
+    assignedStaff: apiInvoice.assignedStaff || []
+  };
+};
