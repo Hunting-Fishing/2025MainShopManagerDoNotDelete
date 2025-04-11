@@ -23,10 +23,10 @@ export function AddToCartButton({
 }: AddToCartButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { user } = useAuthUser();
+  const { userId, isAuthenticated } = useAuthUser();
 
   const handleAddToCart = async () => {
-    if (!user) {
+    if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to add items to your cart",
@@ -36,8 +36,7 @@ export function AddToCartButton({
 
     setIsLoading(true);
     try {
-      // We'll implement this in the next feature
-      // await addToCart(productId, quantity);
+      await addToCart(productId, quantity);
       
       // Show success state briefly
       setSuccess(true);

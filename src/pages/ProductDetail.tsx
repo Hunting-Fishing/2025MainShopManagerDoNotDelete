@@ -19,7 +19,7 @@ import { AddToCartButton } from '@/components/shopping/AddToCartButton';
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthUser();
+  const { userId, isAuthenticated } = useAuthUser();
   const { addItem, removeItem, checkIfInWishlist } = useWishlist();
   
   const [product, setProduct] = useState<Product | null>(null);
@@ -55,7 +55,7 @@ export default function ProductDetail() {
           setReviews(reviewsData);
           
           // Check wishlist status
-          if (user) {
+          if (isAuthenticated) {
             const isInWishlist = await checkIfInWishlist(productId);
             setInWishlist(isInWishlist);
           }
@@ -73,10 +73,10 @@ export default function ProductDetail() {
     };
 
     fetchProductData();
-  }, [productId, user, checkIfInWishlist]);
+  }, [productId, isAuthenticated, checkIfInWishlist]);
 
   const handleToggleWishlist = async () => {
-    if (!user) {
+    if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to add items to your wishlist",

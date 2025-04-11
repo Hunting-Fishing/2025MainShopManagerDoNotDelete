@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -12,6 +11,7 @@ interface UseAuthUserResult {
   isAuthenticated: boolean;
   isAdmin: boolean;
   error: string | null;
+  user?: any; // Adding user property for backward compatibility if needed
 }
 
 export function useAuthUser(): UseAuthUserResult {

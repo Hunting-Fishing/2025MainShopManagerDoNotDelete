@@ -52,6 +52,7 @@ import FormPreview from './pages/FormPreview';
 import FormEditor from './pages/FormEditor';
 import FormBuilder from './pages/FormBuilder';
 import VehicleInspectionForm from './pages/VehicleInspectionForm';
+import ProductDetail from './pages/ProductDetail';
 import { CustomerRedirect } from './components/routing/CustomerRedirect';
 
 import FeedbackFormsPage from './pages/feedback/FeedbackFormsPage';
