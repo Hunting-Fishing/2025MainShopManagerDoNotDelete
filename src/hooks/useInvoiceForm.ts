@@ -102,23 +102,8 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
   };
 
   // Adapt template save function to handle parameter type
-  const wrappedHandleSaveTemplate = (templateData: string | Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
-    if (typeof templateData === 'string') {
-      // Create a template object from the name
-      const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
-        name: templateData,
-        description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
-        lastUsed: null,
-        defaultTaxRate: taxRate,
-        defaultDueDateDays: 30,
-        defaultNotes: invoice.notes || "",
-        defaultItems: invoice.items
-      };
-      handleSaveTemplate(template);
-    } else {
-      // If it's already an object, pass it through
-      handleSaveTemplate(templateData);
-    }
+  const wrappedHandleSaveTemplate = (templateData: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
+    handleSaveTemplate(templateData);
   };
 
   return {

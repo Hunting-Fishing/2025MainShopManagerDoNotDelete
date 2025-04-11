@@ -23,7 +23,9 @@ const mockTemplates: InvoiceTemplate[] = [
         description: "Full synthetic oil change",
         quantity: 1,
         price: 79.99,
-        total: 79.99
+        total: 79.99,
+        sku: "OC-SYN",
+        category: "Maintenance"
       },
       {
         id: "item-2",
@@ -31,7 +33,9 @@ const mockTemplates: InvoiceTemplate[] = [
         description: "Premium oil filter",
         quantity: 1,
         price: 15.99,
-        total: 15.99
+        total: 15.99,
+        sku: "FIL-OIL",
+        category: "Parts"
       },
       {
         id: "item-3",
@@ -40,7 +44,9 @@ const mockTemplates: InvoiceTemplate[] = [
         quantity: 1,
         price: 65.00,
         hours: true,
-        total: 65.00
+        total: 65.00,
+        sku: "LABOR-STD",
+        category: "Services"
       }
     ]
   },
@@ -61,7 +67,9 @@ const mockTemplates: InvoiceTemplate[] = [
         description: "Premium ceramic brake pads",
         quantity: 1,
         price: 89.99,
-        total: 89.99
+        total: 89.99,
+        sku: "BP-FRONT",
+        category: "Parts"
       },
       {
         id: "item-5",
@@ -69,7 +77,9 @@ const mockTemplates: InvoiceTemplate[] = [
         description: "DOT 4 brake fluid",
         quantity: 1,
         price: 24.99,
-        total: 24.99
+        total: 24.99,
+        sku: "FLD-BRAKE",
+        category: "Parts"
       },
       {
         id: "item-6",
@@ -78,7 +88,9 @@ const mockTemplates: InvoiceTemplate[] = [
         quantity: 1.5,
         price: 95.00,
         hours: true,
-        total: 142.50
+        total: 142.50,
+        sku: "LABOR-BRK",
+        category: "Services"
       }
     ]
   }

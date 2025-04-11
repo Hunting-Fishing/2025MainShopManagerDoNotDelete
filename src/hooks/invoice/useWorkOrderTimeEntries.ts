@@ -65,7 +65,9 @@ export function useWorkOrderTimeEntries(workOrder: WorkOrder) {
         quantity: hours,
         price: hourlyRate,
         hours: true,
-        total: hours * hourlyRate
+        total: hours * hourlyRate,
+        sku: "LABOR",
+        category: "Services"
       });
     });
     

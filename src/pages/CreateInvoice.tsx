@@ -190,8 +190,8 @@ export default function InvoiceCreate() {
       price: 0,
       total: 0,
       hours: true,
-      sku: '',
-      category: ''
+      sku: "LABOR",
+      category: "Services"
     };
     handleAddLaborItem(laborItem);
   };

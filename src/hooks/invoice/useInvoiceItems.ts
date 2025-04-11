@@ -32,7 +32,9 @@ export function useInvoiceItems(initialItems: InvoiceItem[] = []) {
           description: item.description || "",
           quantity: 1,
           price: item.price,
-          total: item.price
+          total: item.price,
+          sku: item.sku || "",
+          category: item.category || ""
         }
       ]);
     }
@@ -82,7 +84,9 @@ export function useInvoiceItems(initialItems: InvoiceItem[] = []) {
         description: "Technician hours",
         quantity: 1,
         price: 100, // Default labor rate
-        total: 100
+        total: 100,
+        sku: "LABOR",
+        category: "Services"
       }
     ]);
   };
