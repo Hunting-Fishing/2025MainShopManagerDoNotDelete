@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { assignRoleToUser, findRoleByName, detectRoleFromJobTitle } from '@/utils/roleUtils';
-import { recordTeamMemberHistory } from '@/utils/teamHistoryUtils';
+import { recordTeamMemberHistory } from '@/utils/team/history';
 import { supabase } from '@/lib/supabase';
 
 /**

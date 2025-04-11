@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TeamMember } from "@/types/team";
-import { TeamMemberHistoryRecord, fetchTeamMemberHistory, formatHistoryRecord } from "@/utils/teamHistoryUtils";
+import { 
+  TeamMemberHistoryRecord, 
+  fetchTeamMemberHistory, 
+  formatHistoryRecord 
+} from "@/utils/team/history";
 import { Loader2 } from "lucide-react";
 
 interface HistoryTabProps {
