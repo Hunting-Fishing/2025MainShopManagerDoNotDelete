@@ -1,6 +1,6 @@
-
 import { supabase } from "@/lib/supabase";
-import { PhaseProgressItem, RecentWorkOrder } from "@/types/dashboard";
+import { PhaseProgressItem, RecentWorkOrder, ServiceTypeData } from "@/types/dashboard";
+import { SERVICE_TYPES, getServiceTypeFromDescription } from "../serviceTypes";
 
 // Fetch data for the work order phases chart
 export const getWorkOrderPhaseData = async () => {
@@ -160,6 +160,55 @@ export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
     });
   } catch (error) {
     console.error("Error fetching recent work orders:", error);
+    return [];
+  }
+};
+
+// Get service type distribution for the dashboard pie chart
+export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_orders')
+      .select(`
+        id,
+        description,
+        service_type
+      `)
+      .limit(200); // Limit to most recent work orders for better performance
+    
+    if (error) throw error;
+    
+    // Initialize counts for all service types
+    const serviceTypeCounts: Record<string, number> = {};
+    
+    // Initialize with zero counts for all known service types
+    SERVICE_TYPES.forEach(type => {
+      serviceTypeCounts[type] = 0;
+    });
+    
+    // Count work orders by service type
+    data.forEach(order => {
+      // Use the existing service_type field if available, otherwise determine from description
+      const serviceType = order.service_type || 
+                          (order.description ? getServiceTypeFromDescription(order.description) : 'Other');
+      
+      if (serviceTypeCounts[serviceType] !== undefined) {
+        serviceTypeCounts[serviceType]++;
+      } else {
+        serviceTypeCounts['Other'] = (serviceTypeCounts['Other'] || 0) + 1;
+      }
+    });
+    
+    // Convert to chart format, filtering out types with zero counts
+    return Object.entries(serviceTypeCounts)
+      .filter(([_, count]) => count > 0)
+      .map(([subject, value]) => ({
+        subject,
+        value
+      }));
+      
+  } catch (error) {
+    console.error("Error fetching service type distribution:", error);
     return [];
   }
 };

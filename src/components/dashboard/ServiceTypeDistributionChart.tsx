@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { getServiceTypeDistribution } from "@/services/dashboardService";
+import { getServiceTypeDistribution } from "@/services/dashboard"; // Updated import path
 import { ServiceTypeData } from "@/types/dashboard";
 
 export function ServiceTypeDistributionChart() {

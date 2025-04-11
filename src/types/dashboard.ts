@@ -60,3 +60,9 @@ export interface TechnicianPerformanceData {
   technicians: string[];
   chartData: TechnicianPerformance[];
 }
+
+export interface ServiceTypeData {
+  subject: string;
+  value: number;
+}
+
