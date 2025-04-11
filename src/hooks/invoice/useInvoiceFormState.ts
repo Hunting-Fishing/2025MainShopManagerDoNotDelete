@@ -1,63 +1,74 @@
 
-import { useState, useEffect } from 'react';
-import { createDefaultInvoice } from '@/utils/invoiceUtils';
-import { Invoice, InvoiceItem, StaffMember } from '@/types/invoice';
-import { v4 as uuidv4 } from 'uuid';
+import { useState } from "react";
+import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
+import { toast } from "@/hooks/use-toast";
 
-export function useInvoiceFormState(initialWorkOrderId?: string) {
-  const [invoice, setInvoice] = useState<Invoice>(() => createDefaultInvoice(initialWorkOrderId));
-  const [items, setItems] = useState<InvoiceItem[]>([]);
-  const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([]);
-  const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
-  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
-  const [showStaffDialog, setShowStaffDialog] = useState(false);
+interface UseInvoiceFormStateProps {
+  initialWorkOrderId?: string;
+}
 
-  // Initialize items and assignedStaff from invoice when it changes
-  useEffect(() => {
-    setItems(invoice.items || []);
-    // Convert string IDs to StaffMember objects if needed
-    if (Array.isArray(invoice.assignedStaff)) {
-      const staffMembers = invoice.assignedStaff.map(staff => {
-        if (typeof staff === 'string') {
-          return { id: staff, name: staff } as StaffMember;
-        }
-        return staff as StaffMember;
-      });
-      setAssignedStaff(staffMembers);
-    }
-  }, [invoice]);
+export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateProps = {}) {
+  // Set up state for invoice form
+  const [invoice, setInvoice] = useState<Invoice>({
+    id: crypto.randomUUID(),
+    workOrderId: initialWorkOrderId || undefined,
+    customer: "",
+    customerEmail: "",
+    customerAddress: "",
+    date: new Date().toISOString().split('T')[0],
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    status: "draft",
+    items: [],
+    assignedStaff: [],
+    createdBy: ""
+  });
 
-  // Add inventory item
+  // Set up state for UI controls
+  const [showWorkOrderDialog, setShowWorkOrderDialog] = useState<boolean>(false);
+  const [showInventoryDialog, setShowInventoryDialog] = useState<boolean>(false);
+  const [showStaffDialog, setShowStaffDialog] = useState<boolean>(false);
+
+  // Item management handlers
   const handleAddInventoryItem = (item: InvoiceItem) => {
-    const newItem = {
-      ...item,
-      id: item.id || uuidv4(),
-      total: item.price * (item.quantity || 1)
-    };
-    
-    setInvoice(prev => ({
+    setInvoice((prev) => ({
       ...prev,
-      items: [...prev.items, newItem]
+      items: [
+        ...prev.items,
+        {
+          ...item,
+          quantity: 1,
+          total: item.price
+        }
+      ]
     }));
+    setShowInventoryDialog(false);
+    toast({
+      title: "Item Added",
+      description: `${item.name} has been added to the invoice.`,
+    });
   };
 
-  // Remove item
   const handleRemoveItem = (index: number) => {
-    setInvoice(prev => ({
+    setInvoice((prev) => ({
       ...prev,
       items: prev.items.filter((_, i) => i !== index)
     }));
+    toast({
+      title: "Item Removed",
+      description: "Item has been removed from the invoice.",
+    });
   };
 
-  // Update item quantity
   const handleUpdateItemQuantity = (index: number, quantity: number) => {
-    setInvoice(prev => {
+    setInvoice((prev) => {
       const updatedItems = [...prev.items];
-      updatedItems[index] = {
-        ...updatedItems[index],
-        quantity,
-        total: updatedItems[index].price * quantity
-      };
+      const item = { ...updatedItems[index] };
+      item.quantity = quantity;
+      item.total = item.price * quantity;
+      updatedItems[index] = item;
       return {
         ...prev,
         items: updatedItems
@@ -65,9 +76,8 @@ export function useInvoiceFormState(initialWorkOrderId?: string) {
     });
   };
 
-  // Update item description
   const handleUpdateItemDescription = (index: number, description: string) => {
-    setInvoice(prev => {
+    setInvoice((prev) => {
       const updatedItems = [...prev.items];
       updatedItems[index] = {
         ...updatedItems[index],
@@ -80,15 +90,13 @@ export function useInvoiceFormState(initialWorkOrderId?: string) {
     });
   };
 
-  // Update item price
   const handleUpdateItemPrice = (index: number, price: number) => {
-    setInvoice(prev => {
+    setInvoice((prev) => {
       const updatedItems = [...prev.items];
-      updatedItems[index] = {
-        ...updatedItems[index],
-        price,
-        total: price * updatedItems[index].quantity
-      };
+      const item = { ...updatedItems[index] };
+      item.price = price;
+      item.total = price * item.quantity;
+      updatedItems[index] = item;
       return {
         ...prev,
         items: updatedItems
@@ -96,51 +104,72 @@ export function useInvoiceFormState(initialWorkOrderId?: string) {
     });
   };
 
-  // Add labor item
   const handleAddLaborItem = (item: InvoiceItem) => {
-    handleAddInventoryItem({
-      ...item,
-      hours: true
+    setInvoice((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        item
+      ]
+    }));
+    toast({
+      title: "Labor Item Added",
+      description: "Labor item has been added to the invoice.",
     });
   };
 
-  // Add staff member
-  const handleAddStaffMember = (staffMember: StaffMember) => {
-    const staffExists = assignedStaff.some(staff => staff.id === staffMember.id);
-    if (!staffExists) {
-      setInvoice(prev => {
-        // Ensure staff member is a proper StaffMember object
-        const updatedStaff = [...prev.assignedStaff, staffMember];
-        return {
-          ...prev,
-          assignedStaff: updatedStaff
-        };
+  // Staff management handlers
+  const handleAddStaffMember = (staff: StaffMember) => {
+    // Check if the staff member is already assigned
+    const isAssigned = invoice.assignedStaff.some(existing => {
+      if (typeof existing === 'string') {
+        return existing === staff.id;
+      }
+      return existing.id === staff.id;
+    });
+
+    if (isAssigned) {
+      toast({
+        title: "Already Assigned",
+        description: `${staff.name} is already assigned to this invoice.`,
+        variant: "destructive",
       });
+      return;
     }
+
+    setInvoice((prev) => ({
+      ...prev,
+      assignedStaff: [...prev.assignedStaff, staff]
+    }));
+    
+    setShowStaffDialog(false);
+    toast({
+      title: "Staff Assigned",
+      description: `${staff.name} has been assigned to the invoice.`,
+    });
   };
 
-  // Remove staff member
   const handleRemoveStaffMember = (staffId: string) => {
-    setInvoice(prev => {
-      const updatedStaff = prev.assignedStaff.filter(staff => {
+    setInvoice((prev) => ({
+      ...prev,
+      assignedStaff: prev.assignedStaff.filter(staff => {
         if (typeof staff === 'string') {
           return staff !== staffId;
-        } else {
-          return staff.id !== staffId;
         }
-      });
-      return {
-        ...prev,
-        assignedStaff: updatedStaff
-      };
+        return staff.id !== staffId;
+      })
+    }));
+    toast({
+      title: "Staff Removed",
+      description: "Staff member has been removed from the invoice.",
     });
   };
 
   return {
     invoice,
     setInvoice,
-    items,
-    assignedStaff,
+    items: invoice.items,
+    assignedStaff: invoice.assignedStaff,
     showWorkOrderDialog,
     setShowWorkOrderDialog,
     showInventoryDialog,

@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -15,7 +14,6 @@ export default function InvoiceCreate() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   
-  // Fetch real data from Supabase
   const { data: workOrdersData } = useQuery({
     queryKey: ['workOrders'],
     queryFn: async () => {
@@ -51,7 +49,6 @@ export default function InvoiceCreate() {
 
   useEffect(() => {
     if (workOrdersData) {
-      // Format work orders to match the WorkOrder type
       const formattedWorkOrders = workOrdersData.map((wo: any) => ({
         id: wo.id,
         customer: wo.customer || "",
@@ -124,14 +121,12 @@ export default function InvoiceCreate() {
     handleSaveTemplate,
   } = useInvoiceForm(workOrderId);
 
-  // Handle work order selection with time entries
   const { handleSelectWorkOrderWithTime } = useWorkOrderSelector({
     invoice,
     setInvoice,
     handleSelectWorkOrder,
   });
 
-  // Format staff names correctly
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
       return `${staff.first_name} ${staff.last_name}`;
@@ -139,7 +134,6 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  // Adapter functions to match expected types
   const handleAddInventoryItemAdapter = (item: InventoryItem) => {
     const invoiceItem: InvoiceItem = {
       id: item.id,
@@ -193,18 +187,7 @@ export default function InvoiceCreate() {
     handleAddLaborItem(laborItem);
   };
 
-  // Adapt template handler
   const handleSaveTemplateAdapter = (name: string) => {
-    // Create a simplified template object from the name
-    const template = {
-      name,
-      description: `Template created on ${new Date().toLocaleDateString()}`,
-      defaultTaxRate: taxRate,
-      defaultDueDateDays: 30,
-      defaultNotes: invoice.notes || "",
-      defaultItems: invoice.items || []
-    };
-    
     handleSaveTemplate(name);
   };
 

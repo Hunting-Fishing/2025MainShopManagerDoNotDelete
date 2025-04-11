@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,7 +55,6 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
     }
   };
   
-  // Create a specific handler for body style changes that accepts a string value directly
   const handleBodyStyleChange = (style: VehicleBodyStyle) => {
     setFormData(prev => ({ ...prev, bodyStyle: style }));
   };
@@ -64,7 +62,6 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Simulate submitting the form
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast({
@@ -72,7 +69,6 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
         description: "Vehicle inspection form has been submitted successfully.",
       });
 
-      // Redirect to vehicle details page
       navigate("/vehicles");
     } catch (error) {
       console.error("Error submitting inspection:", error);

@@ -18,7 +18,7 @@ interface InvoiceCreateLayoutProps {
   workOrders: WorkOrder[];
   inventoryItems: InventoryItem[];
   staffMembers: StaffMember[];
-  templates: any[];
+  templates: InvoiceTemplate[];
   setInvoice: (invoice: Invoice | ((prev: Invoice) => Invoice)) => void;
   setShowWorkOrderDialog: (show: boolean) => void;
   setShowInventoryDialog: (show: boolean) => void;
@@ -33,7 +33,7 @@ interface InvoiceCreateLayoutProps {
   handleUpdateItemPrice: (id: string, price: number) => void;
   handleAddLaborItem: () => void;
   handleSaveInvoice: (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => void;
-  handleApplyTemplate: (template: any) => void;
+  handleApplyTemplate: (template: InvoiceTemplate) => void;
   handleSaveTemplate: (name: string) => void;
 }
 

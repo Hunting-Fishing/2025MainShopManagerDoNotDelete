@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -7,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { WorkOrder } from "@/types/workOrder";
-import { InventoryItem, InvoiceItem, StaffMember } from "@/types/invoice";
+import { InventoryItem, InvoiceItem, StaffMember, InvoiceTemplate } from "@/types/invoice";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -15,7 +14,6 @@ export default function InvoiceCreate() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   
-  // Fetch real data from Supabase
   const { data: workOrdersData } = useQuery({
     queryKey: ['workOrders'],
     queryFn: async () => {
@@ -51,14 +49,13 @@ export default function InvoiceCreate() {
 
   useEffect(() => {
     if (workOrdersData) {
-      // Format work orders to match the WorkOrder type
       const formattedWorkOrders = workOrdersData.map((wo: any) => ({
         id: wo.id,
         customer: wo.customer || "",
-        description: wo.description || "No description", // Ensure description is never empty/undefined
+        description: wo.description || "No description",
         status: wo.status || "",
         date: wo.created_at || "",
-        dueDate: wo.due_date || "", // Ensure dueDate is never empty/undefined
+        dueDate: wo.due_date || "",
         priority: wo.priority || "medium",
         technician: wo.technician || "Unassigned",
         location: wo.location || "",
@@ -124,14 +121,12 @@ export default function InvoiceCreate() {
     handleSaveTemplate,
   } = useInvoiceForm(workOrderId);
 
-  // Handle work order selection with time entries
-  const { handleSelectWorkOrderWithTime } = useWorkOrderSelector({
+  const handleSelectWorkOrderWithTime = useWorkOrderSelector({
     invoice,
     setInvoice,
     handleSelectWorkOrder,
   });
 
-  // Format staff names correctly
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
       return `${staff.first_name} ${staff.last_name}`;
@@ -139,7 +134,6 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
-  // Adapter functions to match expected types
   const handleAddInventoryItemAdapter = (item: InventoryItem) => {
     const invoiceItem: InvoiceItem = {
       id: item.id,
@@ -193,6 +187,10 @@ export default function InvoiceCreate() {
     handleAddLaborItem(laborItem);
   };
 
+  const handleSaveTemplateAdapter = (name: string) => {
+    handleSaveTemplate(name);
+  };
+
   return (
     <InvoiceCreateLayout
       invoice={invoice}
@@ -222,7 +220,7 @@ export default function InvoiceCreate() {
       handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
-      handleSaveTemplate={handleSaveTemplate}
+      handleSaveTemplate={handleSaveTemplateAdapter}
     />
   );
 }
