@@ -4,36 +4,38 @@ import { TeamMemberHistoryRecord } from "./types";
 
 /**
  * Formats a history record for display
- * @param record The history record to format
- * @returns Formatted record with additional display properties
  */
-export const formatHistoryRecord = (record: TeamMemberHistoryRecord) => {
+export const formatHistoryRecord = (record: TeamMemberHistoryRecord): string => {
   const date = new Date(record.timestamp);
+  const formattedDate = format(date, "PPP");
+  const relativeDate = formatDistanceToNow(date, { addSuffix: true });
   
-  return {
-    ...record,
-    formattedDate: format(date, 'MMM d, yyyy h:mm a'),
-    relativeDate: formatDistanceToNow(date, { addSuffix: true }),
-    actionLabel: getActionLabel(record.action_type),
-  };
-};
-
-/**
- * Gets a user-friendly label for an action type
- * @param actionType The action type code
- * @returns User-friendly label
- */
-const getActionLabel = (actionType: string): string => {
-  const actionLabels: Record<string, string> = {
-    'role_assigned': 'Role assigned',
-    'role_removed': 'Role removed',
-    'department_changed': 'Department changed',
-    'status_changed': 'Status changed',
-    'created': 'Account created',
-    'permission_added': 'Permission added',
-    'permission_removed': 'Permission removed',
-    // Add more action types as needed
-  };
-
-  return actionLabels[actionType] || actionType;
+  let actionLabel = "";
+  
+  switch (record.action_type) {
+    case "role_change":
+      const previousRole = record.details.previous_role || record.details.from || "none";
+      const newRole = record.details.new_role || record.details.to;
+      actionLabel = `Role changed from "${previousRole}" to "${newRole}"`;
+      break;
+    case "status_change":
+      actionLabel = `Status changed from "${record.details.previous_status || 'Active'}" to "${record.details.new_status}"`;
+      break;
+    case "creation":
+      actionLabel = "Team member was added";
+      break;
+    case "deletion":
+      actionLabel = "Team member was removed";
+      break;
+    case "update":
+      const fields = record.details.fields;
+      actionLabel = fields 
+        ? `Updated fields: ${Array.isArray(fields) ? fields.join(', ') : fields}`
+        : "Profile was updated";
+      break;
+    default:
+      actionLabel = `${record.action_type.replace("_", " ")}`;
+  }
+  
+  return `${actionLabel} ${relativeDate} by ${record.action_by_name || "System"}`;
 };

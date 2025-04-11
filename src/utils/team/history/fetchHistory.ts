@@ -33,3 +33,32 @@ export const fetchTeamMemberHistory = async (
     return [];
   }
 };
+
+/**
+ * Fetches all team member history records
+ * @param limit Maximum number of records to return
+ * @param offset Pagination offset
+ * @returns Array of history records
+ */
+export const fetchAllTeamHistory = async (
+  limit = 100,
+  offset = 0
+): Promise<TeamMemberHistoryRecord[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("team_member_history")
+      .select("*")
+      .order("timestamp", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error("Error fetching all team history:", error);
+      return [];
+    }
+
+    return data as TeamMemberHistoryRecord[];
+  } catch (error) {
+    console.error("Exception fetching all team history:", error);
+    return [];
+  }
+};

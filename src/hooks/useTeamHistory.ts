@@ -31,7 +31,7 @@ export function useTeamHistory() {
 
   useEffect(() => {
     loadTeamHistory();
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     let result = teamHistory;

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { useRoleAssignment } from "@/hooks/team/useRoleAssignment";
 
 interface TeamOwnerAlertProps {
@@ -13,6 +13,7 @@ interface TeamOwnerAlertProps {
 
 export function TeamOwnerAlert({ userId, hasNoRole }: TeamOwnerAlertProps) {
   const [isAssigningRole, setIsAssigningRole] = useState(false);
+  const { toast } = useToast();
   const { assignRole } = useRoleAssignment();
   
   if (!hasNoRole) return null;
@@ -44,7 +45,7 @@ export function TeamOwnerAlert({ userId, hasNoRole }: TeamOwnerAlertProps) {
       } else {
         toast({
           title: "Error",
-          description: result.message || "Failed to assign role. Please try again.",
+          description: result.error ? String(result.error) : "Failed to assign role. Please try again.",
           variant: "destructive",
         });
       }
