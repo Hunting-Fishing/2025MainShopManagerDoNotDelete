@@ -13,6 +13,8 @@ export interface ChatRoom {
   is_pinned?: boolean;
   is_archived?: boolean;
   metadata?: ChatRoomMetadata;
+  retention_period?: number;
+  retention_type?: string;
 }
 
 export interface ChatMessage {
@@ -23,13 +25,18 @@ export interface ChatMessage {
   content: string;
   created_at: string;
   is_read: boolean;
-  message_type?: 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order';
+  message_type?: 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
   file_url?: string;
   reply_to_id?: string;
   reply_to_message?: ChatMessage;
   is_flagged?: boolean;
   flag_reason?: string;
   metadata?: ChatMessageMetadata;
+  is_edited?: boolean;
+  edited_at?: string;
+  original_content?: string;
+  thread_parent_id?: string;
+  thread_count?: number;
 }
 
 export interface ChatParticipant {

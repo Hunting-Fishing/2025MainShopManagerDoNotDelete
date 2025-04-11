@@ -90,15 +90,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       // Create a temporary URL for the file
       const audioUrl = URL.createObjectURL(file);
       
+      // Get estimated file size in bytes
+      const fileSize = file.size;
+      
       // Format audio message
       const fileMessage = formatFileMessage({
         url: audioUrl,
         type: 'audio',
-        name: filename
+        name: filename,
+        size: fileSize,
+        contentType: 'audio/mp3'
       });
       
       // Send the voice message
-      onSendFileMessage(fileMessage, activeThreadId || undefined);
+      if (onSendFileMessage) {
+        onSendFileMessage(fileMessage, activeThreadId || undefined);
+      }
     } catch (error) {
       console.error("Error with voice message:", error);
     } finally {
@@ -133,6 +140,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </Card>
     );
   }
+
+  // Wrapper for thread operations to make them return promises
+  const handleSendReply = async (content: string, threadId: string) => {
+    setMessageText(content);
+    onSendMessage(threadId);
+    setMessageText('');
+  };
+  
+  const handleThreadEditMessage = async (messageId: string, content: string) => {
+    if (onEditMessage) {
+      onEditMessage(messageId, content);
+    }
+  };
 
   return (
     <Card className="h-full flex flex-col">
@@ -257,14 +277,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               threadId={activeThreadId}
               messages={threadMessages[activeThreadId] || []}
               onClose={onCloseThread}
-              onSendReply={(content, threadId) => {
-                setMessageText(content);
-                onSendMessage(threadId);
-                setMessageText('');
-              }}
+              onSendReply={handleSendReply}
               userId={userId}
               parentMessage={getParentMessage() || undefined}
-              onEditMessage={onEditMessage || (() => {})}
+              onEditMessage={handleThreadEditMessage}
             />
           </div>
         )}

@@ -35,7 +35,12 @@ export function transformDatabaseMessage(message: DatabaseChatMessage): ChatMess
     is_read: message.is_read || false,
     is_flagged: message.is_flagged || false,
     flag_reason: message.flag_reason || undefined,
-    metadata: message.metadata || null
+    metadata: message.metadata || null,
+    is_edited: message.is_edited || false,
+    edited_at: message.edited_at || undefined,
+    original_content: message.original_content || undefined,
+    thread_parent_id: message.thread_parent_id || undefined,
+    thread_count: message.thread_count || 0
   };
 }
 

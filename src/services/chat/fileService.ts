@@ -1,167 +1,57 @@
 
-import { supabase } from "./supabaseClient";
-import { toast } from "@/hooks/use-toast";
-
-// File types we support
-export type ChatFileType = 'image' | 'audio' | 'video' | 'document' | 'other';
-
-// Interface for uploaded file info
+// Define the ChatFileInfo type
 export interface ChatFileInfo {
   url: string;
-  type: ChatFileType;
+  type: 'image' | 'video' | 'audio' | 'file' | 'document';
   name: string;
   size: number;
   contentType: string;
 }
 
-/**
- * Upload a file to the chat attachments bucket
- */
-export const uploadChatFile = async (
-  roomId: string, 
-  file: File
-): Promise<ChatFileInfo | null> => {
-  try {
-    // Check file size (limit to 50MB)
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-    if (file.size > MAX_FILE_SIZE) {
-      toast({
-        title: "File too large",
-        description: "The maximum file size is 50MB",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    // Get file type and create appropriate path
-    const fileType = getFileType(file.type);
-    const fileExt = file.name.split('.').pop() || '';
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${roomId}/${fileType}/${fileName}`;
-    
-    // Upload file to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('chat_attachments')
-      .upload(filePath, file, {
-        contentType: file.type,
-        cacheControl: '3600'
-      });
-    
-    if (error) throw error;
-    
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('chat_attachments')
-      .getPublicUrl(filePath);
-    
-    return {
-      url: urlData.publicUrl,
-      type: fileType,
-      name: file.name,
-      size: file.size,
-      contentType: file.type
-    };
-    
-  } catch (error) {
-    console.error("Error uploading file:", error);
-    toast({
-      title: "Upload failed",
-      description: "Failed to upload file. Please try again.",
-      variant: "destructive"
-    });
-    return null;
-  }
+// Function to format file message strings for sending
+export const formatFileMessage = (fileInfo: ChatFileInfo): string => {
+  const { type, url, name, size, contentType } = fileInfo;
+  return `${type}:${url}|${name}|${size}|${contentType}`;
 };
 
-/**
- * Determine file type based on MIME type
- */
-export const getFileType = (mimeType: string): ChatFileType => {
-  if (mimeType.startsWith('image/')) return 'image';
-  if (mimeType.startsWith('audio/')) return 'audio';
-  if (mimeType.startsWith('video/')) return 'video';
-  if (
-    mimeType === 'application/pdf' || 
-    mimeType.includes('word') || 
-    mimeType.includes('excel') || 
-    mimeType.includes('powerpoint') || 
-    mimeType.includes('text/')
-  ) return 'document';
-  
-  return 'other';
-};
-
-/**
- * Parse file information from a message content
- * Handles messages with file references
- */
+// Function to parse file info from a message content string
 export const parseFileFromMessage = (content: string): { fileInfo: ChatFileInfo | null, text: string } => {
-  // Check if content starts with a file reference pattern
-  const filePattern = /^(file|image|audio|video|document):([^|]+)\|?(.*)$/;
-  const match = content.match(filePattern);
+  // Check if the content starts with a file type identifier
+  const fileTypes = ['image:', 'video:', 'audio:', 'file:', 'document:'];
+  const fileTypeMatch = fileTypes.find(type => content.startsWith(type));
   
-  if (!match) {
+  if (!fileTypeMatch) {
     return { fileInfo: null, text: content };
   }
   
-  const [, typeHint, url, text] = match;
-  let fileType: ChatFileType = 'other';
+  const type = fileTypeMatch.replace(':', '') as 'image' | 'video' | 'audio' | 'file' | 'document';
   
-  // Map the type hint to our ChatFileType
-  switch(typeHint) {
-    case 'image': fileType = 'image'; break;
-    case 'audio': fileType = 'audio'; break;
-    case 'video': fileType = 'video'; break;
-    case 'document': fileType = 'document'; break;
-    case 'file': fileType = 'other'; break;
+  // Remove the file type prefix
+  const fileContent = content.substring(fileTypeMatch.length);
+  
+  // Split the file content by the separator character
+  const parts = fileContent.split('|');
+  
+  // Must have at least URL
+  if (parts.length === 0) {
+    return { fileInfo: null, text: content };
   }
-
-  // Extract file name from URL
-  const fileName = url.split('/').pop() || 'file';
   
-  // Create file info object
+  const url = parts[0];
+  const name = parts.length > 1 ? parts[1] : 'file';
+  const size = parts.length > 2 ? parseInt(parts[2], 10) : 0;
+  const contentType = parts.length > 3 ? parts[3] : `${type}/*`;
+  
+  // If there's a caption (additional text after the file info), extract it
+  const caption = parts.length > 4 ? parts.slice(4).join('|') : '';
+  
   const fileInfo: ChatFileInfo = {
     url,
-    type: fileType,
-    name: fileName,
-    size: 0, // We don't know the size from just the URL
-    contentType: typeHint === 'audio' ? 'audio/webm' : 'application/octet-stream'
+    type,
+    name,
+    size,
+    contentType
   };
   
-  return { 
-    fileInfo, 
-    text: text || '' // Use any text that came after the file reference
-  };
-};
-
-/**
- * Format a file message for sending
- */
-export const formatFileMessage = (fileInfo: ChatFileInfo, caption?: string): string => {
-  return `${fileInfo.type}:${fileInfo.url}|${caption || ''}`;
-};
-
-/**
- * Handle voice recording upload
- */
-export const uploadVoiceRecording = async (
-  roomId: string,
-  audioBlob: Blob
-): Promise<ChatFileInfo | null> => {
-  try {
-    // Create a File object from the Blob
-    const file = new File([audioBlob], `voice_${Date.now()}.webm`, {
-      type: 'audio/webm'
-    });
-    
-    return await uploadChatFile(roomId, file);
-  } catch (error) {
-    console.error("Error uploading voice recording:", error);
-    toast({
-      title: "Upload failed",
-      description: "Failed to send voice message. Please try again.",
-      variant: "destructive"
-    });
-    return null;
-  }
+  return { fileInfo, text: caption };
 };

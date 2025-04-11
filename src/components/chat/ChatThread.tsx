@@ -27,9 +27,9 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
 }) => {
   const [replyText, setReplyText] = useState('');
   
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (replyText.trim()) {
-      onSendReply(replyText, threadId);
+      await onSendReply(replyText, threadId);
       setReplyText('');
     }
   };
@@ -99,4 +99,4 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
       </div>
     </div>
   );
-};
+}

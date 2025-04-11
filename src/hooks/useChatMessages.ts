@@ -115,13 +115,16 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         
         // If it's a thread reply, add it to the thread messages
         if (newMessage.thread_parent_id) {
-          setThreadMessages(prev => ({
-            ...prev,
-            [newMessage.thread_parent_id!]: [
-              ...(prev[newMessage.thread_parent_id!] || []),
-              newMessage
-            ]
-          }));
+          setThreadMessages(prev => {
+            const parentId = newMessage.thread_parent_id!;
+            return {
+              ...prev,
+              [parentId]: [
+                ...(prev[parentId] || []),
+                newMessage
+              ]
+            };
+          });
           
           // Also update the thread count on the parent message
           return prevMessages.map(msg => 
@@ -174,8 +177,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         sender_id: userId,
         sender_name: userName,
         content: newMessageText,
-        thread_parent_id: threadParentId,
-        message_type: threadParentId ? 'thread' : undefined
+        message_type: threadParentId ? 'text' : undefined, // Changed from 'thread' to 'text'
+        thread_parent_id: threadParentId
       };
       
       await sendMessage(messageParams);
@@ -206,8 +209,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         sender_id: userId,
         sender_name: userName,
         content: audioUrl,
-        thread_parent_id: threadParentId,
-        message_type: 'audio'
+        message_type: 'audio',
+        thread_parent_id: threadParentId
       };
       
       await sendMessage(messageParams);
@@ -232,8 +235,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         sender_id: userId,
         sender_name: userName,
         content: fileMessage,
-        thread_parent_id: threadParentId,
-        message_type: 'file'
+        message_type: 'file',
+        thread_parent_id: threadParentId
       };
       
       await sendMessage(messageParams);
