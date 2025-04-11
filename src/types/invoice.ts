@@ -11,8 +11,8 @@ export interface InvoiceItem {
   price: number;
   hours?: boolean; // Is this a labor/time entry
   total: number;
-  sku?: string;
-  category?: string;
+  sku: string; // Changed from optional to required to match inventory.ts
+  category: string; // Changed from optional to required to match inventory.ts
 }
 
 // Interface for InventoryItem in invoice context
@@ -24,8 +24,8 @@ export interface InventoryItem {
   quantity?: number;
   status?: string;
   supplier?: string;
-  sku: string; // Changed from optional to required to match inventory.ts
-  category: string; // Changed from optional to required to match inventory.ts
+  sku: string; // Required to match InvoiceItem
+  category: string; // Required to match InvoiceItem
 }
 
 export interface StaffMember {

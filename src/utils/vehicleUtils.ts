@@ -130,4 +130,3 @@ export function getFuelTypeText(type?: string): string {
   
   return fuelTypes[type.toLowerCase()] || type;
 }
-

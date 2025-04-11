@@ -79,7 +79,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     const workOrderUpdates = handleSelectWorkOrder(workOrder);
     
     setInvoice((prev: Invoice) => {
-      // Ensure we properly type the assigned staff as StaffMember[]
+      // Convert string staff entries to StaffMember objects if needed
       const updatedAssignedStaff: StaffMember[] = Array.isArray(workOrderUpdates.assignedStaff) 
         ? workOrderUpdates.assignedStaff.map((staff: any) => {
             if (typeof staff === 'string') {

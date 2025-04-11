@@ -147,7 +147,7 @@ export default function InvoiceCreate() {
       quantity: 1,
       price: item.price,
       total: item.price,
-      sku: item.sku,
+      sku: item.sku || "",
       category: item.category || ""
     };
     handleAddInventoryItem(invoiceItem);
