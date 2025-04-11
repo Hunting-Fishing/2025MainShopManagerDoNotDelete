@@ -39,11 +39,11 @@ export function AssignmentField({ form }: AssignmentFieldProps) {
         
         if (error) throw error;
         
-        // Transform the data to match TeamMember interface
-        const formattedData = data?.map(member => ({
+        // Transform the data to match TeamMember interface with proper type handling
+        const formattedData: TeamMember[] = data?.map(member => ({
           id: member.id,
-          first_name: member.first_name,
-          last_name: member.last_name,
+          first_name: member.first_name || '',
+          last_name: member.last_name || '',
           // Create a full_name property by concatenating first_name and last_name
           full_name: `${member.first_name || ''} ${member.last_name || ''}`.trim()
         })) || [];

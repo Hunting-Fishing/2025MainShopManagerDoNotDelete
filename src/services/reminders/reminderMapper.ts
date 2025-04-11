@@ -1,134 +1,118 @@
 
-import { 
-  ServiceReminder, 
-  ReminderStatus, 
-  ReminderType, 
-  ReminderPriority, 
-  ReminderCategory,
-  ReminderTag,
-  RecurrenceUnit,
-  ReminderTemplate
-} from "@/types/reminder";
+import { ServiceReminder, ReminderCategory, ReminderTemplate, ReminderTag } from "@/types/reminder";
 
-// Map database record to ServiceReminder type
-export const mapReminderFromDb = (record: any): ServiceReminder => {
+// Map reminder from database representation to application representation
+export const mapReminderFromDb = (data: any): ServiceReminder => {
   return {
-    id: record.id,
-    customerId: record.customer_id,
-    vehicleId: record.vehicle_id,
-    type: record.type as ReminderType,
-    title: record.title,
-    description: record.description,
-    dueDate: record.due_date,
-    status: record.status as ReminderStatus,
-    notificationSent: record.notification_sent,
-    notificationDate: record.notification_date,
-    createdAt: record.created_at,
-    createdBy: record.created_by,
-    completedAt: record.completed_at,
-    completedBy: record.completed_by,
-    notes: record.notes,
+    id: data.id,
+    customerId: data.customer_id,
+    vehicleId: data.vehicle_id,
+    type: data.type,
+    title: data.title,
+    description: data.description,
+    dueDate: data.due_date,
+    status: data.status,
+    notificationSent: data.notification_sent,
+    notificationDate: data.notification_date,
+    createdAt: data.created_at,
+    createdBy: data.created_by,
+    completedAt: data.completed_at,
+    completedBy: data.completed_by,
+    notes: data.notes,
     
-    // New advanced properties
-    priority: record.priority as ReminderPriority || 'medium',
-    categoryId: record.category_id,
-    category: record.categories ? mapCategoryFromDb(record.categories) : undefined,
-    assignedTo: record.assigned_to,
-    assignedToName: record.profiles?.full_name || record.profiles?.first_name,
-    templateId: record.template_id,
-    isRecurring: record.is_recurring || false,
-    recurrenceInterval: record.recurrence_interval,
-    recurrenceUnit: record.recurrence_unit as RecurrenceUnit,
-    parentReminderId: record.parent_reminder_id,
-    lastOccurredAt: record.last_occurred_at,
-    nextOccurrenceDate: record.next_occurrence_date,
-    tags: record.tags ? record.tags.map(mapTagFromDb) : undefined
+    // Advanced properties
+    priority: data.priority,
+    categoryId: data.category_id,
+    category: data.categories ? mapCategoryFromDb(data.categories) : undefined,
+    assignedTo: data.assigned_to,
+    assignedToName: data.profiles ? (data.profiles.full_name || `${data.profiles.first_name || ''} ${data.profiles.last_name || ''}`.trim()) : undefined,
+    templateId: data.template_id,
+    isRecurring: data.is_recurring,
+    recurrenceInterval: data.recurrence_interval,
+    recurrenceUnit: data.recurrence_unit,
+    parentReminderId: data.parent_reminder_id,
+    lastOccurredAt: data.last_occurred_at,
+    nextOccurrenceDate: data.next_occurrence_date,
+    tags: data.tags || []
   };
 };
 
-// Map ServiceReminder to database record format
-export const mapReminderToDb = (reminder: Partial<ServiceReminder>) => {
+// Map reminder from application representation to database representation
+export const mapReminderToDb = (reminder: Partial<ServiceReminder>): any => {
+  const dbReminder: any = {};
+  
+  if (reminder.customerId !== undefined) dbReminder.customer_id = reminder.customerId;
+  if (reminder.vehicleId !== undefined) dbReminder.vehicle_id = reminder.vehicleId;
+  if (reminder.type !== undefined) dbReminder.type = reminder.type;
+  if (reminder.title !== undefined) dbReminder.title = reminder.title;
+  if (reminder.description !== undefined) dbReminder.description = reminder.description;
+  if (reminder.dueDate !== undefined) dbReminder.due_date = reminder.dueDate;
+  if (reminder.status !== undefined) dbReminder.status = reminder.status;
+  if (reminder.notificationSent !== undefined) dbReminder.notification_sent = reminder.notificationSent;
+  if (reminder.notes !== undefined) dbReminder.notes = reminder.notes;
+  if (reminder.priority !== undefined) dbReminder.priority = reminder.priority;
+  if (reminder.categoryId !== undefined) dbReminder.category_id = reminder.categoryId;
+  if (reminder.assignedTo !== undefined) dbReminder.assigned_to = reminder.assignedTo;
+  if (reminder.isRecurring !== undefined) dbReminder.is_recurring = reminder.isRecurring;
+  if (reminder.recurrenceInterval !== undefined) dbReminder.recurrence_interval = reminder.recurrenceInterval;
+  if (reminder.recurrenceUnit !== undefined) dbReminder.recurrence_unit = reminder.recurrenceUnit;
+  
+  return dbReminder;
+};
+
+// Map category from database representation to application representation
+export const mapCategoryFromDb = (data: any): ReminderCategory => {
   return {
-    customer_id: reminder.customerId,
-    vehicle_id: reminder.vehicleId,
-    type: reminder.type,
-    title: reminder.title,
-    description: reminder.description,
-    due_date: reminder.dueDate,
-    status: reminder.status,
-    notification_sent: reminder.notificationSent,
-    notification_date: reminder.notificationDate,
-    created_by: reminder.createdBy,
-    completed_at: reminder.completedAt,
-    completed_by: reminder.completedBy,
-    notes: reminder.notes,
-    
-    // New advanced properties
-    priority: reminder.priority,
-    category_id: reminder.categoryId,
-    assigned_to: reminder.assignedTo,
-    template_id: reminder.templateId,
-    is_recurring: reminder.isRecurring,
-    recurrence_interval: reminder.recurrenceInterval,
-    recurrence_unit: reminder.recurrenceUnit,
-    parent_reminder_id: reminder.parentReminderId,
-    last_occurred_at: reminder.lastOccurredAt,
-    next_occurrence_date: reminder.nextOccurrenceDate
+    id: data.id,
+    name: data.name,
+    color: data.color || '#cccccc',
+    description: data.description,
+    is_active: data.is_active
   };
 };
 
-// Map reminder category from DB
-export const mapCategoryFromDb = (record: any): ReminderCategory => {
+// Map template from database representation to application representation
+export const mapTemplateFromDb = (data: any): ReminderTemplate => {
   return {
-    id: record.id,
-    name: record.name,
-    color: record.color || '#9CA3AF',
-    description: record.description,
-    is_active: record.is_active
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    categoryId: data.category_id,
+    category: data.categories ? mapCategoryFromDb(data.categories) : undefined,
+    priority: data.priority,
+    defaultDaysUntilDue: data.default_days_until_due,
+    notificationDaysBefore: data.notification_days_before,
+    isRecurring: data.is_recurring,
+    recurrenceInterval: data.recurrence_interval,
+    recurrenceUnit: data.recurrence_unit,
+    createdBy: data.created_by,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
   };
 };
 
-// Map reminder tag from DB
-export const mapTagFromDb = (record: any): ReminderTag => {
-  return {
-    id: record.id,
-    name: record.name,
-    color: record.color
-  };
+// Map template from application representation to database representation
+export const mapTemplateToDb = (template: Partial<ReminderTemplate>): any => {
+  const dbTemplate: any = {};
+  
+  if (template.title !== undefined) dbTemplate.title = template.title;
+  if (template.description !== undefined) dbTemplate.description = template.description;
+  if (template.categoryId !== undefined) dbTemplate.category_id = template.categoryId;
+  if (template.priority !== undefined) dbTemplate.priority = template.priority;
+  if (template.defaultDaysUntilDue !== undefined) dbTemplate.default_days_until_due = template.defaultDaysUntilDue;
+  if (template.notificationDaysBefore !== undefined) dbTemplate.notification_days_before = template.notificationDaysBefore;
+  if (template.isRecurring !== undefined) dbTemplate.is_recurring = template.isRecurring;
+  if (template.recurrenceInterval !== undefined) dbTemplate.recurrence_interval = template.recurrenceInterval;
+  if (template.recurrenceUnit !== undefined) dbTemplate.recurrence_unit = template.recurrenceUnit;
+  
+  return dbTemplate;
 };
 
-// Map template from DB
-export const mapTemplateFromDb = (record: any): ReminderTemplate => {
+// Map tag from database representation to application representation
+export const mapTagFromDb = (data: any): ReminderTag => {
   return {
-    id: record.id,
-    title: record.title,
-    description: record.description,
-    categoryId: record.category_id,
-    category: record.categories ? mapCategoryFromDb(record.categories) : undefined,
-    priority: record.priority as ReminderPriority,
-    defaultDaysUntilDue: record.default_days_until_due,
-    notificationDaysBefore: record.notification_days_before,
-    isRecurring: record.is_recurring || false,
-    recurrenceInterval: record.recurrence_interval,
-    recurrenceUnit: record.recurrence_unit as RecurrenceUnit,
-    createdBy: record.created_by,
-    createdAt: record.created_at,
-    updatedAt: record.updated_at
-  };
-};
-
-// Map template to DB
-export const mapTemplateToDb = (template: Partial<ReminderTemplate>) => {
-  return {
-    title: template.title,
-    description: template.description,
-    category_id: template.categoryId,
-    priority: template.priority,
-    default_days_until_due: template.defaultDaysUntilDue,
-    notification_days_before: template.notificationDaysBefore,
-    is_recurring: template.isRecurring,
-    recurrence_interval: template.recurrenceInterval,
-    recurrence_unit: template.recurrenceUnit,
-    created_by: template.createdBy
+    id: data.id,
+    name: data.name,
+    color: data.color
   };
 };
