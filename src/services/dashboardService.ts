@@ -271,7 +271,7 @@ export async function getRevenueData(): Promise<MonthlyRevenueData[]> {
 }
 
 // Function to get monthly revenue data (aggregated by month)
-export async function getMonthlyRevenue(): Promise<MonthlyRevenueData[]> {
+export const getMonthlyRevenue = async (): Promise<MonthlyRevenueData[]> => {
   try {
     // In a real implementation, we'd fetch this from the database with proper aggregation
     return [

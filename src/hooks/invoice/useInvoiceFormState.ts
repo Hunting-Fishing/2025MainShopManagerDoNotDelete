@@ -1,84 +1,124 @@
 
-import { useState } from "react";
-import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
-import { createDefaultInvoice } from "@/utils/invoiceUtils";
+import { useState, useEffect } from 'react';
+import { createDefaultInvoice } from '@/utils/invoiceUtils';
+import { Invoice, InvoiceItem, StaffMember } from '@/types/invoice';
+import { v4 as uuidv4 } from 'uuid';
 
 export function useInvoiceFormState(initialWorkOrderId?: string) {
-  const [invoice, setInvoice] = useState<Invoice>(createDefaultInvoice());
+  const [invoice, setInvoice] = useState<Invoice>(() => createDefaultInvoice(initialWorkOrderId));
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([]);
-  
-  // Dialog control states
   const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
 
-  // Handler for adding inventory item
+  // Initialize items and assignedStaff from invoice when it changes
+  useEffect(() => {
+    setItems(invoice.items || []);
+    setAssignedStaff(invoice.assignedStaff || []);
+  }, [invoice]);
+
+  // Add inventory item
   const handleAddInventoryItem = (item: InvoiceItem) => {
-    setItems(prev => [...prev, item]);
+    const newItem = {
+      ...item,
+      id: item.id || uuidv4(),
+      total: item.price * (item.quantity || 1)
+    };
+    
+    setInvoice(prev => ({
+      ...prev,
+      items: [...prev.items, newItem]
+    }));
   };
 
-  // Handler for removing an item
+  // Remove item
   const handleRemoveItem = (index: number) => {
-    setItems(prev => prev.filter((_, i) => i !== index));
+    setInvoice(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
   };
 
-  // Handler for updating item quantity
+  // Update item quantity
   const handleUpdateItemQuantity = (index: number, quantity: number) => {
-    const updatedItems = [...items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      quantity,
-      total: quantity * updatedItems[index].price
-    };
-    setItems(updatedItems);
+    setInvoice(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        quantity,
+        total: updatedItems[index].price * quantity
+      };
+      return {
+        ...prev,
+        items: updatedItems
+      };
+    });
   };
 
-  // Handler for updating item description
+  // Update item description
   const handleUpdateItemDescription = (index: number, description: string) => {
-    const updatedItems = [...items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      description
-    };
-    setItems(updatedItems);
+    setInvoice(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        description
+      };
+      return {
+        ...prev,
+        items: updatedItems
+      };
+    });
   };
 
-  // Handler for updating item price
+  // Update item price
   const handleUpdateItemPrice = (index: number, price: number) => {
-    const updatedItems = [...items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      price,
-      total: updatedItems[index].quantity * price
-    };
-    setItems(updatedItems);
+    setInvoice(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        price,
+        total: price * updatedItems[index].quantity
+      };
+      return {
+        ...prev,
+        items: updatedItems
+      };
+    });
   };
 
-  // Handler for adding labor item
+  // Add labor item
   const handleAddLaborItem = (item: InvoiceItem) => {
-    setItems(prev => [...prev, { ...item, hours: true }]);
+    handleAddInventoryItem({
+      ...item,
+      hours: true
+    });
   };
 
-  // Handler for adding staff member
-  const handleAddStaffMember = (staff: StaffMember) => {
-    if (!assignedStaff.some(s => s.id === staff.id)) {
-      setAssignedStaff(prev => [...prev, staff]);
+  // Add staff member
+  const handleAddStaffMember = (staffMember: StaffMember) => {
+    const staffExists = assignedStaff.some(staff => staff.id === staffMember.id);
+    if (!staffExists) {
+      setInvoice(prev => ({
+        ...prev,
+        assignedStaff: [...prev.assignedStaff, staffMember]
+      }));
     }
   };
 
-  // Handler for removing staff member
-  const handleRemoveStaffMember = (id: string) => {
-    setAssignedStaff(prev => prev.filter(s => s.id !== id));
+  // Remove staff member
+  const handleRemoveStaffMember = (staffId: string) => {
+    setInvoice(prev => ({
+      ...prev,
+      assignedStaff: prev.assignedStaff.filter(staff => staff.id !== staffId)
+    }));
   };
 
   return {
     invoice,
     setInvoice,
     items,
-    setItems,
     assignedStaff,
-    setAssignedStaff,
     showWorkOrderDialog,
     setShowWorkOrderDialog,
     showInventoryDialog,

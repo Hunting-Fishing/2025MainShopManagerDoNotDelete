@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,17 @@ import { DamageAssessmentTab } from "@/components/inspection-form/DamageAssessme
 import { AdditionalNotesTab } from "@/components/inspection-form/AdditionalNotesTab";
 import { VehicleBodyStyle } from "@/types/vehicle";
 
+interface InspectionFormData {
+  vin: string;
+  make: string;
+  model: string;
+  year: string;
+  licensePlate: string;
+  color: string;
+  bodyStyle: VehicleBodyStyle;
+  mileage: string;
+}
+
 interface VehicleInspectionFormProps {
   vehicleId?: string;
 }
@@ -19,7 +29,7 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [vehicleInfo, setVehicleInfo] = useState({
+  const [formData, setFormData] = useState<InspectionFormData>({
     vin: "",
     make: "",
     model: "",
@@ -29,14 +39,20 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
     bodyStyle: "sedan" as VehicleBodyStyle,
     mileage: ""
   });
-  const [bodyStyle, setBodyStyle] = useState<VehicleBodyStyle>('sedan');
 
   const handleVehicleInfoChange = (newInfo: any) => {
-    setVehicleInfo(newInfo);
+    setFormData(newInfo);
   };
 
-  const handleBodyStyleChange = (style: VehicleBodyStyle) => {
-    setBodyStyle(style);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'bodyStyle') {
+      const validBodyStyle = value as VehicleBodyStyle;
+      setFormData(prev => ({ ...prev, [name]: validBodyStyle }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -79,10 +95,10 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
             </TabsList>
             <TabsContent value="vehicle-info" className="space-y-4">
               <VehicleInfoTab
-                vehicleInfo={vehicleInfo}
+                vehicleInfo={formData}
                 onVehicleInfoChange={handleVehicleInfoChange}
-                initialBodyStyle={bodyStyle}
-                onBodyStyleChange={handleBodyStyleChange}
+                initialBodyStyle={formData.bodyStyle}
+                onBodyStyleChange={handleChange}
               />
             </TabsContent>
             <TabsContent value="damage-assessment">

@@ -5,6 +5,7 @@ import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
 import { useWorkOrderSelector } from "@/components/invoices/WorkOrderSelector";
 import { fetchWorkOrders, fetchInventoryItems, fetchStaffMembers } from "@/data/invoiceCreateData";
 import { useState, useEffect } from "react";
+import { InvoiceItem, InventoryItem } from "@/types/invoice";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -80,6 +81,60 @@ export default function InvoiceCreate() {
     );
   }
 
+  // Adapter functions to match expected types
+  const handleAddInventoryItemAdapter = (item: InventoryItem) => {
+    const invoiceItem: InvoiceItem = {
+      id: item.id || crypto.randomUUID(),
+      name: item.name,
+      description: item.description || "",
+      quantity: 1,
+      price: item.price || 0,
+      total: item.price || 0
+    };
+    handleAddInventoryItem(invoiceItem);
+  };
+
+  const handleRemoveItemAdapter = (id: string) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleRemoveItem(index);
+    }
+  };
+
+  const handleUpdateItemQuantityAdapter = (id: string, quantity: number) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleUpdateItemQuantity(index, quantity);
+    }
+  };
+
+  const handleUpdateItemDescriptionAdapter = (id: string, description: string) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleUpdateItemDescription(index, description);
+    }
+  };
+
+  const handleUpdateItemPriceAdapter = (id: string, price: number) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleUpdateItemPrice(index, price);
+    }
+  };
+
+  const handleAddLaborItemAdapter = () => {
+    const laborItem: InvoiceItem = {
+      id: crypto.randomUUID(),
+      name: "Labor",
+      description: "Service labor",
+      quantity: 1,
+      price: 0,
+      total: 0,
+      hours: true
+    };
+    handleAddLaborItem(laborItem);
+  };
+
   return (
     <InvoiceCreateLayout
       invoice={invoice}
@@ -99,14 +154,14 @@ export default function InvoiceCreate() {
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
       handleSelectWorkOrder={handleSelectWorkOrderWithTime}
-      handleAddInventoryItem={handleAddInventoryItem}
+      handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
-      handleRemoveItem={handleRemoveItem}
-      handleUpdateItemQuantity={handleUpdateItemQuantity}
-      handleUpdateItemDescription={handleUpdateItemDescription}
-      handleUpdateItemPrice={handleUpdateItemPrice}
-      handleAddLaborItem={handleAddLaborItem}
+      handleRemoveItem={handleRemoveItemAdapter}
+      handleUpdateItemQuantity={handleUpdateItemQuantityAdapter}
+      handleUpdateItemDescription={handleUpdateItemDescriptionAdapter}
+      handleUpdateItemPrice={handleUpdateItemPriceAdapter}
+      handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
       handleSaveTemplate={handleSaveTemplate}

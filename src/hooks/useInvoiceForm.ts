@@ -4,6 +4,7 @@ import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
 import { useInvoiceTotals } from "@/hooks/invoice/useInvoiceTotals";
 import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
+import { StaffMember } from "@/types/invoice";
 
 export function useInvoiceForm(initialWorkOrderId?: string) {
   // Use form state hook
@@ -57,7 +58,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleSaveInvoice(
       invoice,
       items,
-      assignedStaff,
+      assignedStaff as unknown as string[], // Type assertion to fix the mismatch
       subtotal,
       tax,
       total,

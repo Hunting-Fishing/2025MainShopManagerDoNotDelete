@@ -7,12 +7,13 @@ import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { WorkOrder } from "@/types/workOrder";
+import { InventoryItem, InvoiceItem, StaffMember } from "@/types/invoice";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [inventoryItems, setInventoryItems] = useState([]);
-  const [staffMembers, setStaffMembers] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   
   // Fetch real data from Supabase
   const { data: workOrdersData } = useQuery({
@@ -72,8 +73,27 @@ export default function InvoiceCreate() {
       }));
       setWorkOrders(formattedWorkOrders);
     }
-    if (inventoryData) setInventoryItems(inventoryData);
-    if (staffData) setStaffMembers(staffData);
+    if (inventoryData) {
+      const formattedInventory = inventoryData.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku || "",
+        description: item.description || "",
+        price: Number(item.unit_price) || 0,
+        category: item.category || "",
+        supplier: item.supplier || "",
+        status: item.status || "",
+        quantity: Number(item.quantity) || 0
+      }));
+      setInventoryItems(formattedInventory);
+    }
+    if (staffData) {
+      const formattedStaff = staffData.map((staff: any) => ({
+        id: staff.id || "",
+        name: getStaffName(staff)
+      }));
+      setStaffMembers(formattedStaff);
+    }
   }, [workOrdersData, inventoryData, staffData]);
 
   const {
@@ -119,6 +139,60 @@ export default function InvoiceCreate() {
     return "Unknown Staff";
   };
 
+  // Adapter functions to match expected types
+  const handleAddInventoryItemAdapter = (item: InventoryItem) => {
+    const invoiceItem: InvoiceItem = {
+      id: item.id,
+      name: item.name,
+      description: item.description || "",
+      quantity: 1,
+      price: item.price,
+      total: item.price
+    };
+    handleAddInventoryItem(invoiceItem);
+  };
+
+  const handleRemoveItemAdapter = (id: string) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleRemoveItem(index);
+    }
+  };
+
+  const handleUpdateItemQuantityAdapter = (id: string, quantity: number) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleUpdateItemQuantity(index, quantity);
+    }
+  };
+
+  const handleUpdateItemDescriptionAdapter = (id: string, description: string) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleUpdateItemDescription(index, description);
+    }
+  };
+
+  const handleUpdateItemPriceAdapter = (id: string, price: number) => {
+    const index = invoice.items.findIndex(item => item.id === id);
+    if (index !== -1) {
+      handleUpdateItemPrice(index, price);
+    }
+  };
+
+  const handleAddLaborItemAdapter = () => {
+    const laborItem: InvoiceItem = {
+      id: crypto.randomUUID(),
+      name: "Labor",
+      description: "Service labor",
+      quantity: 1,
+      price: 0,
+      total: 0,
+      hours: true
+    };
+    handleAddLaborItem(laborItem);
+  };
+
   return (
     <InvoiceCreateLayout
       invoice={invoice}
@@ -138,14 +212,14 @@ export default function InvoiceCreate() {
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
       handleSelectWorkOrder={handleSelectWorkOrderWithTime}
-      handleAddInventoryItem={handleAddInventoryItem}
+      handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
-      handleRemoveItem={handleRemoveItem}
-      handleUpdateItemQuantity={handleUpdateItemQuantity}
-      handleUpdateItemDescription={handleUpdateItemDescription}
-      handleUpdateItemPrice={handleUpdateItemPrice}
-      handleAddLaborItem={handleAddLaborItem}
+      handleRemoveItem={handleRemoveItemAdapter}
+      handleUpdateItemQuantity={handleUpdateItemQuantityAdapter}
+      handleUpdateItemDescription={handleUpdateItemDescriptionAdapter}
+      handleUpdateItemPrice={handleUpdateItemPriceAdapter}
+      handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
       handleSaveTemplate={handleSaveTemplate}
