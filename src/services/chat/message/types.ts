@@ -1,16 +1,15 @@
 
-import { getMessageType, transformDatabaseMessage, parseTaggedItems, MessageSendParams, MessageEditParams, MessageFlagParams } from './messageTypes';
+import { getMessageType, transformDatabaseMessage, MessageSendParams, MessageEditParams, MessageFlagParams } from './messageTypes';
 import { parseTaggedItems as parseTagsHelper } from './messageHelpers';
 
-// Re-export all types and functions
+// Re-export functions
 export {
   getMessageType,
-  transformDatabaseMessage,
-  parseTaggedItems,
-  MessageSendParams,
-  MessageEditParams,
-  MessageFlagParams
+  transformDatabaseMessage
 };
 
-// For compatibility, ensure parseTaggedItems is correctly exported
+// Re-export types with proper syntax
+export type { MessageSendParams, MessageEditParams, MessageFlagParams };
+
+// Export parseTaggedItems from messageHelpers (not duplicating)
 export { parseTagsHelper as parseTaggedItems };
