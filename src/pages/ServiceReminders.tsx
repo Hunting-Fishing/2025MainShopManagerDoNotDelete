@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Calendar, Tag, Template } from "lucide-react";
+import { Plus, Filter, Calendar, Tag, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DateRange } from "react-day-picker";
@@ -98,7 +98,7 @@ export default function ServiceReminders() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar
+                      <CalendarComponent
                         initialFocus
                         mode="range"
                         selected={dateRange}

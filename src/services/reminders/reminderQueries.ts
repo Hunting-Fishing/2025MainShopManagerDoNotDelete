@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ServiceReminder, ReminderCategory, ReminderTag, ReminderTemplate } from "@/types/reminder";
 import { mapReminderFromDb, mapCategoryFromDb, mapTagFromDb, mapTemplateFromDb } from "./reminderMapper";
@@ -307,7 +306,7 @@ export const getReminderTemplateById = async (templateId: string): Promise<Remin
 };
 
 // Get tags for a specific reminder
-export const getReminderTags = async (reminderId: string): Promise<ReminderTag[]> => {
+export const getReminderTagsByReminderId = async (reminderId: string): Promise<ReminderTag[]> => {
   try {
     const { data, error } = await supabase
       .from("service_reminder_tags")

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   ServiceReminder, 
@@ -6,9 +5,11 @@ import {
   CreateReminderParams, 
   ReminderTemplate, 
   CreateReminderTemplateParams, 
-  ReminderTag 
+  ReminderTag,
+  ReminderPriority,
+  RecurrenceUnit
 } from "@/types/reminder";
-import { mapReminderFromDb, mapReminderToDb, mapTemplateFromDb, mapTemplateToDb } from "./reminderMapper";
+import { mapReminderFromDb, mapReminderToDb, mapTemplateFromDb, mapTemplateToDb, mapTagFromDb } from "./reminderMapper";
 
 // Create a new reminder
 export const createReminder = async (params: CreateReminderParams): Promise<ServiceReminder> => {
@@ -27,13 +28,13 @@ export const createReminder = async (params: CreateReminderParams): Promise<Serv
     notes: params.notes || null,
     
     // New advanced properties
-    priority: params.priority || "medium",
+    priority: (params.priority || "medium") as ReminderPriority,
     category_id: params.categoryId || null,
     assigned_to: params.assignedTo || null,
     template_id: params.templateId || null,
     is_recurring: params.isRecurring || false,
     recurrence_interval: params.recurrenceInterval || null,
-    recurrence_unit: params.recurrenceUnit || null
+    recurrence_unit: params.recurrenceUnit as RecurrenceUnit || null
   };
 
   const { data, error } = await supabase

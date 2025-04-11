@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface TeamMember {
   id: string;
-  full_name: string;
+  full_name?: string;
   first_name: string;
   last_name: string;
 }
@@ -34,12 +34,21 @@ export function AssignmentField({ form }: AssignmentFieldProps) {
         setIsLoading(true);
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, full_name')
+          .select('id, first_name, last_name')
           .order('first_name');
         
         if (error) throw error;
         
-        setTeamMembers(data || []);
+        // Transform the data to match TeamMember interface
+        const formattedData = data?.map(member => ({
+          id: member.id,
+          first_name: member.first_name,
+          last_name: member.last_name,
+          // Create a full_name property by concatenating first_name and last_name
+          full_name: `${member.first_name || ''} ${member.last_name || ''}`.trim()
+        })) || [];
+        
+        setTeamMembers(formattedData);
       } catch (err) {
         console.error("Failed to load team members:", err);
       } finally {
