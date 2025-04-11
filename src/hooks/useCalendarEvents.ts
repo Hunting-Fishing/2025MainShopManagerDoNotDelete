@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { CalendarEvent } from '@/types/calendar/events';
+import { CalendarEvent as DatabaseCalendarEvent } from '@/types/calendar/events';
+import { CalendarEvent } from '@/types/calendar';
 import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
 import { getShiftChats } from '@/services/calendar/shiftChatService';
 import { ChatRoom } from '@/types/chat';
@@ -62,7 +63,8 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
         }));
 
         // Combine and format all events for the calendar
-        const formattedEvents = [
+        // Transform DatabaseCalendarEvent to CalendarEvent format for UI
+        const formattedEvents: CalendarEvent[] = [
           ...calendarEvents,
           ...workOrderEvents.filter(wo => {
             // Only include work orders that aren't already in calendar_events
@@ -71,10 +73,25 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
             );
           })
         ].map(event => ({
-          ...event,
+          id: event.id,
+          title: event.title,
           start: new Date(event.start_time),
           end: new Date(event.end_time),
-          type: event.event_type // Map event_type to type for UI compatibility
+          customer: event.customer || '',
+          status: event.status,
+          priority: event.priority,
+          technician: event.technician || '',
+          location: event.location || '',
+          type: event.event_type, // Map event_type to type for UI compatibility
+          
+          // Include original fields for API operations
+          description: event.description,
+          customer_id: event.customer_id,
+          work_order_id: event.work_order_id,
+          technician_id: event.technician_id,
+          all_day: event.all_day,
+          start_time: event.start_time,
+          end_time: event.end_time
         }));
 
         setEvents(formattedEvents);
