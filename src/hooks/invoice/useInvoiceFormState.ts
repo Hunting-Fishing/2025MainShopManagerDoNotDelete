@@ -1,9 +1,9 @@
 
 import { useState } from "react";
-import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
+import { Invoice, InvoiceItem, StaffMember, InventoryItem } from "@/types/invoice";
 import { toast } from "@/hooks/use-toast";
 
-interface UseInvoiceFormStateProps {
+export interface UseInvoiceFormStateProps {
   initialWorkOrderId?: string;
 }
 

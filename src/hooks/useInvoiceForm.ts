@@ -1,13 +1,15 @@
 
-import { useInvoiceFormState } from "@/hooks/invoice/useInvoiceFormState";
+import { useInvoiceFormState, UseInvoiceFormStateProps } from "@/hooks/invoice/useInvoiceFormState";
 import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
 import { useInvoiceTotals } from "@/hooks/invoice/useInvoiceTotals";
 import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
-import { StaffMember } from "@/types/invoice";
+import { StaffMember, Invoice } from "@/types/invoice";
 
 export function useInvoiceForm(initialWorkOrderId?: string) {
-  // Use form state hook
+  // Use form state hook with correct typing
+  const props: UseInvoiceFormStateProps = initialWorkOrderId ? { initialWorkOrderId } : {};
+  
   const {
     invoice,
     setInvoice,
@@ -27,7 +29,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleAddLaborItem,
     handleAddStaffMember,
     handleRemoveStaffMember,
-  } = useInvoiceFormState(initialWorkOrderId);
+  } = useInvoiceFormState(props);
 
   // Use invoice templates hook
   const { 
@@ -55,10 +57,15 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
 
   // Wrap the save invoice function to include all required data
   const saveInvoice = (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => {
+    // Convert assignedStaff to string[] as expected by handleSaveInvoice
+    const staffIds = assignedStaff.map(staff => 
+      typeof staff === 'string' ? staff : staff.id
+    );
+    
     handleSaveInvoice(
       invoice,
       items,
-      assignedStaff as unknown as string[], // Type assertion to fix the mismatch
+      staffIds,
       subtotal,
       tax,
       total,
@@ -72,7 +79,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     
     const workOrderUpdates = handleSelectWorkOrder(workOrder);
     
-    setInvoice((prev) => ({
+    setInvoice((prev: Invoice) => ({
       ...prev,
       workOrderId: workOrderUpdates.workOrderId,
       customer: workOrderUpdates.customer,

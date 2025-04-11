@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +41,7 @@ export default function VehicleInspectionForm({ vehicleId }: VehicleInspectionFo
     mileage: ""
   });
 
-  const handleVehicleInfoChange = (newInfo: any) => {
+  const handleVehicleInfoChange = (newInfo: InspectionFormData) => {
     setFormData(newInfo);
   };
 

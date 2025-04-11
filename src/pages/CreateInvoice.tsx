@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -121,11 +122,13 @@ export default function InvoiceCreate() {
     handleSaveTemplate,
   } = useInvoiceForm(workOrderId);
 
-  const handleSelectWorkOrderWithTime = useWorkOrderSelector({
+  const workOrderSelector = useWorkOrderSelector({
     invoice,
     setInvoice,
     handleSelectWorkOrder,
   });
+
+  const handleSelectWorkOrderWithTime = workOrderSelector.handleSelectWorkOrderWithTime;
 
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
@@ -188,7 +191,18 @@ export default function InvoiceCreate() {
   };
 
   const handleSaveTemplateAdapter = (name: string) => {
-    handleSaveTemplate(name);
+    // Create a template object from the name
+    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+      name,
+      description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
+      lastUsed: null,
+      defaultTaxRate: taxRate,
+      defaultDueDateDays: 30,
+      defaultNotes: invoice.notes || "",
+      defaultItems: invoice.items
+    };
+    
+    handleSaveTemplate(template);
   };
 
   return (

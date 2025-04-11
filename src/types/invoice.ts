@@ -13,6 +13,18 @@ export interface InvoiceItem {
   total: number;
 }
 
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku?: string;
+  description?: string;
+  price: number;
+  category?: string;
+  supplier?: string;
+  status?: string;
+  quantity: number;
+}
+
 export interface StaffMember {
   id: string; // Using string type to ensure compatibility across components
   name: string;
@@ -35,11 +47,11 @@ export interface Invoice {
   date: string;
   dueDate: string;
   createdBy: string;
-  assignedStaff: string[];
+  assignedStaff: (string | StaffMember)[]; // Updated to accept both string and StaffMember
   items: InvoiceItem[];
   customer_id?: string; // Added for backward compatibility
-  lastUpdatedBy?: string; // Add this missing property
-  lastUpdatedAt?: string; // Add this missing property
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
 }
 
 export interface InvoiceTemplate {

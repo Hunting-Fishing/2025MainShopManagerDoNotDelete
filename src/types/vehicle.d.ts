@@ -50,6 +50,6 @@ export interface CarModel {
   model_make_id: string;
 }
 
-// Import VehicleBodyStyle from vehicleBodyStyles to maintain consistency
-import { VehicleBodyStyle } from './vehicleBodyStyles';
-export { VehicleBodyStyle };
+// Import and re-export VehicleBodyStyle from vehicleBodyStyles for consistency
+import { VehicleBodyStyle, VEHICLE_BODY_STYLES } from './vehicleBodyStyles';
+export { VehicleBodyStyle, VEHICLE_BODY_STYLES };
