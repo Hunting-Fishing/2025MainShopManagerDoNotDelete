@@ -80,16 +80,14 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     
     setInvoice((prev: Invoice) => {
       // Ensure we properly type the assigned staff as StaffMember[]
-      let updatedAssignedStaff = prev.assignedStaff;
-      
-      if (Array.isArray(workOrderUpdates.assignedStaff)) {
-        updatedAssignedStaff = workOrderUpdates.assignedStaff.map((staff: string | StaffMember) => {
-          if (typeof staff === 'string') {
-            return { id: crypto.randomUUID(), name: staff, role: '' };
-          }
-          return staff;
-        });
-      }
+      const updatedAssignedStaff: StaffMember[] = Array.isArray(workOrderUpdates.assignedStaff) 
+        ? workOrderUpdates.assignedStaff.map((staff: any) => {
+            if (typeof staff === 'string') {
+              return { id: crypto.randomUUID(), name: staff, role: '' };
+            }
+            return staff as StaffMember;
+          })
+        : prev.assignedStaff;
       
       return {
         ...prev,
@@ -103,12 +101,12 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     setShowWorkOrderDialog(false);
   };
 
-  // Adapt template save function to handle the parameter type expected by consumers
-  const wrappedHandleSaveTemplate = (templateNameOrObject: string | Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
-    if (typeof templateNameOrObject === 'string') {
+  // Adapt template save function to handle parameter type
+  const wrappedHandleSaveTemplate = (templateData: string | Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
+    if (typeof templateData === 'string') {
       // Create a template object from the name
       const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
-        name: templateNameOrObject,
+        name: templateData,
         description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
         lastUsed: null,
         defaultTaxRate: taxRate,
@@ -119,7 +117,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
       handleSaveTemplate(template);
     } else {
       // If it's already an object, pass it through
-      handleSaveTemplate(templateNameOrObject);
+      handleSaveTemplate(templateData);
     }
   };
 

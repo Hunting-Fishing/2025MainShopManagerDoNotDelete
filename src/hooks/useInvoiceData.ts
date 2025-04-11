@@ -69,7 +69,7 @@ export function useInvoiceData() {
             date: invoice.date || new Date().toISOString().split('T')[0],
             dueDate: invoice.due_date || '',
             createdBy: invoice.created_by || '',
-            assignedStaff: staffData?.map((staff: any) => ({
+            assignedStaff: staffData?.map((staff: any): StaffMember => ({
               id: staff.id || crypto.randomUUID(),
               name: staff.staff_name,
               role: staff.role || ''

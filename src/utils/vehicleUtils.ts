@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle, CarMake, CarModel } from '@/types/vehicle';
@@ -131,3 +130,4 @@ export function getFuelTypeText(type?: string): string {
   
   return fuelTypes[type.toLowerCase()] || type;
 }
+

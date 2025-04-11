@@ -83,6 +83,9 @@ export default function InvoiceCreate() {
         description: item.description || "",
         price: Number(item.unit_price) || 0,
         category: item.category || "",
+        supplier: item.supplier || "",
+        status: item.status || "",
+        quantity: Number(item.quantity) || 0
       }));
       setInventoryItems(formattedInventory);
     }
@@ -145,7 +148,7 @@ export default function InvoiceCreate() {
       price: item.price,
       total: item.price,
       sku: item.sku,
-      category: item.category
+      category: item.category || ""
     };
     handleAddInventoryItem(invoiceItem);
   };
@@ -186,26 +189,15 @@ export default function InvoiceCreate() {
       quantity: 1,
       price: 0,
       total: 0,
-      hours: true
+      hours: true,
+      sku: '',
+      category: ''
     };
     handleAddLaborItem(laborItem);
   };
 
-  const handleSaveTemplateAdapter = (templateNameOrObject: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
-    if (typeof templateNameOrObject === 'string') {
-      const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
-        name: templateNameOrObject,
-        description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
-        lastUsed: null,
-        defaultTaxRate: taxRate,
-        defaultDueDateDays: 30,
-        defaultNotes: invoice.notes || "",
-        defaultItems: invoice.items
-      };
-      handleSaveTemplate(template);
-    } else {
-      handleSaveTemplate(templateNameOrObject);
-    }
+  const handleSaveTemplateAdapter = (templateData: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
+    handleSaveTemplate(templateData);
   };
 
   return (
