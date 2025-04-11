@@ -13,8 +13,17 @@ export interface CalendarEvent {
   priority: string;
   technician: string;
   location: string;
-  type: 'work-order' | 'invoice';
+  type: 'work-order' | 'invoice' | 'appointment' | 'meeting' | 'break' | 'other';
   inventoryItems?: WorkOrderInventoryItem[];
+  
+  // Original database fields
+  description?: string;
+  customer_id?: string;
+  work_order_id?: string;
+  technician_id?: string;
+  all_day?: boolean;
+  start_time?: string;
+  end_time?: string;
 }
 
 export interface CalendarDayProps {
@@ -28,3 +37,6 @@ export interface CalendarWeekProps {
   startDate: Date;
   events: CalendarEvent[];
 }
+
+// Re-export types from the new calendar/events.ts file
+export * from './calendar/events';

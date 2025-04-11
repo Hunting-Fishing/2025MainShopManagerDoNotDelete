@@ -1,13 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalendarFilters } from "@/components/calendar/CalendarFilters";
-import { fetchWorkOrders, WorkOrder } from "@/data/workOrdersData";
-import { CalendarEvent } from "@/types/calendar";
 import { CreateShiftChatButton } from "@/components/calendar/CreateShiftChatButton";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Calendar() {
   const navigate = useNavigate();
@@ -15,46 +15,14 @@ export default function Calendar() {
   const [view, setView] = useState<"month" | "week" | "day">("month");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
   
-  // Fetch work orders
-  useEffect(() => {
-    const getWorkOrders = async () => {
-      try {
-        const data = await fetchWorkOrders();
-        setWorkOrders(data);
-        
-        // Create calendar events from work orders
-        const events = data.map(order => ({
-          id: order.id,
-          title: order.description,
-          start: new Date(order.date),
-          end: new Date(order.dueDate || order.date),
-          customer: order.customer,
-          status: order.status,
-          priority: order.priority,
-          technician: order.technician,
-          location: order.location,
-          type: 'work-order' as const
-        }));
-        
-        setCalendarEvents(events);
-      } catch (error) {
-        console.error("Error fetching work orders for calendar:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    getWorkOrders();
-  }, []);
-
+  // Use the custom hook to fetch and manage calendar data
+  const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
+  
   // Filter events based on technician and status
-  const filteredEvents = calendarEvents.filter(event => {
+  const filteredEvents = events.filter(event => {
     const matchesTechnician = 
-      technicianFilter === "all" || event.technician === technicianFilter;
+      technicianFilter === "all" || event.technician_id === technicianFilter;
     
     const matchesStatus = 
       statusFilter.length === 0 || statusFilter.includes(event.status);
@@ -73,12 +41,13 @@ export default function Calendar() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-slate-500">Loading calendar events...</div>
-      </div>
-    );
+  // Show toast when there's an error
+  if (error) {
+    toast({
+      title: "Error loading calendar",
+      description: error,
+      variant: "destructive"
+    });
   }
 
   return (
@@ -106,6 +75,8 @@ export default function Calendar() {
           events={filteredEvents}
           currentDate={currentDate}
           view={view}
+          loading={isLoading}
+          shiftChats={shiftChats}
         />
       </div>
     </div>

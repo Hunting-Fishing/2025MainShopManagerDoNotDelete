@@ -173,6 +173,124 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_events: {
+        Row: {
+          all_day: boolean | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          description: string | null
+          end_time: string
+          event_type: string
+          id: string
+          location: string | null
+          priority: string
+          start_time: string
+          status: string
+          technician_id: string | null
+          title: string
+          updated_at: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          all_day?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          end_time: string
+          event_type: string
+          id?: string
+          location?: string | null
+          priority?: string
+          start_time: string
+          status?: string
+          technician_id?: string | null
+          title: string
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          all_day?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          end_time?: string
+          event_type?: string
+          id?: string
+          location?: string | null
+          priority?: string
+          start_time?: string
+          status?: string
+          technician_id?: string | null
+          title?: string
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_preferences: {
+        Row: {
+          color_settings: Json | null
+          created_at: string | null
+          default_view: string
+          displayed_calendars: Json | null
+          first_day_of_week: number | null
+          id: string
+          updated_at: string | null
+          user_id: string | null
+          work_hours_end: string | null
+          work_hours_start: string | null
+        }
+        Insert: {
+          color_settings?: Json | null
+          created_at?: string | null
+          default_view?: string
+          displayed_calendars?: Json | null
+          first_day_of_week?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          work_hours_end?: string | null
+          work_hours_start?: string | null
+        }
+        Update: {
+          color_settings?: Json | null
+          created_at?: string | null
+          default_view?: string
+          displayed_calendars?: Json | null
+          first_day_of_week?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          work_hours_end?: string | null
+          work_hours_start?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -1578,6 +1696,76 @@ export type Database = {
           work_order_history?: Json | null
         }
         Relationships: []
+      }
+      event_attendees: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          response_status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          response_status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          response_status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_reminders: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          is_sent: boolean | null
+          reminder_time: unknown
+          reminder_type: string
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          is_sent?: boolean | null
+          reminder_time: unknown
+          reminder_type: string
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          is_sent?: boolean | null
+          reminder_time?: unknown
+          reminder_type?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback_forms: {
         Row: {
@@ -3827,6 +4015,47 @@ export type Database = {
           },
         ]
       }
+      recurring_events: {
+        Row: {
+          base_event_id: string | null
+          created_at: string | null
+          end_date: string | null
+          id: string
+          recurrence_exception_dates: string[] | null
+          recurrence_rule: string
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_event_id?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          recurrence_exception_dates?: string[] | null
+          recurrence_rule: string
+          start_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_event_id?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          recurrence_exception_dates?: string[] | null
+          recurrence_rule?: string
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_events_base_event_id_fkey"
+            columns: ["base_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_sources: {
         Row: {
           created_at: string
@@ -4115,6 +4344,59 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_chats: {
+        Row: {
+          chat_room_id: string | null
+          created_at: string | null
+          created_by: string | null
+          end_time: string
+          id: string
+          location: string | null
+          notes: string | null
+          shift_date: string
+          shift_name: string
+          start_time: string
+          technician_ids: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          chat_room_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          end_time: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          shift_date: string
+          shift_name: string
+          start_time: string
+          technician_ids?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          chat_room_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          end_time?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          shift_date?: string
+          shift_name?: string
+          start_time?: string
+          technician_ids?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_chats_chat_room_id_fkey"
+            columns: ["chat_room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
             referencedColumns: ["id"]
           },
         ]

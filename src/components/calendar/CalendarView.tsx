@@ -1,22 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek,
-  eachDayOfInterval,
-  format,
-  isSameMonth,
-  isToday,
-  addDays,
-  getDay,
-  parse,
-  startOfDay,
-  endOfDay,
-  isSameDay,
-  isPast
-} from "date-fns";
 import { CalendarEvent, CalendarViewType } from "@/types/calendar";
 import { CalendarMonthView } from "./CalendarMonthView";
 import { CalendarWeekView } from "./CalendarWeekView";
@@ -24,19 +7,24 @@ import { CalendarDayView } from "./CalendarDayView";
 import { CalendarEventDialog } from "./CalendarEventDialog";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { ChatRoom } from "@/types/chat";
-import { useEffect as useReactEffect } from "react";
-import { supabase } from "@/integrations/supabase/client"; // Assuming you have this
 
 interface CalendarViewProps {
   events: CalendarEvent[];
   currentDate: Date;
   view: CalendarViewType;
+  loading?: boolean;
+  shiftChats?: ChatRoom[];
 }
 
-export function CalendarView({ events, currentDate, view }: CalendarViewProps) {
+export function CalendarView({ 
+  events, 
+  currentDate, 
+  view,
+  loading = false,
+  shiftChats = []
+}: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [now, setNow] = useState(new Date());
-  const [shiftChats, setShiftChats] = useState<ChatRoom[]>([]);
 
   // Update current time every minute
   useEffect(() => {
@@ -47,62 +35,6 @@ export function CalendarView({ events, currentDate, view }: CalendarViewProps) {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Fetch shift chats
-  useReactEffect(() => {
-    // This would be replaced with your real API call
-    const fetchShiftChats = async () => {
-      try {
-        // Mock data for now - replace with actual Supabase call when ready
-        // const { data, error } = await supabase
-        //   .from('chat_rooms')
-        //   .select('*')
-        //   .eq('is_shift_chat', true);
-        
-        // If using mock data for now
-        const mockShiftChats: ChatRoom[] = [
-          {
-            id: "shift-chat-1",
-            name: "Morning Shift - Team A",
-            type: "group",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            metadata: {
-              is_shift_chat: true,
-              shift_date: format(new Date(), 'yyyy-MM-dd'),
-              shift_name: "Morning Shift",
-              shift_time: {
-                start: "08:00",
-                end: "16:00"
-              }
-            }
-          },
-          {
-            id: "shift-chat-2",
-            name: "Afternoon Shift - Team B",
-            type: "group",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            metadata: {
-              is_shift_chat: true,
-              shift_date: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-              shift_name: "Afternoon Shift",
-              shift_time: {
-                start: "16:00",
-                end: "00:00"
-              }
-            }
-          }
-        ];
-        
-        setShiftChats(mockShiftChats);
-      } catch (error) {
-        console.error("Error fetching shift chats:", error);
-      }
-    };
-
-    fetchShiftChats();
-  }, [currentDate]);
-
   // Open event details
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
@@ -112,6 +44,18 @@ export function CalendarView({ events, currentDate, view }: CalendarViewProps) {
   const handleCloseDialog = () => {
     setSelectedEvent(null);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="h-[800px] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 border-4 border-t-blue-600 border-b-blue-600 border-l-transparent border-r-transparent rounded-full animate-spin"></div>
+          <div className="text-slate-500">Loading calendar events...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[800px] overflow-auto relative">
@@ -134,7 +78,6 @@ export function CalendarView({ events, currentDate, view }: CalendarViewProps) {
             currentTime={now}
             shiftChats={shiftChats}
           />
-          {/* Current time indicator for week view */}
           <CurrentTimeIndicator currentTime={now} view="week" />
         </>
       )}
@@ -148,7 +91,6 @@ export function CalendarView({ events, currentDate, view }: CalendarViewProps) {
             currentTime={now}
             shiftChats={shiftChats}
           />
-          {/* Current time indicator for day view */}
           <CurrentTimeIndicator currentTime={now} view="day" />
         </>
       )}

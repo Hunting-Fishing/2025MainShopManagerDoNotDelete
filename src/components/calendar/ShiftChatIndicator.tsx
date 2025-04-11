@@ -63,7 +63,7 @@ export const ShiftChatIndicator: React.FC<ShiftChatIndicatorProps> = ({
                   onClick={() => onClick && onClick(chat)}
                 >
                   <Users className="h-3 w-3" />
-                  <span>{chat.name || 'Unnamed shift'}</span>
+                  <span>{chat.name || chat.metadata?.shift_name || 'Unnamed shift'}</span>
                 </div>
               ))}
             </div>
