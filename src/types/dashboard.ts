@@ -1,4 +1,3 @@
-
 export interface DashboardStats {
   revenue: number;
   activeOrders: number;
@@ -66,3 +65,13 @@ export interface ServiceTypeData {
   value: number;
 }
 
+export interface EquipmentRecommendation {
+  id: string;
+  name: string;
+  model: string;
+  manufacturer: string;
+  status: string;
+  maintenanceType: string;
+  maintenanceDate: string;
+  priority: "High" | "Medium" | "Low";
+}
