@@ -192,17 +192,7 @@ export default function InvoiceCreate() {
   };
 
   const handleSaveTemplateAdapter = (templateName: string) => {
-    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
-      name: templateName,
-      description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
-      lastUsed: null,
-      defaultTaxRate: taxRate,
-      defaultDueDateDays: 30,
-      defaultNotes: invoice.notes || "",
-      defaultItems: invoice.items
-    };
-    
-    handleSaveTemplate(template);
+    handleSaveTemplate(templateName);
   };
 
   return (

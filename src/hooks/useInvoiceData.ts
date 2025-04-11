@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Invoice } from '@/types/invoice';
+import { Invoice, StaffMember } from '@/types/invoice';
 import { toast } from '@/hooks/use-toast';
 
 export function useInvoiceData() {
@@ -69,7 +69,10 @@ export function useInvoiceData() {
             date: invoice.date || new Date().toISOString().split('T')[0],
             dueDate: invoice.due_date || '',
             createdBy: invoice.created_by || '',
-            assignedStaff: staffData?.map(staff => staff.staff_name) || [],
+            assignedStaff: staffData?.map(staff => ({
+              id: staff.id || crypto.randomUUID(),
+              name: staff.staff_name
+            })) || [],
             items: itemsData?.map(item => ({
               id: item.id,
               name: item.name,

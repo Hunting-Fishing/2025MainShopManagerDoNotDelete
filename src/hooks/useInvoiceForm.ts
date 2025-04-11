@@ -83,7 +83,6 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
       workOrderId: workOrderUpdates.workOrderId,
       customer: workOrderUpdates.customer,
       description: workOrderUpdates.description,
-      // Convert string assignments to StaffMember objects if needed
       assignedStaff: Array.isArray(workOrderUpdates.assignedStaff) 
         ? workOrderUpdates.assignedStaff.map((staff: string | StaffMember) => {
             if (typeof staff === 'string') {
@@ -95,6 +94,26 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     }));
     
     setShowWorkOrderDialog(false);
+  };
+
+  // Adapt template save function to handle the parameter type expected by consumers
+  const wrappedHandleSaveTemplate = (templateNameOrObject: string | Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
+    if (typeof templateNameOrObject === 'string') {
+      // Create a template object from the name
+      const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+        name: templateNameOrObject,
+        description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
+        lastUsed: null,
+        defaultTaxRate: taxRate,
+        defaultDueDateDays: 30,
+        defaultNotes: invoice.notes || "",
+        defaultItems: invoice.items
+      };
+      handleSaveTemplate(template);
+    } else {
+      // If it's already an object, pass it through
+      handleSaveTemplate(templateNameOrObject);
+    }
   };
 
   return {
@@ -132,6 +151,6 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleAddLaborItem,
     handleSaveInvoice: saveInvoice,
     handleApplyTemplate,
-    handleSaveTemplate,
+    handleSaveTemplate: wrappedHandleSaveTemplate,
   };
 }

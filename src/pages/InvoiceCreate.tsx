@@ -148,7 +148,9 @@ export default function InvoiceCreate() {
       description: item.description || "",
       quantity: 1,
       price: item.price,
-      total: item.price
+      total: item.price,
+      sku: item.sku,
+      category: item.category
     };
     handleAddInventoryItem(invoiceItem);
   };
@@ -189,23 +191,15 @@ export default function InvoiceCreate() {
       quantity: 1,
       price: 0,
       total: 0,
-      hours: true
+      hours: true,
+      sku: '',
+      category: ''
     };
     handleAddLaborItem(laborItem);
   };
 
   const handleSaveTemplateAdapter = (templateName: string) => {
-    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
-      name: templateName,
-      description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
-      lastUsed: null,
-      defaultTaxRate: taxRate,
-      defaultDueDateDays: 30,
-      defaultNotes: invoice.notes || "",
-      defaultItems: invoice.items
-    };
-    
-    handleSaveTemplate(template);
+    handleSaveTemplate(templateName);
   };
 
   return (

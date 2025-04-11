@@ -21,7 +21,7 @@ export interface InventoryItem {
   name: string;
   description?: string;
   price: number;
-  quantity: number;
+  quantity?: number;
   status?: string;
   supplier?: string;
   sku?: string;
@@ -29,9 +29,9 @@ export interface InventoryItem {
 }
 
 export interface StaffMember {
-  id: string; // Using string type to ensure compatibility across components
+  id: string;
   name: string;
-  role?: string; // Added role property
+  role?: string;
 }
 
 export interface Invoice {
@@ -50,9 +50,9 @@ export interface Invoice {
   date: string;
   dueDate: string;
   createdBy: string;
-  assignedStaff: StaffMember[]; // Using StaffMember type instead of mixed types
+  assignedStaff: StaffMember[];
   items: InvoiceItem[];
-  customer_id?: string; // Added for backward compatibility
+  customer_id?: string;
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
 }
