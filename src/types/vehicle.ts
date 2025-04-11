@@ -8,4 +8,10 @@ export type VehicleBodyStyle =
   | 'wagon'
   | 'hatchback'
   | 'convertible'
+  | 'crossover'
+  | 'minivan'
+  | 'pickup'
+  | 'bus'
+  | 'motorcycle'
+  | 'off-road'
   | 'other';

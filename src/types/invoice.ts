@@ -12,6 +12,8 @@ export interface InvoiceItem {
   price: number;
   hours?: boolean; // Is this a labor/time entry
   total: number;
+  sku?: string;
+  category?: string;
 }
 
 // Extend the base InventoryItem to include additional props needed for invoices

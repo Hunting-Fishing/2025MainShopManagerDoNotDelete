@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Invoice, InvoiceItem, StaffMember, InventoryItem } from "@/types/invoice";
 import { toast } from "@/hooks/use-toast";
@@ -39,7 +40,9 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
       description: item.description || "",
       quantity: 1,
       price: item.price,
-      total: item.price
+      total: item.price,
+      sku: item.sku || "",
+      category: item.category || ""
     };
     
     setInvoice((prev) => ({

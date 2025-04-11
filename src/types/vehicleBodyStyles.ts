@@ -1,36 +1,37 @@
 
+// Define the possible vehicle body styles
 export type VehicleBodyStyle = 
   | 'sedan'
   | 'suv'
-  | 'truck'
   | 'coupe'
-  | 'hatchback'
-  | 'wagon'
+  | 'truck'
   | 'van'
+  | 'wagon'
+  | 'hatchback'
   | 'convertible'
-  | 'minivan'
   | 'crossover'
+  | 'minivan'
   | 'pickup'
   | 'bus'
   | 'motorcycle'
   | 'off-road'
   | 'other';
 
-// Export a list of all available body styles for UI components to use
-export const VEHICLE_BODY_STYLES: {value: VehicleBodyStyle; label: string}[] = [
+// Available body style options for UI selection
+export const VEHICLE_BODY_STYLES: Array<{ value: VehicleBodyStyle; label: string }> = [
   { value: 'sedan', label: 'Sedan' },
   { value: 'suv', label: 'SUV' },
-  { value: 'truck', label: 'Truck' },
   { value: 'coupe', label: 'Coupe' },
-  { value: 'hatchback', label: 'Hatchback' },
-  { value: 'wagon', label: 'Wagon' },
+  { value: 'truck', label: 'Truck' },
   { value: 'van', label: 'Van' },
+  { value: 'wagon', label: 'Wagon' },
+  { value: 'hatchback', label: 'Hatchback' },
   { value: 'convertible', label: 'Convertible' },
-  { value: 'minivan', label: 'Minivan' },
   { value: 'crossover', label: 'Crossover' },
+  { value: 'minivan', label: 'Minivan' },
   { value: 'pickup', label: 'Pickup' },
   { value: 'bus', label: 'Bus' },
   { value: 'motorcycle', label: 'Motorcycle' },
-  { value: 'off-road', label: 'Off-Road' },
+  { value: 'off-road', label: 'Off-road' },
   { value: 'other', label: 'Other' }
 ];

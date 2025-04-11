@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -7,11 +8,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { WorkOrder } from "@/types/workOrder";
 import { 
-  InventoryItem, 
   InvoiceItem, 
   StaffMember, 
   InvoiceTemplate 
 } from "@/types/invoice";
+import { InventoryItem } from "@/types/inventory";
 
 export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
@@ -83,9 +84,6 @@ export default function InvoiceCreate() {
         description: item.description || "",
         price: Number(item.unit_price) || 0,
         category: item.category || "",
-        supplier: item.supplier || "",
-        status: item.status || "",
-        quantity: Number(item.quantity) || 0
       }));
       setInventoryItems(formattedInventory);
     }
@@ -132,10 +130,6 @@ export default function InvoiceCreate() {
     handleSelectWorkOrder,
   });
 
-  const handleSelectWorkOrderWithTime = (workOrder: WorkOrder) => {
-    workOrderSelector.handleSelectWorkOrderWithTime(workOrder);
-  };
-
   const getStaffName = (staff: any) => {
     if (staff && staff.first_name && staff.last_name) {
       return `${staff.first_name} ${staff.last_name}`;
@@ -150,7 +144,9 @@ export default function InvoiceCreate() {
       description: item.description || "",
       quantity: 1,
       price: item.price,
-      total: item.price
+      total: item.price,
+      sku: item.sku,
+      category: item.category
     };
     handleAddInventoryItem(invoiceItem);
   };
@@ -197,16 +193,6 @@ export default function InvoiceCreate() {
   };
 
   const handleSaveTemplateAdapter = (name: string) => {
-    const template: Partial<InvoiceTemplate> = {
-      name,
-      description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
-      lastUsed: null,
-      defaultTaxRate: taxRate,
-      defaultDueDateDays: 30,
-      defaultNotes: invoice.notes || "",
-      defaultItems: invoice.items
-    };
-    
     handleSaveTemplate(name);
   };
 
@@ -228,7 +214,7 @@ export default function InvoiceCreate() {
       setShowWorkOrderDialog={setShowWorkOrderDialog}
       setShowInventoryDialog={setShowInventoryDialog}
       setShowStaffDialog={setShowStaffDialog}
-      handleSelectWorkOrder={handleSelectWorkOrderWithTime}
+      handleSelectWorkOrder={workOrderSelector.handleSelectWorkOrderWithTime}
       handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}

@@ -1,36 +1,42 @@
-
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { User, Box, Plus } from "lucide-react";
 import { StaffMember } from "@/types/invoice";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { StaffSelector } from "../StaffSelector";
+import { formatCurrency } from "@/lib/utils";
+import { Plus, X } from "lucide-react";
 
-interface InvoiceRightColumnProps {
-  assignedStaff?: StaffMember[];
-  showStaffDialog: boolean;
-  showWorkOrderDialog: boolean;
-  showInventoryDialog: boolean;
-  setShowStaffDialog: (show: boolean) => void;
-  setShowWorkOrderDialog: (show: boolean) => void;
-  setShowInventoryDialog: (show: boolean) => void;
-  handleRemoveStaffMember: (id: string) => void;
-  handleAddStaffMember: (staff: StaffMember) => void;
+export interface InvoiceRightColumnProps {
+  createdBy: string;
+  assignedStaff: StaffMember[];
   staffMembers: StaffMember[];
-  handleAddInventoryItem: (item: any) => void;
+  subtotal: number;
+  taxRate: number;
+  tax: number;
+  total: number;
+  showStaffDialog: boolean;
+  setShowStaffDialog: (show: boolean) => void;
+  onCreatedByChange: (value: string) => void;
+  onAddStaffMember: (staff: StaffMember) => void;
+  onRemoveStaffMember: (staffId: string) => void;
 }
 
-export const InvoiceRightColumn = ({
-  assignedStaff = [],
-  showStaffDialog,
-  showWorkOrderDialog,
-  showInventoryDialog,
-  setShowStaffDialog,
-  setShowWorkOrderDialog,
-  setShowInventoryDialog,
-  handleRemoveStaffMember,
-  handleAddStaffMember,
+export function InvoiceRightColumn({
+  createdBy,
+  assignedStaff,
   staffMembers,
-  handleAddInventoryItem
-}: InvoiceRightColumnProps) => {
+  subtotal,
+  taxRate,
+  tax,
+  total,
+  showStaffDialog,
+  setShowStaffDialog,
+  onCreatedByChange,
+  onAddStaffMember,
+  onRemoveStaffMember
+}: InvoiceRightColumnProps) {
   return (
     <div className="col-span-12 lg:col-span-4 space-y-6">
       <div className="bg-white shadow rounded-md p-4">
@@ -102,4 +108,4 @@ export const InvoiceRightColumn = ({
       </div>
     </div>
   );
-};
+}

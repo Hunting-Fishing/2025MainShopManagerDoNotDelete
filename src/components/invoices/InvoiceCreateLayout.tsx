@@ -6,12 +6,12 @@ import { InvoiceRightColumn } from "@/components/invoices/layout/InvoiceRightCol
 import { 
   Invoice, 
   StaffMember, 
-  InventoryItem, 
-  InvoiceTemplate, 
-  InvoiceItem,
+  InvoiceItem, 
+  InvoiceTemplate,
   createInvoiceUpdater
 } from "@/types/invoice";
 import { WorkOrder } from "@/types/workOrder";
+import { InventoryItem } from "@/types/inventory";
 
 interface InvoiceCreateLayoutProps {
   invoice: Invoice;
@@ -41,7 +41,7 @@ interface InvoiceCreateLayoutProps {
   handleAddLaborItem: () => void;
   handleSaveInvoice: (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => void;
   handleApplyTemplate: (template: InvoiceTemplate) => void;
-  handleSaveTemplate: (name: string) => void;
+  handleSaveTemplate: (templateName: string) => void;
 }
 
 export function InvoiceCreateLayout({
