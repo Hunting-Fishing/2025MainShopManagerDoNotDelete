@@ -73,7 +73,8 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
         ].map(event => ({
           ...event,
           start: new Date(event.start_time),
-          end: new Date(event.end_time)
+          end: new Date(event.end_time),
+          type: event.event_type // Map event_type to type for UI compatibility
         }));
 
         setEvents(formattedEvents);
