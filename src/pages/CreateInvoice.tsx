@@ -191,8 +191,21 @@ export default function InvoiceCreate() {
     handleAddLaborItem(laborItem);
   };
 
-  const handleSaveTemplateAdapter = (templateName: string) => {
-    handleSaveTemplate(templateName);
+  const handleSaveTemplateAdapter = (templateNameOrObject: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
+    if (typeof templateNameOrObject === 'string') {
+      const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+        name: templateNameOrObject,
+        description: `Template created from invoice on ${new Date().toLocaleDateString()}`,
+        lastUsed: null,
+        defaultTaxRate: taxRate,
+        defaultDueDateDays: 30,
+        defaultNotes: invoice.notes || "",
+        defaultItems: invoice.items
+      };
+      handleSaveTemplate(template);
+    } else {
+      handleSaveTemplate(templateNameOrObject);
+    }
   };
 
   return (

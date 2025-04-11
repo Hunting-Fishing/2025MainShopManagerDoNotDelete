@@ -24,8 +24,8 @@ export interface InventoryItem {
   quantity?: number;
   status?: string;
   supplier?: string;
-  sku?: string;
-  category?: string;
+  sku: string; // Changed from optional to required to match inventory.ts
+  category: string; // Changed from optional to required to match inventory.ts
 }
 
 export interface StaffMember {

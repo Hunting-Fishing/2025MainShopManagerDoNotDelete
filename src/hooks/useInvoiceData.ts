@@ -69,18 +69,21 @@ export function useInvoiceData() {
             date: invoice.date || new Date().toISOString().split('T')[0],
             dueDate: invoice.due_date || '',
             createdBy: invoice.created_by || '',
-            assignedStaff: staffData?.map(staff => ({
+            assignedStaff: staffData?.map((staff: any) => ({
               id: staff.id || crypto.randomUUID(),
-              name: staff.staff_name
+              name: staff.staff_name,
+              role: staff.role || ''
             })) || [],
-            items: itemsData?.map(item => ({
+            items: itemsData?.map((item: any) => ({
               id: item.id,
               name: item.name,
               description: item.description || '',
               quantity: Number(item.quantity),
               price: Number(item.price),
               hours: item.hours || false,
-              total: Number(item.total)
+              total: Number(item.total),
+              sku: item.sku || '',
+              category: item.category || ''
             })) || []
           };
 
