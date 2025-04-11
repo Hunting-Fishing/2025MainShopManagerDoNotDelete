@@ -3,7 +3,7 @@ import React from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InventoryItemSelector } from "./InventoryItemSelector";
-import { InventoryItem } from "@/types/inventory"; // Update import to use inventory type
+import { InventoryItem } from "@/types/inventory"; 
 
 interface InvoiceItemsHeaderProps {
   inventoryItems: InventoryItem[];

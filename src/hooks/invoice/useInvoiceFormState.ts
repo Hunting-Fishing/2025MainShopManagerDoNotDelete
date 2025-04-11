@@ -60,10 +60,10 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
     });
   };
 
-  const handleRemoveItem = (index: number) => {
+  const handleRemoveItem = (id: string) => {
     setInvoice((prev) => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index)
+      items: prev.items.filter(item => item.id !== id)
     }));
     toast({
       title: "Item Removed",
@@ -71,13 +71,16 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
     });
   };
 
-  const handleUpdateItemQuantity = (index: number, quantity: number) => {
+  const handleUpdateItemQuantity = (id: string, quantity: number) => {
     setInvoice((prev) => {
       const updatedItems = [...prev.items];
-      const item = { ...updatedItems[index] };
-      item.quantity = quantity;
-      item.total = item.price * quantity;
-      updatedItems[index] = item;
+      const itemIndex = updatedItems.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        const item = { ...updatedItems[itemIndex] };
+        item.quantity = quantity;
+        item.total = item.price * quantity;
+        updatedItems[itemIndex] = item;
+      }
       return {
         ...prev,
         items: updatedItems
@@ -85,13 +88,16 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
     });
   };
 
-  const handleUpdateItemDescription = (index: number, description: string) => {
+  const handleUpdateItemDescription = (id: string, description: string) => {
     setInvoice((prev) => {
       const updatedItems = [...prev.items];
-      updatedItems[index] = {
-        ...updatedItems[index],
-        description
-      };
+      const itemIndex = updatedItems.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        updatedItems[itemIndex] = {
+          ...updatedItems[itemIndex],
+          description
+        };
+      }
       return {
         ...prev,
         items: updatedItems
@@ -99,13 +105,16 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
     });
   };
 
-  const handleUpdateItemPrice = (index: number, price: number) => {
+  const handleUpdateItemPrice = (id: string, price: number) => {
     setInvoice((prev) => {
       const updatedItems = [...prev.items];
-      const item = { ...updatedItems[index] };
-      item.price = price;
-      item.total = price * item.quantity;
-      updatedItems[index] = item;
+      const itemIndex = updatedItems.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        const item = { ...updatedItems[itemIndex] };
+        item.price = price;
+        item.total = price * item.quantity;
+        updatedItems[itemIndex] = item;
+      }
       return {
         ...prev,
         items: updatedItems
