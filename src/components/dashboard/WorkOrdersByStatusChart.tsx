@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { getWorkOrdersByStatus } from "@/services/dashboardService";
+import { getWorkOrdersByStatus } from "@/services/dashboard";
 
 interface StatusData {
   name: string;

@@ -6,7 +6,12 @@ import { RecentWorkOrders } from "@/components/dashboard/RecentWorkOrders";
 import { TechnicianPerformanceChart } from "@/components/dashboard/TechnicianPerformanceChart";
 import { ServiceTypeDistributionChart } from "@/components/dashboard/ServiceTypeDistributionChart";
 import { EquipmentRecommendations } from "@/components/dashboard/EquipmentRecommendations";
-import { getDashboardStats, getPhaseProgressData, getChecklistStats, getTechnicianEfficiency } from "@/services/dashboardService";
+import { 
+  getDashboardStats,
+  getPhaseProgressData,
+  getChecklistStats,
+  getTechnicianEfficiency 
+} from "@/services/dashboard"; // Updated import
 import { DashboardStats } from "@/types/dashboard";
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPhaseProgress } from "@/components/dashboard/WorkOrderPhaseProgress";

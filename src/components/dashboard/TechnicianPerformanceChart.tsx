@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { getTechnicianPerformance } from "@/services/dashboardService";
+import { getTechnicianPerformance } from "@/services/dashboard"; // Updated import
 import { TechnicianPerformanceData } from "@/types/dashboard";
 
 export function TechnicianPerformanceChart() {

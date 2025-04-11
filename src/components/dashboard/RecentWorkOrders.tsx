@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getRecentWorkOrders } from "@/services/dashboardService";
+import { getRecentWorkOrders } from "@/services/dashboard"; // Updated import
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { RecentWorkOrder } from "@/types/dashboard";
