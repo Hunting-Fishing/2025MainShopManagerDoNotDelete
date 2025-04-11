@@ -61,7 +61,7 @@ export const useInventoryItemOperations = (
             description: availability.message,
             variant: "destructive"
           });
-          if (availability.availableQuantity) {
+          if (availability.availableQuantity !== undefined) {
             updatedItems[existingItemIndex] = {
               ...updatedItems[existingItemIndex],
               quantity: availability.availableQuantity

@@ -5,7 +5,7 @@ import { TechnicianEfficiencyData, TechnicianPerformance, TechnicianPerformanceD
 export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyData[]> => {
   try {
     // Get all technicians from profiles
-    const { data: technicianData, error: techError } = await supabase
+    const { data: technicians, error: techError } = await supabase
       .from('profiles')
       .select('id, first_name, last_name')
       .eq('job_title', 'Technician')
@@ -13,7 +13,7 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
       
     if (techError) throw techError;
     
-    let techniciansToUse = technicianData;
+    let techniciansToUse = technicians;
     
     if (!techniciansToUse || techniciansToUse.length === 0) {
       // Fallback to get any profiles if no technicians found
@@ -29,7 +29,7 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
     }
     
     // Get time entries for the technicians
-    const technicianData: TechnicianEfficiencyData[] = [];
+    const techEfficiencyData: TechnicianEfficiencyData[] = [];
     
     for (const tech of techniciansToUse) {
       // Get time entries for this technician
@@ -59,7 +59,7 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
         billableHours = totalHours * (0.65 + ((techIdNum % 20) / 100)); // 65-85% billable
       }
       
-      technicianData.push({
+      techEfficiencyData.push({
         id: tech.id,
         name: `${tech.first_name} ${tech.last_name}`,
         totalHours,
@@ -68,7 +68,7 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
       });
     }
     
-    return technicianData;
+    return techEfficiencyData;
   } catch (error) {
     console.error("Error fetching technician efficiency:", error);
     return [];
@@ -78,7 +78,7 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
 export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceData> => {
   try {
     // Get technicians from profiles
-    const { data: technicianData, error: techError } = await supabase
+    const { data: technicians, error: techError } = await supabase
       .from('profiles')
       .select('id, first_name, last_name')
       .eq('job_title', 'Technician')
@@ -86,7 +86,7 @@ export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceD
       
     if (techError) throw techError;
     
-    let techniciansToUse = technicianData;
+    let techniciansToUse = technicians;
     
     if (!techniciansToUse || techniciansToUse.length === 0) {
       // Fallback to get any profiles if no technicians found

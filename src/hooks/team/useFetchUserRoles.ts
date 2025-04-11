@@ -50,8 +50,8 @@ export function useFetchUserRoles() {
         user_id: item.user_id,
         role_id: item.role_id,
         roles: {
-          id: item.roles?.id || '',
-          name: item.roles?.name || ''
+          id: item.roles ? item.roles.id || '' : '',
+          name: item.roles ? item.roles.name || '' : ''
         }
       }));
 

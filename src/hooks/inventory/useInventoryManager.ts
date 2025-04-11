@@ -4,6 +4,13 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { InventoryItemExtended } from "@/types/inventory";
 
+// Define interface for availability response
+export interface AvailabilityResponse {
+  available: boolean;
+  message: string;
+  availableQuantity?: number;
+}
+
 export interface AutoReorderSettings {
   enabled: boolean;
   threshold: number;
@@ -232,7 +239,7 @@ export function useInventoryManager() {
   };
 
   // Inventory availability checking for work orders
-  const checkItemAvailability = async (itemId: string, requiredQuantity: number): Promise<boolean> => {
+  const checkItemAvailability = async (itemId: string, requiredQuantity: number): Promise<AvailabilityResponse> => {
     try {
       const { data, error } = await supabase
         .from('inventory_items')
@@ -242,10 +249,27 @@ export function useInventoryManager() {
         
       if (error) throw error;
       
-      return data && data.quantity >= requiredQuantity;
+      if (!data || data.quantity < requiredQuantity) {
+        const availableQty = data ? data.quantity : 0;
+        return {
+          available: false,
+          message: `Only ${availableQty} unit(s) available of requested ${requiredQuantity}`,
+          availableQuantity: availableQty
+        };
+      }
+      
+      return {
+        available: true,
+        message: 'Item available in requested quantity',
+        availableQuantity: data.quantity
+      };
+      
     } catch (error) {
       console.error('Error checking item availability:', error);
-      return false;
+      return {
+        available: false,
+        message: 'Error checking inventory availability',
+      };
     }
   };
 

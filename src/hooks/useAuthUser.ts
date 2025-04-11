@@ -65,7 +65,7 @@ export function useAuthUser(): UseAuthUserResult {
             
           if (roleData && roleData.length > 0) {
             const hasAdminRole = roleData.some(
-              (role) => role.roles?.name === 'admin' || role.roles?.name === 'owner'
+              (role) => role.roles && (role.roles.name === 'admin' || role.roles.name === 'owner')
             );
             setIsAdmin(hasAdminRole);
           }
@@ -109,7 +109,7 @@ export function useAuthUser(): UseAuthUserResult {
                 
               if (roleData && roleData.length > 0) {
                 const hasAdminRole = roleData.some(
-                  (role) => role.roles?.name === 'admin' || role.roles?.name === 'owner'
+                  (role) => role.roles && (role.roles.name === 'admin' || role.roles.name === 'owner')
                 );
                 setIsAdmin(hasAdminRole);
               }
