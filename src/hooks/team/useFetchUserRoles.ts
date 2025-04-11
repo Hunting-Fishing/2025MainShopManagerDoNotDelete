@@ -24,7 +24,7 @@ export function useFetchUserRoles() {
     
     try {
       // Fetch user roles from Supabase
-      const { data: userRoles, error: rolesError } = await supabase
+      const { data: userRolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select(`
           user_id,
@@ -41,7 +41,21 @@ export function useFetchUserRoles() {
         return [];
       }
 
-      return userRoles || [];
+      if (!userRolesData) {
+        return [];
+      }
+      
+      // Convert to proper format with single role object
+      const userRoles: UserRole[] = userRolesData.map(item => ({
+        user_id: item.user_id,
+        role_id: item.role_id,
+        roles: {
+          id: item.roles?.id || '',
+          name: item.roles?.name || ''
+        }
+      }));
+
+      return userRoles;
     } catch (err) {
       console.error('Error fetching user roles:', err);
       setError(err instanceof Error ? err.message : 'Failed to load user roles');

@@ -5,7 +5,7 @@ import { TechnicianEfficiencyData, TechnicianPerformance, TechnicianPerformanceD
 export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyData[]> => {
   try {
     // Get all technicians from profiles
-    const { data: technicians, error: techError } = await supabase
+    const { data: technicianData, error: techError } = await supabase
       .from('profiles')
       .select('id, first_name, last_name')
       .eq('job_title', 'Technician')
@@ -13,7 +13,9 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
       
     if (techError) throw techError;
     
-    if (!technicians || technicians.length === 0) {
+    let techniciansToUse = technicianData;
+    
+    if (!techniciansToUse || techniciansToUse.length === 0) {
       // Fallback to get any profiles if no technicians found
       const { data: backupTechs, error: backupError } = await supabase
         .from('profiles')
@@ -23,13 +25,13 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
       if (backupError) throw backupError;
       if (!backupTechs || backupTechs.length === 0) return [];
       
-      technicians = backupTechs;
+      techniciansToUse = backupTechs;
     }
     
     // Get time entries for the technicians
     const technicianData: TechnicianEfficiencyData[] = [];
     
-    for (const tech of technicians) {
+    for (const tech of techniciansToUse) {
       // Get time entries for this technician
       const { data: timeEntries, error: entriesError } = await supabase
         .from('work_order_time_entries')
@@ -76,7 +78,7 @@ export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiencyDat
 export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceData> => {
   try {
     // Get technicians from profiles
-    const { data: technicians, error: techError } = await supabase
+    const { data: technicianData, error: techError } = await supabase
       .from('profiles')
       .select('id, first_name, last_name')
       .eq('job_title', 'Technician')
@@ -84,7 +86,9 @@ export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceD
       
     if (techError) throw techError;
     
-    if (!technicians || technicians.length === 0) {
+    let techniciansToUse = technicianData;
+    
+    if (!techniciansToUse || techniciansToUse.length === 0) {
       // Fallback to get any profiles if no technicians found
       const { data: backupTechs, error: backupError } = await supabase
         .from('profiles')
@@ -96,10 +100,10 @@ export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceD
         return { technicians: [], chartData: [] };
       }
       
-      technicians = backupTechs;
+      techniciansToUse = backupTechs;
     }
     
-    const techNames = technicians.map(t => `${t.first_name} ${t.last_name}`);
+    const techNames = techniciansToUse.map(t => `${t.first_name} ${t.last_name}`);
     
     // Generate monthly performance data
     // In a real app, this would come from actual completed work orders and time entries
@@ -108,8 +112,8 @@ export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceD
     const chartData = months.map(month => {
       const monthData: TechnicianPerformance = { month };
       
-      technicians.forEach((tech, index) => {
-        const name = `${tech.first_name} ${t.last_name}`;
+      techniciansToUse.forEach((tech, index) => {
+        const name = `${tech.first_name} ${tech.last_name}`;
         // Generate consistent but varied performance numbers
         const baseValue = 50 + (months.indexOf(month) * 5) + (index * 3);
         const variance = Math.sin(months.indexOf(month) + index) * 10;

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -78,7 +77,8 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
             profile.roles[0]?.role && 
             typeof profile.roles[0].role === 'object' &&
             profile.roles[0].role !== null &&
-            'name' in profile.roles[0].role) {
+            'name' in profile.roles[0].role &&
+            typeof profile.roles[0].role.name === 'string') {
           roleName = profile.roles[0].role.name;
         }
         
