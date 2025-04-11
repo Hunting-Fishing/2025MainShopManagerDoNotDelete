@@ -10,15 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  price: number;
-  description: string;
-}
+import { InventoryItem } from "@/types/inventory"; 
 
 interface InventoryItemSelectorProps {
   inventoryItems: InventoryItem[];

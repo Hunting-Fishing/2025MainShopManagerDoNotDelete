@@ -4,7 +4,8 @@ import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
 import { useInvoiceTotals } from "@/hooks/invoice/useInvoiceTotals";
 import { useInvoiceWorkOrder } from "@/hooks/invoice/useInvoiceWorkOrder";
-import { StaffMember, Invoice, InvoiceTemplate } from "@/types/invoice";
+import { StaffMember, Invoice, InvoiceTemplate, InvoiceItem } from "@/types/invoice";
+import { InventoryItem } from "@/types/inventory";
 
 export interface UseInvoiceFormStateProps {
   initialWorkOrderId?: string;
@@ -61,6 +62,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
 
   // Wrap the save invoice function to include all required data
   const saveInvoice = (status: "draft" | "pending" | "paid" | "overdue" | "cancelled") => {
+    // Pass the staff members directly, not as strings
     handleSaveInvoice(
       invoice,
       items,
