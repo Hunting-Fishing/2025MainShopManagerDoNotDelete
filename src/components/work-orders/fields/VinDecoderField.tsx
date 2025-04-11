@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
 import { decodeVin } from "@/utils/vehicleUtils";
-import { VehicleBodyStyle } from "@/types/vehicleBodyStyles";
+import { VehicleBodyStyle } from "@/types/vehicle";
 
 interface VinDecoderFieldProps {
   form: any;

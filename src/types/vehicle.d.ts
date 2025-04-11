@@ -51,13 +51,13 @@ export interface CarModel {
 }
 
 export type VehicleBodyStyle = 
-  | 'Sedan'
-  | 'SUV'
-  | 'Truck'
-  | 'Coupe'
-  | 'Hatchback'
-  | 'Wagon'
-  | 'Van'
-  | 'Convertible'
-  | 'Minivan'
-  | 'Other';
+  | 'sedan'
+  | 'suv'
+  | 'truck'
+  | 'coupe'
+  | 'hatchback'
+  | 'wagon'
+  | 'van'
+  | 'convertible'
+  | 'minivan'
+  | 'other';
