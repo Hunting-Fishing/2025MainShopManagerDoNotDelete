@@ -42,8 +42,10 @@ export interface DatabaseChatParticipant {
   joined_at: string;
 }
 
-// Update the following exports to fix the file-related functions
+import { supabase } from '@/lib/supabase';
+export { supabase };
 
+// Function to upload chat files
 export const uploadChatFile = async (roomId: string, file: File): Promise<any> => {
   try {
     // Create a unique file path using roomId and timestamp

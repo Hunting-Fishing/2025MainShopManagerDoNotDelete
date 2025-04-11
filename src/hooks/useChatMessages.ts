@@ -178,7 +178,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         sender_name: userName,
         content: newMessageText,
         message_type: 'text',
-        thread_parent_id: threadParentId
+        thread_parent_id: threadParentId,
+        metadata: {}
       };
       
       await sendMessage(messageParams);
@@ -210,7 +211,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         sender_name: userName,
         content: audioUrl,
         message_type: 'audio',
-        thread_parent_id: threadParentId
+        thread_parent_id: threadParentId,
+        metadata: {}
       };
       
       await sendMessage(messageParams);
@@ -236,7 +238,8 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         sender_name: userName,
         content: fileMessage,
         message_type: 'file',
-        thread_parent_id: threadParentId
+        thread_parent_id: threadParentId,
+        metadata: {}
       };
       
       await sendMessage(messageParams);

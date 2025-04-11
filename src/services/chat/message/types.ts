@@ -1,4 +1,3 @@
-
 import { DatabaseChatMessage } from '../supabaseClient';
 import { ChatMessage } from '@/types/chat';
 
@@ -9,6 +8,7 @@ export interface MessageSendParams {
   content: string;
   message_type?: string;
   thread_parent_id?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface MessageEditParams {
@@ -23,8 +23,19 @@ export interface MessageFlagParams {
   userId: string;
 }
 
+// Determine message type based on content
+export function getMessageType(content: string): string {
+  if (content.startsWith('image:')) return 'image';
+  if (content.startsWith('video:')) return 'video';
+  if (content.startsWith('audio:')) return 'audio';
+  if (content.startsWith('file:')) return 'file';
+  if (content.startsWith('document:')) return 'document';
+  if (content.startsWith('thread:')) return 'thread';
+  return 'text';
+}
+
 // Convert database message to frontend message
-export const mapDatabaseMessageToMessage = (dbMessage: DatabaseChatMessage): ChatMessage => {
+export const transformDatabaseMessage = (dbMessage: DatabaseChatMessage): ChatMessage => {
   return {
     id: dbMessage.id,
     room_id: dbMessage.room_id,
@@ -71,3 +82,6 @@ export const parseTaggedItems = (content: string): {
     jobIds: jobMatches.map(match => match[1])
   };
 };
+
+// For compatibility if we missed a function in our updates
+export const mapDatabaseMessageToMessage = transformDatabaseMessage;
