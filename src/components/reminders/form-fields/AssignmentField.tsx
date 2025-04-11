@@ -79,7 +79,6 @@ export function AssignmentField({ form }: AssignmentFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {/* Fix: Changed value from empty string to "unassigned" */}
               <SelectItem value="unassigned">Unassigned</SelectItem>
               {teamMembers.map((member) => (
                 <SelectItem key={member.id} value={member.id}>

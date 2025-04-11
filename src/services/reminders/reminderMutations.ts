@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ServiceReminder, CreateReminderParams, ReminderStatus, ReminderTag } from "@/types/reminder";
 import { mapReminderToDb, mapReminderFromDb } from "./reminderMapper";
@@ -14,12 +15,28 @@ export const createReminder = async (reminderData: CreateReminderParams): Promis
     const { data: userData } = await supabase.auth.getUser();
     if (userData?.user) {
       dbData.created_by = userData.user.id || 'unknown';
+    } else {
+      dbData.created_by = 'unknown'; // Ensure required field has a value
     }
     
-    // Insert the reminder
+    // Ensure all required fields are present
+    if (!dbData.customer_id) {
+      throw new Error("Customer ID is required");
+    }
+    if (!dbData.title) {
+      throw new Error("Title is required");
+    }
+    if (!dbData.due_date) {
+      throw new Error("Due date is required");
+    }
+    if (!dbData.type) {
+      throw new Error("Type is required");
+    }
+    
+    // Insert the reminder - explicitly cast the object to any to satisfy TypeScript
     const { data: newReminder, error } = await supabase
       .from('service_reminders')
-      .insert(dbData)
+      .insert(dbData as any)
       .select(`
         *,
         categories:category_id(*),

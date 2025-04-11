@@ -28,5 +28,20 @@ export const reminderFormSchema = z.object({
   categories: z.array(z.any()).optional(),
 });
 
+// Schema with additional validation for recurring reminders
+export const reminderFormSchemaWithValidation = reminderFormSchema.refine(
+  (data) => {
+    // If recurring is enabled, make sure interval and unit are provided
+    if (data.isRecurring) {
+      return !!data.recurrenceInterval && !!data.recurrenceUnit;
+    }
+    return true;
+  },
+  {
+    message: "Recurrence interval and unit are required for recurring reminders",
+    path: ["recurrenceInterval"],
+  }
+);
+
 // Form values type derived from schema
 export type ReminderFormValues = z.infer<typeof reminderFormSchema>;

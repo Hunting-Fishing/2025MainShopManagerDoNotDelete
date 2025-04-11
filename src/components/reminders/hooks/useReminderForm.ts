@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { createReminder } from "@/services/reminderService";
 import { ReminderType, ReminderPriority, RecurrenceUnit, ReminderCategory, CreateReminderParams } from "@/types/reminder";
-import { reminderFormSchemaWithValidation, ReminderFormValues } from "../schemas/reminderFormSchema";
+import { reminderFormSchema, reminderFormSchemaWithValidation, ReminderFormValues } from "../schemas/reminderFormSchema";
 
 interface UseReminderFormProps {
   customerId?: string;
@@ -20,7 +20,7 @@ export function useReminderForm({ customerId, vehicleId, onSuccess, categories =
 
   // Initialize the form with default values
   const form = useForm<ReminderFormValues>({
-    resolver: zodResolver(reminderFormSchemaWithValidation),
+    resolver: zodResolver(reminderFormSchema), // Using the basic schema for form validation
     defaultValues: {
       customerId: customerId || "",
       vehicleId: vehicleId || "",
@@ -55,7 +55,7 @@ export function useReminderForm({ customerId, vehicleId, onSuccess, categories =
         vehicleId: values.vehicleId,
         type: values.type as ReminderType,
         title: values.title,
-        description: values.description,
+        description: values.description || "",
         dueDate: formattedDate,
         notes: values.notes,
         
