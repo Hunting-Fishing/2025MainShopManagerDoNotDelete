@@ -1,15 +1,30 @@
+
 import React from "react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { statusMap } from "@/utils/workOrders"; // Updated import path
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { statusMap } from "@/utils/workOrders";
 
 interface WorkOrderFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   statusFilter: string[];
-  setStatusFilter: (status: string[]) => void;
+  setStatusFilter: (statuses: string[]) => void;
   selectedTechnician: string;
   setSelectedTechnician: (technician: string) => void;
   technicians: string[];
@@ -26,71 +41,75 @@ const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
   technicians,
   resetFilters,
 }) => {
+  const handleStatusChange = (status: string) => {
+    setStatusFilter((prev) => {
+      if (prev.includes(status)) {
+        return prev.filter((s) => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+  };
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Search Input */}
-        <div>
-          <Label htmlFor="search">Search</Label>
+    <div className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-wrap gap-3">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
           <Input
-            type="search"
-            id="search"
             placeholder="Search work orders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
           />
         </div>
 
         {/* Status Filter */}
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select
-            onValueChange={(value) =>
-              setStatusFilter((prev) =>
-                prev.includes(value)
-                  ? prev.filter((item) => item !== value)
-                  : [...prev, value]
-              )
-            }
-            defaultValue={statusFilter.join(" ")}
-            multiple
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(statusMap).map(([key, value]) => (
-                <SelectItem key={key} value={key}>
-                  {String(value)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              Status {statusFilter.length > 0 && `(${statusFilter.length})`}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {Object.entries(statusMap).map(([key, label]) => (
+              <DropdownMenuCheckboxItem
+                key={key}
+                checked={statusFilter.includes(key)}
+                onCheckedChange={() => handleStatusChange(key)}
+              >
+                {String(label)}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Technician Filter */}
-        <div>
-          <Label htmlFor="technician">Technician</Label>
-          <Select onValueChange={setSelectedTechnician} defaultValue={selectedTechnician}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by technician" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Technicians</SelectItem>
-              {technicians.map((technician) => (
-                <SelectItem key={technician} value={technician}>
-                  {technician}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+        <Select
+          value={selectedTechnician}
+          onValueChange={(value) => setSelectedTechnician(value)}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="All technicians" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All technicians</SelectItem>
+            {technicians.map((tech) => (
+              <SelectItem key={tech} value={tech}>
+                {tech}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {/* Reset Filters Button */}
-      <Button variant="outline" onClick={resetFilters}>
-        Reset Filters
-      </Button>
+        {/* Reset Filters */}
+        <Button variant="ghost" onClick={resetFilters}>
+          Reset Filters
+        </Button>
+      </div>
     </div>
   );
 };
