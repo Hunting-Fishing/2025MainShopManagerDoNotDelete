@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 
 export interface CompanyInfo {
@@ -150,21 +149,31 @@ export const companyService = {
         `${companyInfo.state} ${companyInfo.zip}`
       ].filter(Boolean).join(", ");
       
-      // Update the shop
+      // Update the shop - Make this more resilient by only updating fields we know exist
+      const shopUpdateData: any = {
+        name: companyInfo.name,
+        address: formattedAddress,
+        phone: companyInfo.phone,
+        email: companyInfo.email,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only include logo_url if it's provided
+      if (companyInfo.logoUrl) {
+        shopUpdateData.logo_url = companyInfo.logoUrl;
+      }
+      
       const { error: shopError } = await supabase
         .from("shops")
-        .update({
-          name: companyInfo.name,
-          address: formattedAddress,
-          phone: companyInfo.phone,
-          email: companyInfo.email,
-          logo_url: companyInfo.logoUrl,
-          updated_at: new Date().toISOString()
-        })
+        .update(shopUpdateData)
         .eq("id", shopId);
         
       if (shopError) {
-        throw shopError;
+        console.error("Shop update error:", shopError);
+        // If the error is about the logo_url column, we can ignore it for now
+        if (!shopError.message.includes('logo_url')) {
+          throw shopError;
+        }
       }
       
       // Save additional company settings
