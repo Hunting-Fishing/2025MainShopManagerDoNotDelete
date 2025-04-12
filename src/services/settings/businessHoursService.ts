@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 
 async function getBusinessHours(shopId: string) {
@@ -110,10 +109,10 @@ async function updateBusinessHours(shopId: string, businessHours: any[]) {
     if (fetchError) {
       console.error("Error fetching updated business hours:", fetchError);
       // Don't throw here, just return the hours we intended to insert
-      return businessHours;
+      return hoursToInsert;
     }
     
-    return updatedHours || businessHours;
+    return updatedHours || hoursToInsert;
   } catch (error) {
     console.error("Error in updateBusinessHours:", error);
     throw error;

@@ -84,6 +84,7 @@ export function useCompanyInfo() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
+    console.log("Input changed:", id, value);
     setCompanyInfo(prev => ({
       ...prev,
       [id.replace("company-", "")]: value
@@ -91,6 +92,7 @@ export function useCompanyInfo() {
   };
 
   const handleSelectChange = (field: string, value: string) => {
+    console.log("Select changed:", field, value);
     setCompanyInfo(prev => ({
       ...prev,
       [field]: value,
@@ -99,8 +101,9 @@ export function useCompanyInfo() {
   };
 
   const handleBusinessHoursChange = (index: number, field: string, value: any) => {
+    console.log("Business hours changed:", index, field, value);
     const newHours = [...businessHours];
-    newHours[index][field as keyof typeof newHours[0]] = value;
+    newHours[index][field] = value;
     setBusinessHours(newHours);
   };
 
@@ -110,6 +113,7 @@ export function useCompanyInfo() {
     try {
       setUploadingLogo(true);
       const file = e.target.files[0];
+      console.log("Uploading file:", file.name, file.size, file.type);
       
       const logoUrl = await companyService.uploadLogo(shopId, file);
       console.log("Logo uploaded successfully:", logoUrl);
@@ -173,12 +177,20 @@ export function useCompanyInfo() {
         otherIndustry: companyInfo.industry === "other" ? companyInfo.otherIndustry : ""
       };
       
+      // Log data before saving to ensure it's correct
+      console.log("Data being saved:", dataToSave);
+      
       try {
         // Update company info and business hours separately
-        await companyService.updateCompanyInfo(shopId, dataToSave);
+        const result = await companyService.updateCompanyInfo(shopId, dataToSave);
+        console.log("Company info save result:", result);
         
         if (businessHours && businessHours.length > 0) {
-          await companyService.updateBusinessHours(shopId, businessHours);
+          const updatedHours = await companyService.updateBusinessHours(shopId, businessHours);
+          console.log("Business hours saved:", updatedHours);
+          if (updatedHours) {
+            setBusinessHours(updatedHours);
+          }
         }
         
         toast({
@@ -187,7 +199,7 @@ export function useCompanyInfo() {
           variant: "success"
         });
         
-        // Reload data to ensure we have the latest info, but don't show loading indicator
+        // Reload data without showing loading indicator
         await loadCompanyInfo(false);
         setSaveComplete(true);
       } catch (error: any) {
@@ -198,17 +210,17 @@ export function useCompanyInfo() {
           variant: "destructive"
         });
       }
-    } catch (error: any) {
-      console.error("Error in handleSave:", error);
-      toast({
-        title: "Error",
-        description: `An unexpected error occurred: ${error.message || 'Unknown error'}`,
-        variant: "destructive"
-      });
     } finally {
       setSaving(false);
     }
   };
+
+  // Add a console.log to debug the company info and logo
+  useEffect(() => {
+    if (initialized && !loading) {
+      console.log("Current company info state:", companyInfo);
+    }
+  }, [companyInfo, initialized, loading]);
 
   return {
     companyInfo,

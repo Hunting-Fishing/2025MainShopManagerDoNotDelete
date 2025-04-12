@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { CompanyInfo } from "./companyService";
 
@@ -141,7 +142,7 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
         updated_at: new Date().toISOString()
       })
       .eq('id', shopId)
-      .select(); // Add select() to return the updated data
+      .select('*'); // Select all fields to return updated record
       
     if (error) {
       console.error("Error updating shop info:", error);

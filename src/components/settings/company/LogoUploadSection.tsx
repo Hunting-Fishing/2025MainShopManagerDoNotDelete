@@ -33,7 +33,7 @@ export function LogoUploadSection({ logoUrl, isUploading, onFileUpload }: LogoUp
             src={logoUrl} 
             alt="Company Logo" 
             className="object-contain w-full h-full p-1"
-            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+            onError={() => {
               console.error("Logo image failed to load", logoUrl);
               setImgError(true);
             }}
