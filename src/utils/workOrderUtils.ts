@@ -1,5 +1,5 @@
 
-import { WorkOrder, TimeEntry } from "@/types/workOrder";
+import { WorkOrder, TimeEntry, DbTimeEntry } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 
 // Generate a unique work order ID
@@ -25,6 +25,18 @@ export const formatDate = (dateStr: string | undefined): string => {
   }
 };
 
+// Map time entry from DB format to app format
+const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
+  id: entry.id,
+  employeeId: entry.employee_id,
+  employeeName: entry.employee_name,
+  startTime: entry.start_time,
+  endTime: entry.end_time,
+  duration: entry.duration,
+  notes: entry.notes || '',
+  billable: entry.billable || false
+});
+
 // Database to app model mapping
 const mapDatabaseToAppModel = (data: any): Partial<WorkOrder> => {
   const customers = data.customers as any || {};
@@ -39,16 +51,7 @@ const mapDatabaseToAppModel = (data: any): Partial<WorkOrder> => {
   
   // Map time entries if they exist
   const timeEntries: TimeEntry[] = data.work_order_time_entries 
-    ? data.work_order_time_entries.map((entry: any) => ({
-        id: entry.id,
-        employeeId: entry.employee_id,
-        employeeName: entry.employee_name,
-        startTime: entry.start_time,
-        endTime: entry.end_time,
-        duration: entry.duration,
-        notes: entry.notes || '',
-        billable: entry.billable || false
-      }))
+    ? data.work_order_time_entries.map((entry: any) => mapTimeEntryFromDb(entry))
     : [];
   
   return {
@@ -71,8 +74,8 @@ const mapDatabaseToAppModel = (data: any): Partial<WorkOrder> => {
     lastUpdatedAt: data.updated_at,
     vehicle_id: data.vehicle_id,
     vehicleId: data.vehicle_id,
-    service_category: data.service_category,
-    serviceCategory: data.service_category
+    service_category: data.service_category || '',
+    serviceCategory: data.service_category || ''
   };
 };
 
@@ -187,8 +190,8 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       }
     }
 
-    // Map response back to our application format
-    return {
+    // Create a base work order with required fields
+    const baseWorkOrder: WorkOrder = {
       id: data.id,
       date: data.created_at,
       customer: workOrderData.customer,
@@ -208,9 +211,15 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       lastUpdatedAt: data.updated_at,
       vehicle_id: data.vehicle_id,
       vehicleId: data.vehicle_id, // Include both casing conventions for frontend compatibility
-      service_category: data.service_category,
-      serviceCategory: data.service_category, // Include both casing conventions for frontend compatibility
     };
+    
+    // Add service category if it exists in the data or source
+    if (data.service_category) {
+      baseWorkOrder.service_category = data.service_category;
+      baseWorkOrder.serviceCategory = data.service_category;
+    }
+
+    return baseWorkOrder;
   } catch (err) {
     console.error("Error in createWorkOrder:", err);
     throw err;
