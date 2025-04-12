@@ -37,7 +37,7 @@ async function getBusinessHours(shopId: string) {
 
 async function updateBusinessHours(shopId: string, businessHours: any[]) {
   try {
-    console.log("Updating business hours for shop", shopId);
+    console.log("Updating business hours for shop", shopId, "with data:", businessHours);
     
     // First, delete existing business hours
     const { error: deleteError } = await supabase
@@ -68,6 +68,7 @@ async function updateBusinessHours(shopId: string, businessHours: any[]) {
       throw error;
     }
     
+    console.log("Business hours updated successfully");
     return true;
   } catch (error) {
     console.error("Error in updateBusinessHours:", error);

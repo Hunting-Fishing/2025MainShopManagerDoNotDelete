@@ -58,7 +58,8 @@ export function useCompanyInfo() {
       // Get business hours
       if (id) {
         const hours = await companyService.getBusinessHours(id);
-        setBusinessHours(hours);
+        console.log("Loaded business hours:", hours);
+        setBusinessHours(hours || []);
       }
 
       setInitialized(true);
@@ -167,7 +168,10 @@ export function useCompanyInfo() {
       try {
         // Update company info and business hours separately
         await companyService.updateCompanyInfo(shopId, dataToSave);
-        await companyService.updateBusinessHours(shopId, businessHours);
+        
+        if (businessHours && businessHours.length > 0) {
+          await companyService.updateBusinessHours(shopId, businessHours);
+        }
         
         toast({
           title: "Success",

@@ -29,20 +29,14 @@ export function CompanyTabContainer() {
     handleSelectChange,
     handleBusinessHoursChange,
     handleFileUpload,
-    handleSave,
-    loadCompanyInfo
+    handleSave
   } = useCompanyInfo();
 
   // Debugging - check if we have data
   if (initialized && !loading) {
     console.log("Company info in container:", companyInfo);
+    console.log("Business hours in container:", businessHours);
   }
-
-  const onSaveChanges = async () => {
-    await handleSave();
-    // After saving, trigger a refresh of the data to ensure fields are updated
-    loadCompanyInfo();
-  };
 
   return (
     <div className="space-y-6">
@@ -101,7 +95,7 @@ export function CompanyTabContainer() {
                 <div className="flex justify-end mt-6">
                   <Button 
                     className="bg-esm-blue-600 hover:bg-esm-blue-700"
-                    onClick={onSaveChanges}
+                    onClick={handleSave}
                     disabled={saving}
                   >
                     {saving ? "Saving..." : "Save Changes"}

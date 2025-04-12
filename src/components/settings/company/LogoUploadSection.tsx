@@ -20,6 +20,11 @@ export function LogoUploadSection({ logoUrl, isUploading, onFileUpload }: LogoUp
     }
   }, [logoUrl]);
 
+  // For debugging
+  React.useEffect(() => {
+    console.log("LogoUploadSection rendered with logoUrl:", logoUrl);
+  }, [logoUrl]);
+
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="relative mb-4 w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">

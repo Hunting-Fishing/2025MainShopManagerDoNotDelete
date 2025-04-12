@@ -148,8 +148,8 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       throw error;
     }
     
-    console.log("Company info updated successfully:", data);
-    return { success: true, data };
+    console.log("Company info updated successfully");
+    return { success: true };
   } catch (error) {
     console.error("Error updating company info:", error);
     throw error;
