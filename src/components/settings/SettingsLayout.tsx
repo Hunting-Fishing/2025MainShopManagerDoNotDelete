@@ -22,17 +22,17 @@ export const SettingsLayout = () => {
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="overflow-x-auto pb-2">
         <TabsList className="grid min-w-max grid-cols-11 w-full">
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="company">Company</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="email">Email</TabsTrigger>
-          <TabsTrigger value="export">Export</TabsTrigger>
-          <TabsTrigger value="language">Language</TabsTrigger>
+          <TabsTrigger value="account">{t('settings.tabs.account')}</TabsTrigger>
+          <TabsTrigger value="company">{t('settings.tabs.company')}</TabsTrigger>
+          <TabsTrigger value="security">{t('settings.tabs.security')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('settings.tabs.notifications')}</TabsTrigger>
+          <TabsTrigger value="branding">{t('settings.tabs.branding')}</TabsTrigger>
+          <TabsTrigger value="loyalty">{t('settings.tabs.loyalty')}</TabsTrigger>
+          <TabsTrigger value="inventory">{t('settings.tabs.inventory')}</TabsTrigger>
+          <TabsTrigger value="team">{t('settings.tabs.team')}</TabsTrigger>
+          <TabsTrigger value="email">{t('settings.tabs.email')}</TabsTrigger>
+          <TabsTrigger value="export">{t('settings.tabs.export')}</TabsTrigger>
+          <TabsTrigger value="language">{t('settings.tabs.language')}</TabsTrigger>
         </TabsList>
       </div>
       <div className="mt-6">
