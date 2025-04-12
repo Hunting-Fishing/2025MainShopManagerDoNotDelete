@@ -35,10 +35,11 @@ async function uploadLogo(shopId: string, file: File) {
     console.log('Logo uploaded, public URL:', publicUrl);
 
     // Update shop record with logo URL
-    const { error: updateError } = await supabase
+    const { data: updatedShop, error: updateError } = await supabase
       .from('shops')
       .update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
-      .eq('id', shopId);
+      .eq('id', shopId)
+      .select('*');
 
     if (updateError) {
       console.error('Shop update error:', updateError);
@@ -150,7 +151,24 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
     }
     
     console.log("Company info updated successfully:", data);
-    return { success: true, data };
+    
+    // Return formatted updated data
+    const updatedCompanyInfo: CompanyInfo = {
+      name: data[0]?.name || companyInfo.name,
+      address: data[0]?.address || companyInfo.address,
+      city: data[0]?.city || companyInfo.city,
+      state: data[0]?.state || companyInfo.state,
+      zip: data[0]?.postal_code || companyInfo.zip,
+      phone: data[0]?.phone || companyInfo.phone,
+      email: data[0]?.email || companyInfo.email,
+      taxId: data[0]?.tax_id || companyInfo.taxId,
+      businessType: data[0]?.business_type || companyInfo.businessType,
+      industry: data[0]?.industry || companyInfo.industry,
+      otherIndustry: data[0]?.other_industry || companyInfo.otherIndustry,
+      logoUrl: data[0]?.logo_url || companyInfo.logoUrl
+    };
+    
+    return { success: true, data: updatedCompanyInfo };
   } catch (error) {
     console.error("Error updating company info:", error);
     throw error;

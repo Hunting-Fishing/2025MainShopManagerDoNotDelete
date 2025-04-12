@@ -27,6 +27,7 @@ export function useCompanyInfo() {
   const [businessHours, setBusinessHours] = useState<any[]>([]);
   const [initialized, setInitialized] = useState(false);
   const [saveComplete, setSaveComplete] = useState(false);
+  const [dataChanged, setDataChanged] = useState(false);
   
   const { toast } = useToast();
   const { 
@@ -63,6 +64,7 @@ export function useCompanyInfo() {
       }
 
       setInitialized(true);
+      setDataChanged(false);
     } catch (error) {
       console.error("Failed to load company information:", error);
       toast({
@@ -80,7 +82,8 @@ export function useCompanyInfo() {
   // Initial data loading
   useEffect(() => {
     loadCompanyInfo();
-  }, [loadCompanyInfo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -89,6 +92,7 @@ export function useCompanyInfo() {
       ...prev,
       [id.replace("company-", "")]: value
     }));
+    setDataChanged(true);
   };
 
   const handleSelectChange = (field: string, value: string) => {
@@ -98,6 +102,7 @@ export function useCompanyInfo() {
       [field]: value,
       ...(field === 'industry' && value !== 'other' ? { otherIndustry: '' } : {})
     }));
+    setDataChanged(true);
   };
 
   const handleBusinessHoursChange = (index: number, field: string, value: any) => {
@@ -105,6 +110,7 @@ export function useCompanyInfo() {
     const newHours = [...businessHours];
     newHours[index][field] = value;
     setBusinessHours(newHours);
+    setDataChanged(true);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,10 +187,16 @@ export function useCompanyInfo() {
       console.log("Data being saved:", dataToSave);
       
       try {
-        // Update company info and business hours separately
+        // Update company info
         const result = await companyService.updateCompanyInfo(shopId, dataToSave);
         console.log("Company info save result:", result);
         
+        // Update the local state with the returned data
+        if (result && result.data) {
+          setCompanyInfo(result.data);
+        }
+        
+        // Update business hours if they've been changed
         if (businessHours && businessHours.length > 0) {
           const updatedHours = await companyService.updateBusinessHours(shopId, businessHours);
           console.log("Business hours saved:", updatedHours);
@@ -199,8 +211,7 @@ export function useCompanyInfo() {
           variant: "success"
         });
         
-        // Reload data without showing loading indicator
-        await loadCompanyInfo(false);
+        setDataChanged(false);
         setSaveComplete(true);
       } catch (error: any) {
         console.error("Failed to save company information:", error);
@@ -234,6 +245,7 @@ export function useCompanyInfo() {
     isLoadingConstants,
     initialized,
     saveComplete,
+    dataChanged,
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,

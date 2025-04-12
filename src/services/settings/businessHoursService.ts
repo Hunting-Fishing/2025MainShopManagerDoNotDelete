@@ -57,6 +57,8 @@ async function getBusinessHours(shopId: string) {
     // Sort by day of week
     uniqueHours.sort((a, b) => a.day_of_week - b.day_of_week);
     
+    console.log("Loaded business hours:", uniqueHours);
+    
     return uniqueHours;
   } catch (error) {
     console.error("Error in getBusinessHours:", error);
@@ -88,9 +90,10 @@ async function updateBusinessHours(shopId: string, businessHours: any[]) {
       is_closed: hour.is_closed
     }));
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('shop_hours')
-      .insert(hoursToInsert);
+      .insert(hoursToInsert)
+      .select('*');
       
     if (error) {
       console.error("Error inserting business hours:", error);
@@ -100,19 +103,7 @@ async function updateBusinessHours(shopId: string, businessHours: any[]) {
     console.log("Business hours updated successfully");
     
     // Return the newly inserted hours to ensure state is up-to-date
-    const { data: updatedHours, error: fetchError } = await supabase
-      .from('shop_hours')
-      .select('*')
-      .eq('shop_id', shopId)
-      .order('day_of_week', { ascending: true });
-      
-    if (fetchError) {
-      console.error("Error fetching updated business hours:", fetchError);
-      // Don't throw here, just return the hours we intended to insert
-      return hoursToInsert;
-    }
-    
-    return updatedHours || hoursToInsert;
+    return data || hoursToInsert;
   } catch (error) {
     console.error("Error in updateBusinessHours:", error);
     throw error;

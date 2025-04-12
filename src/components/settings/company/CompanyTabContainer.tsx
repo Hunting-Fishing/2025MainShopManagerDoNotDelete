@@ -26,6 +26,7 @@ export function CompanyTabContainer() {
     isLoadingConstants,
     initialized,
     saveComplete,
+    dataChanged,
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,
@@ -41,6 +42,22 @@ export function CompanyTabContainer() {
       console.log("Business hours in container:", businessHours);
     }
   }, [companyInfo, businessHours, initialized, loading]);
+
+  // Prompt user before leaving if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (dataChanged) {
+        const message = "You have unsaved changes. Are you sure you want to leave?";
+        e.returnValue = message;
+        return message;
+      }
+    };
+
+    if (dataChanged) {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [dataChanged]);
 
   // Only force refresh data when component initially mounts
   useEffect(() => {
@@ -105,9 +122,9 @@ export function CompanyTabContainer() {
 
                 <div className="flex justify-end mt-6">
                   <Button 
-                    className="bg-esm-blue-600 hover:bg-esm-blue-700"
+                    className={`${dataChanged ? 'bg-esm-blue-600 hover:bg-esm-blue-700' : 'bg-gray-300 hover:bg-gray-400'}`}
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || !dataChanged}
                   >
                     {saving ? (
                       <>
@@ -117,7 +134,7 @@ export function CompanyTabContainer() {
                     ) : (
                       <>
                         <Save className="mr-2 h-4 w-4" />
-                        Save Changes
+                        {dataChanged ? "Save Changes" : "No Changes"}
                       </>
                     )}
                   </Button>
