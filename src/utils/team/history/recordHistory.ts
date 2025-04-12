@@ -27,7 +27,7 @@ export const recordTeamMemberHistory = async (
       return null;
     }
 
-    return record;
+    return record as string;
   } catch (error) {
     console.error("Exception recording team member history:", error);
     return null;
