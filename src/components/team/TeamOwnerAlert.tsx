@@ -14,7 +14,10 @@ interface TeamOwnerAlertProps {
 export function TeamOwnerAlert({ userId, hasNoRole }: TeamOwnerAlertProps) {
   const [isAssigningRole, setIsAssigningRole] = useState(false);
   const { toast } = useToast();
-  const { assignRole } = useRoleAssignment();
+  const { assignRole } = useRoleAssignment({
+    currentUserName: "System",
+    currentUserId: userId || ""
+  });
   
   if (!hasNoRole) return null;
   
