@@ -72,7 +72,14 @@ export async function getCalendarEvents(
         return {
           ...event,
           customer,
-          technician
+          technician,
+          // Convert to expected format
+          start: event.start_time,
+          end: event.end_time,
+          allDay: event.all_day,
+          workOrderId: event.work_order_id,
+          type: event.event_type,
+          assignedTo: technician
         };
       })
     );
@@ -154,20 +161,19 @@ export async function getWorkOrderEvents(): Promise<CalendarEvent[]> {
           id: wo.id,
           title: wo.description || 'Work Order',
           description: wo.description,
-          start_time: wo.start_time,
-          end_time: wo.end_time || wo.start_time, // Use start_time as fallback
-          all_day: false,
+          start: wo.start_time,
+          end: wo.end_time || wo.start_time, // Use start_time as fallback
+          allDay: false,
           location,
-          customer_id: wo.customer_id,
-          work_order_id: wo.id,
-          technician_id: wo.technician_id,
-          event_type: 'work-order' as 'work-order',
+          workOrderId: wo.id,
+          type: 'work-order',
           status: wo.status,
           priority: 'medium', // Default priority
           customer,
           technician,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          assignedTo: technician,
+          start_time: wo.start_time,
+          end_time: wo.end_time || wo.start_time
         };
       })
     );
@@ -193,7 +199,16 @@ export async function createCalendarEvent(
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Format response to match CalendarEvent type
+    return {
+      ...data,
+      start: data.start_time,
+      end: data.end_time,
+      allDay: data.all_day,
+      workOrderId: data.work_order_id,
+      type: data.event_type
+    };
   } catch (error) {
     handleApiError(error, "Failed to create calendar event");
     return null;
@@ -208,15 +223,34 @@ export async function updateCalendarEvent(
   eventData: Partial<CalendarEvent>
 ): Promise<CalendarEvent | null> {
   try {
+    // Convert to database field names
+    const dbEventData = {
+      ...eventData,
+      start_time: eventData.start,
+      end_time: eventData.end,
+      all_day: eventData.allDay,
+      work_order_id: eventData.workOrderId,
+      event_type: eventData.type
+    };
+
     const { data, error } = await supabase
       .from('calendar_events')
-      .update(eventData)
+      .update(dbEventData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Format response to match CalendarEvent type
+    return {
+      ...data,
+      start: data.start_time,
+      end: data.end_time,
+      allDay: data.all_day,
+      workOrderId: data.work_order_id,
+      type: data.event_type
+    };
   } catch (error) {
     handleApiError(error, "Failed to update calendar event");
     return null;

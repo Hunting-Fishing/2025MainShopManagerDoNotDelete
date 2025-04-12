@@ -2,7 +2,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { WorkOrder } from "@/types/workOrder";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 // Define schema using zod for form validation
 const workOrderFormSchema = z.object({
@@ -27,6 +31,11 @@ const workOrderFormSchema = z.object({
 export type WorkOrderFormValues = z.infer<typeof workOrderFormSchema>;
 
 export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder?.timeEntries || []);
+
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
@@ -47,5 +56,50 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
     },
   });
 
-  return form;
+  const setFormValues = (values: Partial<WorkOrderFormValues>) => {
+    Object.entries(values).forEach(([key, value]) => {
+      form.setValue(key as any, value);
+    });
+  };
+
+  const onSubmit = async (data: WorkOrderFormValues) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      // Logic for submitting work order to database
+      const { data: result, error: submitError } = await supabase
+        .from('work_orders')
+        .upsert([
+          {
+            ...data,
+            updated_at: new Date().toISOString()
+          }
+        ])
+        .select();
+      
+      if (submitError) throw submitError;
+      
+      toast({
+        title: "Success",
+        description: data.id ? "Work order updated." : "Work order created.",
+      });
+      
+      navigate(data.id ? `/work-orders/${data.id}` : '/work-orders');
+    } catch (err) {
+      console.error('Error saving work order:', err);
+      setError('Failed to save work order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return { 
+    form, 
+    onSubmit, 
+    isSubmitting, 
+    error, 
+    setTimeEntries,
+    setFormValues
+  };
 }

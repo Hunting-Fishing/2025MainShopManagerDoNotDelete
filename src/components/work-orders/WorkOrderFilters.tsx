@@ -42,13 +42,11 @@ const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
   resetFilters,
 }) => {
   const handleStatusChange = (status: string) => {
-    setStatusFilter((prev) => {
-      if (prev.includes(status)) {
-        return prev.filter((s) => s !== status);
-      } else {
-        return [...prev, status];
-      }
-    });
+    if (statusFilter.includes(status)) {
+      setStatusFilter(statusFilter.filter(s => s !== status));
+    } else {
+      setStatusFilter([...statusFilter, status]);
+    }
   };
 
   return (

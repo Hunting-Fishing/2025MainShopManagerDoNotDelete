@@ -98,7 +98,7 @@ export function CalendarView({
       {selectedEvent && (
         <CalendarEventDialog 
           event={selectedEvent} 
-          open={!!selectedEvent} 
+          isOpen={!!selectedEvent}
           onClose={handleCloseDialog} 
         />
       )}

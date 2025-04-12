@@ -1,6 +1,6 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,10 +18,24 @@ interface AssignmentSectionProps {
 
 export const AssignmentSection: React.FC<AssignmentSectionProps> = ({ 
   form,
-  technicians
+  technicians 
 }) => {
+  // Convert string date to Date object for the calendar
+  const getDueDateValue = () => {
+    const dateValue = form.watch("dueDate");
+    return dateValue ? new Date(dateValue) : undefined;
+  };
+
+  // Handle date selection and convert back to string
+  const handleDateSelection = (date: Date | undefined) => {
+    if (date) {
+      form.setValue("dueDate", date.toISOString().split('T')[0]);
+    }
+  };
+
   return (
     <>
+      {/* Technician Field */}
       <FormField
         control={form.control}
         name="technician"
@@ -38,7 +52,6 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="_unassigned">Unassigned</SelectItem>
                 {technicians.map((tech) => (
                   <SelectItem key={tech} value={tech}>
                     {tech}
@@ -46,14 +59,12 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <FormDescription>
-              Select a technician to assign this work order to.
-            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
+      {/* Due Date Field */}
       <FormField
         control={form.control}
         name="dueDate"
@@ -71,7 +82,7 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
                     )}
                   >
                     {field.value ? (
-                      format(field.value, "PPP")
+                      format(new Date(field.value), "PPP")
                     ) : (
                       <span>Select a date</span>
                     )}
@@ -82,11 +93,9 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={field.value}
-                  onSelect={field.onChange}
+                  selected={getDueDateValue()}
+                  onSelect={handleDateSelection}
                   initialFocus
-                  disabled={(date) => date < new Date()}
-                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>

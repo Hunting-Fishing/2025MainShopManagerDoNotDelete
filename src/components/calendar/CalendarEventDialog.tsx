@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Link } from "react-router-dom";
 
 interface CalendarEventDialogProps {
   event: CalendarEvent | null;
-  isOpen: boolean;
+  isOpen: boolean; // Changed from 'open' to 'isOpen' for consistency
   onClose: () => void;
 }
 
@@ -18,17 +19,17 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
   if (!event) return null;
 
   // Format the event times for display
-  const startTime = new Date(event.start).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
+  const startTime = event.start instanceof Date 
+    ? event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
-  const endTime = new Date(event.end).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
+  const endTime = event.end instanceof Date
+    ? event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
-  const eventDate = formatDate(event.start);
+  const eventDate = typeof event.start === 'string' 
+    ? formatDate(event.start)
+    : formatDate(event.start.toISOString());
 
   // Determine if this is a work order event
   const isWorkOrder = event.type === 'work-order';
