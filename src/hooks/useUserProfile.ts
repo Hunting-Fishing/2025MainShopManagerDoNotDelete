@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/lib/supabase";
 import { useAuthUser } from './useAuthUser';
+import { useToast } from './use-toast';
 
 interface UserProfile {
   firstName: string;
@@ -16,17 +17,16 @@ export function useUserProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useAuthUser();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (userId) {
-      fetchUserProfile();
-    }
-  }, [userId]);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
+    if (!userId) return;
+    
     try {
       setLoading(true);
       setError(null);
+      
+      console.log("Fetching profile for user ID:", userId);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -38,6 +38,8 @@ export function useUserProfile() {
         throw error;
       }
       
+      console.log("Profile data received:", data);
+      
       setUserProfile({
         firstName: data.first_name || '',
         lastName: data.last_name || '',
@@ -48,15 +50,38 @@ export function useUserProfile() {
     } catch (err) {
       console.error("Error fetching profile:", err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      
+      toast({
+        title: "Error loading profile",
+        description: "We couldn't load your profile information. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, toast]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserProfile();
+    }
+  }, [userId, fetchUserProfile]);
 
   const updateProfile = async (profileData: Partial<UserProfile>) => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return { success: false, error: 'User not authenticated' };
+    }
+    
     try {
       setLoading(true);
       setError(null);
+      
+      console.log("Updating profile with data:", profileData);
       
       // Map the form values back to the database column names
       const updateData: Record<string, any> = {};
@@ -83,10 +108,23 @@ export function useUserProfile() {
         });
       }
       
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
+        variant: "default",
+      });
+      
       return { success: true };
     } catch (err) {
       console.error("Error updating profile:", err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      
+      toast({
+        title: "Update Failed",
+        description: "Couldn't update your profile. Please try again.",
+        variant: "destructive",
+      });
+      
       return { 
         success: false, 
         error: err instanceof Error ? err.message : 'Unknown error occurred'

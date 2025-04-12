@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { companyService } from "@/services/settings/companyService";
 import { CompanyInfo } from "@/services/settings/companyService";
@@ -35,11 +35,8 @@ export function useCompanyInfo() {
     fetchBusinessConstants
   } = useBusinessConstants();
 
-  useEffect(() => {
-    loadCompanyInfo();
-  }, []);
-
-  async function loadCompanyInfo() {
+  // Function to load company info - made into a callback so we can call it after saving
+  const loadCompanyInfo = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -73,7 +70,12 @@ export function useCompanyInfo() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [toast]);
+
+  // Initial data loading
+  useEffect(() => {
+    loadCompanyInfo();
+  }, [loadCompanyInfo]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;

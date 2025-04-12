@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,63 +8,37 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/context/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
-import { useAuthUser } from "@/hooks/useAuthUser";
-import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export function AccountTab() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { toast } = useToast();
-  const { userId } = useAuthUser();
-  const [loading, setLoading] = useState(false);
+  const { userProfile, loading, updateProfile } = useUserProfile();
   const [saving, setSaving] = useState(false);
-  const [userProfile, setUserProfile] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    jobTitle: ""
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    jobTitle: ''
   });
 
+  // Update form data when userProfile is loaded
+  React.useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        email: userProfile.email || '',
+        phone: userProfile.phone || '',
+        jobTitle: userProfile.jobTitle || ''
+      });
+      console.log("Form data updated from userProfile:", userProfile);
+    }
+  }, [userProfile]);
+
   const isDarkModeEnabled = resolvedTheme === 'dark';
-
-  useEffect(() => {
-    if (userId) {
-      fetchUserProfile();
-    }
-  }, [userId]);
-
-  const fetchUserProfile = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, email, phone, job_title')
-        .eq('id', userId)
-        .single();
-        
-      if (error) {
-        throw error;
-      }
-      
-      setUserProfile({
-        firstName: data.first_name || '',
-        lastName: data.last_name || '',
-        email: data.email || '',
-        phone: data.phone || '',
-        jobTitle: data.job_title || ''
-      });
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      toast({
-        title: "Failed to load profile",
-        description: "We couldn't load your profile information.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDarkModeToggle = () => {
     const newTheme = isDarkModeEnabled ? 'light' : 'dark';
@@ -78,10 +52,10 @@ export function AccountTab() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setUserProfile(prev => ({
+    const { name, value } = e.target;
+    setFormData(prev => ({
       ...prev,
-      [id === 'name' ? 'firstName' : id === 'title' ? 'jobTitle' : id]: value
+      [name]: value
     }));
   };
 
@@ -89,35 +63,13 @@ export function AccountTab() {
     try {
       setSaving(true);
       
-      // Map the form values back to the database column names
-      const updateData = {
-        first_name: userProfile.firstName,
-        last_name: userProfile.lastName,
-        email: userProfile.email,
-        phone: userProfile.phone,
-        job_title: userProfile.jobTitle
-      };
+      const result = await updateProfile(formData);
       
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId);
-        
-      if (error) {
-        throw error;
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update profile');
       }
-      
-      toast({
-        title: "Settings updated",
-        description: "Your account settings have been updated successfully.",
-      });
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Update failed",
-        description: "Failed to update your profile information.",
-        variant: "destructive",
-      });
+      console.error("Error in handleSaveChanges:", error);
     } finally {
       setSaving(false);
     }
@@ -138,10 +90,20 @@ export function AccountTab() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input 
-                    id="name" 
-                    value={userProfile.firstName} 
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input 
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName} 
                     onChange={handleInputChange} 
                   />
                 </div>
@@ -149,8 +111,9 @@ export function AccountTab() {
                   <Label htmlFor="email">Email Address</Label>
                   <Input 
                     id="email" 
+                    name="email"
                     type="email" 
-                    value={userProfile.email} 
+                    value={formData.email} 
                     onChange={handleInputChange} 
                   />
                 </div>
@@ -158,15 +121,17 @@ export function AccountTab() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input 
                     id="phone" 
-                    value={userProfile.phone || ''} 
+                    name="phone"
+                    value={formData.phone || ''} 
                     onChange={handleInputChange} 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="title">Job Title</Label>
+                  <Label htmlFor="jobTitle">Job Title</Label>
                   <Input 
-                    id="title" 
-                    value={userProfile.jobTitle || ''} 
+                    id="jobTitle" 
+                    name="jobTitle"
+                    value={formData.jobTitle || ''} 
                     onChange={handleInputChange} 
                   />
                 </div>
