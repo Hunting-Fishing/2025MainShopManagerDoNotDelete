@@ -82,6 +82,4 @@ export function FormField({
   );
 }
 
-export function RequiredIndicator() {
-  return <span className="text-destructive ml-1">*</span>
-}
+// Remove the duplicate RequiredIndicator function here
