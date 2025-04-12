@@ -1,56 +1,37 @@
 
 import { supabase } from "@/lib/supabase";
 
-export const businessIndustryService = {
-  async addCustomIndustry(industryName: string): Promise<string | undefined> {
-    try {
-      if (!industryName.trim()) {
-        console.error("Cannot add empty industry name");
-        return undefined;
-      }
+async function addCustomIndustry(industryName: string) {
+  try {
+    // First check if this industry already exists
+    const { data: existingIndustry, error: checkError } = await supabase
+      .from('business_industries')
+      .select('id')
+      .ilike('label', industryName)
+      .single();
       
-      // Check if we're authenticated first
-      const { data: authData } = await supabase.auth.getSession();
-      if (!authData.session) {
-        throw new Error("User must be authenticated to add custom industries");
-      }
-      
-      // First check if the industry already exists to avoid duplicates
-      const { data: existingIndustry } = await supabase
-        .from("business_industries")
-        .select("id")
-        .eq("label", industryName)
-        .maybeSingle();
-        
-      if (existingIndustry) {
-        // Industry already exists, return its ID
-        console.log("Industry already exists:", existingIndustry);
-        return existingIndustry.id;
-      }
-      
-      // Format the value (lowercase, replace spaces with underscores)
-      const industryValue = industryName.toLowerCase().replace(/\s+/g, '_');
-      
-      // Add the new industry to the business_industries table
-      const { data, error } = await supabase
-        .from("business_industries")
-        .insert({
-          label: industryName,
-          value: industryValue
-        })
-        .select()
-        .single();
-        
-      if (error) {
-        console.error("Error adding industry:", error);
-        throw error;
-      }
-      
-      console.log("Successfully added new industry:", data);
-      return data.id;
-    } catch (error) {
+    if (existingIndustry) {
+      console.log("Industry already exists:", existingIndustry);
+      return existingIndustry.id;
+    }
+    
+    // Use the RPC function to add a new industry
+    const { data, error } = await supabase.rpc('addcustomindustry', {
+      industry_name: industryName
+    });
+    
+    if (error) {
       console.error("Error adding custom industry:", error);
       throw error;
     }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in addCustomIndustry:", error);
+    throw error;
   }
+}
+
+export const businessIndustryService = {
+  addCustomIndustry
 };

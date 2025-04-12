@@ -48,6 +48,8 @@ export function CompanyTabContainer() {
       const { shopId: id, companyInfo: info } = await companyService.getShopInfo();
       setShopId(id);
       
+      console.log("Loaded company info:", info);
+      
       // Make sure otherIndustry has a default value if it's undefined
       setCompanyInfo({
         ...info,
@@ -101,6 +103,7 @@ export function CompanyTabContainer() {
       const file = e.target.files[0];
       
       const logoUrl = await companyService.uploadLogo(shopId, file);
+      console.log("Logo uploaded successfully:", logoUrl);
       
       if (logoUrl) {
         setCompanyInfo(prev => ({
@@ -131,6 +134,7 @@ export function CompanyTabContainer() {
     
     try {
       setSaving(true);
+      console.log("Saving company info:", companyInfo);
       
       // Handle custom industry if needed
       if (companyInfo.industry === "other" && companyInfo.otherIndustry) {

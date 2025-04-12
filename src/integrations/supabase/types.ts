@@ -5966,32 +5966,56 @@ export type Database = {
       shops: {
         Row: {
           address: string | null
+          business_type: string | null
+          city: string | null
           created_at: string
           email: string | null
           id: string
+          industry: string | null
+          logo_url: string | null
           name: string
           organization_id: string
+          other_industry: string | null
           phone: string | null
+          postal_code: string | null
+          state: string | null
+          tax_id: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          business_type?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          industry?: string | null
+          logo_url?: string | null
           name: string
           organization_id: string
+          other_industry?: string | null
           phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          tax_id?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          business_type?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          industry?: string | null
+          logo_url?: string | null
           name?: string
           organization_id?: string
+          other_industry?: string | null
           phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          tax_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -6968,6 +6992,10 @@ export type Database = {
       }
     }
     Functions: {
+      addcustomindustry: {
+        Args: { industry_name: string }
+        Returns: string
+      }
       assign_role_to_user: {
         Args: { user_id_param: string; role_id_param: string }
         Returns: boolean

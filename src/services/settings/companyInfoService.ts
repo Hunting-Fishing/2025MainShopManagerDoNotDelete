@@ -33,6 +33,8 @@ async function uploadLogo(shopId: string, file: File) {
       .from('shop_logos')
       .getPublicUrl(filePath);
 
+    console.log('Logo uploaded, public URL:', publicUrl);
+
     // Update shop record with logo URL
     const { error: updateError } = await supabase
       .from('shops')
@@ -92,6 +94,8 @@ async function getShopInfo() {
       throw shopError;
     }
     
+    console.log("Shop data from DB:", shop);
+    
     // Format shop data to match CompanyInfo structure
     const companyInfo: CompanyInfo = {
       name: shop?.name || "",
@@ -117,8 +121,10 @@ async function getShopInfo() {
 
 async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
   try {
+    console.log("Updating company info for shop", shopId, "with data:", companyInfo);
+    
     // Update shop record
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('shops')
       .update({
         name: companyInfo.name,
@@ -141,7 +147,8 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       throw error;
     }
     
-    return { success: true };
+    console.log("Company info updated successfully:", data);
+    return { success: true, data };
   } catch (error) {
     console.error("Error updating company info:", error);
     throw error;
