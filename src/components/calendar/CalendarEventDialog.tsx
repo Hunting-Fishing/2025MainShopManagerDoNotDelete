@@ -18,18 +18,18 @@ interface CalendarEventDialogProps {
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
   if (!event) return null;
 
-  // Format the event times for display
-  const startTime = event.start instanceof Date 
-    ? event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Format the event times for display - fixed type checking to avoid instanceof on string
+  const startTime = typeof event.start === 'string' 
+    ? new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '';
   
-  const endTime = event.end instanceof Date
-    ? event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const endTime = typeof event.end === 'string'
+    ? new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '';
   
   const eventDate = typeof event.start === 'string' 
     ? formatDate(event.start)
-    : formatDate(event.start.toISOString());
+    : formatDate(new Date().toISOString()); // Fallback to today if event.start is not a string
 
   // Determine if this is a work order event
   const isWorkOrder = event.type === 'work-order';
