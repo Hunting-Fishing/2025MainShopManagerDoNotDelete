@@ -22,10 +22,13 @@ export function BusinessHoursSection({ businessHours, onBusinessHoursChange }: B
     return days[dayIndex] || '';
   };
 
+  // Sort business hours by day_of_week to ensure consistent display
+  const sortedHours = [...businessHours].sort((a, b) => a.day_of_week - b.day_of_week);
+
   return (
     <div className="space-y-4 p-1">
-      {businessHours.map((hours, index) => (
-        <div key={index} className="flex items-center space-x-4 p-2 rounded-md bg-muted/30">
+      {sortedHours.map((hours, index) => (
+        <div key={`${hours.day_of_week}-${index}`} className="flex items-center space-x-4 p-2 rounded-md bg-muted/30">
           <div className="w-1/4">
             <p className="font-medium">{getDayName(hours.day_of_week)}</p>
           </div>

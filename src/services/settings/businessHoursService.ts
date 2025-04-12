@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 
 async function getBusinessHours(shopId: string) {
@@ -28,7 +27,37 @@ async function getBusinessHours(shopId: string) {
       return defaultHours;
     }
     
-    return data;
+    // Filter out duplicate entries - keep only unique day_of_week values
+    const uniqueHours = [];
+    const dayMap = new Map();
+    
+    for (const hour of data) {
+      if (!dayMap.has(hour.day_of_week)) {
+        dayMap.set(hour.day_of_week, true);
+        uniqueHours.push(hour);
+      }
+    }
+    
+    // Ensure all 7 days are represented
+    const daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
+    const existingDays = uniqueHours.map(h => h.day_of_week);
+    
+    for (const day of daysOfWeek) {
+      if (!existingDays.includes(day)) {
+        uniqueHours.push({
+          day_of_week: day,
+          open_time: '09:00:00',
+          close_time: '17:00:00',
+          is_closed: day === 0 || day === 6, // Default closed on weekends
+          shop_id: shopId
+        });
+      }
+    }
+    
+    // Sort by day of week
+    uniqueHours.sort((a, b) => a.day_of_week - b.day_of_week);
+    
+    return uniqueHours;
   } catch (error) {
     console.error("Error in getBusinessHours:", error);
     throw error;
