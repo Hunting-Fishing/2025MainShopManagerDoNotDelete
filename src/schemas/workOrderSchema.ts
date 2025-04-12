@@ -1,7 +1,8 @@
 
 import { z } from "zod";
+import { WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
 
-// Inventory item schema
+// Define inventory item schema using the type
 export const inventoryItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -19,10 +20,11 @@ export const workOrderFormSchema = z.object({
   description: z.string().min(5, {
     message: "Description must be at least 5 characters.",
   }),
-  status: z.enum(["pending", "in-progress", "completed", "cancelled"], {
+  serviceCategory: z.string().optional(),
+  status: z.enum(["pending", "in-progress", "completed", "cancelled"] as const, {
     required_error: "Please select a status.",
   }),
-  priority: z.enum(["low", "medium", "high"], {
+  priority: z.enum(["low", "medium", "high"] as const, {
     required_error: "Please select a priority.",
   }),
   technician: z.string().min(1, {
@@ -36,7 +38,13 @@ export const workOrderFormSchema = z.object({
   }),
   notes: z.string().optional(),
   inventoryItems: z.array(inventoryItemSchema).optional(),
+  // New vehicle fields
+  vehicleId: z.string().optional(),
+  vehicleMake: z.string().optional(),
+  vehicleModel: z.string().optional(),
+  vehicleYear: z.string().optional(),
+  odometer: z.string().optional(),
+  licensePlate: z.string().optional(),
 });
 
-// Define the form values type from the schema
 export type WorkOrderFormSchemaValues = z.infer<typeof workOrderFormSchema>;

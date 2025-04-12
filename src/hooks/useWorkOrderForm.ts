@@ -3,63 +3,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
 import { createWorkOrder } from "@/utils/workOrderUtils";
 import { format } from "date-fns";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
 import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
+import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
-
-// Define inventory item schema using the type
-const inventoryItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  sku: z.string(),
-  category: z.string(),
-  quantity: z.number().min(1),
-  unitPrice: z.number()
-});
-
-// Form schema validation - enhanced with new fields
-const formSchema = z.object({
-  customer: z.string().min(2, {
-    message: "Customer name must be at least 2 characters.",
-  }),
-  description: z.string().min(5, {
-    message: "Description must be at least 5 characters.",
-  }),
-  serviceCategory: z.string().optional(),
-  status: z.enum(["pending", "in-progress", "completed", "cancelled"], {
-    required_error: "Please select a status.",
-  }),
-  priority: z.enum(["low", "medium", "high"], {
-    required_error: "Please select a priority.",
-  }),
-  technician: z.string().min(1, {
-    message: "Please select a technician.",
-  }),
-  location: z.string().min(2, {
-    message: "Location must be at least 2 characters.",
-  }),
-  dueDate: z.date({
-    required_error: "Due date is required.",
-  }),
-  notes: z.string().optional(),
-  inventoryItems: z.array(inventoryItemSchema).optional(),
-  // New vehicle fields
-  vehicleId: z.string().optional(),
-  vehicleMake: z.string().optional(),
-  vehicleModel: z.string().optional(),
-  vehicleYear: z.string().optional(),
-  odometer: z.string().optional(),
-  licensePlate: z.string().optional(),
-});
-
-export type WorkOrderFormValues = z.infer<typeof formSchema>;
 
 export const useWorkOrderForm = () => {
   const navigate = useNavigate();
@@ -68,8 +21,8 @@ export const useWorkOrderForm = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
 
   // Initialize the form
-  const form = useForm<WorkOrderFormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<WorkOrderFormSchemaValues>({
+    resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
       status: "pending",
       priority: "medium",
@@ -87,14 +40,14 @@ export const useWorkOrderForm = () => {
   });
 
   // Function to manually set form values
-  const setFormValues = (values: Partial<WorkOrderFormValues>) => {
+  const setFormValues = (values: Partial<WorkOrderFormSchemaValues>) => {
     Object.entries(values).forEach(([key, value]) => {
       form.setValue(key as any, value);
     });
   };
 
   // Handle form submission
-  const onSubmit = async (values: WorkOrderFormValues) => {
+  const onSubmit = async (values: WorkOrderFormSchemaValues) => {
     setIsSubmitting(true);
     setError(null);
     

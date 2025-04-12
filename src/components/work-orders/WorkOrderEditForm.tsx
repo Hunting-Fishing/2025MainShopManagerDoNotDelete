@@ -1,6 +1,6 @@
 
 import React from "react";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 import { EditFormHeader } from "./edit/EditFormHeader";
 import { WorkOrderEditFormContent } from "./edit/WorkOrderEditFormContent";
 import { useWorkOrderEditForm } from "@/hooks/useWorkOrderEditForm";

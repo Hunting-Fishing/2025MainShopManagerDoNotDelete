@@ -43,30 +43,46 @@ export interface WorkOrderTemplate {
   inventoryItems?: WorkOrderInventoryItem[];
 }
 
-// Define the WorkOrder interface - ensure all required fields are present
+// Define a comprehensive WorkOrder interface that works for both UI and API
 export interface WorkOrder {
   id: string;
   customer: string;
-  description: string; // Required in both interfaces
-  status: string;
-  date: string;
-  dueDate: string; // Make dueDate required to align with invoice.WorkOrder
-  priority: string;
+  description: string;
+  status: "pending" | "in-progress" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high";
   technician: string;
+  date: string;
+  dueDate: string;
   location: string;
   notes?: string;
   inventoryItems?: WorkOrderInventoryItem[];
   timeEntries?: TimeEntry[];
   totalBillableTime?: number;
-  // Add any other fields needed
-  service_type?: string;
+  createdBy?: string;
+  createdAt?: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
+  // Additional fields for Supabase integration
   customer_id?: string;
   vehicle_id?: string;
   vehicle_make?: string;
   vehicle_model?: string;
-  created_at?: string;
-  updated_at?: string;
   technician_id?: string;
   total_cost?: number;
   estimated_hours?: number;
+  service_type?: string;
+  service_category?: string;
+  vehicleDetails?: {
+    make?: string;
+    model?: string;
+    year?: string;
+    odometer?: string;
+    licensePlate?: string;
+  };
 }
+
+// Define status map type
+export type WorkOrderStatusType = "pending" | "in-progress" | "completed" | "cancelled";
+
+// Define priority map type
+export type WorkOrderPriorityType = "low" | "medium" | "high";

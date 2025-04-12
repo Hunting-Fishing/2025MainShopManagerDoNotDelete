@@ -1,35 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
-
-// Define work order type
-export interface WorkOrder {
-  id: string;
-  date: string;
-  customer: string;
-  description: string;
-  status: "pending" | "in-progress" | "completed" | "cancelled";
-  priority: "low" | "medium" | "high";
-  technician: string;
-  location: string;
-  dueDate: string;
-  notes?: string;
-  inventoryItems?: any[];
-  timeEntries?: any[];
-  serviceCategory?: string;
-  vehicleId?: string;
-  vehicleDetails?: {
-    make?: string;
-    model?: string;
-    year?: string;
-    odometer?: string;
-    licensePlate?: string;
-  };
-  totalBillableTime?: number;
-  createdBy?: string;
-  createdAt?: string;
-  lastUpdatedBy?: string;
-  lastUpdatedAt?: string;
-}
+import { WorkOrder, WorkOrderStatusType, WorkOrderPriorityType } from '@/types/workOrder';
 
 // Define status colors and labels
 export const statusMap: Record<string, string> = {
@@ -84,7 +55,7 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
       const profiles = wo.profiles as any || {};
       const statusValue = wo.status || 'pending';
       // Ensure status is one of the allowed values
-      let typedStatus: "pending" | "in-progress" | "completed" | "cancelled" = "pending";
+      let typedStatus: WorkOrderStatusType = "pending";
       if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
         typedStatus = statusValue;
       }
@@ -115,7 +86,7 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
 };
 
 // Helper function to determine priority based on work order properties
-const determinePriority = (workOrder: any): "low" | "medium" | "high" => {
+const determinePriority = (workOrder: any): WorkOrderPriorityType => {
   // Logic to determine priority - could be enhanced based on business rules
   const hoursSinceCreation = Math.floor(
     (new Date().getTime() - new Date(workOrder.created_at).getTime()) / (1000 * 60 * 60)
@@ -151,7 +122,7 @@ export const createWorkOrder = async (workOrder: Omit<WorkOrder, "id" | "date">)
       date: data.created_at,
       customer: workOrder.customer,
       description: data.description,
-      status: data.status as "pending" | "in-progress" | "completed" | "cancelled",
+      status: data.status as WorkOrderStatusType,
       priority: workOrder.priority,
       technician: workOrder.technician,
       location: workOrder.location,
@@ -192,7 +163,7 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
     const profiles = data.profiles as any || {};
     const statusValue = data.status || 'pending';
     // Ensure status is one of the allowed values
-    let typedStatus: "pending" | "in-progress" | "completed" | "cancelled" = "pending";
+    let typedStatus: WorkOrderStatusType = "pending";
     if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
       typedStatus = statusValue;
     }
