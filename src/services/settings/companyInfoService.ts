@@ -125,29 +125,29 @@ async function getShopInfo() {
 async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
   try {
     // Clean phone number before saving
-    const cleanedCompanyInfo = {
-      ...companyInfo,
-      phone: cleanPhoneNumber(companyInfo.phone || '')
-    };
+    const cleanedPhone = cleanPhoneNumber(companyInfo.phone || '');
+    console.log("Original phone:", companyInfo.phone, "Cleaned phone:", cleanedPhone);
 
-    console.log("Updating company info with cleaned phone:", cleanedCompanyInfo);
+    const updateData = {
+      name: companyInfo.name,
+      address: companyInfo.address,
+      city: companyInfo.city,
+      state: companyInfo.state,
+      postal_code: companyInfo.zip,
+      phone: cleanedPhone,
+      email: companyInfo.email,
+      tax_id: companyInfo.taxId,
+      business_type: companyInfo.businessType,
+      industry: companyInfo.industry,
+      other_industry: companyInfo.otherIndustry,
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log("Updating company with data:", updateData);
     
     const { data, error } = await supabase
       .from('shops')
-      .update({
-        name: cleanedCompanyInfo.name,
-        address: cleanedCompanyInfo.address,
-        city: cleanedCompanyInfo.city,
-        state: cleanedCompanyInfo.state,
-        postal_code: cleanedCompanyInfo.zip,
-        phone: cleanedCompanyInfo.phone,
-        email: cleanedCompanyInfo.email,
-        tax_id: cleanedCompanyInfo.taxId,
-        business_type: cleanedCompanyInfo.businessType,
-        industry: cleanedCompanyInfo.industry,
-        other_industry: cleanedCompanyInfo.otherIndustry,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', shopId)
       .select('*');
       

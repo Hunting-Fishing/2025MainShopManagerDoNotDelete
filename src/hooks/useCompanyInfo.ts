@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { companyService } from "@/services/settings/companyService";
 import { CompanyInfo } from "@/services/settings/companyService";
 import { useBusinessConstants } from "@/hooks/useBusinessConstants";
+import { cleanPhoneNumber } from "@/utils/formatters";
 
 export function useCompanyInfo() {
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
@@ -88,10 +89,15 @@ export function useCompanyInfo() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     console.log("Input changed:", id, value);
+    
+    // Extract the field name without the "company-" prefix
+    const fieldName = id.replace("company-", "");
+    
     setCompanyInfo(prev => ({
       ...prev,
-      [id.replace("company-", "")]: value
+      [fieldName]: value
     }));
+    
     setDataChanged(true);
   };
 

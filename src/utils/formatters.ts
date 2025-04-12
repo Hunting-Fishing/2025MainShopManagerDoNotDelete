@@ -1,3 +1,4 @@
+
 /**
  * Format a number as currency
  * @param value - The number to format
@@ -94,7 +95,7 @@ export function formatPhoneNumber(phone: string): string {
  * @returns Cleaned phone number with only digits
  */
 export function cleanPhoneNumber(phone: string): string {
-  return phone.replace(/\D/g, '');
+  return phone ? phone.replace(/\D/g, '') : '';
 }
 
 /**
