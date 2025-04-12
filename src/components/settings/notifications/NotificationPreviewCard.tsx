@@ -1,141 +1,90 @@
 
-import React, { useState } from "react";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Info, CheckCircle, AlertTriangle, Bell, User } from "lucide-react";
-import { useNotifications } from "@/context/notifications";
-import { cn } from "@/lib/utils";
 
-type NotificationType = 'info' | 'success' | 'warning' | 'error';
+interface NotificationPreviewProps {}
 
-export function NotificationPreviewCard() {
-  const { triggerTestNotification } = useNotifications();
-  const [notificationType, setNotificationType] = useState<NotificationType>('info');
-  
-  const getIconForType = (type: NotificationType) => {
+export function NotificationPreviewCard({}: NotificationPreviewProps) {
+  const demoNotifications = [
+    {
+      type: "info",
+      title: "Information Notification",
+      message: "This is a sample informational notification.",
+    },
+    {
+      type: "success",
+      title: "Success Notification",
+      message: "This is a sample success notification.",
+    },
+    {
+      type: "warning",
+      title: "Warning Notification",
+      message: "This is a sample warning notification.",
+    },
+    {
+      type: "error",
+      title: "Error Notification",
+      message: "This is a sample error notification.",
+    },
+  ];
+
+  const getBackgroundColor = (type: string) => {
     switch (type) {
-      case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
-      case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case "info":
+        return "bg-blue-50 border-blue-200";
+      case "success":
+        return "bg-green-50 border-green-200";
+      case "warning":
+        return "bg-yellow-50 border-yellow-200";
+      case "error":
+        return "bg-red-50 border-red-200";
+      default:
+        return "bg-gray-50 border-gray-200";
     }
   };
 
-  const handleTestNotification = () => {
-    triggerTestNotification();
+  const getTextColor = (type: string) => {
+    switch (type) {
+      case "info":
+        return "text-blue-800";
+      case "success":
+        return "text-green-800";
+      case "warning":
+        return "text-yellow-800";
+      case "error":
+        return "text-red-800";
+      default:
+        return "text-gray-800";
+    }
   };
-  
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Notification Previews</CardTitle>
-        <CardDescription>
-          Preview how different notification types will appear
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="space-y-1">
+          <CardTitle>Notification Preview</CardTitle>
+        </div>
+        <Eye className="h-5 w-5 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Tabs value={notificationType} onValueChange={(value) => setNotificationType(value as NotificationType)}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="info">Info</TabsTrigger>
-            <TabsTrigger value="success">Success</TabsTrigger>
-            <TabsTrigger value="warning">Warning</TabsTrigger>
-            <TabsTrigger value="error">Error</TabsTrigger>
-          </TabsList>
-          
-          <div className="mt-4 rounded-lg border p-4">
-            <div className="font-medium mb-2">Preview</div>
-            
-            {/* Notification Center Preview */}
-            <div className="mb-6 rounded-md border shadow-sm">
-              <div className="flex items-center justify-between bg-muted/50 px-4 py-2 border-b">
-                <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
-                  <span className="font-medium text-sm">Notification Center</span>
-                </div>
+      <CardContent className="pt-4 space-y-4">
+        <div className="text-sm text-muted-foreground mb-2">
+          Preview how different types of notifications will appear
+        </div>
+        <div className="space-y-3">
+          {demoNotifications.map((notification, index) => (
+            <div
+              key={index}
+              className={`border p-3 rounded-md ${getBackgroundColor(notification.type)}`}
+            >
+              <div className={`font-medium mb-1 ${getTextColor(notification.type)}`}>
+                {notification.title}
               </div>
-              <div className="p-2">
-                <div 
-                  className={cn(
-                    "flex items-start space-x-4 rounded-md p-3 hover:bg-muted/50 border-l-2",
-                    {
-                      "border-blue-500": notificationType === 'info',
-                      "border-green-500": notificationType === 'success',
-                      "border-amber-500": notificationType === 'warning',
-                      "border-red-500": notificationType === 'error',
-                    }
-                  )}
-                >
-                  {getIconForType(notificationType)}
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {notificationType === 'info' && 'New information available'}
-                      {notificationType === 'success' && 'Operation completed successfully'}
-                      {notificationType === 'warning' && 'Action needed'}
-                      {notificationType === 'error' && 'Error occurred'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {notificationType === 'info' && 'There is new information available for your account.'}
-                      {notificationType === 'success' && 'Your changes have been saved successfully.'}
-                      {notificationType === 'warning' && 'Please review your account settings.'}
-                      {notificationType === 'error' && 'There was an error processing your request.'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">1 minute ago</p>
-                  </div>
-                </div>
-              </div>
+              <div className="text-sm text-gray-600">{notification.message}</div>
             </div>
-            
-            {/* Toast Preview */}
-            <div className="mb-6 rounded-md border shadow-sm">
-              <div className="flex items-center justify-between bg-muted/50 px-4 py-2 border-b">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="font-medium text-sm">Toast Notification</span>
-                </div>
-              </div>
-              <div className="p-2">
-                <div 
-                  className={cn(
-                    "flex w-full items-center justify-between space-x-4 rounded-md p-3",
-                    {
-                      "bg-background": notificationType === 'info',
-                      "bg-green-50": notificationType === 'success',
-                      "bg-amber-50": notificationType === 'warning',
-                      "bg-red-50": notificationType === 'error',
-                    }
-                  )}
-                >
-                  <div className="flex items-start space-x-4">
-                    {getIconForType(notificationType)}
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {notificationType === 'info' && 'New information available'}
-                        {notificationType === 'success' && 'Operation completed successfully'}
-                        {notificationType === 'warning' && 'Action needed'}
-                        {notificationType === 'error' && 'Error occurred'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {notificationType === 'info' && 'There is new information available.'}
-                        {notificationType === 'success' && 'Your changes have been saved.'}
-                        {notificationType === 'warning' && 'Please review your settings.'}
-                        {notificationType === 'error' && 'There was an error processing your request.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <Button onClick={handleTestNotification} className="w-full">
-              Send Test {notificationType.charAt(0).toUpperCase() + notificationType.slice(1)} Notification
-            </Button>
-          </div>
-        </Tabs>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, Save } from "lucide-react";
 
 interface SaveButtonProps {
   saveStatus: "idle" | "saved" | "changed";
@@ -15,18 +15,22 @@ export function SaveButton({ saveStatus, onSave }: SaveButtonProps) {
 
   return (
     <div className="flex justify-end">
-      <Button 
-        onClick={onSave} 
+      <Button
+        onClick={onSave}
         disabled={saveStatus === "saved"}
-        className="w-24"
+        variant={saveStatus === "saved" ? "outline" : "default"}
+        className={saveStatus === "saved" ? "text-green-600 border-green-600" : ""}
       >
         {saveStatus === "saved" ? (
           <>
-            <Check className="mr-2 h-4 w-4" /> 
+            <Check className="mr-2 h-4 w-4" />
             Saved
           </>
         ) : (
-          "Save"
+          <>
+            <Save className="mr-2 h-4 w-4" />
+            Save Changes
+          </>
         )}
       </Button>
     </div>
