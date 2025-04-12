@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 
 export interface CompanyInfo {
@@ -11,7 +12,7 @@ export interface CompanyInfo {
   taxId: string;
   businessType: string;
   industry: string;
-  otherIndustry?: string;
+  otherIndustry?: string;  // This is correctly marked as optional
   logoUrl: string;
 }
 

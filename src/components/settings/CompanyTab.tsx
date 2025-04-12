@@ -23,7 +23,7 @@ export function CompanyTab() {
     taxId: "",
     businessType: "",
     industry: "",
-    otherIndustry: "",
+    otherIndustry: "", // This is the field that's causing the issue
     logoUrl: ""
   });
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,12 @@ export function CompanyTab() {
       // Get company info
       const { shopId: id, companyInfo: info } = await companyService.getShopInfo();
       setShopId(id);
-      setCompanyInfo(info);
+      
+      // Make sure otherIndustry has a default value if it's undefined
+      setCompanyInfo({
+        ...info,
+        otherIndustry: info.otherIndustry || ""
+      });
       
       // Get business hours
       if (id) {
