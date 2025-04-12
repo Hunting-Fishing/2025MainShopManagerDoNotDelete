@@ -30,15 +30,15 @@ export interface BusinessHours {
 export const companyService = {
   // Company Info Methods
   getShopInfo: companyInfoService.getShopInfo,
-  updateCompanyInfo: async (shopId: string, companyInfo: CompanyInfo, businessHours: BusinessHours[]) => {
-    await companyInfoService.updateCompanyInfo(shopId, companyInfo, businessHours);
-    await businessHoursService.updateBusinessHours(shopId, businessHours);
+  updateCompanyInfo: async (shopId: string, companyInfo: CompanyInfo) => {
+    await companyInfoService.updateCompanyInfo(shopId, companyInfo);
     return { success: true };
   },
   uploadLogo: companyInfoService.uploadLogo,
   
   // Business Hours Methods
   getBusinessHours: businessHoursService.getBusinessHours,
+  updateBusinessHours: businessHoursService.updateBusinessHours,
   
   // Business Industry Methods
   addCustomIndustry: businessIndustryService.addCustomIndustry
