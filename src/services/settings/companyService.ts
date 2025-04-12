@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 
 export interface CompanyInfo {
@@ -177,17 +178,19 @@ export const companyService = {
       }
       
       // Save additional company settings
+      const settingsValue = {
+        taxId: companyInfo.taxId,
+        businessType: companyInfo.businessType,
+        industry: companyInfo.industry,
+        otherIndustry: companyInfo.industry === "other" ? companyInfo.otherIndustry : ""
+      };
+      
       const { error: settingsError } = await supabase
         .from("company_settings")
         .upsert({
           shop_id: shopId,
           settings_key: "business_profile",
-          settings_value: {
-            taxId: companyInfo.taxId,
-            businessType: companyInfo.businessType,
-            industry: companyInfo.industry,
-            otherIndustry: companyInfo.industry === "other" ? companyInfo.otherIndustry : ""
-          },
+          settings_value: settingsValue,
           updated_at: new Date().toISOString()
         });
         
@@ -271,8 +274,13 @@ export const companyService = {
     }
   },
   
-  async addCustomIndustry(industryName: string) {
+  async addCustomIndustry(industryName: string): Promise<string | undefined> {
     try {
+      if (!industryName.trim()) {
+        console.error("Cannot add empty industry name");
+        return undefined;
+      }
+      
       // First check if the industry already exists to avoid duplicates
       const { data: existingIndustry } = await supabase
         .from("business_industries")
@@ -281,7 +289,8 @@ export const companyService = {
         .maybeSingle();
         
       if (existingIndustry) {
-        // Industry already exists, no need to add it again
+        // Industry already exists, return its ID
+        console.log("Industry already exists:", existingIndustry);
         return existingIndustry.id;
       }
       
@@ -299,9 +308,11 @@ export const companyService = {
         .single();
         
       if (error) {
+        console.error("Error adding industry:", error);
         throw error;
       }
       
+      console.log("Successfully added new industry:", data);
       return data.id;
     } catch (error) {
       console.error("Error adding custom industry:", error);

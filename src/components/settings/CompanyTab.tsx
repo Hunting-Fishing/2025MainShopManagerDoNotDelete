@@ -23,7 +23,7 @@ export function CompanyTab() {
     taxId: "",
     businessType: "",
     industry: "",
-    otherIndustry: "", // This is the field that's causing the issue
+    otherIndustry: "", 
     logoUrl: ""
   });
   const [loading, setLoading] = useState(true);
@@ -131,18 +131,25 @@ export function CompanyTab() {
     try {
       setSaving(true);
       
-      // If industry is "other" and otherIndustry is provided, we need to handle it specially
+      // Handle custom industry if needed
       if (companyInfo.industry === "other" && companyInfo.otherIndustry) {
-        // First, add the custom industry to the database
         try {
-          await companyService.addCustomIndustry(companyInfo.otherIndustry);
+          // Add the custom industry to the database and get its ID
+          const industryId = await companyService.addCustomIndustry(companyInfo.otherIndustry);
+          console.log("Added custom industry with ID:", industryId);
         } catch (error) {
           console.error("Error adding custom industry:", error);
-          // Continue anyway since the main company data can still be saved
+          // Continue with saving other data
         }
       }
       
-      await companyService.updateCompanyInfo(shopId, companyInfo, businessHours);
+      // Prepare data for saving - ensure otherIndustry is only set when industry is "other"
+      const dataToSave = {
+        ...companyInfo,
+        otherIndustry: companyInfo.industry === "other" ? companyInfo.otherIndustry : ""
+      };
+      
+      await companyService.updateCompanyInfo(shopId, dataToSave, businessHours);
       
       toast({
         title: "Success",
