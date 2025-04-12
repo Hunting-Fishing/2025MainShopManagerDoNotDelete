@@ -1,3 +1,4 @@
+
 import React from "react";
 import { FormField } from "@/components/ui/form-field";
 import { LogoUploadSection } from "./LogoUploadSection";

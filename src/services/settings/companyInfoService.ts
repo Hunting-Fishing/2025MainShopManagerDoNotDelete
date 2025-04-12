@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { CompanyInfo } from "./companyService";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/utils/formatters";
@@ -103,7 +104,7 @@ async function getShopInfo() {
       city: shop?.city || "",
       state: shop?.state || "",
       zip: shop?.postal_code || "",
-      phone: shop?.phone || "",
+      phone: shop?.phone ? formatPhoneNumber(shop.phone) : "",
       email: shop?.email || "",
       taxId: shop?.tax_id || "",
       businessType: shop?.business_type || "",
