@@ -12,27 +12,38 @@ import { LoyaltyTab } from "./LoyaltyTab";
 import { InventorySettingsTab } from "./InventorySettingsTab";
 import { TeamHistoryTab } from "./TeamHistoryTab";
 import { EmailSchedulingTab } from "./EmailSchedulingTab";
+import { AppearanceTab } from "./AppearanceTab";
+import { EmailSettingsTab } from "./EmailSettingsTab";
+import { IntegrationsTab } from "./IntegrationsTab";
+import { SecurityAdvancedTab } from "./SecurityAdvancedTab";
 import { useTranslation } from 'react-i18next';
+import { useShopId } from "@/hooks/useShopId";
 import { 
   User, Building, Shield, Bell, Palette, 
-  Database, Globe2, Gift, Package, Users, Mail 
+  Database, Globe2, Gift, Package, Users, Mail,
+  Brush, MailPlus, Link, ShieldCheck
 } from "lucide-react";
 
 export const SettingsLayout = () => {
   const [activeTab, setActiveTab] = useState("account");
   const { t } = useTranslation();
+  const { shopId } = useShopId();
 
   // Define tabs with proper fallback values for translations
   const tabs = [
     { id: "account", label: t('settings.tabs.account', 'Account'), icon: User },
     { id: "company", label: t('settings.tabs.company', 'Company'), icon: Building },
     { id: "security", label: t('settings.tabs.security', 'Security'), icon: Shield },
+    { id: "security-advanced", label: t('settings.tabs.security_advanced', 'Advanced Security'), icon: ShieldCheck },
     { id: "notifications", label: t('settings.tabs.notifications', 'Notifications'), icon: Bell },
     { id: "branding", label: t('settings.tabs.branding', 'Branding'), icon: Palette },
+    { id: "appearance", label: t('settings.tabs.appearance', 'Appearance'), icon: Brush },
+    { id: "email", label: t('settings.tabs.email', 'Email Settings'), icon: MailPlus },
+    { id: "integrations", label: t('settings.tabs.integrations', 'Integrations'), icon: Link },
     { id: "loyalty", label: t('settings.tabs.loyalty', 'Loyalty'), icon: Gift },
     { id: "inventory", label: t('settings.tabs.inventory', 'Inventory'), icon: Package },
     { id: "team", label: t('settings.tabs.team', 'Team History'), icon: Users },
-    { id: "email", label: t('settings.tabs.email', 'Email Scheduling'), icon: Mail },
+    { id: "email-scheduling", label: t('settings.tabs.email_scheduling', 'Email Scheduling'), icon: Mail },
     { id: "export", label: t('settings.tabs.export', 'Data Export'), icon: Database },
     { id: "language", label: t('settings.tabs.language', 'Language'), icon: Globe2 },
   ];
@@ -63,11 +74,23 @@ export const SettingsLayout = () => {
         <TabsContent value="security">
           <SecurityTab />
         </TabsContent>
+        <TabsContent value="security-advanced">
+          <SecurityAdvancedTab shopId={shopId || undefined} />
+        </TabsContent>
         <TabsContent value="notifications">
           <NotificationsTab />
         </TabsContent>
         <TabsContent value="branding">
           <BrandingTab />
+        </TabsContent>
+        <TabsContent value="appearance">
+          <AppearanceTab shopId={shopId || undefined} />
+        </TabsContent>
+        <TabsContent value="email">
+          <EmailSettingsTab shopId={shopId || undefined} />
+        </TabsContent>
+        <TabsContent value="integrations">
+          <IntegrationsTab shopId={shopId || undefined} />
         </TabsContent>
         <TabsContent value="loyalty">
           <LoyaltyTab />
@@ -78,7 +101,7 @@ export const SettingsLayout = () => {
         <TabsContent value="team">
           <TeamHistoryTab />
         </TabsContent>
-        <TabsContent value="email">
+        <TabsContent value="email-scheduling">
           <EmailSchedulingTab />
         </TabsContent>
         <TabsContent value="export">

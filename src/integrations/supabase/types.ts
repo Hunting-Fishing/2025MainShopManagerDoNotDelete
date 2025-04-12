@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      appearance_settings: {
+        Row: {
+          accent_color: string | null
+          created_at: string | null
+          font_family: string | null
+          id: string
+          primary_color: string | null
+          secondary_color: string | null
+          shop_id: string | null
+          theme_mode: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string | null
+          font_family?: string | null
+          id?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          shop_id?: string | null
+          theme_mode?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string | null
+          font_family?: string | null
+          id?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          shop_id?: string | null
+          theme_mode?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appearance_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           advisor_id: string | null
@@ -1734,6 +1778,59 @@ export type Database = {
           },
         ]
       }
+      email_provider_settings: {
+        Row: {
+          api_key: string | null
+          created_at: string | null
+          from_email: string | null
+          id: string
+          is_enabled: boolean | null
+          provider: string
+          shop_id: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_username: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string | null
+          from_email?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          provider: string
+          shop_id?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string | null
+          from_email?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          provider?: string
+          shop_id?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_provider_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_sequence_analytics: {
         Row: {
           active_enrollments: number
@@ -3022,6 +3119,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      integration_settings: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          id: string
+          integration_type: string
+          is_enabled: boolean | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_type: string
+          is_enabled?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_type?: string
+          is_enabled?: boolean | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_auto_reorder: {
         Row: {
@@ -5299,6 +5434,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      security_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_whitelist: string[] | null
+          mfa_enabled: boolean | null
+          password_policy: Json | null
+          session_timeout_minutes: number | null
+          shop_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_whitelist?: string[] | null
+          mfa_enabled?: boolean | null
+          password_policy?: Json | null
+          session_timeout_minutes?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_whitelist?: string[] | null
+          mfa_enabled?: boolean | null
+          password_policy?: Json | null
+          session_timeout_minutes?: number | null
+          shop_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       segment_rules: {
         Row: {
