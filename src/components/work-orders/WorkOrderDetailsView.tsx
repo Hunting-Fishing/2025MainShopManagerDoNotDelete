@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 import { deleteWorkOrder } from "@/utils/workOrderUtils";
 import { useToast } from "@/hooks/use-toast";
 import { 

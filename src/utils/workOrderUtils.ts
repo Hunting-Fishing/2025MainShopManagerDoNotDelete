@@ -1,4 +1,5 @@
-import { WorkOrder } from "@/types/workOrder";
+
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 
 // Generate a unique work order ID
@@ -24,6 +25,57 @@ export const formatDate = (dateStr: string | undefined): string => {
   }
 };
 
+// Database to app model mapping
+const mapDatabaseToAppModel = (data: any): Partial<WorkOrder> => {
+  const customers = data.customers as any || {};
+  const profiles = data.profiles as any || {};
+  const statusValue = data.status || 'pending';
+  
+  // Ensure status is one of the allowed values
+  let typedStatus: WorkOrder["status"] = "pending";
+  if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
+    typedStatus = statusValue;
+  }
+  
+  // Map time entries if they exist
+  const timeEntries: TimeEntry[] = data.work_order_time_entries 
+    ? data.work_order_time_entries.map((entry: any) => ({
+        id: entry.id,
+        employeeId: entry.employee_id,
+        employeeName: entry.employee_name,
+        startTime: entry.start_time,
+        endTime: entry.end_time,
+        duration: entry.duration,
+        notes: entry.notes || '',
+        billable: entry.billable || false
+      }))
+    : [];
+  
+  return {
+    id: data.id,
+    date: data.created_at,
+    customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
+    description: data.description || '',
+    status: typedStatus,
+    priority: data.priority || "medium",
+    technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
+    location: data.location || '',
+    dueDate: data.end_time || '',
+    notes: data.notes || '',
+    timeEntries: timeEntries,
+    totalBillableTime: timeEntries.reduce((sum, entry) => 
+      sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
+    createdBy: data.created_by || 'System',
+    createdAt: data.created_at,
+    lastUpdatedBy: data.updated_by || '',
+    lastUpdatedAt: data.updated_at,
+    vehicle_id: data.vehicle_id,
+    vehicleId: data.vehicle_id,
+    service_category: data.service_category,
+    serviceCategory: data.service_category
+  };
+};
+
 // Create a new work order
 export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
   try {
@@ -32,10 +84,9 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
 
     // Helper function to convert camelCase to snake_case
     const mapCamelToSnakeCase = (data: any) => {
-      // Handle specific field mappings
       const result: any = {};
 
-      // Handle service category property (which could be either serviceCategory or service_category)
+      // Handle specific field mappings
       if (data.serviceCategory !== undefined) {
         result.service_category = data.serviceCategory;
       } else if (data.service_category !== undefined) {
@@ -71,6 +122,7 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       result.location = data.location;
       result.notes = data.notes || '';
       result.due_date = data.dueDate;
+      result.end_time = data.dueDate; // Map dueDate to end_time for database
       result.priority = data.priority;
       result.total_cost = data.total_cost || 0;
       result.estimated_hours = data.estimated_hours || null;
@@ -145,7 +197,7 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       priority: workOrderData.priority,
       technician: workOrderData.technician,
       location: workOrderData.location,
-      dueDate: data.due_date || '',
+      dueDate: data.end_time || '',
       notes: workOrderData.notes,
       inventoryItems: workOrderData.inventoryItems || [],
       timeEntries: workOrderData.timeEntries || [],
@@ -186,38 +238,8 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
     
     if (!data) return null;
     
-    const customers = data.customers as any || {};
-    const profiles = data.profiles as any || {};
-    const statusValue = data.status || 'pending';
-    // Ensure status is one of the allowed values
-    let typedStatus: WorkOrder["status"] = "pending";
-    if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
-      typedStatus = statusValue;
-    }
-    
-    return {
-      id: data.id,
-      date: data.created_at,
-      customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
-      description: data.description || '',
-      status: typedStatus,
-      priority: data.priority,
-      technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
-      location: '', // Not available in schema yet
-      dueDate: data.end_time || '',
-      notes: '',
-      timeEntries: data.work_order_time_entries || [],
-      totalBillableTime: data.work_order_time_entries?.reduce((sum, entry) => 
-        sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
-      createdBy: 'System',
-      createdAt: data.created_at,
-      lastUpdatedBy: '',
-      lastUpdatedAt: data.updated_at,
-      vehicle_id: data.vehicle_id,
-      vehicleId: data.vehicle_id,
-      service_category: data.service_category,
-      serviceCategory: data.service_category
-    };
+    // Map database model to application model
+    return mapDatabaseToAppModel(data) as WorkOrder;
   } catch (err) {
     console.error("Error in findWorkOrderById:", err);
     return null;
@@ -227,13 +249,24 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
 // Update a work order
 export const updateWorkOrder = async (updatedWorkOrder: WorkOrder): Promise<WorkOrder> => {
   try {
+    // Map from app model to database model
+    const dbData: any = {
+      description: updatedWorkOrder.description,
+      status: updatedWorkOrder.status,
+      priority: updatedWorkOrder.priority,
+      notes: updatedWorkOrder.notes,
+      end_time: updatedWorkOrder.dueDate,
+      // Add more fields as needed
+    };
+    
+    // Handle snake_case fields that might not be in the database schema
+    if (updatedWorkOrder.service_category || updatedWorkOrder.serviceCategory) {
+      dbData.service_category = updatedWorkOrder.service_category || updatedWorkOrder.serviceCategory;
+    }
+    
     const { data, error } = await supabase
       .from('work_orders')
-      .update({
-        description: updatedWorkOrder.description,
-        status: updatedWorkOrder.status,
-        // Map other fields as needed
-      })
+      .update(dbData)
       .eq('id', updatedWorkOrder.id)
       .select()
       .single();
@@ -249,6 +282,26 @@ export const updateWorkOrder = async (updatedWorkOrder: WorkOrder): Promise<Work
     };
   } catch (err) {
     console.error("Error in updateWorkOrder:", err);
+    throw err;
+  }
+};
+
+// Delete a work order
+export const deleteWorkOrder = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('work_orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting work order:", error);
+      throw new Error(error.message);
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Error in deleteWorkOrder:", err);
     throw err;
   }
 };

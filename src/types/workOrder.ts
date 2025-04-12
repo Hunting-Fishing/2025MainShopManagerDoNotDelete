@@ -26,6 +26,20 @@ export interface TimeEntry {
   billable: boolean;
 }
 
+// Database version of TimeEntry (snake_case)
+export interface DbTimeEntry {
+  id: string;
+  employee_id: string;
+  employee_name: string;
+  start_time: string;
+  end_time: string | null;
+  duration: number;
+  notes?: string;
+  billable: boolean;
+  work_order_id: string;
+  created_at?: string;
+}
+
 // Define work order template interface
 export interface WorkOrderTemplate {
   id: string;
@@ -62,20 +76,21 @@ export interface WorkOrder {
   createdAt?: string;
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
-  // Additional fields for Supabase integration
+  // Database field format (snake_case)
   customer_id?: string;
   vehicle_id?: string;
-  vehicleId?: string; // client-side alias for vehicle_id
+  // Client-side aliases (camelCase)
+  vehicleId?: string;
   vehicle_make?: string;
-  vehicleMake?: string; // client-side alias
+  vehicleMake?: string;
   vehicle_model?: string;
-  vehicleModel?: string; // client-side alias
+  vehicleModel?: string;
   technician_id?: string;
   total_cost?: number;
   estimated_hours?: number;
   service_type?: string;
   service_category?: string;
-  serviceCategory?: string; // client-side alias for service_category
+  serviceCategory?: string;
   vehicleDetails?: {
     make?: string;
     model?: string;
