@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
@@ -7,7 +6,8 @@ import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination"
 import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
+import { mapDatabaseToAppModel } from "@/utils/workOrders";
+import { getUniqueTechnicians } from "@/utils/workOrders/crud";
 
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,7 +26,6 @@ export default function WorkOrders() {
       try {
         setLoading(true);
         
-        // Fetch all work orders
         const { data, error } = await supabase
           .from('work_orders')
           .select(`
@@ -41,16 +40,14 @@ export default function WorkOrders() {
           throw error;
         }
         
-        // Map DB format to application format
         const completeWorkOrders: WorkOrder[] = data.map((order) => 
           mapDatabaseToAppModel(order)
         );
         
         setWorkOrders(completeWorkOrders);
         
-        // Extract unique technicians for filter
-        const uniqueTechnicians = getUniqueTechnicians(completeWorkOrders);
-        setTechnicians(uniqueTechnicians);
+        const uniqueTechs = await getUniqueTechnicians();
+        setTechnicians(uniqueTechs);
       } catch (error) {
         console.error("Error fetching work orders:", error);
         toast({

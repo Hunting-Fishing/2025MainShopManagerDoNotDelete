@@ -151,9 +151,4 @@ export const priorityMap: Record<
   }
 };
 
-// Helper function to get unique technicians - moved from workOrdersData.ts
-export const getUniqueTechnicians = (workOrders: WorkOrder[]): string[] => {
-  return Array.from(
-    new Set(workOrders.map(order => order.technician))
-  ).filter(tech => tech && tech !== '').sort();
-};
+// Removed getUniqueTechnicians from here since it's now in crud.ts
