@@ -30,10 +30,7 @@ export interface BusinessHours {
 export const companyService = {
   // Company Info Methods
   getShopInfo: companyInfoService.getShopInfo,
-  updateCompanyInfo: async (shopId: string, companyInfo: CompanyInfo) => {
-    await companyInfoService.updateCompanyInfo(shopId, companyInfo);
-    return { success: true };
-  },
+  updateCompanyInfo: companyInfoService.updateCompanyInfo,
   uploadLogo: companyInfoService.uploadLogo,
   
   // Business Hours Methods
