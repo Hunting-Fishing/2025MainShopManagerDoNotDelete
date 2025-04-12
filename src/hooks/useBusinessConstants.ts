@@ -19,10 +19,15 @@ export function useBusinessConstants() {
     setError(null);
     
     try {
+      // Check if we're authenticated first
+      const { data: authData } = await supabase.auth.getSession();
+      const isAuth = !!authData.session;
+      
       // Fetch business types
       const { data: typesData, error: typesError } = await supabase
         .from('business_types')
-        .select('*');
+        .select('*')
+        .order('label');
       
       if (typesError) throw typesError;
       
@@ -47,18 +52,20 @@ export function useBusinessConstants() {
       // Fetch business industries
       const { data: industriesData, error: industriesError } = await supabase
         .from('business_industries')
-        .select('*');
+        .select('*')
+        .order('label');
       
       if (industriesError) throw industriesError;
       
+      let industriesList: BusinessConstant[] = [];
       if (industriesData && industriesData.length > 0) {
-        setBusinessIndustries(industriesData.map(item => ({
+        industriesList = industriesData.map(item => ({
           value: item.value || item.id,
           label: item.label || item.name
-        })));
+        }));
       } else {
         // Fallback defaults if no data exists
-        const defaultIndustries: BusinessConstant[] = [
+        industriesList = [
           { value: 'automotive', label: 'Automotive' },
           { value: 'construction', label: 'Construction' },
           { value: 'retail', label: 'Retail' },
@@ -66,11 +73,16 @@ export function useBusinessConstants() {
           { value: 'hospitality', label: 'Hospitality' },
           { value: 'manufacturing', label: 'Manufacturing' },
           { value: 'technology', label: 'Technology' },
-          { value: 'transportation', label: 'Transportation' },
-          { value: 'other', label: 'Other' }
+          { value: 'transportation', label: 'Transportation' }
         ];
-        setBusinessIndustries(defaultIndustries);
       }
+      
+      // Always ensure "other" option is available for industries
+      if (!industriesList.some(i => i.value === 'other')) {
+        industriesList.push({ value: 'other', label: 'Other' });
+      }
+      
+      setBusinessIndustries(industriesList);
       
       // Fetch payment methods
       const { data: methodsData, error: methodsError } = await supabase
@@ -95,9 +107,9 @@ export function useBusinessConstants() {
         ];
         setPaymentMethods(defaultPaymentMethods);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching business constants:', err);
-      setError('Failed to load business data');
+      setError('Failed to load business data: ' + (err.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }

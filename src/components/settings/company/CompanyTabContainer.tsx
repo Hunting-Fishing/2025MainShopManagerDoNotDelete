@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -145,9 +146,14 @@ export function CompanyTabContainer() {
             // Note: We'll keep the UI as "other" for this save, next time they load
             // the form it will show their custom industry in the dropdown
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error adding custom industry:", error);
-          // Continue with saving other data
+          // Don't prevent saving other data if this fails
+          toast({
+            title: "Warning",
+            description: `Failed to add custom industry: ${error.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
         }
       }
       
@@ -157,18 +163,30 @@ export function CompanyTabContainer() {
         otherIndustry: companyInfo.industry === "other" ? companyInfo.otherIndustry : ""
       };
       
-      await companyService.updateCompanyInfo(shopId, dataToSave, businessHours);
-      
-      toast({
-        title: "Success",
-        description: "Company information saved successfully",
-        variant: "success"
-      });
-    } catch (error) {
-      console.error("Failed to save company information:", error);
+      try {
+        await companyService.updateCompanyInfo(shopId, dataToSave, businessHours);
+        
+        toast({
+          title: "Success",
+          description: "Company information saved successfully",
+          variant: "success"
+        });
+        
+        // Reload data to ensure we have the latest info
+        await loadCompanyInfo();
+      } catch (error: any) {
+        console.error("Failed to save company information:", error);
+        toast({
+          title: "Error",
+          description: `Failed to save company information: ${error.message || 'Unknown error'}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in handleSave:", error);
       toast({
         title: "Error",
-        description: "Failed to save company information",
+        description: `An unexpected error occurred: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {

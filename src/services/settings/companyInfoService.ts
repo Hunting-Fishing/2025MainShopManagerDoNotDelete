@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { CompanyInfo } from "./companyService";
 
@@ -87,6 +88,12 @@ export const companyInfoService = {
 
   async updateCompanyInfo(shopId: string, companyInfo: CompanyInfo, businessHours: any[]) {
     try {
+      // Check if we're authenticated first
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session) {
+        throw new Error("User must be authenticated to update company information");
+      }
+      
       // Format the address
       const formattedAddress = [
         companyInfo.address,
@@ -129,15 +136,41 @@ export const companyInfoService = {
         otherIndustry: companyInfo.industry === "other" ? companyInfo.otherIndustry : ""
       };
       
-      const { error: settingsError } = await supabase
+      // Check if company settings exist first
+      const { data: existingSettings } = await supabase
         .from("company_settings")
-        .upsert({
-          shop_id: shopId,
-          settings_key: "business_profile",
-          settings_value: settingsValue,
-          updated_at: new Date().toISOString()
-        });
-        
+        .select("id")
+        .eq("shop_id", shopId)
+        .eq("settings_key", "business_profile")
+        .maybeSingle();
+      
+      let settingsError;
+      
+      if (existingSettings) {
+        // Update existing settings
+        const { error } = await supabase
+          .from("company_settings")
+          .update({
+            settings_value: settingsValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", existingSettings.id);
+          
+        settingsError = error;
+      } else {
+        // Insert new settings
+        const { error } = await supabase
+          .from("company_settings")
+          .insert({
+            shop_id: shopId,
+            settings_key: "business_profile",
+            settings_value: settingsValue,
+            updated_at: new Date().toISOString()
+          });
+          
+        settingsError = error;
+      }
+      
       if (settingsError) {
         throw settingsError;
       }

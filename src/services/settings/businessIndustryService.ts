@@ -9,6 +9,12 @@ export const businessIndustryService = {
         return undefined;
       }
       
+      // Check if we're authenticated first
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session) {
+        throw new Error("User must be authenticated to add custom industries");
+      }
+      
       // First check if the industry already exists to avoid duplicates
       const { data: existingIndustry } = await supabase
         .from("business_industries")
