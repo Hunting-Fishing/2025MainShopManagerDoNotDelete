@@ -9,9 +9,11 @@ import { BusinessInfoSection } from "./BusinessInfoSection";
 import { BusinessHoursSection } from "./BusinessHoursSection";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { CompanyTabSkeleton } from "./CompanyTabSkeleton";
+import { useToast } from "@/hooks/use-toast";
 
 export function CompanyTabContainer() {
   const [activeTab, setActiveTab] = useState("basic");
+  const { toast } = useToast();
   
   const {
     companyInfo,
@@ -22,12 +24,25 @@ export function CompanyTabContainer() {
     businessTypes,
     businessIndustries,
     isLoadingConstants,
+    initialized,
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,
     handleFileUpload,
-    handleSave
+    handleSave,
+    loadCompanyInfo
   } = useCompanyInfo();
+
+  // Debugging - check if we have data
+  if (initialized && !loading) {
+    console.log("Company info in container:", companyInfo);
+  }
+
+  const onSaveChanges = async () => {
+    await handleSave();
+    // After saving, trigger a refresh of the data to ensure fields are updated
+    loadCompanyInfo();
+  };
 
   return (
     <div className="space-y-6">
@@ -86,7 +101,7 @@ export function CompanyTabContainer() {
                 <div className="flex justify-end mt-6">
                   <Button 
                     className="bg-esm-blue-600 hover:bg-esm-blue-700"
-                    onClick={handleSave}
+                    onClick={onSaveChanges}
                     disabled={saving}
                   >
                     {saving ? "Saving..." : "Save Changes"}

@@ -25,13 +25,14 @@ export function useCompanyInfo() {
   const [shopId, setShopId] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [businessHours, setBusinessHours] = useState<any[]>([]);
+  const [initialized, setInitialized] = useState(false);
   
   const { toast } = useToast();
   const { 
     businessTypes, 
     businessIndustries, 
     isLoading: isLoadingConstants, 
-    fetchBusinessConstants 
+    fetchBusinessConstants
   } = useBusinessConstants();
 
   useEffect(() => {
@@ -59,6 +60,8 @@ export function useCompanyInfo() {
         const hours = await companyService.getBusinessHours(id);
         setBusinessHours(hours);
       }
+
+      setInitialized(true);
     } catch (error) {
       console.error("Failed to load company information:", error);
       toast({
@@ -204,10 +207,12 @@ export function useCompanyInfo() {
     businessTypes,
     businessIndustries,
     isLoadingConstants,
+    initialized,
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,
     handleFileUpload,
-    handleSave
+    handleSave,
+    loadCompanyInfo
   };
 }

@@ -11,29 +11,35 @@ interface LogoUploadSectionProps {
 }
 
 export function LogoUploadSection({ logoUrl, isUploading, onFileUpload }: LogoUploadSectionProps) {
+  const [imgError, setImgError] = React.useState(false);
+
+  React.useEffect(() => {
+    // Reset error state when logoUrl changes
+    if (logoUrl) {
+      setImgError(false);
+    }
+  }, [logoUrl]);
+
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="relative mb-4 w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
-        {logoUrl ? (
+        {logoUrl && !imgError ? (
           <img 
             src={logoUrl} 
             alt="Company Logo" 
             className="object-contain w-full h-full p-1"
             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
               console.error("Logo image failed to load", logoUrl);
-              const target = e.target as HTMLImageElement;
-              target.src = ""; // Clear the src to show the fallback
-              target.style.display = "none";
-              target.parentElement?.classList.add("logo-error");
+              setImgError(true);
             }}
           />
         ) : (
           <div className="text-center p-4 text-gray-500">
             <Image className="w-10 h-10 mx-auto mb-2" />
-            <span className="text-xs">No logo uploaded</span>
+            <span className="text-xs">{imgError ? "Failed to load logo" : "No logo uploaded"}</span>
           </div>
         )}
-        {logoUrl && (
+        {logoUrl && !imgError && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-30 transition-opacity">
             <span className="text-white opacity-0 hover:opacity-100">Change Logo</span>
           </div>
@@ -53,10 +59,10 @@ export function LogoUploadSection({ logoUrl, isUploading, onFileUpload }: LogoUp
         onChange={onFileUpload}
         disabled={isUploading}
       />
-      {logoUrl && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Logo URL: <span className="font-mono text-[10px] break-all">{logoUrl}</span>
-        </p>
+      {logoUrl && !imgError && (
+        <div className="mt-2 text-xs text-muted-foreground max-w-xs overflow-hidden">
+          <p className="truncate">Logo URL: {logoUrl}</p>
+        </div>
       )}
     </div>
   );

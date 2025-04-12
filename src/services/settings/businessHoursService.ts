@@ -1,63 +1,81 @@
 
 import { supabase } from "@/lib/supabase";
 
-export const businessHoursService = {
-  async getBusinessHours(shopId: string) {
-    try {
-      const { data, error } = await supabase
-        .from("shop_hours")
-        .select("*")
-        .eq("shop_id", shopId)
-        .order("day_of_week");
-        
-      if (error) {
-        throw error;
-      }
-
-      if (data && data.length > 0) {
-        return data;
-      }
+async function getBusinessHours(shopId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('shop_hours')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('day_of_week', { ascending: true });
       
-      // Return default hours if none exist
-      return [
-        { day_of_week: 0, open_time: "10:00:00", close_time: "15:00:00", is_closed: false },
-        { day_of_week: 1, open_time: "09:00:00", close_time: "17:00:00", is_closed: false },
-        { day_of_week: 2, open_time: "09:00:00", close_time: "17:00:00", is_closed: false },
-        { day_of_week: 3, open_time: "09:00:00", close_time: "17:00:00", is_closed: false },
-        { day_of_week: 4, open_time: "09:00:00", close_time: "17:00:00", is_closed: false },
-        { day_of_week: 5, open_time: "09:00:00", close_time: "17:00:00", is_closed: false },
-        { day_of_week: 6, open_time: "00:00:00", close_time: "00:00:00", is_closed: true }
-      ];
-    } catch (error) {
+    if (error) {
       console.error("Error fetching business hours:", error);
       throw error;
     }
-  },
-
-  async updateBusinessHours(shopId: string, businessHours: any[]) {
-    try {
-      // Save business hours
-      for (const hours of businessHours) {
-        const { error: hoursError } = await supabase
-          .from("shop_hours")
-          .upsert({
-            shop_id: shopId,
-            day_of_week: hours.day_of_week,
-            open_time: hours.open_time,
-            close_time: hours.close_time,
-            is_closed: hours.is_closed,
-            updated_at: new Date().toISOString()
-          });
-          
-        if (hoursError) {
-          throw hoursError;
-        }
+    
+    // If no business hours exist yet, create default business hours
+    if (!data || data.length === 0) {
+      const defaultHours = [];
+      for (let i = 0; i < 7; i++) {
+        defaultHours.push({
+          day_of_week: i,
+          open_time: '09:00:00',
+          close_time: '17:00:00',
+          is_closed: i === 0 || i === 6 // Default closed on weekends
+        });
       }
+      return defaultHours;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in getBusinessHours:", error);
+    throw error;
+  }
+}
+
+async function updateBusinessHours(shopId: string, businessHours: any[]) {
+  try {
+    console.log("Updating business hours for shop", shopId);
+    
+    // First, delete existing business hours
+    const { error: deleteError } = await supabase
+      .from('shop_hours')
+      .delete()
+      .eq('shop_id', shopId);
       
-      return { success: true };
-    } catch (error) {
-      console.error("Error updating business hours:", error);
+    if (deleteError) {
+      console.error("Error deleting existing business hours:", deleteError);
+      throw deleteError;
+    }
+    
+    // Then insert new business hours
+    const hoursToInsert = businessHours.map(hour => ({
+      shop_id: shopId,
+      day_of_week: hour.day_of_week,
+      open_time: hour.open_time,
+      close_time: hour.close_time,
+      is_closed: hour.is_closed
+    }));
+    
+    const { data, error } = await supabase
+      .from('shop_hours')
+      .insert(hoursToInsert);
+      
+    if (error) {
+      console.error("Error inserting business hours:", error);
       throw error;
     }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in updateBusinessHours:", error);
+    throw error;
   }
+}
+
+export const businessHoursService = {
+  getBusinessHours,
+  updateBusinessHours
 };

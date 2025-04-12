@@ -2,7 +2,6 @@
 import { supabase } from "@/lib/supabase";
 import { CompanyInfo } from "./companyService";
 
-// Update the uploadLogo method to use the new shop_logos bucket
 async function uploadLogo(shopId: string, file: File) {
   try {
     // Validate file
@@ -111,6 +110,8 @@ async function getShopInfo() {
       otherIndustry: shop?.other_industry || "",
       logoUrl: shop?.logo_url || ""
     };
+    
+    console.log("Loaded company info:", companyInfo);
     
     return { shopId, companyInfo };
   } catch (error) {
