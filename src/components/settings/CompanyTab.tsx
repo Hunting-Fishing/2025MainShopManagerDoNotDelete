@@ -23,6 +23,7 @@ export function CompanyTab() {
     taxId: "",
     businessType: "",
     industry: "",
+    otherIndustry: "",
     logoUrl: ""
   });
   const [loading, setLoading] = useState(true);
@@ -125,7 +126,29 @@ export function CompanyTab() {
     try {
       setSaving(true);
       
-      await companyService.updateCompanyInfo(shopId, companyInfo, businessHours);
+      // Process industry data before saving
+      let industryToSave = companyInfo.industry;
+      let otherIndustryToSave = companyInfo.otherIndustry;
+      
+      // If industry is "other" and otherIndustry is provided, save both values
+      // If not, just save the selected industry
+      const dataToSave = {
+        ...companyInfo,
+        industry: industryToSave,
+        otherIndustry: industryToSave === "other" ? otherIndustryToSave : ""
+      };
+      
+      await companyService.updateCompanyInfo(shopId, dataToSave, businessHours);
+      
+      // If the user entered a custom industry, add it to the business_industries table
+      if (industryToSave === "other" && otherIndustryToSave) {
+        try {
+          await companyService.addCustomIndustry(otherIndustryToSave);
+        } catch (error) {
+          console.error("Error adding custom industry:", error);
+          // Continue anyway since the main company data was saved
+        }
+      }
       
       toast({
         title: "Success",

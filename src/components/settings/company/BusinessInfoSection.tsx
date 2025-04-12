@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BusinessConstant } from "@/hooks/useBusinessConstants";
 
@@ -10,6 +11,7 @@ interface BusinessInfoSectionProps {
     taxId: string;
     businessType: string;
     industry: string;
+    otherIndustry?: string;
   };
   businessTypes: BusinessConstant[];
   businessIndustries: BusinessConstant[];
@@ -26,6 +28,13 @@ export function BusinessInfoSection({
   onInputChange,
   onSelectChange
 }: BusinessInfoSectionProps) {
+  const [showOtherIndustry, setShowOtherIndustry] = useState(false);
+  
+  // Check if "other" is selected when component mounts or industry changes
+  useEffect(() => {
+    setShowOtherIndustry(companyInfo.industry === "other");
+  }, [companyInfo.industry]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FormField
@@ -58,7 +67,10 @@ export function BusinessInfoSection({
         <Label htmlFor="business-industry">Industry</Label>
         <Select 
           value={companyInfo.industry} 
-          onValueChange={(value) => onSelectChange('industry', value)}
+          onValueChange={(value) => {
+            onSelectChange('industry', value);
+            setShowOtherIndustry(value === "other");
+          }}
           disabled={isLoadingConstants}
         >
           <SelectTrigger id="business-industry">
@@ -71,6 +83,18 @@ export function BusinessInfoSection({
           </SelectContent>
         </Select>
       </div>
+
+      {showOtherIndustry && (
+        <FormField
+          label="Specify Industry"
+          id="company-otherIndustry"
+          value={companyInfo.otherIndustry || ""}
+          onChange={onInputChange}
+          placeholder="Enter your industry"
+          required
+          description="Please specify your industry"
+        />
+      )}
     </div>
   );
 }

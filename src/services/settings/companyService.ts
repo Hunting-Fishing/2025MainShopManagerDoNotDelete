@@ -11,6 +11,7 @@ export interface CompanyInfo {
   taxId: string;
   businessType: string;
   industry: string;
+  otherIndustry?: string;
   logoUrl: string;
 }
 
@@ -96,6 +97,7 @@ export const companyService = {
         taxId: companySettings?.settings_value?.taxId || "",
         businessType: companySettings?.settings_value?.businessType || "",
         industry: companySettings?.settings_value?.industry || "",
+        otherIndustry: companySettings?.settings_value?.otherIndustry || "",
         logoUrl: shopData.logo_url || ""
       };
       
@@ -173,7 +175,8 @@ export const companyService = {
           settings_value: {
             taxId: companyInfo.taxId,
             businessType: companyInfo.businessType,
-            industry: companyInfo.industry
+            industry: companyInfo.industry,
+            otherIndustry: companyInfo.industry === "other" ? companyInfo.otherIndustry : ""
           },
           updated_at: new Date().toISOString()
         });
@@ -254,6 +257,44 @@ export const companyService = {
       return urlData?.publicUrl;
     } catch (error) {
       console.error("Error uploading logo:", error);
+      throw error;
+    }
+  },
+  
+  async addCustomIndustry(industryName: string) {
+    try {
+      // First check if the industry already exists to avoid duplicates
+      const { data: existingIndustry } = await supabase
+        .from("business_industries")
+        .select("id")
+        .eq("label", industryName)
+        .maybeSingle();
+        
+      if (existingIndustry) {
+        // Industry already exists, no need to add it again
+        return existingIndustry.id;
+      }
+      
+      // Format the value (lowercase, replace spaces with underscores)
+      const industryValue = industryName.toLowerCase().replace(/\s+/g, '_');
+      
+      // Add the new industry to the business_industries table
+      const { data, error } = await supabase
+        .from("business_industries")
+        .insert({
+          label: industryName,
+          value: industryValue
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      return data.id;
+    } catch (error) {
+      console.error("Error adding custom industry:", error);
       throw error;
     }
   }
