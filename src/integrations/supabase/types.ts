@@ -6864,6 +6864,16 @@ export type Database = {
         Args: { referral_id: string; points?: number }
         Returns: string
       }
+      record_team_history: {
+        Args: {
+          profile_id_param: string
+          action_type_param: string
+          action_by_param: string
+          action_by_name_param: string
+          details_param: Json
+        }
+        Returns: string
+      }
       record_work_order_activity: {
         Args: {
           p_action: string

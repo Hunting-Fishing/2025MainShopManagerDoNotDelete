@@ -11,16 +11,15 @@ export const recordTeamMemberHistory = async (
   data: RecordTeamMemberHistoryData
 ): Promise<string | null> => {
   try {
+    // Use the new record_team_history database function
     const { data: record, error } = await supabase
-      .from("team_member_history")
-      .insert({
-        profile_id: data.profile_id,
-        action_type: data.action_type,
-        action_by: data.action_by,
-        action_by_name: data.action_by_name,
-        details: data.details
+      .rpc('record_team_history', {
+        profile_id_param: data.profile_id,
+        action_type_param: data.action_type,
+        action_by_param: data.action_by,
+        action_by_name_param: data.action_by_name || 'System',
+        details_param: data.details || {}
       })
-      .select("id")
       .single();
 
     if (error) {
@@ -28,7 +27,7 @@ export const recordTeamMemberHistory = async (
       return null;
     }
 
-    return record.id;
+    return record;
   } catch (error) {
     console.error("Exception recording team member history:", error);
     return null;
