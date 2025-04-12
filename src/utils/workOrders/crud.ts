@@ -1,7 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from "@/types/workOrder";
 import { generateWorkOrderId } from "./generators";
-import { mapDatabaseToAppModel, mapAppModelToDatabase, mapTimeEntryFromDb } from "./mappers";
+import { mapDatabaseToAppModel, mapAppModelToDatabase } from "./mappers";
+import { recordWorkOrderActivity } from "./activity";
 
 // Get unique technicians for filtering
 export const getUniqueTechnicians = async (): Promise<string[]> => {
@@ -49,44 +51,12 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
 
     // After creating the work order, add any inventory items
     if (workOrderData.inventoryItems && workOrderData.inventoryItems.length > 0) {
-      const inventoryItems = workOrderData.inventoryItems.map(item => ({
-        work_order_id: data.id,
-        name: item.name,
-        sku: item.sku,
-        category: item.category,
-        quantity: item.quantity,
-        unit_price: item.unitPrice
-      }));
-
-      const { error: inventoryError } = await supabase
-        .from('work_order_inventory_items')
-        .insert(inventoryItems);
-
-      if (inventoryError) {
-        console.error("Error adding inventory items:", inventoryError);
-      }
+      await addInventoryItemsToWorkOrder(data.id, workOrderData.inventoryItems);
     }
 
     // Add time entries if provided
     if (workOrderData.timeEntries && workOrderData.timeEntries.length > 0) {
-      const timeEntries = workOrderData.timeEntries.map(entry => ({
-        work_order_id: data.id,
-        employee_id: entry.employeeId,
-        employee_name: entry.employeeName,
-        start_time: entry.startTime,
-        end_time: entry.endTime,
-        duration: entry.duration,
-        notes: entry.notes || '',
-        billable: entry.billable
-      }));
-
-      const { error: timeError } = await supabase
-        .from('work_order_time_entries')
-        .insert(timeEntries);
-
-      if (timeError) {
-        console.error("Error adding time entries:", timeError);
-      }
+      await addTimeEntriesToWorkOrder(data.id, workOrderData.timeEntries);
     }
 
     // Create a base work order with required fields
@@ -128,6 +98,50 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
   }
 };
 
+// Helper function to add inventory items to a work order
+async function addInventoryItemsToWorkOrder(workOrderId: string, items: WorkOrderInventoryItem[]) {
+  const inventoryItems = items.map(item => ({
+    work_order_id: workOrderId,
+    name: item.name,
+    sku: item.sku,
+    category: item.category,
+    quantity: item.quantity,
+    unit_price: item.unitPrice
+  }));
+
+  const { error } = await supabase
+    .from('work_order_inventory_items')
+    .insert(inventoryItems);
+
+  if (error) {
+    console.error("Error adding inventory items:", error);
+    throw error;
+  }
+}
+
+// Helper function to add time entries to a work order
+async function addTimeEntriesToWorkOrder(workOrderId: string, entries: TimeEntry[]) {
+  const timeEntries = entries.map(entry => ({
+    work_order_id: workOrderId,
+    employee_id: entry.employeeId,
+    employee_name: entry.employeeName,
+    start_time: entry.startTime,
+    end_time: entry.endTime,
+    duration: entry.duration,
+    notes: entry.notes || '',
+    billable: entry.billable
+  }));
+
+  const { error } = await supabase
+    .from('work_order_time_entries')
+    .insert(timeEntries);
+
+  if (error) {
+    console.error("Error adding time entries:", error);
+    throw error;
+  }
+}
+
 // Find a work order by ID
 export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
   try {
@@ -135,8 +149,6 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
       .from('work_orders')
       .select(`
         *,
-        customers(first_name, last_name),
-        profiles(first_name, last_name),
         work_order_time_entries(*)
       `)
       .eq('id', id)
@@ -149,8 +161,37 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
     
     if (!data) return null;
     
+    // Fetch customer data separately
+    let customerData = null;
+    if (data.customer_id) {
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('first_name, last_name')
+        .eq('id', data.customer_id)
+        .single();
+      customerData = customer;
+    }
+    
+    // Fetch technician data separately
+    let technicianData = null;
+    if (data.technician_id) {
+      const { data: technician } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', data.technician_id)
+        .single();
+      technicianData = technician;
+    }
+    
+    // Combine all the data
+    const workOrderWithRelations = {
+      ...data,
+      customers: customerData,
+      profiles: technicianData
+    };
+    
     // Map database model to application model
-    return mapDatabaseToAppModel(data) as WorkOrder;
+    return mapDatabaseToAppModel(workOrderWithRelations) as WorkOrder;
   } catch (err) {
     console.error("Error in findWorkOrderById:", err);
     return null;
@@ -161,19 +202,7 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
 export const updateWorkOrder = async (updatedWorkOrder: WorkOrder): Promise<WorkOrder> => {
   try {
     // Map from app model to database model
-    const dbData: any = {
-      description: updatedWorkOrder.description,
-      status: updatedWorkOrder.status,
-      priority: updatedWorkOrder.priority,
-      notes: updatedWorkOrder.notes,
-      end_time: updatedWorkOrder.dueDate,
-      // Add more fields as needed
-    };
-    
-    // Handle snake_case fields that might not be in the database schema
-    if (updatedWorkOrder.service_category || updatedWorkOrder.serviceCategory) {
-      dbData.service_category = updatedWorkOrder.service_category || updatedWorkOrder.serviceCategory;
-    }
+    const dbData = mapAppModelToDatabase(updatedWorkOrder);
     
     const { data, error } = await supabase
       .from('work_orders')

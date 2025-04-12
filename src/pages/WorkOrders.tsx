@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
@@ -25,21 +26,53 @@ export default function WorkOrders() {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        // Modified query to address relationship issue 
+        let query = supabase
           .from('work_orders')
           .select(`
             *,
-            customers(first_name, last_name),
-            profiles(first_name, last_name),
             work_order_time_entries(*)
-          `)
-          .order('created_at', { ascending: false });
+          `);
+          
+        const { data: workOrderData, error } = await query;
           
         if (error) {
           throw error;
         }
+
+        // Fetch customer and technician data separately to avoid relationship issues
+        const workOrdersWithDetails = await Promise.all(workOrderData.map(async (order) => {
+          // Get customer data if available
+          let customerData = null;
+          if (order.customer_id) {
+            const { data } = await supabase
+              .from('customers')
+              .select('first_name, last_name')
+              .eq('id', order.customer_id)
+              .single();
+            customerData = data;
+          }
+
+          // Get technician data if available
+          let technicianData = null;
+          if (order.technician_id) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('id', order.technician_id)
+              .single();
+            technicianData = data;
+          }
+
+          // Create a combined object with all necessary data
+          return {
+            ...order,
+            customers: customerData,
+            profiles: technicianData
+          };
+        }));
         
-        const completeWorkOrders: WorkOrder[] = data.map((order) => 
+        const completeWorkOrders: WorkOrder[] = workOrdersWithDetails.map((order) => 
           mapDatabaseToAppModel(order)
         );
         

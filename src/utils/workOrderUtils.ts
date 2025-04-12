@@ -1,7 +1,11 @@
 
-// This file is deprecated - importing from the new modular structure
-// All exports are re-exported from src/utils/workOrders/index.ts
+/**
+ * @deprecated This file is deprecated. 
+ * Please import from '@/utils/workOrders' directory instead.
+ * This file will be removed in a future version.
+ */
 
+// Re-export everything from the new modular structure
 import * as workOrderUtils from './workOrders';
 export default workOrderUtils;
 
@@ -17,4 +21,7 @@ export const {
   mapTimeEntryFromDb,
   updateWorkOrder,
   getUniqueTechnicians,
+  statusMap,
+  priorityMap,
+  determinePriority
 } = workOrderUtils;

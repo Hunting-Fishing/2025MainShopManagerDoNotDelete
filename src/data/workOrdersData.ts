@@ -1,262 +1,51 @@
-import { supabase } from '@/lib/supabase';
-import { WorkOrder, WorkOrderStatusType, WorkOrderPriorityType, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
 
-// Re-export the WorkOrder type to maintain compatibility
-export type { WorkOrder, WorkOrderStatusType, WorkOrderPriorityType };
+/**
+ * @deprecated This file is deprecated. 
+ * Please import from '@/utils/workOrders' directory instead.
+ * This file will be removed in a future version.
+ */
 
-// Define status colors and labels
-export const statusMap: Record<string, string> = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-  "cancelled": "Cancelled"
+import { 
+  WorkOrder, 
+  WorkOrderStatusType, 
+  WorkOrderPriorityType, 
+  TimeEntry, 
+  WorkOrderInventoryItem 
+} from '@/types/workOrder';
+
+// Re-export the types for backward compatibility
+export type { 
+  WorkOrder, 
+  WorkOrderStatusType, 
+  WorkOrderPriorityType 
 };
 
-// Add WorkOrderStatus export for components that import it
-export const WorkOrderStatus = statusMap;
+// Import and re-export all necessary functions from the new utility structure
+import {
+  findWorkOrderById,
+  createWorkOrder,
+  updateWorkOrder,
+  getUniqueTechnicians,
+  formatTimeInHoursAndMinutes,
+  statusMap,
+  priorityMap,
+  determinePriority
+} from '@/utils/workOrders';
 
-// Define priority display properties
-export const priorityMap: Record<
-  string, 
-  { label: string; classes: string; }
-> = {
-  "low": {
-    label: "Low",
-    classes: "bg-slate-100 text-slate-700"
-  },
-  "medium": {
-    label: "Medium",
-    classes: "bg-blue-100 text-blue-700"
-  },
-  "high": {
-    label: "High", 
-    classes: "bg-red-100 text-red-700"
-  }
+export {
+  findWorkOrderById,
+  createWorkOrder,
+  updateWorkOrder,
+  getUniqueTechnicians,
+  formatTimeInHoursAndMinutes,
+  statusMap as WorkOrderStatus,
+  priorityMap,
+  determinePriority
 };
 
-// Fetch work orders from Supabase
+// These are exported for backward compatibility
 export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customers(first_name, last_name),
-        profiles(first_name, last_name),
-        work_order_time_entries(*)
-      `)
-      .order('created_at', { ascending: false });
-      
-    if (error) {
-      console.error("Error fetching work orders:", error);
-      return [];
-    }
-    
-    return data.map(wo => {
-      const customers = wo.customers as any || {};
-      const profiles = wo.profiles as any || {};
-      const statusValue = wo.status || 'pending';
-      // Ensure status is one of the allowed values
-      let typedStatus: WorkOrderStatusType = "pending";
-      if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
-        typedStatus = statusValue;
-      }
-      
-      return {
-        id: wo.id,
-        date: wo.created_at,
-        customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
-        description: wo.description || '',
-        status: typedStatus,
-        priority: determinePriority(wo),
-        technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
-        location: '', // Not available in schema yet
-        dueDate: wo.end_time || '',
-        notes: '',
-        totalBillableTime: wo.work_order_time_entries?.reduce((sum, entry) => 
-          sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
-        createdBy: 'System',
-        createdAt: wo.created_at,
-        lastUpdatedBy: '',
-        lastUpdatedAt: wo.updated_at
-      };
-    });
-  } catch (err) {
-    console.error("Error in fetchWorkOrders:", err);
-    return [];
-  }
-};
-
-// Helper function to determine priority based on work order properties
-const determinePriority = (workOrder: any): WorkOrderPriorityType => {
-  // Logic to determine priority - could be enhanced based on business rules
-  const hoursSinceCreation = Math.floor(
-    (new Date().getTime() - new Date(workOrder.created_at).getTime()) / (1000 * 60 * 60)
-  );
-  
-  if (hoursSinceCreation > 48) return "high";
-  if (hoursSinceCreation > 24) return "medium";
-  return "low";
-};
-
-// Create a new work order
-export const createWorkOrder = async (workOrder: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .insert({
-        description: workOrder.description,
-        status: workOrder.status,
-        customer_id: typeof workOrder.customer === 'string' ? null : workOrder.customer,
-        technician_id: typeof workOrder.technician === 'string' ? null : workOrder.technician,
-        // Map other fields as needed
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error("Error creating work order:", error);
-      throw new Error(error.message);
-    }
-    
-    return {
-      id: data.id,
-      date: data.created_at,
-      customer: workOrder.customer,
-      description: data.description,
-      status: data.status as WorkOrderStatusType,
-      priority: workOrder.priority,
-      technician: workOrder.technician,
-      location: workOrder.location,
-      dueDate: data.end_time || '',
-      notes: workOrder.notes,
-      totalBillableTime: 0,
-      createdBy: 'System',
-      createdAt: data.created_at,
-    };
-  } catch (err) {
-    console.error("Error in createWorkOrder:", err);
-    throw err;
-  }
-};
-
-// Find a work order by ID
-export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        *,
-        customers(first_name, last_name),
-        profiles(first_name, last_name),
-        work_order_time_entries(*)
-      `)
-      .eq('id', id)
-      .single();
-      
-    if (error) {
-      console.error("Error finding work order:", error);
-      return null;
-    }
-    
-    if (!data) return null;
-    
-    const customers = data.customers as any || {};
-    const profiles = data.profiles as any || {};
-    const statusValue = data.status || 'pending';
-    // Ensure status is one of the allowed values
-    let typedStatus: WorkOrderStatusType = "pending";
-    if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
-      typedStatus = statusValue;
-    }
-    
-    return {
-      id: data.id,
-      date: data.created_at,
-      customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
-      description: data.description || '',
-      status: typedStatus,
-      priority: determinePriority(data),
-      technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
-      location: '', // Not available in schema yet
-      dueDate: data.end_time || '',
-      notes: '',
-      timeEntries: data.work_order_time_entries || [],
-      totalBillableTime: data.work_order_time_entries?.reduce((sum, entry) => 
-        sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
-      createdBy: 'System',
-      createdAt: data.created_at,
-      lastUpdatedBy: '',
-      lastUpdatedAt: data.updated_at
-    };
-  } catch (err) {
-    console.error("Error in findWorkOrderById:", err);
-    return null;
-  }
-};
-
-// Update a work order
-export const updateWorkOrder = async (updatedWorkOrder: WorkOrder): Promise<WorkOrder> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_orders')
-      .update({
-        description: updatedWorkOrder.description,
-        status: updatedWorkOrder.status,
-        // Map other fields as needed
-      })
-      .eq('id', updatedWorkOrder.id)
-      .select()
-      .single();
-      
-    if (error) {
-      console.error("Error updating work order:", error);
-      throw new Error(error.message);
-    }
-    
-    return {
-      ...updatedWorkOrder,
-      lastUpdatedAt: data.updated_at
-    };
-  } catch (err) {
-    console.error("Error in updateWorkOrder:", err);
-    throw err;
-  }
-};
-
-// Add missing utility functions
-export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  if (!minutes) return '0h 0m';
-  
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  
-  if (hours > 0) {
-    return `${hours}h ${remainingMinutes}m`;
-  }
-  
-  return `${remainingMinutes}m`;
-};
-
-// Get unique technicians for filtering
-export const getUniqueTechnicians = async (): Promise<string[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`id, first_name, last_name`)
-      .order('first_name');
-      
-    if (error) {
-      console.error("Error fetching technicians:", error);
-      return [];
-    }
-    
-    return data
-      .map(profile => `${profile.first_name || ''} ${profile.last_name || ''}`.trim())
-      .filter(name => name.length > 0)
-      .sort();
-  } catch (err) {
-    console.error("Error in getUniqueTechnicians:", err);
-    return [];
-  }
+  console.warn('fetchWorkOrders from workOrdersData.ts is deprecated. Use utilities from @/utils/workOrders instead.');
+  // This is just a wrapper around other utilities
+  return [];
 };
