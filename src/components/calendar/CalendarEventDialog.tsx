@@ -82,10 +82,10 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
           )}
           
           {/* Assigned To */}
-          {event.assignedTo && (
+          {event.technician && (
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-500" />
-              <span>Assigned to {event.assignedTo}</span>
+              <span>Assigned to {event.technician}</span>
             </div>
           )}
           

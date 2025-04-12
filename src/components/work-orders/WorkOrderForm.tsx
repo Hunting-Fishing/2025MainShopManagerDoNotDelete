@@ -105,7 +105,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         priority: initialTemplate.priority,
         technician: initialTemplate.technician,
         location: initialTemplate.location || "",
-        dueDate: new Date(), // Always use current date
+        dueDate: new Date().toISOString().split('T')[0], // Always use current date, converted to YYYY-MM-DD string
         notes: initialTemplate.notes || "",
         inventoryItems: initialTemplate.inventoryItems || [],
       });
@@ -132,7 +132,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         // If we have a vehicle ID, store it for the component that needs it
         if (vehicleId) {
           setSelectedVehicleId(vehicleId);
-          form.setValue('vehicleId', vehicleId);
+          form.setValue('vehicle_id', vehicleId);
         }
         
         // Show a toast notification to confirm the pre-fill

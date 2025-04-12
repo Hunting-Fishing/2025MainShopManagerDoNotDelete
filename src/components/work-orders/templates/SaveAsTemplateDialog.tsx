@@ -43,8 +43,8 @@ export function SaveAsTemplateDialog({ formValues, onSave }: SaveAsTemplateDialo
       customer: customer || undefined,
       location: location || undefined,
       // Use type assertions to ensure we conform to the expected types
-      status: status as WorkOrderStatusType,
-      priority: priority as WorkOrderPriorityType,
+      status: (status as string) as WorkOrderStatusType,
+      priority: (priority as string) as WorkOrderPriorityType,
       technician: technician || "",
       notes: notes || undefined,
       inventoryItems: inventoryItems || []

@@ -58,7 +58,9 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
 
   const setFormValues = (values: Partial<WorkOrderFormValues>) => {
     Object.entries(values).forEach(([key, value]) => {
-      form.setValue(key as any, value);
+      if (key in form.getValues()) {
+        form.setValue(key as any, value);
+      }
     });
   };
 
@@ -67,15 +69,18 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
     setError(null);
     
     try {
+      // Convert data format for Supabase
+      const dbData = {
+        ...data,
+        // Make sure status is always provided
+        status: data.status || 'pending',
+        updated_at: new Date().toISOString()
+      };
+      
       // Logic for submitting work order to database
       const { data: result, error: submitError } = await supabase
         .from('work_orders')
-        .upsert([
-          {
-            ...data,
-            updated_at: new Date().toISOString()
-          }
-        ])
+        .upsert([dbData])
         .select();
       
       if (submitError) throw submitError;

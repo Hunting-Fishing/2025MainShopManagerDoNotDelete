@@ -8,7 +8,6 @@ import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
-import { CalendarEvent } from "@/types/calendar"; // Import from the main calendar types file
 
 export default function Calendar() {
   const navigate = useNavigate();
@@ -73,7 +72,7 @@ export default function Calendar() {
       
       <div className="border rounded-lg bg-white shadow">
         <CalendarView 
-          events={filteredEvents}
+          events={filteredEvents as any}
           currentDate={currentDate}
           view={view}
           loading={isLoading}

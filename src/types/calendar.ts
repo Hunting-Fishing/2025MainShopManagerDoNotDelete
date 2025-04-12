@@ -1,30 +1,11 @@
 
 import { WorkOrderInventoryItem } from "./workOrder";
+import { CalendarEvent as CalendarEventFromEvents } from "./calendar/events";
 
 export type CalendarViewType = "month" | "week" | "day";
 
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  customer: string;
-  status: string;
-  priority: string;
-  technician: string;
-  location: string;
-  type: 'work-order' | 'invoice' | 'appointment' | 'meeting' | 'break' | 'other';
-  inventoryItems?: WorkOrderInventoryItem[];
-  
-  // Original database fields
-  description?: string;
-  customer_id?: string;
-  work_order_id?: string;
-  technician_id?: string;
-  all_day?: boolean;
-  start_time?: string;
-  end_time?: string;
-}
+// Re-export the CalendarEvent type from calendar/events.ts
+export type CalendarEvent = CalendarEventFromEvents;
 
 export interface CalendarDayProps {
   date: Date;
