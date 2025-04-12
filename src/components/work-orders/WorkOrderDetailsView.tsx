@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { WorkOrder } from "@/types/workOrder";
-import { deleteWorkOrder } from "@/utils/workOrderUtils";
+import { deleteWorkOrder } from "@/utils/workOrders";
 import { useToast } from "@/hooks/use-toast";
 import { 
   AlertDialog,
