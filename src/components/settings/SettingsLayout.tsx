@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
@@ -19,6 +20,12 @@ import { AppearanceTab } from "./AppearanceTab";
 import { EmailSettingsTab } from "./EmailSettingsTab";
 import { IntegrationsTab } from "./IntegrationsTab";
 import { SecurityAdvancedTab } from "./SecurityAdvancedTab";
+import { LoyaltyTab } from "./LoyaltyTab";
+import { InventorySettingsTab } from "./InventorySettingsTab";
+import { TeamHistoryTab } from "./TeamHistoryTab";
+import { EmailSchedulingTab } from "./EmailSchedulingTab";
+import { DataExportTab } from "./DataExportTab";
+import { LanguageTab } from "./LanguageTab";
 
 export const SettingsLayout = () => {
   const [activeTab, setActiveTab] = useState("account");

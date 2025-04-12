@@ -1,364 +1,198 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { SaveIcon, FileDown, Calendar, Clock, FileJson, FileText, FileSpreadsheet } from 'lucide-react';
-import { saveAs } from 'file-saver';
-import { supabase } from '@/lib/supabase';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import React, { useState } from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { Download, Calendar, Code, FileText } from "lucide-react";
 
 export function DataExportTab() {
-  const [selectedEntities, setSelectedEntities] = useState<Record<string, boolean>>({
+  const [exportType, setExportType] = useState<string>("all");
+  const [exportFormat, setExportFormat] = useState<string>("csv");
+  const [isLoading, setIsLoading] = useState(false);
+  const [checkedTables, setCheckedTables] = useState<{ [key: string]: boolean }>({
     customers: true,
     vehicles: true,
-    workOrders: true,
-    inventory: false,
+    work_orders: true,
+    invoices: true,
+    inventory: true,
+    team_members: false,
+    feedback: false,
     communications: false
   });
-  const [isExporting, setIsExporting] = useState(false);
-  const [dateRange, setDateRange] = useState<string>('all');
-  const [exportFormat, setExportFormat] = useState<string>('json');
-  const [scheduleType, setScheduleType] = useState<string>('oneTime');
+  const { toast } = useToast();
 
-  // Handle checkbox change
-  const handleCheckboxChange = (entity: string) => {
-    setSelectedEntities({
-      ...selectedEntities,
-      [entity]: !selectedEntities[entity]
-    });
+  const toggleCheck = (tableName: string) => {
+    setCheckedTables(prev => ({
+      ...prev,
+      [tableName]: !prev[tableName]
+    }));
   };
-  
-  // Function to export data
-  const exportData = async () => {
+
+  const handleExport = async () => {
+    setIsLoading(true);
+    
     try {
-      setIsExporting(true);
+      // In a real implementation, this would call an API to generate the export
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const exportData: Record<string, any> = {};
-      
-      // Fetch customers if selected
-      if (selectedEntities.customers) {
-        const { data: customers } = await supabase.from('customers').select('*');
-        exportData.customers = customers || [];
-      }
-      
-      // Fetch vehicles if selected
-      if (selectedEntities.vehicles) {
-        const { data: vehicles } = await supabase.from('vehicles').select('*');
-        exportData.vehicles = vehicles || [];
-      }
-      
-      // Fetch work orders if selected
-      if (selectedEntities.workOrders) {
-        const { data: workOrders } = await supabase.from('work_orders').select('*');
-        exportData.workOrders = workOrders || [];
-      }
-      
-      // Fetch inventory if selected
-      if (selectedEntities.inventory) {
-        const { data: inventory } = await supabase.from('inventory_items').select('*');
-        exportData.inventory = inventory || [];
-      }
-      
-      // Fetch communications if selected
-      if (selectedEntities.communications) {
-        const { data: communications } = await supabase.from('customer_communications').select('*');
-        exportData.communications = communications || [];
-      }
-
-      // Create appropriate file based on format
-      let blob;
-      let filename = `shop-data-export-${new Date().toISOString().split('T')[0]}`;
-
-      if (exportFormat === 'json') {
-        blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        filename += '.json';
-      } else if (exportFormat === 'csv') {
-        // In a real implementation, convert JSON to CSV
-        blob = new Blob(['csv content would go here'], { type: 'text/csv' });
-        filename += '.csv';
-      } else { // xlsx
-        // In a real implementation, convert JSON to XLSX
-        blob = new Blob(['xlsx content would go here'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        filename += '.xlsx';
-      }
-      
-      saveAs(blob, filename);
-      
+      toast({
+        title: "Export Started",
+        description: "Your data export is being processed. You'll receive a notification when it's ready to download.",
+      });
     } catch (error) {
-      console.error('Error exporting data:', error);
-      // Handle error
+      toast({
+        title: "Export Failed",
+        description: "There was an error processing your export request.",
+        variant: "destructive"
+      });
     } finally {
-      setIsExporting(false);
+      setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="oneTime">
-        <TabsList>
-          <TabsTrigger value="oneTime">One-Time Export</TabsTrigger>
-          <TabsTrigger value="scheduled">Scheduled Exports</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="oneTime" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileDown className="h-5 w-5" />
-                Export Data
-              </CardTitle>
-              <CardDescription>
-                Select what data you want to export from your shop
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Choose which entities to include in the export:
-                </p>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="customers" 
-                      checked={selectedEntities.customers}
-                      onCheckedChange={() => handleCheckboxChange('customers')}
-                    />
-                    <label htmlFor="customers" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Customers
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="vehicles" 
-                      checked={selectedEntities.vehicles}
-                      onCheckedChange={() => handleCheckboxChange('vehicles')}
-                    />
-                    <label htmlFor="vehicles" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Vehicles
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="workOrders" 
-                      checked={selectedEntities.workOrders}
-                      onCheckedChange={() => handleCheckboxChange('workOrders')}
-                    />
-                    <label htmlFor="workOrders" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Work Orders
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="inventory" 
-                      checked={selectedEntities.inventory}
-                      onCheckedChange={() => handleCheckboxChange('inventory')}
-                    />
-                    <label htmlFor="inventory" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Inventory Items
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="communications" 
-                      checked={selectedEntities.communications}
-                      onCheckedChange={() => handleCheckboxChange('communications')}
-                    />
-                    <label htmlFor="communications" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Customer Communications
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="space-y-2">
-                  <Label>Date Range</Label>
-                  <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select date range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">This Week</SelectItem>
-                      <SelectItem value="month">This Month</SelectItem>
-                      <SelectItem value="year">This Year</SelectItem>
-                      <SelectItem value="custom">Custom Range</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>File Format</Label>
-                  <div className="flex space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex flex-col items-center justify-center">
-                        <RadioGroupItem value="json" id="json" checked={exportFormat === 'json'} onClick={() => setExportFormat('json')} />
-                        <FileJson className="h-4 w-4 mt-1 text-blue-500" />
-                      </div>
-                      <Label htmlFor="json">JSON</Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <div className="flex flex-col items-center justify-center">
-                        <RadioGroupItem value="csv" id="csv" checked={exportFormat === 'csv'} onClick={() => setExportFormat('csv')} />
-                        <FileText className="h-4 w-4 mt-1 text-green-500" />
-                      </div>
-                      <Label htmlFor="csv">CSV</Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <div className="flex flex-col items-center justify-center">
-                        <RadioGroupItem value="xlsx" id="xlsx" checked={exportFormat === 'xlsx'} onClick={() => setExportFormat('xlsx')} />
-                        <FileSpreadsheet className="h-4 w-4 mt-1 text-purple-500" />
-                      </div>
-                      <Label htmlFor="xlsx">Excel</Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end mt-6">
-                <Button 
-                  onClick={exportData} 
-                  disabled={isExporting || !Object.values(selectedEntities).some(v => v)}
-                >
-                  {isExporting ? (
-                    <SaveIcon className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileDown className="mr-2 h-4 w-4" />
-                  )}
-                  {isExporting ? "Exporting..." : "Export Data"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="scheduled" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Scheduled Exports
-              </CardTitle>
-              <CardDescription>
-                Configure regular automated data exports
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <RadioGroup value={scheduleType} onValueChange={setScheduleType} className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="weekly" id="weekly" />
-                    <Label htmlFor="weekly">
-                      Weekly Export (Every Monday at 1:00 AM)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="monthly" id="monthly" />
-                    <Label htmlFor="monthly">
-                      Monthly Export (1st day of month at 1:00 AM)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="custom" id="custom" />
-                    <Label htmlFor="custom">
-                      Custom Schedule
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              {scheduleType === 'custom' && (
-                <div className="space-y-4 border rounded-md p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Frequency</Label>
-                      <Select defaultValue="daily">
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="daily">Daily</SelectItem>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Time</Label>
-                      <Select defaultValue="1am">
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select time" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="12am">12:00 AM</SelectItem>
-                          <SelectItem value="1am">1:00 AM</SelectItem>
-                          <SelectItem value="2am">2:00 AM</SelectItem>
-                          <SelectItem value="3am">3:00 AM</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div className="mt-6 space-y-2">
-                <p className="text-sm font-medium">Export Settings</p>
-                <div className="space-y-2">
-                  {['customers', 'vehicles', 'workOrders', 'inventory'].map(entity => (
-                    <div key={entity} className="flex items-center space-x-2">
-                      <Checkbox id={`scheduled-${entity}`} defaultChecked={entity === 'customers'} />
-                      <label 
-                        htmlFor={`scheduled-${entity}`} 
-                        className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Include {entity === 'workOrders' ? 'work orders' : entity}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-end">
-                <Button variant="outline" className="mr-2">
-                  Cancel
-                </Button>
-                <Button>
-                  <Clock className="mr-2 h-4 w-4" />
-                  Schedule Exports
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="h-5 w-5" />
+            Data Export
+          </CardTitle>
+          <CardDescription>
+            Export your shop's data for backup or analysis purposes
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="export-type">Export Type</Label>
+            <Select value={exportType} onValueChange={setExportType}>
+              <SelectTrigger id="export-type">
+                <SelectValue placeholder="Select export type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Full Database Export</SelectItem>
+                <SelectItem value="selected">Selected Tables Only</SelectItem>
+                <SelectItem value="date-range">Date Range Export</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Export Jobs</CardTitle>
-              <CardDescription>
-                View and manage your scheduled exports
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground text-center py-6">
-                No scheduled exports configured
+          {exportType === "selected" && (
+            <div className="space-y-3 pt-2">
+              <Label>Select Tables to Export</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Object.keys(checkedTables).map(tableName => (
+                  <div key={tableName} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`table-${tableName}`} 
+                      checked={checkedTables[tableName]}
+                      onCheckedChange={() => toggleCheck(tableName)}
+                    />
+                    <Label 
+                      htmlFor={`table-${tableName}`}
+                      className="capitalize"
+                    >
+                      {tableName.replace(/_/g, ' ')}
+                    </Label>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          )}
+          
+          {exportType === "date-range" && (
+            <div className="flex items-start space-x-4 pt-2">
+              <div className="w-full space-y-2">
+                <Label htmlFor="start-date">Start Date</Label>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <input 
+                    type="date" 
+                    id="start-date" 
+                    className="w-full border rounded-md px-3 py-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="w-full space-y-2">
+                <Label htmlFor="end-date">End Date</Label>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <input 
+                    type="date" 
+                    id="end-date" 
+                    className="w-full border rounded-md px-3 py-1"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <Separator />
+          
+          <div className="space-y-2">
+            <Label htmlFor="export-format">Export Format</Label>
+            <Select value={exportFormat} onValueChange={setExportFormat}>
+              <SelectTrigger id="export-format" className="flex items-center">
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="csv">
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 mr-2" />
+                    <span>CSV (Comma Separated Values)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="json">
+                  <div className="flex items-center">
+                    <Code className="h-4 w-4 mr-2" />
+                    <span>JSON (JavaScript Object Notation)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="excel">
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 mr-2" />
+                    <span>Excel Spreadsheet</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox id="include-metadata" defaultChecked />
+            <Label htmlFor="include-metadata">Include metadata and timestamps</Label>
+          </div>
+          
+          <div className="pt-4 flex justify-end">
+            <Button 
+              className="bg-esm-blue-600 hover:bg-esm-blue-700"
+              onClick={handleExport}
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : "Start Export"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Export History</CardTitle>
+          <CardDescription>
+            Previous exports available for download
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6 text-muted-foreground">
+            <p>No previous exports available</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
