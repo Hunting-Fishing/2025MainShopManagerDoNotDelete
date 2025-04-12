@@ -1,9 +1,12 @@
+
 import { Notification, NotificationPreferences } from '@/types/notification';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
+import { playNotificationSound } from '@/utils/notificationSounds';
 
 export const createAddNotificationHandler = (
-  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>
+  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>,
+  preferences: NotificationPreferences
 ) => {
   return (notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: Notification = {
@@ -16,6 +19,13 @@ export const createAddNotificationHandler = (
     };
 
     setNotifications(prev => [newNotification, ...prev]);
+    
+    // Play notification sound based on preferences
+    if (preferences.sound && preferences.sound !== 'none') {
+      playNotificationSound(preferences.sound).catch(err => {
+        console.error('Error playing notification sound:', err);
+      });
+    }
     
     // Show a toast when a new notification arrives
     toast({
@@ -82,13 +92,27 @@ export const createHandleNewNotificationHandler = (
     // Add notification to state
     setNotifications(prev => [notification, ...prev]);
     
-    // Show toast for high priority notifications
-    if (notification.priority === 'high' || !notification.priority) {
-      toast({
-        title: notification.title,
-        description: notification.message,
-        variant: notification.type === 'error' ? 'destructive' : 'default',
-      });
+    // Check if notification should be shown based on frequency settings
+    const category = notification.category || 'system';
+    const frequency = preferences.frequencies?.[category] || 'realtime';
+    
+    // Only show toast and play sound for realtime notifications
+    if (frequency === 'realtime') {
+      // Play notification sound based on preferences
+      if (preferences.sound && preferences.sound !== 'none') {
+        playNotificationSound(preferences.sound).catch(err => {
+          console.error('Error playing notification sound:', err);
+        });
+      }
+      
+      // Show toast for high priority notifications or based on frequency
+      if (notification.priority === 'high' || !notification.priority) {
+        toast({
+          title: notification.title,
+          description: notification.message,
+          variant: notification.type === 'error' ? 'destructive' : 'default',
+        });
+      }
     }
   };
 };

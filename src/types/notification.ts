@@ -23,5 +23,7 @@ export type NotificationPreferences = {
   email: boolean;
   push: boolean;
   inApp: boolean;
+  sound?: string;
+  frequencies?: Record<string, 'realtime' | 'hourly' | 'daily' | 'weekly'>;
   subscriptions: NotificationSubscription[];
 }

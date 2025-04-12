@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { Notification } from "@/types/notification";
 import { NotificationDB } from "@/types/database.types";
@@ -266,14 +265,39 @@ export class SupabaseNotificationService implements INotificationService {
   }
 
   // Test notification function for demo purposes
-  public async triggerDemoNotification(): Promise<void> {
-    await this.addNotification({
-      title: 'Test Notification',
-      message: 'This is a test notification from Supabase.',
-      type: 'info',
-      category: 'system',
-      priority: 'medium'
-    });
+  public async triggerDemoNotification(type: 'info' | 'success' | 'warning' | 'error' = 'info'): Promise<void> {
+    const notifications = {
+      info: {
+        title: 'Test Information',
+        message: 'This is a test information notification.',
+        type: 'info' as const,
+        category: 'system' as const,
+        priority: 'medium' as const
+      },
+      success: {
+        title: 'Test Success',
+        message: 'Operation completed successfully! This is a test success notification.',
+        type: 'success' as const,
+        category: 'system' as const,
+        priority: 'medium' as const
+      },
+      warning: {
+        title: 'Test Warning',
+        message: 'This is a test warning notification. Action may be needed.',
+        type: 'warning' as const,
+        category: 'system' as const,
+        priority: 'high' as const
+      },
+      error: {
+        title: 'Test Error',
+        message: 'This is a test error notification. Something went wrong!',
+        type: 'error' as const,
+        category: 'system' as const,
+        priority: 'high' as const
+      }
+    };
+
+    await this.addNotification(notifications[type]);
   }
 
   private updateConnectionStatus(connected: boolean): void {

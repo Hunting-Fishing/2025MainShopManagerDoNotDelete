@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { Notification, NotificationPreferences } from '@/types/notification';
 import { notificationService } from '@/services/notificationService';
@@ -17,6 +16,7 @@ import {
   createUpdateSubscriptionHandler,
 } from './preferenceHandlers';
 import { supabase } from '@/lib/supabase';
+import { preloadNotificationSounds } from '@/utils/notificationSounds';
 
 export const NotificationsContext = createContext<NotificationsContextProps | undefined>(undefined);
 
@@ -43,6 +43,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       setUserId(session?.user?.id || null);
     });
     
+    // Preload notification sounds
+    preloadNotificationSounds();
+    
     return () => {
       authListener?.subscription.unsubscribe();
     };
@@ -56,9 +59,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   
   const addNotification = useCallback(
     async (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+      const handler = createAddNotificationHandler(setNotifications, preferences);
+      handler(notification);
       await notificationService.addNotification(notification);
     },
-    []
+    [preferences]
   );
   
   const markAsRead = useCallback(

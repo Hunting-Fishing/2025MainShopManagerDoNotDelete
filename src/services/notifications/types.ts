@@ -11,5 +11,10 @@ export interface INotificationService {
   disconnect(): void;
   onNotification(listener: (notification: Notification) => void): () => void;
   onConnectionStatus(listener: (connected: boolean) => void): () => void;
-  triggerDemoNotification(): void;
+  triggerDemoNotification(type?: 'info' | 'success' | 'warning' | 'error'): void;
+  addNotification(notification: Omit<Notification, 'id' | 'timestamp' | 'read'>): Promise<void>;
+  markAsRead(id: string): Promise<void>;
+  markAllAsRead(): Promise<void>;
+  clearNotification(id: string): Promise<void>;
+  clearAllNotifications(): Promise<void>;
 }
