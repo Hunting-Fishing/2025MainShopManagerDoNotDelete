@@ -22,22 +22,23 @@ export const SettingsLayout = () => {
   const [activeTab, setActiveTab] = useState("account");
   const { t } = useTranslation();
 
+  // Define tabs with proper fallback values for translations
   const tabs = [
-    { id: "account", label: t('settings.tabs.account'), icon: User },
-    { id: "company", label: t('settings.tabs.company'), icon: Building },
-    { id: "security", label: t('settings.tabs.security'), icon: Shield },
-    { id: "notifications", label: t('settings.tabs.notifications'), icon: Bell },
-    { id: "branding", label: t('settings.tabs.branding'), icon: Palette },
-    { id: "loyalty", label: t('settings.tabs.loyalty'), icon: Gift },
-    { id: "inventory", label: t('settings.tabs.inventory'), icon: Package },
-    { id: "team", label: t('settings.tabs.team'), icon: Users },
-    { id: "email", label: t('settings.tabs.email'), icon: Mail },
-    { id: "export", label: t('settings.tabs.export'), icon: Database },
-    { id: "language", label: t('settings.tabs.language'), icon: Globe2 },
+    { id: "account", label: t('settings.tabs.account', 'Account'), icon: User },
+    { id: "company", label: t('settings.tabs.company', 'Company'), icon: Building },
+    { id: "security", label: t('settings.tabs.security', 'Security'), icon: Shield },
+    { id: "notifications", label: t('settings.tabs.notifications', 'Notifications'), icon: Bell },
+    { id: "branding", label: t('settings.tabs.branding', 'Branding'), icon: Palette },
+    { id: "loyalty", label: t('settings.tabs.loyalty', 'Loyalty'), icon: Gift },
+    { id: "inventory", label: t('settings.tabs.inventory', 'Inventory'), icon: Package },
+    { id: "team", label: t('settings.tabs.team', 'Team History'), icon: Users },
+    { id: "email", label: t('settings.tabs.email', 'Email Scheduling'), icon: Mail },
+    { id: "export", label: t('settings.tabs.export', 'Data Export'), icon: Database },
+    { id: "language", label: t('settings.tabs.language', 'Language'), icon: Globe2 },
   ];
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="p-6">
       <div className="mb-6 overflow-x-auto pb-2">
         <TabsList className="inline-flex h-10 items-center justify-start space-x-1 rounded-md p-1 bg-muted/20">
           {tabs.map((tab) => (
