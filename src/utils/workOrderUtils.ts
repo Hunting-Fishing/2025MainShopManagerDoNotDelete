@@ -4,6 +4,7 @@ import { handleApiError } from "@/utils/errorHandling";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
+import { v4 as uuidv4 } from 'uuid';
 
 // Maps our application WorkOrder type to Supabase database format
 const mapToDbWorkOrder = (workOrder: Partial<WorkOrder>) => {
@@ -219,15 +220,32 @@ export const deleteWorkOrder = async (id: string): Promise<void> => {
 // Create a new work order
 export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
   try {
+    console.log("Creating work order with data:", workOrderData);
+    
     // Extract time entries and inventory items
     const timeEntries = workOrderData.timeEntries || [];
     const inventoryItems = workOrderData.inventoryItems || [];
     
-    // Create DB format object
-    const dbWorkOrder = mapToDbWorkOrder({
-      ...workOrderData,
-      date: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
-    });
+    // Generate an ID for the new work order
+    const workOrderId = uuidv4();
+    
+    // Prepare data for insertion
+    const dbWorkOrder = {
+      id: workOrderId,
+      description: workOrderData.description,
+      status: workOrderData.status,
+      customer_id: typeof workOrderData.customer === 'string' ? workOrderData.customer : null,
+      technician_id: typeof workOrderData.technician === 'string' ? null : workOrderData.technician,
+      vehicle_id: workOrderData.vehicleId || null,
+      end_time: workOrderData.dueDate || null,
+      advisor_id: null, // Could be set from current user if available
+      service_type: workOrderData.serviceCategory || null,
+      total_cost: 0, // Calculate based on inventory items and time if needed
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log("Inserting work order with data:", dbWorkOrder);
     
     // Create the work order in Supabase
     const { data, error } = await supabase
@@ -236,12 +254,16 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       .select()
       .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating work order in Supabase:", error);
+      throw error;
+    }
     
-    const workOrderId = data.id;
+    console.log("Work order created successfully:", data);
     
     // Handle time entries
     if (timeEntries.length > 0) {
+      console.log("Adding time entries:", timeEntries.length);
       for (const entry of timeEntries) {
         const { error: insertError } = await supabase
           .from('work_order_time_entries')
@@ -256,12 +278,16 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
             billable: entry.billable
           });
         
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.warn("Error inserting time entry:", insertError);
+          // Continue with other entries even if one fails
+        }
       }
     }
     
     // Handle inventory items
     if (inventoryItems.length > 0) {
+      console.log("Adding inventory items:", inventoryItems.length);
       for (const item of inventoryItems) {
         const { error: insertError } = await supabase
           .from('work_order_inventory_items')
@@ -274,16 +300,48 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
             unit_price: item.unitPrice
           });
         
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.warn("Error inserting inventory item:", insertError);
+          // Continue with other items even if one fails
+        }
       }
     }
     
     // Record activity
-    await recordWorkOrderActivity("Created", workOrderId, "system", workOrderData.createdBy || "System");
+    try {
+      await recordWorkOrderActivity(
+        "Created", 
+        workOrderId, 
+        "system", 
+        workOrderData.createdBy || "System"
+      );
+    } catch (activityError) {
+      console.warn("Failed to record activity, but work order was created:", activityError);
+    }
     
     // Return the complete work order
-    return mapFromDbWorkOrder(data, timeEntries, inventoryItems);
+    return {
+      id: data.id,
+      date: data.created_at,
+      customer: workOrderData.customer,
+      description: data.description,
+      status: data.status as "pending" | "in-progress" | "completed" | "cancelled",
+      priority: workOrderData.priority,
+      technician: workOrderData.technician,
+      location: workOrderData.location,
+      dueDate: data.end_time || '',
+      notes: workOrderData.notes,
+      inventoryItems,
+      timeEntries,
+      vehicleId: data.vehicle_id,
+      totalBillableTime: timeEntries.reduce((total, entry) => {
+        return entry.billable ? total + entry.duration : total;
+      }, 0),
+      createdBy: workOrderData.createdBy || 'System',
+      createdAt: data.created_at,
+    };
   } catch (error) {
+    console.error("Error in createWorkOrder:", error);
     const formattedError = handleApiError(error, "Failed to create work order");
     throw new Error(formattedError.message);
   }

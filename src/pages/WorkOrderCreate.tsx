@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
+import { ResponsiveContainer } from "@/components/ui/responsive-container";
 
 export default function WorkOrderCreate() {
   const { templates: workOrderTemplates, updateTemplateUsage } = useWorkOrderTemplates();
@@ -35,41 +36,37 @@ export default function WorkOrderCreate() {
     ? `Creating a new work order for ${vehicleInfo}`
     : "Create a new work order for your team to complete.";
 
-  // Fetch technicians (in a real app, this would fetch from a users/employees table)
+  // Fetch technicians from Supabase
   useEffect(() => {
     const fetchTechnicians = async () => {
       try {
-        // This is a placeholder for fetching technicians from Supabase
-        // In a real implementation, this would query a staff or users table
+        // Try to fetch staff members from profiles table
         const { data, error } = await supabase
-          .from('work_orders')
-          .select('*');
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .order('first_name', { ascending: true });
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching technicians:", error);
+          return; // Keep using default technicians
+        }
         
         if (data && data.length > 0) {
-          // Since we don't have a 'technician' field but rather 'technician_id',
-          // we'll need to handle this differently
+          // Format technician names
+          const techniciansList = data.map(tech => 
+            `${tech.first_name || ''} ${tech.last_name || ''}`.trim()
+          ).filter(name => name.length > 0);
           
-          // For now, let's use the default technicians list
-          // In a real implementation, we would fetch names from a technicians/staff table
-          // using the technician_id values
+          // Add "Unassigned" option
+          if (!techniciansList.includes("Unassigned")) {
+            techniciansList.push("Unassigned");
+          }
           
-          // We could potentially do a join query or a separate query to get technician names
-          
-          // As a fallback, we'll keep the default list and just ensure "Unassigned" is included
-          const defaultTechnicians = [
-            "Michael Brown",
-            "Sarah Johnson",
-            "David Lee",
-            "Emily Chen",
-            "Unassigned"
-          ];
-          
-          setTechnicians(defaultTechnicians);
+          setTechnicians(techniciansList);
+          console.log("Fetched technicians:", techniciansList);
         }
       } catch (error) {
-        console.error("Error fetching technicians:", error);
+        console.error("Error in fetchTechnicians:", error);
       }
     };
     
@@ -82,26 +79,28 @@ export default function WorkOrderCreate() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <WorkOrderFormHeader 
-          title={pageTitle}
-          description={pageDescription}
-        />
-        {!hasPreFilledInfo && (
-          <WorkOrderTemplateSelector
-            templates={workOrderTemplates}
-            onSelectTemplate={handleSelectTemplate}
+    <ResponsiveContainer>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <WorkOrderFormHeader 
+            title={pageTitle}
+            description={pageDescription}
           />
-        )}
-      </div>
+          {!hasPreFilledInfo && (
+            <WorkOrderTemplateSelector
+              templates={workOrderTemplates}
+              onSelectTemplate={handleSelectTemplate}
+            />
+          )}
+        </div>
 
-      {/* Form */}
-      <WorkOrderForm 
-        technicians={technicians} 
-        initialTemplate={selectedTemplate}
-      />
-    </div>
+        {/* Form */}
+        <WorkOrderForm 
+          technicians={technicians} 
+          initialTemplate={selectedTemplate}
+        />
+      </div>
+    </ResponsiveContainer>
   );
 }

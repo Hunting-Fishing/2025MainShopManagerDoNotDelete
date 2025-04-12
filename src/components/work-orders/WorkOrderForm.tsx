@@ -10,6 +10,7 @@ import { WorkOrderTemplate } from "@/types/workOrder";
 import { workOrderTemplates } from "@/data/workOrderTemplatesData";
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
+import { toast } from "@/hooks/use-toast";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -20,7 +21,6 @@ import { WorkOrderInventorySection } from "@/components/work-orders/inventory/Wo
 import { FormActions } from "@/components/work-orders/FormActions";
 import { TimeTrackingSection } from "@/components/work-orders/time-tracking/TimeTrackingSection";
 import { SaveAsTemplateDialog } from "./templates/SaveAsTemplateDialog";
-import { toast } from "@/hooks/use-toast";
 import { WorkOrderDescriptionField } from "./fields/WorkOrderDescriptionField";
 import { VehicleDetailsField } from "./fields/VehicleDetailsField";
 import { CommonServicesChecklist } from "./fields/CommonServicesChecklist";
@@ -60,10 +60,12 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
           .order('last_name', { ascending: true });
         
         if (error) {
+          console.error("Error fetching customers:", error);
           throw error;
         }
         
         if (data) {
+          console.log("Fetched customers:", data.length);
           // Apply adaptCustomerForUI to normalize each customer record
           const adaptedCustomers = data.map(customer => adaptCustomerForUI(customer));
           setCustomers(adaptedCustomers);
@@ -89,11 +91,12 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     };
 
     fetchCustomers();
-  }, []);
+  }, [customerId]);
 
   // Apply template values when initialTemplate changes
   useEffect(() => {
     if (initialTemplate) {
+      console.log("Applying template:", initialTemplate.name);
       // Reset form with template values
       form.reset({
         customer: initialTemplate.customer || "",
@@ -119,6 +122,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   // Pre-fill form with customer and vehicle information from URL
   useEffect(() => {
     if (customerId) {
+      console.log("Pre-filling form with customerId:", customerId);
       // Automatically select the customer in the form
       form.setValue('customer', customerId);
       
@@ -141,13 +145,19 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   }, [customerId, customerName, vehicleId, vehicleInfo, form]);
 
   const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
+    console.log("Updating time entries:", entries.length);
     setLocalTimeEntries(entries);
     setTimeEntries(entries);
   };
 
   const handleSaveTemplate = (template: WorkOrderTemplate) => {
+    console.log("Saving template:", template.name);
     // Add the template to the templates array
     workOrderTemplates.push(template);
+    toast({
+      title: "Template Saved",
+      description: `Template "${template.name}" has been saved.`,
+    });
   };
 
   const handleServiceChecked = (services: string[]) => {
