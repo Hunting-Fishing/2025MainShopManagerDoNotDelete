@@ -14,7 +14,7 @@ interface LoyaltyTierFormProps {
 
 export function LoyaltyTierForm({ tier, onSave, onCancel }: LoyaltyTierFormProps) {
   const [formData, setFormData] = useState<LoyaltyTier>({
-    id: tier?.id || undefined,
+    id: tier?.id,
     name: tier?.name || '',
     threshold: tier?.threshold || 0,
     benefits: tier?.benefits || '',

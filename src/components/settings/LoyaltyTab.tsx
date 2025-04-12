@@ -1,316 +1,225 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Edit2, Award, ChevronDown, ChevronUp } from "lucide-react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogTrigger
-} from "@/components/ui/dialog";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LoyaltySettings, LoyaltyTier } from "@/types/loyalty";
-import { supabase } from "@/lib/supabase";
-import { useShopId } from "@/hooks/useShopId";
-import { LoyaltyTierForm } from "./loyalty/LoyaltyTierForm";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Plus } from "lucide-react";
 import { LoyaltyTierCard } from "./loyalty/LoyaltyTierCard";
+import { LoyaltyTierForm } from "./loyalty/LoyaltyTierForm";
+import { getLoyaltySettings, updateLoyaltySettings, toggleLoyaltyProgramEnabled } from "@/services/loyalty";
+import { getShopTiers } from "@/services/loyalty/tierService";
+import { LoyaltySettings, LoyaltyTier } from "@/types/loyalty";
+import { useShopId } from "@/hooks/useShopId";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export function LoyaltyTab() {
-  const [loading, setLoading] = useState(true);
+  const { shopId } = useShopId();
+  const [activeTab, setActiveTab] = useState("settings");
+  const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<LoyaltySettings | null>(null);
   const [tiers, setTiers] = useState<LoyaltyTier[]>([]);
+  const [editingTier, setEditingTier] = useState<LoyaltyTier | null>(null);
+  const [isAddingTier, setIsAddingTier] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<LoyaltyTier | null>(null);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("settings");
-  const { toast } = useToast();
-  const { shopId } = useShopId();
 
+  // Load settings and tiers
   useEffect(() => {
-    if (shopId) {
-      loadLoyaltySettings();
-    }
+    const loadLoyaltyData = async () => {
+      if (!shopId) return;
+      
+      setIsLoading(true);
+      try {
+        // Load loyalty settings
+        const settingsData = await getLoyaltySettings(shopId);
+        setSettings(settingsData);
+        
+        // Load tiers
+        const tiersData = await getShopTiers(shopId);
+        setTiers(tiersData);
+      } catch (error) {
+        console.error('Error loading loyalty data:', error);
+        toast.error('Failed to load loyalty program data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadLoyaltyData();
   }, [shopId]);
 
-  const loadLoyaltySettings = async () => {
-    if (!shopId) return;
-    
-    setLoading(true);
-    try {
-      // Get loyalty settings
-      const { data, error } = await supabase
-        .from('loyalty_settings')
-        .select('*')
-        .eq('shop_id', shopId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-      
-      let settingsData = data;
-      
-      if (!settingsData) {
-        // Create default settings
-        const defaultSettings = {
-          shop_id: shopId,
-          is_enabled: false,
-          points_per_dollar: 1,
-          points_expiration_days: 365
-        };
-        
-        const { data: newSettings, error: createError } = await supabase
-          .from('loyalty_settings')
-          .insert(defaultSettings)
-          .select();
-          
-        if (createError) throw createError;
-        
-        settingsData = newSettings[0];
-      }
-      
-      setSettings(settingsData);
-      
-      // Get loyalty tiers
-      const { data: tierData, error: tierError } = await supabase
-        .from('loyalty_tiers')
-        .select('*')
-        .eq('shop_id', shopId)
-        .order('threshold', { ascending: true });
-        
-      if (tierError) throw tierError;
-      
-      if (tierData && tierData.length > 0) {
-        setTiers(tierData);
-      } else {
-        // Create default tiers if none exist
-        const defaultTiers = [
-          {
-            name: "Standard",
-            threshold: 0,
-            benefits: "Basic loyalty program benefits",
-            multiplier: 1,
-            color: "green",
-            shop_id: shopId,
-            settings_id: settingsData.id
-          },
-          {
-            name: "Silver",
-            threshold: 1000,
-            benefits: "5% additional points on all purchases, priority scheduling",
-            multiplier: 1.05,
-            color: "blue",
-            shop_id: shopId,
-            settings_id: settingsData.id
-          },
-          {
-            name: "Gold",
-            threshold: 5000,
-            benefits: "10% additional points on all purchases, priority scheduling, free courtesy vehicles",
-            multiplier: 1.1, 
-            color: "purple",
-            shop_id: shopId,
-            settings_id: settingsData.id
-          },
-          {
-            name: "Platinum",
-            threshold: 10000,
-            benefits: "15% additional points on all purchases, VIP service, free courtesy vehicles, complimentary inspections",
-            multiplier: 1.15,
-            color: "amber",
-            shop_id: shopId,
-            settings_id: settingsData.id
-          }
-        ];
-        
-        const { data: newTiers, error: createTierError } = await supabase
-          .from('loyalty_tiers')
-          .insert(defaultTiers)
-          .select();
-          
-        if (createTierError) throw createTierError;
-        
-        setTiers(newTiers);
-      }
-    } catch (error) {
-      console.error("Error loading loyalty settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load loyalty program settings",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEnableToggle = (checked: boolean) => {
-    setSettings(prev => prev ? { ...prev, is_enabled: checked } : null);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setSettings(prev => prev ? { ...prev, [name]: Number(value) } : null);
-  };
-
-  const handleSave = async () => {
+  // Handle settings save
+  const handleSaveSettings = async () => {
     if (!settings || !shopId) return;
     
     setIsSaving(true);
     try {
-      // Update or insert loyalty settings
-      let query;
-      if (settings.id) {
-        query = supabase
-          .from('loyalty_settings')
-          .update({
-            is_enabled: settings.is_enabled,
-            points_per_dollar: settings.points_per_dollar,
-            points_expiration_days: settings.points_expiration_days
-          })
-          .eq('id', settings.id);
-      } else {
-        query = supabase
-          .from('loyalty_settings')
-          .insert([settings]);
-      }
-      
-      const { error } = await query;
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Loyalty program settings have been saved",
-      });
-      
-      // Reload settings to ensure we have the latest data
-      loadLoyaltySettings();
+      await updateLoyaltySettings(settings);
+      toast.success('Loyalty settings saved successfully');
     } catch (error) {
-      console.error("Error saving loyalty settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save loyalty program settings",
-        variant: "destructive",
-      });
+      console.error('Error saving loyalty settings:', error);
+      toast.error('Failed to save loyalty settings');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSaveTier = async (tier: LoyaltyTier) => {
-    if (!shopId || !settings) return;
+  // Handle toggle loyalty program
+  const handleToggleLoyalty = async (enabled: boolean) => {
+    if (!settings || !shopId) return;
     
+    setIsSaving(true);
     try {
-      const tierData = {
-        ...tier,
-        shop_id: shopId,
-        settings_id: settings.id
-      };
-      
-      if (tier.id) {
-        // Update existing tier
-        const { error } = await supabase
-          .from('loyalty_tiers')
-          .update(tierData)
-          .eq('id', tier.id);
-        
-        if (error) throw error;
-        
-        setTiers(prev => prev.map(t => t.id === tier.id ? tierData : t));
-        
-        toast({
-          title: "Success",
-          description: `${tier.name} tier has been updated`,
-        });
-      } else {
-        // Create new tier
-        const { data, error } = await supabase
-          .from('loyalty_tiers')
-          .insert(tierData)
-          .select();
-        
-        if (error) throw error;
-        
-        setTiers(prev => [...prev, data[0]]);
-        
-        toast({
-          title: "Success",
-          description: `${tier.name} tier has been created`,
-        });
-      }
-      
-      setSelectedTier(null);
-    } catch (error) {
-      console.error("Error saving loyalty tier:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save loyalty tier",
-        variant: "destructive",
+      await toggleLoyaltyProgramEnabled(settings.id, enabled);
+      setSettings({
+        ...settings,
+        is_enabled: enabled
       });
+      toast.success(enabled ? 'Loyalty program enabled' : 'Loyalty program disabled');
+    } catch (error) {
+      console.error('Error toggling loyalty program:', error);
+      toast.error('Failed to update loyalty program status');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDeleteTier = async () => {
-    if (!selectedTier) return;
+  // Handle input changes for settings
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (!settings) return;
     
+    setSettings({
+      ...settings,
+      [name]: name === 'points_per_dollar' || name === 'points_expiration_days' 
+        ? Number(value) 
+        : value
+    });
+  };
+
+  // Handle adding a new tier
+  const handleAddTier = async (tier: LoyaltyTier) => {
+    if (!shopId) return;
+    
+    setIsSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('loyalty_tiers')
+        .insert({
+          name: tier.name,
+          threshold: tier.threshold,
+          benefits: tier.benefits || '',
+          multiplier: tier.multiplier,
+          color: tier.color,
+          shop_id: shopId
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      setTiers([...tiers, data]);
+      toast.success(`${tier.name} tier created successfully`);
+      setIsAddingTier(false);
+    } catch (error) {
+      console.error('Error adding loyalty tier:', error);
+      toast.error('Failed to create loyalty tier');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle updating a tier
+  const handleUpdateTier = async (tier: LoyaltyTier) => {
+    if (!shopId || !tier.id) return;
+    
+    setIsSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('loyalty_tiers')
+        .update({
+          name: tier.name,
+          threshold: tier.threshold,
+          benefits: tier.benefits,
+          multiplier: tier.multiplier,
+          color: tier.color
+        })
+        .eq('id', tier.id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      setTiers(tiers.map(t => t.id === tier.id ? data : t));
+      toast.success(`${tier.name} tier updated successfully`);
+      setEditingTier(null);
+    } catch (error) {
+      console.error('Error updating loyalty tier:', error);
+      toast.error('Failed to update loyalty tier');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle deleting a tier
+  const handleDeleteTier = async (tier: LoyaltyTier) => {
+    if (!tier.id) return;
+    
+    setIsSaving(true);
     try {
       const { error } = await supabase
         .from('loyalty_tiers')
         .delete()
-        .eq('id', selectedTier.id);
-      
+        .eq('id', tier.id);
+        
       if (error) throw error;
       
-      setTiers(prev => prev.filter(t => t.id !== selectedTier.id));
-      
-      toast({
-        title: "Success",
-        description: `${selectedTier.name} tier has been deleted`,
-      });
-      
-      setSelectedTier(null);
-      setIsDeleteAlertOpen(false);
+      setTiers(tiers.filter(t => t.id !== tier.id));
+      toast.success(`${tier.name} tier deleted`);
     } catch (error) {
-      console.error("Error deleting loyalty tier:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete loyalty tier",
-        variant: "destructive",
-      });
+      console.error('Error deleting loyalty tier:', error);
+      toast.error('Failed to delete loyalty tier');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (loading) {
+  // Handle edit tier
+  const handleEditTier = (tier: LoyaltyTier) => {
+    setEditingTier(tier);
+    setIsAddingTier(false);
+  };
+
+  // Cancel edit/add
+  const handleCancelEdit = () => {
+    setEditingTier(null);
+    setIsAddingTier(false);
+  };
+
+  // Render loading state
+  if (isLoading) {
     return (
       <div className="space-y-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex justify-center items-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+        <div className="h-32 bg-gray-200 rounded animate-pulse" />
       </div>
+    );
+  }
+
+  // No settings found
+  if (!settings) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load loyalty program settings. Please try again.
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -321,167 +230,142 @@ export function LoyaltyTab() {
           <TabsTrigger value="settings">Program Settings</TabsTrigger>
           <TabsTrigger value="tiers">Loyalty Tiers</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="settings" className="mt-4">
+
+        <TabsContent value="settings" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Loyalty Program Settings</CardTitle>
-              <CardDescription>Configure your shop's loyalty program</CardDescription>
+              <CardDescription>
+                Configure your shop's loyalty program settings and parameters.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="loyalty-enabled">Enable Loyalty Program</Label>
+                  <Label htmlFor="loyaltyEnabled">Enable Loyalty Program</Label>
                   <p className="text-sm text-muted-foreground">
-                    Turn on the loyalty program for your customers
+                    Turn on to allow customers to earn and redeem loyalty points
                   </p>
                 </div>
-                <Switch 
-                  id="loyalty-enabled" 
-                  checked={settings?.is_enabled || false}
-                  onCheckedChange={handleEnableToggle}
+                <Switch
+                  id="loyaltyEnabled"
+                  checked={settings.is_enabled}
+                  onCheckedChange={handleToggleLoyalty}
+                  disabled={isSaving}
                 />
               </div>
               
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Points Configuration</h3>
-                
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="points-per-dollar">Points Per Dollar</Label>
-                    <Input 
-                      id="points-per-dollar"
-                      name="points_per_dollar"
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={settings?.points_per_dollar || 0}
-                      onChange={handleInputChange}
-                      disabled={!settings?.is_enabled}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      How many points customers earn for each dollar spent
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="expiration-days">Points Expiration (Days)</Label>
-                    <Input 
-                      id="expiration-days"
-                      name="points_expiration_days"
-                      type="number"
-                      min="0"
-                      value={settings?.points_expiration_days || 365}
-                      onChange={handleInputChange}
-                      disabled={!settings?.is_enabled}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Number of days before earned points expire
-                    </p>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="points_per_dollar">Points Per Dollar</Label>
+                <Input
+                  id="points_per_dollar"
+                  name="points_per_dollar"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={settings.points_per_dollar}
+                  onChange={handleInputChange}
+                  disabled={isSaving}
+                />
+                <p className="text-xs text-muted-foreground">
+                  How many loyalty points customers earn per dollar spent
+                </p>
               </div>
               
-              <div className="pt-4 flex justify-end">
-                <Button 
-                  className="bg-esm-blue-600 hover:bg-esm-blue-700" 
-                  onClick={handleSave}
+              <div className="space-y-2">
+                <Label htmlFor="points_expiration_days">Points Expiration (Days)</Label>
+                <Input
+                  id="points_expiration_days"
+                  name="points_expiration_days"
+                  type="number"
+                  min="0"
+                  value={settings.points_expiration_days}
+                  onChange={handleInputChange}
                   disabled={isSaving}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Number of days until points expire (0 for no expiration)
+                </p>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  onClick={handleSaveSettings}
+                  disabled={isSaving}
+                  className="bg-esm-blue-600 hover:bg-esm-blue-700"
                 >
-                  {isSaving ? "Saving..." : "Save Settings"}
+                  Save Settings
                 </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="tiers" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Loyalty Tiers</CardTitle>
-                  <CardDescription>Manage the loyalty tiers for your program</CardDescription>
-                </div>
-                
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="bg-esm-blue-600 hover:bg-esm-blue-700">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Tier
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Loyalty Tier</DialogTitle>
-                    </DialogHeader>
-                    <LoyaltyTierForm onSave={handleSaveTier} onCancel={() => setSelectedTier(null)} />
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {tiers.length === 0 ? (
-                <div className="text-center py-8">
-                  <Award className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <p className="mt-2 text-lg font-medium">No loyalty tiers defined</p>
-                  <p className="text-sm text-muted-foreground">
-                    Create your first loyalty tier to get started
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {tiers.sort((a, b) => a.threshold - b.threshold).map((tier) => (
-                    <LoyaltyTierCard 
-                      key={tier.id}
-                      tier={tier}
-                      onEdit={() => setSelectedTier(tier)}
-                      onDelete={() => {
-                        setSelectedTier(tier);
-                        setIsDeleteAlertOpen(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
+        <TabsContent value="tiers" className="space-y-4 mt-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Loyalty Tiers</h3>
+            <Button 
+              onClick={() => { setIsAddingTier(true); setEditingTier(null); }}
+              disabled={isAddingTier || !!editingTier}
+              className="bg-esm-blue-600 hover:bg-esm-blue-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Tier
+            </Button>
+          </div>
           
-          {/* Edit Tier Dialog */}
-          <Dialog open={!!selectedTier && !isDeleteAlertOpen} onOpenChange={(open) => !open && setSelectedTier(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit {selectedTier?.name} Tier</DialogTitle>
-              </DialogHeader>
-              {selectedTier && (
+          {/* Add Tier Form */}
+          {isAddingTier && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Create New Tier</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <LoyaltyTierForm 
-                  tier={selectedTier} 
-                  onSave={handleSaveTier} 
-                  onCancel={() => setSelectedTier(null)} 
+                  onSave={handleAddTier}
+                  onCancel={handleCancelEdit}
                 />
-              )}
-            </DialogContent>
-          </Dialog>
+              </CardContent>
+            </Card>
+          )}
           
-          {/* Delete Confirmation */}
-          <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Loyalty Tier</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete the {selectedTier?.name} tier? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteTier} className="bg-red-600 hover:bg-red-700">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Edit Tier Form */}
+          {editingTier && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit {editingTier.name} Tier</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LoyaltyTierForm 
+                  tier={editingTier}
+                  onSave={handleUpdateTier}
+                  onCancel={handleCancelEdit}
+                />
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* List of Tiers */}
+          <div className="space-y-3">
+            {tiers.length === 0 ? (
+              <Card>
+                <CardContent className="py-6 text-center text-muted-foreground">
+                  No loyalty tiers defined yet. Create your first tier to get started.
+                </CardContent>
+              </Card>
+            ) : (
+              tiers
+                .sort((a, b) => a.threshold - b.threshold)
+                .map(tier => (
+                  <LoyaltyTierCard
+                    key={tier.id}
+                    tier={tier}
+                    onEdit={() => handleEditTier(tier)}
+                    onDelete={() => handleDeleteTier(tier)}
+                  />
+                ))
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

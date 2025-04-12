@@ -3,11 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerLoyalty, LoyaltyTransaction } from "@/types/loyalty";
 import { getCustomerLoyalty, createCustomerLoyalty } from './customerLoyaltyService';
 import { calculateTier } from './tierService';
+import { useShopId } from "@/hooks/useShopId";
 
 // Add points to customer
 export const addCustomerPoints = async (
   customerId: string, 
   points: number, 
+  shopId: string,
   transactionType: 'earn' | 'adjust', 
   description?: string,
   referenceId?: string,
@@ -17,7 +19,7 @@ export const addCustomerPoints = async (
   let loyalty = await getCustomerLoyalty(customerId);
   
   if (!loyalty) {
-    loyalty = await createCustomerLoyalty(customerId);
+    loyalty = await createCustomerLoyalty(customerId, shopId);
   }
 
   // Calculate new values
@@ -25,7 +27,7 @@ export const addCustomerPoints = async (
   const newLifetimePoints = loyalty.lifetime_points + (points > 0 ? points : 0); // Only add positive points to lifetime
   
   // Update tier based on lifetime points
-  const newTier = calculateTier(newLifetimePoints);
+  const newTier = await calculateTier(newLifetimePoints, shopId);
 
   // Create transaction record
   const transaction = await createLoyaltyTransaction({
@@ -43,7 +45,7 @@ export const addCustomerPoints = async (
     .update({
       current_points: newCurrentPoints,
       lifetime_points: newLifetimePoints,
-      tier: newTier
+      tier: newTier.name
     })
     .eq("id", loyalty.id)
     .select()

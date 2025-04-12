@@ -58,11 +58,13 @@ export interface LoyaltyRedemption {
 }
 
 export interface LoyaltyTier {
+  id?: string; // Added the id property
   name: string;
   threshold: number;
   benefits: string;
   multiplier?: number;
   color?: string;
+  shop_id?: string; // Added shop_id property
 }
 
 export const DEFAULT_LOYALTY_TIERS: LoyaltyTier[] = [
