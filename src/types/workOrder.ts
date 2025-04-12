@@ -65,13 +65,17 @@ export interface WorkOrder {
   // Additional fields for Supabase integration
   customer_id?: string;
   vehicle_id?: string;
+  vehicleId?: string; // client-side alias for vehicle_id
   vehicle_make?: string;
+  vehicleMake?: string; // client-side alias
   vehicle_model?: string;
+  vehicleModel?: string; // client-side alias
   technician_id?: string;
   total_cost?: number;
   estimated_hours?: number;
   service_type?: string;
   service_category?: string;
+  serviceCategory?: string; // client-side alias for service_category
   vehicleDetails?: {
     make?: string;
     model?: string;

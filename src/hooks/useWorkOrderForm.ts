@@ -80,8 +80,13 @@ export const useWorkOrderForm = () => {
       }, 0);
       
       // Prepare vehicle data if provided
-      const vehicleData = values.vehicleId ? {
+      const vehicleData: any = values.vehicleId ? {
+        vehicle_id: values.vehicleId,
         vehicleId: values.vehicleId,
+        vehicle_make: values.vehicleMake,
+        vehicleMake: values.vehicleMake,
+        vehicle_model: values.vehicleModel,
+        vehicleModel: values.vehicleModel,
         vehicleDetails: {
           make: values.vehicleMake,
           model: values.vehicleModel,
@@ -91,10 +96,17 @@ export const useWorkOrderForm = () => {
         }
       } : {};
       
+      // Map service category data
+      const serviceCategoryData = values.serviceCategory ? {
+        service_category: values.serviceCategory,
+        serviceCategory: values.serviceCategory
+      } : {};
+      
       // Create the work order with additional tracking fields
       const newWorkOrder = await createWorkOrder({
         ...values,
         ...vehicleData,
+        ...serviceCategoryData,
         dueDate: formattedDueDate,
         customer: values.customer,
         description: values.description,
@@ -109,7 +121,6 @@ export const useWorkOrderForm = () => {
         createdAt: new Date().toISOString(),
         lastUpdatedBy: currentUser.name,
         lastUpdatedAt: new Date().toISOString(),
-        serviceCategory: values.serviceCategory
       });
       
       // Record the activity
