@@ -6780,6 +6780,10 @@ export type Database = {
         Args: { parent_id: string }
         Returns: string
       }
+      get_email_processing_schedule: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
         Returns: {
@@ -6886,6 +6890,10 @@ export type Database = {
       remove_role_from_user: {
         Args: { user_role_id_param: string }
         Returns: boolean
+      }
+      update_email_processing_schedule: {
+        Args: { new_settings: Json }
+        Returns: Json
       }
     }
     Enums: {

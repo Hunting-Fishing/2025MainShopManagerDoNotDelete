@@ -11,6 +11,7 @@ import { LanguageTab } from "./LanguageTab";
 import { LoyaltyTab } from "./LoyaltyTab";
 import { InventorySettingsTab } from "./InventorySettingsTab";
 import { TeamHistoryTab } from "./TeamHistoryTab";
+import { EmailSchedulingTab } from "./EmailSchedulingTab";
 import { useTranslation } from 'react-i18next';
 
 export const SettingsLayout = () => {
@@ -20,7 +21,7 @@ export const SettingsLayout = () => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="overflow-x-auto pb-2">
-        <TabsList className="grid min-w-max grid-cols-10 w-full">
+        <TabsList className="grid min-w-max grid-cols-11 w-full">
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="company">Company</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
@@ -29,6 +30,7 @@ export const SettingsLayout = () => {
           <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
           <TabsTrigger value="language">Language</TabsTrigger>
         </TabsList>
@@ -57,6 +59,9 @@ export const SettingsLayout = () => {
         </TabsContent>
         <TabsContent value="team">
           <TeamHistoryTab />
+        </TabsContent>
+        <TabsContent value="email">
+          <EmailSchedulingTab />
         </TabsContent>
         <TabsContent value="export">
           <DataExportTab />
