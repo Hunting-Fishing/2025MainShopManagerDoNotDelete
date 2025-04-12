@@ -80,11 +80,27 @@ export function useCompanyInfo() {
     }
   }, [toast]);
 
-  // Initial data loading
+  // Initial data loading - this now runs only once when the component mounts
   useEffect(() => {
     loadCompanyInfo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadCompanyInfo]);
+  
+  // Create a separate effect to reload data when returning to this tab
+  useEffect(() => {
+    // Create a visibility change listener to reload data when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && initialized) {
+        // Only reload if we've been initialized before
+        loadCompanyInfo(false); // Don't show loading state for this refresh
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loadCompanyInfo, initialized]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -219,6 +235,9 @@ export function useCompanyInfo() {
         
         setDataChanged(false);
         setSaveComplete(true);
+        
+        // Refresh data from server to ensure we have the latest state
+        await loadCompanyInfo(false);
       } catch (error: any) {
         console.error("Failed to save company information:", error);
         toast({

@@ -1,8 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
-import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 import { 
   User, Building, Shield, Bell, Palette, 
   Database, Globe2, Gift, Package, Users, Mail,
@@ -28,9 +27,20 @@ import { DataExportTab } from "./DataExportTab";
 import { LanguageTab } from "./LanguageTab";
 
 export const SettingsLayout = () => {
-  const [activeTab, setActiveTab] = useState("account");
+  // Get active tab from localStorage or default to "account"
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem("settingsActiveTab");
+    return savedTab || "account";
+  });
+  
   const { t } = useTranslation();
   const { shopId } = useShopId();
+
+  // Save active tab to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem("settingsActiveTab", activeTab);
+    console.log("Saved settings tab:", activeTab);
+  }, [activeTab]);
 
   const tabs = [
     { id: "account", label: t('settings.tabs.account', 'Account'), icon: User },

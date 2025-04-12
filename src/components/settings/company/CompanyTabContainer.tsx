@@ -59,12 +59,10 @@ export function CompanyTabContainer() {
     }
   }, [dataChanged]);
 
-  // Only force refresh data when component initially mounts
+  // When tab changes - log it to help with debugging
   useEffect(() => {
-    if (!loading && !initialized) {
-      loadCompanyInfo();
-    }
-  }, [loadCompanyInfo, loading, initialized]);
+    console.log("Active tab changed to:", activeTab);
+  }, [activeTab]);
 
   return (
     <div className="space-y-6">
