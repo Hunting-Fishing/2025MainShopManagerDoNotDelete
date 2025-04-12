@@ -42,12 +42,12 @@ export function CompanyTabContainer() {
     }
   }, [companyInfo, businessHours, initialized, loading]);
 
-  // Force refresh data when component mounts
+  // Only force refresh data when component initially mounts
   useEffect(() => {
-    if (!loading) {
+    if (!loading && !initialized) {
       loadCompanyInfo();
     }
-  }, [loadCompanyInfo, loading]);
+  }, [loadCompanyInfo, loading, initialized]);
 
   return (
     <div className="space-y-6">
@@ -72,7 +72,7 @@ export function CompanyTabContainer() {
             <CardTitle>Company Information</CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loading && !initialized ? (
               <CompanyTabSkeleton />
             ) : (
               <>

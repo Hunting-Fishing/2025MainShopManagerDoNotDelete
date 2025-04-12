@@ -37,9 +37,11 @@ export function useCompanyInfo() {
   } = useBusinessConstants();
 
   // Function to load company info - made into a callback so we can call it after saving
-  const loadCompanyInfo = useCallback(async () => {
+  const loadCompanyInfo = useCallback(async (showLoadingState = true) => {
     try {
-      setLoading(true);
+      if (showLoadingState) {
+        setLoading(true);
+      }
       
       // Get company info
       const { shopId: id, companyInfo: info } = await companyService.getShopInfo();
@@ -69,7 +71,9 @@ export function useCompanyInfo() {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      if (showLoadingState) {
+        setLoading(false);
+      }
     }
   }, [toast]);
 
@@ -183,8 +187,8 @@ export function useCompanyInfo() {
           variant: "success"
         });
         
-        // Reload data to ensure we have the latest info
-        await loadCompanyInfo();
+        // Reload data to ensure we have the latest info, but don't show loading indicator
+        await loadCompanyInfo(false);
         setSaveComplete(true);
       } catch (error: any) {
         console.error("Failed to save company information:", error);

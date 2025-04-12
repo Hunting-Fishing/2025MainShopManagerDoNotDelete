@@ -101,11 +101,17 @@ async function updateBusinessHours(shopId: string, businessHours: any[]) {
     console.log("Business hours updated successfully");
     
     // Return the newly inserted hours to ensure state is up-to-date
-    const { data: updatedHours } = await supabase
+    const { data: updatedHours, error: fetchError } = await supabase
       .from('shop_hours')
       .select('*')
       .eq('shop_id', shopId)
       .order('day_of_week', { ascending: true });
+      
+    if (fetchError) {
+      console.error("Error fetching updated business hours:", fetchError);
+      // Don't throw here, just return the hours we intended to insert
+      return businessHours;
+    }
     
     return updatedHours || businessHours;
   } catch (error) {
