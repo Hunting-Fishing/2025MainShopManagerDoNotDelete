@@ -1,8 +1,30 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from "@/types/workOrder";
 import { generateWorkOrderId } from "./generators";
 import { mapDatabaseToAppModel, mapAppModelToDatabase, mapTimeEntryFromDb } from "./mappers";
+
+// Get unique technicians for filtering
+export const getUniqueTechnicians = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`id, first_name, last_name`)
+      .order('first_name');
+      
+    if (error) {
+      console.error("Error fetching technicians:", error);
+      return [];
+    }
+    
+    return data
+      .map(profile => `${profile.first_name || ''} ${profile.last_name || ''}`.trim())
+      .filter(name => name.length > 0)
+      .sort();
+  } catch (err) {
+    console.error("Error in getUniqueTechnicians:", err);
+    return [];
+  }
+};
 
 // Create a new work order
 export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
@@ -192,28 +214,5 @@ export const deleteWorkOrder = async (id: string): Promise<boolean> => {
   } catch (err) {
     console.error("Error in deleteWorkOrder:", err);
     throw err;
-  }
-};
-
-// Get unique technicians for filtering
-export const getUniqueTechnicians = async (): Promise<string[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`id, first_name, last_name`)
-      .order('first_name');
-      
-    if (error) {
-      console.error("Error fetching technicians:", error);
-      return [];
-    }
-    
-    return data
-      .map(profile => `${profile.first_name || ''} ${profile.last_name || ''}`.trim())
-      .filter(name => name.length > 0)
-      .sort();
-  } catch (err) {
-    console.error("Error in getUniqueTechnicians:", err);
-    return [];
   }
 };
