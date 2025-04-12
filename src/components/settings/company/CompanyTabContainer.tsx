@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -164,7 +163,9 @@ export function CompanyTabContainer() {
       };
       
       try {
-        await companyService.updateCompanyInfo(shopId, dataToSave, businessHours);
+        // Update company info and business hours separately
+        await companyService.updateCompanyInfo(shopId, dataToSave);
+        await companyService.updateBusinessHours(shopId, businessHours);
         
         toast({
           title: "Success",
