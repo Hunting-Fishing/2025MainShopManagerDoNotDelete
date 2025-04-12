@@ -3920,7 +3920,7 @@ export type Database = {
           is_enabled: boolean | null
           points_expiration_days: number | null
           points_per_dollar: number | null
-          shop_id: string | null
+          shop_id: string
           updated_at: string
         }
         Insert: {
@@ -3929,7 +3929,7 @@ export type Database = {
           is_enabled?: boolean | null
           points_expiration_days?: number | null
           points_per_dollar?: number | null
-          shop_id?: string | null
+          shop_id: string
           updated_at?: string
         }
         Update: {
@@ -3938,7 +3938,7 @@ export type Database = {
           is_enabled?: boolean | null
           points_expiration_days?: number | null
           points_per_dollar?: number | null
-          shop_id?: string | null
+          shop_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -3946,6 +3946,60 @@ export type Database = {
             foreignKeyName: "loyalty_settings_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_tiers: {
+        Row: {
+          benefits: string | null
+          color: string | null
+          created_at: string
+          id: string
+          multiplier: number | null
+          name: string
+          settings_id: string | null
+          shop_id: string
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          benefits?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          multiplier?: number | null
+          name: string
+          settings_id?: string | null
+          shop_id: string
+          threshold: number
+          updated_at?: string
+        }
+        Update: {
+          benefits?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          multiplier?: number | null
+          name?: string
+          settings_id?: string | null
+          shop_id?: string
+          threshold?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_tiers_settings_id_fkey"
+            columns: ["settings_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_settings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_tiers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },
