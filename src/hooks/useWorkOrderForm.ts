@@ -11,6 +11,9 @@ import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
 import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
 
+// Export the WorkOrderFormValues type for components
+export type WorkOrderFormValues = WorkOrderFormSchemaValues;
+
 // Mock current user - in a real app, this would come from auth context
 const currentUser = { id: "user-123", name: "Admin User" };
 

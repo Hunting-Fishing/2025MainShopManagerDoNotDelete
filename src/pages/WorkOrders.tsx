@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
 import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
 import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { mapFromDbWorkOrder } from "@/utils/supabaseMappers";
@@ -85,7 +84,8 @@ export default function WorkOrders() {
           new Set(completeWorkOrders.map(order => order.technician))
         ).sort();
         
-        setTechnicians(uniqueTechnicians);
+        // Explicitly type the result as string[]
+        setTechnicians(uniqueTechnicians as string[]);
       } catch (error) {
         console.error("Error fetching work orders:", error);
         toast({

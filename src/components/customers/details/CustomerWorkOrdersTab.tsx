@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Customer } from '@/types/customer';
@@ -101,7 +100,7 @@ export function CustomerWorkOrdersTab({
                       {workOrder.id}
                     </div>
                   </TableCell>
-                  <TableCell>{formatDate(workOrder.created_at)}</TableCell>
+                  <TableCell>{formatDate(workOrder.createdAt)}</TableCell>
                   <TableCell>{workOrder.service_type || 'General'}</TableCell>
                   <TableCell>{getStatusBadge(workOrder.status)}</TableCell>
                   <TableCell>

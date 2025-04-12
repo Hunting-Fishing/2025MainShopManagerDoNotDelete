@@ -1,8 +1,9 @@
 
 // Export all types from the individual type files
 export * from './customer';
+
 // Export types from workOrder.ts
-export { 
+export type { 
   WorkOrder, 
   WorkOrderTemplate, 
   TimeEntry, 
@@ -10,7 +11,8 @@ export {
   WorkOrderStatusType,
   WorkOrderPriorityType
 } from './workOrder';
-// Export other types from invoice.ts
+
+// Export types from invoice.ts
 export type { 
   Invoice, 
   InvoiceItem, 
@@ -18,9 +20,11 @@ export type {
   StaffMember, 
   InvoiceUpdater 
 } from './invoice';
+
 // Re-export from inventory but exclude items that would conflict with invoice exports
 export type { InventoryItem } from './inventory';
-// Re-export from vehicle
+
+// Re-export from other type files
 export * from './vehicle';
 export * from './calendar';
 export * from './interaction';

@@ -1,6 +1,8 @@
-
 import { supabase } from '@/lib/supabase';
-import { WorkOrder, WorkOrderStatusType, WorkOrderPriorityType } from '@/types/workOrder';
+import { WorkOrder, WorkOrderStatusType, WorkOrderPriorityType, TimeEntry, WorkOrderInventoryItem } from '@/types/workOrder';
+
+// Re-export the WorkOrder type to maintain compatibility
+export type { WorkOrder, WorkOrderStatusType, WorkOrderPriorityType };
 
 // Define status colors and labels
 export const statusMap: Record<string, string> = {
