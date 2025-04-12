@@ -213,10 +213,13 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       vehicleId: data.vehicle_id, // Include both casing conventions for frontend compatibility
     };
     
-    // Add service category if it exists in the data or source
-    if (data.service_category) {
-      baseWorkOrder.service_category = data.service_category;
-      baseWorkOrder.serviceCategory = data.service_category;
+    // Handle service category assignment safely
+    if (workOrderData.serviceCategory) {
+      baseWorkOrder.serviceCategory = workOrderData.serviceCategory;
+      baseWorkOrder.service_category = workOrderData.serviceCategory;
+    } else if (workOrderData.service_category) {
+      baseWorkOrder.serviceCategory = workOrderData.service_category;
+      baseWorkOrder.service_category = workOrderData.service_category;
     }
 
     return baseWorkOrder;
