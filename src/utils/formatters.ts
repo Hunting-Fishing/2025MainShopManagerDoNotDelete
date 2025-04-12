@@ -1,4 +1,3 @@
-
 /**
  * Format a number as currency
  * @param value - The number to format
@@ -75,15 +74,27 @@ export function formatPhoneNumber(phone: string): string {
   // Strip all non-numeric characters
   const cleaned = phone.replace(/\D/g, '');
   
-  // Format based on length
+  // Handle different input lengths
   if (cleaned.length === 10) {
     return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 10)}`;
   } else if (cleaned.length === 11 && cleaned.charAt(0) === '1') {
     return `(${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 11)}`;
+  } else if (cleaned.length > 10) {
+    // If more than 10 digits, truncate to 10
+    return formatPhoneNumber(cleaned.slice(-10));
   }
   
-  // If not a standard format, return the original
+  // If not a standard format, return the original or a placeholder
   return phone;
+}
+
+/**
+ * Remove non-numeric characters from a phone number
+ * @param phone Phone number string
+ * @returns Cleaned phone number with only digits
+ */
+export function cleanPhoneNumber(phone: string): string {
+  return phone.replace(/\D/g, '');
 }
 
 /**

@@ -1,6 +1,6 @@
-
 import { supabase } from "@/lib/supabase";
 import { CompanyInfo } from "./companyService";
+import { cleanPhoneNumber, formatPhoneNumber } from "@/utils/formatters";
 
 async function uploadLogo(shopId: string, file: File) {
   try {
@@ -123,27 +123,32 @@ async function getShopInfo() {
 
 async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
   try {
-    console.log("Updating company info for shop", shopId, "with data:", companyInfo);
+    // Clean phone number before saving
+    const cleanedCompanyInfo = {
+      ...companyInfo,
+      phone: cleanPhoneNumber(companyInfo.phone || '')
+    };
+
+    console.log("Updating company info with cleaned phone:", cleanedCompanyInfo);
     
-    // Update shop record
     const { data, error } = await supabase
       .from('shops')
       .update({
-        name: companyInfo.name,
-        address: companyInfo.address,
-        city: companyInfo.city,
-        state: companyInfo.state,
-        postal_code: companyInfo.zip,
-        phone: companyInfo.phone,
-        email: companyInfo.email,
-        tax_id: companyInfo.taxId,
-        business_type: companyInfo.businessType,
-        industry: companyInfo.industry,
-        other_industry: companyInfo.otherIndustry,
+        name: cleanedCompanyInfo.name,
+        address: cleanedCompanyInfo.address,
+        city: cleanedCompanyInfo.city,
+        state: cleanedCompanyInfo.state,
+        postal_code: cleanedCompanyInfo.zip,
+        phone: cleanedCompanyInfo.phone,
+        email: cleanedCompanyInfo.email,
+        tax_id: cleanedCompanyInfo.taxId,
+        business_type: cleanedCompanyInfo.businessType,
+        industry: cleanedCompanyInfo.industry,
+        other_industry: cleanedCompanyInfo.otherIndustry,
         updated_at: new Date().toISOString()
       })
       .eq('id', shopId)
-      .select('*'); // Select all fields to return updated record
+      .select('*');
       
     if (error) {
       console.error("Error updating shop info:", error);
@@ -152,14 +157,14 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
     
     console.log("Company info updated successfully:", data);
     
-    // Return formatted updated data
+    // Return formatted data
     const updatedCompanyInfo: CompanyInfo = {
       name: data[0]?.name || companyInfo.name,
       address: data[0]?.address || companyInfo.address,
       city: data[0]?.city || companyInfo.city,
       state: data[0]?.state || companyInfo.state,
       zip: data[0]?.postal_code || companyInfo.zip,
-      phone: data[0]?.phone || companyInfo.phone,
+      phone: formatPhoneNumber(data[0]?.phone || companyInfo.phone),
       email: data[0]?.email || companyInfo.email,
       taxId: data[0]?.tax_id || companyInfo.taxId,
       businessType: data[0]?.business_type || companyInfo.businessType,

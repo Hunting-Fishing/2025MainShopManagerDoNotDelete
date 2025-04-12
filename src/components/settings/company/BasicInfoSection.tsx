@@ -1,8 +1,8 @@
-
 import React from "react";
 import { FormField } from "@/components/ui/form-field";
 import { LogoUploadSection } from "./LogoUploadSection";
 import { CompanyInfo } from "@/services/settings/companyService";
+import { formatPhoneNumber } from "@/utils/formatters";
 
 interface BasicInfoSectionProps {
   companyInfo: CompanyInfo;
@@ -47,7 +47,7 @@ export function BasicInfoSection({
         label="Phone"
         id="company-phone"
         type="tel"
-        value={companyInfo.phone || ""}
+        value={formatPhoneNumber(companyInfo.phone || "")}
         onChange={onInputChange}
       />
       
