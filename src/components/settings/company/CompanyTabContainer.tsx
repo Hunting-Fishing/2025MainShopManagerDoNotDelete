@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ export function CompanyTabContainer() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   
   const { toast } = useToast();
-  const { businessTypes, businessIndustries, isLoading: isLoadingConstants } = useBusinessConstants();
+  const { businessTypes, businessIndustries, isLoading: isLoadingConstants, fetchBusinessConstants } = useBusinessConstants();
 
   useEffect(() => {
     loadCompanyInfo();
@@ -83,7 +82,8 @@ export function CompanyTabContainer() {
   const handleSelectChange = (field: string, value: string) => {
     setCompanyInfo(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
+      ...(field === 'industry' && value !== 'other' ? { otherIndustry: '' } : {})
     }));
   };
 
@@ -137,7 +137,14 @@ export function CompanyTabContainer() {
         try {
           // Add the custom industry to the database and get its ID
           const industryId = await companyService.addCustomIndustry(companyInfo.otherIndustry);
-          console.log("Added custom industry with ID:", industryId);
+          
+          if (industryId) {
+            console.log("Added custom industry with ID:", industryId);
+            // Refresh the business constants to include the new industry
+            await fetchBusinessConstants();
+            // Note: We'll keep the UI as "other" for this save, next time they load
+            // the form it will show their custom industry in the dropdown
+          }
         } catch (error) {
           console.error("Error adding custom industry:", error);
           // Continue with saving other data

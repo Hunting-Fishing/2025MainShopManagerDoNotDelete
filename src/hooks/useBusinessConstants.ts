@@ -14,10 +14,6 @@ export function useBusinessConstants() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBusinessConstants();
-  }, []);
-
   const fetchBusinessConstants = async () => {
     setIsLoading(true);
     setError(null);
@@ -106,6 +102,10 @@ export function useBusinessConstants() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchBusinessConstants();
+  }, []);
 
   return { 
     businessTypes, 
