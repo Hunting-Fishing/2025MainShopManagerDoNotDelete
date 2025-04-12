@@ -13,26 +13,43 @@ import { InventorySettingsTab } from "./InventorySettingsTab";
 import { TeamHistoryTab } from "./TeamHistoryTab";
 import { EmailSchedulingTab } from "./EmailSchedulingTab";
 import { useTranslation } from 'react-i18next';
+import { 
+  User, Building, Shield, Bell, Palette, 
+  Database, Globe2, Gift, Package, Users, Mail 
+} from "lucide-react";
 
 export const SettingsLayout = () => {
   const [activeTab, setActiveTab] = useState("account");
   const { t } = useTranslation();
 
+  const tabs = [
+    { id: "account", label: t('settings.tabs.account'), icon: User },
+    { id: "company", label: t('settings.tabs.company'), icon: Building },
+    { id: "security", label: t('settings.tabs.security'), icon: Shield },
+    { id: "notifications", label: t('settings.tabs.notifications'), icon: Bell },
+    { id: "branding", label: t('settings.tabs.branding'), icon: Palette },
+    { id: "loyalty", label: t('settings.tabs.loyalty'), icon: Gift },
+    { id: "inventory", label: t('settings.tabs.inventory'), icon: Package },
+    { id: "team", label: t('settings.tabs.team'), icon: Users },
+    { id: "email", label: t('settings.tabs.email'), icon: Mail },
+    { id: "export", label: t('settings.tabs.export'), icon: Database },
+    { id: "language", label: t('settings.tabs.language'), icon: Globe2 },
+  ];
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <div className="overflow-x-auto pb-2">
-        <TabsList className="grid min-w-max grid-cols-11 w-full">
-          <TabsTrigger value="account">{t('settings.tabs.account')}</TabsTrigger>
-          <TabsTrigger value="company">{t('settings.tabs.company')}</TabsTrigger>
-          <TabsTrigger value="security">{t('settings.tabs.security')}</TabsTrigger>
-          <TabsTrigger value="notifications">{t('settings.tabs.notifications')}</TabsTrigger>
-          <TabsTrigger value="branding">{t('settings.tabs.branding')}</TabsTrigger>
-          <TabsTrigger value="loyalty">{t('settings.tabs.loyalty')}</TabsTrigger>
-          <TabsTrigger value="inventory">{t('settings.tabs.inventory')}</TabsTrigger>
-          <TabsTrigger value="team">{t('settings.tabs.team')}</TabsTrigger>
-          <TabsTrigger value="email">{t('settings.tabs.email')}</TabsTrigger>
-          <TabsTrigger value="export">{t('settings.tabs.export')}</TabsTrigger>
-          <TabsTrigger value="language">{t('settings.tabs.language')}</TabsTrigger>
+      <div className="mb-6 overflow-x-auto pb-2">
+        <TabsList className="inline-flex h-10 items-center justify-start space-x-1 rounded-md p-1 bg-muted/20">
+          {tabs.map((tab) => (
+            <TabsTrigger 
+              key={tab.id} 
+              value={tab.id}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <tab.icon className="h-4 w-4" />
+              <span>{tab.label}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
       </div>
       <div className="mt-6">

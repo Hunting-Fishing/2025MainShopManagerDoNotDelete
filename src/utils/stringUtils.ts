@@ -21,3 +21,41 @@ export function camelCaseToTitleCase(str: string): string {
   const result = str.replace(/([A-Z])/g, ' $1');
   return capitalize(result);
 }
+
+/**
+ * Truncates text with ellipsis if it exceeds the specified length
+ * @param str Text to truncate
+ * @param length Maximum allowed length
+ * @returns Truncated string with ellipsis if needed
+ */
+export function truncateText(str: string, length: number): string {
+  if (!str || typeof str !== 'string') return '';
+  
+  if (str.length <= length) return str;
+  return str.slice(0, length) + '...';
+}
+
+/**
+ * Format a number with proper thousand separators
+ * @param num Number to format
+ * @param locale Locale to use for formatting
+ * @returns Formatted number string
+ */
+export function formatNumber(num: number, locale: string = 'en-US'): string {
+  if (num === undefined || num === null) return '';
+  
+  return new Intl.NumberFormat(locale).format(num);
+}
+
+/**
+ * Converts kebab-case to camelCase
+ * @param str Kebab case string
+ * @returns camelCase string
+ */
+export function kebabToCamelCase(str: string): string {
+  if (!str || typeof str !== 'string') return '';
+  
+  return str.replace(/-([a-z])/g, function(g) { 
+    return g[1].toUpperCase(); 
+  });
+}

@@ -54,7 +54,7 @@ export function FormField({
       <Input
         id={fieldId}
         className={cn(
-          isMobile ? "px-3 py-2 text-base" : "text-sm",
+          "transition-all duration-200 focus:ring-2 focus:ring-offset-0 focus:ring-primary/20",
           error && "border-destructive",
           inputClassName
         )}
@@ -80,4 +80,8 @@ export function FormField({
       )}
     </div>
   );
+}
+
+export function RequiredIndicator() {
+  return <span className="text-destructive ml-1">*</span>
 }

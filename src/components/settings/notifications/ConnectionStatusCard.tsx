@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wifi, WifiOff, Bell } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ConnectionStatusCardProps {
   connectionStatus: boolean;
@@ -14,16 +15,24 @@ export function ConnectionStatusCard({
   onTestNotification 
 }: ConnectionStatusCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className="overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-card to-muted/50">
         <div className="space-y-1">
-          <CardTitle>Notification System Status</CardTitle>
+          <CardTitle className="text-lg">Notification System Status</CardTitle>
         </div>
-        {connectionStatus ? (
-          <Wifi className="h-5 w-5 text-green-500" />
-        ) : (
-          <WifiOff className="h-5 w-5 text-red-500" />
-        )}
+        <motion.div
+          animate={{ 
+            scale: connectionStatus ? [1, 1.2, 1] : 1, 
+            opacity: connectionStatus ? 1 : 0.7 
+          }}
+          transition={{ duration: 1, repeat: connectionStatus ? Infinity : 0, repeatDelay: 4 }}
+        >
+          {connectionStatus ? (
+            <Wifi className="h-5 w-5 text-green-500" />
+          ) : (
+            <WifiOff className="h-5 w-5 text-destructive" />
+          )}
+        </motion.div>
       </CardHeader>
       <CardContent className="pt-4">
         <div className="flex items-center justify-between">
@@ -33,7 +42,7 @@ export function ConnectionStatusCard({
                 ? "You are connected to the notification system"
                 : "You are disconnected from the notification system"}
             </p>
-            <p className={`text-sm mt-1 ${connectionStatus ? "text-green-600" : "text-red-600"}`}>
+            <p className={`text-sm mt-1 font-medium ${connectionStatus ? "text-green-600" : "text-destructive"}`}>
               {connectionStatus ? "Active" : "Inactive"}
             </p>
           </div>
@@ -42,6 +51,7 @@ export function ConnectionStatusCard({
             disabled={!connectionStatus}
             size="sm"
             variant="outline"
+            className="hover:bg-secondary"
           >
             <Bell className="mr-2 h-4 w-4" />
             Test Notification
