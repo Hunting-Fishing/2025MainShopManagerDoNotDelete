@@ -28,6 +28,7 @@ import {
   getUniqueTechnicians,
   formatTimeInHoursAndMinutes,
   statusMap,
+  WorkOrderStatus,
   priorityMap,
   determinePriority
 } from '@/utils/workOrders';
@@ -40,7 +41,7 @@ export {
   getUniqueTechnicians,
   formatTimeInHoursAndMinutes,
   statusMap,
-  statusMap as WorkOrderStatus, // Export both names for backward compatibility
+  WorkOrderStatus, // Already imported as WorkOrderStatus
   priorityMap,
   determinePriority
 };

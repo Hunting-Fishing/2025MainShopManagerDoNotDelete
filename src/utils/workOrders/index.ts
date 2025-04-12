@@ -6,13 +6,16 @@ export * from './mappers';
 export * from './crud';
 export * from './activity';
 
-// Define standard status and priority maps
+// Define standard status and priority maps as the single source of truth
 export const statusMap = {
   "pending": "Pending",
   "in-progress": "In Progress",
   "completed": "Completed",
   "cancelled": "Cancelled"
 };
+
+// Also export with legacy name for backward compatibility
+export const WorkOrderStatus = statusMap;
 
 export const priorityMap = {
   "low": {
@@ -34,6 +37,3 @@ export const determinePriority = (dueDate: string, status: string): "low" | "med
   // Implementation logic here
   return "medium";
 };
-
-// Define standard entrypoint for all common work order utilities
-// This allows a simpler import pattern: import { functionName } from '@/utils/workOrders'

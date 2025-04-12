@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -9,7 +8,7 @@ import { WorkOrder } from "@/types/workOrder";
 import { updateWorkOrder } from "@/utils/workOrders";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { workOrderFormSchema, WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";
+import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
 import { handleFormError, isNetworkError, handleNetworkError } from "@/utils/errorHandling";
 
 // Mock current user - in a real app, this would come from auth context

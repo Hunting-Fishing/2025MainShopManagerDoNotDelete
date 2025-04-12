@@ -1,108 +1,117 @@
-
-import { format } from "date-fns";
-import { CalendarEvent } from "@/types/calendar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { statusMap, priorityMap } from "@/utils/workOrders";
+import { CalendarEvent } from "@/types/calendar";
 import { Badge } from "@/components/ui/badge";
+import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
+import { statusMap } from "@/utils/workOrders"; // Updated import path
+import { formatDate } from "@/utils/date";
 import { Link } from "react-router-dom";
-import { Calendar, Clock, MapPin, User, FileText } from "lucide-react";
 
 interface CalendarEventDialogProps {
-  event: CalendarEvent;
-  open: boolean;
+  event: CalendarEvent | null;
+  isOpen: boolean;
   onClose: () => void;
 }
 
-export function CalendarEventDialog({ 
-  event, 
-  open, 
-  onClose 
-}: CalendarEventDialogProps) {
+export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
+  if (!event) return null;
+
+  // Format the event times for display
+  const startTime = new Date(event.start).toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  const endTime = new Date(event.end).toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  const eventDate = formatDate(event.start);
+
+  // Determine if this is a work order event
+  const isWorkOrder = event.type === 'work-order';
+  
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{event.title}</DialogTitle>
-          <DialogDescription>
-            Work Order #{event.id}
-          </DialogDescription>
+          <DialogTitle className="text-xl">{event.title}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <div className="text-sm text-slate-500">Customer</div>
-              <div className="font-medium">{event.customer}</div>
-            </div>
-            <Badge className={priorityMap[event.priority].classes.replace("text-xs font-medium", "")}>
-              {priorityMap[event.priority].label}
+          {/* Event Type Badge */}
+          <div className="flex items-center justify-between">
+            <Badge variant={event.type === 'work-order' ? 'default' : 'secondary'}>
+              {event.type === 'work-order' ? 'Work Order' : 'Appointment'}
             </Badge>
+            
+            {/* Status Badge - Only for work orders */}
+            {isWorkOrder && event.status && (
+              <Badge 
+                variant="outline" 
+                className={`
+                  ${event.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
+                  ${event.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : ''}
+                  ${event.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''}
+                  ${event.status === 'cancelled' ? 'bg-gray-100 text-gray-800' : ''}
+                `}
+              >
+                {statusMap[event.status] || event.status}
+              </Badge>
+            )}
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <div className="text-sm text-slate-500 flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                Start Date
-              </div>
-              <div>{format(new Date(event.start), "MMM d, yyyy")}</div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="text-sm text-slate-500 flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                Due Date
-              </div>
-              <div>{format(new Date(event.end), "MMM d, yyyy")}</div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="text-sm text-slate-500 flex items-center gap-1">
-                <User className="h-4 w-4" />
-                Technician
-              </div>
-              <div>{event.technician}</div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="text-sm text-slate-500 flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                Location
-              </div>
-              <div>{event.location}</div>
-            </div>
+          {/* Date and Time */}
+          <div className="flex items-center gap-2 text-sm">
+            <CalendarIcon className="h-4 w-4 text-gray-500" />
+            <span>{eventDate}</span>
+            <span className="text-gray-500">•</span>
+            <Clock className="h-4 w-4 text-gray-500" />
+            <span>{startTime} - {endTime}</span>
           </div>
           
-          <div className="space-y-1">
-            <div className="text-sm text-slate-500">Status</div>
-            <div className="inline-block">
-              <span className={`status-badge status-${event.status}`}>
-                {String(statusMap[event.status])}
-              </span>
+          {/* Location */}
+          {event.location && (
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-gray-500" />
+              <span>{event.location}</span>
             </div>
-          </div>
+          )}
+          
+          {/* Assigned To */}
+          {event.assignedTo && (
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-gray-500" />
+              <span>Assigned to {event.assignedTo}</span>
+            </div>
+          )}
+          
+          {/* Description */}
+          {event.description && (
+            <div className="pt-2">
+              <div className="flex items-center gap-2 text-sm mb-1">
+                <FileText className="h-4 w-4 text-gray-500" />
+                <span className="font-medium">Description</span>
+              </div>
+              <p className="text-sm text-gray-600 pl-6">{event.description}</p>
+            </div>
+          )}
         </div>
         
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
           
-          <div className="space-x-2">
-            <Button variant="outline" asChild>
-              <Link to={`/invoices/from-work-order/${event.id}`}>
-                <FileText className="mr-2 h-4 w-4" />
-                Create Invoice
-              </Link>
-            </Button>
-            
+          {isWorkOrder && event.id && (
             <Button asChild>
               <Link to={`/work-orders/${event.id}`}>
-                View Details
+                View Work Order
               </Link>
             </Button>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

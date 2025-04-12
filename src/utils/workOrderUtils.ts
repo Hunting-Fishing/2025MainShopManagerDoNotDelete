@@ -22,6 +22,7 @@ export const {
   updateWorkOrder,
   getUniqueTechnicians,
   statusMap,
+  WorkOrderStatus,
   priorityMap,
   determinePriority
 } = workOrderUtils;

@@ -1,39 +1,22 @@
-
-import { useState } from "react";
-import { Search, Filter, Calendar, RefreshCw, SlidersHorizontal, Download, ChevronDown } from "lucide-react";
+import React from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { statusMap } from "@/utils/workOrders";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { WorkOrdersExportMenu } from "./WorkOrdersExportMenu";
+import { statusMap } from "@/utils/workOrders"; // Updated import path
 
 interface WorkOrderFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   statusFilter: string[];
-  setStatusFilter: (statuses: string[]) => void;
+  setStatusFilter: (status: string[]) => void;
   selectedTechnician: string;
-  setSelectedTechnician: (tech: string) => void;
+  setSelectedTechnician: (technician: string) => void;
   technicians: string[];
   resetFilters: () => void;
 }
 
-export default function WorkOrderFilters({
+const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
   searchQuery,
   setSearchQuery,
   statusFilter,
@@ -42,104 +25,74 @@ export default function WorkOrderFilters({
   setSelectedTechnician,
   technicians,
   resetFilters,
-}: WorkOrderFiltersProps) {
-  const isMobile = useIsMobile();
-  const [filtersVisible, setFiltersVisible] = useState(!isMobile);
-
+}) => {
   return (
-    <div className="space-y-4">
-      <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-        <Input
-          type="search"
-          placeholder="Search work orders..."
-          className="pl-10 w-full"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {isMobile && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="absolute right-2 top-1/2 -translate-y-1/2"
-            onClick={() => setFiltersVisible(!filtersVisible)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
-        )}
-      </div>
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Search Input */}
+        <div>
+          <Label htmlFor="search">Search</Label>
+          <Input
+            type="search"
+            id="search"
+            placeholder="Search work orders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
 
-      {filtersVisible && (
-        <div className="flex flex-wrap gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Status
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {Object.entries(statusMap).map(([key, value]) => (
-                <DropdownMenuCheckboxItem
-                  key={key}
-                  checked={statusFilter.includes(key)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setStatusFilter([...statusFilter, key]);
-                    } else {
-                      setStatusFilter(statusFilter.filter((s) => s !== key));
-                    }
-                  }}
-                >
-                  {String(value)}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
+        {/* Status Filter */}
+        <div>
+          <Label htmlFor="status">Status</Label>
           <Select
-            value={selectedTechnician}
-            onValueChange={setSelectedTechnician}
+            onValueChange={(value) =>
+              setStatusFilter((prev) =>
+                prev.includes(value)
+                  ? prev.filter((item) => item !== value)
+                  : [...prev, value]
+              )
+            }
+            defaultValue={statusFilter.join(" ")}
+            multiple
           >
-            <SelectTrigger className={isMobile ? "w-full" : "w-[180px]"}>
-              <SelectValue placeholder="All Technicians" />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Technicians</SelectItem>
-              {technicians.map((tech) => (
-                <SelectItem key={tech} value={tech}>
-                  {tech}
+              {Object.entries(statusMap).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  {String(value)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          {!isMobile && (
-            <Button variant="outline" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Date Range
-            </Button>
-          )}
-
-          <Button variant="outline" className="flex items-center gap-2" onClick={resetFilters}>
-            <RefreshCw className="h-4 w-4" />
-            Reset
-          </Button>
-
-          {!isMobile && (
-            <>
-              <Button variant="outline" className="flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4" />
-                More Filters
-              </Button>
-            </>
-          )}
         </div>
-      )}
+
+        {/* Technician Filter */}
+        <div>
+          <Label htmlFor="technician">Technician</Label>
+          <Select onValueChange={setSelectedTechnician} defaultValue={selectedTechnician}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by technician" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Technicians</SelectItem>
+              {technicians.map((technician) => (
+                <SelectItem key={technician} value={technician}>
+                  {technician}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Reset Filters Button */}
+      <Button variant="outline" onClick={resetFilters}>
+        Reset Filters
+      </Button>
     </div>
   );
-}
+};
+
+export default WorkOrderFilters;
