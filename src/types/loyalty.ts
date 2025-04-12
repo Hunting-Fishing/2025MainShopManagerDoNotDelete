@@ -1,13 +1,12 @@
 
-// Define loyalty program types
 export interface LoyaltySettings {
   id: string;
   shop_id: string;
   is_enabled: boolean;
   points_per_dollar: number;
   points_expiration_days: number;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CustomerLoyalty {
@@ -19,17 +18,6 @@ export interface CustomerLoyalty {
   tier: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface LoyaltyTransaction {
-  id: string;
-  customer_id: string;
-  points: number;
-  transaction_type: 'earn' | 'redeem' | 'expire' | 'adjust';
-  description?: string;
-  reference_id?: string;
-  reference_type?: string;
-  created_at: string;
 }
 
 export interface LoyaltyReward {
@@ -45,50 +33,65 @@ export interface LoyaltyReward {
   updated_at: string;
 }
 
+export interface LoyaltyTransaction {
+  id: string;
+  customer_id: string;
+  points: number;
+  transaction_type: 'earn' | 'redeem' | 'expire' | 'adjust';
+  description?: string;
+  reference_id?: string;
+  reference_type?: string;
+  created_at: string;
+}
+
 export interface LoyaltyRedemption {
   id: string;
   customer_id: string;
-  reward_id?: string;
+  reward_id: string;
   points_used: number;
   status: 'pending' | 'completed' | 'cancelled';
+  notes?: string;
+  used_at?: string;
   created_at: string;
   updated_at: string;
-  used_at?: string;
-  notes?: string;
   reward?: LoyaltyReward;
 }
 
-// Tier definitions
 export interface LoyaltyTier {
   name: string;
   threshold: number;
-  perks: string[];
-  color: string;
+  benefits: string;
+  multiplier?: number;
+  color?: string;
 }
 
 export const DEFAULT_LOYALTY_TIERS: LoyaltyTier[] = [
   {
-    name: 'Standard',
+    name: "Standard",
     threshold: 0,
-    perks: ['Basic member benefits'],
-    color: 'bg-slate-500'
+    benefits: "Basic loyalty program benefits",
+    multiplier: 1,
+    color: "green"
   },
   {
-    name: 'Silver',
+    name: "Silver",
     threshold: 1000,
-    perks: ['5% discount on services', 'Priority scheduling'],
-    color: 'bg-gray-400'
+    benefits: "5% additional points on all purchases, priority scheduling",
+    multiplier: 1.05,
+    color: "blue"
   },
   {
-    name: 'Gold',
+    name: "Gold",
     threshold: 5000,
-    perks: ['10% discount on services', 'Free vehicle inspections', 'Priority scheduling'],
-    color: 'bg-yellow-500'
+    benefits: "10% additional points on all purchases, priority scheduling, free courtesy vehicles",
+    multiplier: 1.1,
+    color: "purple"
   },
   {
-    name: 'Platinum',
+    name: "Platinum",
     threshold: 10000,
-    perks: ['15% discount on services', 'Free vehicle inspections', 'Priority scheduling', 'Complimentary loaner vehicles'],
-    color: 'bg-blue-600'
+    benefits: "15% additional points on all purchases, VIP service, free courtesy vehicles, complimentary inspections",
+    multiplier: 1.15,
+    color: "amber"
   }
 ];
