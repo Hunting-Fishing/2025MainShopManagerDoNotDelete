@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
@@ -6,7 +7,7 @@ import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination"
 import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { mapFromDbWorkOrder } from "@/utils/supabaseMappers";
+import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
 
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,64 +29,28 @@ export default function WorkOrders() {
         // Fetch all work orders
         const { data, error } = await supabase
           .from('work_orders')
-          .select('*')
+          .select(`
+            *,
+            customers(first_name, last_name),
+            profiles(first_name, last_name),
+            work_order_time_entries(*)
+          `)
           .order('created_at', { ascending: false });
           
         if (error) {
           throw error;
         }
         
-        // Process each work order with its related data
-        const completeWorkOrders = await Promise.all(
-          data.map(async (order) => {
-            // Fetch time entries
-            const timeEntriesResponse = await supabase
-              .from('work_order_time_entries')
-              .select('*')
-              .eq('work_order_id', order.id)
-              .order('created_at', { ascending: false });
-            
-            // Fetch inventory items
-            const inventoryItemsResponse = await supabase
-              .from('work_order_inventory_items')
-              .select('*')
-              .eq('work_order_id', order.id);
-            
-            // Convert to our application format
-            const timeEntries = (timeEntriesResponse.data || []).map((entry: any) => ({
-              id: entry.id,
-              employeeId: entry.employee_id,
-              employeeName: entry.employee_name,
-              startTime: entry.start_time,
-              endTime: entry.end_time,
-              duration: entry.duration,
-              notes: entry.notes,
-              billable: entry.billable
-            }));
-            
-            const inventoryItems = (inventoryItemsResponse.data || []).map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              sku: item.sku,
-              category: item.category,
-              quantity: item.quantity,
-              unitPrice: item.unit_price
-            }));
-            
-            // Map DB format to application format
-            return mapFromDbWorkOrder(order, timeEntries, inventoryItems);
-          })
+        // Map DB format to application format
+        const completeWorkOrders: WorkOrder[] = data.map((order) => 
+          mapDatabaseToAppModel(order)
         );
         
         setWorkOrders(completeWorkOrders);
         
         // Extract unique technicians for filter
-        const uniqueTechnicians = Array.from(
-          new Set(completeWorkOrders.map(order => order.technician))
-        ).sort();
-        
-        // Explicitly type the result as string[]
-        setTechnicians(uniqueTechnicians as string[]);
+        const uniqueTechnicians = getUniqueTechnicians(completeWorkOrders);
+        setTechnicians(uniqueTechnicians);
       } catch (error) {
         console.error("Error fetching work orders:", error);
         toast({

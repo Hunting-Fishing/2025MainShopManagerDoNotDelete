@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "@/hooks/use-toast";
-import { createWorkOrder } from "@/utils/workOrderUtils";
+import { createWorkOrder } from "@/utils/workOrders";
 import { format } from "date-fns";
 import { WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
 import { recordWorkOrderActivity } from "@/utils/activity/workOrderActivity";

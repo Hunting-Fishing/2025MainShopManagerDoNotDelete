@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { WorkOrder } from "@/data/workOrdersData";
-import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrderUtils";
+import { WorkOrder } from "@/types/workOrder";
+import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrders";
 import WorkOrderDetailsView from "@/components/work-orders/WorkOrderDetailsView";
 import WorkOrderEditForm from "@/components/work-orders/WorkOrderEditForm";
 import { toast } from "@/hooks/use-toast";
