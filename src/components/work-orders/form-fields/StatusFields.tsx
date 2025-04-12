@@ -4,7 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { statusMap, priorityMap } from "@/data/workOrdersData";
+import { statusMap, priorityMap } from "@/utils/workOrders";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
 
@@ -34,7 +34,7 @@ export const StatusFields: React.FC<StatusFieldsProps> = ({ form }) => {
               <SelectContent>
                 {Object.entries(statusMap).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
-                    {label}
+                    {String(label)}
                   </SelectItem>
                 ))}
               </SelectContent>

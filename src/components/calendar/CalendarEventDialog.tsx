@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { CalendarEvent } from "@/types/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { statusMap, priorityMap } from "@/data/workOrdersData";
+import { statusMap, priorityMap } from "@/utils/workOrders";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Calendar, Clock, MapPin, User, FileText } from "lucide-react";
@@ -78,7 +78,7 @@ export function CalendarEventDialog({
             <div className="text-sm text-slate-500">Status</div>
             <div className="inline-block">
               <span className={`status-badge status-${event.status}`}>
-                {statusMap[event.status]}
+                {String(statusMap[event.status])}
               </span>
             </div>
           </div>

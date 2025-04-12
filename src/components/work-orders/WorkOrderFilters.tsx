@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { statusMap, WorkOrderStatus } from "@/data/workOrdersData";
+import { statusMap } from "@/utils/workOrders";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WorkOrdersExportMenu } from "./WorkOrdersExportMenu";
 
@@ -95,7 +95,7 @@ export default function WorkOrderFilters({
                     }
                   }}
                 >
-                  {value}
+                  {String(value)}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>

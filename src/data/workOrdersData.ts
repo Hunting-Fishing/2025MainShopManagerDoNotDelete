@@ -32,13 +32,15 @@ import {
   determinePriority
 } from '@/utils/workOrders';
 
+// Export both versions for backward compatibility
 export {
   findWorkOrderById,
   createWorkOrder,
   updateWorkOrder,
   getUniqueTechnicians,
   formatTimeInHoursAndMinutes,
-  statusMap as WorkOrderStatus,
+  statusMap,
+  statusMap as WorkOrderStatus, // Export both names for backward compatibility
   priorityMap,
   determinePriority
 };

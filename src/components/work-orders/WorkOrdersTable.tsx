@@ -1,7 +1,8 @@
 
 import { Link } from "react-router-dom";
 import { FileText, ChevronRight } from "lucide-react";
-import { WorkOrder, statusMap, priorityMap } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
+import { statusMap, priorityMap } from "@/utils/workOrders";
 import {
   Table,
   TableHeader,

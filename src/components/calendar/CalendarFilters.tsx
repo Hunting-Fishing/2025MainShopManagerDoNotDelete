@@ -2,8 +2,8 @@
 import { Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { getUniqueTechnicians } from "@/data/workOrdersData";
-import { statusMap } from "@/data/workOrdersData";
+import { getUniqueTechnicians } from "@/utils/workOrders";
+import { statusMap } from "@/utils/workOrders";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -100,7 +100,7 @@ export function CalendarFilters({
                 }
               }}
             >
-              {value}
+              {String(value)}
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>
