@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
@@ -6,8 +7,7 @@ import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination"
 import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { mapDatabaseToAppModel } from "@/utils/workOrders";
-import { getUniqueTechnicians } from "@/utils/workOrders/crud";
+import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
 
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");

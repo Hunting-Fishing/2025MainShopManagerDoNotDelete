@@ -1,5 +1,5 @@
 
-// This file is now deprecated - importing from the new modular structure
+// This file is deprecated - importing from the new modular structure
 // All exports are re-exported from src/utils/workOrders/index.ts
 
 import * as workOrderUtils from './workOrders';
@@ -13,8 +13,8 @@ export const {
   formatDate,
   formatTimeInHoursAndMinutes,
   generateWorkOrderId,
-  getUniqueTechnicians,
   mapDatabaseToAppModel,
   mapTimeEntryFromDb,
   updateWorkOrder,
+  getUniqueTechnicians,
 } = workOrderUtils;
