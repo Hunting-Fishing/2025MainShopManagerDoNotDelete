@@ -37,7 +37,7 @@ async function uploadLogo(shopId: string, file: File) {
     // Update shop record with logo URL
     const { error: updateError } = await supabase
       .from('shops')
-      .update({ logo_url: publicUrl })
+      .update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
       .eq('id', shopId);
 
     if (updateError) {
@@ -147,6 +147,8 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       console.error("Error updating shop info:", error);
       throw error;
     }
+    
+    // Clear cache if needed
     
     console.log("Company info updated successfully");
     return { success: true };

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 
 async function getBusinessHours(shopId: string) {
@@ -88,7 +89,7 @@ async function updateBusinessHours(shopId: string, businessHours: any[]) {
       is_closed: hour.is_closed
     }));
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('shop_hours')
       .insert(hoursToInsert);
       
@@ -98,7 +99,15 @@ async function updateBusinessHours(shopId: string, businessHours: any[]) {
     }
     
     console.log("Business hours updated successfully");
-    return true;
+    
+    // Return the newly inserted hours to ensure state is up-to-date
+    const { data: updatedHours } = await supabase
+      .from('shop_hours')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('day_of_week', { ascending: true });
+    
+    return updatedHours || businessHours;
   } catch (error) {
     console.error("Error in updateBusinessHours:", error);
     throw error;

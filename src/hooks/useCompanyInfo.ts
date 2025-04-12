@@ -26,6 +26,7 @@ export function useCompanyInfo() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [businessHours, setBusinessHours] = useState<any[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [saveComplete, setSaveComplete] = useState(false);
   
   const { toast } = useToast();
   const { 
@@ -138,6 +139,7 @@ export function useCompanyInfo() {
     
     try {
       setSaving(true);
+      setSaveComplete(false);
       console.log("Saving company info:", companyInfo);
       
       // Handle custom industry if needed
@@ -183,6 +185,7 @@ export function useCompanyInfo() {
         
         // Reload data to ensure we have the latest info
         await loadCompanyInfo();
+        setSaveComplete(true);
       } catch (error: any) {
         console.error("Failed to save company information:", error);
         toast({
@@ -214,6 +217,7 @@ export function useCompanyInfo() {
     businessIndustries,
     isLoadingConstants,
     initialized,
+    saveComplete,
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,

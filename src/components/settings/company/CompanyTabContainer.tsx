@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, CircleDollarSign, Clock } from "lucide-react";
+import { Building, CircleDollarSign, Clock, Save } from "lucide-react";
 import { BasicInfoSection } from "./BasicInfoSection";
 import { BusinessInfoSection } from "./BusinessInfoSection";
 import { BusinessHoursSection } from "./BusinessHoursSection";
@@ -25,6 +25,7 @@ export function CompanyTabContainer() {
     businessIndustries,
     isLoadingConstants,
     initialized,
+    saveComplete,
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,
@@ -33,17 +34,20 @@ export function CompanyTabContainer() {
     loadCompanyInfo
   } = useCompanyInfo();
 
-  // Debugging - check if we have data
-  if (initialized && !loading) {
-    console.log("Company info in container:", companyInfo);
-    console.log("Business hours in container:", businessHours);
-  }
+  // Debug logs
+  useEffect(() => {
+    if (initialized && !loading) {
+      console.log("Company info in container:", companyInfo);
+      console.log("Business hours in container:", businessHours);
+    }
+  }, [companyInfo, businessHours, initialized, loading]);
 
-  const onSaveChanges = async () => {
-    await handleSave();
-    // Explicit reload after save to ensure fields are updated
-    await loadCompanyInfo();
-  };
+  // Force refresh data when component mounts
+  useEffect(() => {
+    if (!loading) {
+      loadCompanyInfo();
+    }
+  }, [loadCompanyInfo, loading]);
 
   return (
     <div className="space-y-6">
@@ -102,10 +106,20 @@ export function CompanyTabContainer() {
                 <div className="flex justify-end mt-6">
                   <Button 
                     className="bg-esm-blue-600 hover:bg-esm-blue-700"
-                    onClick={onSaveChanges}
+                    onClick={handleSave}
                     disabled={saving}
                   >
-                    {saving ? "Saving..." : "Save Changes"}
+                    {saving ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
                   </Button>
                 </div>
               </>
