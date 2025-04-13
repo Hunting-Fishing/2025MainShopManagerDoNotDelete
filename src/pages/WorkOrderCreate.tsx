@@ -4,28 +4,22 @@ import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeade
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
 import { WorkOrderTemplateSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
 import { WorkOrderTemplate } from "@/types/workOrder";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useSearchParams } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
+import { toast } from "@/hooks/use-toast";
 
 export default function WorkOrderCreate() {
   const { templates: workOrderTemplates, updateTemplateUsage } = useWorkOrderTemplates();
   const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplate | null>(null);
   const [searchParams] = useSearchParams();
-  const [technicians, setTechnicians] = useState<string[]>([
-    "Michael Brown",
-    "Sarah Johnson",
-    "David Lee",
-    "Emily Chen",
-    "Unassigned",
-  ]);
+  const [technicians, setTechnicians] = useState<string[]>([]);
 
   // Check if coming from vehicle details with pre-filled info
   const hasPreFilledInfo = searchParams.has('customerId') && searchParams.has('vehicleId');
   const vehicleInfo = searchParams.get('vehicleInfo');
   const customerName = searchParams.get('customerName');
+  const customerId = searchParams.get('customerId');
 
   // Set a more descriptive title when coming from a vehicle page
   const pageTitle = hasPreFilledInfo 
@@ -63,10 +57,14 @@ export default function WorkOrderCreate() {
           }
           
           setTechnicians(techniciansList);
-          console.log("Fetched technicians:", techniciansList);
         }
       } catch (error) {
         console.error("Error in fetchTechnicians:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load technicians. Please try again.",
+          variant: "destructive"
+        });
       }
     };
     
@@ -104,3 +102,6 @@ export default function WorkOrderCreate() {
     </ResponsiveContainer>
   );
 }
+
+// Import the hook for workorder templates
+import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";

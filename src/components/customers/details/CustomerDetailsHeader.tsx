@@ -83,7 +83,7 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
             asChild
             className="border-esm-blue-200 hover:bg-esm-blue-50"
           >
-            <Link to={`/work-orders/new?customer_id=${customer.id}&customer_name=${encodeURIComponent(customerName)}`}>
+            <Link to={`/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(customerName)}`}>
               <ClipboardList className="mr-2 h-4 w-4 text-esm-blue-500" /> New Work Order
             </Link>
           </Button>
@@ -100,4 +100,4 @@ export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
       </div>
     </div>
   );
-};
+}
