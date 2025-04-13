@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,7 +49,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   });
   
   // Fetch models when make changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (make) {
       fetchModels(make);
     }
