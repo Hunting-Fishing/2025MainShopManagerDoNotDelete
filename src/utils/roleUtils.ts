@@ -1,6 +1,9 @@
 
 import { roleJobTitleMap } from '@/components/team/form/jobTitleData';
 
+// Define the allowed app role types for type safety
+export type AppRoleType = 'owner' | 'admin' | 'manager' | 'parts_manager' | 'service_advisor' | 'technician' | 'reception' | 'other_staff';
+
 // Convert a display role name to the database role name
 export function mapRoleToDbValue(displayRoleName: string): string {
   const roleMap: Record<string, string> = {
@@ -18,13 +21,13 @@ export function mapRoleToDbValue(displayRoleName: string): string {
 }
 
 // Ensure the role value matches one of our expected app_role values
-export function validateRoleValue(roleName: string): string {
-  const validRoles = [
+export function validateRoleValue(roleName: string): AppRoleType {
+  const validRoles: AppRoleType[] = [
     'owner', 'admin', 'manager', 'parts_manager', 
     'service_advisor', 'technician', 'reception', 'other_staff'
   ];
   
-  return validRoles.includes(roleName) ? roleName : 'technician';
+  return (validRoles.includes(roleName as AppRoleType) ? roleName : 'technician') as AppRoleType;
 }
 
 // Detect the most likely role based on job title

@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
-import { mapRoleToDbValue, validateRoleValue } from "@/utils/roleUtils";
+import { mapRoleToDbValue, validateRoleValue, AppRoleType } from "@/utils/roleUtils";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ export default function CreateTeamMember() {
       
       // Get the database role name from the display role name
       const dbRoleName = mapRoleToDbValue(data.role);
-      // Validate the role value to ensure it matches expected types
+      // Convert the string to AppRoleType and validate it
       const validatedRoleName = validateRoleValue(dbRoleName);
       console.log(`Role mapping: ${data.role} -> ${dbRoleName} -> ${validatedRoleName}`);
       
