@@ -92,7 +92,15 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         await populateVehicleFields(result);
         setIsDecodingSuccess(true);
         
-        // Handle toast for success
+        // If we had a previous success toast, dismiss it
+        if (lastSuccessToastId.current) {
+          toast({
+            id: lastSuccessToastId.current,
+            open: false,
+          });
+        }
+        
+        // Show new toast
         const toastResult = toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
@@ -100,7 +108,6 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
           duration: 3000,
         });
         
-        // Store the toast ID
         lastSuccessToastId.current = toastResult.id;
         
         return true;

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle } from '@/types/vehicle';
@@ -9,6 +10,10 @@ import { decodeVin as decodeVinService } from '@/services/vinDecoderService';
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
     console.log('Decoding VIN in utils:', vin);
+    if (!vin || vin.length !== 17) {
+      console.log('Invalid VIN length. VINs must be exactly 17 characters:', vin);
+      return null;
+    }
     return await decodeVinService(vin);
   } catch (error) {
     console.error('Error decoding VIN in utils:', error);

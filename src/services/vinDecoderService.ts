@@ -7,13 +7,18 @@ import { VinDecodeResult } from '@/types/vehicle';
  */
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
+    if (!vin || vin.length !== 17) {
+      console.log('Invalid VIN provided:', vin);
+      return null;
+    }
+    
     console.log('Decoding VIN in service:', vin);
     
     // First try to get the VIN from our vehicles table if we've seen it before
     const { data: existingVehicle, error: vehicleError } = await supabase
       .from('vehicles')
       .select('*')
-      .eq('vin', vin)
+      .eq('vin', vin.toUpperCase())
       .maybeSingle();
     
     if (vehicleError) {
@@ -50,7 +55,7 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
     }
       
     if (vinData) {
-      console.log('Found VIN match in vin_lookup table:', vinData);
+      console.log('Found VIN match in vin_lookup table by 8-char prefix:', vinData);
       return {
         year: vinData.year,
         make: vinData.make,
@@ -79,7 +84,7 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
     }
       
     if (wmiData) {
-      console.log('Found VIN WMI match in vin_lookup table:', wmiData);
+      console.log('Found VIN WMI match in vin_lookup table (first 3 chars):', wmiData);
       return {
         year: wmiData.year,
         make: wmiData.make,
@@ -94,6 +99,17 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
         gvwr: wmiData.gvwr,
         trim: wmiData.trim
       };
+    }
+    
+    // Check if vin_lookup table exists
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('vin_lookup')
+      .select('count(*)', { count: 'exact', head: true });
+    
+    if (tableError) {
+      console.error('Error checking vin_lookup table:', tableError);
+    } else {
+      console.log('VIN lookup table status:', tableInfo);
     }
     
     console.log('VIN not found in database:', vin);
