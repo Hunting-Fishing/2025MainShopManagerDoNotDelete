@@ -86,6 +86,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
     lastVin.current = vinNumber;
     
     try {
+      console.log('Decoding VIN:', vinNumber);
       const result = await decodeVinUtil(vinNumber);
       
       if (result) {
@@ -112,7 +113,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         setIsDecodingSuccess(false);
         toast({
           title: "VIN Not Found",
-          description: "This VIN couldn't be found in our database. Please enter vehicle details manually.",
+          description: "This VIN couldn't be found. Please enter vehicle details manually.",
           variant: "warning",
         });
         return false;
