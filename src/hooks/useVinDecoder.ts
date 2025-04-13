@@ -12,7 +12,7 @@ interface UseVinDecoderProps {
 }
 
 export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
   const { fetchModels } = useVehicleData();
   const [isDecoding, setIsDecoding] = useState(false);
   const [isDecodingSuccess, setIsDecodingSuccess] = useState(false);
@@ -94,10 +94,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         
         // If we had a previous success toast, dismiss it
         if (lastSuccessToastId.current) {
-          toast({
-            id: lastSuccessToastId.current,
-            open: false,
-          });
+          dismiss(lastSuccessToastId.current);
         }
         
         // Show new toast
@@ -132,7 +129,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
     } finally {
       setIsDecoding(false);
     }
-  }, [populateVehicleFields, toast]);
+  }, [populateVehicleFields, toast, dismiss]);
   
   useEffect(() => {
     if (currentVin?.length === 17 && currentVin !== lastVin.current && !isDecoding) {
