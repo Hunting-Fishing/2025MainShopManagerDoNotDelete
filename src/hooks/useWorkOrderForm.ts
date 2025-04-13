@@ -66,11 +66,12 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
       location: workOrder?.location || "",
       notes: workOrder?.notes || "",
       vehicle_id: workOrder?.vehicle_id || "",
-      serviceCategory: workOrder?.serviceCategory || "",
+      serviceCategory: workOrder?.serviceCategory || workOrder?.service_category || "",
       estimatedHours: workOrder?.estimated_hours || undefined,
-      vehicleMake: workOrder?.vehicleMake || "",
-      vehicleModel: workOrder?.vehicleModel || "",
-      vehicleYear: workOrder?.vehicleYear || "",
+      // Fixed: Use optional chaining to safely access the vehicleYear, vehicleMake and vehicleModel properties
+      vehicleMake: workOrder?.vehicleMake || workOrder?.vehicle_make || "",
+      vehicleModel: workOrder?.vehicleModel || workOrder?.vehicle_model || "",
+      vehicleYear: workOrder?.vehicleYear || (workOrder?.vehicleDetails?.year || ""),
     },
   });
 
@@ -98,6 +99,7 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
         vehicle_model: data.vehicleModel,
         vehicle_year: data.vehicleYear,
         estimated_hours: data.estimatedHours,
+        service_category: data.serviceCategory,
         // Add any inventory items and time entries
         inventory_items: data.inventoryItems || [],
         time_entries: timeEntries.length > 0 ? timeEntries : [],
