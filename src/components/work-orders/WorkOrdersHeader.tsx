@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WorkOrdersExportMenu } from "./WorkOrdersExportMenu";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 
 interface WorkOrdersHeaderProps {
   workOrders?: WorkOrder[];
