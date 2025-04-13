@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { decodeVin } from '@/utils/vehicleUtils';
+import { decodeVin as decodeVinUtil } from '@/utils/vehicleUtils';
 import { useToast } from '@/hooks/use-toast';
 import { VinDecodeResult } from '@/types/vehicle';
 import { useVehicleData } from '@/hooks/useVehicleData';
@@ -97,7 +97,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
     lastVin.current = vinNumber;
     
     try {
-      const result = await decodeVin(vinNumber);
+      const result = await decodeVinUtil(vinNumber);
       
       if (result) {
         await populateVehicleFields(result);
@@ -105,23 +105,19 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         
         // Clear previous success toast if it exists
         if (lastSuccessToastId.current) {
-          toast({
-            id: lastSuccessToastId.current,
-            title: '',
-            description: '',
-          });
+          toast.dismiss(lastSuccessToastId.current);
         }
         
         // Show success toast
-        const toastId = `vin-success-${Date.now()}`;
-        lastSuccessToastId.current = toastId;
-        toast({
-          id: toastId,
+        const toastId = toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
           variant: "success",
           duration: 3000,
         });
+        
+        // Store the toast ID for potential future dismissal
+        lastSuccessToastId.current = toastId.id;
         
         return true;
       } else {
