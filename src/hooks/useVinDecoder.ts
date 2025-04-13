@@ -105,8 +105,11 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         
         // Clear previous success toast if it exists
         if (lastSuccessToastId.current) {
-          // We need to use the dismiss method from the useToast() return value
-          toast.dismiss(lastSuccessToastId.current);
+          // Directly call dismiss from the toast instance
+          toast({
+            id: lastSuccessToastId.current,
+            open: false
+          });
         }
         
         // Show success toast and store the ID for future reference
