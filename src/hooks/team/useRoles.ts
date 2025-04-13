@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 
-interface Role {
+export interface Role {
   id: string;
   name: string;
   displayName: string;
@@ -18,7 +18,7 @@ export function useRoles() {
   // Role display name mapping
   const roleDisplayNames: Record<string, string> = {
     'owner': 'Owner',
-    'admin': 'Administrator',
+    'admin': 'Administrator', 
     'manager': 'Manager',
     'parts_manager': 'Parts Manager',
     'service_advisor': 'Service Advisor',
@@ -33,12 +33,18 @@ export function useRoles() {
       setError(null);
       
       try {
+        console.log("Fetching roles");
         const { data, error } = await supabase
           .from('roles')
           .select('*')
           .order('priority');
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching roles:", error);
+          throw error;
+        }
+        
+        console.log("Fetched roles:", data);
         
         // Map the DB roles to display names
         const mappedRoles = data.map(role => ({
@@ -54,7 +60,7 @@ export function useRoles() {
         setError('Failed to load roles');
         toast({
           title: "Error",
-          description: "Failed to load roles. Please try again.",
+          description: "Failed to load roles. Using default values instead.",
           variant: "destructive"
         });
         // Provide some default roles so the form still works
@@ -62,7 +68,10 @@ export function useRoles() {
           { id: '1', name: 'technician', displayName: 'Technician', description: 'Performs service work' },
           { id: '2', name: 'manager', displayName: 'Manager', description: 'Manages team members' },
           { id: '3', name: 'admin', displayName: 'Administrator', description: 'Administers the system' },
-          { id: '4', name: 'owner', displayName: 'Owner', description: 'Business owner' }
+          { id: '4', name: 'owner', displayName: 'Owner', description: 'Business owner' },
+          { id: '5', name: 'service_advisor', displayName: 'Service Advisor', description: 'Advises on services' },
+          { id: '6', name: 'reception', displayName: 'Reception', description: 'Front desk staff' },
+          { id: '7', name: 'other_staff', displayName: 'Other Staff', description: 'Other staff members' }
         ]);
       } finally {
         setIsLoading(false);

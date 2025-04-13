@@ -1,102 +1,142 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { toast } from "@/hooks/use-toast";
-import { Form } from "@/components/ui/form";
-import { availableRoles, availableDepartments } from "./form/formConstants";
-import { teamMemberFormSchema, TeamMemberFormValues } from "./form/formValidation";
-import { PersonalInfoFields } from "./form/PersonalInfoFields";
-import { JobInfoFields } from "./form/JobInfoFields";
-import { StatusToggleField } from "./form/StatusToggleField";
-import { NotesField } from "./form/NotesField";
-import { FormActions } from "./form/FormActions";
-import { useTeamMemberUpdate } from "@/hooks/useTeamMemberUpdate";
+import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { TeamMemberFormValues, teamMemberFormSchema } from './form/formValidation';
+import { Form } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { useDepartments } from '@/hooks/team/useDepartments';
+import { useRoles } from '@/hooks/team/useRoles';
+import { JobInfoFields } from './form/JobInfoFields';
+import { PersonalInfoFields } from './form/PersonalInfoFields';
+import { StatusToggleField } from './form/StatusToggleField';
+import { NotesField } from './form/NotesField';
+import { FormActions } from './form/FormActions';
+import { detectRoleFromJobTitle } from '@/utils/roleUtils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TeamMemberFormProps {
-  initialData?: any;
-  mode: "create" | "edit";
-  onUpdateSuccess?: () => void;
+  onSubmit: (data: TeamMemberFormValues) => void;
+  isSubmitting?: boolean;
+  initialData?: Partial<TeamMemberFormValues>;
+  mode?: 'create' | 'edit';
 }
 
-export function TeamMemberForm({ initialData, mode, onUpdateSuccess }: TeamMemberFormProps) {
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { updateTeamMember, isLoading, error } = useTeamMemberUpdate();
+export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mode = 'create' }: TeamMemberFormProps) {
+  const [autoDetectedRole, setAutoDetectedRole] = useState<string | null>(null);
+  const [showRoleAlert, setShowRoleAlert] = useState(false);
+  
+  // Get departments and roles from our custom hooks
+  const { departments, isLoading: loadingDepartments } = useDepartments();
+  const { roles, isLoading: loadingRoles } = useRoles();
 
-  // Initialize form with default values
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberFormSchema),
-    defaultValues: initialData || {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      jobTitle: "",
-      role: "",
-      department: "",
-      status: true,
-      notes: "",
+    defaultValues: {
+      firstName: initialData?.firstName || '',
+      lastName: initialData?.lastName || '',
+      email: initialData?.email || '',
+      phone: initialData?.phone || '',
+      jobTitle: initialData?.jobTitle || '',
+      role: initialData?.role || '',
+      department: initialData?.department || '',
+      status: initialData?.status ?? true,
+      notes: initialData?.notes || '',
     },
   });
 
-  // Form submission handler
-  const onSubmit = async (values: TeamMemberFormValues) => {
-    setIsSubmitting(true);
-    console.log("Form submission values:", values);
-    console.log("Mode:", mode);
-    console.log("Initial data:", initialData);
-    
-    try {
-      if (mode === "edit" && initialData?.id) {
-        console.log("Updating team member with ID:", initialData.id);
-        // Update existing team member
-        const success = await updateTeamMember(initialData.id, values);
-        if (success) {
-          if (onUpdateSuccess) {
-            onUpdateSuccess();
-          } else {
-            navigate("/team");
-          }
-        }
-      } else {
-        // Create new team member logic would go here
-        // For now just simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast({
-          title: "Team member created!",
-          description: `Successfully added ${values.firstName} ${values.lastName}`,
-        });
-        navigate("/team");
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      toast({
-        title: "Something went wrong",
-        description: "Please try again later",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+  const jobTitle = form.watch('jobTitle');
+  const role = form.watch('role');
+  
+  // Auto-detect role from job title
+  if (jobTitle && !role && mode === 'create') {
+    const detectedRole = detectRoleFromJobTitle(jobTitle);
+    if (detectedRole && detectedRole !== autoDetectedRole) {
+      setAutoDetectedRole(detectedRole);
+      setShowRoleAlert(true);
+    }
+  }
+
+  const handleApplyDetectedRole = () => {
+    if (autoDetectedRole) {
+      form.setValue('role', autoDetectedRole);
+      setShowRoleAlert(false);
     }
   };
 
+  const handleSubmit = (data: TeamMemberFormValues) => {
+    onSubmit(data);
+  };
+
+  const isLoading = loadingDepartments || loadingRoles;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PersonalInfoFields control={form.control} />
-          <JobInfoFields 
-            control={form.control}
-            availableRoles={availableRoles}
-            availableDepartments={availableDepartments}
-          />
-        </div>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {showRoleAlert && autoDetectedRole && (
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="flex justify-between items-center">
+              <span>
+                Based on the job title, we recommend the role: <strong>{autoDetectedRole}</strong>
+              </span>
+              <button 
+                type="button" 
+                className="bg-blue-100 hover:bg-blue-200 text-blue-800 py-1 px-3 rounded text-sm"
+                onClick={handleApplyDetectedRole}
+              >
+                Apply Role
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-        <StatusToggleField control={form.control} />
-        <NotesField control={form.control} />
-        <FormActions isSubmitting={isSubmitting || isLoading} mode={mode} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium">Personal Information</h3>
+            <PersonalInfoFields control={form.control} />
+          </div>
+          
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium">Work Information</h3>
+            <JobInfoFields 
+              control={form.control}
+              availableRoles={roles?.map(r => r.displayName) || []}
+              availableDepartments={departments?.map(d => d.name) || []}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Additional Information</h3>
+          <StatusToggleField control={form.control} />
+          <NotesField control={form.control} />
+        </div>
+        
+        <FormActions isSubmitting={isSubmitting} mode={mode} />
       </form>
     </Form>
   );
