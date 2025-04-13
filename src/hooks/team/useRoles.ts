@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { roleValueMapping } from '@/components/team/form/formConstants';
 
-export interface Role {
+interface Role {
   id: string;
-  name: string; // Database name (enum)
-  displayName: string; // Display name for UI
+  name: string;
+  displayName: string;
   description?: string;
 }
 
@@ -16,51 +15,62 @@ export function useRoles() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Map between DB role names and display names
-  const mapRoleToDisplay = (dbRole: string): string => {
-    const entry = Object.entries(roleValueMapping).find(([_, value]) => value === dbRole);
-    return entry ? entry[0] : dbRole;
+  // Role display name mapping
+  const roleDisplayNames: Record<string, string> = {
+    'owner': 'Owner',
+    'admin': 'Administrator',
+    'manager': 'Manager',
+    'parts_manager': 'Parts Manager',
+    'service_advisor': 'Service Advisor',
+    'technician': 'Technician',
+    'reception': 'Reception',
+    'other_staff': 'Other Staff'
   };
 
   useEffect(() => {
-    async function fetchRoles() {
+    const fetchRoles = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        setIsLoading(true);
         const { data, error } = await supabase
           .from('roles')
           .select('*')
           .order('priority');
-        
+          
         if (error) throw error;
         
-        // Map the DB roles to display roles
-        const mappedRoles = data?.map(role => ({
+        // Map the DB roles to display names
+        const mappedRoles = data.map(role => ({
           id: role.id,
           name: role.name,
-          displayName: mapRoleToDisplay(role.name),
+          displayName: roleDisplayNames[role.name] || role.name,
           description: role.description
-        })) || [];
+        }));
         
         setRoles(mappedRoles);
       } catch (err) {
         console.error('Error fetching roles:', err);
         setError('Failed to load roles');
         toast({
-          title: 'Error',
-          description: 'Failed to load roles',
-          variant: 'destructive',
+          title: "Error",
+          description: "Failed to load roles. Please try again.",
+          variant: "destructive"
         });
+        // Provide some default roles so the form still works
+        setRoles([
+          { id: '1', name: 'technician', displayName: 'Technician', description: 'Performs service work' },
+          { id: '2', name: 'manager', displayName: 'Manager', description: 'Manages team members' },
+          { id: '3', name: 'admin', displayName: 'Administrator', description: 'Administers the system' },
+          { id: '4', name: 'owner', displayName: 'Owner', description: 'Business owner' }
+        ]);
       } finally {
         setIsLoading(false);
       }
-    }
-
+    };
+    
     fetchRoles();
   }, []);
 
-  return {
-    roles,
-    isLoading,
-    error
-  };
+  return { roles, isLoading, error };
 }

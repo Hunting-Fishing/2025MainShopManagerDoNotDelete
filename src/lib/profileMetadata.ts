@@ -1,108 +1,82 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from '@/lib/supabase';
 
-export interface ProfileMetadata {
-  id?: string;
-  profile_id?: string;
-  metadata?: Record<string, any>;
-  created_at?: string;
-  updated_at?: string;
-  notes?: string;
-}
-
-export async function getProfileMetadata(profileId: string): Promise<ProfileMetadata | null> {
+/**
+ * Saves metadata to a user's profile_metadata record
+ * @param profileId - The ID of the profile
+ * @param notes - Notes to save in the metadata
+ */
+export async function saveProfileMetadata(profileId: string, notes: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase
+    // Check if metadata record exists
+    const { data: existing, error: checkError } = await supabase
       .from('profile_metadata')
-      .select('*')
+      .select('id')
       .eq('profile_id', profileId)
-      .single();
+      .maybeSingle();
     
-    if (error) {
-      console.error("Error fetching profile metadata:", error);
-      return null;
+    if (checkError) {
+      throw checkError;
     }
-    
-    // If data is found, process it
-    if (data) {
-      // Extract the notes from the metadata JSON field if it exists
-      const metadata = data.metadata as Record<string, any> || {};
-      const notes = metadata.notes || "";
-      
-      return {
-        id: data.id,
-        profile_id: data.profile_id,
-        metadata: metadata,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        notes
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("Exception in getProfileMetadata:", error);
-    return null;
-  }
-}
-
-export async function updateProfileMetadata(
-  profileId: string, 
-  metadata: Record<string, any>
-): Promise<boolean> {
-  try {
-    // Check if metadata exists for this profile
-    const existing = await getProfileMetadata(profileId);
     
     if (existing) {
-      // Update existing metadata
-      const { error } = await supabase
+      // Update existing record
+      const { error: updateError } = await supabase
         .from('profile_metadata')
-        .update({ 
-          metadata: metadata,
-          updated_at: new Date().toISOString()
+        .update({
+          metadata: {
+            notes,
+            updated_at: new Date().toISOString()
+          }
         })
-        .eq('profile_id', profileId);
-      
-      if (error) {
-        console.error("Error updating profile metadata:", error);
-        return false;
+        .eq('id', existing.id);
+        
+      if (updateError) {
+        throw updateError;
       }
     } else {
-      // Insert new metadata
-      const { error } = await supabase
+      // Create new record
+      const { error: insertError } = await supabase
         .from('profile_metadata')
         .insert({
           profile_id: profileId,
-          metadata: metadata
+          metadata: {
+            notes,
+            created_at: new Date().toISOString()
+          }
         });
-      
-      if (error) {
-        console.error("Error creating profile metadata:", error);
-        return false;
+        
+      if (insertError) {
+        throw insertError;
       }
     }
     
     return true;
-  } catch (error) {
-    console.error("Exception in updateProfileMetadata:", error);
+  } catch (err) {
+    console.error('Error saving profile metadata:', err);
     return false;
   }
 }
 
-export async function saveProfileMetadata(
-  profileId: string,
-  notes: string
-): Promise<boolean> {
+/**
+ * Retrieves metadata for a user's profile
+ * @param profileId - The ID of the profile
+ */
+export async function getProfileMetadata(profileId: string): Promise<Record<string, any> | null> {
   try {
-    // We need to store notes inside the metadata object
-    const metadata = {
-      notes: notes
-    };
+    const { data, error } = await supabase
+      .from('profile_metadata')
+      .select('metadata')
+      .eq('profile_id', profileId)
+      .maybeSingle();
     
-    return await updateProfileMetadata(profileId, metadata);
-  } catch (error) {
-    console.error("Error saving profile metadata:", error);
-    return false;
+    if (error) {
+      throw error;
+    }
+    
+    return data?.metadata || null;
+  } catch (err) {
+    console.error('Error retrieving profile metadata:', err);
+    return null;
   }
 }

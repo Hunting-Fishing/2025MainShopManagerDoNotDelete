@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
 import { TeamMemberFormValues } from "./formValidation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
+import { defaultJobTitles, roleJobTitleMap } from "./jobTitleData";
 
 interface JobInfoFieldsProps {
   control: Control<TeamMemberFormValues>;
@@ -19,6 +21,17 @@ export function JobInfoFields({
   availableDepartments,
   isLoading = false 
 }: JobInfoFieldsProps) {
+  const [jobTitles, setJobTitles] = useState<string[]>(defaultJobTitles);
+  const currentRole = control._formValues.role;
+  
+  // Update job titles when role changes
+  useEffect(() => {
+    if (currentRole && roleJobTitleMap[currentRole]) {
+      setJobTitles(roleJobTitleMap[currentRole]);
+    } else {
+      setJobTitles(defaultJobTitles);
+    }
+  }, [currentRole]);
   
   if (isLoading) {
     return (
@@ -40,6 +53,7 @@ export function JobInfoFields({
             <FormLabel>Role</FormLabel>
             <Select 
               onValueChange={field.onChange} 
+              value={field.value || ""}
               defaultValue={field.value}
             >
               <FormControl>
@@ -69,9 +83,24 @@ export function JobInfoFields({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Job Title</FormLabel>
-            <FormControl>
-              <Input placeholder="Service Technician" {...field} />
-            </FormControl>
+            <Select 
+              onValueChange={field.onChange} 
+              value={field.value || ""}
+              defaultValue={field.value}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a job title" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {jobTitles.map((title) => (
+                  <SelectItem key={title} value={title}>
+                    {title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
@@ -84,7 +113,8 @@ export function JobInfoFields({
           <FormItem>
             <FormLabel>Department</FormLabel>
             <Select 
-              onValueChange={field.onChange} 
+              onValueChange={field.onChange}
+              value={field.value || ""} 
               defaultValue={field.value}
             >
               <FormControl>

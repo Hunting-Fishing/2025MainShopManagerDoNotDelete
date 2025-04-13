@@ -22,11 +22,11 @@ export default function CreateTeamMember() {
       // Generate a UUID for new profiles (will be ignored if profile already exists)
       const newProfileId = crypto.randomUUID();
       
-      // Parse the name into first and last names for the API
+      // Create or update the profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: newProfileId, // Include ID for new profiles
+          id: newProfileId,
           email: data.email,
           first_name: data.firstName,
           last_name: data.lastName,
@@ -34,8 +34,8 @@ export default function CreateTeamMember() {
           job_title: data.jobTitle,
           department: data.department
         }, { 
-          onConflict: 'email',  // Handle conflict based on email column
-          ignoreDuplicates: false // Update the row if it already exists
+          onConflict: 'email',
+          ignoreDuplicates: false
         })
         .select('id, email')
         .single();
@@ -47,7 +47,7 @@ export default function CreateTeamMember() {
       if (!profileData) {
         throw new Error('Failed to create team member profile');
       }
-
+      
       // Get the database role name from the display role name
       const dbRoleName = mapRoleToDbValue(data.role);
       // Validate the role value to ensure it matches expected types
@@ -74,6 +74,20 @@ export default function CreateTeamMember() {
         if (roleAssignError) {
           console.error('Error assigning role:', roleAssignError);
           // Continue without throwing, as the user was created successfully
+        }
+      }
+
+      // Save profile metadata if notes are provided
+      if (data.notes) {
+        const { error: metadataError } = await supabase
+          .from('profile_metadata')
+          .insert({
+            profile_id: profileData.id,
+            metadata: { notes: data.notes }
+          });
+          
+        if (metadataError) {
+          console.warn('Error saving profile metadata:', metadataError);
         }
       }
       
@@ -122,10 +136,13 @@ export default function CreateTeamMember() {
         </div>
       </div>
 
-      <Card className="p-6">
-        <p className="text-muted-foreground mb-6">
-          Fill out the form below to invite a new team member. They will receive an email invitation to join your organization.
-        </p>
+      <Card className="p-6 shadow-md border border-gray-200">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2">Add New Team Member</h2>
+          <p className="text-muted-foreground">
+            Fill out the form below to invite a new team member. They will receive an email invitation to join your organization.
+          </p>
+        </div>
         
         <TeamMemberForm 
           mode="create" 

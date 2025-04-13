@@ -48,6 +48,7 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
   const jobTitle = form.watch('jobTitle');
   const role = form.watch('role');
   
+  // Auto-detect role from job title
   if (jobTitle && !role && mode === 'create') {
     const detectedRole = detectRoleFromJobTitle(jobTitle);
     if (detectedRole && detectedRole !== autoDetectedRole) {
