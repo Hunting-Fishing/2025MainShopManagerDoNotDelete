@@ -83,6 +83,7 @@ export const DeleteCustomerButton = ({ customerId, customerName }: DeleteCustome
               <ul className="list-disc ml-6 mt-2">
                 <li>Vehicle information</li>
                 <li>Service history</li>
+                <li>Follow-ups</li>
                 <li>Notes and communications</li>
                 <li>Household relationships</li>
                 <li>Loyalty data</li>
