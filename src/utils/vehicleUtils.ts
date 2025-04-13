@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle } from '@/types/vehicle';
+import { mockVinDatabase } from '@/data/vinDatabase';
 
 /**
  * Decode a Vehicle Identification Number (VIN) to get vehicle details
@@ -33,42 +34,8 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       };
     }
 
-    // Query Supabase for vehicle data from our cached VIN database
-    console.log('Looking up VIN in vin_lookup table:', vin);
-    const { data: vinData, error: vinError } = await supabase
-      .from('vin_lookup')
-      .select('*')
-      .ilike('vin_prefix', vin.substring(0, 8) + '%')
-      .limit(1)
-      .maybeSingle();
-
-    if (vinError) {
-      console.error('Error querying vin_lookup table:', vinError);
-    }
-
-    if (vinData) {
-      console.log('Found VIN match in vin_lookup table:', vinData);
-      return {
-        year: vinData.year,
-        make: vinData.make,
-        model: vinData.model,
-        transmission: vinData.transmission,
-        transmission_type: vinData.transmission_type,
-        drive_type: vinData.drive_type,
-        fuel_type: vinData.fuel_type,
-        body_style: vinData.body_style,
-        country: vinData.country,
-        engine: vinData.engine,
-        gvwr: vinData.gvwr,
-        trim: vinData.trim
-      };
-    }
-    
-    // If not found in our database tables, use the local mock database as fallback
-    console.log('Using fallback mock VIN decoding database');
-    // Import locally to avoid circular dependencies
-    const { mockVinDatabase } = await import('@/data/vinDatabase');
-    
+    // Try fallback to mock database since the vin_lookup table doesn't exist in database yet
+    console.log('Using mock VIN decoding database for:', vin);
     const vinPrefix = vin.substring(0, 8).toUpperCase();
     
     for (const prefix in mockVinDatabase) {

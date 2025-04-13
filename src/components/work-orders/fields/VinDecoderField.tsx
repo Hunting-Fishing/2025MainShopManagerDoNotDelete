@@ -1,12 +1,11 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
 import { decodeVin } from "@/utils/vehicleUtils";
-import { VehicleBodyStyle } from "@/types/vehicle";
 
 interface VinDecoderFieldProps {
   form: any;
@@ -15,9 +14,12 @@ interface VinDecoderFieldProps {
 
 export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicleDecoded }) => {
   const [isDecoding, setIsDecoding] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const lastVin = useRef<string | null>(null);
   
   const handleVinDecode = async (vinNumber: string) => {
-    if (vinNumber.length !== 17) return;
+    if (vinNumber.length !== 17 || vinNumber === lastVin.current) return;
+    lastVin.current = vinNumber;
     
     setIsDecoding(true);
     try {
@@ -35,9 +37,8 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
         
         // Update the body style if available
         if (decodedData.body_style) {
-          const bodyStyle = decodedData.body_style.toLowerCase() as VehicleBodyStyle;
-          form.setValue("bodyStyle", bodyStyle);
-          console.log("Setting body style from VIN:", bodyStyle);
+          form.setValue("bodyStyle", decodedData.body_style);
+          console.log("Setting body style from VIN:", decodedData.body_style);
         }
         
         if (decodedData.country) form.setValue("country", decodedData.country);
@@ -47,6 +48,9 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
         if (onVehicleDecoded) {
           onVehicleDecoded(decodedData);
         }
+        
+        setIsSuccess(true);
+        setTimeout(() => setIsSuccess(false), 3000);
         
         toast({
           title: "VIN Decoded Successfully",
@@ -78,17 +82,24 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
       name="vin"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>
-            VIN {isDecoding && <Loader2 className="h-4 w-4 inline animate-spin ml-2" />}
+          <FormLabel className="flex items-center gap-2">
+            VIN 
+            {isDecoding && <Loader2 className="h-4 w-4 inline animate-spin ml-2" />}
+            {isSuccess && !isDecoding && <CheckCircle2 className="h-4 w-4 text-green-500 ml-2" />}
           </FormLabel>
           <FormControl>
             <Input 
               {...field} 
               placeholder="Vehicle Identification Number"
+              className="font-mono"
+              maxLength={17}
+              disabled={isDecoding}
               onChange={(e) => {
-                field.onChange(e);
-                if (e.target.value.length === 17) {
-                  handleVinDecode(e.target.value);
+                const value = e.target.value.toUpperCase();
+                field.onChange(value);
+                if (value.length === 17) {
+                  // Use setTimeout to let the input update first
+                  setTimeout(() => handleVinDecode(value), 100);
                 }
               }}
             />

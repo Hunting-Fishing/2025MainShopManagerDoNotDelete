@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,8 +32,18 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const { fetchModels, makes, models } = useVehicleData();
   const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
   const [isDecoding, setIsDecoding] = useState(false);
+  const [isDecodingSuccess, setIsDecodingSuccess] = useState(false);
   const vin = form.watch(`vehicles.${index}.vin`);
   const make = form.watch(`vehicles.${index}.make`);
+  const lastVin = useRef<string | null>(null);
+  
+  // Track if component is mounted to prevent state updates after unmount
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (make) {
@@ -41,38 +51,47 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     }
   }, [make, fetchModels]);
 
-  // Handle VIN decoding when VIN is 17 characters
+  // Handle VIN decoding with debounce and duplicate check
   useEffect(() => {
+    // Skip if VIN hasn't changed or is too short
+    if (!vin || vin.length < 17 || vin === lastVin.current || isDecoding) {
+      return;
+    }
+
+    let decodeTimeout: NodeJS.Timeout;
+
     const handleVinDecode = async () => {
-      if (vin?.length === 17 && !isDecoding) {
-        try {
-          setIsDecoding(true);
-          console.log("Attempting to decode VIN:", vin);
+      try {
+        setIsDecoding(true);
+        lastVin.current = vin;
+        console.log("Attempting to decode VIN:", vin);
+        
+        const decodedData = await decodeVin(vin);
+        
+        if (!isMounted.current) return;
+        
+        if (decodedData) {
+          console.log("Successfully decoded VIN:", decodedData);
+          setDecodedVehicle(decodedData);
           
-          const decodedData = await decodeVin(vin);
+          // Set all the decoded details in the form
+          if (decodedData.year) {
+            form.setValue(`vehicles.${index}.year`, String(decodedData.year));
+          }
           
-          if (decodedData) {
-            console.log("Successfully decoded VIN:", decodedData);
-            setDecodedVehicle(decodedData);
-            
-            // Set all the decoded details in the form
-            if (decodedData.year) {
-              form.setValue(`vehicles.${index}.year`, String(decodedData.year));
+          if (decodedData.make) {
+            form.setValue(`vehicles.${index}.make`, decodedData.make);
+            // Fetch models for this make
+            await fetchModels(decodedData.make);
+          }
+          
+          // Set model after a small delay to ensure models are loaded
+          setTimeout(() => {
+            if (isMounted.current && decodedData.model) {
+              form.setValue(`vehicles.${index}.model`, decodedData.model);
             }
             
-            if (decodedData.make) {
-              form.setValue(`vehicles.${index}.make`, decodedData.make);
-              // Fetch models for this make to ensure they're available
-              await fetchModels(decodedData.make);
-            }
-            
-            if (decodedData.model) {
-              // Short delay to ensure models are loaded
-              setTimeout(() => {
-                form.setValue(`vehicles.${index}.model`, decodedData.model);
-              }, 300);
-            }
-            
+            // Set additional fields
             if (decodedData.trim) form.setValue(`vehicles.${index}.trim`, decodedData.trim);
             if (decodedData.transmission) form.setValue(`vehicles.${index}.transmission`, decodedData.transmission);
             if (decodedData.transmission_type) form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type);
@@ -83,40 +102,62 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             if (decodedData.country) form.setValue(`vehicles.${index}.country`, decodedData.country);
             if (decodedData.gvwr) form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr);
             
-            // Trigger form validation after all fields are set
+            // Trigger form validation
             form.trigger([
               `vehicles.${index}.year`,
               `vehicles.${index}.make`,
               `vehicles.${index}.model`
             ]);
             
-            toast({
-              title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
-              variant: "success",
-            });
-          } else {
+            if (isMounted.current) {
+              setIsDecodingSuccess(true);
+              // Hide the success message after 3 seconds
+              setTimeout(() => {
+                if (isMounted.current) {
+                  setIsDecodingSuccess(false);
+                }
+              }, 3000);
+              
+              toast({
+                title: "VIN Decoded Successfully",
+                description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
+                variant: "success",
+              });
+            }
+          }, 300);
+        } else {
+          if (isMounted.current) {
             toast({
               title: "VIN Not Recognized",
               description: "Unable to identify this VIN. Please enter vehicle details manually.",
               variant: "warning",
             });
           }
-        } catch (error) {
-          console.error("Error decoding VIN:", error);
+        }
+      } catch (error) {
+        console.error("Error decoding VIN:", error);
+        if (isMounted.current) {
           toast({
             title: "Error",
             description: "Failed to decode VIN. Please enter vehicle details manually.",
             variant: "destructive",
           });
-        } finally {
+        }
+      } finally {
+        if (isMounted.current) {
           setIsDecoding(false);
         }
       }
     };
     
-    handleVinDecode();
-  }, [vin, form, index, toast, fetchModels, isDecoding]);
+    // Debounce the VIN decoding to prevent repeated API calls
+    decodeTimeout = setTimeout(handleVinDecode, 500);
+    
+    // Cleanup timeout on component unmount or effect re-run
+    return () => {
+      clearTimeout(decodeTimeout);
+    };
+  }, [vin, form, index, toast, fetchModels]);
 
   return (
     <Card className="relative">
@@ -142,6 +183,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               model: decodedVehicle.model,
               valid: true
             } : undefined}
+            isDecodingSuccess={isDecodingSuccess}
           />
           <LicensePlateField form={form} index={index} />
         </div>

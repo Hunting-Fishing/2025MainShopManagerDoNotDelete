@@ -15,7 +15,8 @@ export const VinField: React.FC<BaseFieldProps & {
     model?: string;
     valid: boolean;
   };
-}> = ({ form, index, processing = false, decodedVehicleInfo }) => {
+  isDecodingSuccess?: boolean;
+}> = ({ form, index, processing = false, decodedVehicleInfo, isDecodingSuccess = false }) => {
   return (
     <FormField
       control={form.control}
