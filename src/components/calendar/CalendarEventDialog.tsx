@@ -6,12 +6,12 @@ import { CalendarEvent } from "@/types/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { statusMap } from "@/utils/workOrders"; // Updated import path
-import { formatDate } from "@/utils/date";
+import { formatDate, formatTime } from "@/utils/dateUtils";
 import { Link } from "react-router-dom";
 
 interface CalendarEventDialogProps {
   event: CalendarEvent | null;
-  isOpen: boolean; // Changed from 'open' to 'isOpen' for consistency
+  isOpen: boolean;
   onClose: () => void;
 }
 
@@ -20,11 +20,11 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
 
   // Format the event times for display - properly handling string dates
   const startTime = event.start ? 
-    new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
+    formatTime(event.start) : 
     '';
   
   const endTime = event.end ? 
-    new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
+    formatTime(event.end) : 
     '';
   
   const eventDate = event.start ? 
@@ -81,7 +81,7 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             </div>
           )}
           
-          {/* Assigned To - using technician property instead of assignedTo */}
+          {/* Assigned To - using technician property */}
           {event.technician && (
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-500" />

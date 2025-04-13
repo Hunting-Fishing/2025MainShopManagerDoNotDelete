@@ -86,8 +86,12 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
           // Include original fields for API operations
           description: event.description,
           workOrderId: event.work_order_id || event.workOrderId,
-          assignedTo: event.technician, // Map technician to assignedTo for consistency
-          allDay: event.all_day || event.allDay
+          allDay: event.all_day || event.allDay,
+          
+          // Include database fields for filtering
+          technician_id: event.technician_id,
+          customer_id: event.customer_id,
+          work_order_id: event.work_order_id || event.workOrderId
         }));
 
         setEvents(formattedEvents);

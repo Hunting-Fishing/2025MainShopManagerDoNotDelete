@@ -19,5 +19,5 @@ export interface CalendarWeekProps {
   events: CalendarEvent[];
 }
 
-// Re-export types from the new calendar/events.ts file
+// Re-export all types from the calendar/events.ts file
 export * from './calendar/events';

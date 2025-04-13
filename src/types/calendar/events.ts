@@ -2,8 +2,8 @@
 export interface CalendarEvent {
   id: string;
   title: string;
-  start: string;
-  end: string;
+  start: string; // Using string for dates consistently
+  end: string;   // Using string for dates consistently
   allDay?: boolean;
   description?: string;
   location?: string;
@@ -28,7 +28,7 @@ export interface CalendarEvent {
 export interface CalendarEventDialogProps {
   event: CalendarEvent | null;
   onClose: () => void;
-  isOpen: boolean; // Changed from 'open' to 'isOpen' for consistency
+  isOpen: boolean;
 }
 
 export interface CreateCalendarEventDto {
