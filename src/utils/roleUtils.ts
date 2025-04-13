@@ -44,3 +44,24 @@ export function canManageDepartments(userRole: string): boolean {
   const managementRoles = ['owner', 'admin', 'administrator'];
   return managementRoles.includes(userRole.toLowerCase());
 }
+
+/**
+ * Validates that the role string matches expected database role values
+ * Returns a valid role or defaults to 'other_staff'
+ */
+export function validateRoleValue(role: string): "admin" | "manager" | "owner" | "parts_manager" | "service_advisor" | "technician" | "reception" | "other_staff" {
+  // List of valid db role values
+  const validRoles = ['admin', 'manager', 'owner', 'parts_manager', 'service_advisor', 'technician', 'reception', 'other_staff'];
+  
+  // Convert to lowercase and remove spaces
+  const normalizedRole = role.toLowerCase().replace(/\s+/g, '_');
+  
+  // Check if the normalized role is valid
+  if (validRoles.includes(normalizedRole)) {
+    return normalizedRole as any;
+  }
+  
+  // Default to other_staff if not valid
+  console.warn(`Invalid role value "${role}" normalized to "other_staff"`);
+  return 'other_staff';
+}

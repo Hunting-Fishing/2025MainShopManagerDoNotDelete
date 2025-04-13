@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
-import { mapRoleToDbValue } from "@/utils/roleUtils";
+import { mapRoleToDbValue, validateRoleValue } from "@/utils/roleUtils";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
@@ -50,17 +50,19 @@ export default function CreateTeamMember() {
       
       // Get the database role name from the display role name
       const dbRoleName = mapRoleToDbValue(data.role);
-      console.log(`Role mapping: ${data.role} -> ${dbRoleName}`);
+      // Validate the role value to ensure it matches expected types
+      const validatedRoleName = validateRoleValue(dbRoleName);
+      console.log(`Role mapping: ${data.role} -> ${dbRoleName} -> ${validatedRoleName}`);
       
       // Find the role ID for the selected role
       const { data: roleData, error: roleError } = await supabase
         .from('roles')
         .select('id')
-        .eq('name', dbRoleName)
+        .eq('name', validatedRoleName)
         .single();
       
       if (roleError) {
-        console.warn(`Role not found for ${data.role} (${dbRoleName}):`, roleError);
+        console.warn(`Role not found for ${data.role} (${validatedRoleName}):`, roleError);
       } else if (roleData) {
         // Assign the role to the user
         const { error: roleAssignError } = await supabase
