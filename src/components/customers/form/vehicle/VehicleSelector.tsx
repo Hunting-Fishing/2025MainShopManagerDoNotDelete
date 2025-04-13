@@ -52,30 +52,47 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           const decodedData = await decodeVin(vin);
           
           if (decodedData) {
+            console.log("Successfully decoded VIN:", decodedData);
             setDecodedVehicle(decodedData);
             
             // Set all the decoded details in the form
-            form.setValue(`vehicles.${index}.make`, decodedData.make || '');
-            form.setValue(`vehicles.${index}.model`, decodedData.model || '');
-            form.setValue(`vehicles.${index}.year`, decodedData.year || '');
-            form.setValue(`vehicles.${index}.trim`, decodedData.trim || '');
-            form.setValue(`vehicles.${index}.transmission`, decodedData.transmission || '');
-            form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type || '');
-            form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type || '');
-            form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type || '');
-            form.setValue(`vehicles.${index}.engine`, decodedData.engine || '');
-            form.setValue(`vehicles.${index}.body_style`, decodedData.body_style || '');
-            form.setValue(`vehicles.${index}.country`, decodedData.country || '');
-            form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr || '');
-            
-            // If the make has changed, update the models
-            if (decodedData.make) {
-              fetchModels(decodedData.make);
+            if (decodedData.year) {
+              form.setValue(`vehicles.${index}.year`, String(decodedData.year));
             }
+            
+            if (decodedData.make) {
+              form.setValue(`vehicles.${index}.make`, decodedData.make);
+              // Fetch models for this make to ensure they're available
+              await fetchModels(decodedData.make);
+            }
+            
+            if (decodedData.model) {
+              // Short delay to ensure models are loaded
+              setTimeout(() => {
+                form.setValue(`vehicles.${index}.model`, decodedData.model);
+              }, 300);
+            }
+            
+            if (decodedData.trim) form.setValue(`vehicles.${index}.trim`, decodedData.trim);
+            if (decodedData.transmission) form.setValue(`vehicles.${index}.transmission`, decodedData.transmission);
+            if (decodedData.transmission_type) form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type);
+            if (decodedData.drive_type) form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type);
+            if (decodedData.fuel_type) form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type);
+            if (decodedData.engine) form.setValue(`vehicles.${index}.engine`, decodedData.engine);
+            if (decodedData.body_style) form.setValue(`vehicles.${index}.body_style`, decodedData.body_style);
+            if (decodedData.country) form.setValue(`vehicles.${index}.country`, decodedData.country);
+            if (decodedData.gvwr) form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr);
+            
+            // Trigger form validation after all fields are set
+            form.trigger([
+              `vehicles.${index}.year`,
+              `vehicles.${index}.make`,
+              `vehicles.${index}.model`
+            ]);
             
             toast({
               title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model} ${decodedData.trim || ''}`,
+              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
               variant: "success",
             });
           } else {
