@@ -2,13 +2,14 @@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle } from '@/types/vehicle';
-import { mockVinDatabase } from '@/data/vinDatabase';
 
 /**
  * Decode a Vehicle Identification Number (VIN) to get vehicle details
  */
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
+    console.log('Decoding VIN:', vin);
+    
     // First try to get the VIN from our database if we've seen it before
     const { data: existingVehicle } = await supabase
       .from('vehicles')
@@ -34,24 +35,37 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       };
     }
 
-    // Try fallback to mock database since the vin_lookup table doesn't exist in database yet
-    console.log('Using mock VIN decoding database for:', vin);
-    const vinPrefix = vin.substring(0, 8).toUpperCase();
-    
-    for (const prefix in mockVinDatabase) {
-      if (vinPrefix.startsWith(prefix)) {
-        console.log('Found VIN match in mock database:', prefix);
-        return mockVinDatabase[prefix];
-      }
+    // If not in database, query from the vehicle_decodes table if it exists
+    const { data: vinData, error: vinError } = await supabase
+      .from('vin_lookup')
+      .select('*')
+      .eq('vin_prefix', vin.substring(0, 8).toUpperCase())
+      .maybeSingle();
+      
+    if (vinData && !vinError) {
+      console.log('Found VIN match in vin_lookup table:', vinData);
+      return {
+        year: vinData.year,
+        make: vinData.make,
+        model: vinData.model,
+        transmission: vinData.transmission,
+        transmission_type: vinData.transmission_type,
+        drive_type: vinData.drive_type,
+        fuel_type: vinData.fuel_type,
+        body_style: vinData.body_style,
+        country: vinData.country,
+        engine: vinData.engine,
+        gvwr: vinData.gvwr,
+        trim: vinData.trim
+      };
     }
-
-    // If we couldn't find in the mock database, log that info
-    console.log('VIN not found in any database:', vin);
+    
+    // If we couldn't find in the database, log that info
+    console.log('VIN not found in database:', vin);
     return null;
     
   } catch (error) {
     console.error('Error decoding VIN:', error);
-    // Don't show toast here, let the component handle it
     return null;
   }
 }

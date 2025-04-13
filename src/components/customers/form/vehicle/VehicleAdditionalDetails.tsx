@@ -1,97 +1,72 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronDown, ChevronUp, Car } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
+import { VEHICLE_BODY_STYLES } from "@/types/vehicle";
 
 interface VehicleAdditionalDetailsProps {
   form: UseFormReturn<any>;
   index: number;
-  decodedDetails?: VinDecodeResult | null;
+  decodedDetails: VinDecodeResult | null;
 }
 
-export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> = ({
-  form,
+export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> = ({ 
+  form, 
   index,
   decodedDetails
 }) => {
-  // Common transmission types
-  const transmissionOptions = [
-    { value: "automatic", label: "Automatic" },
-    { value: "manual", label: "Manual" },
-    { value: "cvt", label: "CVT" },
-    { value: "dual-clutch", label: "Dual Clutch" },
-    { value: "auto-manual", label: "Automated Manual" }
-  ];
+  const [isExpanded, setIsExpanded] = useState(false);
   
-  // Common fuel types
-  const fuelTypeOptions = [
-    { value: "gasoline", label: "Gasoline" },
-    { value: "diesel", label: "Diesel" },
-    { value: "electric", label: "Electric" },
-    { value: "hybrid", label: "Hybrid" },
-    { value: "plugin_hybrid", label: "Plug-in Hybrid" },
-    { value: "cng", label: "CNG" },
-    { value: "lpg", label: "LPG" }
-  ];
+  const driveTypes = ["FWD", "RWD", "AWD", "4WD", "Other"];
+  const fuelTypes = ["Gasoline", "Diesel", "Electric", "Hybrid", "Plugin Hybrid", "Natural Gas", "Other"];
+  const transmissionTypes = ["Automatic", "Manual", "CVT", "Auto-Manual", "Dual Clutch"];
   
-  // Common drive types
-  const driveTypeOptions = [
-    { value: "fwd", label: "FWD" },
-    { value: "rwd", label: "RWD" },
-    { value: "awd", label: "AWD" },
-    { value: "4wd", label: "4WD" },
-    { value: "4x4", label: "4x4" }
-  ];
-  
-  // Common body styles
-  const bodyStyleOptions = [
-    { value: "sedan", label: "Sedan" },
-    { value: "suv", label: "SUV" },
-    { value: "coupe", label: "Coupe" },
-    { value: "truck", label: "Truck" },
-    { value: "van", label: "Van" },
-    { value: "wagon", label: "Wagon" },
-    { value: "hatchback", label: "Hatchback" },
-    { value: "convertible", label: "Convertible" },
-    { value: "crossover", label: "Crossover" },
-    { value: "minivan", label: "Minivan" },
-    { value: "pickup", label: "Pickup" }
-  ];
+  const hasAdditionalDetails = decodedDetails && (
+    decodedDetails.drive_type || 
+    decodedDetails.fuel_type || 
+    decodedDetails.transmission ||
+    decodedDetails.transmission_type ||
+    decodedDetails.body_style ||
+    decodedDetails.engine
+  );
 
   return (
-    <Card className="mt-4">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Additional Details</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name={`vehicles.${index}.trim`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Trim</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="e.g. LX, EX, Sport"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
+    <>
+      <Button 
+        type="button" 
+        variant="ghost" 
+        className="w-full mt-4 flex items-center justify-between border border-dashed"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center">
+          <Car className="mr-2 h-4 w-4 text-muted-foreground" />
+          <span>Additional Vehicle Details</span>
+          {hasAdditionalDetails && !isExpanded && (
+            <span className="ml-2 text-xs bg-muted rounded-full px-2 py-0.5">
+              Info available
+            </span>
+          )}
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+      </Button>
+      
+      {isExpanded && (
+        <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name={`vehicles.${index}.color`}
@@ -99,10 +74,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormItem>
                 <FormLabel>Color</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="e.g. Silver, Black"
-                  />
+                  <Input placeholder="Vehicle color" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -111,25 +83,36 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
           
           <FormField
             control={form.control}
-            name={`vehicles.${index}.transmission`}
+            name={`vehicles.${index}.trim`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trim Level</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. LX, EX, Limited" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name={`vehicles.${index}.transmission_type`}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Transmission</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value || ""}
+                  value={field.value || ''}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select transmission type" />
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {transmissionOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
+                    {transmissionTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -146,19 +129,16 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormLabel>Drive Type</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value || ""}
+                  value={field.value || ''}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select drive type" />
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {driveTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
+                    {driveTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -175,19 +155,16 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormLabel>Fuel Type</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value || ""}
+                  value={field.value || ''}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select fuel type" />
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {fuelTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
+                    {fuelTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -204,18 +181,17 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormLabel>Body Style</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value || ""}
+                  value={field.value || ''}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select body style" />
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {bodyStyleOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                    {VEHICLE_BODY_STYLES.map((style) => (
+                      <SelectItem key={style} value={style}>
+                        {style.charAt(0).toUpperCase() + style.slice(1)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -232,17 +208,14 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
               <FormItem>
                 <FormLabel>Engine</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="e.g. 2.0L 4-Cylinder"
-                  />
+                  <Input placeholder="e.g. 2.0L 4-cylinder" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 };

@@ -8,15 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { BaseFieldProps } from "./BaseFieldTypes";
 
 export const VinField: React.FC<BaseFieldProps & { 
-  processing?: boolean;
+  isDecoding: boolean;
+  isDecodingSuccess: boolean;
   decodedVehicleInfo?: {
-    year?: string;
+    year?: string | number;
     make?: string;
     model?: string;
-    valid: boolean;
-  };
-  isDecodingSuccess?: boolean;
-}> = ({ form, index, processing = false, decodedVehicleInfo, isDecodingSuccess = false }) => {
+  } | null;
+  hasAttemptedDecode?: boolean;
+}> = ({ 
+  form, 
+  index, 
+  isDecoding = false, 
+  isDecodingSuccess = false, 
+  decodedVehicleInfo, 
+  hasAttemptedDecode = false
+}) => {
   return (
     <FormField
       control={form.control}
@@ -41,38 +48,48 @@ export const VinField: React.FC<BaseFieldProps & {
               <Input 
                 {...field} 
                 placeholder="Enter 17-digit VIN to auto-populate" 
-                className="font-mono pr-8"
+                className="font-mono pr-10"
                 maxLength={17}
-                disabled={processing}
+                disabled={isDecoding}
                 onChange={(e) => {
                   // Convert to uppercase as user types
                   field.onChange(e.target.value.toUpperCase());
                 }}
               />
             </FormControl>
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
-              {processing && (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
+              {isDecoding && (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
               )}
-              {!processing && decodedVehicleInfo && (
-                decodedVehicleInfo.valid ? 
+              
+              {!isDecoding && hasAttemptedDecode && (
+                isDecodingSuccess ? 
                   <CheckCircle2 className="h-4 w-4 text-green-500" /> : 
                   <AlertCircle className="h-4 w-4 text-amber-500" />
               )}
             </div>
           </div>
           
-          {decodedVehicleInfo && decodedVehicleInfo.valid && decodedVehicleInfo.make && decodedVehicleInfo.model && (
+          {decodedVehicleInfo && isDecodingSuccess && (
             <div className="mt-2 text-sm">
-              <Badge variant="outline" className="bg-muted/50 mr-2">
-                {decodedVehicleInfo.year || ''}
-              </Badge>
-              <Badge variant="outline" className="bg-muted/50 mr-2">
-                {decodedVehicleInfo.make || ''}
-              </Badge>
-              <Badge variant="outline" className="bg-muted/50">
-                {decodedVehicleInfo.model || ''}
-              </Badge>
+              <div className="flex flex-wrap gap-2">
+                {decodedVehicleInfo.year && (
+                  <Badge variant="outline" className="bg-muted/50">
+                    {decodedVehicleInfo.year}
+                  </Badge>
+                )}
+                {decodedVehicleInfo.make && (
+                  <Badge variant="outline" className="bg-muted/50">
+                    {decodedVehicleInfo.make}
+                  </Badge>
+                )}
+                {decodedVehicleInfo.model && (
+                  <Badge variant="outline" className="bg-muted/50">
+                    {decodedVehicleInfo.model}
+                  </Badge>
+                )}
+              </div>
             </div>
           )}
           
