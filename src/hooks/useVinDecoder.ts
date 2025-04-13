@@ -95,11 +95,11 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         
         // If we had a previous toast, dismiss it
         if (toastIdRef.current) {
-          // We need to use the dismiss function from the useToast hook result
-          toast({
-            id: toastIdRef.current,
-            open: false,
-          });
+          // Dismiss the previous toast properly
+          const { dismiss } = toast;
+          if (dismiss) {
+            dismiss(toastIdRef.current);
+          }
         }
         
         // Show new toast
