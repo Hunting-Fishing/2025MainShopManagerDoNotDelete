@@ -100,6 +100,8 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
         vehicle_year: data.vehicleYear,
         estimated_hours: data.estimatedHours,
         service_category: data.serviceCategory,
+        // Make sure technician_id is saved to database
+        technician_id: data.technician_id || null,
         // Add any inventory items and time entries
         inventory_items: data.inventoryItems || [],
         time_entries: timeEntries.length > 0 ? timeEntries : [],

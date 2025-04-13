@@ -11,14 +11,22 @@ import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
 
+interface Technician {
+  id: string;
+  name: string;
+  jobTitle?: string;
+}
+
 interface AssignmentSectionProps {
   form: UseFormReturn<WorkOrderFormValues>;
-  technicians: string[];
+  technicians: Technician[];
+  isLoading?: boolean;
 }
 
 export const AssignmentSection: React.FC<AssignmentSectionProps> = ({ 
   form,
-  technicians 
+  technicians,
+  isLoading = false
 }) => {
   // Convert string date to Date object for the calendar
   const getDueDateValue = () => {
@@ -38,23 +46,31 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
       {/* Technician Field */}
       <FormField
         control={form.control}
-        name="technician"
+        name="technician_id"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Assigned Technician</FormLabel>
             <Select
-              onValueChange={field.onChange}
+              onValueChange={(value) => {
+                field.onChange(value);
+                // Also set the display name for backward compatibility
+                const tech = technicians.find(t => t.id === value);
+                if (tech) {
+                  form.setValue("technician", tech.name);
+                }
+              }}
               defaultValue={field.value}
+              disabled={isLoading}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Assign technician" />
+                  <SelectValue placeholder={isLoading ? "Loading..." : "Assign technician"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 {technicians.map((tech) => (
-                  <SelectItem key={tech} value={tech}>
-                    {tech}
+                  <SelectItem key={tech.id} value={tech.id}>
+                    {tech.name}{tech.jobTitle ? ` (${tech.jobTitle})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
