@@ -93,7 +93,6 @@ export const VinField: React.FC<BaseFieldProps & {
             </div>
           )}
           
-          {/* Single FormDescription instead of duplicate */}
           <FormDescription>
             Enter a complete 17-digit VIN to auto-populate vehicle details
           </FormDescription>
