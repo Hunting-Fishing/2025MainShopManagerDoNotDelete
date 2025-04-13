@@ -11,11 +11,13 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
 import { mapRoleToDbValue, validateRoleValue, AppRoleType } from "@/utils/roleUtils";
+import { useShopId } from "@/hooks/useShopId";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { shopId } = useShopId();
 
   const handleSubmit = async (data: TeamMemberFormValues) => {
     setIsSubmitting(true);
@@ -24,8 +26,7 @@ export default function CreateTeamMember() {
     try {
       console.log("Starting team member creation process");
       
-      // Instead of creating an auth user, just insert team member info into profiles table
-      // without specifying an ID (let Supabase generate one)
+      // Create a profile record for the team member without requiring an auth user
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -34,7 +35,8 @@ export default function CreateTeamMember() {
           last_name: data.lastName,
           phone: data.phone || null,
           job_title: data.jobTitle,
-          department: data.department
+          department: data.department,
+          shop_id: shopId // Associate with the current shop
         })
         .select('id, email')
         .single();
@@ -90,7 +92,10 @@ export default function CreateTeamMember() {
           .from('profile_metadata')
           .insert({
             profile_id: profileData.id,
-            metadata: { notes: data.notes }
+            metadata: { 
+              notes: data.notes,
+              is_active: data.status === true 
+            }
           });
           
         if (metadataError) {
@@ -99,6 +104,15 @@ export default function CreateTeamMember() {
           console.log("Profile metadata saved successfully");
         }
       }
+      
+      // Record this action in the team member history
+      await supabase.rpc('record_team_history', {
+        profile_id_param: profileData.id,
+        action_type_param: 'created',
+        action_by_param: null, // Can be updated if we have current user ID
+        action_by_name_param: 'System',
+        details_param: { initial_role: data.role }
+      });
       
       // Show success message
       toast({
