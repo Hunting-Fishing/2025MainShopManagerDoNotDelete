@@ -1,7 +1,7 @@
 
 import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/export";
 import { toast } from "@/components/ui/use-toast";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 import { ExportMenuBase } from "../invoices/ExportMenuBase";
 import { useIsMobile } from "@/hooks/use-mobile";
 

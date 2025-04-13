@@ -15,14 +15,14 @@ export const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
 
 // Database to app model mapping
 export const mapDatabaseToAppModel = (data: any): WorkOrder => {
-  const customers = data.customers as any || {};
-  const profiles = data.profiles as any || {};
-  const statusValue = data.status || 'pending';
+  // Handle missing data gracefully
+  const customers = data.customers || {};
+  const profiles = data.profiles || {};
   
   // Ensure status is one of the allowed values
   let typedStatus: WorkOrderStatusType = "pending";
-  if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
-    typedStatus = statusValue;
+  if (["in-progress", "completed", "cancelled"].includes(data.status)) {
+    typedStatus = data.status as WorkOrderStatusType;
   }
   
   // Map time entries if they exist
@@ -30,16 +30,27 @@ export const mapDatabaseToAppModel = (data: any): WorkOrder => {
     ? data.work_order_time_entries.map((entry: any) => mapTimeEntryFromDb(entry))
     : [];
   
+  // Build customer name from first and last name
+  const customerName = customers 
+    ? `${customers.first_name || ''} ${customers.last_name || ''}`.trim() 
+    : 'Unknown Customer';
+  
+  // Build technician name from first and last name
+  const technicianName = profiles 
+    ? `${profiles.first_name || ''} ${profiles.last_name || ''}`.trim() 
+    : 'Unassigned';
+
+  // Create the work order object with all necessary fields
   const workOrder: WorkOrder = {
     id: data.id,
     date: data.created_at,
-    customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
+    customer: customerName,
     description: data.description || '',
     status: typedStatus,
     priority: determinePriority(data) as WorkOrderPriorityType,
-    technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
+    technician: technicianName || 'Unassigned',
     location: data.location || '',
-    dueDate: data.end_time || '',
+    dueDate: data.end_time || data.created_at || '',
     notes: data.notes || '',
     timeEntries: timeEntries,
     totalBillableTime: timeEntries.reduce((sum, entry) => 
@@ -79,18 +90,6 @@ export const mapAppModelToDatabase = (workOrder: Partial<WorkOrder>) => {
     result.vehicle_id = workOrder.vehicle_id;
   }
 
-  if (workOrder.vehicleMake !== undefined) {
-    result.vehicle_make = workOrder.vehicleMake;
-  } else if (workOrder.vehicle_make !== undefined) {
-    result.vehicle_make = workOrder.vehicle_make;
-  }
-
-  if (workOrder.vehicleModel !== undefined) {
-    result.vehicle_model = workOrder.vehicleModel;
-  } else if (workOrder.vehicle_model !== undefined) {
-    result.vehicle_model = workOrder.vehicle_model;
-  }
-
   // Standard fields
   result.description = workOrder.description;
   result.status = workOrder.status;
@@ -115,14 +114,8 @@ export const determinePriority = (workOrder: any): WorkOrderPriorityType => {
     }
   }
   
-  // Logic to determine priority based on creation time
-  const hoursSinceCreation = Math.floor(
-    (new Date().getTime() - new Date(workOrder.created_at).getTime()) / (1000 * 60 * 60)
-  );
-  
-  if (hoursSinceCreation > 48) return "high";
-  if (hoursSinceCreation > 24) return "medium";
-  return "low";
+  // Default to medium priority if not set
+  return "medium";
 };
 
 // Export status and priority mappings for UI consistency
@@ -133,10 +126,7 @@ export const statusMap: Record<string, string> = {
   "cancelled": "Cancelled"
 };
 
-export const priorityMap: Record<
-  string, 
-  { label: string; classes: string; }
-> = {
+export const priorityMap: Record<string, { label: string; classes: string; }> = {
   "low": {
     label: "Low",
     classes: "bg-slate-100 text-slate-700"

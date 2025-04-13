@@ -1,9 +1,8 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from "@/types/workOrder";
 import { generateWorkOrderId } from "./generators";
 import { mapDatabaseToAppModel, mapAppModelToDatabase } from "./mappers";
-import { recordWorkOrderActivity } from "./activity";
 
 // Get unique technicians for filtering
 export const getUniqueTechnicians = async (): Promise<string[]> => {

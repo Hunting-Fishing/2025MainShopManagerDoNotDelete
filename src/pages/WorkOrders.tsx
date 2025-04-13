@@ -5,7 +5,7 @@ import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
 import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
 import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination";
 import { WorkOrder } from "@/types/workOrder";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
 
@@ -26,15 +26,13 @@ export default function WorkOrders() {
       try {
         setLoading(true);
         
-        // Modified query to address relationship issue 
-        let query = supabase
+        // Get work orders with time entries
+        const { data: workOrderData, error } = await supabase
           .from('work_orders')
           .select(`
             *,
             work_order_time_entries(*)
           `);
-          
-        const { data: workOrderData, error } = await query;
           
         if (error) {
           throw error;
@@ -64,7 +62,6 @@ export default function WorkOrders() {
             technicianData = data;
           }
 
-          // Create a combined object with all necessary data
           return {
             ...order,
             customers: customerData,
@@ -72,12 +69,14 @@ export default function WorkOrders() {
           };
         }));
         
+        // Map database models to application models
         const completeWorkOrders: WorkOrder[] = workOrdersWithDetails.map((order) => 
           mapDatabaseToAppModel(order)
         );
         
         setWorkOrders(completeWorkOrders);
         
+        // Get unique technicians for the filter
         const uniqueTechs = await getUniqueTechnicians();
         setTechnicians(uniqueTechs);
       } catch (error) {
@@ -101,7 +100,7 @@ export default function WorkOrders() {
       !searchQuery ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (order.description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     
     const matchesStatus = 
       statusFilter.length === 0 || statusFilter.includes(order.status);
