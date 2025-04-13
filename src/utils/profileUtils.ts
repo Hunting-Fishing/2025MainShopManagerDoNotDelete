@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { saveProfileMetadata } from '@/lib/profileMetadata';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
@@ -15,20 +14,15 @@ export const updateUserProfile = async (
   error?: string;
 }> => {
   try {
-    // Parse the name into first and last components
-    const nameParts = values.name.split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ');
-    
     // Update the profile with all available fields
     const { error, data } = await supabase
       .from('profiles')
       .update({
-        first_name: firstName,
-        last_name: lastName,
+        first_name: values.firstName,
+        last_name: values.lastName,
         email: values.email,
         phone: values.phone || null,
-        job_title: values.jobTitle, // Ensure job_title is properly updated
+        job_title: values.jobTitle,
         department: values.department,
       })
       .eq('id', userId)

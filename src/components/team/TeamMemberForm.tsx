@@ -29,7 +29,8 @@ export function TeamMemberForm({ initialData, mode, onUpdateSuccess }: TeamMembe
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberFormSchema),
     defaultValues: initialData || {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phone: "",
       jobTitle: "",
@@ -65,7 +66,7 @@ export function TeamMemberForm({ initialData, mode, onUpdateSuccess }: TeamMembe
         await new Promise(resolve => setTimeout(resolve, 1000));
         toast({
           title: "Team member created!",
-          description: `Successfully added ${values.name}`,
+          description: `Successfully added ${values.firstName} ${values.lastName}`,
         });
         navigate("/team");
       }

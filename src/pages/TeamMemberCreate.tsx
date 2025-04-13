@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { TeamMemberForm } from "@/components/team/form/TeamMemberForm";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
+import { mapRoleToDbValue } from "@/utils/roleUtils";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
@@ -18,27 +19,23 @@ export default function CreateTeamMember() {
     setIsSubmitting(true);
     
     try {
-      // Parse the name into first and last names for the API
-      const nameParts = data.name.split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-      
-      // Generate a UUID for new profiles (will be ignored if profile already exists)
+      // Generate a UUID for new profiles
       const newProfileId = crypto.randomUUID();
       
+      // Create or update the profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: newProfileId, // Include ID for new profiles
+          id: newProfileId,
           email: data.email,
-          first_name: firstName,
-          last_name: lastName,
+          first_name: data.firstName,
+          last_name: data.lastName,
           phone: data.phone || null,
           job_title: data.jobTitle,
           department: data.department
         }, { 
-          onConflict: 'email',  // Handle conflict based on email column
-          ignoreDuplicates: false // Update the row if it already exists
+          onConflict: 'email',
+          ignoreDuplicates: false
         })
         .select('id, email')
         .single();
@@ -50,16 +47,20 @@ export default function CreateTeamMember() {
       if (!profileData) {
         throw new Error('Failed to create team member profile');
       }
-
+      
+      // Get the database role name from the display role name
+      const dbRoleName = mapRoleToDbValue(data.role);
+      console.log(`Role mapping: ${data.role} -> ${dbRoleName}`);
+      
       // Find the role ID for the selected role
       const { data: roleData, error: roleError } = await supabase
         .from('roles')
         .select('id')
-        .ilike('name', data.role.toLowerCase())
+        .eq('name', dbRoleName)
         .single();
-
+      
       if (roleError) {
-        console.warn(`Role not found for ${data.role}, will skip role assignment:`, roleError);
+        console.warn(`Role not found for ${data.role} (${dbRoleName}):`, roleError);
       } else if (roleData) {
         // Assign the role to the user
         const { error: roleAssignError } = await supabase
@@ -71,14 +72,27 @@ export default function CreateTeamMember() {
 
         if (roleAssignError) {
           console.error('Error assigning role:', roleAssignError);
-          // Continue without throwing, as the user was created successfully
+        }
+      }
+
+      // Save profile metadata if notes are provided
+      if (data.notes) {
+        const { error: metadataError } = await supabase
+          .from('profile_metadata')
+          .insert({
+            profile_id: profileData.id,
+            metadata: { notes: data.notes }
+          });
+          
+        if (metadataError) {
+          console.warn('Error saving profile metadata:', metadataError);
         }
       }
       
       // Show success message
       toast({
         title: "Team member created",
-        description: `${data.name} has been added to your team.`,
+        description: `${data.firstName} ${data.lastName} has been added to your team.`,
         variant: "success",
       });
       
@@ -103,7 +117,6 @@ export default function CreateTeamMember() {
       <Helmet>
         <title>Create Team Member</title>
         <meta name="description" content="Add a new team member to your organization" />
-        <meta name="keywords" content="team management, create team member, add user" />
       </Helmet>
       
       <div className="mb-6 flex items-center justify-between">

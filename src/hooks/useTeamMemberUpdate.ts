@@ -22,8 +22,8 @@ export function useTeamMemberUpdate() {
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          first_name: formData.name.split(' ')[0],
-          last_name: formData.name.split(' ').slice(1).join(' '),
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           email: formData.email,
           phone: formData.phone,
           job_title: formData.jobTitle,

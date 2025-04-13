@@ -5,7 +5,10 @@ import { roleValueMapping } from '@/components/team/form/formConstants';
  * Converts a display role name to the database role value
  */
 export function mapRoleToDbValue(displayRole: string): string {
-  return roleValueMapping[displayRole] || displayRole.toLowerCase().replace(/\s+/g, '_');
+  const mappedValue = roleValueMapping[displayRole];
+  
+  // In case the role isn't in our mapping or is already a DB value
+  return mappedValue !== undefined ? mappedValue : displayRole.toLowerCase().replace(/\s+/g, '_');
 }
 
 /**

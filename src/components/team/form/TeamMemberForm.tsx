@@ -30,21 +30,11 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
   const { departments, isLoading: loadingDepartments } = useDepartments();
   const { roles, isLoading: loadingRoles } = useRoles();
 
-  // Parse name into first and last name for existing data
-  let firstName = '';
-  let lastName = '';
-  
-  if (initialData?.name) {
-    const nameParts = initialData.name.split(' ');
-    firstName = nameParts[0];
-    lastName = nameParts.slice(1).join(' ');
-  }
-
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberFormSchema),
     defaultValues: {
-      firstName: initialData?.firstName || firstName,
-      lastName: initialData?.lastName || lastName,
+      firstName: initialData?.firstName || '',
+      lastName: initialData?.lastName || '',
       email: initialData?.email || '',
       phone: initialData?.phone || '',
       jobTitle: initialData?.jobTitle || '',
