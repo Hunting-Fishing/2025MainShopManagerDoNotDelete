@@ -12,7 +12,6 @@ export interface CalendarEvent {
   priority?: string;
   customer?: string;
   technician?: string;
-  assignedTo?: string; // Added this property
   color?: string;
   type?: 'appointment' | 'work-order' | 'reminder' | 'event' | string;
   
@@ -27,9 +26,9 @@ export interface CalendarEvent {
 }
 
 export interface CalendarEventDialogProps {
-  event: CalendarEvent;
+  event: CalendarEvent | null;
   onClose: () => void;
-  isOpen?: boolean; // Changed from 'open' to 'isOpen' for consistency
+  isOpen: boolean; // Changed from 'open' to 'isOpen' for consistency
 }
 
 export interface CreateCalendarEventDto {

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { CalendarEvent, CreateCalendarEventDto } from "@/types/calendar/events";
 import { handleApiError } from "@/utils/errorHandling";
@@ -78,9 +77,8 @@ export async function getCalendarEvents(
           end: event.end_time,
           allDay: event.all_day,
           workOrderId: event.work_order_id,
-          type: event.event_type,
-          assignedTo: technician
-        };
+          type: event.event_type
+        } as CalendarEvent;
       })
     );
 

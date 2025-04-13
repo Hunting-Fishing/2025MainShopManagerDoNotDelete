@@ -18,18 +18,18 @@ interface CalendarEventDialogProps {
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
   if (!event) return null;
 
-  // Format the event times for display - fixed type checking to avoid instanceof on string
-  const startTime = typeof event.start === 'string' 
-    ? new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : '';
+  // Format the event times for display - properly handling string dates
+  const startTime = event.start ? 
+    new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
+    '';
   
-  const endTime = typeof event.end === 'string'
-    ? new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : '';
+  const endTime = event.end ? 
+    new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
+    '';
   
-  const eventDate = typeof event.start === 'string' 
-    ? formatDate(event.start)
-    : formatDate(new Date().toISOString()); // Fallback to today if event.start is not a string
+  const eventDate = event.start ? 
+    formatDate(event.start) : 
+    formatDate(new Date().toISOString()); // Fallback to today if event.start is missing
 
   // Determine if this is a work order event
   const isWorkOrder = event.type === 'work-order';
@@ -81,7 +81,7 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             </div>
           )}
           
-          {/* Assigned To */}
+          {/* Assigned To - using technician property instead of assignedTo */}
           {event.technician && (
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-500" />

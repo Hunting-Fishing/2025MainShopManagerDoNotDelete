@@ -25,7 +25,7 @@ export default function Calendar() {
       technicianFilter === "all" || event.technician_id === technicianFilter;
     
     const matchesStatus = 
-      statusFilter.length === 0 || statusFilter.includes(event.status);
+      statusFilter.length === 0 || (event.status && statusFilter.includes(event.status));
     
     return matchesTechnician && matchesStatus;
   });
@@ -72,7 +72,7 @@ export default function Calendar() {
       
       <div className="border rounded-lg bg-white shadow">
         <CalendarView 
-          events={filteredEvents as any}
+          events={filteredEvents}
           currentDate={currentDate}
           view={view}
           loading={isLoading}
