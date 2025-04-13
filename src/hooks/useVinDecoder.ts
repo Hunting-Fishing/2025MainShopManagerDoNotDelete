@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { decodeVin as decodeVinUtil } from '@/utils/vehicleUtils';
@@ -11,7 +12,7 @@ interface UseVinDecoderProps {
 }
 
 export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
-  const { toast, dismiss } = useToast();
+  const { toast } = useToast();
   const { fetchModels } = useVehicleData();
   const [isDecoding, setIsDecoding] = useState(false);
   const [isDecodingSuccess, setIsDecodingSuccess] = useState(false);
@@ -91,10 +92,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         await populateVehicleFields(result);
         setIsDecodingSuccess(true);
         
-        if (lastSuccessToastId.current) {
-          dismiss(lastSuccessToastId.current);
-        }
-        
+        // Handle toast for success
         const toastResult = toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
@@ -102,6 +100,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
           duration: 3000,
         });
         
+        // Store the toast ID
         lastSuccessToastId.current = toastResult.id;
         
         return true;
@@ -126,7 +125,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
     } finally {
       setIsDecoding(false);
     }
-  }, [populateVehicleFields, toast, dismiss]);
+  }, [populateVehicleFields, toast]);
   
   useEffect(() => {
     if (currentVin?.length === 17 && currentVin !== lastVin.current && !isDecoding) {

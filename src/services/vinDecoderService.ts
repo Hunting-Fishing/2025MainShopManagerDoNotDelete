@@ -7,12 +7,18 @@ import { VinDecodeResult } from '@/types/vehicle';
  */
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
+    console.log('Decoding VIN in service:', vin);
+    
     // First try to get the VIN from our vehicles table if we've seen it before
-    const { data: existingVehicle } = await supabase
+    const { data: existingVehicle, error: vehicleError } = await supabase
       .from('vehicles')
       .select('*')
       .eq('vin', vin)
       .maybeSingle();
+    
+    if (vehicleError) {
+      console.error('Error querying vehicles table:', vehicleError);
+    }
 
     if (existingVehicle) {
       console.log('Found existing vehicle in vehicles table:', existingVehicle);
@@ -39,7 +45,11 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       .eq('vin_prefix', vin.substring(0, 8).toUpperCase())
       .maybeSingle();
       
-    if (vinData && !vinError) {
+    if (vinError) {
+      console.error('Error querying vin_lookup table:', vinError);
+    }
+      
+    if (vinData) {
       console.log('Found VIN match in vin_lookup table:', vinData);
       return {
         year: vinData.year,
@@ -54,6 +64,35 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
         engine: vinData.engine,
         gvwr: vinData.gvwr,
         trim: vinData.trim
+      };
+    }
+    
+    // Try another query using just the first part of the VIN (WMI)
+    const { data: wmiData, error: wmiError } = await supabase
+      .from('vin_lookup')
+      .select('*')
+      .eq('vin_prefix', vin.substring(0, 3).toUpperCase())
+      .maybeSingle();
+      
+    if (wmiError) {
+      console.error('Error querying vin_lookup table for WMI:', wmiError);
+    }
+      
+    if (wmiData) {
+      console.log('Found VIN WMI match in vin_lookup table:', wmiData);
+      return {
+        year: wmiData.year,
+        make: wmiData.make,
+        model: wmiData.model,
+        transmission: wmiData.transmission,
+        transmission_type: wmiData.transmission_type,
+        drive_type: wmiData.drive_type,
+        fuel_type: wmiData.fuel_type,
+        body_style: wmiData.body_style,
+        country: wmiData.country,
+        engine: wmiData.engine,
+        gvwr: wmiData.gvwr,
+        trim: wmiData.trim
       };
     }
     

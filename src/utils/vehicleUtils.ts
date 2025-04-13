@@ -1,71 +1,17 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle } from '@/types/vehicle';
+import { decodeVin as decodeVinService } from '@/services/vinDecoderService';
 
 /**
  * Decode a Vehicle Identification Number (VIN) to get vehicle details
  */
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
-    console.log('Decoding VIN:', vin);
-    
-    // First try to get the VIN from our database if we've seen it before
-    const { data: existingVehicle } = await supabase
-      .from('vehicles')
-      .select('*')
-      .eq('vin', vin)
-      .maybeSingle();
-
-    if (existingVehicle) {
-      console.log('Found existing vehicle in database:', existingVehicle);
-      return {
-        year: existingVehicle.year,
-        make: existingVehicle.make,
-        model: existingVehicle.model,
-        transmission: existingVehicle.transmission,
-        transmission_type: existingVehicle.transmission_type,
-        drive_type: existingVehicle.drive_type,
-        fuel_type: existingVehicle.fuel_type,
-        body_style: existingVehicle.body_style,
-        country: existingVehicle.country,
-        engine: existingVehicle.engine,
-        gvwr: existingVehicle.gvwr,
-        trim: existingVehicle.trim
-      };
-    }
-
-    // If not in database, query from the vehicle_decodes table if it exists
-    const { data: vinData, error: vinError } = await supabase
-      .from('vin_lookup')
-      .select('*')
-      .eq('vin_prefix', vin.substring(0, 8).toUpperCase())
-      .maybeSingle();
-      
-    if (vinData && !vinError) {
-      console.log('Found VIN match in vin_lookup table:', vinData);
-      return {
-        year: vinData.year,
-        make: vinData.make,
-        model: vinData.model,
-        transmission: vinData.transmission,
-        transmission_type: vinData.transmission_type,
-        drive_type: vinData.drive_type,
-        fuel_type: vinData.fuel_type,
-        body_style: vinData.body_style,
-        country: vinData.country,
-        engine: vinData.engine,
-        gvwr: vinData.gvwr,
-        trim: vinData.trim
-      };
-    }
-    
-    // If we couldn't find in the database, log that info
-    console.log('VIN not found in database:', vin);
-    return null;
-    
+    console.log('Decoding VIN in utils:', vin);
+    return await decodeVinService(vin);
   } catch (error) {
-    console.error('Error decoding VIN:', error);
+    console.error('Error decoding VIN in utils:', error);
     return null;
   }
 }
