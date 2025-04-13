@@ -13,12 +13,26 @@ export function PersonalInfoFields({ control }: PersonalInfoFieldsProps) {
     <>
       <FormField
         control={control}
-        name="name"
+        name="firstName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Full Name</FormLabel>
+            <FormLabel>First Name</FormLabel>
             <FormControl>
-              <Input placeholder="John Smith" {...field} />
+              <Input placeholder="John" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name="lastName"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Last Name</FormLabel>
+            <FormControl>
+              <Input placeholder="Smith" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
