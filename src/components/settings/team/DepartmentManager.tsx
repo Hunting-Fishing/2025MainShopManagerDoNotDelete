@@ -17,14 +17,14 @@ import {
 } from '@/components/ui/dialog';
 
 export function DepartmentManager() {
-  const { departments, isLoading, createDepartment } = useDepartments();
+  const { departments, isLoading, addDepartment } = useDepartments();
   const [newDepartment, setNewDepartment] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleCreateDepartment = async () => {
     if (newDepartment.trim()) {
-      await createDepartment(newDepartment.trim(), newDescription.trim() || undefined);
+      await addDepartment(newDepartment.trim(), newDescription.trim() || undefined);
       setNewDepartment('');
       setNewDescription('');
       setIsDialogOpen(false);

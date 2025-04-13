@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 
-interface Department {
+export interface Department {
   id: string;
   name: string;
   description?: string;
