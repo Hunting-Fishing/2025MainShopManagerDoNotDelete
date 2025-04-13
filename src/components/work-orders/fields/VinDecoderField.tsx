@@ -4,7 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { decodeVin } from "@/utils/vehicleUtils";
 
 interface VinDecoderFieldProps {
@@ -16,6 +16,7 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
   const [isDecoding, setIsDecoding] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const lastVin = useRef<string | null>(null);
+  const { toast } = useToast();
   
   const handleVinDecode = async (vinNumber: string) => {
     if (vinNumber.length !== 17 || vinNumber === lastVin.current) return;

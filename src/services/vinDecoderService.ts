@@ -42,66 +42,8 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
         trim: existingVehicle.trim
       };
     }
-
-    // If not found in vehicles, try the dedicated VIN lookup table by prefix
-    const { data: vinData, error: vinError } = await supabase
-      .from('vin_lookup')
-      .select('*')
-      .eq('vin_prefix', vin.substring(0, 8).toUpperCase())
-      .maybeSingle();
-      
-    if (vinError) {
-      console.error('Error querying vin_lookup table:', vinError);
-    }
-      
-    if (vinData) {
-      console.log('Found VIN match in vin_lookup table by 8-char prefix:', vinData);
-      return {
-        year: vinData.year,
-        make: vinData.make,
-        model: vinData.model,
-        transmission: vinData.transmission,
-        transmission_type: vinData.transmission_type,
-        drive_type: vinData.drive_type,
-        fuel_type: vinData.fuel_type,
-        body_style: vinData.body_style,
-        country: vinData.country,
-        engine: vinData.engine,
-        gvwr: vinData.gvwr,
-        trim: vinData.trim
-      };
-    }
     
-    // Try another query using just the first part of the VIN (WMI)
-    const { data: wmiData, error: wmiError } = await supabase
-      .from('vin_lookup')
-      .select('*')
-      .eq('vin_prefix', vin.substring(0, 3).toUpperCase())
-      .maybeSingle();
-      
-    if (wmiError) {
-      console.error('Error querying vin_lookup table for WMI:', wmiError);
-    }
-      
-    if (wmiData) {
-      console.log('Found VIN WMI match in vin_lookup table (first 3 chars):', wmiData);
-      return {
-        year: wmiData.year,
-        make: wmiData.make,
-        model: wmiData.model,
-        transmission: wmiData.transmission,
-        transmission_type: wmiData.transmission_type,
-        drive_type: wmiData.drive_type,
-        fuel_type: wmiData.fuel_type,
-        body_style: wmiData.body_style,
-        country: wmiData.country,
-        engine: wmiData.engine,
-        gvwr: wmiData.gvwr,
-        trim: wmiData.trim
-      };
-    }
-    
-    // If no internal match found, use NHTSA API as fallback
+    // If not found in vehicles, use NHTSA API as fallback
     return await decodeVinUsingNHTSA(vin);
   } catch (error) {
     console.error('Error in vinDecoderService:', error);
@@ -199,13 +141,11 @@ function mapNHTSADataToVehicle(results: any[]): VinDecodeResult | null {
  */
 async function saveDecodedVehicleToDatabase(vin: string, vehicle: VinDecodeResult): Promise<void> {
   try {
-    // Try to save to vin_lookup table for future lookups
-    const vinPrefix = vin.substring(0, 8).toUpperCase();
-    
+    // Save to vehicles table for future lookups
     const { error } = await supabase
-      .from('vin_lookup')
-      .upsert([{
-        vin_prefix: vinPrefix,
+      .from('vehicles')
+      .insert([{
+        vin: vin.toUpperCase(),
         year: vehicle.year,
         make: vehicle.make,
         model: vehicle.model,
@@ -218,16 +158,20 @@ async function saveDecodedVehicleToDatabase(vin: string, vehicle: VinDecodeResul
         engine: vehicle.engine,
         gvwr: vehicle.gvwr,
         trim: vehicle.trim,
-        created_at: new Date().toISOString()
-      }]);
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select('id')
+      .single();
     
     if (error) {
-      console.error('Failed to save VIN data to database:', error);
+      // If the insert fails, it might be because we need a customer_id
+      // In this case we'll just log the error and not save the vehicle
+      console.error('Failed to save vehicle to database:', error);
     } else {
-      console.log('Successfully saved VIN data to database');
+      console.log('Successfully saved vehicle to database');
     }
   } catch (error) {
     console.error('Error saving decoded vehicle to database:', error);
   }
 }
-

@@ -12,7 +12,7 @@ interface UseVinDecoderProps {
 }
 
 export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
-  const { toast, dismiss } = useToast();
+  const { toast } = useToast();
   const { fetchModels } = useVehicleData();
   const [isDecoding, setIsDecoding] = useState(false);
   const [isDecodingSuccess, setIsDecodingSuccess] = useState(false);
@@ -20,7 +20,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
   const [hasAttemptedDecode, setHasAttemptedDecode] = useState(false);
   
   const lastVin = useRef<string | null>(null);
-  const lastSuccessToastId = useRef<string | null>(null);
+  const toastIdRef = useRef<string | null>(null);
   const decodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const fieldPath = useCallback((field: string) => `vehicles.${vehicleIndex}.${field}`, [vehicleIndex]);
@@ -93,20 +93,20 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         await populateVehicleFields(result);
         setIsDecodingSuccess(true);
         
-        // If we had a previous success toast, dismiss it
-        if (lastSuccessToastId.current) {
-          dismiss(lastSuccessToastId.current);
+        // If we had a previous toast, dismiss it
+        if (toastIdRef.current) {
+          toast.dismiss(toastIdRef.current);
         }
         
         // Show new toast
-        const toastResult = toast({
+        const toastId = toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
           variant: "success",
           duration: 3000,
         });
         
-        lastSuccessToastId.current = toastResult.id;
+        toastIdRef.current = toastId;
         
         return true;
       } else {
@@ -130,7 +130,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
     } finally {
       setIsDecoding(false);
     }
-  }, [populateVehicleFields, toast, dismiss]);
+  }, [populateVehicleFields, toast]);
   
   useEffect(() => {
     if (currentVin?.length === 17 && currentVin !== lastVin.current && !isDecoding) {
