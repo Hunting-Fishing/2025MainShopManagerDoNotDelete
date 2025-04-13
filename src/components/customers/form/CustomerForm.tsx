@@ -1,12 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form } from "@/components/ui/form";
 import { CustomerFormValues, customerSchema } from "./schemas/customerSchema";
-import { FormTabs } from "./FormTabs";
-import { FormContent } from "./FormContent";
-import { CustomerFormActions } from "./CustomerFormActions";
 import { useFormNavigation } from "./useFormNavigation";
 import { FormContentWrapper } from "./FormContentWrapper";
 
@@ -19,6 +15,7 @@ interface CustomerFormProps {
   isEditMode?: boolean;
   customerId?: string;
   initialTab?: string;
+  onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({
@@ -29,7 +26,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   singleShopMode = false,
   isEditMode = false,
   customerId,
-  initialTab
+  initialTab,
+  onDirtyStateChange
 }) => {
   const {
     currentTab,
@@ -66,7 +64,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       terms_agreed: false,
       create_new_household: false
     },
+    mode: "onChange", // Enable real-time validation
   });
+  
+  // Track form dirty state for parent component
+  useEffect(() => {
+    if (onDirtyStateChange) {
+      onDirtyStateChange(form.formState.isDirty);
+    }
+  }, [form.formState.isDirty, onDirtyStateChange]);
 
   const handleFormSubmit = async (data: CustomerFormValues) => {
     await onSubmit(data);
