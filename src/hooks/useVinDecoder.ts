@@ -105,12 +105,12 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         
         // Clear previous success toast if it exists
         if (lastSuccessToastId.current) {
-          // Use the dismiss function from useToast, not directly on toast
+          // We need to use the dismiss method from the useToast() return value
           toast.dismiss(lastSuccessToastId.current);
         }
         
-        // Show success toast
-        const toastId = toast({
+        // Show success toast and store the ID for future reference
+        const toastResult = toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
           variant: "success",
@@ -118,7 +118,7 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         });
         
         // Store the toast ID for potential future dismissal
-        lastSuccessToastId.current = toastId.id;
+        lastSuccessToastId.current = toastResult.id;
         
         return true;
       } else {
