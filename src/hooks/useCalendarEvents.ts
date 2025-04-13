@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { CalendarEvent } from '@/types/calendar/events';
+import { CalendarEvent } from '@/types/calendar';
 import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
 import { getShiftChats } from '@/services/calendar/shiftChatService';
 import { ChatRoom } from '@/types/chat';

@@ -8,6 +8,7 @@ import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
+import { CalendarEvent } from "@/types/calendar";
 
 export default function Calendar() {
   const navigate = useNavigate();

@@ -4,7 +4,7 @@ import { CalendarEvent as CalendarEventFromEvents } from "./calendar/events";
 
 export type CalendarViewType = "month" | "week" | "day";
 
-// Re-export the CalendarEvent type from calendar/events.ts
+// Use the same CalendarEvent definition from calendar/events.ts
 export type CalendarEvent = CalendarEventFromEvents;
 
 export interface CalendarDayProps {
