@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { Card } from "@/components/ui/card";
@@ -14,9 +15,15 @@ import { NotesSection } from "@/components/work-orders/NotesSection";
 import { WorkOrderInventoryField } from "@/components/work-orders/inventory/WorkOrderInventoryField";
 import { EditFormActions } from "@/components/work-orders/edit/EditFormActions";
 
+interface Technician {
+  id: string;
+  name: string;
+  jobTitle?: string;
+}
+
 interface WorkOrderEditFormContentProps {
   workOrderId: string;
-  technicians: string[];
+  technicians: Technician[];
   form: any;
   onSubmit: (data: any) => void;
   isSubmitting: boolean;
