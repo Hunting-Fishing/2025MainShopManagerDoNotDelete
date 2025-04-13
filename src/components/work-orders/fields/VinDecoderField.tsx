@@ -64,7 +64,7 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
       console.error("Error decoding VIN:", error);
       toast({
         title: "Error",
-        description: "An error occurred while decoding the VIN.",
+        description: "An error occurred while decoding the VIN. Please enter vehicle details manually.",
         variant: "destructive",
       });
     } finally {

@@ -31,6 +31,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const { toast } = useToast();
   const { fetchModels, makes, models } = useVehicleData();
   const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
+  const [isDecoding, setIsDecoding] = useState(false);
   const vin = form.watch(`vehicles.${index}.vin`);
   const make = form.watch(`vehicles.${index}.make`);
 
@@ -40,11 +41,16 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     }
   }, [make, fetchModels]);
 
+  // Handle VIN decoding when VIN is 17 characters
   useEffect(() => {
     const handleVinDecode = async () => {
-      if (vin?.length === 17) {
+      if (vin?.length === 17 && !isDecoding) {
         try {
+          setIsDecoding(true);
+          console.log("Attempting to decode VIN:", vin);
+          
           const decodedData = await decodeVin(vin);
+          
           if (decodedData) {
             setDecodedVehicle(decodedData);
             
@@ -72,6 +78,12 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model} ${decodedData.trim || ''}`,
               variant: "success",
             });
+          } else {
+            toast({
+              title: "VIN Not Recognized",
+              description: "Unable to identify this VIN. Please enter vehicle details manually.",
+              variant: "warning",
+            });
           }
         } catch (error) {
           console.error("Error decoding VIN:", error);
@@ -80,12 +92,14 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             description: "Failed to decode VIN. Please enter vehicle details manually.",
             variant: "destructive",
           });
+        } finally {
+          setIsDecoding(false);
         }
       }
     };
     
     handleVinDecode();
-  }, [vin, form, index, toast, fetchModels]);
+  }, [vin, form, index, toast, fetchModels, isDecoding]);
 
   return (
     <Card className="relative">
@@ -101,7 +115,17 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       
       <CardContent className="pt-6 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <VinField form={form} index={index} />
+          <VinField 
+            form={form} 
+            index={index}
+            processing={isDecoding}
+            decodedVehicleInfo={decodedVehicle ? {
+              year: String(decodedVehicle.year),
+              make: decodedVehicle.make,
+              model: decodedVehicle.model,
+              valid: true
+            } : undefined}
+          />
           <LicensePlateField form={form} index={index} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">

@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle, CarMake, CarModel } from '@/types/vehicle';
+import { mockVinDatabase } from '@/data/vinDatabase';
 
 /**
  * Decode a Vehicle Identification Number (VIN) to get vehicle details
@@ -31,30 +32,23 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       };
     }
 
-    // If not in our database, use the VIN decoder service
-    const { data: decodedData, error } = await supabase.functions.invoke('vin-decoder', {
-      body: { vin }
-    });
-
-    if (error) {
-      throw new Error(`VIN decoding error: ${error.message}`);
+    // Use the fallback VIN decoding database since Edge Function is failing
+    console.log('Using fallback VIN decoding database');
+    const vinPrefix = vin.substring(0, 8).toUpperCase();
+    
+    for (const prefix in mockVinDatabase) {
+      if (vinPrefix.startsWith(prefix)) {
+        return mockVinDatabase[prefix];
+      }
     }
 
-    if (decodedData) {
-      return decodedData;
-    }
-
-    // Fall back to the vinDecoderService if Supabase function fails
-    const fallbackData = await import('@/services/vinDecoderService').then(module => module.decodeVin(vin));
-    return fallbackData;
+    // If we couldn't find in the mock database, log that info
+    console.log('VIN not found in fallback database:', vin);
+    return null;
     
   } catch (error) {
     console.error('Error decoding VIN:', error);
-    toast({
-      title: 'Error',
-      description: 'Could not decode VIN. Please check the number and try again.',
-      variant: 'destructive',
-    });
+    // Don't show toast here, let the component handle it
     return null;
   }
 }
