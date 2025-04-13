@@ -99,14 +99,14 @@ export function useVinDecoder({ form, vehicleIndex }: UseVinDecoderProps) {
         }
         
         // Show new toast
-        const id = toast({
+        const toastResponse = toast({
           title: "VIN Decoded Successfully",
           description: `Vehicle identified as ${result.year} ${result.make} ${result.model}`,
           variant: "success",
           duration: 3000,
-        }).id;
+        });
         
-        toastIdRef.current = id;
+        toastIdRef.current = toastResponse.id;
         
         return true;
       } else {
