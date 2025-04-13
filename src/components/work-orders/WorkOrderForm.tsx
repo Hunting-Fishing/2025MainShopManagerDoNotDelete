@@ -8,7 +8,7 @@ import { AlertCircle } from "lucide-react";
 import { TimeEntry } from "@/types/workOrder";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { workOrderTemplates } from "@/data/workOrderTemplatesData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/lib/supabase';
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { toast } from "@/hooks/use-toast";
 
@@ -24,6 +24,20 @@ import { SaveAsTemplateDialog } from "./templates/SaveAsTemplateDialog";
 import { WorkOrderDescriptionField } from "./fields/WorkOrderDescriptionField";
 import { VehicleDetailsField } from "./fields/VehicleDetailsField";
 import { CommonServicesChecklist } from "./fields/CommonServicesChecklist";
+import { TechTips } from "./fields/TechTips";
+import { WorkOrderInfoSection } from "./WorkOrderInfoSection";
+
+// Service categories
+const SERVICE_CATEGORIES = [
+  "Diagnostic",
+  "Repair",
+  "Maintenance",
+  "Inspection",
+  "Tire Service",
+  "Body Work",
+  "Detailing",
+  "Other"
+];
 
 interface WorkOrderFormProps {
   technicians: string[];
@@ -182,6 +196,15 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     }
   };
 
+  const handleInsertTechTip = (tipContent: string) => {
+    const currentDescription = form.getValues("description") || "";
+    const updatedDescription = currentDescription 
+      ? `${currentDescription}\n\n${tipContent}`
+      : tipContent;
+    
+    form.setValue("description", updatedDescription);
+  };
+
   return (
     <div className="rounded-lg border border-slate-200 p-6 bg-white">
       {error && (
@@ -202,7 +225,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
             />
           )}
           
-          {/* Common Services Checklist - New! */}
+          {/* Common Services Checklist - Enhanced UI */}
           <CommonServicesChecklist onServiceChecked={handleServiceChecked} />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -220,18 +243,26 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
             
             {/* Assignment */}
             <AssignmentSection form={form as any} technicians={technicians} />
-            
-            {/* Description Field - Enhanced! */}
+          </div>
+
+          {/* Work Order Info Section - New Component! */}
+          <WorkOrderInfoSection form={form} serviceCategories={SERVICE_CATEGORIES} />
+          
+          {/* Description Field - Enhanced with Tech Tips! */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="col-span-1 md:col-span-2">
               <WorkOrderDescriptionField form={form} />
             </div>
-            
-            {/* Notes */}
-            <NotesSection form={form as any} />
-
-            {/* Inventory Items */}
-            <WorkOrderInventorySection form={form as any} />
+            <div className="col-span-1">
+              <TechTips onInsert={handleInsertTechTip} />
+            </div>
           </div>
+            
+          {/* Notes */}
+          <NotesSection form={form as any} />
+
+          {/* Inventory Items */}
+          <WorkOrderInventorySection form={form as any} />
 
           {/* Form Actions with Save as Template */}
           <div className="flex justify-between items-center">

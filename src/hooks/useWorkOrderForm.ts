@@ -5,8 +5,8 @@ import * as z from "zod";
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
 
 // Define schema using zod for form validation
 const workOrderFormSchema = z.object({
@@ -26,6 +26,20 @@ const workOrderFormSchema = z.object({
   inventoryItems: z.array(z.any()).optional(),
   timeEntries: z.array(z.any()).optional(),
   serviceCategory: z.string().optional(),
+  estimatedHours: z.number().optional(),
+  vehicleMake: z.string().optional(),
+  vehicleModel: z.string().optional(),
+  vehicleYear: z.string().optional(),
+  odometer: z.string().optional(),
+  licensePlate: z.string().optional(),
+  vin: z.string().optional(),
+  // Additional vehicle fields from VIN decoding
+  driveType: z.string().optional(),
+  transmission: z.string().optional(),
+  fuelType: z.string().optional(),
+  engine: z.string().optional(),
+  bodyStyle: z.string().optional(),
+  country: z.string().optional(),
 });
 
 export type WorkOrderFormValues = z.infer<typeof workOrderFormSchema>;
@@ -48,11 +62,15 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
       technician: workOrder?.technician || "",
       technician_id: workOrder?.technician_id || "",
       date: workOrder?.date || new Date().toISOString(),
-      dueDate: workOrder?.dueDate || "",
+      dueDate: workOrder?.dueDate || new Date().toISOString().split('T')[0],
       location: workOrder?.location || "",
       notes: workOrder?.notes || "",
       vehicle_id: workOrder?.vehicle_id || "",
       serviceCategory: workOrder?.serviceCategory || "",
+      estimatedHours: workOrder?.estimated_hours || undefined,
+      vehicleMake: workOrder?.vehicleMake || "",
+      vehicleModel: workOrder?.vehicleModel || "",
+      vehicleYear: workOrder?.vehicleYear || "",
     },
   });
 
@@ -74,7 +92,15 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
         ...data,
         // Make sure status is always provided
         status: data.status || 'pending',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Convert to snake_case for database
+        vehicle_make: data.vehicleMake,
+        vehicle_model: data.vehicleModel,
+        vehicle_year: data.vehicleYear,
+        estimated_hours: data.estimatedHours,
+        // Add any inventory items and time entries
+        inventory_items: data.inventoryItems || [],
+        time_entries: timeEntries.length > 0 ? timeEntries : [],
       };
       
       // Logic for submitting work order to database
@@ -94,6 +120,12 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
     } catch (err) {
       console.error('Error saving work order:', err);
       setError('Failed to save work order. Please try again.');
+      
+      toast({
+        title: "Error",
+        description: "Failed to save work order. Please check your inputs and try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
