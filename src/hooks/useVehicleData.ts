@@ -25,42 +25,6 @@ export const useVehicleData = () => {
     setYears(yearsList);
   }, []);
 
-  // Load makes from database on mount
-  useEffect(() => {
-    const fetchMakes = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const { data, error } = await supabase
-          .from('vehicle_makes')
-          .select('*')
-          .order('make_display');
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Map the data to match our CarMake type
-        const formattedMakes: CarMake[] = data.map((make: any) => ({
-          make_id: make.make_id,
-          make_display: make.make_display,
-          make_is_common: '1', // All makes in our DB are considered common
-          make_country: make.country || '' // Use country if available
-        }));
-        
-        setMakes(formattedMakes);
-      } catch (err) {
-        console.error("Error loading vehicle makes:", err);
-        setError("Could not load vehicle makes");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchMakes();
-  }, []);
-
   // Function to fetch models for a selected make
   const fetchModels = useCallback(async (make: string) => {
     if (!make) return;
