@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { CalendarEvent } from '@/types/calendar/events';
 import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
@@ -74,8 +73,14 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
           priority: event.priority || 'medium',
           customer: event.customer || '',
           technician: event.technician || '',
+          technician_id: event.technician_id,
           type: event.event_type,
           workOrderId: event.work_order_id,
+          start_time: event.start_time,
+          end_time: event.end_time,
+          all_day: event.all_day,
+          customer_id: event.customer_id,
+          work_order_id: event.work_order_id
         }));
 
         // Transform work order events to CalendarEvent format
@@ -91,8 +96,14 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
           priority: event.priority || 'medium',
           customer: event.customer || '',
           technician: event.technician || '',
+          technician_id: event.technician_id,
           type: 'work-order',
           workOrderId: event.id,
+          start_time: event.start_time,
+          end_time: event.end_time,
+          all_day: event.all_day,
+          customer_id: event.customer_id,
+          work_order_id: event.id
         }));
 
         // Combine and filter events

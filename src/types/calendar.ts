@@ -6,12 +6,13 @@ export type CalendarViewType = "month" | "week" | "day";
 export interface CalendarEvent {
   id: string;
   title: string;
-  start: Date;
-  end: Date;
+  start: string; // Changed from Date to string to match events.ts
+  end: string;   // Changed from Date to string to match events.ts
   customer: string;
   status: string;
   priority: string;
   technician: string;
+  technician_id?: string; // Added for compatibility
   location: string;
   type: 'work-order' | 'invoice' | 'appointment' | 'meeting' | 'break' | 'other';
   inventoryItems?: WorkOrderInventoryItem[];
@@ -20,7 +21,6 @@ export interface CalendarEvent {
   description?: string;
   customer_id?: string;
   work_order_id?: string;
-  technician_id?: string;
   all_day?: boolean;
   start_time?: string;
   end_time?: string;

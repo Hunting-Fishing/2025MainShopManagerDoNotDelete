@@ -1,6 +1,5 @@
-
 import { supabase } from "@/lib/supabase";
-import { CreateCalendarEventDto } from "@/types/calendar/events";
+import { CalendarEvent, CreateCalendarEventDto } from "@/types/calendar/events";
 import { handleApiError } from "@/utils/errorHandling";
 
 // Create a type to represent the internal database structure

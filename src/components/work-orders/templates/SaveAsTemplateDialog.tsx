@@ -45,15 +45,15 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
     }));
 
     // Ensure status and priority are valid enum values
-    const status = (formValues.status as "pending" | "in-progress" | "completed" | "cancelled") || "pending";
-    const priority = (formValues.priority as "low" | "medium" | "high") || "medium";
+    const status = formValues.status || "pending";
+    const priority = formValues.priority || "medium";
 
     // Create the template with values from the form
     const result = await createTemplate({
       name: templateName,
       description: templateDescription || `Template for ${formValues.customer}`,
-      status,
-      priority,
+      status: status as "pending" | "in-progress" | "completed" | "cancelled",
+      priority: priority as "low" | "medium" | "high",
       technician: formValues.technician,
       notes: formValues.notes,
       inventoryItems: inventoryItems
@@ -68,7 +68,22 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
       
       // Close dialog and notify parent component
       setOpen(false);
-      onSave(result.template!);
+      
+      // Create a complete template object to pass to the parent
+      const savedTemplate: WorkOrderTemplate = {
+        id: result.id || '',
+        name: templateName,
+        description: templateDescription || `Template for ${formValues.customer}`,
+        status: status as "pending" | "in-progress" | "completed" | "cancelled", 
+        priority: priority as "low" | "medium" | "high",
+        technician: formValues.technician,
+        notes: formValues.notes || '',
+        inventoryItems: inventoryItems,
+        createdAt: new Date().toISOString(),
+        usageCount: 0
+      };
+      
+      onSave(savedTemplate);
       
       // Reset form
       setTemplateName("");
@@ -76,7 +91,7 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
     } else {
       toast({
         title: "Error Saving Template",
-        description: result.error || "An unknown error occurred",
+        description: result.message || "An unknown error occurred",
         variant: "destructive"
       });
     }

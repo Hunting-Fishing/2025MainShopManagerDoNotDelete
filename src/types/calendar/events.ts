@@ -2,19 +2,25 @@
 export interface CalendarEvent {
   id: string;
   title: string;
-  start: string;
-  end: string;
+  start: string; // Using string consistently for date fields
+  end: string;   // Using string consistently for date fields
   allDay?: boolean;
   description?: string;
   location?: string;
-  workOrderId?: string;
+  workOrderId?: string; // Consistent camelCase property naming
   status?: string;
   priority?: string;
   customer?: string;
-  technician?: string;
-  assignedTo?: string;
+  technician?: string; 
+  technician_id?: string; // Keep for backward compatibility
   color?: string;
   type?: 'appointment' | 'work-order' | 'reminder' | 'event' | string;
+  // Database field format (snake_case) for backward compatibility
+  all_day?: boolean;
+  start_time?: string;
+  end_time?: string;
+  customer_id?: string;
+  work_order_id?: string;
 }
 
 export interface CalendarEventDialogProps {

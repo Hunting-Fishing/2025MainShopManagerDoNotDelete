@@ -23,6 +23,7 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
     minute: '2-digit' 
   });
   
+  // Use string for date formatting to avoid type errors
   const eventDate = formatDate(new Date(event.start));
 
   // Determine if this is a work order event

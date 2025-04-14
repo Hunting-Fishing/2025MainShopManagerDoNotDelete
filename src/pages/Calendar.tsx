@@ -8,7 +8,7 @@ import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
-import { CalendarEvent } from "@/types/calendar"; // Import from the main calendar types file
+import { CalendarEvent } from "@/types/calendar/events"; // Import from events.ts specifically
 
 export default function Calendar() {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ export default function Calendar() {
       technicianFilter === "all" || event.technician_id === technicianFilter;
     
     const matchesStatus = 
-      statusFilter.length === 0 || statusFilter.includes(event.status);
+      statusFilter.length === 0 || statusFilter.includes(event.status || '');
     
     return matchesTechnician && matchesStatus;
   });

@@ -11,6 +11,7 @@ import { workOrderTemplates } from "@/data/workOrderTemplatesData";
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns"; // Import format for date formatting
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -97,6 +98,10 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   useEffect(() => {
     if (initialTemplate) {
       console.log("Applying template:", initialTemplate.name);
+      
+      // Format today's date as a string for the form
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
       // Reset form with template values
       form.reset({
         customer: initialTemplate.customer || "",
@@ -105,7 +110,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         priority: initialTemplate.priority,
         technician: initialTemplate.technician,
         location: initialTemplate.location || "",
-        dueDate: new Date(), // Always use current date
+        dueDate: today, // Always use current date as string
         notes: initialTemplate.notes || "",
         inventoryItems: initialTemplate.inventoryItems || [],
       });
@@ -132,7 +137,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         // If we have a vehicle ID, store it for the component that needs it
         if (vehicleId) {
           setSelectedVehicleId(vehicleId);
-          form.setValue('vehicleId', vehicleId);
+          form.setValue('vehicle_id', vehicleId); // Using correct field name from form
         }
         
         // Show a toast notification to confirm the pre-fill

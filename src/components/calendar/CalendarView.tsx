@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { CalendarEvent, CalendarViewType } from "@/types/calendar";
+import { CalendarViewType } from "@/types/calendar";
 import { CalendarMonthView } from "./CalendarMonthView";
 import { CalendarWeekView } from "./CalendarWeekView";
 import { CalendarDayView } from "./CalendarDayView";
 import { CalendarEventDialog } from "./CalendarEventDialog";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { ChatRoom } from "@/types/chat";
+import { CalendarEvent } from "@/types/calendar/events"; // Import from the specific file
 
 interface CalendarViewProps {
   events: CalendarEvent[];
