@@ -1,5 +1,6 @@
 
 import { useAuth } from "@/hooks/useAuth";
+import React from "react";
 
 // Define the possible permissions
 export type Permission = 
