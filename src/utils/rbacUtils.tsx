@@ -1,5 +1,5 @@
 
-import { useEffect, useState, FunctionComponent, ComponentType } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 // Permission types
