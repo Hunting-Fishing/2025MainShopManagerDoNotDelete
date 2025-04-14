@@ -37,9 +37,10 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     if (selectedMake) {
       console.log("Make changed in useVehicleForm, fetching models for:", selectedMake);
       setModelsLoaded(false);
-      fetchModels(selectedMake).then((models) => {
+      fetchModels(selectedMake).then((fetchedModels) => {
         setModelsLoaded(true);
-        console.log(`Loaded ${models?.length || 0} models for make:`, selectedMake);
+        const modelsCount = fetchedModels ? fetchedModels.length : 0;
+        console.log(`Loaded ${modelsCount} models for make:`, selectedMake);
       });
     }
   }, [selectedMake, fetchModels]);
@@ -66,7 +67,8 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         // Wait for models to load
         console.log("Fetching models for make:", vehicleInfo.make);
         const fetchedModels = await fetchModels(vehicleInfo.make);
-        console.log(`Fetched ${fetchedModels?.length || 0} models for make:`, vehicleInfo.make);
+        const modelsCount = fetchedModels ? fetchedModels.length : 0;
+        console.log(`Fetched ${modelsCount} models for make:`, vehicleInfo.make);
         setModelsLoaded(true);
         
         // Set the model after models are fetched with a small delay
