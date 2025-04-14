@@ -65,12 +65,12 @@ export const usePermission = () => {
  * HOC to protect components based on permissions
  */
 export const withPermission = <P extends object>(
-  WrappedComponent: ComponentType<P>,
+  WrappedComponent: React.ComponentType<P>,
   resource: ResourceType,
   action: ActionType,
-  FallbackComponent?: ComponentType<{}>
+  FallbackComponent?: React.ComponentType
 ): React.FC<P> => {
-  const WithPermissionComponent: React.FC<P> = (props) => {
+  const WithPermissionComponent: React.FC<P> = (props: P) => {
     const { hasPermission } = usePermission();
     const allowed = hasPermission(resource, action);
 
