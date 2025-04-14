@@ -44,12 +44,16 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
       unitPrice: item.unitPrice
     }));
 
+    // Ensure status and priority are valid enum values
+    const status = (formValues.status as "pending" | "in-progress" | "completed" | "cancelled") || "pending";
+    const priority = (formValues.priority as "low" | "medium" | "high") || "medium";
+
     // Create the template with values from the form
     const result = await createTemplate({
       name: templateName,
       description: templateDescription || `Template for ${formValues.customer}`,
-      status: formValues.status,
-      priority: formValues.priority,
+      status,
+      priority,
       technician: formValues.technician,
       notes: formValues.notes,
       inventoryItems: inventoryItems
@@ -58,73 +62,66 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
     if (result.success) {
       toast({
         title: "Template Saved",
-        description: `"${templateName}" has been saved as a template.`,
-        variant: "success",
+        description: `"${templateName}" template has been saved successfully.`,
+        variant: "success"
       });
       
-      // Reset and close
+      // Close dialog and notify parent component
+      setOpen(false);
+      onSave(result.template!);
+      
+      // Reset form
       setTemplateName("");
       setTemplateDescription("");
-      setOpen(false);
     } else {
       toast({
         title: "Error Saving Template",
-        description: result.message || "An error occurred while saving the template.",
-        variant: "destructive",
+        description: result.error || "An unknown error occurred",
+        variant: "destructive"
       });
     }
   };
 
   return (
     <>
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         onClick={() => setOpen(true)}
       >
         Save as Template
       </Button>
-
+      
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Save as Template</DialogTitle>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="template-name" className="text-right">
-                Name
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="templateName">Template Name</Label>
               <Input
-                id="template-name"
+                id="templateName"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
-                className="col-span-3"
-                placeholder="Enter template name"
+                placeholder="Enter a name for this template"
               />
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="template-description" className="text-right">
-                Description
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="templateDescription">Description (Optional)</Label>
               <Textarea
-                id="template-description"
+                id="templateDescription"
                 value={templateDescription}
                 onChange={(e) => setTemplateDescription(e.target.value)}
-                className="col-span-3"
-                placeholder="Enter template description"
+                placeholder="Describe what this template is used for"
               />
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              Save Template
-            </Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave}>Save Template</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

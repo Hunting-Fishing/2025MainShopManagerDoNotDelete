@@ -71,7 +71,7 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
                     )}
                   >
                     {field.value ? (
-                      format(field.value, "PPP")
+                      format(new Date(field.value), "PPP")
                     ) : (
                       <span>Select a date</span>
                     )}
@@ -82,11 +82,9 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={field.value}
+                  selected={field.value ? new Date(field.value) : undefined}
                   onSelect={field.onChange}
                   initialFocus
-                  disabled={(date) => date < new Date()}
-                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>

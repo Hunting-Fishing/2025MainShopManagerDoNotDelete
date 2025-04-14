@@ -1,18 +1,13 @@
+
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CalendarEvent } from "@/types/calendar";
+import { CalendarEvent, CalendarEventDialogProps } from "@/types/calendar/events";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { statusMap } from "@/utils/workOrders"; // Updated import path
 import { formatDate } from "@/utils/date";
 import { Link } from "react-router-dom";
-
-interface CalendarEventDialogProps {
-  event: CalendarEvent | null;
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
   if (!event) return null;
@@ -28,7 +23,7 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
     minute: '2-digit' 
   });
   
-  const eventDate = formatDate(event.start);
+  const eventDate = formatDate(new Date(event.start));
 
   // Determine if this is a work order event
   const isWorkOrder = event.type === 'work-order';
@@ -80,11 +75,11 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             </div>
           )}
           
-          {/* Assigned To */}
-          {event.assignedTo && (
+          {/* Assigned To - using technician field */}
+          {event.technician && (
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-500" />
-              <span>Assigned to {event.assignedTo}</span>
+              <span>Assigned to {event.technician}</span>
             </div>
           )}
           

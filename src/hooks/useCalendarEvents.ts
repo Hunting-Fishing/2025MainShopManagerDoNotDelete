@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { CalendarEvent as DatabaseCalendarEvent } from '@/types/calendar/events';
-import { CalendarEvent } from '@/types/calendar';
+import { CalendarEvent } from '@/types/calendar/events';
 import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
 import { getShiftChats } from '@/services/calendar/shiftChatService';
 import { ChatRoom } from '@/types/chat';
@@ -38,7 +37,7 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
         const endDateStr = format(endDate, 'yyyy-MM-dd');
 
         // Fetch calendar events
-        const [calendarEvents, workOrderEvents, shiftChatsData] = await Promise.all([
+        const [dbCalendarEvents, dbWorkOrderEvents, shiftChatsData] = await Promise.all([
           getCalendarEvents(startDateStr, endDateStr),
           getWorkOrderEvents(),
           getShiftChats(startDateStr, endDateStr)
@@ -62,39 +61,51 @@ export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'd
           }
         }));
 
-        // Combine and format all events for the calendar
-        // Transform DatabaseCalendarEvent to CalendarEvent format for UI
-        const formattedEvents: CalendarEvent[] = [
-          ...calendarEvents,
-          ...workOrderEvents.filter(wo => {
-            // Only include work orders that aren't already in calendar_events
-            return !calendarEvents.some(event => 
-              event.work_order_id === wo.id && event.event_type === 'work-order'
-            );
-          })
-        ].map(event => ({
+        // Transform database events to CalendarEvent format for UI
+        const calendarEvents: CalendarEvent[] = dbCalendarEvents.map(event => ({
           id: event.id,
           title: event.title,
-          start: new Date(event.start_time),
-          end: new Date(event.end_time),
-          customer: event.customer || '',
-          status: event.status,
-          priority: event.priority,
-          technician: event.technician || '',
-          location: event.location || '',
-          type: event.event_type, // Map event_type to type for UI compatibility
-          
-          // Include original fields for API operations
+          start: event.start_time,
+          end: event.end_time,
+          allDay: event.all_day,
           description: event.description,
-          customer_id: event.customer_id,
-          work_order_id: event.work_order_id,
-          technician_id: event.technician_id,
-          all_day: event.all_day,
-          start_time: event.start_time,
-          end_time: event.end_time
+          location: event.location || '',
+          status: event.status || '',
+          priority: event.priority || 'medium',
+          customer: event.customer || '',
+          technician: event.technician || '',
+          type: event.event_type,
+          workOrderId: event.work_order_id,
         }));
 
-        setEvents(formattedEvents);
+        // Transform work order events to CalendarEvent format
+        const workOrderEvents: CalendarEvent[] = dbWorkOrderEvents.map(event => ({
+          id: event.id,
+          title: event.title,
+          start: event.start_time,
+          end: event.end_time,
+          allDay: event.all_day || false,
+          description: event.description,
+          location: event.location || '',
+          status: event.status || '',
+          priority: event.priority || 'medium',
+          customer: event.customer || '',
+          technician: event.technician || '',
+          type: 'work-order',
+          workOrderId: event.id,
+        }));
+
+        // Combine and filter events
+        const combinedEvents = [
+          ...calendarEvents,
+          ...workOrderEvents.filter(wo => {
+            return !calendarEvents.some(event => 
+              event.workOrderId === wo.id && event.type === 'work-order'
+            );
+          })
+        ];
+
+        setEvents(combinedEvents);
         setShiftChats(formattedShiftChats);
       } catch (err) {
         console.error("Error fetching calendar data:", err);

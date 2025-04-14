@@ -1,7 +1,29 @@
 
 import { supabase } from "@/lib/supabase";
-import { CalendarEvent, CreateCalendarEventDto } from "@/types/calendar/events";
+import { CreateCalendarEventDto } from "@/types/calendar/events";
 import { handleApiError } from "@/utils/errorHandling";
+
+// Create a type to represent the internal database structure
+interface DbCalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  all_day?: boolean;
+  location?: string;
+  customer_id?: string;
+  work_order_id?: string;
+  technician_id?: string;
+  event_type: string;
+  status?: string;
+  priority?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  customer?: string;
+  technician?: string;
+}
 
 /**
  * Fetch calendar events for a specified date range
@@ -9,7 +31,7 @@ import { handleApiError } from "@/utils/errorHandling";
 export async function getCalendarEvents(
   startDate: string, 
   endDate: string
-): Promise<CalendarEvent[]> {
+): Promise<DbCalendarEvent[]> {
   try {
     // Fetch events based on the date range
     const { data, error } = await supabase
@@ -87,7 +109,7 @@ export async function getCalendarEvents(
 /**
  * Fetch work order events for the calendar
  */
-export async function getWorkOrderEvents(): Promise<CalendarEvent[]> {
+export async function getWorkOrderEvents(): Promise<DbCalendarEvent[]> {
   try {
     const { data, error } = await supabase
       .from('work_orders')
@@ -161,7 +183,7 @@ export async function getWorkOrderEvents(): Promise<CalendarEvent[]> {
           customer_id: wo.customer_id,
           work_order_id: wo.id,
           technician_id: wo.technician_id,
-          event_type: 'work-order' as 'work-order',
+          event_type: 'work-order',
           status: wo.status,
           priority: 'medium', // Default priority
           customer,
@@ -184,7 +206,7 @@ export async function getWorkOrderEvents(): Promise<CalendarEvent[]> {
  */
 export async function createCalendarEvent(
   eventData: CreateCalendarEventDto
-): Promise<CalendarEvent | null> {
+): Promise<DbCalendarEvent | null> {
   try {
     const { data, error } = await supabase
       .from('calendar_events')
@@ -205,8 +227,8 @@ export async function createCalendarEvent(
  */
 export async function updateCalendarEvent(
   id: string,
-  eventData: Partial<CalendarEvent>
-): Promise<CalendarEvent | null> {
+  eventData: Partial<DbCalendarEvent>
+): Promise<DbCalendarEvent | null> {
   try {
     const { data, error } = await supabase
       .from('calendar_events')

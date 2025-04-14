@@ -24,6 +24,7 @@ export function CalendarView({
   shiftChats = []
 }: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [showEventDialog, setShowEventDialog] = useState<boolean>(false);
   const [now, setNow] = useState(new Date());
 
   // Update current time every minute
@@ -38,10 +39,12 @@ export function CalendarView({
   // Open event details
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
+    setShowEventDialog(true);
   };
 
   // Close event details
   const handleCloseDialog = () => {
+    setShowEventDialog(false);
     setSelectedEvent(null);
   };
 
@@ -95,13 +98,11 @@ export function CalendarView({
         </>
       )}
 
-      {selectedEvent && (
-        <CalendarEventDialog 
-          event={selectedEvent} 
-          open={!!selectedEvent} 
-          onClose={handleCloseDialog} 
-        />
-      )}
+      <CalendarEventDialog 
+        event={selectedEvent} 
+        isOpen={showEventDialog} 
+        onClose={handleCloseDialog} 
+      />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { WorkOrder } from "@/types/workOrder";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
 
 // Define schema using zod for form validation
 const workOrderFormSchema = z.object({
@@ -27,6 +28,10 @@ const workOrderFormSchema = z.object({
 export type WorkOrderFormValues = z.infer<typeof workOrderFormSchema>;
 
 export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderFormSchema),
     defaultValues: {
@@ -47,5 +52,31 @@ export function useWorkOrderForm(workOrder?: Partial<WorkOrder>) {
     },
   });
 
-  return form;
+  const onSubmit = async (values: WorkOrderFormValues) => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      // Submit logic would go here
+      console.log('Form submitted:', values);
+      // You would call an API or service to save the work order here
+    } catch (err: any) {
+      setError(err.message || "An error occurred while saving the work order");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const setFormValues = (values: Partial<WorkOrderFormValues>) => {
+    form.reset({ ...form.getValues(), ...values });
+  };
+
+  return {
+    form,
+    onSubmit,
+    isSubmitting,
+    error,
+    timeEntries,
+    setTimeEntries,
+    setFormValues
+  };
 }
