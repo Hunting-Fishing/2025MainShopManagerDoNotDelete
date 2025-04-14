@@ -69,7 +69,7 @@ export const withPermission = <P extends object>(
   resource: ResourceType,
   action: ActionType,
   FallbackComponent?: ComponentType<{}>
-): React.FC<P> => {  // Explicit return type added
+): React.FC<P> => {
   const WithPermissionComponent: React.FC<P> = (props) => {
     const { hasPermission } = usePermission();
     const allowed = hasPermission(resource, action);
