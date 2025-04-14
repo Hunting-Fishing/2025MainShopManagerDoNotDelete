@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle, CarMake, CarModel } from '@/types/vehicle';
@@ -36,7 +35,7 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       };
     }
 
-    // Check the mock database directly with full VIN first
+    // Check the mock database for exact match with full VIN
     const exactVinMatch = mockVinDatabase[vin];
     if (exactVinMatch) {
       console.log(`Found exact match in mock database for VIN ${vin}:`, exactVinMatch);
@@ -55,7 +54,6 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
     }
     
     // If no match in mock database, try the edge function
-    // This might still fail with CORS errors, but we'll try with better error handling
     try {
       console.log("Attempting to use edge function for VIN decoding");
       const { data: decodedData, error } = await supabase.functions.invoke('vin-decoder', {
@@ -64,7 +62,6 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
 
       if (error) {
         console.warn("Edge function error:", error);
-        // Instead of throwing, we'll continue to the fallback method
       }
 
       if (decodedData) {
@@ -73,34 +70,34 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       }
     } catch (edgeFunctionError) {
       console.warn("Failed to use edge function, falling back to mock data:", edgeFunctionError);
-      // We continue to the fallback method below
     }
 
     // If we get here, VIN wasn't found in any source
-    // Let's try to guess based on the first few characters
-    // This is not as accurate but better than nothing
     if (vin.startsWith('1FT') || vin.startsWith('1FA') || vin.startsWith('1FM')) {
       return {
-        year: "2020", // Just a guess
+        year: "2020",
         make: "ford",
         model: "Unknown Ford Model",
         transmission: "Automatic",
+        fuel_type: "Gas",
         body_style: "unknown"
       };
     } else if (vin.startsWith('1G1') || vin.startsWith('2G1') || vin.startsWith('3G1')) {
       return {
-        year: "2020", // Just a guess
+        year: "2020", 
         make: "chevrolet",
         model: "Unknown Chevrolet Model",
         transmission: "Automatic",
+        fuel_type: "Gas",
         body_style: "unknown"
       };
     } else if (vin.startsWith('JTD') || vin.startsWith('4T1') || vin.startsWith('5TD')) {
       return {
-        year: "2020", // Just a guess
+        year: "2020",
         make: "toyota",
         model: "Unknown Toyota Model",
         transmission: "Automatic",
+        fuel_type: "Gas",
         body_style: "unknown"
       };
     }
@@ -110,11 +107,6 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
     
   } catch (error) {
     console.error('Error decoding VIN:', error);
-    toast({
-      title: 'VIN Lookup',
-      description: 'Using built-in VIN database for this vehicle.',
-      variant: 'default',
-    });
     return null;
   }
 }

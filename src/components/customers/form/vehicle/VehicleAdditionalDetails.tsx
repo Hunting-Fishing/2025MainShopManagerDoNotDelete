@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   const gvwr = form.watch(`vehicles.${index}.gvwr`);
   
   // Auto-expand if we have decoded details or any fields are filled
-  React.useEffect(() => {
+  useEffect(() => {
     if (decodedDetails || transmission || transmissionType || driveType || 
         fuelType || engine || bodyStyle || country || trim || gvwr) {
       setIsExpanded(true);
@@ -42,6 +42,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
 
   // Common fuel types for the dropdown
   const fuelTypes = [
+    "Gas",
     "Gasoline",
     "Diesel",
     "Electric",
