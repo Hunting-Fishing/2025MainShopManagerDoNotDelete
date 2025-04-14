@@ -4,9 +4,9 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { Input } from "@/components/ui/input";
 import { Loader2, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
 import { BaseFieldProps } from "./BaseFieldTypes";
 
+// Remove the badge previews since we'll be setting the actual fields directly
 export const VinField: React.FC<BaseFieldProps & { 
   processing?: boolean;
   decodedVehicleInfo?: {
@@ -60,20 +60,6 @@ export const VinField: React.FC<BaseFieldProps & {
               )}
             </div>
           </div>
-          
-          {decodedVehicleInfo && decodedVehicleInfo.valid && decodedVehicleInfo.make && decodedVehicleInfo.model && (
-            <div className="mt-2 text-sm">
-              <Badge variant="outline" className="bg-muted/50 mr-2">
-                {decodedVehicleInfo.year || ''}
-              </Badge>
-              <Badge variant="outline" className="bg-muted/50 mr-2">
-                {decodedVehicleInfo.make || ''}
-              </Badge>
-              <Badge variant="outline" className="bg-muted/50">
-                {decodedVehicleInfo.model || ''}
-              </Badge>
-            </div>
-          )}
           
           <FormDescription>
             Enter a complete 17-digit VIN to auto-populate vehicle details

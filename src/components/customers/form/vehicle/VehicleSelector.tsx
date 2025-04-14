@@ -53,7 +53,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             console.log("Decoded VIN data:", decodedData);
             setDecodedVehicle(decodedData);
             
-            // Set primary fields
+            // Set primary fields immediately - this ensures they appear in the form fields
             form.setValue(`vehicles.${index}.make`, decodedData.make || '');
             form.setValue(`vehicles.${index}.model`, decodedData.model || '');
             form.setValue(`vehicles.${index}.year`, decodedData.year || '');

@@ -35,6 +35,7 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
   
   // Common fuel types
   const fuelTypeOptions = [
+    'Gas',
     'Gasoline',
     'Diesel',
     'Electric',
@@ -169,6 +170,7 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
                       <Select 
                         onValueChange={formField.onChange} 
                         defaultValue={field.value?.toString()}
+                        value={formField.value || field.value?.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -204,6 +206,7 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
                       <Input 
                         {...formField} 
                         defaultValue={field.value}
+                        value={formField.value || field.value}
                         placeholder={field.placeholder}
                         className="bg-gray-50"
                       />
