@@ -2,6 +2,7 @@
 import { useCustomers } from "@/hooks/useCustomers";
 import { CustomersList } from "@/components/customers/list/CustomersList";
 import { CustomersHeader } from "@/components/customers/list/CustomersHeader";
+import { CustomerCount } from "@/components/customers/CustomerCount";
 
 export default function Customers() {
   const {
@@ -22,7 +23,14 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      <CustomersHeader />
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="md:col-span-1">
+          <CustomerCount />
+        </div>
+        <div className="md:col-span-3">
+          <CustomersHeader />
+        </div>
+      </div>
       <CustomersList
         customers={customers}
         filteredCustomers={filteredCustomers}
