@@ -70,7 +70,8 @@ export const withPermission = <P extends object>(
   action: ActionType,
   FallbackComponent?: FunctionComponent
 ) => {
-  const WithPermissionComponent = (props: P) => {
+  // Fixed the missing return type and syntax issues with generics
+  const WithPermissionComponent: React.FC<P> = (props: P) => {
     const { hasPermission } = usePermission();
     const allowed = hasPermission(resource, action);
 
