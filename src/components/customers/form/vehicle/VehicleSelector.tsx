@@ -29,10 +29,12 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   onRemove
 }) => {
   const { toast } = useToast();
-  const { fetchModels, makes, models } = useVehicleData();
+  const { fetchModels, makes, models, loading: vehicleDataLoading } = useVehicleData();
   const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
   const [isDecoding, setIsDecoding] = useState(false);
   const [hasDecodingFailed, setHasDecodingFailed] = useState(false);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [makesLoading, setMakesLoading] = useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const vin = form.watch(`vehicles.${index}.vin`);
   const make = form.watch(`vehicles.${index}.make`);
@@ -51,15 +53,21 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     if (make) {
       console.log("Make changed in VehicleSelector, fetching models for:", make);
       setModelsLoaded(false);
+      setModelsLoading(true);
+      
       fetchModels(make).then((fetchedModels) => {
         setModelsLoaded(true);
+        setModelsLoading(false);
         console.log(`Models loaded for make: ${make}, count:`, fetchedModels.length);
+      }).catch(err => {
+        console.error("Error fetching models:", err);
+        setModelsLoading(false);
       });
     }
   }, [make, fetchModels]);
 
   // Handle manual make change
-  const handleMakeChange = (makeValue: string) => {
+  const handleMakeChange = async (makeValue: string) => {
     console.log("Make changed via selector:", makeValue);
     if (makeValue) {
       form.setValue(`vehicles.${index}.make`, makeValue);
@@ -67,6 +75,21 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       form.setValue(`vehicles.${index}.model`, '');
       // Trigger form validation
       form.trigger(`vehicles.${index}.make`);
+      
+      // Reset models state
+      setModelsLoading(true);
+      setModelsLoaded(false);
+      
+      try {
+        // Fetch models for the selected make
+        const fetchedModels = await fetchModels(makeValue);
+        setModelsLoaded(true);
+        console.log(`Loaded ${fetchedModels.length} models for make ${makeValue}`);
+      } catch (err) {
+        console.error("Error fetching models for make change:", err);
+      } finally {
+        setModelsLoading(false);
+      }
     }
   };
 
@@ -92,48 +115,58 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               `vehicles.${index}.`,
               async (make) => {
                 console.log("Fetching models for make:", make);
-                const fetchedModels = await fetchModels(make);
-                console.log("Fetched models successfully");
-                setModelsLoaded(true);
-                return Promise.resolve();
+                setModelsLoading(true);
+                try {
+                  const fetchedModels = await fetchModels(make);
+                  console.log("Fetched models successfully");
+                  setModelsLoaded(true);
+                  return Promise.resolve();
+                } catch (err) {
+                  console.error("Error fetching models during VIN decode:", err);
+                  return Promise.reject(err);
+                } finally {
+                  setModelsLoading(false);
+                }
               }
             );
             
             if (success) {
               // Force re-render the form
-              const currentValues = form.getValues();
-              form.reset({...currentValues}, { keepValues: true });
-              
-              toast({
-                title: "VIN Decoded Successfully",
-                description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
-                variant: "success",
-              });
-              
-              // Double check that make and model were set correctly
               setTimeout(() => {
-                const currentMake = form.getValues(`vehicles.${index}.make`);
-                const currentModel = form.getValues(`vehicles.${index}.model`);
-                
-                console.log("After decoding - Current make:", currentMake);
-                console.log("After decoding - Current model:", currentModel);
-                
-                // If values are still not set correctly, try setting them again
-                if (!currentMake && decodedData.make) {
-                  form.setValue(`vehicles.${index}.make`, decodedData.make);
-                }
-                
-                if (!currentModel && decodedData.model) {
-                  form.setValue(`vehicles.${index}.model`, decodedData.model);
-                }
-                
-                // Force form validation
-                form.trigger([
-                  `vehicles.${index}.make`,
-                  `vehicles.${index}.model`,
-                  `vehicles.${index}.year`
-                ]);
-              }, 800);
+                const currentValues = form.getValues();
+                form.reset({...currentValues}, { keepValues: true });
+              
+                toast({
+                  title: "VIN Decoded Successfully",
+                  description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
+                  variant: "success",
+                });
+              
+                // Double check that make and model were set correctly
+                setTimeout(() => {
+                  const currentMake = form.getValues(`vehicles.${index}.make`);
+                  const currentModel = form.getValues(`vehicles.${index}.model`);
+                  
+                  console.log("After decoding - Current make:", currentMake);
+                  console.log("After decoding - Current model:", currentModel);
+                  
+                  // If values are still not set correctly, try setting them again
+                  if (!currentMake && decodedData.make) {
+                    form.setValue(`vehicles.${index}.make`, decodedData.make);
+                  }
+                  
+                  if (!currentModel && decodedData.model) {
+                    form.setValue(`vehicles.${index}.model`, decodedData.model);
+                  }
+                  
+                  // Force form validation
+                  form.trigger([
+                    `vehicles.${index}.make`,
+                    `vehicles.${index}.model`,
+                    `vehicles.${index}.year`
+                  ]);
+                }, 800);
+              }, 200);
             } else {
               setHasDecodingFailed(true);
               toast({
@@ -206,13 +239,14 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             index={index} 
             makes={makes} 
             onMakeChange={handleMakeChange}
+            isLoading={makesLoading || vehicleDataLoading}
           />
           <ModelField 
             form={form} 
             index={index} 
             models={models}
             selectedMake={make}
-            isLoading={!modelsLoaded && !!make}
+            isLoading={modelsLoading || !modelsLoaded && !!make}
           />
         </div>
         <VehicleAdditionalDetails form={form} index={index} decodedDetails={decodedVehicle} />

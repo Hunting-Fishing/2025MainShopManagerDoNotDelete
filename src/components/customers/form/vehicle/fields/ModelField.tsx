@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HelpCircle, Loader2 } from "lucide-react";
@@ -22,6 +22,28 @@ export const ModelField: React.FC<ModelFieldProps> = ({
 }) => {
   // Get current model value from form
   const modelValue = form.watch(`vehicles.${index}.model`) || "";
+  
+  // Effect to validate model value exists in the models list when loaded
+  useEffect(() => {
+    if (!isLoading && models.length > 0 && modelValue) {
+      const modelExists = models.some(
+        model => model.model_name && model.model_name.toLowerCase() === modelValue.toLowerCase()
+      );
+      
+      // If model value doesn't match any available models, find closest match
+      if (!modelExists) {
+        // Try to find a case-insensitive match
+        const caseInsensitiveMatch = models.find(
+          model => model.model_name && model.model_name.toLowerCase() === modelValue.toLowerCase()
+        );
+        
+        if (caseInsensitiveMatch && caseInsensitiveMatch.model_name) {
+          console.log(`Found case-insensitive model match for "${modelValue}": "${caseInsensitiveMatch.model_name}"`);
+          form.setValue(`vehicles.${index}.model`, caseInsensitiveMatch.model_name);
+        }
+      }
+    }
+  }, [models, modelValue, isLoading, form, index]);
 
   return (
     <FormField
@@ -62,7 +84,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({
                 )}
               </SelectTrigger>
             </FormControl>
-            <SelectContent className="max-h-[300px]">
+            <SelectContent className="max-h-[300px] overflow-y-auto">
               {isLoading ? (
                 <SelectItem value="loading" disabled>Loading models...</SelectItem>
               ) : !selectedMake ? (
@@ -76,7 +98,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({
                     </SelectItem>
                   ))
               ) : (
-                <SelectItem value="no-models" disabled>No models available</SelectItem>
+                <SelectItem value="no-models" disabled>No models available for {selectedMake}</SelectItem>
               )}
             </SelectContent>
           </Select>
