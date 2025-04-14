@@ -1,5 +1,6 @@
+
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CalendarEvent, CalendarEventDialogProps } from "@/types/calendar/events";
@@ -9,6 +10,8 @@ import { statusMap } from "@/utils/workOrders";
 import { formatDate } from "@/utils/date";
 
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
+  const navigate = useNavigate();
+  
   if (!event) return null;
 
   const startTime = new Date(event.start).toLocaleTimeString([], { 
@@ -24,6 +27,14 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
   const eventDate = formatDate(event.start);
 
   const isWorkOrder = event.type === 'work-order';
+  
+  // Handle view work order click with both direct navigation and Link component support
+  const handleViewWorkOrder = () => {
+    if (event.id) {
+      navigate(`/work-orders/${event.id}`);
+      onClose();
+    }
+  };
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -92,10 +103,8 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
           </Button>
           
           {isWorkOrder && event.id && (
-            <Button asChild>
-              <Link to={`/work-orders/${event.id}`}>
-                View Work Order
-              </Link>
+            <Button onClick={handleViewWorkOrder}>
+              View Work Order
             </Button>
           )}
         </div>
