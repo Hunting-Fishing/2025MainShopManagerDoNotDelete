@@ -61,6 +61,7 @@ export const useVehicleData = () => {
     setSelectedModel('');
     
     try {
+      console.log("Fetching models for make:", make);
       const { data, error } = await supabase
         .from('vehicle_models')
         .select('*')
@@ -77,8 +78,9 @@ export const useVehicleData = () => {
         model_make_id: model.make_id
       }));
       
+      console.log(`Fetched ${formattedModels.length} models for make: ${make}`);
       setModels(formattedModels);
-      return Promise.resolve();
+      return Promise.resolve(formattedModels);
     } catch (err) {
       console.error("Error fetching vehicle models:", err);
       setError("Could not load vehicle models");
@@ -103,6 +105,9 @@ export const useVehicleData = () => {
         
         if (matchingMake) {
           result.make = matchingMake.make_id;
+          console.log("Mapped make to:", result.make);
+        } else {
+          console.log("Could not find matching make ID for:", result.make);
         }
       }
       

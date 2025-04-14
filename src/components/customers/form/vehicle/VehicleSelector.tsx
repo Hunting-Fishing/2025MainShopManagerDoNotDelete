@@ -41,10 +41,11 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   // When make changes, fetch corresponding models
   useEffect(() => {
     if (make) {
-      console.log("Make changed, fetching models for:", make);
+      console.log("Make changed in VehicleSelector, fetching models for:", make);
       setModelsLoaded(false);
       fetchModels(make).then(() => {
         setModelsLoaded(true);
+        console.log("Models loaded for make:", make);
       });
     }
   }, [make, fetchModels]);
@@ -70,8 +71,11 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               decodedData, 
               `vehicles.${index}.`,
               async (make) => {
-                await fetchModels(make);
+                console.log("Fetching models for make:", make);
+                const fetchedModels = await fetchModels(make);
+                console.log("Fetched models:", fetchedModels);
                 setModelsLoaded(true);
+                return Promise.resolve();
               }
             );
             
@@ -82,12 +86,21 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
                 variant: "success",
               });
               
-              // Force form validation
-              form.trigger([
-                `vehicles.${index}.make`,
-                `vehicles.${index}.model`,
-                `vehicles.${index}.year`
-              ]);
+              // Double check that make and model were set correctly
+              setTimeout(() => {
+                const currentMake = form.getValues(`vehicles.${index}.make`);
+                const currentModel = form.getValues(`vehicles.${index}.model`);
+                
+                console.log("After decoding - Current make:", currentMake);
+                console.log("After decoding - Current model:", currentModel);
+                
+                // Force form validation
+                form.trigger([
+                  `vehicles.${index}.make`,
+                  `vehicles.${index}.model`,
+                  `vehicles.${index}.year`
+                ]);
+              }, 500);
             } else {
               setHasDecodingFailed(true);
               toast({
@@ -162,6 +175,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             onMakeChange={(make) => {
               console.log("Make changed via selector:", make);
               fetchModels(make);
+              // Clear the model when make changes
               form.setValue(`vehicles.${index}.model`, '');
             }}
           />

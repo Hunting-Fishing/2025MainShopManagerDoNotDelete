@@ -167,21 +167,32 @@ export async function populateFormFromVin(
       form.setValue(`${fieldPrefix}year`, String(vinData.year));
     }
     
-    // Then set the make and fetch models for this make
+    // Then set the make
     if (vinData.make) {
+      console.log(`Setting ${fieldPrefix}make to:`, vinData.make);
       form.setValue(`${fieldPrefix}make`, vinData.make);
       
-      // Wait for models to load if callback provided
+      // Fetch models for this make before setting the model
       if (onModelsFetch) {
-        await onModelsFetch(vinData.make);
-        
-        // Set model after models are loaded
-        if (vinData.model) {
-          form.setValue(`${fieldPrefix}model`, vinData.model);
+        try {
+          await onModelsFetch(vinData.make);
+          console.log("Models fetched successfully");
+          
+          // Small delay to ensure models are loaded in the component state
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Now set the model after models are loaded
+          if (vinData.model) {
+            console.log(`Setting ${fieldPrefix}model to:`, vinData.model);
+            form.setValue(`${fieldPrefix}model`, vinData.model);
+          }
+        } catch (err) {
+          console.error("Error fetching models:", err);
         }
       } else {
-        // No models fetching callback - just set the model directly
+        // No fetch callback provided, set model directly
         if (vinData.model) {
+          console.log(`Setting ${fieldPrefix}model directly to:`, vinData.model);
           form.setValue(`${fieldPrefix}model`, vinData.model);
         }
       }
@@ -202,10 +213,17 @@ export async function populateFormFromVin(
     
     fieldsToSet.forEach(field => {
       if (field.value) {
-        console.log(`Setting ${field.name}:`, field.value);
+        console.log(`Setting ${fieldPrefix}${field.name}:`, field.value);
         form.setValue(`${fieldPrefix}${field.name}`, field.value);
       }
     });
+    
+    // Ensure form validation is triggered for make and model fields
+    form.trigger([
+      `${fieldPrefix}year`,
+      `${fieldPrefix}make`, 
+      `${fieldPrefix}model`
+    ]);
     
     return true;
   } catch (error) {

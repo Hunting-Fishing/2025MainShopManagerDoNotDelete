@@ -35,9 +35,11 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   // Fetch models when make changes
   useEffect(() => {
     if (selectedMake) {
+      console.log("Make changed in useVehicleForm, fetching models for:", selectedMake);
       setModelsLoaded(false);
-      fetchModels(selectedMake).then(() => {
+      fetchModels(selectedMake).then((models) => {
         setModelsLoaded(true);
+        console.log(`Loaded ${models?.length || 0} models for make:`, selectedMake);
       });
     }
   }, [selectedMake, fetchModels]);
@@ -58,15 +60,19 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       
       // Then set the make and fetch models for this make
       if (vehicleInfo.make) {
+        console.log("Setting make to:", vehicleInfo.make);
         form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
         
         // Wait for models to load
-        await fetchModels(vehicleInfo.make);
+        console.log("Fetching models for make:", vehicleInfo.make);
+        const fetchedModels = await fetchModels(vehicleInfo.make);
+        console.log(`Fetched ${fetchedModels?.length || 0} models for make:`, vehicleInfo.make);
         setModelsLoaded(true);
         
-        // Set the model after models are fetched
-        if (vehicleInfo.model) {
-          setTimeout(() => {
+        // Set the model after models are fetched with a small delay
+        setTimeout(() => {
+          if (vehicleInfo.model) {
+            console.log("Setting model to:", vehicleInfo.model);
             form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
             
             // Set additional vehicle details if available
@@ -96,6 +102,12 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
               `vehicles.${index}.model`
             ]);
             
+            // Verify fields were set correctly
+            console.log("Form fields after population:");
+            console.log("Year:", form.getValues(`vehicles.${index}.year`));
+            console.log("Make:", form.getValues(`vehicles.${index}.make`));
+            console.log("Model:", form.getValues(`vehicles.${index}.model`));
+            
             toast({
               title: "VIN Decoded Successfully",
               description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
@@ -104,12 +116,14 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
             
             setVinDecodeSuccess(true);
             setVinProcessing(false);
-          }, 300); // Small delay to ensure models are loaded
-        } else {
-          setVinProcessing(false);
-        }
+          } else {
+            setVinProcessing(false);
+            console.log("No model information available");
+          }
+        }, 500);
       } else {
         setVinProcessing(false);
+        console.log("No make information available");
       }
     } catch (err) {
       console.error("Error populating vehicle form:", err);
@@ -143,6 +157,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       setVinDecodeSuccess(false);
       
       try {
+        console.log(`Initiating VIN decode for ${vin}`);
         const vehicleInfo = await decodeVin(vin);
         if (vehicleInfo) {
           await populateVehicleFromVin(vehicleInfo);
