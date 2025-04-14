@@ -33,27 +33,28 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
   const [isDecoding, setIsDecoding] = useState(false);
   const [hasDecodingFailed, setHasDecodingFailed] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
   const vin = form.watch(`vehicles.${index}.vin`);
   const make = form.watch(`vehicles.${index}.make`);
   const processedVinRef = useRef<string>('');
 
+  // When make changes, fetch corresponding models
   useEffect(() => {
     if (make) {
-      fetchModels(make);
+      console.log("Make changed, fetching models for:", make);
+      setModelsLoaded(false);
+      fetchModels(make).then(() => {
+        setModelsLoaded(true);
+      });
     }
   }, [make, fetchModels]);
 
   useEffect(() => {
     const handleVinDecode = async () => {
-      // Only process if:
-      // 1. VIN is valid (17 chars)
-      // 2. We're not already decoding
-      // 3. This VIN hasn't been processed before
-      // 4. Fields aren't already filled in (to prevent overwriting user edits)
       if (vin?.length === 17 && !isDecoding && vin !== processedVinRef.current) {
         setIsDecoding(true);
         setHasDecodingFailed(false);
-        processedVinRef.current = vin; // Mark this VIN as processed
+        processedVinRef.current = vin;
         
         try {
           console.log(`Starting VIN decode for ${vin}`);
@@ -63,12 +64,27 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             console.log("Decoded VIN data:", decodedData);
             setDecodedVehicle(decodedData);
             
-            // Set primary fields immediately - this ensures they appear in the form
-            form.setValue(`vehicles.${index}.make`, decodedData.make || '');
-            form.setValue(`vehicles.${index}.model`, decodedData.model || '');
-            form.setValue(`vehicles.${index}.year`, decodedData.year || '');
+            // Set make first and wait for models to load
+            if (decodedData.make) {
+              console.log("Setting make to:", decodedData.make);
+              form.setValue(`vehicles.${index}.make`, decodedData.make);
+              await fetchModels(decodedData.make);
+              setModelsLoaded(true);
+              
+              // Set model after models are loaded
+              if (decodedData.model) {
+                console.log("Setting model to:", decodedData.model);
+                form.setValue(`vehicles.${index}.model`, decodedData.model);
+              }
+            }
+
+            // Set year
+            if (decodedData.year) {
+              console.log("Setting year to:", decodedData.year);
+              form.setValue(`vehicles.${index}.year`, decodedData.year.toString());
+            }
             
-            // Set all additional fields from the decoded data - check each one to avoid setting undefined values
+            // Set all additional fields
             const fieldsToSet = [
               { name: 'trim', value: decodedData.trim },
               { name: 'transmission', value: decodedData.transmission },
@@ -84,25 +100,20 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             // Only set fields that have values
             fieldsToSet.forEach(field => {
               if (field.value) {
-                form.setValue(`vehicles.${index}.${field.name}`, field.value);
                 console.log(`Setting ${field.name}:`, field.value);
+                form.setValue(`vehicles.${index}.${field.name}`, field.value);
               }
             });
             
-            // If the make has changed, update the models
-            if (decodedData.make) {
-              await fetchModels(decodedData.make);
-            }
-            
             toast({
               title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model} ${decodedData.trim || ''}`,
+              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
               variant: "success",
             });
             
-            // Force a form validation after setting values
+            // Force form validation
             form.trigger([
-              `vehicles.${index}.make`, 
+              `vehicles.${index}.make`,
               `vehicles.${index}.model`,
               `vehicles.${index}.year`
             ]);
@@ -170,7 +181,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             index={index} 
             makes={makes} 
             onMakeChange={(make) => {
-              // When make changes, refresh models and reset model value
+              console.log("Make changed via selector:", make);
               fetchModels(make);
               form.setValue(`vehicles.${index}.model`, '');
             }}
