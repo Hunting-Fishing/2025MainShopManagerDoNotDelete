@@ -3,17 +3,18 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { TeamMemberFormValues, teamMemberFormSchema } from './formValidation';
+import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { useDepartments } from '@/hooks/team/useDepartments';
-import { useRoles } from '@/hooks/team/useRoles';
+import { availableRoles, availableDepartments } from './formConstants';
+import { Loader2 } from 'lucide-react';
 import { JobInfoFields } from './JobInfoFields';
 import { PersonalInfoFields } from './PersonalInfoFields';
 import { StatusToggleField } from './StatusToggleField';
 import { NotesField } from './NotesField';
 import { FormActions } from './FormActions';
 import { detectRoleFromJobTitle } from '@/utils/roleUtils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface TeamMemberFormProps {
   onSubmit: (data: TeamMemberFormValues) => void;
@@ -25,16 +26,11 @@ interface TeamMemberFormProps {
 export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mode = 'create' }: TeamMemberFormProps) {
   const [autoDetectedRole, setAutoDetectedRole] = useState<string | null>(null);
   const [showRoleAlert, setShowRoleAlert] = useState(false);
-  
-  // Get departments and roles from our custom hooks
-  const { departments, isLoading: loadingDepartments } = useDepartments();
-  const { roles, isLoading: loadingRoles } = useRoles();
 
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberFormSchema),
     defaultValues: {
-      firstName: initialData?.firstName || '',
-      lastName: initialData?.lastName || '',
+      name: initialData?.name || '',
       email: initialData?.email || '',
       phone: initialData?.phone || '',
       jobTitle: initialData?.jobTitle || '',
@@ -48,7 +44,6 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
   const jobTitle = form.watch('jobTitle');
   const role = form.watch('role');
   
-  // Auto-detect role from job title
   if (jobTitle && !role && mode === 'create') {
     const detectedRole = detectRoleFromJobTitle(jobTitle);
     if (detectedRole && detectedRole !== autoDetectedRole) {
@@ -68,8 +63,6 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
     onSubmit(data);
   };
 
-  const isLoading = loadingDepartments || loadingRoles;
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -80,13 +73,14 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
               <span>
                 Based on the job title, we recommend the role: <strong>{autoDetectedRole}</strong>
               </span>
-              <button 
+              <Button 
                 type="button" 
-                className="bg-blue-100 hover:bg-blue-200 text-blue-800 py-1 px-3 rounded text-sm"
+                variant="outline" 
+                size="sm" 
                 onClick={handleApplyDetectedRole}
               >
                 Apply Role
-              </button>
+              </Button>
             </AlertDescription>
           </Alert>
         )}
@@ -101,9 +95,8 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
             <h3 className="text-lg font-medium">Work Information</h3>
             <JobInfoFields 
               control={form.control}
-              availableRoles={roles?.map(r => r.displayName) || []}
-              availableDepartments={departments?.map(d => d.name) || []}
-              isLoading={isLoading}
+              availableRoles={availableRoles}
+              availableDepartments={availableDepartments}
             />
           </div>
         </div>

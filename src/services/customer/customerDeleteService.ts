@@ -12,7 +12,6 @@ import { toast } from "@/hooks/use-toast";
  * - Customer communications
  * - Loyalty data
  * - Any segment assignments
- * - Follow-ups
  */
 export const deleteCustomer = async (customerId: string): Promise<boolean> => {
   try {
@@ -29,18 +28,7 @@ export const deleteCustomer = async (customerId: string): Promise<boolean> => {
       throw householdError;
     }
 
-    // 2. Delete customer's follow-ups
-    const { error: followUpsError } = await supabase
-      .from("follow_ups")
-      .delete()
-      .eq("customer_id", customerId);
-      
-    if (followUpsError) {
-      console.error("Error deleting customer follow-ups:", followUpsError);
-      throw followUpsError;
-    }
-
-    // 3. Delete customer's vehicles
+    // 2. Delete customer's vehicles
     const { error: vehiclesError } = await supabase
       .from("vehicles")
       .delete()
@@ -51,7 +39,7 @@ export const deleteCustomer = async (customerId: string): Promise<boolean> => {
       throw vehiclesError;
     }
 
-    // 4. Delete customer's notes
+    // 3. Delete customer's notes
     const { error: notesError } = await supabase
       .from("customer_notes")
       .delete()
@@ -62,7 +50,7 @@ export const deleteCustomer = async (customerId: string): Promise<boolean> => {
       throw notesError;
     }
 
-    // 5. Delete customer's interactions
+    // 4. Delete customer's interactions
     const { error: interactionsError } = await supabase
       .from("customer_interactions")
       .delete()
@@ -73,7 +61,7 @@ export const deleteCustomer = async (customerId: string): Promise<boolean> => {
       throw interactionsError;
     }
 
-    // 6. Delete customer's communications
+    // 5. Delete customer's communications
     const { error: communicationsError } = await supabase
       .from("customer_communications")
       .delete()
@@ -84,7 +72,7 @@ export const deleteCustomer = async (customerId: string): Promise<boolean> => {
       throw communicationsError;
     }
 
-    // 7. Delete customer's loyalty data
+    // 6. Delete customer's loyalty data
     const { error: loyaltyError } = await supabase
       .from("customer_loyalty")
       .delete()
@@ -95,7 +83,7 @@ export const deleteCustomer = async (customerId: string): Promise<boolean> => {
       throw loyaltyError;
     }
 
-    // 8. Delete customer's segment assignments
+    // 7. Delete customer's segment assignments
     const { error: segmentAssignmentsError } = await supabase
       .from("customer_segment_assignments")
       .delete()
@@ -106,7 +94,7 @@ export const deleteCustomer = async (customerId: string): Promise<boolean> => {
       throw segmentAssignmentsError;
     }
 
-    // 9. Finally delete the customer record itself
+    // 8. Finally delete the customer record itself
     const { error: customerDeleteError } = await supabase
       .from("customers")
       .delete()

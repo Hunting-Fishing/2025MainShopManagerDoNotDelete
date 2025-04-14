@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WorkOrdersExportMenu } from "./WorkOrdersExportMenu";
-import { WorkOrder } from "@/types/workOrder";
+import { WorkOrder } from "@/data/workOrdersData";
 
 interface WorkOrdersHeaderProps {
   workOrders?: WorkOrder[];
@@ -29,7 +29,7 @@ export default function WorkOrdersHeader({ workOrders = [] }: WorkOrdersHeaderPr
           asChild 
           className={`flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700 ${isMobile ? 'w-full justify-center' : ''}`}
         >
-          <Link to="/work-orders/create">
+          <Link to="/work-orders/new">
             <Plus className="h-4 w-4" />
             New Work Order
           </Link>

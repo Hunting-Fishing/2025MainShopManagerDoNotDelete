@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   ColumnDef,
@@ -18,7 +17,7 @@ import { WorkOrder } from "@/types/workOrder";
 import { Link } from "react-router-dom";
 import { formatDate, formatTimeInHoursAndMinutes } from "@/utils/workOrders/formatters";
 import { Badge } from "@/components/ui/badge";
-import { statusMap, priorityMap } from "@/utils/workOrders";
+import { statusMap, priorityMap } from "@/utils/workOrders"; // Updated import path
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];

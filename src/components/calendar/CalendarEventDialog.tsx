@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { CalendarEvent } from "@/types/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { statusMap } from "@/utils/workOrders"; // Updated import path
-import { formatDate, formatTime } from "@/utils/dateUtils";
+import { formatDate } from "@/utils/date";
 import { Link } from "react-router-dom";
 
 interface CalendarEventDialogProps {
@@ -18,18 +17,18 @@ interface CalendarEventDialogProps {
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
   if (!event) return null;
 
-  // Format the event times for display - properly handling string dates
-  const startTime = event.start ? 
-    formatTime(event.start) : 
-    '';
+  // Format the event times for display
+  const startTime = new Date(event.start).toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
   
-  const endTime = event.end ? 
-    formatTime(event.end) : 
-    '';
+  const endTime = new Date(event.end).toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
   
-  const eventDate = event.start ? 
-    formatDate(event.start) : 
-    formatDate(new Date().toISOString()); // Fallback to today if event.start is missing
+  const eventDate = formatDate(event.start);
 
   // Determine if this is a work order event
   const isWorkOrder = event.type === 'work-order';
@@ -81,11 +80,11 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             </div>
           )}
           
-          {/* Assigned To - using technician property */}
-          {event.technician && (
+          {/* Assigned To */}
+          {event.assignedTo && (
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-500" />
-              <span>Assigned to {event.technician}</span>
+              <span>Assigned to {event.assignedTo}</span>
             </div>
           )}
           

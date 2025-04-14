@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CustomerFormValues } from '@/components/customers/form/schemas/customerSchema';
 import { useToast } from '@/hooks/use-toast';
@@ -7,9 +7,6 @@ import { getCustomerById, updateCustomer } from '@/services/customer';
 import { getAllShops } from '@/services/shops/shopService';
 import { Customer } from '@/types/customer';
 import { handleApiError } from '@/utils/errorHandling';
-import { logCustomerEdit } from '@/services/auditTrail';
-import { startPerformanceTimer } from '@/utils/performanceTracking';
-import { useAuth } from '@/hooks/useAuth';
 
 // Helper function to convert Customer to CustomerFormValues
 const customerToFormValues = (customer: Customer): CustomerFormValues => {
@@ -98,36 +95,13 @@ const customerToFormValues = (customer: Customer): CustomerFormValues => {
 export const useCustomerEdit = (customerId?: string) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [formValues, setFormValues] = useState<CustomerFormValues | null>(null);
-  const [originalFormValues, setOriginalFormValues] = useState<CustomerFormValues | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableShops, setAvailableShops] = useState<Array<{id: string, name: string}>>([]);
   const [error, setError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const loadAttempts = useRef(0);
-  const maxRetries = 3;
-  
-  // Track if form has been modified
-  const [isDirty, setIsDirty] = useState(false);
-  
-  // Retry loading mechanism
-  const retryFetchWithDelay = async (fn: () => Promise<any>, delay: number = 2000) => {
-    try {
-      return await fn();
-    } catch (err) {
-      if (loadAttempts.current < maxRetries) {
-        loadAttempts.current += 1;
-        console.log(`Retrying data fetch attempt ${loadAttempts.current}/${maxRetries}...`);
-        return new Promise(resolve => {
-          setTimeout(() => resolve(retryFetchWithDelay(fn)), delay);
-        });
-      }
-      throw err;
-    }
-  };
   
   // Fetch customer and shops data on load
   useEffect(() => {
@@ -138,14 +112,11 @@ export const useCustomerEdit = (customerId?: string) => {
         return;
       }
       
-      const perfTimer = startPerformanceTimer("customer_data_fetch");
-      
       try {
         setIsLoading(true);
-        setError(null);
         
         // Load customer data with vehicles included
-        const customerData = await retryFetchWithDelay(() => getCustomerById(customerId));
+        const customerData = await getCustomerById(customerId);
         if (!customerData) {
           setError("Customer not found");
           return;
@@ -157,7 +128,6 @@ export const useCustomerEdit = (customerId?: string) => {
         // Convert to form values
         const formData = customerToFormValues(customerData);
         setFormValues(formData);
-        setOriginalFormValues(JSON.parse(JSON.stringify(formData))); // Deep copy for comparison
         console.log("Converted to form values:", formData);
         
         // Load available shops
@@ -167,7 +137,6 @@ export const useCustomerEdit = (customerId?: string) => {
         console.error('Error loading customer:', err);
         setError("Failed to load customer information");
       } finally {
-        perfTimer.end();
         setIsLoading(false);
       }
     };
@@ -175,40 +144,16 @@ export const useCustomerEdit = (customerId?: string) => {
     fetchData();
   }, [customerId]);
   
-  // Track form changes
-  const trackFormChanges = (formData: CustomerFormValues) => {
-    if (!originalFormValues) return false;
-    
-    // Simple deep comparison to detect changes
-    return JSON.stringify(formData) !== JSON.stringify(originalFormValues);
-  };
-  
   // Handle form submission
   const handleSubmit = async (formData: CustomerFormValues) => {
-    if (!customerId || !user) return;
-    
-    const submitTimer = startPerformanceTimer("customer_form_submit");
+    if (!customerId) return;
     
     try {
       setIsSubmitting(true);
       console.log("Submitting form data with vehicles:", formData.vehicles);
       
-      // Record changes for audit log
-      const formChanged = trackFormChanges(formData);
-      if (formChanged) {
-        setIsDirty(true);
-      }
-      
       // Update customer
       const updatedCustomer = await updateCustomer(customerId, formData);
-      
-      // Log the edit action to audit trail
-      if (formChanged) {
-        await logCustomerEdit(customerId, user.id, {
-          previous: originalFormValues,
-          new: formData
-        });
-      }
       
       toast({
         title: "Success",
@@ -218,15 +163,11 @@ export const useCustomerEdit = (customerId?: string) => {
       // Check if we should return to a specific tab
       const tab = searchParams.get('tab');
       
-      // Reset dirty state
-      setIsDirty(false);
-      
       // Navigate back to customer details page
       navigate(`/customers/${customerId}${tab ? `?tab=${tab}` : ''}`);
     } catch (err) {
       handleApiError(err, "Failed to update customer");
     } finally {
-      submitTimer.end();
       setIsSubmitting(false);
     }
   };
@@ -236,10 +177,8 @@ export const useCustomerEdit = (customerId?: string) => {
     formValues,
     isLoading,
     isSubmitting,
-    isDirty,
     availableShops,
     handleSubmit,
-    error,
-    setIsDirty
+    error
   };
 };

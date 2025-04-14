@@ -3,8 +3,7 @@ import { z } from "zod";
 
 export const teamMemberFormSchema = z.object({
   id: z.string().optional(), // Add the id field for existing members
-  firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
-  lastName: z.string().min(1, { message: "Last name is required." }),
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
   phone: z.string().optional(),
   jobTitle: z.string().min(1, { message: "Please select a job title." }),

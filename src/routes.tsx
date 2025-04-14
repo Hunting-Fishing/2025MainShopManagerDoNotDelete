@@ -11,8 +11,7 @@ import CreateCustomer from "./pages/CreateCustomer";
 import Team from "./pages/Team";
 import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
-import WorkOrderCreate from "./pages/WorkOrderCreate"; 
-import WorkOrders from "./pages/WorkOrders";
+import WorkOrderCreate from "./pages/WorkOrderCreate"; // Import the WorkOrderCreate component
 
 // The router exported from this file is not currently being used
 // since we're defining routes in App.tsx directly.
@@ -72,11 +71,15 @@ export const routeDefinitions = [
       },
       {
         path: "work-orders",
-        element: <WorkOrders />,
+        element: <>Work Orders</>,
       },
       {
         path: "work-orders/create",
-        element: <WorkOrderCreate />,
+        element: <WorkOrderCreate />, // Use WorkOrderCreate instead of placeholder
+      },
+      {
+        path: "work-orders/:workOrderId",
+        element: <>Work Order Details</>,
       },
       {
         path: "invoices",

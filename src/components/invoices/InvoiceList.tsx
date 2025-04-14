@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InvoiceListHeader } from "./InvoiceListHeader";
 
 export function InvoiceList() {
   const [activeTab, setActiveTab] = useState<string>("all");

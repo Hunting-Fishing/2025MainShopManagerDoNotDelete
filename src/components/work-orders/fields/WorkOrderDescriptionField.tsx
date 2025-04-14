@@ -2,48 +2,201 @@
 import React, { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { serviceCategories, serviceAreas, commonServices } from "@/data/workServiceCategories";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WorkOrderDescriptionFieldProps {
   form: any;
 }
 
 export const WorkOrderDescriptionField: React.FC<WorkOrderDescriptionFieldProps> = ({ form }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   
+  const currentDescription = form.watch("description") || "";
+  
+  const handleAreaChange = (area: string) => {
+    if (!selectedAreas.includes(area)) {
+      const newSelectedAreas = [...selectedAreas, area];
+      setSelectedAreas(newSelectedAreas);
+      updateDescription(newSelectedAreas, selectedServices);
+    }
+  };
+  
+  const handleServiceChange = (service: string) => {
+    if (!selectedServices.includes(service)) {
+      const newSelectedServices = [...selectedServices, service];
+      setSelectedServices(newSelectedServices);
+      updateDescription(selectedAreas, newSelectedServices);
+    }
+  };
+  
+  const removeArea = (area: string) => {
+    const newSelectedAreas = selectedAreas.filter(a => a !== area);
+    setSelectedAreas(newSelectedAreas);
+    updateDescription(newSelectedAreas, selectedServices);
+  };
+  
+  const removeService = (service: string) => {
+    const newSelectedServices = selectedServices.filter(s => s !== service);
+    setSelectedServices(newSelectedServices);
+    updateDescription(selectedAreas, newSelectedServices);
+  };
+  
+  const updateDescription = (areas: string[], services: string[]) => {
+    const areaLabels = areas.map(area => 
+      serviceAreas.find(a => a.value === area)?.label || area
+    );
+    
+    const serviceLabels = services.map(service => 
+      commonServices.find(s => s.value === service)?.label || service
+    );
+    
+    let description = currentDescription;
+    
+    if (areaLabels.length > 0) {
+      description = `Work Areas: ${areaLabels.join(", ")}\n`;
+    }
+    
+    if (serviceLabels.length > 0) {
+      description += `Services: ${serviceLabels.join(", ")}\n`;
+    }
+    
+    // Keep any custom text after our generated part
+    const customTextMatch = currentDescription.match(/(?:Work Areas:|Services:).*\n\n(.*)/s);
+    if (customTextMatch && customTextMatch[1]) {
+      description += `\n${customTextMatch[1]}`;
+    }
+    
+    form.setValue("description", description);
+  };
+
   return (
-    <FormField
-      control={form.control}
-      name="description"
-      render={({ field }) => (
-        <FormItem className="col-span-1 md:col-span-2">
-          <div className="flex justify-between items-center">
-            <FormLabel className="text-base">Work Order Description</FormLabel>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="h-8 w-8 p-0"
+    <div className="space-y-4">
+      <FormField
+        control={form.control}
+        name="serviceCategory"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Service Category</FormLabel>
+            <Select 
+              onValueChange={(value) => {
+                field.onChange(value);
+                form.setValue("description", 
+                  `Category: ${serviceCategories.find(cat => cat.value === value)?.label}\n` + 
+                  (currentDescription || "")
+                );
+              }}
+              value={field.value}
             >
-              {isExpanded ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          <FormControl>
-            <Textarea
-              placeholder="Describe the work to be performed in detail..."
-              className={`resize-none transition-all duration-200 ${isExpanded ? 'min-h-[300px]' : 'min-h-[100px]'}`}
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select service category" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {serviceCategories.map((category) => (
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      <Tabs defaultValue="areas">
+        <TabsList className="grid grid-cols-2">
+          <TabsTrigger value="areas">Service Areas</TabsTrigger>
+          <TabsTrigger value="services">Common Services</TabsTrigger>
+        </TabsList>
+        <TabsContent value="areas" className="space-y-4">
+          <FormItem>
+            <FormLabel>Service Areas</FormLabel>
+            <Select onValueChange={handleAreaChange}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select service area" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {serviceAreas.map((area) => (
+                  <SelectItem key={area.value} value={area.value}>
+                    {area.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedAreas.map(area => {
+                const areaLabel = serviceAreas.find(a => a.value === area)?.label || area;
+                return (
+                  <Badge key={area} variant="secondary" className="flex items-center gap-1">
+                    {areaLabel}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeArea(area)} />
+                  </Badge>
+                );
+              })}
+            </div>
+          </FormItem>
+        </TabsContent>
+        
+        <TabsContent value="services" className="space-y-4">
+          <FormItem>
+            <FormLabel>Common Services</FormLabel>
+            <Select onValueChange={handleServiceChange}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select service" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {commonServices.map((service) => (
+                  <SelectItem key={service.value} value={service.value}>
+                    {service.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedServices.map(service => {
+                const serviceLabel = commonServices.find(s => s.value === service)?.label || service;
+                return (
+                  <Badge key={service} variant="secondary" className="flex items-center gap-1">
+                    {serviceLabel}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeService(service)} />
+                  </Badge>
+                );
+              })}
+            </div>
+          </FormItem>
+        </TabsContent>
+      </Tabs>
+
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Description & Instructions</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Enter detailed description and instructions for the work order..."
+                className="min-h-[120px]"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 };

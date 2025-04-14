@@ -76,40 +76,21 @@ export interface WorkOrder {
   createdAt?: string;
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
-  
   // Database field format (snake_case)
   customer_id?: string;
   vehicle_id?: string;
-  
   // Client-side aliases (camelCase)
   vehicleId?: string;
   vehicle_make?: string;
   vehicleMake?: string;
   vehicle_model?: string;
   vehicleModel?: string;
-  vehicle_year?: string;
-  vehicleYear?: string;
-  
   technician_id?: string;
   total_cost?: number;
   estimated_hours?: number;
   service_type?: string;
   service_category?: string;
   serviceCategory?: string;
-  
-  // Added vehicle-related fields for form consistency
-  odometer?: string;
-  licensePlate?: string;
-  vin?: string;
-  
-  // Additional vehicle fields from VIN decoding
-  driveType?: string;
-  transmission?: string;
-  fuelType?: string;
-  engine?: string;
-  bodyStyle?: string;
-  country?: string;
-  
   vehicleDetails?: {
     make?: string;
     model?: string;

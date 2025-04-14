@@ -20,19 +20,23 @@ export const VehiclesFields: React.FC<VehiclesFieldsProps> = ({ form }) => {
     form.setValue('vehicles', [
       ...currentVehicles,
       { make: '', model: '', year: '', vin: '', license_plate: '' }
-    ], { shouldValidate: true });
+    ]);
     
-    console.log('Vehicle added, current vehicles:', form.getValues('vehicles'));
+    // Trigger form validation after adding vehicle
+    form.trigger('vehicles');
+    console.log('Vehicle added, current vehicles:', [...currentVehicles, { make: '', model: '', year: '', vin: '', license_plate: '' }]);
   };
 
   const removeVehicle = (index: number) => {
     const currentVehicles = form.getValues('vehicles') || [];
+    form.setValue(
+      'vehicles',
+      currentVehicles.filter((_, i) => i !== index)
+    );
     
-    if (currentVehicles.length > 0) {
-      const updatedVehicles = currentVehicles.filter((_, i) => i !== index);
-      form.setValue('vehicles', updatedVehicles, { shouldValidate: true });
-      console.log('Vehicle removed, remaining vehicles:', updatedVehicles);
-    }
+    // Trigger form validation after removing vehicle
+    form.trigger('vehicles');
+    console.log('Vehicle removed, remaining vehicles:', currentVehicles.filter((_, i) => i !== index));
   };
 
   return (
@@ -44,7 +48,7 @@ export const VehiclesFields: React.FC<VehiclesFieldsProps> = ({ form }) => {
         </div>
 
         {vehicles.length > 0 ? (
-          <Accordion type="multiple" className="space-y-4" defaultValue={vehicles.map((_, i) => `vehicle-${i}`)}>
+          <Accordion type="multiple" className="space-y-4" defaultValue={['vehicle-0']}>
             {vehicles.map((vehicle, index) => (
               <AccordionItem 
                 key={index} 
@@ -56,7 +60,7 @@ export const VehiclesFields: React.FC<VehiclesFieldsProps> = ({ form }) => {
                     <Car className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span>
                       {vehicle.make || vehicle.model || vehicle.year ? (
-                        `${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}`.trim() || `Vehicle ${index + 1}`
+                        `${vehicle.year || 'Year'} ${vehicle.make || 'Make'} ${vehicle.model || 'Model'}`
                       ) : (
                         `Vehicle ${index + 1}`
                       )}

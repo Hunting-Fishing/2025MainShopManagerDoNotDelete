@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase';
 import { saveProfileMetadata } from '@/lib/profileMetadata';
 import { TeamMemberFormValues } from '@/components/team/form/formValidation';
 import { toast } from '@/hooks/use-toast';
-import { mapRoleToDbValue, validateRoleValue } from '@/utils/roleUtils';
 
 /**
  * Updates a user's profile in the Supabase profiles table
@@ -16,15 +15,20 @@ export const updateUserProfile = async (
   error?: string;
 }> => {
   try {
+    // Parse the name into first and last components
+    const nameParts = values.name.split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ');
+    
     // Update the profile with all available fields
     const { error, data } = await supabase
       .from('profiles')
       .update({
-        first_name: values.firstName,
-        last_name: values.lastName,
+        first_name: firstName,
+        last_name: lastName,
         email: values.email,
         phone: values.phone || null,
-        job_title: values.jobTitle,
+        job_title: values.jobTitle, // Ensure job_title is properly updated
         department: values.department,
       })
       .eq('id', userId)
@@ -51,85 +55,6 @@ export const updateUserProfile = async (
         console.error("Metadata operation error:", metadataError);
         // Continue with the update even if metadata fails
       }
-    }
-
-    // Update role if provided
-    if (values.role) {
-      try {
-        const dbRoleName = mapRoleToDbValue(values.role);
-        const validatedRoleName = validateRoleValue(dbRoleName);
-
-        // Get the role ID
-        const { data: roleData, error: roleError } = await supabase
-          .from('roles')
-          .select('id')
-          .eq('name', validatedRoleName)
-          .single();
-          
-        if (roleError) {
-          console.warn(`Role not found for ${validatedRoleName}:`, roleError);
-        } else if (roleData) {
-          // Check for any existing role
-          const { data: existingRole } = await supabase
-            .from('user_roles')
-            .select('id')
-            .eq('user_id', userId)
-            .single();
-
-          if (existingRole) {
-            // Update the existing role
-            await supabase
-              .from('user_roles')
-              .update({ role_id: roleData.id })
-              .eq('id', existingRole.id);
-          } else {
-            // Create a new role assignment
-            await supabase
-              .from('user_roles')
-              .insert({
-                user_id: userId,
-                role_id: roleData.id
-              });
-          }
-        }
-      } catch (roleError) {
-        console.error("Role update error:", roleError);
-        // Continue with the update even if role assignment fails
-      }
-    }
-    
-    // Record the profile update in team history
-    try {
-      const currentUserData = await supabase.auth.getUser();
-      const currentUser = currentUserData?.data?.user;
-      
-      if (currentUser) {
-        // Get current user profile for name
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', currentUser.id)
-          .single();
-  
-        const currentUserName = currentProfile 
-          ? `${currentProfile.first_name || ''} ${currentProfile.last_name || ''}`.trim() 
-          : 'Unknown user';
-          
-        // Record in team history
-        await supabase.rpc('record_team_history', {
-          profile_id_param: userId,
-          action_type_param: 'profile_updated',
-          action_by_param: currentUser.id,
-          action_by_name_param: currentUserName,
-          details_param: {
-            fields_updated: Object.keys(values),
-            timestamp: new Date().toISOString()
-          }
-        });
-      }
-    } catch (historyError) {
-      console.error("Failed to record team history:", historyError);
-      // Continue even if history recording fails
     }
     
     return { success: true };

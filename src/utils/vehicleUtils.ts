@@ -1,23 +1,60 @@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { VinDecodeResult, Vehicle } from '@/types/vehicle';
-import { decodeVin as decodeVinService } from '@/services/vinDecoderService';
+import { VinDecodeResult, Vehicle, CarMake, CarModel } from '@/types/vehicle';
 
 /**
  * Decode a Vehicle Identification Number (VIN) to get vehicle details
  */
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
-    console.log('Decoding VIN in utils:', vin);
-    if (!vin || vin.length !== 17) {
-      console.log('Invalid VIN length. VINs must be exactly 17 characters:', vin);
-      return null;
+    // First try to get the VIN from our database if we've seen it before
+    const { data: existingVehicle } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('vin', vin)
+      .maybeSingle();
+
+    if (existingVehicle) {
+      return {
+        year: existingVehicle.year,
+        make: existingVehicle.make,
+        model: existingVehicle.model,
+        transmission: existingVehicle.transmission,
+        transmission_type: existingVehicle.transmission_type,
+        drive_type: existingVehicle.drive_type,
+        fuel_type: existingVehicle.fuel_type,
+        body_style: existingVehicle.body_style,
+        country: existingVehicle.country,
+        engine: existingVehicle.engine,
+        gvwr: existingVehicle.gvwr,
+        trim: existingVehicle.trim
+      };
     }
+
+    // If not in our database, use the VIN decoder service
+    const { data: decodedData, error } = await supabase.functions.invoke('vin-decoder', {
+      body: { vin }
+    });
+
+    if (error) {
+      throw new Error(`VIN decoding error: ${error.message}`);
+    }
+
+    if (decodedData) {
+      return decodedData;
+    }
+
+    // Fall back to the vinDecoderService if Supabase function fails
+    const fallbackData = await import('@/services/vinDecoderService').then(module => module.decodeVin(vin));
+    return fallbackData;
     
-    // Using the enhanced service that includes NHTSA API fallback
-    return await decodeVinService(vin);
   } catch (error) {
-    console.error('Error decoding VIN in utils:', error);
+    console.error('Error decoding VIN:', error);
+    toast({
+      title: 'Error',
+      description: 'Could not decode VIN. Please check the number and try again.',
+      variant: 'destructive',
+    });
     return null;
   }
 }

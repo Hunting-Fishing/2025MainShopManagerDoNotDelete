@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
 import { VinDecodeResult } from "@/types/vehicle";
-import { Car } from "lucide-react";
 
 // Import refactored components
 import { VinDecoderField } from "./VinDecoderField";
@@ -37,14 +36,7 @@ export const VehicleDetailsField: React.FC<VehicleDetailsFieldProps> = ({
   };
   
   return (
-    <Card className="mb-4 border-esm-blue-100">
-      <CardHeader className="pb-3 bg-gradient-to-r from-esm-blue-50 to-transparent">
-        <CardTitle className="text-lg flex items-center">
-          <Car className="h-5 w-5 mr-2 text-esm-blue-600" />
-          Vehicle Information
-        </CardTitle>
-      </CardHeader>
-      
+    <Card className="mb-4">
       <CardContent className="pt-4">
         <div className="grid grid-cols-1 gap-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
