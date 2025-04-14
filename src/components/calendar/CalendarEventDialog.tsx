@@ -1,13 +1,11 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CalendarEvent, CalendarEventDialogProps } from "@/types/calendar/events";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
-import { statusMap } from "@/utils/workOrders"; // Updated import path
+import { statusMap } from "@/utils/workOrders"; 
 import { formatDate } from "@/utils/date";
-import { Link } from "react-router-dom";
 
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
   if (!event) return null;
@@ -23,8 +21,8 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
     minute: '2-digit' 
   });
   
-  // Use string directly since event.start is already a string
-  const eventDate = formatDate(new Date(event.start));
+  // Use event.start directly as a string for date formatting
+  const eventDate = formatDate(event.start);
 
   // Determine if this is a work order event
   const isWorkOrder = event.type === 'work-order';
