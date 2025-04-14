@@ -57,6 +57,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       // First set the year - ensure it's a string
       if (vehicleInfo.year) {
         form.setValue(`vehicles.${index}.year`, String(vehicleInfo.year));
+        console.log("Set year to:", vehicleInfo.year);
       }
       
       // Then set the make and fetch models for this make
@@ -71,72 +72,93 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         console.log(`Fetched ${modelsCount} models for make:`, vehicleInfo.make);
         setModelsLoaded(true);
         
-        // Set the model after models are fetched with a small delay
-        setTimeout(() => {
-          if (vehicleInfo.model) {
-            console.log("Setting model to:", vehicleInfo.model);
-            form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
-            
-            // Set additional vehicle details if available
-            if (vehicleInfo.transmission) 
-              form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
-            if (vehicleInfo.drive_type) 
-              form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
-            if (vehicleInfo.fuel_type) 
-              form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
-            if (vehicleInfo.body_style) 
-              form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
-            if (vehicleInfo.engine) 
-              form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
-            if (vehicleInfo.trim)
-              form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
-            if (vehicleInfo.transmission_type)
-              form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
-            if (vehicleInfo.gvwr)
-              form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
-            if (vehicleInfo.country)
-              form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
-            
-            // Trigger form validation after all fields are set
-            form.trigger([
-              `vehicles.${index}.year`,
-              `vehicles.${index}.make`,
-              `vehicles.${index}.model`
-            ]);
-            
-            // Verify fields were set correctly
-            console.log("Form fields after population:");
-            console.log("Year:", form.getValues(`vehicles.${index}.year`));
-            console.log("Make:", form.getValues(`vehicles.${index}.make`));
-            console.log("Model:", form.getValues(`vehicles.${index}.model`));
-            
-            toast({
-              title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
-              variant: "success",
-            });
-            
-            setVinDecodeSuccess(true);
-            setVinProcessing(false);
-          } else {
-            setVinProcessing(false);
-            console.log("No model information available");
+        // Important: Let React render cycle complete before setting the model
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Set the model after models are loaded
+        if (vehicleInfo.model) {
+          console.log("Setting model to:", vehicleInfo.model);
+          form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+          
+          // Set additional vehicle details if available
+          if (vehicleInfo.transmission) {
+            form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
+            console.log("Set transmission to:", vehicleInfo.transmission);
           }
-        }, 500);
-      } else {
-        setVinProcessing(false);
-        console.log("No make information available");
+          
+          if (vehicleInfo.drive_type) {
+            form.setValue(`vehicles.${index}.drive_type`, vehicleInfo.drive_type);
+            console.log("Set drive_type to:", vehicleInfo.drive_type);
+          }
+          
+          if (vehicleInfo.fuel_type) {
+            form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
+            console.log("Set fuel_type to:", vehicleInfo.fuel_type);
+          }
+          
+          if (vehicleInfo.body_style) {
+            form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
+            console.log("Set body_style to:", vehicleInfo.body_style);
+          }
+          
+          if (vehicleInfo.engine) {
+            form.setValue(`vehicles.${index}.engine`, vehicleInfo.engine);
+            console.log("Set engine to:", vehicleInfo.engine);
+          }
+          
+          if (vehicleInfo.trim) {
+            form.setValue(`vehicles.${index}.trim`, vehicleInfo.trim);
+            console.log("Set trim to:", vehicleInfo.trim);
+          }
+          
+          if (vehicleInfo.transmission_type) {
+            form.setValue(`vehicles.${index}.transmission_type`, vehicleInfo.transmission_type);
+            console.log("Set transmission_type to:", vehicleInfo.transmission_type);
+          }
+          
+          if (vehicleInfo.gvwr) {
+            form.setValue(`vehicles.${index}.gvwr`, vehicleInfo.gvwr);
+            console.log("Set gvwr to:", vehicleInfo.gvwr);
+          }
+          
+          if (vehicleInfo.country) {
+            form.setValue(`vehicles.${index}.country`, vehicleInfo.country);
+            console.log("Set country to:", vehicleInfo.country);
+          }
+          
+          // Trigger form validation after all fields are set
+          form.trigger([
+            `vehicles.${index}.year`,
+            `vehicles.${index}.make`,
+            `vehicles.${index}.model`
+          ]);
+          
+          // Force render by updating the form
+          const currentValues = form.getValues();
+          form.reset({...currentValues}, { keepValues: true });
+
+          // Verify fields were set correctly
+          console.log("After decoding - Current make:", form.getValues(`vehicles.${index}.make`));
+          console.log("After decoding - Current model:", form.getValues(`vehicles.${index}.model`));
+          
+          toast({
+            title: "VIN Decoded Successfully",
+            description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
+            variant: "success",
+          });
+          
+          setVinDecodeSuccess(true);
+        }
       }
     } catch (err) {
       console.error("Error populating vehicle form:", err);
-      setVinProcessing(false);
-      setVinDecodeSuccess(false);
-      
       toast({
         title: "Error",
         description: "Failed to populate vehicle information.",
         variant: "destructive",
       });
+    } finally {
+      setVinProcessing(false);
     }
   }, [form, index, fetchModels, toast]);
 

@@ -36,7 +36,15 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const vin = form.watch(`vehicles.${index}.vin`);
   const make = form.watch(`vehicles.${index}.make`);
+  const model = form.watch(`vehicles.${index}.model`);
   const processedVinRef = useRef<string>('');
+
+  // Debug make and model values to check form state
+  useEffect(() => {
+    if (make || model) {
+      console.log(`Current form state at index ${index}: make=${make}, model=${model}`);
+    }
+  }, [make, model, index]);
 
   // When make changes, fetch corresponding models
   useEffect(() => {
@@ -72,14 +80,18 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               `vehicles.${index}.`,
               async (make) => {
                 console.log("Fetching models for make:", make);
-                const fetchedModels = await fetchModels(make);
-                console.log("Fetched models:", fetchedModels);
+                await fetchModels(make);
+                console.log("Fetched models successfully");
                 setModelsLoaded(true);
                 return Promise.resolve();
               }
             );
             
             if (success) {
+              // Force re-render the form
+              const currentValues = form.getValues();
+              form.reset({...currentValues}, { keepValues: true });
+              
               toast({
                 title: "VIN Decoded Successfully",
                 description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
@@ -100,7 +112,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
                   `vehicles.${index}.model`,
                   `vehicles.${index}.year`
                 ]);
-              }, 500);
+              }, 800);
             } else {
               setHasDecodingFailed(true);
               toast({

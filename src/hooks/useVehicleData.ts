@@ -52,8 +52,8 @@ export const useVehicleData = () => {
   }, []);
 
   // Function to fetch models for a selected make
-  const fetchModels = useCallback(async (make: string) => {
-    if (!make) return Promise.resolve();
+  const fetchModels = useCallback(async (make: string): Promise<CarModel[]> => {
+    if (!make) return Promise.resolve([]);
     
     setLoading(true);
     setError(null);
@@ -80,11 +80,11 @@ export const useVehicleData = () => {
       
       console.log(`Fetched ${formattedModels.length} models for make: ${make}`);
       setModels(formattedModels);
-      return Promise.resolve(formattedModels);
+      return formattedModels;
     } catch (err) {
       console.error("Error fetching vehicle models:", err);
       setError("Could not load vehicle models");
-      return Promise.reject(err);
+      return [];
     } finally {
       setLoading(false);
     }

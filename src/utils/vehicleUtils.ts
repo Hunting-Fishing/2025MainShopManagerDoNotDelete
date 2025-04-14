@@ -165,6 +165,7 @@ export async function populateFormFromVin(
     // First set the year - ensure it's a string
     if (vinData.year) {
       form.setValue(`${fieldPrefix}year`, String(vinData.year));
+      console.log(`Setting ${fieldPrefix}year:`, vinData.year);
     }
     
     // Then set the make
@@ -178,8 +179,8 @@ export async function populateFormFromVin(
           await onModelsFetch(vinData.make);
           console.log("Models fetched successfully");
           
-          // Small delay to ensure models are loaded in the component state
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Important delay to ensure models are loaded in component state
+          await new Promise(resolve => setTimeout(resolve, 800));
           
           // Now set the model after models are loaded
           if (vinData.model) {
@@ -218,12 +219,20 @@ export async function populateFormFromVin(
       }
     });
     
+    // Force a form refresh to ensure values are registered
+    const currentValues = form.getValues();
+    form.reset({...currentValues}, { keepValues: true });
+    
     // Ensure form validation is triggered for make and model fields
     form.trigger([
       `${fieldPrefix}year`,
       `${fieldPrefix}make`, 
       `${fieldPrefix}model`
     ]);
+    
+    // Log final values for debugging
+    console.log("After setting form values - Current make:", form.getValues(`${fieldPrefix}make`));
+    console.log("After setting form values - Current model:", form.getValues(`${fieldPrefix}model`));
     
     return true;
   } catch (error) {
