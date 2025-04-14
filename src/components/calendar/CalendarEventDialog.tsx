@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CalendarEvent, CalendarEventDialogProps } from "@/types/calendar/events";
@@ -10,7 +11,6 @@ import { formatDate } from "@/utils/date";
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
   if (!event) return null;
 
-  // Format the event times for display
   const startTime = new Date(event.start).toLocaleTimeString([], { 
     hour: '2-digit', 
     minute: '2-digit' 
@@ -21,10 +21,8 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
     minute: '2-digit' 
   });
   
-  // Use event.start directly as a string for date formatting
   const eventDate = formatDate(event.start);
 
-  // Determine if this is a work order event
   const isWorkOrder = event.type === 'work-order';
   
   return (
@@ -35,13 +33,11 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          {/* Event Type Badge */}
           <div className="flex items-center justify-between">
             <Badge variant={event.type === 'work-order' ? 'default' : 'secondary'}>
               {event.type === 'work-order' ? 'Work Order' : 'Appointment'}
             </Badge>
             
-            {/* Status Badge - Only for work orders */}
             {isWorkOrder && event.status && (
               <Badge 
                 variant="outline" 
@@ -57,7 +53,6 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             )}
           </div>
           
-          {/* Date and Time */}
           <div className="flex items-center gap-2 text-sm">
             <CalendarIcon className="h-4 w-4 text-gray-500" />
             <span>{eventDate}</span>
@@ -66,7 +61,6 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             <span>{startTime} - {endTime}</span>
           </div>
           
-          {/* Location */}
           {event.location && (
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-gray-500" />
@@ -74,7 +68,6 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             </div>
           )}
           
-          {/* Assigned To - using technician field */}
           {event.technician && (
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-500" />
@@ -82,7 +75,6 @@ export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDia
             </div>
           )}
           
-          {/* Description */}
           {event.description && (
             <div className="pt-2">
               <div className="flex items-center gap-2 text-sm mb-1">
