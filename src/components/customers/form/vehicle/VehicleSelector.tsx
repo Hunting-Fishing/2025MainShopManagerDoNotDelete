@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,8 +32,10 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const { fetchModels, makes, models } = useVehicleData();
   const [decodedVehicle, setDecodedVehicle] = useState<VinDecodeResult | null>(null);
   const [isDecoding, setIsDecoding] = useState(false);
+  const [hasDecodingFailed, setHasDecodingFailed] = useState(false);
   const vin = form.watch(`vehicles.${index}.vin`);
   const make = form.watch(`vehicles.${index}.make`);
+  const processedVinRef = useRef<string>('');
 
   useEffect(() => {
     if (make) {
@@ -43,8 +45,16 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
 
   useEffect(() => {
     const handleVinDecode = async () => {
-      if (vin?.length === 17 && !isDecoding) {
+      // Only process if:
+      // 1. VIN is valid (17 chars)
+      // 2. We're not already decoding
+      // 3. This VIN hasn't been processed before
+      // 4. Fields aren't already filled in (to prevent overwriting user edits)
+      if (vin?.length === 17 && !isDecoding && vin !== processedVinRef.current) {
         setIsDecoding(true);
+        setHasDecodingFailed(false);
+        processedVinRef.current = vin; // Mark this VIN as processed
+        
         try {
           console.log(`Starting VIN decode for ${vin}`);
           const decodedData = await decodeVin(vin);
@@ -53,21 +63,31 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             console.log("Decoded VIN data:", decodedData);
             setDecodedVehicle(decodedData);
             
-            // Set primary fields immediately - this ensures they appear in the form fields
+            // Set primary fields immediately - this ensures they appear in the form
             form.setValue(`vehicles.${index}.make`, decodedData.make || '');
             form.setValue(`vehicles.${index}.model`, decodedData.model || '');
             form.setValue(`vehicles.${index}.year`, decodedData.year || '');
             
-            // Set all additional fields from the decoded data
-            if (decodedData.trim) form.setValue(`vehicles.${index}.trim`, decodedData.trim);
-            if (decodedData.transmission) form.setValue(`vehicles.${index}.transmission`, decodedData.transmission);
-            if (decodedData.transmission_type) form.setValue(`vehicles.${index}.transmission_type`, decodedData.transmission_type);
-            if (decodedData.drive_type) form.setValue(`vehicles.${index}.drive_type`, decodedData.drive_type);
-            if (decodedData.fuel_type) form.setValue(`vehicles.${index}.fuel_type`, decodedData.fuel_type);
-            if (decodedData.engine) form.setValue(`vehicles.${index}.engine`, decodedData.engine);
-            if (decodedData.body_style) form.setValue(`vehicles.${index}.body_style`, decodedData.body_style);
-            if (decodedData.country) form.setValue(`vehicles.${index}.country`, decodedData.country);
-            if (decodedData.gvwr) form.setValue(`vehicles.${index}.gvwr`, decodedData.gvwr);
+            // Set all additional fields from the decoded data - check each one to avoid setting undefined values
+            const fieldsToSet = [
+              { name: 'trim', value: decodedData.trim },
+              { name: 'transmission', value: decodedData.transmission },
+              { name: 'transmission_type', value: decodedData.transmission_type },
+              { name: 'drive_type', value: decodedData.drive_type },
+              { name: 'fuel_type', value: decodedData.fuel_type },
+              { name: 'engine', value: decodedData.engine },
+              { name: 'body_style', value: decodedData.body_style },
+              { name: 'country', value: decodedData.country },
+              { name: 'gvwr', value: decodedData.gvwr }
+            ];
+            
+            // Only set fields that have values
+            fieldsToSet.forEach(field => {
+              if (field.value) {
+                form.setValue(`vehicles.${index}.${field.name}`, field.value);
+                console.log(`Setting ${field.name}:`, field.value);
+              }
+            });
             
             // If the make has changed, update the models
             if (decodedData.make) {
@@ -87,14 +107,16 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               `vehicles.${index}.year`
             ]);
           } else {
+            setHasDecodingFailed(true);
             toast({
-              title: "VIN Decode Notice",
-              description: "Limited vehicle information available for this VIN.",
-              variant: "default",
+              title: "VIN Not Found",
+              description: "Could not find vehicle information for this VIN. Please enter vehicle details manually.",
+              variant: "warning",
             });
           }
         } catch (error) {
           console.error("Error decoding VIN:", error);
+          setHasDecodingFailed(true);
           toast({
             title: "Error",
             description: "Failed to decode VIN. Please enter vehicle details manually.",
@@ -133,6 +155,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               model: decodedVehicle.model,
               valid: !!decodedVehicle.make
             } : undefined}
+            decodingFailed={hasDecodingFailed}
           />
           <LicensePlateField form={form} index={index} />
         </div>

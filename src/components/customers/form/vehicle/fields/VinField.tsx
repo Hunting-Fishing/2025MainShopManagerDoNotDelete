@@ -1,70 +1,70 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import { UseFormReturn } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { BaseFieldProps } from "./BaseFieldTypes";
+import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
-// Remove the badge previews since we'll be setting the actual fields directly
-export const VinField: React.FC<BaseFieldProps & { 
+interface DecodedVehicleInfo {
+  year?: string;
+  make?: string;
+  model?: string;
+  valid: boolean;
+}
+
+interface VinFieldProps {
+  form: UseFormReturn<any>;
+  index: number;
   processing?: boolean;
-  decodedVehicleInfo?: {
-    year?: string;
-    make?: string;
-    model?: string;
-    valid: boolean;
-  };
-}> = ({ form, index, processing = false, decodedVehicleInfo }) => {
+  decodedVehicleInfo?: DecodedVehicleInfo;
+  decodingFailed?: boolean;
+}
+
+export const VinField: React.FC<VinFieldProps> = ({ 
+  form, 
+  index, 
+  processing = false,
+  decodedVehicleInfo,
+  decodingFailed = false
+}) => {
+  const hasVehicleInfo = decodedVehicleInfo && decodedVehicleInfo.valid;
+
   return (
     <FormField
       control={form.control}
       name={`vehicles.${index}.vin`}
       render={({ field }) => (
         <FormItem>
-          <div className="flex items-center gap-2">
-            <FormLabel>VIN</FormLabel>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-sm">
-                  <p>Vehicle Identification Number - A 17-character unique identifier for the vehicle. Enter a complete VIN to auto-populate vehicle details.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="relative">
-            <FormControl>
-              <Input 
-                {...field} 
-                placeholder="Enter 17-digit VIN to auto-populate" 
-                className="font-mono pr-8"
-                maxLength={17}
-                disabled={processing}
-                onChange={(e) => {
-                  // Convert to uppercase as user types
-                  field.onChange(e.target.value.toUpperCase());
-                }}
-              />
-            </FormControl>
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
-              {processing && (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-              {!processing && decodedVehicleInfo && (
-                decodedVehicleInfo.valid ? 
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> : 
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-              )}
-            </div>
-          </div>
-          
-          <FormDescription>
-            Enter a complete 17-digit VIN to auto-populate vehicle details
-          </FormDescription>
+          <FormLabel className="flex items-center">
+            VIN
+            {processing && <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
+            {hasVehicleInfo && <CheckCircle className="ml-2 h-4 w-4 text-green-500" />}
+            {decodingFailed && <AlertCircle className="ml-2 h-4 w-4 text-amber-500" />}
+          </FormLabel>
+          <FormControl>
+            <Input
+              {...field}
+              placeholder="Vehicle Identification Number"
+              className="font-mono"
+              maxLength={17}
+              onChange={(e) => {
+                // Convert to uppercase and pass to the form field
+                const value = e.target.value.toUpperCase();
+                field.onChange(value);
+              }}
+            />
+          </FormControl>
           <FormMessage />
+          {hasVehicleInfo && (
+            <div className="text-xs text-green-600 mt-1">
+              Identified as: {decodedVehicleInfo.year} {decodedVehicleInfo.make} {decodedVehicleInfo.model}
+            </div>
+          )}
+          {decodingFailed && (
+            <div className="text-xs text-amber-600 mt-1">
+              VIN not recognized. Please enter vehicle details manually.
+            </div>
+          )}
         </FormItem>
       )}
     />

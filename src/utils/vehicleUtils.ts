@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle, CarMake, CarModel } from '@/types/vehicle';
@@ -8,6 +9,11 @@ import { mockVinDatabase } from '@/data/vinDatabase';
  */
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
+    if (!vin || vin.length !== 17) {
+      console.warn("Invalid VIN format or length:", vin);
+      return null;
+    }
+    
     console.log(`Starting VIN decode for: ${vin}`);
     
     // First try to get the VIN from our database if we've seen it before
@@ -35,25 +41,25 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       };
     }
 
-    // Check the mock database for exact match with full VIN
+    // Check the database first (exact match)
     const exactVinMatch = mockVinDatabase[vin];
     if (exactVinMatch) {
-      console.log(`Found exact match in mock database for VIN ${vin}:`, exactVinMatch);
+      console.log(`Found exact match in database for VIN ${vin}:`, exactVinMatch);
       return exactVinMatch;
     }
 
-    // If no exact match, check by prefix
-    console.log("Checking mock VIN database for", vin);
+    // If no exact match, check by prefix - only use the first 8 characters for matching
+    console.log("Checking VIN database by prefix for", vin);
     const vinPrefix = vin.substring(0, 8).toUpperCase();
     
     for (const prefix in mockVinDatabase) {
       if (vinPrefix.startsWith(prefix)) {
-        console.log(`Found match in mock database for prefix ${prefix}:`, mockVinDatabase[prefix]);
+        console.log(`Found match in database for prefix ${prefix}:`, mockVinDatabase[prefix]);
         return mockVinDatabase[prefix];
       }
     }
     
-    // If no match in mock database, try the edge function
+    // If no match in database, try the edge function
     try {
       console.log("Attempting to use edge function for VIN decoding");
       const { data: decodedData, error } = await supabase.functions.invoke('vin-decoder', {
@@ -62,6 +68,7 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
 
       if (error) {
         console.warn("Edge function error:", error);
+        throw new Error(`Edge function failed: ${error.message}`);
       }
 
       if (decodedData) {
@@ -69,10 +76,12 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
         return decodedData;
       }
     } catch (edgeFunctionError) {
-      console.warn("Failed to use edge function, falling back to mock data:", edgeFunctionError);
+      console.warn("Failed to use edge function, falling back to pattern matching:", edgeFunctionError);
     }
 
-    // If we get here, VIN wasn't found in any source
+    // Last resort: Basic pattern matching
+    console.log("Using basic pattern matching for VIN:", vin);
+    
     if (vin.startsWith('1FT') || vin.startsWith('1FA') || vin.startsWith('1FM')) {
       return {
         year: "2020",
