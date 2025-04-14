@@ -26,7 +26,7 @@ export default function Calendar() {
       technicianFilter === "all" || event.technician_id === technicianFilter;
     
     const matchesStatus = 
-      statusFilter.length === 0 || statusFilter.includes(event.status || '');
+      statusFilter.length === 0 || (event.status && statusFilter.includes(event.status));
     
     return matchesTechnician && matchesStatus;
   });

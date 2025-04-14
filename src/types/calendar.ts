@@ -3,18 +3,19 @@ import { WorkOrderInventoryItem } from "./workOrder";
 
 export type CalendarViewType = "month" | "week" | "day";
 
+// Make the CalendarEvent interface match the one in calendar/events.ts
 export interface CalendarEvent {
   id: string;
   title: string;
-  start: string; // Changed from Date to string to match events.ts
-  end: string;   // Changed from Date to string to match events.ts
-  customer: string;
-  status: string;
-  priority: string;
-  technician: string;
-  technician_id?: string; // Added for compatibility
-  location: string;
-  type: 'work-order' | 'invoice' | 'appointment' | 'meeting' | 'break' | 'other';
+  start: string; // Using string consistently for date fields
+  end: string;   // Using string consistently for date fields
+  customer?: string; // Make this optional to match events.ts
+  status?: string;
+  priority?: string;
+  technician?: string;
+  technician_id?: string;
+  location?: string;
+  type?: 'work-order' | 'invoice' | 'appointment' | 'meeting' | 'break' | 'other' | string;
   inventoryItems?: WorkOrderInventoryItem[];
   
   // Original database fields
