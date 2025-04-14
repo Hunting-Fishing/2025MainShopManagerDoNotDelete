@@ -1,36 +1,91 @@
 
-import { useEffect } from "react";
+import { useEffect, useCallback, RefObject } from "react";
 
 interface AccessibilityOptions {
   trapFocus?: boolean;
   ariaLive?: boolean;
   escapeToClose?: boolean;
   onEscape?: () => void;
+  ariaLabel?: string;
+  ariaDescribedBy?: string;
+  autoFocus?: boolean;
+  role?: string;
 }
 
 export function useAccessibility(
-  ref: React.RefObject<HTMLElement>,
+  ref: RefObject<HTMLElement>,
   options: AccessibilityOptions = {}
 ) {
-  const { trapFocus = false, ariaLive = false, escapeToClose = false, onEscape } = options;
+  const { 
+    trapFocus = false, 
+    ariaLive = false, 
+    escapeToClose = false, 
+    onEscape, 
+    ariaLabel,
+    ariaDescribedBy,
+    autoFocus = false,
+    role
+  } = options;
 
-  // Handle keyboard navigation and accessibility
+  // Handle escape key
+  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape" && (escapeToClose || onEscape)) {
+      if (onEscape) onEscape();
+      e.preventDefault();
+    }
+  }, [escapeToClose, onEscape]);
+
+  // Apply ARIA attributes and role
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
 
-    // Set appropriate ARIA attributes
+    // Apply ARIA attributes
     if (ariaLive) {
       element.setAttribute("aria-live", "polite");
     }
+    
+    if (ariaLabel) {
+      element.setAttribute("aria-label", ariaLabel);
+    }
+    
+    if (ariaDescribedBy) {
+      element.setAttribute("aria-describedby", ariaDescribedBy);
+    }
+    
+    if (role) {
+      element.setAttribute("role", role);
+    }
+
+    // Auto-focus the first focusable element if requested
+    if (autoFocus) {
+      const focusableElements = element.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      
+      if (focusableElements.length > 0) {
+        (focusableElements[0] as HTMLElement).focus();
+      }
+    }
+
+    return () => {
+      // Clean up attributes when component unmounts
+      if (ariaLive) element.removeAttribute("aria-live");
+      if (ariaLabel) element.removeAttribute("aria-label");
+      if (ariaDescribedBy) element.removeAttribute("aria-describedby");
+      if (role) element.removeAttribute("role");
+    };
+  }, [ref, ariaLive, ariaLabel, ariaDescribedBy, autoFocus, role]);
+
+  // Handle keyboard navigation and trap focus
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
 
     // Handle escape key
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && (escapeToClose || onEscape)) {
-        if (onEscape) onEscape();
-        e.preventDefault();
-      }
-    };
+    if (escapeToClose || onEscape) {
+      window.addEventListener("keydown", handleEscapeKey);
+    }
 
     // Focus trap implementation
     if (trapFocus) {
@@ -58,16 +113,17 @@ export function useAccessibility(
         
         return () => {
           element.removeEventListener("keydown", trapFocusHandler);
+          if (escapeToClose || onEscape) {
+            window.removeEventListener("keydown", handleEscapeKey);
+          }
         };
       }
     }
 
     if (escapeToClose || onEscape) {
-      window.addEventListener("keydown", handleKeyDown);
-      
       return () => {
-        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keydown", handleEscapeKey);
       };
     }
-  }, [ref, trapFocus, ariaLive, escapeToClose, onEscape]);
+  }, [ref, trapFocus, escapeToClose, onEscape, handleEscapeKey]);
 }
