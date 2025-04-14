@@ -11,7 +11,7 @@ import {
   ModelField, 
   LicensePlateField 
 } from "./fields";
-import { decodeVin } from "@/utils/vehicleUtils";
+import { decodeVin, populateFormFromVin } from "@/utils/vehicleUtils";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
 import { VinDecodeResult } from "@/types/vehicle";
@@ -64,59 +64,38 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             console.log("Decoded VIN data:", decodedData);
             setDecodedVehicle(decodedData);
             
-            // Set make first and wait for models to load
-            if (decodedData.make) {
-              console.log("Setting make to:", decodedData.make);
-              form.setValue(`vehicles.${index}.make`, decodedData.make);
-              await fetchModels(decodedData.make);
-              setModelsLoaded(true);
+            // Use the centralized helper function to populate form fields
+            const success = await populateFormFromVin(
+              form,
+              decodedData, 
+              `vehicles.${index}.`,
+              async (make) => {
+                await fetchModels(make);
+                setModelsLoaded(true);
+              }
+            );
+            
+            if (success) {
+              toast({
+                title: "VIN Decoded Successfully",
+                description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
+                variant: "success",
+              });
               
-              // Set model after models are loaded
-              if (decodedData.model) {
-                console.log("Setting model to:", decodedData.model);
-                form.setValue(`vehicles.${index}.model`, decodedData.model);
-              }
+              // Force form validation
+              form.trigger([
+                `vehicles.${index}.make`,
+                `vehicles.${index}.model`,
+                `vehicles.${index}.year`
+              ]);
+            } else {
+              setHasDecodingFailed(true);
+              toast({
+                title: "Warning",
+                description: "VIN decoded but some data couldn't be filled in. Please check the form.",
+                variant: "warning",
+              });
             }
-
-            // Set year
-            if (decodedData.year) {
-              console.log("Setting year to:", decodedData.year);
-              form.setValue(`vehicles.${index}.year`, decodedData.year.toString());
-            }
-            
-            // Set all additional fields
-            const fieldsToSet = [
-              { name: 'trim', value: decodedData.trim },
-              { name: 'transmission', value: decodedData.transmission },
-              { name: 'transmission_type', value: decodedData.transmission_type },
-              { name: 'drive_type', value: decodedData.drive_type },
-              { name: 'fuel_type', value: decodedData.fuel_type },
-              { name: 'engine', value: decodedData.engine },
-              { name: 'body_style', value: decodedData.body_style },
-              { name: 'country', value: decodedData.country },
-              { name: 'gvwr', value: decodedData.gvwr }
-            ];
-            
-            // Only set fields that have values
-            fieldsToSet.forEach(field => {
-              if (field.value) {
-                console.log(`Setting ${field.name}:`, field.value);
-                form.setValue(`vehicles.${index}.${field.name}`, field.value);
-              }
-            });
-            
-            toast({
-              title: "VIN Decoded Successfully",
-              description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
-              variant: "success",
-            });
-            
-            // Force form validation
-            form.trigger([
-              `vehicles.${index}.make`,
-              `vehicles.${index}.model`,
-              `vehicles.${index}.year`
-            ]);
           } else {
             setHasDecodingFailed(true);
             toast({
@@ -140,7 +119,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     };
     
     handleVinDecode();
-  }, [vin, form, index, toast, fetchModels, isDecoding]);
+  }, [vin, form, index, toast, fetchModels]);
 
   return (
     <Card className="relative">

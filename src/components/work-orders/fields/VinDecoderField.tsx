@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { VinDecodeResult } from "@/types/vehicle";
 import { toast } from "@/hooks/use-toast";
-import { decodeVin } from "@/utils/vehicleUtils";
-import { VehicleBodyStyle } from "@/types/vehicle";
+import { decodeVin, populateFormFromVin } from "@/utils/vehicleUtils";
 
 interface VinDecoderFieldProps {
   form: any;
@@ -35,42 +34,27 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
         console.log("Decoded vehicle data:", decodedData);
         setIsDecoded(true);
         
-        // Update form fields with decoded vehicle information - primary fields
-        form.setValue("vehicleMake", decodedData.make || '');
-        form.setValue("vehicleModel", decodedData.model || '');
-        form.setValue("vehicleYear", decodedData.year || '');
+        // Use centralized helper function to populate form fields
+        const success = await populateFormFromVin(form, decodedData);
         
-        // Add additional vehicle details to the form - check each one to avoid setting undefined values
-        const fieldsToSet = [
-          { name: "driveType", value: decodedData.drive_type },
-          { name: "fuelType", value: decodedData.fuel_type },
-          { name: "transmission", value: decodedData.transmission },
-          { name: "transmissionType", value: decodedData.transmission_type },
-          { name: "bodyStyle", value: decodedData.body_style?.toLowerCase() as VehicleBodyStyle },
-          { name: "country", value: decodedData.country },
-          { name: "engine", value: decodedData.engine },
-          { name: "gvwr", value: decodedData.gvwr },
-          { name: "trim", value: decodedData.trim }
-        ];
-        
-        // Only set fields that have values
-        fieldsToSet.forEach(field => {
-          if (field.value) {
-            form.setValue(field.name, field.value);
-            console.log("Setting", field.name + ":", field.value);
+        if (success) {
+          // Notify parent component
+          if (onVehicleDecoded) {
+            onVehicleDecoded(decodedData);
           }
-        });
-        
-        // Notify parent component
-        if (onVehicleDecoded) {
-          onVehicleDecoded(decodedData);
+          
+          toast({
+            title: "VIN Decoded Successfully",
+            description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
+            variant: "success",
+          });
+        } else {
+          toast({
+            title: "Warning",
+            description: "VIN decoded but some data couldn't be filled in. Please check the form.",
+            variant: "warning",
+          });
         }
-        
-        toast({
-          title: "VIN Decoded Successfully",
-          description: `Vehicle identified as ${decodedData.year} ${decodedData.make} ${decodedData.model}`,
-          variant: "success",
-        });
       } else {
         setDecodingFailed(true);
         toast({

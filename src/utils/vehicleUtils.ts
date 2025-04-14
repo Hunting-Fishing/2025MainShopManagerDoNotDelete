@@ -148,6 +148,73 @@ export async function getVehicleById(vehicleId: string): Promise<Vehicle | null>
 }
 
 /**
+ * Helper function to populate form fields from VIN decoding result
+ * This centralizes the logic for setting form fields across the app
+ */
+export async function populateFormFromVin(
+  form: any, 
+  vinData: VinDecodeResult, 
+  fieldPrefix: string = '', 
+  onModelsFetch?: (make: string) => Promise<void>
+): Promise<boolean> {
+  try {
+    if (!vinData) return false;
+    
+    console.log("Populating form with decoded VIN data:", vinData);
+    
+    // First set the year - ensure it's a string
+    if (vinData.year) {
+      form.setValue(`${fieldPrefix}year`, String(vinData.year));
+    }
+    
+    // Then set the make and fetch models for this make
+    if (vinData.make) {
+      form.setValue(`${fieldPrefix}make`, vinData.make);
+      
+      // Wait for models to load if callback provided
+      if (onModelsFetch) {
+        await onModelsFetch(vinData.make);
+        
+        // Set model after models are loaded
+        if (vinData.model) {
+          form.setValue(`${fieldPrefix}model`, vinData.model);
+        }
+      } else {
+        // No models fetching callback - just set the model directly
+        if (vinData.model) {
+          form.setValue(`${fieldPrefix}model`, vinData.model);
+        }
+      }
+    }
+    
+    // Set all additional fields if they have values
+    const fieldsToSet = [
+      { name: 'trim', value: vinData.trim },
+      { name: 'transmission', value: vinData.transmission },
+      { name: 'transmission_type', value: vinData.transmission_type },
+      { name: 'drive_type', value: vinData.drive_type },
+      { name: 'fuel_type', value: vinData.fuel_type },
+      { name: 'engine', value: vinData.engine },
+      { name: 'body_style', value: vinData.body_style },
+      { name: 'country', value: vinData.country },
+      { name: 'gvwr', value: vinData.gvwr }
+    ];
+    
+    fieldsToSet.forEach(field => {
+      if (field.value) {
+        console.log(`Setting ${field.name}:`, field.value);
+        form.setValue(`${fieldPrefix}${field.name}`, field.value);
+      }
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error populating form from VIN data:", error);
+    return false;
+  }
+}
+
+/**
  * Formats vehicle information for display
  */
 export function formatVehicleInfo(vehicle: Vehicle | null): string {

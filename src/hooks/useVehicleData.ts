@@ -25,9 +25,35 @@ export const useVehicleData = () => {
     setYears(yearsList);
   }, []);
 
+  // Load makes on initial mount
+  useEffect(() => {
+    const loadMakes = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('vehicle_makes')
+          .select('*')
+          .order('make_display');
+          
+        if (error) {
+          throw error;
+        }
+        
+        setMakes(data || []);
+      } catch (err) {
+        console.error("Error loading vehicle makes:", err);
+        setError("Failed to load vehicle makes");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadMakes();
+  }, []);
+
   // Function to fetch models for a selected make
   const fetchModels = useCallback(async (make: string) => {
-    if (!make) return;
+    if (!make) return Promise.resolve();
     
     setLoading(true);
     setError(null);
@@ -99,6 +125,7 @@ export const useVehicleData = () => {
     selectedMake,
     selectedModel,
     selectedYear,
+    setSelectedMake,
     setSelectedModel,
     setSelectedYear,
     fetchModels,
