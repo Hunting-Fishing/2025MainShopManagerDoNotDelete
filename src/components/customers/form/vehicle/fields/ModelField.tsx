@@ -2,7 +2,7 @@
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
 import { CarModel } from "@/types/vehicle";
@@ -10,9 +10,19 @@ import { CarModel } from "@/types/vehicle";
 interface ModelFieldProps extends BaseFieldProps {
   models: CarModel[];
   selectedMake: string;
+  isLoading?: boolean;
 }
 
-export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = [], selectedMake }) => {
+export const ModelField: React.FC<ModelFieldProps> = ({ 
+  form, 
+  index, 
+  models = [], 
+  selectedMake,
+  isLoading = false
+}) => {
+  // Get current model value from form
+  const modelValue = form.watch(`vehicles.${index}.model`) || "";
+
   return (
     <FormField
       control={form.control}
@@ -34,17 +44,29 @@ export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = []
           </div>
           <Select
             value={field.value || ""}
-            onValueChange={field.onChange}
-            disabled={!selectedMake || field.disabled}
+            onValueChange={(value) => {
+              console.log(`Setting model to: ${value}`);
+              field.onChange(value);
+            }}
+            disabled={!selectedMake || field.disabled || isLoading}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder={selectedMake ? "Select model" : "Select make first"} />
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <span>Loading models...</span>
+                  </div>
+                ) : (
+                  <SelectValue placeholder={selectedMake ? "Select model" : "Select make first"} />
+                )}
               </SelectTrigger>
             </FormControl>
-            <SelectContent>
-              {!selectedMake ? (
-                <SelectItem value="select-make">Select make first</SelectItem>
+            <SelectContent className="max-h-[300px]">
+              {isLoading ? (
+                <SelectItem value="loading" disabled>Loading models...</SelectItem>
+              ) : !selectedMake ? (
+                <SelectItem value="select-make" disabled>Select make first</SelectItem>
               ) : models.length > 0 ? (
                 models
                   .filter(model => model.model_name) // Filter out invalid models
@@ -54,7 +76,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({ form, index, models = []
                     </SelectItem>
                   ))
               ) : (
-                <SelectItem value="no-models">No models available</SelectItem>
+                <SelectItem value="no-models" disabled>No models available</SelectItem>
               )}
             </SelectContent>
           </Select>

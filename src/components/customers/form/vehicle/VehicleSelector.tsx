@@ -51,12 +51,24 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     if (make) {
       console.log("Make changed in VehicleSelector, fetching models for:", make);
       setModelsLoaded(false);
-      fetchModels(make).then(() => {
+      fetchModels(make).then((fetchedModels) => {
         setModelsLoaded(true);
-        console.log("Models loaded for make:", make);
+        console.log(`Models loaded for make: ${make}, count:`, fetchedModels.length);
       });
     }
   }, [make, fetchModels]);
+
+  // Handle manual make change
+  const handleMakeChange = (makeValue: string) => {
+    console.log("Make changed via selector:", makeValue);
+    if (makeValue) {
+      form.setValue(`vehicles.${index}.make`, makeValue);
+      // Clear the model when make changes
+      form.setValue(`vehicles.${index}.model`, '');
+      // Trigger form validation
+      form.trigger(`vehicles.${index}.make`);
+    }
+  };
 
   useEffect(() => {
     const handleVinDecode = async () => {
@@ -80,7 +92,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               `vehicles.${index}.`,
               async (make) => {
                 console.log("Fetching models for make:", make);
-                await fetchModels(make);
+                const fetchedModels = await fetchModels(make);
                 console.log("Fetched models successfully");
                 setModelsLoaded(true);
                 return Promise.resolve();
@@ -105,6 +117,15 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
                 
                 console.log("After decoding - Current make:", currentMake);
                 console.log("After decoding - Current model:", currentModel);
+                
+                // If values are still not set correctly, try setting them again
+                if (!currentMake && decodedData.make) {
+                  form.setValue(`vehicles.${index}.make`, decodedData.make);
+                }
+                
+                if (!currentModel && decodedData.model) {
+                  form.setValue(`vehicles.${index}.model`, decodedData.model);
+                }
                 
                 // Force form validation
                 form.trigger([
@@ -184,18 +205,14 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             form={form} 
             index={index} 
             makes={makes} 
-            onMakeChange={(make) => {
-              console.log("Make changed via selector:", make);
-              fetchModels(make);
-              // Clear the model when make changes
-              form.setValue(`vehicles.${index}.model`, '');
-            }}
+            onMakeChange={handleMakeChange}
           />
           <ModelField 
             form={form} 
             index={index} 
             models={models}
             selectedMake={make}
+            isLoading={!modelsLoaded && !!make}
           />
         </div>
         <VehicleAdditionalDetails form={form} index={index} decodedDetails={decodedVehicle} />

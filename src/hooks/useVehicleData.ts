@@ -39,6 +39,8 @@ export const useVehicleData = () => {
           throw error;
         }
         
+        // Log the makes data for debugging
+        console.log(`Loaded ${data?.length || 0} vehicle makes from database:`, data?.slice(0, 5));
         setMakes(data || []);
       } catch (err) {
         console.error("Error loading vehicle makes:", err);
@@ -53,7 +55,10 @@ export const useVehicleData = () => {
 
   // Function to fetch models for a selected make
   const fetchModels = useCallback(async (make: string): Promise<CarModel[]> => {
-    if (!make) return Promise.resolve([]);
+    if (!make) {
+      console.log("No make provided to fetchModels, returning empty array");
+      return Promise.resolve([]);
+    }
     
     setLoading(true);
     setError(null);
@@ -79,6 +84,31 @@ export const useVehicleData = () => {
       }));
       
       console.log(`Fetched ${formattedModels.length} models for make: ${make}`);
+      
+      // Log the first few models for debugging
+      if (formattedModels.length > 0) {
+        console.log("Sample models:", formattedModels.slice(0, 5));
+      } else {
+        console.warn("No models found for make:", make);
+        
+        // If no models were found, try a case-insensitive search as a fallback
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('vehicle_models')
+          .select('*')
+          .ilike('make_id', `%${make}%`)
+          .order('model_display');
+          
+        if (!fallbackError && fallbackData?.length > 0) {
+          console.log(`Found ${fallbackData.length} models using fallback search`);
+          const fallbackModels = fallbackData.map((model: any) => ({
+            model_name: model.model_display,
+            model_make_id: model.make_id
+          }));
+          setModels(fallbackModels);
+          return fallbackModels;
+        }
+      }
+      
       setModels(formattedModels);
       return formattedModels;
     } catch (err) {

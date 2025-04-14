@@ -15,6 +15,9 @@ interface MakeFieldProps extends BaseFieldProps {
 export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], onMakeChange }) => {
   // Ensure makes is valid array
   const safeMakes = Array.isArray(makes) ? makes : [];
+
+  // Extract current make value from form
+  const makeValue = form.watch(`vehicles.${index}.make`) || "";
   
   return (
     <FormField
@@ -39,6 +42,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
             value={field.value || ""}
             onValueChange={(value) => {
               field.onChange(value);
+              console.log(`Updating make field to: ${value}`);
               if (onMakeChange) {
                 onMakeChange(value);
               }
@@ -50,7 +54,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
                 <SelectValue placeholder="Select make" />
               </SelectTrigger>
             </FormControl>
-            <SelectContent>
+            <SelectContent className="max-h-[300px]">
               {safeMakes.length > 0 ? (
                 safeMakes
                   .filter(make => make.make_id && make.make_display) // Filter out invalid makes
@@ -60,7 +64,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({ form, index, makes = [], o
                     </SelectItem>
                   ))
               ) : (
-                <SelectItem value="no-makes">No makes available</SelectItem>
+                <SelectItem value="no-makes" disabled>Loading makes...</SelectItem>
               )}
             </SelectContent>
           </Select>
