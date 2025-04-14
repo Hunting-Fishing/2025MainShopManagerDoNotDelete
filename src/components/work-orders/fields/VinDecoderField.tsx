@@ -21,17 +21,37 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
     
     setIsDecoding(true);
     try {
+      console.log(`Starting VIN decode for ${vinNumber}`);
       const decodedData = await decodeVin(vinNumber);
+      
       if (decodedData) {
+        console.log("Decoded vehicle data:", decodedData);
+        
         // Update form fields with decoded vehicle information
         form.setValue("vehicleMake", decodedData.make || '');
         form.setValue("vehicleModel", decodedData.model || '');
         form.setValue("vehicleYear", decodedData.year || '');
         
         // Add additional vehicle details to the form
-        if (decodedData.drive_type) form.setValue("driveType", decodedData.drive_type);
-        if (decodedData.fuel_type) form.setValue("fuelType", decodedData.fuel_type);
-        if (decodedData.transmission) form.setValue("transmission", decodedData.transmission);
+        if (decodedData.drive_type) {
+          form.setValue("driveType", decodedData.drive_type);
+          console.log("Setting drive type:", decodedData.drive_type);
+        }
+        
+        if (decodedData.fuel_type) {
+          form.setValue("fuelType", decodedData.fuel_type);
+          console.log("Setting fuel type:", decodedData.fuel_type);
+        }
+        
+        if (decodedData.transmission) {
+          form.setValue("transmission", decodedData.transmission);
+          console.log("Setting transmission:", decodedData.transmission);
+        }
+        
+        if (decodedData.transmission_type) {
+          form.setValue("transmissionType", decodedData.transmission_type);
+          console.log("Setting transmission type:", decodedData.transmission_type);
+        }
         
         // Update the body style if available
         if (decodedData.body_style) {
@@ -40,8 +60,25 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
           console.log("Setting body style from VIN:", bodyStyle);
         }
         
-        if (decodedData.country) form.setValue("country", decodedData.country);
-        if (decodedData.engine) form.setValue("engine", decodedData.engine);
+        if (decodedData.country) {
+          form.setValue("country", decodedData.country);
+          console.log("Setting country:", decodedData.country);
+        }
+        
+        if (decodedData.engine) {
+          form.setValue("engine", decodedData.engine);
+          console.log("Setting engine:", decodedData.engine);
+        }
+        
+        if (decodedData.gvwr) {
+          form.setValue("gvwr", decodedData.gvwr);
+          console.log("Setting GVWR:", decodedData.gvwr);
+        }
+        
+        if (decodedData.trim) {
+          form.setValue("trim", decodedData.trim);
+          console.log("Setting trim:", decodedData.trim);
+        }
         
         // Notify parent component
         if (onVehicleDecoded) {
@@ -87,8 +124,10 @@ export const VinDecoderField: React.FC<VinDecoderFieldProps> = ({ form, onVehicl
               placeholder="Vehicle Identification Number"
               onChange={(e) => {
                 field.onChange(e);
-                if (e.target.value.length === 17) {
-                  handleVinDecode(e.target.value);
+                const vinValue = e.target.value.toUpperCase();
+                field.onChange(vinValue);
+                if (vinValue.length === 17) {
+                  handleVinDecode(vinValue);
                 }
               }}
             />

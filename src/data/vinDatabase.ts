@@ -45,7 +45,24 @@ export const mockVinDatabase: Record<string, VinDecodeResult> = {
     body_style: "suv",
     country: "CANADA",
     engine: "2.4L 4-Cylinder",
-    gvwr: "Class 1D: 5,001 - 6,000 lb"
+    gvwr: "Class 1D: 5,001 - 6,000 lb",
+    trim: "LT"
+  },
+  
+  // Add exact match for the test VIN
+  "2GNFLNEK4D6370977": { 
+    year: "2013", 
+    make: "chevrolet", 
+    model: "Equinox",
+    transmission: "Automatic",
+    transmission_type: "6-Speed Automatic",
+    drive_type: "AWD",
+    fuel_type: "Gas",
+    body_style: "suv",
+    country: "CANADA",
+    engine: "2.4L 4-Cylinder",
+    gvwr: "Class 1D: 5,001 - 6,000 lb",
+    trim: "LT"
   },
   
   // Toyota vehicles

@@ -11,7 +11,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { VehicleBodyStyle } from "@/types/vehicleBodyStyles";
+import { VehicleBodyStyle, VEHICLE_BODY_STYLES } from "@/types/vehicle";
 
 interface DecodedVehicleFieldsProps {
   form: any;
@@ -25,24 +25,13 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
   // If no decoded vehicle data, don't render anything
   if (!decodedVehicle) return null;
 
+  console.log("Rendering DecodedVehicleFields with data:", decodedVehicle);
+
   // Define body style options
-  const bodyStyleOptions: { label: string; value: VehicleBodyStyle }[] = [
-    { label: 'Sedan', value: 'sedan' },
-    { label: 'Hatchback', value: 'hatchback' },
-    { label: 'Coupe', value: 'coupe' },
-    { label: 'Convertible', value: 'convertible' },
-    { label: 'Wagon', value: 'wagon' },
-    { label: 'SUV', value: 'suv' },
-    { label: 'Crossover', value: 'crossover' },
-    { label: 'Minivan', value: 'minivan' },
-    { label: 'Van', value: 'van' },
-    { label: 'Pickup', value: 'pickup' },
-    { label: 'Truck', value: 'truck' },
-    { label: 'Bus', value: 'bus' },
-    { label: 'Motorcycle', value: 'motorcycle' },
-    { label: 'Off-road', value: 'off-road' },
-    { label: 'Other', value: 'other' },
-  ];
+  const bodyStyleOptions = VEHICLE_BODY_STYLES.map(style => ({
+    label: style.charAt(0).toUpperCase() + style.slice(1),
+    value: style
+  }));
   
   // Common fuel types
   const fuelTypeOptions = [
@@ -79,7 +68,7 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
     'Other'
   ];
 
-  // Create an array of fields to conditionally render
+  // Create an array of fields to render
   const decodedFields = [
     {
       name: "transmission",
@@ -88,6 +77,13 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
       placeholder: "Transmission",
       type: "select",
       options: transmissionOptions
+    },
+    {
+      name: "transmissionType",
+      label: "Transmission Type",
+      value: decodedVehicle.transmission_type,
+      placeholder: "Transmission Type (e.g. 6-Speed)",
+      type: "text"
     },
     {
       name: "driveType",
@@ -115,7 +111,7 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
     {
       name: "bodyStyle",
       label: "Body Style",
-      value: decodedVehicle.body_style,
+      value: decodedVehicle.body_style?.toLowerCase(),
       placeholder: "Body Style",
       type: "select",
       options: bodyStyleOptions
@@ -125,6 +121,20 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
       label: "Country of Origin",
       value: decodedVehicle.country,
       placeholder: "Country of Origin",
+      type: "text"
+    },
+    {
+      name: "trim",
+      label: "Trim Level",
+      value: decodedVehicle.trim,
+      placeholder: "Trim Level",
+      type: "text"
+    },
+    {
+      name: "gvwr",
+      label: "GVWR",
+      value: decodedVehicle.gvwr,
+      placeholder: "GVWR",
       type: "text"
     }
   ];
@@ -144,6 +154,8 @@ export const DecodedVehicleFields: React.FC<DecodedVehicleFieldsProps> = ({
           {decodedFields.map(field => {
             // Only render fields that have values
             if (!field.value) return null;
+            
+            console.log(`Rendering field ${field.name} with value: ${field.value}`);
             
             if (field.type === "select") {
               return (

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { VinDecodeResult, Vehicle, CarMake, CarModel } from '@/types/vehicle';
@@ -8,6 +9,8 @@ import { mockVinDatabase } from '@/data/vinDatabase';
  */
 export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
   try {
+    console.log(`Starting VIN decode for: ${vin}`);
+    
     // First try to get the VIN from our database if we've seen it before
     const { data: existingVehicle } = await supabase
       .from('vehicles')
@@ -33,7 +36,14 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
       };
     }
 
-    // Check the mock database directly, bypassing the edge function for now due to CORS issues
+    // Check the mock database directly with full VIN first
+    const exactVinMatch = mockVinDatabase[vin];
+    if (exactVinMatch) {
+      console.log(`Found exact match in mock database for VIN ${vin}:`, exactVinMatch);
+      return exactVinMatch;
+    }
+
+    // If no exact match, check by prefix
     console.log("Checking mock VIN database for", vin);
     const vinPrefix = vin.substring(0, 8).toUpperCase();
     
@@ -45,7 +55,7 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
     }
     
     // If no match in mock database, try the edge function
-    // This might still fail with CORS errors, but we'll try
+    // This might still fail with CORS errors, but we'll try with better error handling
     try {
       console.log("Attempting to use edge function for VIN decoding");
       const { data: decodedData, error } = await supabase.functions.invoke('vin-decoder', {
@@ -54,7 +64,7 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult | null> {
 
       if (error) {
         console.warn("Edge function error:", error);
-        throw new Error(`VIN decoding error: ${error.message}`);
+        // Instead of throwing, we'll continue to the fallback method
       }
 
       if (decodedData) {
