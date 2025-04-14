@@ -48,8 +48,11 @@ export function usePermission(permission: Permission): boolean {
 }
 
 // Component guard for permission-based access
-export function withPermission(Component: React.ComponentType, requiredPermission: Permission) {
-  return function ProtectedComponent(props: any) {
+export function withPermission<P extends object>(
+  Component: React.ComponentType<P>, 
+  requiredPermission: Permission
+): React.FC<P> {
+  return function ProtectedComponent(props: P) {
     const hasPermission = usePermission(requiredPermission);
     
     if (!hasPermission) {
