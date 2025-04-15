@@ -26,11 +26,16 @@ export const ModelField: React.FC<ModelFieldProps> = ({
   // Effect to validate model value exists in the models list when loaded
   useEffect(() => {
     if (!isLoading && models.length > 0 && modelValue) {
+      console.log(`Checking if model "${modelValue}" exists in ${models.length} available models`);
+      
       const modelExists = models.some(
         model => model.model_name && model.model_name.toLowerCase() === modelValue.toLowerCase()
       );
       
-      // If model value doesn't match any available models, find closest match
+      // Log the model validation result
+      console.log(`Model "${modelValue}" exists in models list: ${modelExists}`);
+      
+      // If model value doesn't match any available models, try to find closest match
       if (!modelExists) {
         // Try to find a case-insensitive match
         const caseInsensitiveMatch = models.find(

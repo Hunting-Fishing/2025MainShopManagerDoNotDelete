@@ -6,7 +6,6 @@ import { HelpCircle, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
 import { CarMake } from "@/types/vehicle";
-import { Input } from "@/components/ui/input";
 
 interface MakeFieldProps extends BaseFieldProps {
   makes: CarMake[];
@@ -30,8 +29,13 @@ export const MakeField: React.FC<MakeFieldProps> = ({
   // Effect to normalize make value if it doesn't match exactly what's in the database
   useEffect(() => {
     if (makeValue && safeMakes.length > 0) {
+      console.log(`Checking if make "${makeValue}" exists in available makes`);
+      
       // Check if the current value exists in the makes list
       const exactMatch = safeMakes.find(make => make.make_id === makeValue);
+      
+      // Log the result of the exact match check
+      console.log(`Exact match for make "${makeValue}" found: ${!!exactMatch}`);
       
       // If no exact match but we have a value, try to find case-insensitive match
       if (!exactMatch && makeValue) {

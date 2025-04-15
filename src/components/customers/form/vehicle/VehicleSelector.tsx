@@ -45,13 +45,14 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const vin = form.watch(`vehicles.${index}.vin`);
   const make = form.watch(`vehicles.${index}.make`);
   const model = form.watch(`vehicles.${index}.model`);
+  const year = form.watch(`vehicles.${index}.year`);
   
-  // Debug make and model values to check form state
+  // Debug values
   useEffect(() => {
-    if (make || model) {
-      console.log(`Current form state at index ${index}: make=${make}, model=${model}`);
+    if (make || model || year) {
+      console.log(`Current form state at index ${index}: year=${year}, make=${make}, model=${model}`);
     }
-  }, [make, model, index]);
+  }, [make, model, year, index]);
   
   // Handle manual make change
   const handleMakeChange = async (makeValue: string) => {
