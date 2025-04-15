@@ -62,14 +62,14 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     if (!makeValue) return;
     
     try {
-      // Fetch models for the selected make
-      await fetchModels(makeValue);
-      console.log(`Models fetched for make: ${makeValue}`);
-      
-      // Clear the model when make changes
+      // Clear model when make changes
       if (model) {
         form.setValue(`vehicles.${index}.model`, '');
       }
+      
+      // Fetch models for the selected make
+      await fetchModels(makeValue);
+      console.log(`Models fetched for make: ${makeValue}`);
     } catch (err) {
       console.error("Error handling make change:", err);
       toast({

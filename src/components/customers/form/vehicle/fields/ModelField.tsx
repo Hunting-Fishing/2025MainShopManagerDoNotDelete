@@ -46,6 +46,20 @@ export const ModelField: React.FC<ModelFieldProps> = ({
           console.log(`Found case-insensitive model match for "${modelValue}": "${caseInsensitiveMatch.model_name}"`);
           form.setValue(`vehicles.${index}.model`, caseInsensitiveMatch.model_name);
         }
+        
+        // If no exact match, look for a partial match
+        if (!caseInsensitiveMatch) {
+          const partialMatch = models.find(
+            model => model.model_name && modelValue && 
+              (model.model_name.toLowerCase().includes(modelValue.toLowerCase()) || 
+               modelValue.toLowerCase().includes(model.model_name.toLowerCase()))
+          );
+          
+          if (partialMatch && partialMatch.model_name) {
+            console.log(`Found partial model match for "${modelValue}": "${partialMatch.model_name}"`);
+            form.setValue(`vehicles.${index}.model`, partialMatch.model_name);
+          }
+        }
       }
     }
   }, [models, modelValue, isLoading, form, index]);

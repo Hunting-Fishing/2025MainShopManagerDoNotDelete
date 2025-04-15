@@ -35,7 +35,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
 
   // Manual make selection or change from outside the component
   useEffect(() => {
-    if (selectedMake && !isModelLoading) {
+    if (selectedMake && !isModelLoading && !vinProcessing) {
       console.log("Make changed or selected in useVehicleForm:", selectedMake);
       setModelsLoaded(false);
       setIsModelLoading(true);
@@ -50,7 +50,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           setIsModelLoading(false);
         });
     }
-  }, [selectedMake, fetchModels]);
+  }, [selectedMake, fetchModels, isModelLoading, vinProcessing]);
 
   // Enhanced auto-populate function that ensures proper order of operations
   const populateVehicleFromVin = useCallback(async (vehicleInfo: VinDecodeResult) => {
@@ -61,6 +61,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     console.log("Populating form with decoded VIN info:", vehicleInfo);
     
     try {
+      // Clear the current model list to force a refresh
+      setModelsLoaded(false);
+      
       // Batch our form updates to avoid race conditions
       const updates: Record<string, any> = {};
       
@@ -75,19 +78,19 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         console.log("Setting make to:", vehicleInfo.make);
         updates[`vehicles.${index}.make`] = vehicleInfo.make;
         
-        // Wait for models to load
-        console.log("Fetching models for make:", vehicleInfo.make);
+        // Wait for models to load for this make
         setIsModelLoading(true);
-        const fetchedModels = await fetchModels(vehicleInfo.make);
-        setIsModelLoading(false);
-        const modelsCount = fetchedModels ? fetchedModels.length : 0;
-        console.log(`Fetched ${modelsCount} models for make:`, vehicleInfo.make);
-        setModelsLoaded(true);
+        console.log("Fetching models for make:", vehicleInfo.make);
         
-        // Set the model
-        if (vehicleInfo.model) {
-          console.log("Setting model to:", vehicleInfo.model);
-          updates[`vehicles.${index}.model`] = vehicleInfo.model;
+        try {
+          const fetchedModels = await fetchModels(vehicleInfo.make);
+          console.log(`Fetched ${fetchedModels?.length || 0} models for make:`, vehicleInfo.make);
+          
+          // Now set the model after models are loaded
+          if (vehicleInfo.model) {
+            console.log("Setting model to:", vehicleInfo.model);
+            updates[`vehicles.${index}.model`] = vehicleInfo.model;
+          }
           
           // Additional vehicle details
           if (vehicleInfo.transmission) updates[`vehicles.${index}.transmission`] = vehicleInfo.transmission;
@@ -99,34 +102,39 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           if (vehicleInfo.transmission_type) updates[`vehicles.${index}.transmission_type`] = vehicleInfo.transmission_type;
           if (vehicleInfo.gvwr) updates[`vehicles.${index}.gvwr`] = vehicleInfo.gvwr;
           if (vehicleInfo.country) updates[`vehicles.${index}.country`] = vehicleInfo.country;
+          
+          // Apply all updates at once
+          Object.entries(updates).forEach(([key, value]) => {
+            form.setValue(key as any, value);
+          });
+          
+          setModelsLoaded(true);
+          
+          // Trigger form validation after all fields are set
+          form.trigger([
+            `vehicles.${index}.year` as const,
+            `vehicles.${index}.make` as const,
+            `vehicles.${index}.model` as const
+          ] as const);
+          
+          // Verify fields were set correctly
+          console.log("After decoding - Current year:", form.getValues(`vehicles.${index}.year`));
+          console.log("After decoding - Current make:", form.getValues(`vehicles.${index}.make`));
+          console.log("After decoding - Current model:", form.getValues(`vehicles.${index}.model`));
+          
+          setVinDecodeSuccess(true);
+          
+          toast({
+            title: "VIN Decoded Successfully",
+            description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
+            variant: "success",
+          });
+        } catch (err) {
+          console.error("Error fetching models during VIN decode:", err);
+        } finally {
+          setIsModelLoading(false);
         }
       }
-      
-      // Apply all updates at once
-      Object.entries(updates).forEach(([key, value]) => {
-        form.setValue(key as any, value);
-      });
-      
-      // Trigger form validation after all fields are set
-      // Fix: Using type assertion to satisfy TypeScript's constraints
-      form.trigger([
-        `vehicles.${index}.year` as const,
-        `vehicles.${index}.make` as const,
-        `vehicles.${index}.model` as const
-      ] as const);
-      
-      // Verify fields were set correctly
-      console.log("After decoding - Current year:", form.getValues(`vehicles.${index}.year`));
-      console.log("After decoding - Current make:", form.getValues(`vehicles.${index}.make`));
-      console.log("After decoding - Current model:", form.getValues(`vehicles.${index}.model`));
-      
-      setVinDecodeSuccess(true);
-      
-      toast({
-        title: "VIN Decoded Successfully",
-        description: `Vehicle identified as ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`,
-        variant: "success",
-      });
     } catch (err) {
       console.error("Error populating vehicle form:", err);
       toast({
@@ -134,10 +142,11 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         description: "Failed to populate vehicle information.",
         variant: "destructive",
       });
+      setVinDecodeSuccess(false);
     } finally {
       setVinProcessing(false);
     }
-  }, [form, index, fetchModels, toast]);
+  }, [form, index, fetchModels]);
 
   // Auto-populate fields when VIN changes with improved debouncing
   useEffect(() => {
