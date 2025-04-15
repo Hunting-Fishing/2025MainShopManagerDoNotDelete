@@ -1,27 +1,40 @@
 
 import { supabase } from "@/lib/supabase";
+import { TechnicianPerformanceData } from "@/types/dashboard";
 
-export interface TechnicianEfficiency {
-  technician_name: string;
-  efficiency_rate: number;
-  tasks_completed: number;
-  hours_logged: number;
-  average_task_time: number;
-}
-
-export const getTechnicianEfficiency = async (): Promise<TechnicianEfficiency[]> => {
+export const getTechnicianPerformance = async (): Promise<TechnicianPerformanceData> => {
   try {
-    // Fetch technician efficiency data
+    // Fetch technician performance data from the last 6 months
     const { data, error } = await supabase
       .from('technician_performance')
       .select('*')
-      .order('efficiency_rate', { ascending: false });
-    
+      .gte('month', new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString())
+      .order('month');
+
     if (error) throw error;
-    
-    return data || [];
+
+    // Transform data into required format
+    const technicians = [...new Set(data.map(entry => entry.technician_name))];
+    const chartData = data.reduce((acc, curr) => {
+      const existingMonth = acc.find(item => item.month === curr.month);
+      if (existingMonth) {
+        existingMonth[curr.technician_name] = curr.efficiency_rate;
+      } else {
+        acc.push({
+          month: curr.month,
+          [curr.technician_name]: curr.efficiency_rate
+        });
+      }
+      return acc;
+    }, [] as any[]);
+
+    return {
+      technicians,
+      chartData
+    };
   } catch (error) {
-    console.error("Error fetching technician efficiency:", error);
-    return [];
+    console.error("Error fetching technician performance:", error);
+    return { technicians: [], chartData: [] };
   }
 };
+
