@@ -11,7 +11,8 @@ export default function Customers() {
     filters,
     loading,
     error,
-    handleFilterChange
+    handleFilterChange,
+    refreshCustomers
   } = useCustomers();
 
   console.log("Customers page rendering with:", { 
@@ -38,6 +39,7 @@ export default function Customers() {
         loading={loading}
         error={error}
         onFilterChange={handleFilterChange}
+        onRefresh={refreshCustomers}
       />
     </div>
   );

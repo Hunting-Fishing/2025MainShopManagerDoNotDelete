@@ -7,7 +7,6 @@ import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
 export const getAllCustomers = async (): Promise<Customer[]> => {
   try {
     console.log("Fetching all customers...");
-    // Fix the vehicles relationship query by selecting just the customers first
     const { data, error } = await supabase
       .from("customers")
       .select("*")
@@ -18,7 +17,7 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
       throw error;
     }
     
-    console.log("Customer data fetched:", data);
+    console.log(`Successfully fetched ${data?.length || 0} customers from database`);
     
     // Handle null or undefined data
     if (!data) {
@@ -26,10 +25,10 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
       return [];
     }
     
-    // Fix the type assertion by first converting to unknown
-    const customers = data.map(customer => adaptCustomerForUI(customer as Customer));
+    // Fix the type assertion and process the customer data
+    const customers = data.map(customer => adaptCustomerForUI(customer as any));
     
-    console.log("Adapted customers:", customers);
+    console.log("Successfully adapted customer data for UI");
     
     // Fetch vehicles for each customer separately to avoid relationship issues
     for (const customer of customers) {
@@ -51,7 +50,6 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
     }
     
     // Fetch loyalty data for each customer
-    // This is done separately to keep the initial customer query simple
     try {
       for (const customer of customers) {
         try {
@@ -70,7 +68,7 @@ export const getAllCustomers = async (): Promise<Customer[]> => {
     return customers;
   } catch (error) {
     console.error("Error in getAllCustomers:", error);
-    return [];
+    throw error; // Re-throw the error to be handled by the caller
   }
 };
 
@@ -96,7 +94,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     }
     
     console.log("Customer data from DB:", data);
-    const customer = adaptCustomerForUI(data as Customer);
+    const customer = adaptCustomerForUI(data as any);
     
     // Fetch vehicles for this customer
     try {
@@ -128,7 +126,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     return customer;
   } catch (error) {
     console.error("Error in getCustomerById:", error);
-    return null;
+    throw error;
   }
 };
 

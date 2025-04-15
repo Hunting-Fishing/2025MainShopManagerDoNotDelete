@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase client configuration
@@ -9,17 +8,23 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper function to check if Supabase connection is working
-export const checkSupabaseConnection = async (): Promise<boolean> => {
+export async function checkSupabaseConnection(): Promise<boolean> {
   try {
-    // Try to fetch a small amount of data to verify connection
+    // Simple health check query that should always work
     const { data, error } = await supabase
       .from('customers')
       .select('id')
       .limit(1);
     
-    return !error;
-  } catch (error) {
-    console.error("Supabase connection check failed:", error);
+    if (error) {
+      console.error("Supabase connection check failed:", error);
+      return false;
+    }
+    
+    console.log("Supabase connection successful");
+    return true;
+  } catch (err) {
+    console.error("Error checking Supabase connection:", err);
     return false;
   }
-};
+}
