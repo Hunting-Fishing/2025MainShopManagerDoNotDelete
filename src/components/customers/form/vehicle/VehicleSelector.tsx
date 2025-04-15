@@ -133,7 +133,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
         <VehicleAdditionalDetails
           form={form}
           index={index}
-          vehicleInfo={decodedVehicleInfo}
+          decodedDetails={decodedVehicleInfo}
         />
       )}
     </div>
