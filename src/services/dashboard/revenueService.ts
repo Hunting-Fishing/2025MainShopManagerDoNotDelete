@@ -110,30 +110,59 @@ export const getMonthlyRevenue = async (): Promise<{ month: string; revenue: num
 // Get service type distribution data
 export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> => {
   try {
-    // Fetch work orders grouped by service type
-    const { data, error } = await supabase
+    // Let's first try using service_category_id if available
+    const { data: workOrdersWithCategories, error: categoryError } = await supabase
       .from('work_orders')
-      .select('service_type, id');
-      
-    if (error) throw error;
-    
-    if (!data || data.length === 0) return [];
-    
-    // Count work orders by service type
-    const countByType = data.reduce((acc: Record<string, number>, order) => {
-      const type = order.service_type || 'Other';
-      if (!acc[type]) {
-        acc[type] = 0;
+      .select(`
+        service_category_id,
+        service_categories:service_category_id (name)
+      `)
+      .not('service_category_id', 'is', null);
+
+    // If there's no data with service_category_id, try using service_type
+    if (categoryError || !workOrdersWithCategories || workOrdersWithCategories.length === 0) {
+      const { data: workOrdersWithType, error: typeError } = await supabase
+        .from('work_orders')
+        .select('service_type')
+        .not('service_type', 'is', null);
+        
+      if (typeError || !workOrdersWithType || workOrdersWithType.length === 0) {
+        // If no data with either field, return an empty array
+        return [];
       }
-      acc[type]++;
-      return acc;
-    }, {});
-    
-    // Convert to chart data format
-    return Object.entries(countByType)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6); // Top 6 service types
+
+      // Count work orders by service type
+      const countByType = workOrdersWithType.reduce((acc: Record<string, number>, order) => {
+        const type = order.service_type || 'Other';
+        if (!acc[type]) {
+          acc[type] = 0;
+        }
+        acc[type]++;
+        return acc;
+      }, {});
+
+      // Convert to chart data format
+      return Object.entries(countByType)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 6); // Top 6 service types
+    } else {
+      // Count work orders by service category
+      const countByCategory = workOrdersWithCategories.reduce((acc: Record<string, number>, order) => {
+        const categoryName = order.service_categories?.name || 'Other';
+        if (!acc[categoryName]) {
+          acc[categoryName] = 0;
+        }
+        acc[categoryName]++;
+        return acc;
+      }, {});
+      
+      // Convert to chart data format
+      return Object.entries(countByCategory)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 6); // Top 6 service categories
+    }
   } catch (error) {
     console.error("Error fetching service type distribution:", error);
     return [];

@@ -5607,6 +5607,33 @@ export type Database = {
           },
         ]
       }
+      service_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       service_reminder_tags: {
         Row: {
           created_at: string
@@ -6908,6 +6935,8 @@ export type Database = {
           end_time: string | null
           estimated_hours: number | null
           id: string
+          service_category_id: string | null
+          service_type: string | null
           start_time: string | null
           status: string
           technician_id: string | null
@@ -6924,6 +6953,8 @@ export type Database = {
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
+          service_category_id?: string | null
+          service_type?: string | null
           start_time?: string | null
           status: string
           technician_id?: string | null
@@ -6940,6 +6971,8 @@ export type Database = {
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
+          service_category_id?: string | null
+          service_type?: string | null
           start_time?: string | null
           status?: string
           technician_id?: string | null
@@ -6947,7 +6980,22 @@ export type Database = {
           updated_at?: string
           vehicle_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_service_category_id_fkey"
+            columns: ["service_category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -7064,6 +7112,10 @@ export type Database = {
       create_custom_role: {
         Args: { role_name: string; role_description: string }
         Returns: string
+      }
+      create_storage_folders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_work_order_procedures: {
         Args: Record<PropertyKey, never>

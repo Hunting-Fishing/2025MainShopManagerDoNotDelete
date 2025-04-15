@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getRecentWorkOrders } from "@/services/dashboard"; // Updated import
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { RecentWorkOrder } from "@/types/dashboard";
+import { supabase } from "@/lib/supabase";
 
 export function RecentWorkOrders() {
   const [workOrders, setWorkOrders] = useState<RecentWorkOrder[]>([]);
@@ -15,8 +15,69 @@ export function RecentWorkOrders() {
     const fetchWorkOrders = async () => {
       try {
         setLoading(true);
-        const data = await getRecentWorkOrders();
-        setWorkOrders(data);
+        
+        // Fetch recent work orders directly with supabase
+        const { data, error } = await supabase
+          .from('work_orders')
+          .select(`
+            id, 
+            description,
+            status,
+            created_at,
+            customer_id
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (error) throw error;
+        
+        // If we have work orders, fetch customer details for each
+        if (data && data.length > 0) {
+          // Get all customer IDs from work orders
+          const customerIds = data.map(wo => wo.customer_id).filter(Boolean);
+          
+          // Fetch customer details if there are IDs
+          let customerDetails: Record<string, string> = {};
+          if (customerIds.length > 0) {
+            const { data: customers, error: customerError } = await supabase
+              .from('customers')
+              .select('id, first_name, last_name')
+              .in('id', customerIds);
+              
+            if (!customerError && customers) {
+              // Create a map of customer IDs to names
+              customerDetails = customers.reduce((acc, customer) => {
+                acc[customer.id] = `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unknown Customer';
+                return acc;
+              }, {} as Record<string, string>);
+            }
+          }
+          
+          // Map work orders to the format we need
+          const mappedWorkOrders = data.map(order => {
+            // Determine priority based on status
+            let priority = 'normal';
+            if (order.status === 'waiting-parts') priority = 'medium';
+            if (order.status === 'on-hold') priority = 'high';
+            
+            return {
+              id: order.id,
+              customer: order.customer_id ? customerDetails[order.customer_id] || 'Unknown Customer' : 'Unknown Customer',
+              service: order.description || 'General Service',
+              status: order.status || 'pending',
+              date: new Date(order.created_at).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+              }),
+              priority
+            };
+          });
+          
+          setWorkOrders(mappedWorkOrders);
+        } else {
+          setWorkOrders([]);
+        }
+        
         setError(null);
       } catch (err) {
         console.error("Error fetching recent work orders:", err);

@@ -7,3 +7,4 @@ export * from './rewardService';
 export * from './redemptionService';
 export * from './tierService';
 export * from './transactions/loyaltyTransactionService';
+export * from './serviceCategoryService';

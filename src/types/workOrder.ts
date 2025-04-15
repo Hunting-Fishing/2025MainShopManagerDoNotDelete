@@ -89,8 +89,10 @@ export interface WorkOrder {
   total_cost?: number;
   estimated_hours?: number;
   service_type?: string;
+  serviceType?: string; 
   service_category?: string;
   serviceCategory?: string;
+  service_category_id?: string;
   vehicleDetails?: {
     make?: string;
     model?: string;

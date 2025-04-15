@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { getServiceTypeDistribution } from "@/services/dashboard"; // Updated import path
+import { getServiceTypeDistribution } from "@/services/dashboard/revenueService";
 import { ServiceTypeData } from "@/types/dashboard";
 
 export function ServiceTypeDistributionChart() {
@@ -67,7 +67,7 @@ export function ServiceTypeDistributionChart() {
       <CardContent className="h-80">
         {data.length === 0 ? (
           <div className="flex justify-center items-center h-full text-muted-foreground">
-            No data available
+            No service data available. Try creating work orders with service types.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

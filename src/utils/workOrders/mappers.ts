@@ -52,7 +52,16 @@ export const mapDatabaseToAppModel = (data: any): WorkOrder => {
     vehicleId: data.vehicle_id,
   };
   
-  // Handle service category safely
+  // Handle service category and type safely
+  if (data.service_category_id !== undefined) {
+    workOrder.service_category_id = data.service_category_id;
+  }
+  
+  if (data.service_type !== undefined) {
+    workOrder.service_type = data.service_type;
+    workOrder.serviceType = data.service_type;
+  }
+  
   if (data.service_category !== undefined) {
     workOrder.serviceCategory = data.service_category;
     workOrder.service_category = data.service_category;
@@ -70,6 +79,16 @@ export const mapAppModelToDatabase = (workOrder: Partial<WorkOrder>) => {
     result.service_category = workOrder.serviceCategory;
   } else if (workOrder.service_category !== undefined) {
     result.service_category = workOrder.service_category;
+  }
+  
+  if (workOrder.serviceType !== undefined) {
+    result.service_type = workOrder.serviceType;
+  } else if (workOrder.service_type !== undefined) {
+    result.service_type = workOrder.service_type;
+  }
+  
+  if (workOrder.service_category_id !== undefined) {
+    result.service_category_id = workOrder.service_category_id;
   }
 
   // Handle vehicle properties
