@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,21 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
     "4WD",
     "4x4",
     "Part-time 4WD"
+  ];
+  
+  // Common fuel types - this was missing in the original code
+  const fuelTypes = [
+    "Gasoline",
+    "Diesel",
+    "Electric",
+    "Hybrid",
+    "Plug-in Hybrid",
+    "CNG",
+    "LPG",
+    "Ethanol",
+    "Flex Fuel",
+    "Hydrogen",
+    "Other"
   ];
   
   // Common body styles
