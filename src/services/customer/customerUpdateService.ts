@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
@@ -24,6 +23,18 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     
     // Business information
     company: updates.company,
+    business_type: updates.business_type,
+    business_industry: updates.business_industry,
+    other_business_industry: updates.other_business_industry,
+    tax_id: updates.tax_id,
+    business_email: updates.business_email,
+    business_phone: updates.business_phone,
+    
+    // Payment & Billing
+    preferred_payment_method: updates.preferred_payment_method,
+    auto_billing: updates.auto_billing,
+    credit_terms: updates.credit_terms,
+    terms_agreed: updates.terms_agreed,
     
     // Shop assignment
     shop_id: updates.shop_id,
@@ -45,6 +56,9 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     // Fleet information
     is_fleet: updates.is_fleet,
     fleet_company: updates.fleet_company,
+    fleet_manager: updates.fleet_manager,
+    fleet_contact: updates.fleet_contact,
+    preferred_service_type: updates.preferred_service_type,
     
     // Additional information
     notes: updates.notes
@@ -113,12 +127,13 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
               vin: vehicle.vin || null,
               license_plate: vehicle.license_plate || null,
               color: vehicle.color || null,
+              transmission: vehicle.transmission || null,
+              transmission_type: vehicle.transmission_type || null,
               drive_type: vehicle.drive_type || null,
               fuel_type: vehicle.fuel_type || null,
               engine: vehicle.engine || null,
               body_style: vehicle.body_style || null,
               country: vehicle.country || null,
-              transmission_type: vehicle.transmission_type || null,
               gvwr: vehicle.gvwr || null,
               trim: vehicle.trim || null
             })
@@ -143,12 +158,13 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
               vin: vehicle.vin || null,
               license_plate: vehicle.license_plate || null,
               color: vehicle.color || null,
+              transmission: vehicle.transmission || null,
+              transmission_type: vehicle.transmission_type || null,
               drive_type: vehicle.drive_type || null,
               fuel_type: vehicle.fuel_type || null,
               engine: vehicle.engine || null,
               body_style: vehicle.body_style || null,
               country: vehicle.country || null,
-              transmission_type: vehicle.transmission_type || null,
               gvwr: vehicle.gvwr || null,
               trim: vehicle.trim || null
             });

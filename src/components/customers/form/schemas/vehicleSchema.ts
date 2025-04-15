@@ -12,6 +12,7 @@ export const vehicleSchema = z.object({
   color: z.string().optional(),
   
   // Additional vehicle details
+  transmission: z.string().optional(),
   transmission_type: z.string().optional(),
   drive_type: z.string().optional(),
   fuel_type: z.string().optional(),
