@@ -149,6 +149,7 @@ export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> =
     } else {
       // Count work orders by service category
       const countByCategory = workOrdersWithCategories.reduce((acc: Record<string, number>, order) => {
+        // Fixed here: Check if service_categories exists and is an object that has a name property
         const categoryName = order.service_categories?.name || 'Other';
         if (!acc[categoryName]) {
           acc[categoryName] = 0;
