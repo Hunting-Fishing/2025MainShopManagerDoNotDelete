@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerLoyalty, LoyaltyRedemption } from "@/types/loyalty";
 import { getCustomerLoyalty } from './customerLoyaltyService';
-import { createLoyaltyTransaction } from './transactionService';
+import { createLoyaltyTransaction } from './transactions/loyaltyTransactionService';
 import { toast } from "sonner";
 
 // Redeem points for a reward
