@@ -1,119 +1,53 @@
 
 import { supabase } from "@/lib/supabase";
-import { PhaseProgressItem, RecentWorkOrder } from "@/types/dashboard";
 
-// Get phase progress data
-export const getPhaseProgress = async (): Promise<PhaseProgressItem[]> => {
+export interface WorkOrderPhase {
+  name: string;
+  completed: number;
+  total: number;
+  completion_rate: number;
+}
+
+export const getPhaseProgress = async (): Promise<WorkOrderPhase[]> => {
   try {
-    // Get work orders with their statuses
+    // Fetch work order phase progress data
     const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        id, 
-        description,
-        status,
-        customer_id
-      `)
-      .in('status', ['pending', 'in-progress', 'on-hold', 'waiting-parts']);
-      
+      .from('work_order_phases')
+      .select('name, completed, total')
+      .order('name');
+    
     if (error) throw error;
     
-    if (!data || data.length === 0) return [];
-    
-    // Map work orders to phase progress format
-    return data.map(workOrder => {
-      // Calculate progress based on status
-      let progress = 0;
-      let completedPhases = 0;
-      const totalPhases = 5; // Assuming a 5-phase workflow
-      
-      switch (workOrder.status) {
-        case 'pending':
-          progress = 20;
-          completedPhases = 1;
-          break;
-        case 'in-progress':
-          progress = 40;
-          completedPhases = 2;
-          break;
-        case 'waiting-parts':
-          progress = 60;
-          completedPhases = 3;
-          break;
-        case 'on-hold':
-          progress = 80;
-          completedPhases = 4;
-          break;
-        default:
-          progress = 0;
-          completedPhases = 0;
-      }
-      
-      return {
-        id: workOrder.id,
-        name: workOrder.description || `Work Order #${workOrder.id.substring(0, 8)}`,
-        totalPhases,
-        completedPhases,
-        progress
-      };
-    });
+    // Calculate completion rates for each phase
+    return data.map(phase => ({
+      ...phase,
+      completion_rate: phase.total > 0 
+        ? Math.round((phase.completed / phase.total) * 100)
+        : 0
+    }));
   } catch (error) {
-    console.error("Error fetching phase progress:", error);
+    console.error("Error fetching work order phase progress:", error);
     return [];
   }
 };
 
-// Get recent work orders
-export const getRecentWorkOrders = async (): Promise<RecentWorkOrder[]> => {
+export const getWorkOrderPhaseCompletionRate = async (): Promise<string> => {
   try {
-    // Get recent work orders with customer information
-    const { data, error } = await supabase
-      .from('work_orders')
-      .select(`
-        id, 
-        description,
-        status,
-        created_at,
-        customer_id,
-        customers (
-          first_name,
-          last_name
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(5);
-      
-    if (error) throw error;
+    // Calculate the overall phase completion rate across all phases
+    const phases = await getPhaseProgress();
     
-    if (!data || data.length === 0) return [];
+    if (phases.length === 0) return 'N/A';
     
-    // Map to required format
-    return data.map(order => {
-      // Safe check for customer data - handle as single object, not array
-      const customer = order.customers || { first_name: 'Unknown', last_name: 'Customer' };
-      const customerName = customer && typeof customer === 'object' && 'first_name' in customer ? 
-        `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : 
-        'Unknown Customer';
-        
-      // Determine priority based on status
-      let priority = 'normal';
-      if (order.status === 'waiting-parts') priority = 'medium';
-      if (order.status === 'on-hold') priority = 'high';
-      
-      return {
-        id: order.id,
-        customer: customerName,
-        service: order.description || 'General Service',
-        status: order.status || 'pending',
-        date: new Date(order.created_at).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
-        }),
-        priority
-      };
-    });
+    const totalCompleted = phases.reduce((sum, phase) => sum + phase.completed, 0);
+    const totalPhases = phases.reduce((sum, phase) => sum + phase.total, 0);
+    
+    const completionRate = totalPhases > 0 
+      ? Math.round((totalCompleted / totalPhases) * 100)
+      : 0;
+    
+    return `${completionRate}%`;
   } catch (error) {
-    console.error("Error fetching recent work orders:", error);
-    return [];
+    console.error("Error calculating phase completion rate:", error);
+    return 'N/A';
   }
 };

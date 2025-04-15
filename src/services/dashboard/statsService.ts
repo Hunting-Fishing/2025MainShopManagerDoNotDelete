@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { DashboardStats } from "@/types/dashboard";
 
@@ -123,6 +124,34 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       avgCompletionHours = totalHours / completedOrders.length;
     }
     
+    // Get phase completion rate
+    const { data: phaseData, error: phaseError } = await supabase
+      .from('work_order_phases')
+      .select('completed, total');
+      
+    if (phaseError) throw phaseError;
+    
+    let phaseCompletionRate = 'N/A';
+    if (phaseData && phaseData.length > 0) {
+      const totalCompleted = phaseData.reduce((sum, phase) => sum + (phase.completed || 0), 0);
+      const totalPhases = phaseData.reduce((sum, phase) => sum + (phase.total || 0), 0);
+      
+      if (totalPhases > 0) {
+        phaseCompletionRate = `${Math.round((totalCompleted / totalPhases) * 100)}%`;
+      }
+    }
+    
+    // Get quality control pass rate
+    const { data: qualityControlData } = await supabase
+      .from('quality_control_metrics')
+      .select('pass_rate')
+      .order('calculated_at', { ascending: false })
+      .limit(1);
+      
+    const qualityControlPassRate = qualityControlData?.[0]?.pass_rate
+      ? `${Math.round(qualityControlData[0].pass_rate)}%`
+      : 'N/A';
+    
     // Return formatted stats
     return {
       revenue,
@@ -139,8 +168,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       completionTimeChange: '0%', // Would need historical data for accurate calculation
       customerSatisfaction,
       schedulingEfficiency,
-      phaseCompletionRate: '87%', // This would need real phase tracking data
-      qualityControlPassRate: '98%', // This would need real QC data
+      phaseCompletionRate,
+      qualityControlPassRate,
     };
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);

@@ -4,35 +4,48 @@ import { ChecklistStat } from "@/types/dashboard";
 
 export const getChecklistStats = async (): Promise<ChecklistStat[]> => {
   try {
-    // In a real application, you'd have a checklist_items table
-    // Here we'll create placeholder data based on existing work orders
+    // Fetch checklist completion stats from the quality_control_checklists table
     const { data, error } = await supabase
-      .from('work_orders')
-      .select('id, status')
-      .in('status', ['pending', 'in-progress'])
+      .from('quality_control_checklists')
+      .select('name, items_total, items_completed, last_updated')
+      .order('last_updated', { ascending: false })
       .limit(5);
-      
+
+    if (error) {
+      console.error("Error fetching checklist stats:", error);
+      return [];
+    }
+
+    // Transform the data to calculate completion rates
+    return data.map(checklist => ({
+      name: checklist.name,
+      completionRate: checklist.items_total > 0 
+        ? Math.round((checklist.items_completed / checklist.items_total) * 100)
+        : 0,
+      lastUpdated: checklist.last_updated
+    }));
+  } catch (error) {
+    console.error("Error in getChecklistStats:", error);
+    return [];
+  }
+};
+
+export const getQualityControlStats = async (): Promise<{ passRate: string }> => {
+  try {
+    // Fetch the latest quality control pass rate
+    const { data, error } = await supabase
+      .from('quality_control_metrics')
+      .select('pass_rate')
+      .order('calculated_at', { ascending: false })
+      .limit(1);
+    
     if (error) throw error;
     
-    if (!data || data.length === 0) return [];
-    
-    // Create checklist stats based on work orders
-    // In real implementation, you would query real checklist data
-    return data.map((workOrder, index) => {
-      // Generate random but consistent required and completed items
-      const requiredItems = 10 + (index % 5); // 10-14 items
-      const completedRequiredItems = Math.floor(requiredItems * (0.4 + (index * 0.1))); // 40-80% complete
-      
-      return {
-        work_order_id: workOrder.id,
-        checklist_id: `checklist-${index+1}`,
-        requiredItems,
-        completedRequiredItems,
-        completionRate: parseFloat((completedRequiredItems / requiredItems).toFixed(2))
-      };
-    });
+    return {
+      passRate: data && data.length > 0 ? `${Math.round(data[0].pass_rate)}%` : 'N/A'
+    };
   } catch (error) {
-    console.error("Error generating checklist stats:", error);
-    return [];
+    console.error("Error fetching quality control stats:", error);
+    return { passRate: 'N/A' };
   }
 };
