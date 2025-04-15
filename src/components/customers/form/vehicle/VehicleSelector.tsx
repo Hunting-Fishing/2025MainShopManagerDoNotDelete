@@ -31,6 +31,9 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     handleMakeChange
   } = useVehicleSelection({ form, index });
 
+  // Get the current selected make value from the form
+  const selectedMake = form.watch(`vehicles.${index}.make`) || "";
+
   return (
     <div className="p-4 pt-2 space-y-6">
       <div className="flex justify-end">
@@ -71,6 +74,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           index={index}
           models={models}
           isLoading={isModelLoading}
+          selectedMake={selectedMake}
         />
         
         <LicensePlateField 

@@ -8,7 +8,7 @@ import { BaseFieldProps } from "./BaseFieldTypes";
 import { CarModel } from "@/types/vehicle";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-interface ModelFieldProps extends BaseFieldProps {
+export interface ModelFieldProps extends BaseFieldProps {
   models: CarModel[];
   selectedMake: string;
   isLoading?: boolean;
