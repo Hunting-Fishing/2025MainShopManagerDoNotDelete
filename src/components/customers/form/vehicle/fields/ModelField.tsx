@@ -37,7 +37,22 @@ export const ModelField: React.FC<ModelFieldProps> = ({
     } else if (models.length > 0) {
       console.log(`Loaded ${models.length} models for make:`, selectedMake);
     }
-  }, [isLoading, models, selectedMake]);
+    
+    // Debug log to track model value
+    console.log(`Current model value in ModelField:`, modelValue);
+  }, [isLoading, models, selectedMake, modelValue]);
+  
+  // Effect to ensure model is visible once loaded
+  useEffect(() => {
+    if (modelValue && !isLoading && selectedMake) {
+      // Force model to be set again after models are loaded to ensure it appears in UI
+      const timer = setTimeout(() => {
+        console.log(`Re-asserting model value: ${modelValue}`);
+        form.setValue(`vehicles.${index}.model`, modelValue);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [models, isLoading, selectedMake, modelValue, form, index]);
   
   const hasLoadedModels = models.length > 0;
   
