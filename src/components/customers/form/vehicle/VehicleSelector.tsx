@@ -88,7 +88,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
         <ModelField 
           form={form}
           index={index}
-          models={models}
+          models={models || []}
           selectedMake={make}
           isLoading={isModelLoading || (make && !modelsLoaded)}
         />

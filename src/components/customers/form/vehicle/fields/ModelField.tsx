@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HelpCircle, Loader2 } from "lucide-react";
@@ -26,8 +26,16 @@ export const ModelField: React.FC<ModelFieldProps> = ({
     form.trigger(`vehicles.${index}.model`);
   };
 
-  // Check if the current model value exists in the models array
+  // Get current model value
   const modelValue = form.watch(`vehicles.${index}.model`);
+
+  // Effect to ensure model value is included in dropdown if not found in models array
+  useEffect(() => {
+    if (modelValue && models.length > 0 && !models.some(m => 
+      m.model_name.toLowerCase() === modelValue.toLowerCase())) {
+      console.log(`Model "${modelValue}" not found in loaded models, will be added to dropdown`);
+    }
+  }, [modelValue, models]);
   
   return (
     <FormField
@@ -86,7 +94,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({
               {/* Add current model if it doesn't exist in the models array */}
               {modelValue && 
                !models.some(m => m.model_name.toLowerCase() === modelValue.toLowerCase()) && 
-               !isLoading && (
+               !isLoading && modelValue !== "loading" && modelValue !== "select-make" && modelValue !== "no-models" && (
                 <SelectItem value={modelValue} key={modelValue}>
                   {modelValue}
                 </SelectItem>

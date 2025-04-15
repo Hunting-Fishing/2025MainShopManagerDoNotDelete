@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { useVehicleData } from './useVehicleData';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +20,7 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
 
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const lastMakeRef = useRef<string>('');
 
   const handleMakeChange = useCallback(async (makeValue: string) => {
     console.log("Make changed:", makeValue);
@@ -33,9 +34,16 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
         form.setValue(`${fieldPrefix}model`, '');
       }
       
+      // Don't refetch if we just loaded models for this make
+      if (makeValue === lastMakeRef.current && modelsLoaded) {
+        console.log(`Using cached models for ${makeValue}`);
+        return;
+      }
+      
       setIsModelLoading(true);
       await fetchModels(makeValue);
       setModelsLoaded(true);
+      lastMakeRef.current = makeValue;
       console.log(`Models fetched for make: ${makeValue}`);
     } catch (err) {
       console.error("Error handling make change:", err);
@@ -47,7 +55,7 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
     } finally {
       setIsModelLoading(false);
     }
-  }, [form, fieldPrefix, fetchModels]);
+  }, [form, fieldPrefix, fetchModels, modelsLoaded]);
 
   const validateMakeModel = useCallback(async (make: string, model: string) => {
     if (!make || !model) return true;
@@ -63,15 +71,21 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
         return false;
       }
       
-      await fetchModels(make);
+      // If we haven't loaded models for this make yet or it's different from the last make, fetch them
+      if (make !== lastMakeRef.current || !modelsLoaded) {
+        await fetchModels(make);
+        lastMakeRef.current = make;
+      }
       
+      // Check if model exists, case insensitive
       const modelExists = models.some(m => 
         m.model_name.toLowerCase() === model.toLowerCase()
       );
       
       if (!modelExists) {
         console.log(`Model "${model}" not found for make "${make}"`);
-        return false;
+        // Still return true since we allow custom models that might not be in our database
+        return true;
       }
       
       return true;
@@ -79,7 +93,7 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
       console.error("Error validating make/model:", err);
       return false;
     }
-  }, [makes, models, fetchModels]);
+  }, [makes, models, fetchModels, modelsLoaded]);
 
   return {
     makes,

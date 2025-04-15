@@ -55,31 +55,38 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         // Set make and fetch models first
         if (vehicleInfo.make) {
           console.log("Setting make from VIN:", vehicleInfo.make);
-          
           form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
           
-          // Fetch models for this make
           try {
             console.log("Fetching models for make:", vehicleInfo.make);
-            const modelsList = await fetchModels(vehicleInfo.make);
+            await fetchModels(vehicleInfo.make);
             
-            // Small delay to ensure models are loaded
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Delay to ensure models are loaded before setting the model
+            await new Promise(resolve => setTimeout(resolve, 300));
             
             // Then set model if provided in vehicleInfo
             if (vehicleInfo.model) {
               console.log("Setting model from VIN:", vehicleInfo.model);
               form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+              // Force form update to ensure model value is recognized
+              form.trigger(`vehicles.${index}.model`);
             }
             
             setVinDecodeSuccess(true);
           } catch (err) {
             console.error("Error fetching models:", err);
-            // Still try to set the model directly
+            // Even if fetching models fails, still try to set the model directly
             if (vehicleInfo.model) {
+              console.log("Setting model directly due to model fetch error:", vehicleInfo.model);
               form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+              form.trigger(`vehicles.${index}.model`);
             }
           }
+        } else if (vehicleInfo.model) {
+          // If make is missing but model is present, still set the model
+          console.log("Setting model without make:", vehicleInfo.model);
+          form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+          form.trigger(`vehicles.${index}.model`);
         }
         
         // Set any additional fields
