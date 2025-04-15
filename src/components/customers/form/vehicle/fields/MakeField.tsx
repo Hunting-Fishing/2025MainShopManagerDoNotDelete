@@ -1,16 +1,15 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HelpCircle, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
-import { CarMake } from "@/types/vehicle";
 
 interface MakeFieldProps extends BaseFieldProps {
-  makes: CarMake[];
   onMakeChange?: (make: string) => void;
   isLoading?: boolean;
+  makes: { make_id: string; make_display: string }[];
 }
 
 export const MakeField: React.FC<MakeFieldProps> = ({ 
@@ -20,42 +19,8 @@ export const MakeField: React.FC<MakeFieldProps> = ({
   onMakeChange,
   isLoading = false 
 }) => {
-  // Ensure makes is valid array
-  const safeMakes = Array.isArray(makes) ? makes : [];
-  
-  // Extract current make value from form - force to string for proper comparison
-  const makeValue = String(form.watch(`vehicles.${index}.make`) || "");
-  
-  // Effect to normalize make value if it doesn't match exactly what's in the database
-  useEffect(() => {
-    if (makeValue && safeMakes.length > 0) {
-      console.log(`Checking if make "${makeValue}" exists in available makes`);
-      
-      // Check if the current value exists in the makes list
-      const exactMatch = safeMakes.find(make => make.make_id === makeValue);
-      
-      // Log the result of the exact match check
-      console.log(`Exact match for make "${makeValue}" found: ${!!exactMatch}`);
-      
-      // If no exact match but we have a value, try to find case-insensitive match
-      if (!exactMatch && makeValue) {
-        const caseInsensitiveMatch = safeMakes.find(
-          make => make.make_id.toLowerCase() === makeValue.toLowerCase() ||
-                 make.make_display.toLowerCase() === makeValue.toLowerCase()
-        );
-        
-        // If found a match with different casing, update the form value
-        if (caseInsensitiveMatch) {
-          console.log(`Found case-insensitive match for "${makeValue}": "${caseInsensitiveMatch.make_id}"`);
-          form.setValue(`vehicles.${index}.make`, caseInsensitiveMatch.make_id);
-          
-          if (onMakeChange) {
-            onMakeChange(caseInsensitiveMatch.make_id);
-          }
-        }
-      }
-    }
-  }, [makeValue, safeMakes, form, index, onMakeChange]);
+  // Get current make value from form
+  const makeValue = form.watch(`vehicles.${index}.make`) || "";
   
   const handleMakeChange = (value: string) => {
     console.log(`Make selected: ${value}`);
@@ -105,10 +70,10 @@ export const MakeField: React.FC<MakeFieldProps> = ({
             <SelectContent className="max-h-[300px] overflow-y-auto">
               {isLoading ? (
                 <SelectItem value="loading" disabled>Loading makes...</SelectItem>
-              ) : safeMakes.length > 0 ? (
-                safeMakes
-                  .filter(make => make.make_id && make.make_display) // Filter out invalid makes
-                  .sort((a, b) => a.make_display.localeCompare(b.make_display)) // Sort alphabetically
+              ) : makes.length > 0 ? (
+                makes
+                  .filter(make => make.make_id && make.make_display)
+                  .sort((a, b) => a.make_display.localeCompare(b.make_display))
                   .map((make) => (
                     <SelectItem key={make.make_id} value={make.make_id}>
                       {make.make_display}

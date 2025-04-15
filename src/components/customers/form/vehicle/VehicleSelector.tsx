@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { X, AlertTriangle } from "lucide-react";
+import { X } from "lucide-react";
 import { 
   VinField, 
   YearField, 
@@ -13,6 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
 import { useVehicleForm } from "./useVehicleForm";
+import { useVehicleMakeModel } from "@/hooks/useVehicleMakeModel";
 
 interface VehicleSelectorProps {
   form: UseFormReturn<any>;
@@ -27,58 +27,25 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
 }) => {
   const { toast } = useToast();
   const {
-    makes,
-    models,
-    years,
-    loading: vehicleDataLoading,
     vinProcessing,
-    modelsLoaded,
     vinDecodeSuccess,
-    decodedVehicleInfo,
-    isModelLoading,
-    fetchModels
+    decodedVehicleInfo
   } = useVehicleForm({ form, index });
 
-  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+  const {
+    makes,
+    models,
+    isModelLoading,
+    modelsLoaded,
+    vehicleDataLoading,
+    handleMakeChange
+  } = useVehicleMakeModel({ 
+    form, 
+    fieldPrefix: `vehicles.${index}.` 
+  });
   
-  // Current field values
-  const vin = form.watch(`vehicles.${index}.vin`);
+  // Current make value
   const make = form.watch(`vehicles.${index}.make`);
-  const model = form.watch(`vehicles.${index}.model`);
-  const year = form.watch(`vehicles.${index}.year`);
-  
-  // Debug values
-  useEffect(() => {
-    if (make || model || year) {
-      console.log(`Current form state at index ${index}: year=${year}, make=${make}, model=${model}`);
-    }
-  }, [make, model, year, index]);
-  
-  // Handle manual make change
-  const handleMakeChange = async (makeValue: string) => {
-    console.log("Make changed via selector:", makeValue);
-    setHasAttemptedLoad(true);
-    
-    if (!makeValue) return;
-    
-    try {
-      // Clear model when make changes
-      if (model) {
-        form.setValue(`vehicles.${index}.model`, '');
-      }
-      
-      // Fetch models for the selected make
-      await fetchModels(makeValue);
-      console.log(`Models fetched for make: ${makeValue}`);
-    } catch (err) {
-      console.error("Error handling make change:", err);
-      toast({
-        title: "Error",
-        description: "Failed to load models for the selected make.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="p-4 pt-2 space-y-6">
@@ -105,7 +72,6 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
         <YearField 
           form={form}
           index={index}
-          years={years}
         />
         
         <MakeField 
@@ -121,7 +87,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           index={index}
           models={models}
           selectedMake={make}
-          isLoading={isModelLoading || (hasAttemptedLoad && !modelsLoaded && !!make)}
+          isLoading={isModelLoading || (make && !modelsLoaded)}
         />
         
         <LicensePlateField 

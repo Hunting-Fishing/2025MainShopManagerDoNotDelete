@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HelpCircle, Loader2 } from "lucide-react";
@@ -20,50 +20,6 @@ export const ModelField: React.FC<ModelFieldProps> = ({
   selectedMake,
   isLoading = false
 }) => {
-  // Get current model value from form
-  const modelValue = form.watch(`vehicles.${index}.model`) || "";
-  
-  // Effect to validate model value exists in the models list when loaded
-  useEffect(() => {
-    if (!isLoading && models.length > 0 && modelValue) {
-      console.log(`Checking if model "${modelValue}" exists in ${models.length} available models`);
-      
-      const modelExists = models.some(
-        model => model.model_name && model.model_name.toLowerCase() === modelValue.toLowerCase()
-      );
-      
-      // Log the model validation result
-      console.log(`Model "${modelValue}" exists in models list: ${modelExists}`);
-      
-      // If model value doesn't match any available models, try to find closest match
-      if (!modelExists) {
-        // Try to find a case-insensitive match
-        const caseInsensitiveMatch = models.find(
-          model => model.model_name && model.model_name.toLowerCase() === modelValue.toLowerCase()
-        );
-        
-        if (caseInsensitiveMatch && caseInsensitiveMatch.model_name) {
-          console.log(`Found case-insensitive model match for "${modelValue}": "${caseInsensitiveMatch.model_name}"`);
-          form.setValue(`vehicles.${index}.model`, caseInsensitiveMatch.model_name);
-        }
-        
-        // If no exact match, look for a partial match
-        if (!caseInsensitiveMatch) {
-          const partialMatch = models.find(
-            model => model.model_name && modelValue && 
-              (model.model_name.toLowerCase().includes(modelValue.toLowerCase()) || 
-               modelValue.toLowerCase().includes(model.model_name.toLowerCase()))
-          );
-          
-          if (partialMatch && partialMatch.model_name) {
-            console.log(`Found partial model match for "${modelValue}": "${partialMatch.model_name}"`);
-            form.setValue(`vehicles.${index}.model`, partialMatch.model_name);
-          }
-        }
-      }
-    }
-  }, [models, modelValue, isLoading, form, index]);
-
   const handleModelChange = (value: string) => {
     console.log(`Model selected: ${value}`);
     form.setValue(`vehicles.${index}.model`, value);
@@ -113,8 +69,8 @@ export const ModelField: React.FC<ModelFieldProps> = ({
                 <SelectItem value="select-make" disabled>Select make first</SelectItem>
               ) : models.length > 0 ? (
                 models
-                  .filter(model => model.model_name) // Filter out invalid models
-                  .sort((a, b) => a.model_name.localeCompare(b.model_name)) // Sort alphabetically
+                  .filter(model => model.model_name)
+                  .sort((a, b) => a.model_name.localeCompare(b.model_name))
                   .map((model) => (
                     <SelectItem key={model.model_name} value={model.model_name}>
                       {model.model_name}
