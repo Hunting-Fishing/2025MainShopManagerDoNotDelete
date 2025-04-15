@@ -3,17 +3,10 @@ import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { 
-  VinField, 
-  YearField, 
-  MakeField, 
-  ModelField, 
-  LicensePlateField 
-} from "./fields";
+import { VinField, YearField, MakeField, ModelField, LicensePlateField } from "./fields";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleAdditionalDetails } from "./VehicleAdditionalDetails";
-import { useVehicleForm } from "./useVehicleForm";
-import { useVehicleMakeModel } from "@/hooks/useVehicleMakeModel";
+import { useVehicleSelection } from "@/hooks/useVehicleSelection";
 
 interface VehicleSelectorProps {
   form: UseFormReturn<any>;
@@ -28,34 +21,15 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
 }) => {
   const { toast } = useToast();
   const {
+    makes,
+    models,
+    years,
     vinProcessing,
     vinDecodeSuccess,
     decodedVehicleInfo,
-    years,
-    makes
-  } = useVehicleForm({ form, index });
-
-  const {
-    models,
     isModelLoading,
-    modelsLoaded,
-    vehicleDataLoading,
-    handleMakeChange,
-    fetchModels
-  } = useVehicleMakeModel({ 
-    form, 
-    fieldPrefix: `vehicles.${index}.` 
-  });
-  
-  // Current make value
-  const make = form.watch(`vehicles.${index}.make`);
-  
-  // Trigger model fetch when make changes
-  React.useEffect(() => {
-    if (make) {
-      handleMakeChange(make);
-    }
-  }, [make, handleMakeChange]);
+    handleMakeChange
+  } = useVehicleSelection({ form, index });
 
   return (
     <div className="p-4 pt-2 space-y-6">
@@ -82,23 +56,21 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
         <YearField 
           form={form}
           index={index}
-          years={years || []}
+          years={years}
         />
         
         <MakeField 
           form={form}
           index={index}
-          makes={makes || []}
+          makes={makes}
           onMakeChange={handleMakeChange}
-          isLoading={vehicleDataLoading}
         />
         
         <ModelField 
           form={form}
           index={index}
-          models={models || []}
-          selectedMake={make}
-          isLoading={isModelLoading && !!make}
+          models={models}
+          isLoading={isModelLoading}
         />
         
         <LicensePlateField 
