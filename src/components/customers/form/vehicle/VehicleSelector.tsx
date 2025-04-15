@@ -1,3 +1,4 @@
+
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,8 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   const {
     vinProcessing,
     vinDecodeSuccess,
-    decodedVehicleInfo
+    decodedVehicleInfo,
+    years
   } = useVehicleForm({ form, index });
 
   const {
@@ -72,6 +74,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
         <YearField 
           form={form}
           index={index}
+          years={years || []}
         />
         
         <MakeField 

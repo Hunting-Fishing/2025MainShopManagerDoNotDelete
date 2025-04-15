@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { VinDecodeResult } from "@/types/vehicle";
@@ -16,7 +16,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [vinDecodeSuccess, setVinDecodeSuccess] = useState<boolean>(false);
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
   
-  const { decodeVin } = useVehicleData();
+  const { decodeVin, years } = useVehicleData();
   const { validateMakeModel } = useVehicleMakeModel({ 
     form, 
     fieldPrefix: `vehicles.${index}.` 
@@ -58,7 +58,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   }, [form, index, lastProcessedVin, vinProcessing, decodeVin, validateMakeModel]);
 
   // Process VIN on change
-  React.useEffect(() => {
+  useEffect(() => {
     if (vin) {
       processVin(vin);
     }
@@ -67,6 +67,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   return {
     vinProcessing,
     vinDecodeSuccess,
-    decodedVehicleInfo
+    decodedVehicleInfo,
+    years
   };
 };
