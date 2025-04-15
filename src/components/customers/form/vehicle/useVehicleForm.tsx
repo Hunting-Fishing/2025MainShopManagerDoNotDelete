@@ -17,7 +17,11 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
   
   const { decodeVin, years } = useVehicleData();
-  const { validateMakeModel } = useVehicleMakeModel({ 
+  const { 
+    validateMakeModel, 
+    fetchModels,
+    makes 
+  } = useVehicleMakeModel({ 
     form, 
     fieldPrefix: `vehicles.${index}.` 
   });
@@ -36,18 +40,65 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     setVinDecodeSuccess(false);
     
     try {
+      console.log("Processing VIN:", vin);
       const vehicleInfo = await decodeVin(vin);
+      
       if (vehicleInfo) {
+        console.log("VIN decoded successfully:", vehicleInfo);
         setDecodedVehicleInfo(vehicleInfo);
         
-        // Validate make/model before setting
-        const isValid = await validateMakeModel(vehicleInfo.make, vehicleInfo.model);
-        if (isValid) {
+        // Set year directly
+        if (vehicleInfo.year) {
           form.setValue(`vehicles.${index}.year`, String(vehicleInfo.year));
-          form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
-          form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
-          setVinDecodeSuccess(true);
         }
+        
+        // Set make and fetch models first
+        if (vehicleInfo.make) {
+          console.log("Setting make from VIN:", vehicleInfo.make);
+          
+          form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
+          
+          // Fetch models for this make
+          try {
+            console.log("Fetching models for make:", vehicleInfo.make);
+            const modelsList = await fetchModels(vehicleInfo.make);
+            
+            // Small delay to ensure models are loaded
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Then set model if provided in vehicleInfo
+            if (vehicleInfo.model) {
+              console.log("Setting model from VIN:", vehicleInfo.model);
+              form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+            }
+            
+            setVinDecodeSuccess(true);
+          } catch (err) {
+            console.error("Error fetching models:", err);
+            // Still try to set the model directly
+            if (vehicleInfo.model) {
+              form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+            }
+          }
+        }
+        
+        // Set any additional fields
+        if (vehicleInfo.transmission) {
+          form.setValue(`vehicles.${index}.transmission`, vehicleInfo.transmission);
+        }
+        if (vehicleInfo.fuel_type) {
+          form.setValue(`vehicles.${index}.fuel_type`, vehicleInfo.fuel_type);
+        }
+        if (vehicleInfo.body_style) {
+          form.setValue(`vehicles.${index}.body_style`, vehicleInfo.body_style);
+        }
+        
+        // Ensure form validation is triggered
+        form.trigger([
+          `vehicles.${index}.year`,
+          `vehicles.${index}.make`,
+          `vehicles.${index}.model`
+        ]);
       }
     } catch (error) {
       console.error("Error processing VIN:", error);
@@ -55,7 +106,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     } finally {
       setVinProcessing(false);
     }
-  }, [form, index, lastProcessedVin, vinProcessing, decodeVin, validateMakeModel]);
+  }, [form, index, lastProcessedVin, vinProcessing, decodeVin, fetchModels]);
 
   // Process VIN on change
   useEffect(() => {
@@ -68,6 +119,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     vinProcessing,
     vinDecodeSuccess,
     decodedVehicleInfo,
-    years
+    years,
+    makes
   };
 };

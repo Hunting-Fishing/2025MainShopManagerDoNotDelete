@@ -26,6 +26,9 @@ export const ModelField: React.FC<ModelFieldProps> = ({
     form.trigger(`vehicles.${index}.model`);
   };
 
+  // Check if the current model value exists in the models array
+  const modelValue = form.watch(`vehicles.${index}.model`);
+  
   return (
     <FormField
       control={form.control}
@@ -78,6 +81,15 @@ export const ModelField: React.FC<ModelFieldProps> = ({
                   ))
               ) : (
                 <SelectItem value="no-models" disabled>No models available for {selectedMake}</SelectItem>
+              )}
+              
+              {/* Add current model if it doesn't exist in the models array */}
+              {modelValue && 
+               !models.some(m => m.model_name.toLowerCase() === modelValue.toLowerCase()) && 
+               !isLoading && (
+                <SelectItem value={modelValue} key={modelValue}>
+                  {modelValue}
+                </SelectItem>
               )}
             </SelectContent>
           </Select>

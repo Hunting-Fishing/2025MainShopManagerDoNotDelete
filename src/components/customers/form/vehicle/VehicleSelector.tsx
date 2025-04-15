@@ -31,11 +31,11 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     vinProcessing,
     vinDecodeSuccess,
     decodedVehicleInfo,
-    years
+    years,
+    makes
   } = useVehicleForm({ form, index });
 
   const {
-    makes,
     models,
     isModelLoading,
     modelsLoaded,
@@ -80,7 +80,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
         <MakeField 
           form={form}
           index={index}
-          makes={makes}
+          makes={makes || []}
           onMakeChange={handleMakeChange}
           isLoading={vehicleDataLoading}
         />

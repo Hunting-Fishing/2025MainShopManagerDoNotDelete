@@ -88,6 +88,7 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
     modelsLoaded,
     vehicleDataLoading,
     handleMakeChange,
-    validateMakeModel
+    validateMakeModel,
+    fetchModels
   };
 };
