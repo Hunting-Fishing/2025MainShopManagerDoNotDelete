@@ -6,6 +6,7 @@ import { HelpCircle, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
 import { CarModel } from "@/types/vehicle";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ModelFieldProps extends BaseFieldProps {
   models: CarModel[];
@@ -29,13 +30,16 @@ export const ModelField: React.FC<ModelFieldProps> = ({
   // Get current model value
   const modelValue = form.watch(`vehicles.${index}.model`);
 
-  // Effect to ensure model value is included in dropdown if not found in models array
+  // Debug logging
   useEffect(() => {
-    if (modelValue && models.length > 0 && !models.some(m => 
-      m.model_name.toLowerCase() === modelValue.toLowerCase())) {
-      console.log(`Model "${modelValue}" not found in loaded models, will be added to dropdown`);
+    if (isLoading) {
+      console.log('Model field is loading models for make:', selectedMake);
+    } else if (models.length > 0) {
+      console.log(`Loaded ${models.length} models for make:`, selectedMake);
     }
-  }, [modelValue, models]);
+  }, [isLoading, models, selectedMake]);
+  
+  const hasLoadedModels = models.length > 0;
   
   return (
     <FormField
@@ -59,13 +63,13 @@ export const ModelField: React.FC<ModelFieldProps> = ({
           <Select
             value={field.value || ""}
             onValueChange={handleModelChange}
-            disabled={!selectedMake || field.disabled || isLoading}
+            disabled={!selectedMake || field.disabled}
           >
             <FormControl>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white">
                 {isLoading ? (
                   <div className="flex items-center">
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <LoadingSpinner size="sm" className="mr-2" />
                     <span>Loading models...</span>
                   </div>
                 ) : (
@@ -73,7 +77,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({
                 )}
               </SelectTrigger>
             </FormControl>
-            <SelectContent className="max-h-[300px] overflow-y-auto">
+            <SelectContent className="max-h-[300px] overflow-y-auto bg-white">
               {isLoading ? (
                 <SelectItem value="loading" disabled>Loading models...</SelectItem>
               ) : !selectedMake ? (

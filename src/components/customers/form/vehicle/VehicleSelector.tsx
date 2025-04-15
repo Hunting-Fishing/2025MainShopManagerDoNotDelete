@@ -40,7 +40,8 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     isModelLoading,
     modelsLoaded,
     vehicleDataLoading,
-    handleMakeChange
+    handleMakeChange,
+    fetchModels
   } = useVehicleMakeModel({ 
     form, 
     fieldPrefix: `vehicles.${index}.` 
@@ -48,6 +49,13 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   
   // Current make value
   const make = form.watch(`vehicles.${index}.make`);
+  
+  // Trigger model fetch when make changes
+  React.useEffect(() => {
+    if (make) {
+      handleMakeChange(make);
+    }
+  }, [make, handleMakeChange]);
 
   return (
     <div className="p-4 pt-2 space-y-6">
@@ -90,7 +98,7 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           index={index}
           models={models || []}
           selectedMake={make}
-          isLoading={isModelLoading || (make && !modelsLoaded)}
+          isLoading={isModelLoading && !!make}
         />
         
         <LicensePlateField 

@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { useVehicleData } from './useVehicleData';
 import { toast } from '@/hooks/use-toast';
@@ -13,24 +13,63 @@ interface UseVehicleMakeModelProps {
 export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelProps) => {
   const {
     makes,
-    models,
+    models: availableModels,
     loading: vehicleDataLoading,
-    fetchModels,
+    fetchModels: fetchAvailableModels,
   } = useVehicleData();
 
+  const [models, setModels] = useState<CarModel[]>([]);
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const lastMakeRef = useRef<string>('');
+  
+  // Get the current make value
+  const currentMake = form.watch(`${fieldPrefix}make`) as string;
+
+  // Effect to load models when make changes
+  useEffect(() => {
+    if (currentMake && currentMake !== lastMakeRef.current) {
+      handleMakeChange(currentMake);
+    }
+  }, [currentMake]);
+
+  const fetchModels = useCallback(async (makeValue: string) => {
+    if (!makeValue) return [];
+    
+    console.log(`Fetching models for make: ${makeValue}`);
+    setIsModelLoading(true);
+    
+    try {
+      const fetchedModels = await fetchAvailableModels(makeValue);
+      console.log(`Fetched ${fetchedModels.length} models for ${makeValue}`);
+      setModels(fetchedModels);
+      return fetchedModels;
+    } catch (err) {
+      console.error("Error fetching models:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load vehicle models",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setIsModelLoading(false);
+    }
+  }, [fetchAvailableModels]);
 
   const handleMakeChange = useCallback(async (makeValue: string) => {
     console.log("Make changed:", makeValue);
     
-    if (!makeValue) return;
+    if (!makeValue) {
+      setModels([]);
+      setModelsLoaded(false);
+      return;
+    }
     
     try {
       // Clear model when make changes
       const currentModel = form.getValues(`${fieldPrefix}model`);
-      if (currentModel) {
+      if (currentModel && makeValue !== lastMakeRef.current) {
         form.setValue(`${fieldPrefix}model`, '');
       }
       
@@ -41,10 +80,11 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
       }
       
       setIsModelLoading(true);
-      await fetchModels(makeValue);
+      const fetchedModels = await fetchAvailableModels(makeValue);
+      setModels(fetchedModels);
       setModelsLoaded(true);
       lastMakeRef.current = makeValue;
-      console.log(`Models fetched for make: ${makeValue}`);
+      console.log(`Models fetched for make: ${makeValue}, found ${fetchedModels.length} models`);
     } catch (err) {
       console.error("Error handling make change:", err);
       toast({
@@ -55,7 +95,7 @@ export const useVehicleMakeModel = ({ form, fieldPrefix }: UseVehicleMakeModelPr
     } finally {
       setIsModelLoading(false);
     }
-  }, [form, fieldPrefix, fetchModels, modelsLoaded]);
+  }, [form, fieldPrefix, fetchAvailableModels, modelsLoaded]);
 
   const validateMakeModel = useCallback(async (make: string, model: string) => {
     if (!make || !model) return true;

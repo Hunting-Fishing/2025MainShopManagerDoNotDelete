@@ -38,9 +38,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     setVinProcessing(true);
     setLastProcessedVin(vin);
     setVinDecodeSuccess(false);
+    console.log("Processing VIN:", vin);
     
     try {
-      console.log("Processing VIN:", vin);
       const vehicleInfo = await decodeVin(vin);
       
       if (vehicleInfo) {
@@ -59,10 +59,10 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
           
           try {
             console.log("Fetching models for make:", vehicleInfo.make);
-            await fetchModels(vehicleInfo.make);
+            const fetchedModels = await fetchModels(vehicleInfo.make);
             
             // Delay to ensure models are loaded before setting the model
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500));
             
             // Then set model if provided in vehicleInfo
             if (vehicleInfo.model) {
@@ -117,10 +117,10 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
 
   // Process VIN on change
   useEffect(() => {
-    if (vin) {
+    if (vin && vin.length === 17 && vin !== lastProcessedVin) {
       processVin(vin);
     }
-  }, [vin, processVin]);
+  }, [vin, processVin, lastProcessedVin]);
 
   return {
     vinProcessing,
