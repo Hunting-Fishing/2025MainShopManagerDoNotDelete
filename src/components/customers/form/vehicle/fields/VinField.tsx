@@ -19,6 +19,18 @@ export const VinField: React.FC<VinFieldProps> = ({
   success = false,
   failure = false
 }) => {
+  // Log VIN changes for debugging
+  const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const upperValue = e.target.value.toUpperCase();
+    
+    // Log to console when VIN is complete
+    if (upperValue.length === 17) {
+      console.log(`VIN field: Complete VIN entered: ${upperValue}`);
+    }
+    
+    form.setValue(`vehicles.${index}.vin`, upperValue);
+  };
+
   return (
     <FormField
       control={form.control}
@@ -48,10 +60,7 @@ export const VinField: React.FC<VinFieldProps> = ({
               placeholder="Vehicle Identification Number"
               className="font-mono"
               maxLength={17}
-              onChange={(e) => {
-                const upperValue = e.target.value.toUpperCase();
-                field.onChange(upperValue);
-              }}
+              onChange={handleVinChange}
             />
           </FormControl>
           <FormMessage />

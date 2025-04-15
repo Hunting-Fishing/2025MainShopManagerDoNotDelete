@@ -34,6 +34,13 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   // Get the current selected make value from the form
   const selectedMake = form.watch(`vehicles.${index}.make`) || "";
 
+  // Log decoded vehicle info when it changes
+  React.useEffect(() => {
+    if (decodedVehicleInfo) {
+      console.log(`VehicleSelector[${index}] has decoded info:`, decodedVehicleInfo);
+    }
+  }, [decodedVehicleInfo, index]);
+
   return (
     <div className="p-4 pt-2 space-y-6">
       <div className="flex justify-end">

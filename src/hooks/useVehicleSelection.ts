@@ -71,6 +71,7 @@ export const useVehicleSelection = ({ form, index }: UseVehicleSelectionProps) =
     try {
       const vehicleInfo = await decodeVin(vin);
       if (vehicleInfo) {
+        console.log("Decoded vehicle info:", vehicleInfo);
         setDecodedVehicleInfo(vehicleInfo);
         
         // Set year
@@ -91,6 +92,20 @@ export const useVehicleSelection = ({ form, index }: UseVehicleSelectionProps) =
             form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
           }
         }
+
+        // Set all additional fields from vehicleInfo
+        const additionalFields = [
+          'transmission', 'transmission_type', 'drive_type', 
+          'fuel_type', 'engine', 'body_style', 
+          'country', 'trim', 'gvwr'
+        ];
+
+        additionalFields.forEach(field => {
+          if (vehicleInfo[field as keyof VinDecodeResult]) {
+            console.log(`Setting ${field} to:`, vehicleInfo[field as keyof VinDecodeResult]);
+            form.setValue(`vehicles.${index}.${field}`, vehicleInfo[field as keyof VinDecodeResult]);
+          }
+        });
 
         setVinDecodeSuccess(true);
         form.trigger([

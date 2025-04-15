@@ -32,6 +32,13 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
   const trim = form.watch(`vehicles.${index}.trim`);
   const gvwr = form.watch(`vehicles.${index}.gvwr`);
   
+  // Debug log to check if decodedDetails is being passed correctly
+  useEffect(() => {
+    if (decodedDetails) {
+      console.log("VehicleAdditionalDetails received decoded info:", decodedDetails);
+    }
+  }, [decodedDetails]);
+
   // Auto-expand if we have decoded details or any fields are filled
   useEffect(() => {
     if (decodedDetails || transmission || transmissionType || driveType || 
@@ -148,6 +155,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormControl>
                   <Input
                     {...field}
+                    value={field.value || ''}
                     placeholder="e.g. 6-Speed Automatic"
                   />
                 </FormControl>
@@ -221,6 +229,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormControl>
                   <Input
                     {...field}
+                    value={field.value || ''}
                     placeholder="e.g. 2.0L 4-Cylinder"
                   />
                 </FormControl>
@@ -266,6 +275,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormControl>
                   <Input
                     {...field}
+                    value={field.value || ''}
                     placeholder="e.g. XLE, Limited, Sport"
                   />
                 </FormControl>
@@ -283,6 +293,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormControl>
                   <Input
                     {...field}
+                    value={field.value || ''}
                     placeholder="e.g. USA, Japan, Germany"
                   />
                 </FormControl>
@@ -300,6 +311,7 @@ export const VehicleAdditionalDetails: React.FC<VehicleAdditionalDetailsProps> =
                 <FormControl>
                   <Input
                     {...field}
+                    value={field.value || ''}
                     placeholder="e.g. Class 1: 0 - 6,000 lb"
                   />
                 </FormControl>
