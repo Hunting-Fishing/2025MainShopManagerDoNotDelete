@@ -45,6 +45,12 @@ export const ModelField: React.FC<ModelFieldProps> = ({
     }
   }, [models, modelValue, isLoading, form, index]);
 
+  const handleModelChange = (value: string) => {
+    console.log(`Model selected: ${value}`);
+    form.setValue(`vehicles.${index}.model`, value);
+    form.trigger(`vehicles.${index}.model`);
+  };
+
   return (
     <FormField
       control={form.control}
@@ -66,10 +72,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({
           </div>
           <Select
             value={field.value || ""}
-            onValueChange={(value) => {
-              console.log(`Setting model to: ${value}`);
-              field.onChange(value);
-            }}
+            onValueChange={handleModelChange}
             disabled={!selectedMake || field.disabled || isLoading}
           >
             <FormControl>
@@ -92,6 +95,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({
               ) : models.length > 0 ? (
                 models
                   .filter(model => model.model_name) // Filter out invalid models
+                  .sort((a, b) => a.model_name.localeCompare(b.model_name)) // Sort alphabetically
                   .map((model) => (
                     <SelectItem key={model.model_name} value={model.model_name}>
                       {model.model_name}

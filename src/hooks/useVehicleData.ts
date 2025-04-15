@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { CarMake, CarModel, VinDecodeResult } from '@/types/vehicle';
 import { decodeVin as decodeVinUtil } from '@/utils/vehicleUtils';
@@ -16,6 +17,7 @@ export const useVehicleData = () => {
   const [selectedMake, setSelectedMake] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>('');
+  const [modelCache, setModelCache] = useState<Record<string, CarModel[]>>({});
 
   // Load years (from current year back to 1950)
   useEffect(() => {
@@ -39,7 +41,7 @@ export const useVehicleData = () => {
         }
         
         // Log the makes data for debugging
-        console.log(`Loaded ${data?.length || 0} vehicle makes from database:`, data?.slice(0, 5));
+        console.log(`Loaded ${data?.length || 0} vehicle makes from database`);
         setMakes(data || []);
       } catch (err) {
         console.error("Error loading vehicle makes:", err);
@@ -59,13 +61,19 @@ export const useVehicleData = () => {
       return Promise.resolve([]);
     }
     
+    // Check if we have cached models for this make
+    if (modelCache[make.toLowerCase()]) {
+      console.log(`Using cached models for make: ${make}`);
+      return modelCache[make.toLowerCase()];
+    }
+    
     setLoading(true);
     setError(null);
     setSelectedMake(make);
     setSelectedModel('');
     
     try {
-      console.log("Fetching models for make:", make);
+      console.log("Fetching models from database for make:", make);
       
       // Try exact match first
       const { data, error } = await supabase
@@ -94,7 +102,7 @@ export const useVehicleData = () => {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('vehicle_models')
           .select('*')
-          .ilike('make_id', `%${make}%`)
+          .ilike('make_id', make)
           .order('model_display');
           
         if (!fallbackError && fallbackData?.length > 0) {
@@ -103,11 +111,18 @@ export const useVehicleData = () => {
             model_name: model.model_display || model.model_id,
             model_make_id: model.make_id
           }));
+          
+          // Cache the results
+          setModelCache(prev => ({
+            ...prev,
+            [make.toLowerCase()]: fallbackModels
+          }));
+          
           setModels(fallbackModels);
           return fallbackModels;
         }
         
-        // If still no models, try searching by make display
+        // If still no models, try finding a corresponding make
         const makeRecord = makes.find(m => 
           m.make_id.toLowerCase() === make.toLowerCase() || 
           m.make_display.toLowerCase() === make.toLowerCase()
@@ -127,18 +142,25 @@ export const useVehicleData = () => {
               model_name: model.model_display || model.model_id,
               model_make_id: model.make_id
             }));
+            
+            // Cache the results
+            setModelCache(prev => ({
+              ...prev,
+              [make.toLowerCase()]: displayModels,
+              [makeRecord.make_id.toLowerCase()]: displayModels
+            }));
+            
             setModels(displayModels);
             return displayModels;
           }
         }
       }
       
-      // Log the first few models for debugging
-      if (formattedModels.length > 0) {
-        console.log("Sample models:", formattedModels.slice(0, 5));
-      } else {
-        console.warn("No models found for make:", make);
-      }
+      // Cache the results
+      setModelCache(prev => ({
+        ...prev,
+        [make.toLowerCase()]: formattedModels
+      }));
       
       setModels(formattedModels);
       return formattedModels;
@@ -149,7 +171,7 @@ export const useVehicleData = () => {
     } finally {
       setLoading(false);
     }
-  }, [makes]);
+  }, [makes, modelCache]);
 
   // Function to decode VIN and return vehicle information with improved make matching
   const decodeVin = useCallback(async (vin: string): Promise<VinDecodeResult | null> => {
@@ -172,9 +194,6 @@ export const useVehicleData = () => {
           result.make = matchingMake.make_id;
         } else {
           console.log("Could not find matching make ID for:", result.make);
-          
-          // If no exact match, maybe the make needs normalization (e.g. "chevrolet" -> "Chevrolet")
-          // Keep original for now, we'll do case insensitive matching when needed
         }
       }
       

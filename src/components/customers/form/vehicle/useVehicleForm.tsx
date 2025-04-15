@@ -28,6 +28,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [vinDecodeSuccess, setVinDecodeSuccess] = useState<boolean>(false);
   const [decodedVehicleInfo, setDecodedVehicleInfo] = useState<VinDecodeResult | null>(null);
+  const [isModelLoading, setIsModelLoading] = useState<boolean>(false);
   
   const selectedMake = form.watch(`vehicles.${index}.make`);
   const vin = form.watch(`vehicles.${index}.vin`);
@@ -37,11 +38,17 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     if (selectedMake) {
       console.log("Make changed in useVehicleForm, fetching models for:", selectedMake);
       setModelsLoaded(false);
-      fetchModels(selectedMake).then((fetchedModels) => {
-        setModelsLoaded(true);
-        const modelsCount = fetchedModels ? fetchedModels.length : 0;
-        console.log(`Loaded ${modelsCount} models for make:`, selectedMake);
-      });
+      setIsModelLoading(true);
+      
+      fetchModels(selectedMake)
+        .then((fetchedModels) => {
+          setModelsLoaded(true);
+          const modelsCount = fetchedModels ? fetchedModels.length : 0;
+          console.log(`Loaded ${modelsCount} models for make:`, selectedMake);
+        })
+        .finally(() => {
+          setIsModelLoading(false);
+        });
     }
   }, [selectedMake, fetchModels]);
 
@@ -67,7 +74,9 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         
         // Wait for models to load
         console.log("Fetching models for make:", vehicleInfo.make);
+        setIsModelLoading(true);
         const fetchedModels = await fetchModels(vehicleInfo.make);
+        setIsModelLoading(false);
         const modelsCount = fetchedModels ? fetchedModels.length : 0;
         console.log(`Fetched ${modelsCount} models for make:`, vehicleInfo.make);
         setModelsLoaded(true);
@@ -79,6 +88,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
         if (vehicleInfo.model) {
           console.log("Setting model to:", vehicleInfo.model);
           form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
+          form.trigger(`vehicles.${index}.model`);
           
           // Set additional vehicle details if available
           if (vehicleInfo.transmission) {
@@ -133,10 +143,6 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
             `vehicles.${index}.model`
           ]);
           
-          // Force render by updating the form
-          const currentValues = form.getValues();
-          form.reset({...currentValues}, { keepValues: true });
-
           // Verify fields were set correctly
           console.log("After decoding - Current make:", form.getValues(`vehicles.${index}.make`));
           console.log("After decoding - Current model:", form.getValues(`vehicles.${index}.model`));
@@ -221,6 +227,7 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
     modelsLoaded,
     vinDecodeSuccess,
     decodedVehicleInfo,
-    fetchModels
+    fetchModels,
+    isModelLoading
   };
 };

@@ -6,6 +6,7 @@ import { HelpCircle, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
 import { CarMake } from "@/types/vehicle";
+import { Input } from "@/components/ui/input";
 
 interface MakeFieldProps extends BaseFieldProps {
   makes: CarMake[];
@@ -52,6 +53,15 @@ export const MakeField: React.FC<MakeFieldProps> = ({
     }
   }, [makeValue, safeMakes, form, index, onMakeChange]);
   
+  const handleMakeChange = (value: string) => {
+    console.log(`Make selected: ${value}`);
+    form.setValue(`vehicles.${index}.make`, value);
+    
+    if (onMakeChange) {
+      onMakeChange(value);
+    }
+  };
+  
   return (
     <FormField
       control={form.control}
@@ -73,13 +83,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({
           </div>
           <Select
             value={field.value || ""}
-            onValueChange={(value) => {
-              field.onChange(value);
-              console.log(`Updating make field to: ${value}`);
-              if (onMakeChange) {
-                onMakeChange(value);
-              }
-            }}
+            onValueChange={handleMakeChange}
             disabled={field.disabled || isLoading}
           >
             <FormControl>
@@ -100,6 +104,7 @@ export const MakeField: React.FC<MakeFieldProps> = ({
               ) : safeMakes.length > 0 ? (
                 safeMakes
                   .filter(make => make.make_id && make.make_display) // Filter out invalid makes
+                  .sort((a, b) => a.make_display.localeCompare(b.make_display)) // Sort alphabetically
                   .map((make) => (
                     <SelectItem key={make.make_id} value={make.make_id}>
                       {make.make_display}
