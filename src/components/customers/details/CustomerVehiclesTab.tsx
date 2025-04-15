@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Car, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface CustomerVehiclesTabProps {
   customer: Customer;
@@ -14,6 +15,7 @@ interface CustomerVehiclesTabProps {
 
 export function CustomerVehiclesTab({ customer }: CustomerVehiclesTabProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const vehicles = customer?.vehicles || [];
 
   const handleAddVehicle = () => {
@@ -25,6 +27,27 @@ export function CustomerVehiclesTab({ customer }: CustomerVehiclesTabProps) {
   };
 
   const handleVehicleClick = (vehicleId: string) => {
+    if (!customer.id) {
+      console.error("Cannot navigate to vehicle details: missing customer ID");
+      toast({
+        title: "Error",
+        description: "Cannot access vehicle details: missing customer ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!vehicleId) {
+      console.error("Cannot navigate to vehicle details: missing vehicle ID");
+      toast({
+        title: "Error",
+        description: "Cannot access vehicle details: missing vehicle ID",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Ensure both IDs are included in the navigation path
     navigate(`/customers/${customer.id}/vehicles/${vehicleId}`);
   };
 
