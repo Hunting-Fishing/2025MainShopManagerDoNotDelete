@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { DashboardStats } from "@/types/dashboard";
 
@@ -68,6 +67,28 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       ? `${Math.round((currentMonthOrders - previousMonthOrders) / previousMonthOrders * 100)}%` 
       : 'N/A';
     
+    // Get customer satisfaction metrics
+    const { data: satisfactionData } = await supabase
+      .from('customer_satisfaction_metrics')
+      .select('rating')
+      .order('calculated_at', { ascending: false })
+      .limit(1);
+      
+    const customerSatisfaction = satisfactionData?.[0]?.rating
+      ? `${satisfactionData[0].rating.toFixed(1)}/5`
+      : 'N/A';
+
+    // Get scheduling efficiency metrics
+    const { data: schedulingData } = await supabase
+      .from('scheduling_metrics')
+      .select('efficiency_rate')
+      .order('calculated_at', { ascending: false })
+      .limit(1);
+      
+    const schedulingEfficiency = schedulingData?.[0]?.efficiency_rate
+      ? `${Math.round(schedulingData[0].efficiency_rate)}%`
+      : 'N/A';
+
     // Get active team members count (via profiles)
     const { count: teamMembers, error: teamError } = await supabase
       .from('profiles')
@@ -116,9 +137,9 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       inventoryChange: '0%', // Would need historical data for accurate calculation
       avgCompletionTime: `${Math.round(avgCompletionHours)} hours`,
       completionTimeChange: '0%', // Would need historical data for accurate calculation
-      customerSatisfaction: '95%', // This would need real feedback data
+      customerSatisfaction,
+      schedulingEfficiency,
       phaseCompletionRate: '87%', // This would need real phase tracking data
-      schedulingEfficiency: '92%', // This would need real scheduling data
       qualityControlPassRate: '98%', // This would need real QC data
     };
   } catch (error) {
@@ -138,8 +159,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       avgCompletionTime: '0 hours',
       completionTimeChange: '0%',
       customerSatisfaction: 'N/A',
-      phaseCompletionRate: 'N/A',
       schedulingEfficiency: 'N/A',
+      phaseCompletionRate: 'N/A',
       qualityControlPassRate: 'N/A',
     };
   }
