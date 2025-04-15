@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { useVehicleData } from './useVehicleData';
@@ -25,11 +24,9 @@ export const useVehicleSelection = ({ form, index }: UseVehicleSelectionProps) =
     fetchModels: fetchAvailableModels
   } = useVehicleData();
 
-  // Watch VIN and make changes
   const vin = form.watch(`vehicles.${index}.vin`);
   const selectedMake = form.watch(`vehicles.${index}.make`);
 
-  // Fetch models when make changes
   const fetchModels = useCallback(async (make: string) => {
     if (!make) return;
     
@@ -51,7 +48,6 @@ export const useVehicleSelection = ({ form, index }: UseVehicleSelectionProps) =
     }
   }, [fetchAvailableModels]);
 
-  // Handle make changes
   const handleMakeChange = useCallback(async (make: string) => {
     if (!make) return;
     console.log('Make changed:', make);
@@ -60,7 +56,6 @@ export const useVehicleSelection = ({ form, index }: UseVehicleSelectionProps) =
     await fetchModels(make);
   }, [form, index, fetchModels]);
 
-  // Process VIN when it changes
   const processVin = useCallback(async (vin: string) => {
     if (!vin || vin.length !== 17 || vin === lastProcessedVin || vinProcessing) return;
 
@@ -74,28 +69,21 @@ export const useVehicleSelection = ({ form, index }: UseVehicleSelectionProps) =
         console.log("Decoded vehicle info:", vehicleInfo);
         setDecodedVehicleInfo(vehicleInfo);
         
-        // Set year
         if (vehicleInfo.year) {
           form.setValue(`vehicles.${index}.year`, String(vehicleInfo.year));
         }
 
-        // Set make and fetch models
         if (vehicleInfo.make) {
           form.setValue(`vehicles.${index}.make`, vehicleInfo.make);
           await fetchModels(vehicleInfo.make);
           
-          // Small delay to ensure models are loaded
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Set model
           if (vehicleInfo.model) {
             form.setValue(`vehicles.${index}.model`, vehicleInfo.model);
           }
         }
 
-        // Set all additional fields from vehicleInfo
         const additionalFields = [
-          'transmission', 'transmission_type', 'drive_type', 
+          'transmission_type', 'drive_type', 
           'fuel_type', 'engine', 'body_style', 
           'country', 'trim', 'gvwr'
         ];
@@ -122,14 +110,12 @@ export const useVehicleSelection = ({ form, index }: UseVehicleSelectionProps) =
     }
   }, [form, index, lastProcessedVin, vinProcessing, decodeVin, fetchModels]);
 
-  // Process VIN changes
   useEffect(() => {
     if (vin && vin.length === 17 && vin !== lastProcessedVin) {
       processVin(vin);
     }
   }, [vin, processVin, lastProcessedVin]);
 
-  // Handle make changes
   useEffect(() => {
     if (selectedMake) {
       handleMakeChange(selectedMake);
