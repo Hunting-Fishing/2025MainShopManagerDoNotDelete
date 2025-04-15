@@ -104,15 +104,16 @@ export const useVehicleForm = ({ form, index }: UseVehicleFormProps) => {
       
       // Apply all updates at once
       Object.entries(updates).forEach(([key, value]) => {
-        form.setValue(key, value);
+        form.setValue(key as any, value);
       });
       
       // Trigger form validation after all fields are set
+      // Fix: Using type assertion to satisfy TypeScript's constraints
       form.trigger([
-        `vehicles.${index}.year`,
-        `vehicles.${index}.make`,
-        `vehicles.${index}.model`
-      ]);
+        `vehicles.${index}.year` as const,
+        `vehicles.${index}.make` as const,
+        `vehicles.${index}.model` as const
+      ] as const);
       
       // Verify fields were set correctly
       console.log("After decoding - Current year:", form.getValues(`vehicles.${index}.year`));
