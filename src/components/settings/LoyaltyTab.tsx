@@ -1,24 +1,44 @@
+
 import React, { useState } from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Plus } from "lucide-react";
 import { LoyaltyTabHeader } from './loyalty/LoyaltyTabHeader';
 import { ProgramSettingsCard } from './loyalty/ProgramSettingsCard';
 import { useLoyaltySettings } from './loyalty/useLoyaltySettings';
+import { useLoyaltyTiers } from './loyalty/useLoyaltyTiers';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoyaltyTierCard } from "./loyalty/LoyaltyTierCard";
+import { LoyaltyTierForm } from "./loyalty/LoyaltyTierForm";
 
 export function LoyaltyTab() {
   const [activeTab, setActiveTab] = useState("settings");
   const {
     settings,
-    isLoading,
-    isSaving,
+    isLoading: isLoadingSettings,
+    isSaving: isSavingSettings,
     handleSettingsChange,
     handleSaveSettings,
     handleToggleLoyalty
   } = useLoyaltySettings();
 
+  const {
+    tiers,
+    isLoading: isLoadingTiers,
+    isAddingTier,
+    editingTier,
+    setIsAddingTier,
+    setEditingTier,
+    handleAddTier,
+    handleUpdateTier,
+    handleDeleteTier,
+    handleEditTier,
+    handleCancelEdit
+  } = useLoyaltyTiers();
+
   // Render loading state
-  if (isLoading) {
+  if (isLoadingSettings) {
     return (
       <div className="space-y-4">
         <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
@@ -50,7 +70,7 @@ export function LoyaltyTab() {
       <TabsContent value="settings" className="space-y-4 mt-6">
         <ProgramSettingsCard
           settings={settings}
-          isSaving={isSaving}
+          isSaving={isSavingSettings}
           onSettingsChange={handleSettingsChange}
           onToggleLoyalty={handleToggleLoyalty}
           onSaveSettings={handleSaveSettings}
@@ -103,7 +123,15 @@ export function LoyaltyTab() {
         
         {/* List of Tiers */}
         <div className="space-y-3">
-          {tiers.length === 0 ? (
+          {isLoadingTiers ? (
+            <Card>
+              <CardContent className="py-6 text-center">
+                <div className="h-24 flex items-center justify-center">
+                  <div className="h-8 w-8 border-4 border-t-esm-blue-600 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
+                </div>
+              </CardContent>
+            </Card>
+          ) : tiers.length === 0 ? (
             <Card>
               <CardContent className="py-6 text-center text-muted-foreground">
                 No loyalty tiers defined yet. Create your first tier to get started.
