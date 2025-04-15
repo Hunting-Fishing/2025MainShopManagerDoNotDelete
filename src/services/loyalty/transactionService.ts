@@ -1,9 +1,8 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { CustomerLoyalty, LoyaltyTransaction } from "@/types/loyalty";
 import { getCustomerLoyalty, createCustomerLoyalty } from './customerLoyaltyService';
 import { calculateTier } from './tierService';
-import { useShopId } from "@/hooks/useShopId";
 
 // Add points to customer
 export const addCustomerPoints = async (
@@ -19,7 +18,9 @@ export const addCustomerPoints = async (
   let loyalty = await getCustomerLoyalty(customerId);
   
   if (!loyalty) {
-    loyalty = await createCustomerLoyalty(customerId, shopId);
+    // The error was here - createCustomerLoyalty was being called with 2 arguments but only expecting 1
+    // I'm adjusting the function call to match its definition
+    loyalty = await createCustomerLoyalty(customerId);
   }
 
   // Calculate new values
