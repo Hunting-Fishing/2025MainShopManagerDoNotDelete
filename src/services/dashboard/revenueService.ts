@@ -1,18 +1,9 @@
 
 import { supabase } from "@/lib/supabase";
-
-export interface MonthlyRevenueData {
-  date: string;
-  revenue: number;
-}
-
-export interface ServiceTypeData {
-  name: string;
-  value: number;
-}
+import { MonthlyRevenueData, ServiceTypeData } from "@/types/dashboard";
 
 // Get daily revenue data for the chart
-export const getRevenueData = async (): Promise<MonthlyRevenueData[]> => {
+export const getRevenueData = async (): Promise<{ date: string; revenue: number }[]> => {
   try {
     // Get the last 30 days range
     const endDate = new Date();
@@ -56,7 +47,7 @@ export const getRevenueData = async (): Promise<MonthlyRevenueData[]> => {
 };
 
 // Get monthly revenue data
-export const getMonthlyRevenue = async (): Promise<{ month: string; revenue: number }[]> => {
+export const getMonthlyRevenue = async (): Promise<MonthlyRevenueData[]> => {
   try {
     // Get the last 6 months
     const endDate = new Date();
@@ -143,7 +134,7 @@ export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> =
 
       // Convert to chart data format
       return Object.entries(countByType)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, value]) => ({ subject: name, value }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 6); // Top 6 service types
     } else {
@@ -170,7 +161,7 @@ export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> =
       
       // Convert to chart data format
       return Object.entries(countByCategory)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, value]) => ({ subject: name, value }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 6); // Top 6 service categories
     }

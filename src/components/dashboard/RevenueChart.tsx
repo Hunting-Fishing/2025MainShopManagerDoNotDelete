@@ -1,12 +1,16 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getRevenueData } from "@/services/dashboardService";
+import { getRevenueData } from "@/services/dashboard/revenueService";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { MonthlyRevenueData } from "@/types/dashboard";
+
+interface RevenueData {
+  date: string;
+  revenue: number;
+}
 
 export function RevenueChart() {
-  const [data, setData] = useState<MonthlyRevenueData[]>([]);
+  const [data, setData] = useState<RevenueData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
