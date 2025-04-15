@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 
 export interface MonthlyRevenueData {
@@ -131,7 +132,7 @@ export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> =
       }
 
       // Count work orders by service type
-      const countByType = workOrdersWithType.reduce((acc: Record<string, number>, order) => {
+      const countByType: Record<string, number> = workOrdersWithType.reduce((acc: Record<string, number>, order) => {
         const type = order.service_type || 'Other';
         if (!acc[type]) {
           acc[type] = 0;
@@ -147,11 +148,18 @@ export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> =
         .slice(0, 6); // Top 6 service types
     } else {
       // Count work orders by service category
-      const countByCategory = workOrdersWithCategories.reduce((acc: Record<string, number>, order) => {
-        // Safely access category name, with a fallback to 'Other'
-        const categoryName = order.service_categories && 'name' in order.service_categories 
-          ? order.service_categories.name 
-          : 'Other';
+      const countByCategory: Record<string, number> = workOrdersWithCategories.reduce((acc: Record<string, number>, order) => {
+        // Safely extract the category name
+        let categoryName = 'Other';
+        
+        if (order.service_categories) {
+          // Check if service_categories is an object with a name property
+          if (typeof order.service_categories === 'object' && 
+              order.service_categories !== null && 
+              'name' in order.service_categories) {
+            categoryName = order.service_categories.name as string || 'Other';
+          }
+        }
         
         if (!acc[categoryName]) {
           acc[categoryName] = 0;
