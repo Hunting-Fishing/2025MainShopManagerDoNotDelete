@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
@@ -7,68 +6,52 @@ import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
 export const getAllCustomers = async (): Promise<Customer[]> => {
   try {
     console.log("Fetching all customers...");
-    const { data, error } = await supabase
+    const { data: customersData, error: customersError } = await supabase
       .from("customers")
       .select("*")
       .order("last_name", { ascending: true });
     
-    if (error) {
-      console.error("Error fetching customers:", error);
-      throw error;
+    if (customersError) {
+      console.error("Error fetching customers:", customersError);
+      throw customersError;
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} customers from database`);
-    
-    // Handle null or undefined data
-    if (!data) {
+    if (!customersData) {
       console.log("No customer data returned");
       return [];
     }
     
-    // Fix the type assertion and process the customer data
-    const customers = data.map(customer => adaptCustomerForUI(customer as any));
+    console.log(`Successfully fetched ${customersData.length} customers from database`);
     
+    // Adapt the customer data for UI
+    const customers = customersData.map(customer => adaptCustomerForUI(customer as any));
     console.log("Successfully adapted customer data for UI");
     
-    // Fetch vehicles for each customer separately to avoid relationship issues
+    // Fetch additional data for each customer
     for (const customer of customers) {
       try {
-        const { data: vehiclesData, error: vehiclesError } = await supabase
+        // Fetch loyalty data
+        const loyalty = await getCustomerLoyalty(customer.id);
+        if (loyalty) {
+          customer.loyalty = loyalty;
+        }
+        
+        // Fetch vehicles
+        const { data: vehiclesData } = await supabase
           .from("vehicles")
           .select("*")
           .eq("customer_id", customer.id);
           
-        if (vehiclesError) {
-          console.error(`Error fetching vehicles for customer ${customer.id}:`, vehiclesError);
-        } else {
-          customer.vehicles = vehiclesData || [];
-        }
+        customer.vehicles = vehiclesData || [];
       } catch (error) {
-        console.error(`Error processing vehicles for customer ${customer.id}:`, error);
-        customer.vehicles = [];
+        console.error(`Error fetching additional data for customer ${customer.id}:`, error);
       }
-    }
-    
-    // Fetch loyalty data for each customer
-    try {
-      for (const customer of customers) {
-        try {
-          const loyalty = await getCustomerLoyalty(customer.id);
-          if (loyalty) {
-            customer.loyalty = loyalty;
-          }
-        } catch (error) {
-          console.error(`Error fetching loyalty for customer ${customer.id}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching customer loyalty data:", error);
     }
 
     return customers;
   } catch (error) {
     console.error("Error in getAllCustomers:", error);
-    throw error; // Re-throw the error to be handled by the caller
+    throw error;
   }
 };
 

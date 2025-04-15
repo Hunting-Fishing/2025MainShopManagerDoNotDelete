@@ -7035,6 +7035,10 @@ export type Database = {
         Args: { industry_name: string }
         Returns: string
       }
+      adjust_customer_points: {
+        Args: { p_customer_id: string; p_points: number }
+        Returns: undefined
+      }
       assign_role_to_user: {
         Args: { user_id_param: string; role_id_param: string }
         Returns: boolean
