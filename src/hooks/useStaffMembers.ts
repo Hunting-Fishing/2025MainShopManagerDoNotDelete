@@ -52,9 +52,15 @@ export function useStaffMembers(roleFilter?: string) {
           // Extract role from the nested user_roles data
           let role = 'No Role';
           
-          if (staff.user_roles && staff.user_roles.length > 0 && 
-              staff.user_roles[0].roles && staff.user_roles[0].roles.name) {
-            role = staff.user_roles[0].roles.name;
+          if (staff.user_roles && 
+              Array.isArray(staff.user_roles) && 
+              staff.user_roles.length > 0 && 
+              staff.user_roles[0]?.roles) {
+            // Correctly access the role name
+            const rolesData = staff.user_roles[0].roles;
+            if (rolesData && typeof rolesData === 'object' && 'name' in rolesData) {
+              role = rolesData.name;
+            }
           }
           
           return {
