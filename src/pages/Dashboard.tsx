@@ -12,7 +12,7 @@ import {
   getChecklistStats,
   getTechnicianEfficiency 
 } from "@/services/dashboard"; // Updated import
-import { DashboardStats } from "@/types/dashboard";
+import { DashboardStats, TechnicianPerformanceData } from "@/types/dashboard";
 import { supabase } from '@/lib/supabase';
 import { WorkOrderPhaseProgress } from "@/components/dashboard/WorkOrderPhaseProgress";
 import { QualityControlStats } from "@/components/dashboard/QualityControlStats";
@@ -39,7 +39,7 @@ export default function Dashboard() {
   });
   const [phaseProgressData, setPhaseProgressData] = useState([]);
   const [checklistStats, setChecklistStats] = useState([]);
-  const [technicianEfficiency, setTechnicianEfficiency] = useState([]);
+  const [technicianEfficiency, setTechnicianEfficiency] = useState<any[]>([]); // Initialize as empty array with any type
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -65,7 +65,9 @@ export default function Dashboard() {
         
         // Fetch technician efficiency metrics
         const efficiency = await getTechnicianEfficiency();
-        setTechnicianEfficiency(efficiency);
+        // Handle the TechnicianPerformanceData correctly:
+        // Only set the chartData array part to technicianEfficiency
+        setTechnicianEfficiency(efficiency.chartData || []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
