@@ -30,6 +30,11 @@ export const handleApiError = (error: any, fallbackMessage = "An unexpected erro
   } else if (error?.code === '23505') {
     // Handle duplicate key violations
     errorMessage = "This record already exists. Please try with different information.";
+    
+    // Specific handling for team member email uniqueness
+    if (error.details?.includes('team_members_email_key')) {
+      errorMessage = "A team member with this email address already exists.";
+    }
   } else if (error?.code === '42P01') {
     // Relation does not exist
     errorMessage = "Database table not found. This might be a setup issue.";

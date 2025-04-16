@@ -6213,6 +6213,42 @@ export type Database = {
           },
         ]
       }
+      team_member_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_member_roles_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_member_settings: {
         Row: {
           created_at: string | null
@@ -6250,6 +6286,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_members: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string
+          first_name: string | null
+          id: string
+          job_title: string | null
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email: string
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       team_notifications: {
         Row: {
@@ -7222,6 +7300,16 @@ export type Database = {
         Returns: string
       }
       record_team_history: {
+        Args: {
+          profile_id_param: string
+          action_type_param: string
+          action_by_param: string
+          action_by_name_param: string
+          details_param: Json
+        }
+        Returns: string
+      }
+      record_team_member_history: {
         Args: {
           profile_id_param: string
           action_type_param: string

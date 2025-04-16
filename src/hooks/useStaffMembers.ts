@@ -21,7 +21,7 @@ export function useStaffMembers(roleFilter?: string) {
       setIsLoading(true);
       setError(null);
       try {
-        // First try to fetch from the team_members table
+        // Fetch from the new team_members table
         let { data, error: fetchError } = await supabase
           .from('team_members')
           .select(`
@@ -36,9 +36,9 @@ export function useStaffMembers(roleFilter?: string) {
             )
           `);
 
-        // If the team_members table doesn't exist yet, fall back to profiles
-        if (fetchError && (fetchError.message.includes("relation") || fetchError.message.includes("does not exist"))) {
-          console.warn("Team members table not found, falling back to profiles:", fetchError);
+        // If there's an error or no data, try to fall back to profiles
+        if (fetchError || !data || data.length === 0) {
+          console.warn("Team members table error or empty, falling back to profiles:", fetchError);
           
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
@@ -54,15 +54,10 @@ export function useStaffMembers(roleFilter?: string) {
           data = profilesData?.map(profile => ({
             ...profile,
             team_member_roles: []
-          }));
-        } else if (fetchError) {
-          // Handle other errors
-          console.error("Error fetching staff members:", fetchError);
-          setError("Failed to load staff members");
-          return;
+          })) || [];
         }
 
-        if (!data || data.length === 0) {
+        if (data.length === 0) {
           setStaffMembers([]);
           return;
         }

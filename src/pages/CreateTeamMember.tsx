@@ -32,7 +32,7 @@ export default function CreateTeamMember() {
         department: data.department
       });
       
-      // Create team member record in a custom table instead of profiles
+      // Create team member record in our new team_members table
       const { data: teamMemberData, error: createError } = await supabase
         .from('team_members')
         .insert({
@@ -86,6 +86,34 @@ export default function CreateTeamMember() {
           console.error('Error assigning role:', roleAssignError);
           // Continue without throwing, as the team member was created successfully
         }
+      }
+      
+      // Record the team member creation history
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (userData?.user) {
+        // Get the current user's name for the history record
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', userData.user.id)
+          .single();
+          
+        const userName = userProfile 
+          ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() 
+          : 'System';
+          
+        await supabase.rpc('record_team_member_history', {
+          profile_id_param: teamMemberData.id,
+          action_type_param: 'creation',
+          action_by_param: userData.user.id,
+          action_by_name_param: userName,
+          details_param: {
+            email: data.email,
+            role: data.role,
+            timestamp: new Date().toISOString()
+          }
+        });
       }
       
       // Show success message
