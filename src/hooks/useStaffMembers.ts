@@ -50,7 +50,11 @@ export function useStaffMembers(roleFilter?: string) {
             return;
           }
           
-          data = profilesData;
+          // Add empty user_roles array to each profile in the fallback data
+          data = profilesData?.map(profile => ({
+            ...profile,
+            user_roles: []
+          }));
         }
 
         if (!data) {
