@@ -77,9 +77,8 @@ export function useCompanySettings() {
   }, [initialize, initialized, shopId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value, name } = e.target;
-    // Try to extract field name from id (company-name -> name) or use the name attribute directly
-    const fieldName = name || id.replace("company-", "");
+    const { name, value } = e.target;
+    const fieldName = name || e.target.id.replace("company-", "");
     
     console.log(`Input changed: ${fieldName} = ${value}`);
     
@@ -179,7 +178,15 @@ export function useCompanySettings() {
     dataChanged,
     shopId,
     handleInputChange,
-    handleSelectChange,
+    handleSelectChange: (field: string, value: string) => {
+      console.log("Select changed:", field, value);
+      setCompanyInfo(prev => ({
+        ...prev,
+        [field]: value,
+        ...(field === 'industry' && value !== 'other' ? { otherIndustry: '' } : {})
+      }));
+      setDataChanged(true);
+    },
     handleBusinessHoursChange,
     handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => {
       if (shopId) {

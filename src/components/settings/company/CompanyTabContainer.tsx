@@ -45,11 +45,29 @@ export function CompanyTabContainer() {
   useEffect(() => {
     if (initialized) {
       console.log("Company info in container:", companyInfo);
+      console.log("Company info has keys:", Object.keys(companyInfo));
+      console.log("Company info name:", companyInfo.name);
       console.log("Business hours in container:", businessHours);
       console.log("Data changed status:", dataChanged);
       console.log("Loading status:", loading);
     }
   }, [companyInfo, businessHours, initialized, loading, dataChanged]);
+
+  // Check if company data appears to be empty (all fields are empty strings or null/undefined)
+  const isCompanyInfoEmpty = !companyInfo || Object.values(companyInfo).every(
+    val => val === "" || val === null || val === undefined
+  );
+
+  // Extra debug to check emptiness
+  useEffect(() => {
+    if (initialized) {
+      console.log("Is company info empty:", isCompanyInfoEmpty);
+      // Check each field individually
+      Object.entries(companyInfo).forEach(([key, value]) => {
+        console.log(`Field ${key} = ${value} (empty? ${!value})`);
+      });
+    }
+  }, [companyInfo, initialized, isCompanyInfoEmpty]);
 
   // Prompt user before leaving if there are unsaved changes
   useEffect(() => {
@@ -83,6 +101,16 @@ export function CompanyTabContainer() {
     }
   }, [saveComplete, toast]);
 
+  const handleReloadData = () => {
+    console.log("Manually reloading company data");
+    initialize();
+    toast({
+      title: "Information",
+      description: "Reloading company data from server",
+      variant: "default"
+    });
+  };
+
   const handleSaveClick = async () => {
     try {
       console.log("Save button clicked, current data changed status:", dataChanged);
@@ -111,8 +139,18 @@ export function CompanyTabContainer() {
         </TabsList>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Company Information</CardTitle>
+            {initialized && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleReloadData}
+                disabled={loading || saving}
+              >
+                Refresh Data
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {loading && !initialized ? (
@@ -146,24 +184,31 @@ export function CompanyTabContainer() {
                   />
                 </TabsContent>
 
-                <div className="flex justify-end mt-6">
-                  <Button 
-                    className={`${dataChanged ? 'bg-esm-blue-600 hover:bg-esm-blue-700' : 'bg-gray-300 hover:bg-gray-400'}`}
-                    onClick={handleSaveClick}
-                    disabled={saving || !dataChanged}
-                  >
-                    {saving ? (
-                      <>
-                        <span className="animate-spin mr-2">⏳</span>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        {dataChanged ? "Save Changes" : "No Changes"}
-                      </>
-                    )}
-                  </Button>
+                <div className="flex justify-between mt-6">
+                  {isCompanyInfoEmpty && initialized && !loading && (
+                    <div className="text-amber-600 text-sm">
+                      No company information found. Please fill in the form and save.
+                    </div>
+                  )}
+                  <div className="ml-auto">
+                    <Button 
+                      className={`${dataChanged ? 'bg-esm-blue-600 hover:bg-esm-blue-700' : 'bg-gray-300 hover:bg-gray-400'}`}
+                      onClick={handleSaveClick}
+                      disabled={saving || !dataChanged}
+                    >
+                      {saving ? (
+                        <>
+                          <span className="animate-spin mr-2">⏳</span>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          {dataChanged ? "Save Changes" : "No Changes"}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </>
             )}

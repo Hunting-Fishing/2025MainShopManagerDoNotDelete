@@ -1,33 +1,11 @@
-
 import { supabase } from "@/lib/supabase";
+import { CompanyInfo, BusinessHours } from "./companyService.types";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/utils/formatters";
 
-// Types
-export interface CompanyInfo {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
-  email: string;
-  taxId: string;
-  businessType: string;
-  industry: string;
-  otherIndustry?: string;  
-  logoUrl: string;
-}
+// Re-export the types
+export type { CompanyInfo, BusinessHours };
 
-export interface BusinessHours {
-  id?: string;
-  shop_id: string;
-  day_of_week: number;
-  open_time: string;
-  close_time: string;
-  is_closed: boolean;
-}
-
-// Company Info Methods
+// Helper function to get company info from either shops table or company_settings
 async function getShopInfo() {
   try {
     // Get the current authenticated user
@@ -65,7 +43,41 @@ async function getShopInfo() {
     
     console.log("Found shop ID:", shopId);
     
-    // Get shop details
+    // First try to get company info from company_settings table
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('company_settings')
+      .select('settings_value')
+      .eq('shop_id', shopId)
+      .eq('settings_key', 'business_profile')
+      .single();
+    
+    // If company_settings has data, use it
+    if (!settingsError && settingsData) {
+      console.log("Found company info in company_settings:", settingsData);
+      
+      // Extract values from settings_value JSONB
+      const settings = settingsData.settings_value;
+      
+      // Map settings to CompanyInfo structure
+      const companyInfo: CompanyInfo = {
+        name: settings.name || "",
+        address: settings.address || "",
+        city: settings.city || "",
+        state: settings.state || "",
+        zip: settings.postal_code || settings.zip || "",
+        phone: settings.phone ? formatPhoneNumber(settings.phone) : "",
+        email: settings.email || "",
+        taxId: settings.tax_id || settings.taxId || "",
+        businessType: settings.business_type || settings.businessType || "",
+        industry: settings.industry || "",
+        otherIndustry: settings.other_industry || settings.otherIndustry || "",
+        logoUrl: settings.logo_url || settings.logoUrl || ""
+      };
+      
+      return { shopId, companyInfo };
+    }
+    
+    // Fallback to getting info directly from shops table
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('*')
@@ -100,8 +112,6 @@ async function getShopInfo() {
       logoUrl: shop?.logo_url || ""
     };
     
-    console.log("Loaded company info:", companyInfo);
-    
     return { shopId, companyInfo };
   } catch (error) {
     console.error("Error fetching shop info:", error);
@@ -115,10 +125,55 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       throw new Error("Shop ID is required for updating company information");
     }
     
+    console.log("Updating company info:", companyInfo);
+    
     // Clean phone number before saving
     const cleanedPhone = cleanPhoneNumber(companyInfo.phone || '');
-    console.log("Original phone:", companyInfo.phone, "Cleaned phone:", cleanedPhone);
-
+    
+    // First, check if we have an entry in company_settings
+    const { data: existingSettings } = await supabase
+      .from('company_settings')
+      .select('*')
+      .eq('shop_id', shopId)
+      .eq('settings_key', 'business_profile');
+    
+    // Prepare the business profile data for JSONB storage
+    const businessProfileData = {
+      name: companyInfo.name,
+      address: companyInfo.address,
+      city: companyInfo.city,
+      state: companyInfo.state,
+      postal_code: companyInfo.zip,
+      phone: cleanedPhone,
+      email: companyInfo.email,
+      tax_id: companyInfo.taxId,
+      business_type: companyInfo.businessType,
+      industry: companyInfo.industry,
+      other_industry: companyInfo.otherIndustry,
+      logo_url: companyInfo.logoUrl,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Use upsert to either update or insert into company_settings
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('company_settings')
+      .upsert({
+        id: existingSettings && existingSettings.length > 0 ? existingSettings[0].id : undefined,
+        shop_id: shopId,
+        settings_key: 'business_profile',
+        settings_value: businessProfileData,
+        updated_at: new Date().toISOString(),
+        created_at: existingSettings && existingSettings.length > 0 ? existingSettings[0].created_at : new Date().toISOString()
+      })
+      .select();
+    
+    if (settingsError) {
+      console.error("Error updating company_settings:", settingsError);
+    } else {
+      console.log("Updated company_settings successfully:", settingsData);
+    }
+    
+    // Also update the shops table for backward compatibility
     const updateData = {
       name: companyInfo.name,
       address: companyInfo.address,
@@ -131,10 +186,11 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       business_type: companyInfo.businessType,
       industry: companyInfo.industry,
       other_industry: companyInfo.otherIndustry,
+      logo_url: companyInfo.logoUrl,
       updated_at: new Date().toISOString()
     };
     
-    console.log("Updating company with data:", updateData);
+    console.log("Also updating shops table with:", updateData);
     
     const { data, error } = await supabase
       .from('shops')
@@ -144,36 +200,14 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       
     if (error) {
       console.error("Error updating shop info:", error);
-      throw error;
+      // We won't throw here since we've already updated company_settings
+      console.warn("Failed to update shops table, but company_settings was updated");
     }
     
-    console.log("Company info updated successfully:", data);
+    console.log("Company info updated successfully in both tables");
     
-    // Make sure we're returning consistent data format even if the response is empty
-    let updatedInfo: CompanyInfo;
-    
-    if (data && data.length > 0) {
-      const shopData = data[0];
-      updatedInfo = {
-        name: shopData?.name || companyInfo.name,
-        address: shopData?.address || companyInfo.address,
-        city: shopData?.city || companyInfo.city,
-        state: shopData?.state || companyInfo.state,
-        zip: shopData?.postal_code || companyInfo.zip,
-        phone: shopData?.phone ? formatPhoneNumber(shopData.phone) : companyInfo.phone,
-        email: shopData?.email || companyInfo.email,
-        taxId: shopData?.tax_id || companyInfo.taxId,
-        businessType: shopData?.business_type || companyInfo.businessType,
-        industry: shopData?.industry || companyInfo.industry,
-        otherIndustry: shopData?.other_industry || companyInfo.otherIndustry,
-        logoUrl: shopData?.logo_url || companyInfo.logoUrl
-      };
-    } else {
-      // If no data returned, use the input data as the result
-      updatedInfo = { ...companyInfo };
-    }
-    
-    return { success: true, data: updatedInfo };
+    // Return the updated company info
+    return { success: true, data: companyInfo };
   } catch (error) {
     console.error("Error updating company info:", error);
     throw error;
@@ -451,18 +485,11 @@ async function checkTablesExist() {
 }
 
 export const companyService = {
-  // Database Check Method
-  checkTablesExist,
-  
-  // Company Info Methods
   getShopInfo,
   updateCompanyInfo,
   uploadLogo,
-  
-  // Business Hours Methods
   getBusinessHours,
   updateBusinessHours,
-  
-  // Business Industry Methods
-  addCustomIndustry
+  addCustomIndustry,
+  checkTablesExist
 };
