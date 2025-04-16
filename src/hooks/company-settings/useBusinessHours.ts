@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { companyService } from '@/services/settings/companyService';
+import { handleApiError } from '@/utils/errorHandling';
 
 export function useBusinessHours() {
   const [businessHours, setBusinessHours] = useState<any[]>([]);
@@ -26,11 +27,7 @@ export function useBusinessHours() {
       return sortedHours;
     } catch (error) {
       console.error("Failed to load business hours:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load business hours",
-        variant: "destructive"
-      });
+      handleApiError(error, "Failed to load business hours");
       return [];
     } finally {
       setIsLoading(false);

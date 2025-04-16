@@ -37,6 +37,7 @@ export function CompanyTabContainer() {
 
   // Initialize data
   useEffect(() => {
+    console.log("CompanyTabContainer: Initializing data");
     initialize();
   }, [initialize]);
 
@@ -45,8 +46,9 @@ export function CompanyTabContainer() {
     if (initialized && !loading) {
       console.log("Company info in container:", companyInfo);
       console.log("Business hours in container:", businessHours);
+      console.log("Data changed status:", dataChanged);
     }
-  }, [companyInfo, businessHours, initialized, loading]);
+  }, [companyInfo, businessHours, initialized, loading, dataChanged]);
 
   // Prompt user before leaving if there are unsaved changes
   useEffect(() => {
@@ -72,25 +74,20 @@ export function CompanyTabContainer() {
   // Reload data when save operation completes
   useEffect(() => {
     if (saveComplete) {
-      initialize();
       toast({
         title: "Success",
         description: "Company information saved successfully",
         variant: "success"
       });
     }
-  }, [saveComplete, initialize, toast]);
+  }, [saveComplete, toast]);
 
   const handleSaveClick = async () => {
     try {
+      console.log("Save button clicked, current data changed status:", dataChanged);
       await handleSave();
     } catch (error) {
-      console.error("Error saving company information:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save company information. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Error caught in CompanyTabContainer:", error);
     }
   };
 

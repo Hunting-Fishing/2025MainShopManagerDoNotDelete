@@ -5,6 +5,7 @@ import { useCompanyBasicInfo } from './useCompanyBasicInfo';
 import { useBusinessHours } from './useBusinessHours';
 import { companyService } from '@/services/settings/companyService';
 import { useBusinessConstants } from '@/hooks/useBusinessConstants';
+import { handleApiError } from '@/utils/errorHandling';
 
 export function useCompanySettings() {
   const [initialized, setInitialized] = useState(false);
@@ -34,26 +35,32 @@ export function useCompanySettings() {
 
   const initialize = useCallback(async () => {
     try {
+      console.log("Initializing company settings...");
       const id = await loadCompanyInfo();
+      console.log("Company info loaded, shop ID:", id);
+      
       if (id) {
         setShopId(id);
-        await loadBusinessHours(id);
+        const hours = await loadBusinessHours(id);
+        console.log("Business hours loaded:", hours?.length || 0, "records");
+      } else {
+        console.warn("No shop ID returned from loadCompanyInfo");
       }
+      
       setInitialized(true);
       setDataChanged(false); // Reset data changed flag after successful initialization
+      console.log("Company settings initialization complete");
     } catch (error) {
       console.error("Failed to initialize company settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load company settings",
-        variant: "destructive"
-      });
+      handleApiError(error, "Failed to load company settings");
     }
   }, [loadCompanyInfo, loadBusinessHours, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     const fieldName = id.replace("company-", "");
+    
+    console.log(`Input changed: ${fieldName} = ${value}`);
     
     setCompanyInfo(prev => ({
       ...prev,
@@ -111,14 +118,15 @@ export function useCompanySettings() {
       setDataChanged(false);
       setSaveComplete(true);
       
+      toast({
+        title: "Success",
+        description: "Company information saved successfully",
+        variant: "success"
+      });
+      
     } catch (error: any) {
       console.error("Failed to save company information:", error);
-      toast({
-        title: "Error",
-        description: `Failed to save company information: ${error.message || 'Unknown error'}`,
-        variant: "destructive"
-      });
-      throw error; // Re-throw to allow the UI component to handle it
+      handleApiError(error, "Failed to save company information");
     } finally {
       setSaving(false);
     }

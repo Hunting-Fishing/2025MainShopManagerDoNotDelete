@@ -14,6 +14,8 @@ async function uploadLogo(shopId: string, file: File) {
     const fileName = `${shopId}_${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
     const filePath = `${shopId}/${fileName}`;
 
+    console.log("Uploading logo:", fileName);
+    
     // Upload file to Supabase storage
     const { data, error } = await supabase.storage
       .from('shop_logos')
@@ -60,12 +62,15 @@ async function getShopInfo() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
+      console.error("User auth error:", userError);
       throw userError;
     }
     
     if (!user) {
       throw new Error("No authenticated user found");
     }
+    
+    console.log("Fetching shop info for user:", user.id);
     
     // Get the profile with shop_id
     const { data: profile, error: profileError } = await supabase
@@ -75,14 +80,18 @@ async function getShopInfo() {
       .single();
       
     if (profileError) {
+      console.error("Profile fetch error:", profileError);
       throw profileError;
     }
     
     const shopId = profile?.shop_id;
     
     if (!shopId) {
+      console.error("No shop associated with this user");
       throw new Error("No shop associated with this user");
     }
+    
+    console.log("Found shop ID:", shopId);
     
     // Get shop details
     const { data: shop, error: shopError } = await supabase
@@ -92,10 +101,16 @@ async function getShopInfo() {
       .single();
       
     if (shopError) {
+      console.error("Shop fetch error:", shopError);
       throw shopError;
     }
     
     console.log("Shop data from DB:", shop);
+    
+    if (!shop) {
+      console.error("Shop not found");
+      throw new Error("Shop not found");
+    }
     
     // Format shop data to match CompanyInfo structure
     const companyInfo: CompanyInfo = {
@@ -124,6 +139,10 @@ async function getShopInfo() {
 
 async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
   try {
+    if (!shopId) {
+      throw new Error("Shop ID is required for updating company information");
+    }
+    
     // Clean phone number before saving
     const cleanedPhone = cleanPhoneNumber(companyInfo.phone || '');
     console.log("Original phone:", companyInfo.phone, "Cleaned phone:", cleanedPhone);
