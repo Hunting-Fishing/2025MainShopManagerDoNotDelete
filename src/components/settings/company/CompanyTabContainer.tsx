@@ -39,8 +39,7 @@ export function CompanyTabContainer() {
   useEffect(() => {
     console.log("CompanyTabContainer: Initializing data");
     initialize();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialize]);
 
   // Debug logs to track the state
   useEffect(() => {

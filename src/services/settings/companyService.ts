@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/utils/formatters";
 
@@ -191,6 +192,19 @@ async function uploadLogo(shopId: string, file: File) {
     const filePath = `${shopId}/${fileName}`;
 
     console.log("Uploading logo:", fileName);
+    
+    // Create shop_logos bucket if it doesn't exist
+    const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('shop_logos');
+    
+    if (bucketError && bucketError.message.includes('not found')) {
+      console.log("Creating shop_logos bucket");
+      const { error: createBucketError } = await supabase.storage.createBucket('shop_logos', { public: true });
+      
+      if (createBucketError) {
+        console.error('Error creating bucket:', createBucketError);
+        throw createBucketError;
+      }
+    }
     
     // Upload file to Supabase storage
     const { data, error } = await supabase.storage
@@ -388,7 +402,58 @@ async function addCustomIndustry(industryName: string) {
   }
 }
 
+// Check if required tables exist
+async function checkTablesExist() {
+  try {
+    // Check if shops table exists
+    const { error: shopsError } = await supabase
+      .from('shops')
+      .select('id')
+      .limit(1);
+      
+    if (shopsError && shopsError.message.includes('does not exist')) {
+      console.error("Shops table does not exist!");
+      return {
+        shopsTableExists: false,
+        businessHoursTableExists: false,
+        error: "Database setup incomplete: shops table missing"
+      };
+    }
+    
+    // Check if shop_hours table exists
+    const { error: hoursError } = await supabase
+      .from('shop_hours')
+      .select('id')
+      .limit(1);
+    
+    if (hoursError && hoursError.message.includes('does not exist')) {
+      console.error("Shop_hours table does not exist!");
+      return {
+        shopsTableExists: true,
+        businessHoursTableExists: false,
+        error: "Database setup incomplete: shop_hours table missing"
+      };
+    }
+    
+    return {
+      shopsTableExists: true,
+      businessHoursTableExists: true,
+      error: null
+    };
+  } catch (error) {
+    console.error("Error checking tables:", error);
+    return {
+      shopsTableExists: false,
+      businessHoursTableExists: false,
+      error: "Failed to check database tables"
+    };
+  }
+}
+
 export const companyService = {
+  // Database Check Method
+  checkTablesExist,
+  
   // Company Info Methods
   getShopInfo,
   updateCompanyInfo,

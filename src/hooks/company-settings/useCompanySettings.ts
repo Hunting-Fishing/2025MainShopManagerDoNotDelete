@@ -40,17 +40,24 @@ export function useCompanySettings() {
   }, []);
 
   const initialize = useCallback(async () => {
+    console.log("Initializing company settings...");
     try {
-      console.log("Initializing company settings...");
+      // First load company info
       const id = await loadCompanyInfo();
       console.log("Company info loaded, shop ID:", id);
       
       if (id) {
         setShopId(id);
+        // Then load business hours
         const hours = await loadBusinessHours(id);
         console.log("Business hours loaded:", hours?.length || 0, "records");
       } else {
         console.warn("No shop ID returned from loadCompanyInfo");
+        toast({
+          title: "Warning",
+          description: "Could not load shop information",
+          variant: "destructive"
+        });
       }
       
       setInitialized(true);
@@ -60,11 +67,19 @@ export function useCompanySettings() {
       console.error("Failed to initialize company settings:", error);
       handleApiError(error, "Failed to load company settings");
     }
-  }, [loadCompanyInfo, loadBusinessHours]);
+  }, [loadCompanyInfo, loadBusinessHours, toast]);
+
+  // Ensure initialization happens when the hook mounts
+  useEffect(() => {
+    if (!initialized && !shopId) {
+      initialize();
+    }
+  }, [initialize, initialized, shopId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    const fieldName = id.replace("company-", "");
+    const { id, value, name } = e.target;
+    // Try to extract field name from id (company-name -> name) or use the name attribute directly
+    const fieldName = name || id.replace("company-", "");
     
     console.log(`Input changed: ${fieldName} = ${value}`);
     
@@ -146,8 +161,9 @@ export function useCompanySettings() {
     if (initialized) {
       console.log("Company info state updated:", companyInfo);
       console.log("Business hours state updated:", businessHours);
+      console.log("Data changed status:", dataChanged);
     }
-  }, [companyInfo, businessHours, initialized]);
+  }, [companyInfo, businessHours, initialized, dataChanged]);
 
   return {
     companyInfo,
@@ -169,6 +185,13 @@ export function useCompanySettings() {
       if (shopId) {
         handleFileUpload(e, shopId).then(() => {
           setDataChanged(true); // Mark as changed when logo is uploaded
+        });
+      } else {
+        console.error("Cannot upload logo - no shop ID available");
+        toast({
+          title: "Error",
+          description: "Cannot upload logo - shop information not loaded",
+          variant: "destructive"
         });
       }
     },

@@ -36,6 +36,7 @@ export function BasicInfoSection({
       <FormField
         label="Company Name"
         id="company-name"
+        name="name"
         value={companyInfo.name || ""}
         onChange={onInputChange}
         required
@@ -44,6 +45,7 @@ export function BasicInfoSection({
       <FormField
         label="Email"
         id="company-email"
+        name="email"
         type="email"
         value={companyInfo.email || ""}
         onChange={onInputChange}
@@ -52,6 +54,7 @@ export function BasicInfoSection({
       <FormField
         label="Phone"
         id="company-phone"
+        name="phone"
         type="tel"
         value={formatPhoneNumber(companyInfo.phone || "")}
         onChange={onInputChange}
@@ -60,6 +63,7 @@ export function BasicInfoSection({
       <FormField
         label="Address"
         id="company-address"
+        name="address"
         value={companyInfo.address || ""}
         onChange={onInputChange}
       />
@@ -67,6 +71,7 @@ export function BasicInfoSection({
       <FormField
         label="City"
         id="company-city"
+        name="city"
         value={companyInfo.city || ""}
         onChange={onInputChange}
       />
@@ -75,6 +80,7 @@ export function BasicInfoSection({
         <FormField
           label="State"
           id="company-state"
+          name="state"
           value={companyInfo.state || ""}
           onChange={onInputChange}
         />
@@ -82,6 +88,7 @@ export function BasicInfoSection({
         <FormField
           label="ZIP Code"
           id="company-zip"
+          name="zip"
           value={companyInfo.zip || ""}
           onChange={onInputChange}
         />
