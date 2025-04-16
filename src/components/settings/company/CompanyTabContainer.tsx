@@ -35,18 +35,20 @@ export function CompanyTabContainer() {
     initialize
   } = useCompanySettings();
 
-  // Initialize data
+  // Initialize data when component mounts
   useEffect(() => {
     console.log("CompanyTabContainer: Initializing data");
     initialize();
-  }, [initialize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Debug logs to track the state
   useEffect(() => {
-    if (initialized && !loading) {
+    if (initialized) {
       console.log("Company info in container:", companyInfo);
       console.log("Business hours in container:", businessHours);
       console.log("Data changed status:", dataChanged);
+      console.log("Loading status:", loading);
     }
   }, [companyInfo, businessHours, initialized, loading, dataChanged]);
 

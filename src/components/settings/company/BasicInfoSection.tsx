@@ -18,6 +18,11 @@ export function BasicInfoSection({
   onInputChange,
   onFileUpload,
 }: BasicInfoSectionProps) {
+  // Add debug log to verify we're getting data
+  React.useEffect(() => {
+    console.log("BasicInfoSection rendered with companyInfo:", companyInfo);
+  }, [companyInfo]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="md:col-span-2 mb-4 flex items-center justify-center">
@@ -31,7 +36,7 @@ export function BasicInfoSection({
       <FormField
         label="Company Name"
         id="company-name"
-        value={companyInfo.name}
+        value={companyInfo.name || ""}
         onChange={onInputChange}
         required
       />

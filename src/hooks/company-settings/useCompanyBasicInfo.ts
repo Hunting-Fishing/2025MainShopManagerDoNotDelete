@@ -26,12 +26,18 @@ export function useCompanyBasicInfo() {
   const loadCompanyInfo = useCallback(async (showLoadingState = true) => {
     try {
       if (showLoadingState) setLoading(true);
+      
+      console.log("Loading company info...");
       const { shopId, companyInfo: info } = await companyService.getShopInfo();
+      
       console.log("Loaded company info from service:", info);
+      
+      // Make sure we're correctly setting the loaded data
       setCompanyInfo({
         ...info,
         otherIndustry: info.otherIndustry || ""
       });
+      
       return shopId;
     } catch (error: any) {
       console.error("Failed to load company information:", error);

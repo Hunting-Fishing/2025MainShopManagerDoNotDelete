@@ -18,6 +18,8 @@ export function useBusinessHours() {
     
     try {
       setIsLoading(true);
+      console.log("Loading business hours for shop ID:", shopId);
+      
       const hours = await companyService.getBusinessHours(shopId);
       console.log("Loaded business hours:", hours);
       
@@ -33,7 +35,7 @@ export function useBusinessHours() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   const handleBusinessHoursChange = (index: number, field: string, value: any) => {
     console.log("Business hours changed:", index, field, value);

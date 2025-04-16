@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanyBasicInfo } from './useCompanyBasicInfo';
 import { useBusinessHours } from './useBusinessHours';
@@ -20,7 +20,7 @@ export function useCompanySettings() {
   const {
     companyInfo,
     setCompanyInfo,
-    loading,
+    loading: loadingInfo,
     uploadingLogo,
     loadCompanyInfo,
     handleFileUpload
@@ -30,8 +30,14 @@ export function useCompanySettings() {
     businessHours,
     setBusinessHours,
     loadBusinessHours,
-    handleBusinessHoursChange
+    handleBusinessHoursChange,
+    isLoading: loadingHours
   } = useBusinessHours();
+
+  // Debugging on mount
+  useEffect(() => {
+    console.log("useCompanySettings mounted");
+  }, []);
 
   const initialize = useCallback(async () => {
     try {
@@ -54,7 +60,7 @@ export function useCompanySettings() {
       console.error("Failed to initialize company settings:", error);
       handleApiError(error, "Failed to load company settings");
     }
-  }, [loadCompanyInfo, loadBusinessHours, toast]);
+  }, [loadCompanyInfo, loadBusinessHours]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -124,6 +130,9 @@ export function useCompanySettings() {
         variant: "success"
       });
       
+      // Refresh data from the server to ensure we have latest state
+      await initialize();
+      
     } catch (error: any) {
       console.error("Failed to save company information:", error);
       handleApiError(error, "Failed to save company information");
@@ -132,10 +141,18 @@ export function useCompanySettings() {
     }
   };
 
+  // Add a debug effect to monitor state changes
+  useEffect(() => {
+    if (initialized) {
+      console.log("Company info state updated:", companyInfo);
+      console.log("Business hours state updated:", businessHours);
+    }
+  }, [companyInfo, businessHours, initialized]);
+
   return {
     companyInfo,
     businessHours,
-    loading,
+    loading: loadingInfo || loadingHours,
     saving,
     uploadingLogo,
     businessTypes,
@@ -149,9 +166,11 @@ export function useCompanySettings() {
     handleSelectChange,
     handleBusinessHoursChange,
     handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => {
-      handleFileUpload(e, shopId || '').then(() => {
-        setDataChanged(true); // Mark as changed when logo is uploaded
-      });
+      if (shopId) {
+        handleFileUpload(e, shopId).then(() => {
+          setDataChanged(true); // Mark as changed when logo is uploaded
+        });
+      }
     },
     handleSave,
     initialize
