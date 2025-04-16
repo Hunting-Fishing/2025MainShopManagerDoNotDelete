@@ -46,6 +46,9 @@ export function StaffAssignment({
   onAddStaffMember,
   onRemoveStaffMember,
 }: StaffAssignmentProps) {
+  // Check if there are actually any staff members available
+  const hasStaffMembers = staffMembers && staffMembers.length > 0;
+  
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -66,7 +69,7 @@ export function StaffAssignment({
             </DialogHeader>
             <div className="max-h-[300px] overflow-y-auto">
               <div className="space-y-3 mt-2">
-                {staffMembers.length > 0 ? (
+                {hasStaffMembers ? (
                   staffMembers.map((staff) => (
                     <div 
                       key={staff.id} 
@@ -83,8 +86,9 @@ export function StaffAssignment({
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-slate-500">
-                    No staff members available
+                  <div className="text-center py-6 text-slate-500">
+                    <div className="mb-2">No staff members available</div>
+                    <p className="text-sm">You need to create team members first.</p>
                   </div>
                 )}
               </div>
@@ -104,7 +108,7 @@ export function StaffAssignment({
             <SelectValue placeholder="Select creator" />
           </SelectTrigger>
           <SelectContent>
-            {staffMembers.length > 0 ? (
+            {hasStaffMembers ? (
               staffMembers.map((staff) => (
                 <SelectItem key={staff.id} value={staff.name}>
                   {staff.name}

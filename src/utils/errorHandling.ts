@@ -22,11 +22,17 @@ export const handleApiError = (error: any, fallbackMessage = "An unexpected erro
   
   // Special handling for common database errors
   if (error?.code === '23503') {
-    if (error.message.includes('profiles_id_fkey')) {
-      errorMessage = "Unable to create team member: User authentication record not found.";
+    if (error.message?.includes('profiles_id_fkey')) {
+      errorMessage = "Could not create team member: Auth user record not found. Please create team members in the Team Members table instead.";
     } else if (error.details) {
       errorMessage = `Database constraint error: ${error.details}`;
     }
+  } else if (error?.code === '23505') {
+    // Handle duplicate key violations
+    errorMessage = "This record already exists. Please try with different information.";
+  } else if (error?.code === '42P01') {
+    // Relation does not exist
+    errorMessage = "Database table not found. This might be a setup issue.";
   }
   
   // Show toast notification

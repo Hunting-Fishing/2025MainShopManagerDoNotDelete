@@ -24,7 +24,7 @@ export default function CreateTeamMember() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      console.log("Creating team member with profile data:", {
+      console.log("Creating team member with data:", {
         firstName,
         lastName,
         email: data.email,
@@ -32,39 +32,37 @@ export default function CreateTeamMember() {
         department: data.department
       });
       
-      // Create profile without specifying an ID (let the database generate one)
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
+      // Create team member record in a custom table instead of profiles
+      const { data: teamMemberData, error: createError } = await supabase
+        .from('team_members')
         .insert({
           email: data.email,
           first_name: firstName,
           last_name: lastName,
           phone: data.phone || null,
           job_title: data.jobTitle,
-          department: data.department
+          department: data.department,
+          status: data.status ? 'Active' : 'Inactive',
+          notes: data.notes || null
         })
         .select('id, email')
         .single();
 
-      if (profileError) {
-        // Handle specific profile creation errors
-        if (profileError.code === '23505') {
+      if (createError) {
+        // Handle specific errors
+        if (createError.code === '23505') {
           throw new Error('A team member with this email already exists.');
         }
         
-        if (profileError.code === '23503') {
-          throw new Error('Unable to create team member profile: User authentication record not found.');
-        }
-        
-        console.error("Profile creation error:", profileError);
-        throw profileError;
+        console.error("Team member creation error:", createError);
+        throw createError;
       }
 
-      if (!profileData) {
-        throw new Error('Failed to create team member profile');
+      if (!teamMemberData) {
+        throw new Error('Failed to create team member');
       }
 
-      console.log("Created profile with ID:", profileData.id);
+      console.log("Created team member with ID:", teamMemberData.id);
 
       // Find the role ID for the selected role
       const { data: roleData, error: roleError } = await supabase
@@ -76,17 +74,17 @@ export default function CreateTeamMember() {
       if (roleError) {
         console.warn(`Role not found for ${data.role}, will skip role assignment:`, roleError);
       } else if (roleData) {
-        // Assign the role to the user
+        // Assign the role to the team member
         const { error: roleAssignError } = await supabase
-          .from('user_roles')
+          .from('team_member_roles')
           .insert({
-            user_id: profileData.id,
+            team_member_id: teamMemberData.id,
             role_id: roleData.id
           });
 
         if (roleAssignError) {
           console.error('Error assigning role:', roleAssignError);
-          // Continue without throwing, as the user was created successfully
+          // Continue without throwing, as the team member was created successfully
         }
       }
       

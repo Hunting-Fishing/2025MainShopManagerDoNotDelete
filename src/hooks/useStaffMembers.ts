@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { handleApiError } from '@/utils/errorHandling';
 
 export interface StaffMember {
   id: string;
@@ -20,14 +21,14 @@ export function useStaffMembers(roleFilter?: string) {
       setIsLoading(true);
       setError(null);
       try {
-        // First try the correct join approach
+        // First try to fetch from the team_members table
         let { data, error: fetchError } = await supabase
-          .from('profiles')
+          .from('team_members')
           .select(`
             id, 
             first_name, 
             last_name, 
-            user_roles!left (
+            team_member_roles!left (
               role_id, 
               roles:role_id (
                 name
@@ -35,10 +36,9 @@ export function useStaffMembers(roleFilter?: string) {
             )
           `);
 
-        // If there's an error with the join, fall back to just fetching profiles
-        if (fetchError) {
-          console.error("Error with join query:", fetchError);
-          console.log("Falling back to simple profiles query");
+        // If the team_members table doesn't exist yet, fall back to profiles
+        if (fetchError && (fetchError.message.includes("relation") || fetchError.message.includes("does not exist"))) {
+          console.warn("Team members table not found, falling back to profiles:", fetchError);
           
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
@@ -50,29 +50,34 @@ export function useStaffMembers(roleFilter?: string) {
             return;
           }
           
-          // Add empty user_roles array to each profile in the fallback data
+          // Add empty team_member_roles array to each profile in the fallback data
           data = profilesData?.map(profile => ({
             ...profile,
-            user_roles: []
+            team_member_roles: []
           }));
+        } else if (fetchError) {
+          // Handle other errors
+          console.error("Error fetching staff members:", fetchError);
+          setError("Failed to load staff members");
+          return;
         }
 
-        if (!data) {
+        if (!data || data.length === 0) {
           setStaffMembers([]);
           return;
         }
 
         // Transform the data to match StaffMember interface
         const formattedStaff = data.map(staff => {
-          // Extract role from the nested user_roles data
+          // Extract role from the nested team_member_roles data
           let role = 'No Role';
           
-          if (staff.user_roles && 
-              Array.isArray(staff.user_roles) && 
-              staff.user_roles.length > 0 && 
-              staff.user_roles[0]?.roles) {
+          if (staff.team_member_roles && 
+              Array.isArray(staff.team_member_roles) && 
+              staff.team_member_roles.length > 0 && 
+              staff.team_member_roles[0]?.roles) {
             // Correctly access the role name
-            const rolesData = staff.user_roles[0].roles;
+            const rolesData = staff.team_member_roles[0].roles;
             if (rolesData && 
                 typeof rolesData === 'object' && 
                 'name' in rolesData && 
@@ -83,7 +88,7 @@ export function useStaffMembers(roleFilter?: string) {
           
           return {
             id: staff.id,
-            name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim(),
+            name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Unnamed',
             role: role,
             first_name: staff.first_name,
             last_name: staff.last_name
@@ -101,6 +106,7 @@ export function useStaffMembers(roleFilter?: string) {
       } catch (err) {
         console.error("Error in fetchStaffMembers:", err);
         setError("An unexpected error occurred");
+        handleApiError(err, "Failed to load team members");
       } finally {
         setIsLoading(false);
       }
