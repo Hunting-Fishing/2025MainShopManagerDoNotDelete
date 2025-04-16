@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
@@ -14,11 +14,13 @@ import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
 interface AssignmentSectionProps {
   form: UseFormReturn<WorkOrderFormValues>;
   technicians: string[];
+  isLoading?: boolean;
 }
 
 export const AssignmentSection: React.FC<AssignmentSectionProps> = ({ 
   form,
-  technicians
+  technicians,
+  isLoading = false
 }) => {
   return (
     <>
@@ -31,10 +33,18 @@ export const AssignmentSection: React.FC<AssignmentSectionProps> = ({
             <Select
               onValueChange={field.onChange}
               defaultValue={field.value}
+              disabled={isLoading}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Assign technician" />
+                  {isLoading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <span>Loading technicians...</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Assign technician" />
+                  )}
                 </SelectTrigger>
               </FormControl>
               <SelectContent>

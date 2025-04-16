@@ -4,23 +4,23 @@ import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeade
 import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm";
 import { WorkOrderTemplateSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
 import { WorkOrderTemplate } from "@/types/workOrder";
-import { supabase } from '@/integrations/supabase/client';
 import { useSearchParams } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
 import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
+import { useStaffMembers } from "@/hooks/useStaffMembers";
+import { useToast } from "@/hooks/use-toast";
 
 export default function WorkOrderCreate() {
   const { templates: workOrderTemplates, updateTemplateUsage } = useWorkOrderTemplates();
   const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplate | null>(null);
   const [searchParams] = useSearchParams();
-  const [technicians, setTechnicians] = useState<string[]>([
-    "Michael Brown",
-    "Sarah Johnson",
-    "David Lee",
-    "Emily Chen",
-    "Unassigned",
-  ]);
+  const { toast } = useToast();
+  
+  // Use the new hook to fetch technicians with role filter
+  const { staffMembers, isLoading: loadingTechnicians, error: techError } = useStaffMembers('technician');
+  
+  // Map staff members to technician names for the dropdown
+  const technicians = staffMembers.map(tech => tech.name);
 
   // Check if coming from vehicle details with pre-filled info
   const hasPreFilledInfo = searchParams.has('customerId') && searchParams.has('vehicleId');
@@ -36,42 +36,16 @@ export default function WorkOrderCreate() {
     ? `Creating a new work order for ${vehicleInfo}`
     : "Create a new work order for your team to complete.";
 
-  // Fetch technicians from Supabase
+  // Show error toast if technician fetch fails
   useEffect(() => {
-    const fetchTechnicians = async () => {
-      try {
-        // Try to fetch staff members from profiles table
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name')
-          .order('first_name', { ascending: true });
-          
-        if (error) {
-          console.error("Error fetching technicians:", error);
-          return; // Keep using default technicians
-        }
-        
-        if (data && data.length > 0) {
-          // Format technician names
-          const techniciansList = data.map(tech => 
-            `${tech.first_name || ''} ${tech.last_name || ''}`.trim()
-          ).filter(name => name.length > 0);
-          
-          // Add "Unassigned" option
-          if (!techniciansList.includes("Unassigned")) {
-            techniciansList.push("Unassigned");
-          }
-          
-          setTechnicians(techniciansList);
-          console.log("Fetched technicians:", techniciansList);
-        }
-      } catch (error) {
-        console.error("Error in fetchTechnicians:", error);
-      }
-    };
-    
-    fetchTechnicians();
-  }, []);
+    if (techError) {
+      toast({
+        title: "Error loading technicians",
+        description: "Could not load technicians from the database",
+        variant: "destructive"
+      });
+    }
+  }, [techError, toast]);
 
   const handleSelectTemplate = (template: WorkOrderTemplate) => {
     setSelectedTemplate(template);
@@ -99,6 +73,7 @@ export default function WorkOrderCreate() {
         <WorkOrderForm 
           technicians={technicians} 
           initialTemplate={selectedTemplate}
+          loadingTechnicians={loadingTechnicians}
         />
       </div>
     </ResponsiveContainer>

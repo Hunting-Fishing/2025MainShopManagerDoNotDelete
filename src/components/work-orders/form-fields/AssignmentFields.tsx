@@ -1,7 +1,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -14,11 +14,13 @@ import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
 interface AssignmentFieldsProps {
   form: UseFormReturn<WorkOrderFormFieldValues>;
   technicians: string[];
+  isLoading?: boolean;
 }
 
 export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
   form,
-  technicians
+  technicians,
+  isLoading = false
 }) => {
   return (
     <>
@@ -32,10 +34,18 @@ export const AssignmentFields: React.FC<AssignmentFieldsProps> = ({
             <Select
               onValueChange={field.onChange}
               defaultValue={field.value}
+              disabled={isLoading}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Assign technician" />
+                  {isLoading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <span>Loading technicians...</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Assign technician" />
+                  )}
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
