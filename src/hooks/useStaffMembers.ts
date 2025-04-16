@@ -5,7 +5,7 @@ import { handleApiError } from '@/utils/errorHandling';
 
 export interface StaffMember {
   id: string;
-  name: string;
+  name?: string;
   role: string;
   first_name?: string;
   last_name?: string;
@@ -21,7 +21,7 @@ export function useStaffMembers(roleFilter?: string) {
       setIsLoading(true);
       setError(null);
       try {
-        // Fetch from the new team_members table
+        // Fetch from the team_members table
         let { data, error: fetchError } = await supabase
           .from('team_members')
           .select(`
@@ -81,12 +81,15 @@ export function useStaffMembers(roleFilter?: string) {
             }
           }
           
+          // Create a full name from first and last name
+          const name = `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Unnamed';
+          
           return {
             id: staff.id,
-            name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Unnamed',
-            role: role,
+            name: name,
             first_name: staff.first_name,
-            last_name: staff.last_name
+            last_name: staff.last_name,
+            role: role
           };
         });
 

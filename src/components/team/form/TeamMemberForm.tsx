@@ -30,7 +30,8 @@ export function TeamMemberForm({ onSubmit, isSubmitting = false, initialData, mo
   const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberFormSchema),
     defaultValues: {
-      name: initialData?.name || '',
+      firstName: initialData?.firstName || '',
+      lastName: initialData?.lastName || '',
       email: initialData?.email || '',
       phone: initialData?.phone || '',
       jobTitle: initialData?.jobTitle || '',

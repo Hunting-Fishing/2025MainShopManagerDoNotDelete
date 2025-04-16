@@ -1,4 +1,3 @@
-
 import React from "react";
 import { X, Users, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -21,7 +20,9 @@ import {
 
 interface StaffMember {
   id: string;
-  name: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
   role: string;
 }
 
@@ -49,6 +50,15 @@ export function StaffAssignment({
   // Check if there are actually any staff members available
   const hasStaffMembers = staffMembers && staffMembers.length > 0;
   
+  // Function to get the full name of a staff member
+  const getFullName = (staff: StaffMember) => {
+    // If name is already provided, use it
+    if (staff.name) return staff.name;
+    
+    // Otherwise combine first and last name
+    return `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Unnamed';
+  };
+  
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -70,21 +80,24 @@ export function StaffAssignment({
             <div className="max-h-[300px] overflow-y-auto">
               <div className="space-y-3 mt-2">
                 {hasStaffMembers ? (
-                  staffMembers.map((staff) => (
-                    <div 
-                      key={staff.id} 
-                      className="flex justify-between items-center p-3 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer"
-                      onClick={() => onAddStaffMember(staff)}
-                    >
-                      <div>
-                        <div className="font-medium">{staff.name}</div>
-                        <div className="text-sm text-slate-500">{staff.role}</div>
+                  staffMembers.map((staff) => {
+                    const fullName = getFullName(staff);
+                    return (
+                      <div 
+                        key={staff.id} 
+                        className="flex justify-between items-center p-3 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer"
+                        onClick={() => onAddStaffMember({...staff, name: fullName})}
+                      >
+                        <div>
+                          <div className="font-medium">{fullName}</div>
+                          <div className="text-sm text-slate-500">{staff.role}</div>
+                        </div>
+                        <Button variant="ghost" size="sm">
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-center py-6 text-slate-500">
                     <div className="mb-2">No staff members available</div>
@@ -109,11 +122,14 @@ export function StaffAssignment({
           </SelectTrigger>
           <SelectContent>
             {hasStaffMembers ? (
-              staffMembers.map((staff) => (
-                <SelectItem key={staff.id} value={staff.name}>
-                  {staff.name}
-                </SelectItem>
-              ))
+              staffMembers.map((staff) => {
+                const fullName = getFullName(staff);
+                return (
+                  <SelectItem key={staff.id} value={fullName}>
+                    {fullName}
+                  </SelectItem>
+                );
+              })
             ) : (
               <SelectItem value="" disabled>No staff members available</SelectItem>
             )}

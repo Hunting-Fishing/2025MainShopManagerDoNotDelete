@@ -19,26 +19,21 @@ export default function CreateTeamMember() {
     setIsSubmitting(true);
     
     try {
-      // Parse the name into first and last names
-      const nameParts = data.name.split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-      
       console.log("Creating team member with data:", {
-        firstName,
-        lastName,
+        firstName: data.firstName,
+        lastName: data.lastName,
         email: data.email,
         jobTitle: data.jobTitle,
         department: data.department
       });
       
-      // Create team member record in our new team_members table
+      // Create team member record in our team_members table
       const { data: teamMemberData, error: createError } = await supabase
         .from('team_members')
         .insert({
           email: data.email,
-          first_name: firstName,
-          last_name: lastName,
+          first_name: data.firstName,
+          last_name: data.lastName,
           phone: data.phone || null,
           job_title: data.jobTitle,
           department: data.department,
@@ -119,7 +114,7 @@ export default function CreateTeamMember() {
       // Show success message
       toast({
         title: "Team member created",
-        description: `${data.name} has been added to your team.`,
+        description: `${data.firstName} ${data.lastName} has been added to your team.`,
       });
       
       // Redirect to team page

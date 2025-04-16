@@ -20,14 +20,16 @@ export function useTeamMemberUpdate() {
     try {
       // Update the profile record
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from('team_members')
         .update({
-          first_name: formData.name.split(' ')[0],
-          last_name: formData.name.split(' ').slice(1).join(' '),
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           email: formData.email,
           phone: formData.phone,
           job_title: formData.jobTitle,
           department: formData.department,
+          status: formData.status ? 'Active' : 'Inactive',
+          notes: formData.notes
         })
         .eq('id', memberId);
 

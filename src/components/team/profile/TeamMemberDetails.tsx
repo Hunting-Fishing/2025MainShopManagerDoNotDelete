@@ -17,7 +17,8 @@ export function TeamMemberDetails({ member, activeTab }: TeamMemberDetailsProps)
   // Convert member data to form values format for editing
   const initialFormData = {
     id: member.id,
-    name: member.name,
+    firstName: member.first_name || '',
+    lastName: member.last_name || '',
     email: member.email,
     phone: member.phone || '',
     jobTitle: member.jobTitle || '',
