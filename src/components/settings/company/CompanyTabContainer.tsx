@@ -10,6 +10,7 @@ import { BusinessHoursSection } from "./BusinessHoursSection";
 import { useCompanySettings } from "@/hooks/company-settings/useCompanySettings";
 import { CompanyTabSkeleton } from "./CompanyTabSkeleton";
 import { useToast } from "@/hooks/use-toast";
+import { CompanyInfo } from "@/services/settings/companyService.types";
 
 export function CompanyTabContainer() {
   const [activeTab, setActiveTab] = useState("basic");
@@ -168,7 +169,7 @@ export function CompanyTabContainer() {
 
                 <TabsContent value="business" className="mt-0">
                   <BusinessInfoSection
-                    companyInfo={companyInfo}
+                    companyInfo={companyInfo}  // This now matches the CompanyInfo type
                     businessTypes={businessTypes}
                     businessIndustries={businessIndustries}
                     isLoadingConstants={isLoadingConstants}
