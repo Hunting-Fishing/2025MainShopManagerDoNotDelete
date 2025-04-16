@@ -157,6 +157,9 @@ export function useCompanyInfo() {
           description: "Logo uploaded successfully",
           variant: "success"
         });
+        
+        // Set data as changed since we've updated the logo
+        setDataChanged(true);
       }
     } catch (error) {
       console.error("Error uploading logo:", error);

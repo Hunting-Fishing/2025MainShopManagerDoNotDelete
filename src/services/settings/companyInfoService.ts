@@ -158,23 +158,30 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
     
     console.log("Company info updated successfully:", data);
     
-    // Return formatted data
-    const updatedCompanyInfo: CompanyInfo = {
-      name: data[0]?.name || companyInfo.name,
-      address: data[0]?.address || companyInfo.address,
-      city: data[0]?.city || companyInfo.city,
-      state: data[0]?.state || companyInfo.state,
-      zip: data[0]?.postal_code || companyInfo.zip,
-      phone: formatPhoneNumber(data[0]?.phone || companyInfo.phone),
-      email: data[0]?.email || companyInfo.email,
-      taxId: data[0]?.tax_id || companyInfo.taxId,
-      businessType: data[0]?.business_type || companyInfo.businessType,
-      industry: data[0]?.industry || companyInfo.industry,
-      otherIndustry: data[0]?.other_industry || companyInfo.otherIndustry,
-      logoUrl: data[0]?.logo_url || companyInfo.logoUrl
-    };
+    // Make sure we're returning consistent data format even if the response is empty
+    let updatedInfo: CompanyInfo;
     
-    return { success: true, data: updatedCompanyInfo };
+    if (data && data.length > 0) {
+      updatedInfo = {
+        name: data[0]?.name || companyInfo.name,
+        address: data[0]?.address || companyInfo.address,
+        city: data[0]?.city || companyInfo.city,
+        state: data[0]?.state || companyInfo.state,
+        zip: data[0]?.postal_code || companyInfo.zip,
+        phone: formatPhoneNumber(data[0]?.phone || companyInfo.phone),
+        email: data[0]?.email || companyInfo.email,
+        taxId: data[0]?.tax_id || companyInfo.taxId,
+        businessType: data[0]?.business_type || companyInfo.businessType,
+        industry: data[0]?.industry || companyInfo.industry,
+        otherIndustry: data[0]?.other_industry || companyInfo.otherIndustry,
+        logoUrl: data[0]?.logo_url || companyInfo.logoUrl
+      };
+    } else {
+      // If no data returned, use the input data as the result
+      updatedInfo = { ...companyInfo };
+    }
+    
+    return { success: true, data: updatedInfo };
   } catch (error) {
     console.error("Error updating company info:", error);
     throw error;

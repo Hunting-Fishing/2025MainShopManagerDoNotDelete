@@ -35,7 +35,7 @@ export function CompanyTabContainer() {
     loadCompanyInfo
   } = useCompanyInfo();
 
-  // Debug logs
+  // Debug logs to track the state
   useEffect(() => {
     if (initialized && !loading) {
       console.log("Company info in container:", companyInfo);
@@ -63,6 +63,13 @@ export function CompanyTabContainer() {
   useEffect(() => {
     console.log("Active tab changed to:", activeTab);
   }, [activeTab]);
+
+  // Reload data when save operation completes
+  useEffect(() => {
+    if (saveComplete) {
+      loadCompanyInfo(false);
+    }
+  }, [saveComplete, loadCompanyInfo]);
 
   return (
     <div className="space-y-6">
