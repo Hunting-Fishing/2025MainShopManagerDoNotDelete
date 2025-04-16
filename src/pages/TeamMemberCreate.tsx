@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { TeamMemberFormValues } from "@/components/team/form/formValidation";
+import { handleApiError } from "@/utils/errorHandling";
 
 export default function CreateTeamMember() {
   const navigate = useNavigate();
@@ -18,68 +19,102 @@ export default function CreateTeamMember() {
     setIsSubmitting(true);
     
     try {
-      // Parse the name into first and last names for the API
-      const nameParts = data.name.split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
+      console.log("Creating team member with data:", {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        jobTitle: data.jobTitle,
+        department: data.department
+      });
       
-      // Generate a UUID for new profiles (will be ignored if profile already exists)
-      const newProfileId = crypto.randomUUID();
-      
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: newProfileId, // Include ID for new profiles
+      // Create team member record in our team_members table
+      const { data: teamMemberData, error: createError } = await supabase
+        .from('team_members')
+        .insert({
           email: data.email,
-          first_name: firstName,
-          last_name: lastName,
+          first_name: data.firstName,
+          last_name: data.lastName,
           phone: data.phone || null,
           job_title: data.jobTitle,
-          department: data.department
-        }, { 
-          onConflict: 'email',  // Handle conflict based on email column
-          ignoreDuplicates: false // Update the row if it already exists
+          department: data.department,
+          status: data.status ? 'Active' : 'Inactive',
+          notes: data.notes || null
         })
         .select('id, email')
         .single();
 
-      if (profileError) {
-        throw profileError;
+      if (createError) {
+        // Handle specific errors
+        if (createError.code === '23505') {
+          throw new Error('A team member with this email already exists.');
+        }
+        
+        console.error("Team member creation error:", createError);
+        throw createError;
       }
 
-      if (!profileData) {
-        throw new Error('Failed to create team member profile');
+      if (!teamMemberData) {
+        throw new Error('Failed to create team member');
       }
+
+      console.log("Created team member with ID:", teamMemberData.id);
 
       // Find the role ID for the selected role
       const { data: roleData, error: roleError } = await supabase
         .from('roles')
         .select('id')
-        .ilike('name', data.role.toLowerCase())
+        .eq('name', data.role.toLowerCase())
         .single();
 
       if (roleError) {
         console.warn(`Role not found for ${data.role}, will skip role assignment:`, roleError);
       } else if (roleData) {
-        // Assign the role to the user
+        // Assign the role to the team member
         const { error: roleAssignError } = await supabase
-          .from('user_roles')
+          .from('team_member_roles')
           .insert({
-            user_id: profileData.id,
+            team_member_id: teamMemberData.id,
             role_id: roleData.id
           });
 
         if (roleAssignError) {
           console.error('Error assigning role:', roleAssignError);
-          // Continue without throwing, as the user was created successfully
+          // Continue without throwing, as the team member was created successfully
         }
+      }
+      
+      // Record the team member creation history
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (userData?.user) {
+        // Get the current user's name for the history record
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', userData.user.id)
+          .single();
+          
+        const userName = userProfile 
+          ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() 
+          : 'System';
+          
+        await supabase.rpc('record_team_member_history', {
+          profile_id_param: teamMemberData.id,
+          action_type_param: 'creation',
+          action_by_param: userData.user.id,
+          action_by_name_param: userName,
+          details_param: {
+            email: data.email,
+            role: data.role,
+            timestamp: new Date().toISOString()
+          }
+        });
       }
       
       // Show success message
       toast({
         title: "Team member created",
-        description: `${data.name} has been added to your team.`,
-        variant: "success",
+        description: `${data.firstName} ${data.lastName} has been added to your team.`,
       });
       
       // Redirect to team page
@@ -88,11 +123,8 @@ export default function CreateTeamMember() {
     } catch (error: any) {
       console.error('Error creating team member:', error);
       
-      toast({
-        title: "Error creating team member",
-        description: error.message || "There was a problem creating the team member. Please try again.",
-        variant: "destructive",
-      });
+      // Use our error handling utility
+      handleApiError(error, "Could not create team member. Please check the information and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -122,7 +154,7 @@ export default function CreateTeamMember() {
 
       <Card className="p-6">
         <p className="text-muted-foreground mb-6">
-          Fill out the form below to invite a new team member. They will receive an email invitation to join your organization.
+          Fill out the form below to add a new team member to your organization.
         </p>
         
         <TeamMemberForm 
