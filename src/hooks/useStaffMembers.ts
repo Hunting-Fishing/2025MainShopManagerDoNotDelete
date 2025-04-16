@@ -20,7 +20,8 @@ export function useStaffMembers(roleFilter?: string) {
       setIsLoading(true);
       setError(null);
       try {
-        let query = supabase
+        // First try the correct join approach
+        let { data, error: fetchError } = await supabase
           .from('profiles')
           .select(`
             id, 
@@ -34,12 +35,22 @@ export function useStaffMembers(roleFilter?: string) {
             )
           `);
 
-        const { data, error: fetchError } = await query;
-
+        // If there's an error with the join, fall back to just fetching profiles
         if (fetchError) {
-          console.error("Error fetching staff members:", fetchError);
-          setError("Failed to load staff members");
-          return;
+          console.error("Error with join query:", fetchError);
+          console.log("Falling back to simple profiles query");
+          
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name');
+            
+          if (profilesError) {
+            console.error("Error fetching staff members:", profilesError);
+            setError("Failed to load staff members");
+            return;
+          }
+          
+          data = profilesData;
         }
 
         if (!data) {

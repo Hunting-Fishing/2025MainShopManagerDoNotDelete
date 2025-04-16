@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 
 interface StaffMember {
-  id: number;
+  id: string;
   name: string;
   role: string;
 }
@@ -66,21 +66,27 @@ export function StaffAssignment({
             </DialogHeader>
             <div className="max-h-[300px] overflow-y-auto">
               <div className="space-y-3 mt-2">
-                {staffMembers.map((staff) => (
-                  <div 
-                    key={staff.id} 
-                    className="flex justify-between items-center p-3 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer"
-                    onClick={() => onAddStaffMember(staff)}
-                  >
-                    <div>
-                      <div className="font-medium">{staff.name}</div>
-                      <div className="text-sm text-slate-500">{staff.role}</div>
+                {staffMembers.length > 0 ? (
+                  staffMembers.map((staff) => (
+                    <div 
+                      key={staff.id} 
+                      className="flex justify-between items-center p-3 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => onAddStaffMember(staff)}
+                    >
+                      <div>
+                        <div className="font-medium">{staff.name}</div>
+                        <div className="text-sm text-slate-500">{staff.role}</div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-slate-500">
+                    No staff members available
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </DialogContent>
@@ -98,11 +104,15 @@ export function StaffAssignment({
             <SelectValue placeholder="Select creator" />
           </SelectTrigger>
           <SelectContent>
-            {staffMembers.map((staff) => (
-              <SelectItem key={staff.id} value={staff.name}>
-                {staff.name}
-              </SelectItem>
-            ))}
+            {staffMembers.length > 0 ? (
+              staffMembers.map((staff) => (
+                <SelectItem key={staff.id} value={staff.name}>
+                  {staff.name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>No staff members available</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>

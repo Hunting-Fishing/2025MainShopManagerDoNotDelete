@@ -20,6 +20,15 @@ export const handleApiError = (error: any, fallbackMessage = "An unexpected erro
     errorMessage = error;
   }
   
+  // Special handling for common database errors
+  if (error?.code === '23503') {
+    if (error.message.includes('profiles_id_fkey')) {
+      errorMessage = "Unable to create team member: User authentication record not found.";
+    } else if (error.details) {
+      errorMessage = `Database constraint error: ${error.details}`;
+    }
+  }
+  
   // Show toast notification
   toast({
     title: "Error",
@@ -86,4 +95,3 @@ export const handleNetworkError = () => {
   
   return { message };
 };
-
