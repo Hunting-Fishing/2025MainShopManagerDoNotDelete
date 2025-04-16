@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { companyService } from '@/services/settings/companyService';
-import { CompanyInfo } from '@/services/settings/companyService';
+import { CompanyInfo } from '@/services/settings/companyService.types';
 
 export function useCompanyBasicInfo() {
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({

@@ -1,12 +1,75 @@
+
 import { supabase } from "@/lib/supabase";
-import { CompanyInfo, BusinessHours } from "./companyService.types";
+import { CompanyInfo } from "./companyService.types";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/utils/formatters";
 
-// Re-export the types
-export type { CompanyInfo, BusinessHours };
+/**
+ * Upload a logo file to Supabase storage for a shop
+ * @param shopId - The shop ID
+ * @param file - The file to upload
+ * @returns The public URL of the uploaded file
+ */
+export async function uploadLogo(shopId: string, file: File): Promise<string> {
+  try {
+    console.log("Starting logo upload for shop:", shopId);
+    // Validate file
+    if (!file) {
+      throw new Error('No file provided');
+    }
 
-// Helper function to get company info from either shops table or company_settings
-async function getShopInfo() {
+    // Generate a unique filename
+    const fileName = `${shopId}_${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    const filePath = `${shopId}/${fileName}`;
+
+    console.log("Uploading logo to path:", filePath);
+    
+    // Upload file to Supabase storage using the 'shop_logos' bucket
+    const { data, error } = await supabase.storage
+      .from('shop_logos')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type
+      });
+
+    if (error) {
+      console.error('Storage upload error:', error);
+      throw error;
+    }
+
+    console.log('Upload successful:', data);
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('shop_logos')
+      .getPublicUrl(filePath);
+
+    console.log('Logo public URL:', publicUrl);
+
+    // Update shop record with logo URL
+    const { data: updatedShop, error: updateError } = await supabase
+      .from('shops')
+      .update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq('id', shopId)
+      .select('*');
+
+    if (updateError) {
+      console.error('Shop update error:', updateError);
+      throw updateError;
+    }
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Logo upload failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get shop information for the current user
+ * @returns Shop information
+ */
+export async function getShopInfo(): Promise<{shopId: string, companyInfo: CompanyInfo}> {
   try {
     // Get the current authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -43,41 +106,7 @@ async function getShopInfo() {
     
     console.log("Found shop ID:", shopId);
     
-    // First try to get company info from company_settings table
-    const { data: settingsData, error: settingsError } = await supabase
-      .from('company_settings')
-      .select('settings_value')
-      .eq('shop_id', shopId)
-      .eq('settings_key', 'business_profile')
-      .single();
-    
-    // If company_settings has data, use it
-    if (!settingsError && settingsData) {
-      console.log("Found company info in company_settings:", settingsData);
-      
-      // Extract values from settings_value JSONB
-      const settings = settingsData.settings_value;
-      
-      // Map settings to CompanyInfo structure
-      const companyInfo: CompanyInfo = {
-        name: settings.name || "",
-        address: settings.address || "",
-        city: settings.city || "",
-        state: settings.state || "",
-        zip: settings.postal_code || settings.zip || "",
-        phone: settings.phone ? formatPhoneNumber(settings.phone) : "",
-        email: settings.email || "",
-        taxId: settings.tax_id || settings.taxId || "",
-        businessType: settings.business_type || settings.businessType || "",
-        industry: settings.industry || "",
-        otherIndustry: settings.other_industry || settings.otherIndustry || "",
-        logoUrl: settings.logo_url || settings.logoUrl || ""
-      };
-      
-      return { shopId, companyInfo };
-    }
-    
-    // Fallback to getting info directly from shops table
+    // Get shop details
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('*')
@@ -112,6 +141,8 @@ async function getShopInfo() {
       logoUrl: shop?.logo_url || ""
     };
     
+    console.log("Formatted company info:", companyInfo);
+    
     return { shopId, companyInfo };
   } catch (error) {
     console.error("Error fetching shop info:", error);
@@ -119,61 +150,22 @@ async function getShopInfo() {
   }
 }
 
-async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
+/**
+ * Update company information in the database
+ * @param shopId - The shop ID
+ * @param companyInfo - The company information to update
+ * @returns Updated company information
+ */
+export async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo): Promise<{success: boolean, data: CompanyInfo}> {
   try {
     if (!shopId) {
       throw new Error("Shop ID is required for updating company information");
     }
     
-    console.log("Updating company info:", companyInfo);
-    
     // Clean phone number before saving
     const cleanedPhone = cleanPhoneNumber(companyInfo.phone || '');
-    
-    // First, check if we have an entry in company_settings
-    const { data: existingSettings } = await supabase
-      .from('company_settings')
-      .select('*')
-      .eq('shop_id', shopId)
-      .eq('settings_key', 'business_profile');
-    
-    // Prepare the business profile data for JSONB storage
-    const businessProfileData = {
-      name: companyInfo.name,
-      address: companyInfo.address,
-      city: companyInfo.city,
-      state: companyInfo.state,
-      postal_code: companyInfo.zip,
-      phone: cleanedPhone,
-      email: companyInfo.email,
-      tax_id: companyInfo.taxId,
-      business_type: companyInfo.businessType,
-      industry: companyInfo.industry,
-      other_industry: companyInfo.otherIndustry,
-      logo_url: companyInfo.logoUrl,
-      updated_at: new Date().toISOString()
-    };
-    
-    // Use upsert to either update or insert into company_settings
-    const { data: settingsData, error: settingsError } = await supabase
-      .from('company_settings')
-      .upsert({
-        id: existingSettings && existingSettings.length > 0 ? existingSettings[0].id : undefined,
-        shop_id: shopId,
-        settings_key: 'business_profile',
-        settings_value: businessProfileData,
-        updated_at: new Date().toISOString(),
-        created_at: existingSettings && existingSettings.length > 0 ? existingSettings[0].created_at : new Date().toISOString()
-      })
-      .select();
-    
-    if (settingsError) {
-      console.error("Error updating company_settings:", settingsError);
-    } else {
-      console.log("Updated company_settings successfully:", settingsData);
-    }
-    
-    // Also update the shops table for backward compatibility
+    console.log("Original phone:", companyInfo.phone, "Cleaned phone:", cleanedPhone);
+
     const updateData = {
       name: companyInfo.name,
       address: companyInfo.address,
@@ -186,11 +178,10 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       business_type: companyInfo.businessType,
       industry: companyInfo.industry,
       other_industry: companyInfo.otherIndustry,
-      logo_url: companyInfo.logoUrl,
       updated_at: new Date().toISOString()
     };
     
-    console.log("Also updating shops table with:", updateData);
+    console.log("Updating shop with data:", updateData);
     
     const { data, error } = await supabase
       .from('shops')
@@ -200,96 +191,72 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
       
     if (error) {
       console.error("Error updating shop info:", error);
-      // We won't throw here since we've already updated company_settings
-      console.warn("Failed to update shops table, but company_settings was updated");
+      throw error;
     }
     
-    console.log("Company info updated successfully in both tables");
+    console.log("Company info updated successfully:", data);
     
-    // Return the updated company info
-    return { success: true, data: companyInfo };
+    // Make sure we're returning consistent data format even if the response is empty
+    let updatedInfo: CompanyInfo;
+    
+    if (data && data.length > 0) {
+      const shopData = data[0];
+      updatedInfo = {
+        name: shopData?.name || companyInfo.name,
+        address: shopData?.address || companyInfo.address,
+        city: shopData?.city || companyInfo.city,
+        state: shopData?.state || companyInfo.state,
+        zip: shopData?.postal_code || companyInfo.zip,
+        phone: shopData?.phone ? formatPhoneNumber(shopData.phone) : companyInfo.phone,
+        email: shopData?.email || companyInfo.email,
+        taxId: shopData?.tax_id || companyInfo.taxId,
+        businessType: shopData?.business_type || companyInfo.businessType,
+        industry: shopData?.industry || companyInfo.industry,
+        otherIndustry: shopData?.other_industry || companyInfo.otherIndustry,
+        logoUrl: shopData?.logo_url || companyInfo.logoUrl
+      };
+    } else {
+      // If no data returned, use the input data as the result
+      updatedInfo = { ...companyInfo };
+    }
+    
+    return { success: true, data: updatedInfo };
   } catch (error) {
     console.error("Error updating company info:", error);
     throw error;
   }
 }
 
-async function uploadLogo(shopId: string, file: File) {
+/**
+ * Add a custom industry to the database
+ * @param industryName - The custom industry name to add
+ * @returns The ID of the newly created industry
+ */
+export async function addCustomIndustry(industryName: string): Promise<string | null> {
   try {
-    // Validate file
-    if (!file) {
-      throw new Error('No file provided');
-    }
-
-    // Generate a unique filename
-    const fileName = `${shopId}_${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-    const filePath = `${shopId}/${fileName}`;
-
-    console.log("Uploading logo:", fileName);
-    
-    // Create shop_logos bucket if it doesn't exist
-    const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('shop_logos');
-    
-    if (bucketError && bucketError.message.includes('not found')) {
-      console.log("Creating shop_logos bucket");
-      const { error: createBucketError } = await supabase.storage.createBucket('shop_logos', { public: true });
-      
-      if (createBucketError) {
-        console.error('Error creating bucket:', createBucketError);
-        throw createBucketError;
-      }
-    }
-    
-    // Upload file to Supabase storage
-    const { data, error } = await supabase.storage
-      .from('shop_logos')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType: file.type
-      });
+    // Call the database function to add a custom industry
+    const { data, error } = await supabase
+      .rpc('addcustomindustry', { industry_name: industryName });
 
     if (error) {
-      console.error('Storage upload error:', error);
+      console.error('Error adding custom industry:', error);
       throw error;
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('shop_logos')
-      .getPublicUrl(filePath);
-
-    console.log('Logo uploaded, public URL:', publicUrl);
-
-    // Update shop record with logo URL
-    const { data: updatedShop, error: updateError } = await supabase
-      .from('shops')
-      .update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
-      .eq('id', shopId)
-      .select('*');
-
-    if (updateError) {
-      console.error('Shop update error:', updateError);
-      throw updateError;
-    }
-
-    return publicUrl;
+    return data;
   } catch (error) {
-    console.error('Logo upload failed:', error);
+    console.error('Error in addCustomIndustry:', error);
     throw error;
   }
 }
 
-// Business Hours Methods
-async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
+/**
+ * Get business hours for a shop
+ * @param shopId - The shop ID
+ * @returns Array of business hours
+ */
+export async function getBusinessHours(shopId: string) {
   try {
-    console.log("Fetching business hours for shop:", shopId);
-    
-    if (!shopId) {
-      console.error("No shop ID provided to getBusinessHours");
-      throw new Error("Shop ID is required");
-    }
-    
     const { data, error } = await supabase
       .from('shop_hours')
       .select('*')
@@ -301,195 +268,80 @@ async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
       throw error;
     }
     
-    console.log("Raw business hours data:", data);
-    
-    // If no business hours exist yet, create default business hours
-    if (!data || data.length === 0) {
-      const defaultHours = [];
-      for (let i = 0; i < 7; i++) {
-        defaultHours.push({
-          day_of_week: i,
-          open_time: '09:00:00',
-          close_time: '17:00:00',
-          is_closed: i === 0 || i === 6, // Default closed on weekends
-          shop_id: shopId
-        });
-      }
-      return defaultHours;
-    }
-    
-    // Filter out duplicate entries - keep only unique day_of_week values
-    const uniqueHours = [];
-    const dayMap = new Map();
-    
-    for (const hour of data) {
-      if (!dayMap.has(hour.day_of_week)) {
-        dayMap.set(hour.day_of_week, true);
-        uniqueHours.push(hour);
-      }
-    }
-    
-    // Ensure all 7 days are represented
-    const daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
-    const existingDays = uniqueHours.map(h => h.day_of_week);
-    
-    for (const day of daysOfWeek) {
-      if (!existingDays.includes(day)) {
-        uniqueHours.push({
-          day_of_week: day,
-          open_time: '09:00:00',
-          close_time: '17:00:00',
-          is_closed: day === 0 || day === 6, // Default closed on weekends
-          shop_id: shopId
-        });
-      }
-    }
-    
-    // Sort by day of week
-    uniqueHours.sort((a, b) => a.day_of_week - b.day_of_week);
-    
-    console.log("Processed business hours:", uniqueHours);
-    
-    return uniqueHours;
+    return data || [];
   } catch (error) {
     console.error("Error in getBusinessHours:", error);
     throw error;
   }
 }
 
-async function updateBusinessHours(shopId: string, businessHours: BusinessHours[]) {
+/**
+ * Update business hours for a shop
+ * @param shopId - The shop ID
+ * @param businessHours - Array of business hours
+ * @returns Updated business hours
+ */
+export async function updateBusinessHours(shopId: string, businessHours: any[]) {
   try {
-    console.log("Updating business hours for shop", shopId);
-    
     if (!shopId) {
-      console.error("No shop ID provided to updateBusinessHours");
-      throw new Error("Shop ID is required");
+      throw new Error("Shop ID is required for updating business hours");
     }
     
-    if (!businessHours || !Array.isArray(businessHours) || businessHours.length === 0) {
-      console.error("Invalid business hours data:", businessHours);
-      throw new Error("Valid business hours data is required");
+    if (!businessHours || businessHours.length === 0) {
+      return null;
     }
     
-    // First, delete existing business hours
-    const { error: deleteError } = await supabase
-      .from('shop_hours')
-      .delete()
-      .eq('shop_id', shopId);
-      
-    if (deleteError) {
-      console.error("Error deleting existing business hours:", deleteError);
-      throw deleteError;
+    // Process each business hour entry
+    for (const hour of businessHours) {
+      if (hour.id) {
+        // Update existing record
+        const { error } = await supabase
+          .from('shop_hours')
+          .update({
+            open_time: hour.open_time,
+            close_time: hour.close_time,
+            is_closed: hour.is_closed,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', hour.id);
+          
+        if (error) {
+          console.error(`Error updating business hour (${hour.day_of_week}):`, error);
+          throw error;
+        }
+      } else {
+        // Create new record
+        const { error } = await supabase
+          .from('shop_hours')
+          .insert({
+            shop_id: shopId,
+            day_of_week: hour.day_of_week,
+            open_time: hour.open_time,
+            close_time: hour.close_time,
+            is_closed: hour.is_closed
+          });
+          
+        if (error) {
+          console.error(`Error creating business hour (${hour.day_of_week}):`, error);
+          throw error;
+        }
+      }
     }
     
-    // Then insert new business hours
-    const hoursToInsert = businessHours.map(hour => ({
-      shop_id: shopId,
-      day_of_week: hour.day_of_week,
-      open_time: hour.open_time,
-      close_time: hour.close_time,
-      is_closed: hour.is_closed
-    }));
-    
-    console.log("Inserting new business hours:", hoursToInsert);
-    
-    const { data, error } = await supabase
-      .from('shop_hours')
-      .insert(hoursToInsert)
-      .select('*');
-      
-    if (error) {
-      console.error("Error inserting business hours:", error);
-      throw error;
-    }
-    
-    console.log("Business hours updated successfully, returned data:", data);
-    
-    // Return the newly inserted hours to ensure state is up-to-date
-    return data || hoursToInsert;
+    // Fetch updated business hours
+    return await getBusinessHours(shopId);
   } catch (error) {
-    console.error("Error in updateBusinessHours:", error);
+    console.error("Error updating business hours:", error);
     throw error;
   }
 }
 
-// Business Industry Methods
-async function addCustomIndustry(industryName: string) {
-  try {
-    const { data, error } = await supabase
-      .from('business_industries')
-      .insert({
-        value: industryName.toLowerCase().replace(/\s+/g, '_'),
-        label: industryName
-      })
-      .select();
-      
-    if (error) {
-      console.error("Error adding custom industry:", error);
-      throw error;
-    }
-    
-    return data && data.length > 0 ? data[0] : null;
-  } catch (error) {
-    console.error("Error in addCustomIndustry:", error);
-    throw error;
-  }
-}
-
-// Check if required tables exist
-async function checkTablesExist() {
-  try {
-    // Check if shops table exists
-    const { error: shopsError } = await supabase
-      .from('shops')
-      .select('id')
-      .limit(1);
-      
-    if (shopsError && shopsError.message.includes('does not exist')) {
-      console.error("Shops table does not exist!");
-      return {
-        shopsTableExists: false,
-        businessHoursTableExists: false,
-        error: "Database setup incomplete: shops table missing"
-      };
-    }
-    
-    // Check if shop_hours table exists
-    const { error: hoursError } = await supabase
-      .from('shop_hours')
-      .select('id')
-      .limit(1);
-    
-    if (hoursError && hoursError.message.includes('does not exist')) {
-      console.error("Shop_hours table does not exist!");
-      return {
-        shopsTableExists: true,
-        businessHoursTableExists: false,
-        error: "Database setup incomplete: shop_hours table missing"
-      };
-    }
-    
-    return {
-      shopsTableExists: true,
-      businessHoursTableExists: true,
-      error: null
-    };
-  } catch (error) {
-    console.error("Error checking tables:", error);
-    return {
-      shopsTableExists: false,
-      businessHoursTableExists: false,
-      error: "Failed to check database tables"
-    };
-  }
-}
-
+// Export service functions as an object
 export const companyService = {
   getShopInfo,
   updateCompanyInfo,
   uploadLogo,
   getBusinessHours,
   updateBusinessHours,
-  addCustomIndustry,
-  checkTablesExist
+  addCustomIndustry
 };
