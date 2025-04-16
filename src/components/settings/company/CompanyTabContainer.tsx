@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,13 +6,11 @@ import { Building, CircleDollarSign, Clock, Save } from "lucide-react";
 import { BasicInfoSection } from "./BasicInfoSection";
 import { BusinessInfoSection } from "./BusinessInfoSection";
 import { BusinessHoursSection } from "./BusinessHoursSection";
-import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { useCompanySettings } from "@/hooks/company-settings/useCompanySettings";
 import { CompanyTabSkeleton } from "./CompanyTabSkeleton";
-import { useToast } from "@/hooks/use-toast";
 
 export function CompanyTabContainer() {
   const [activeTab, setActiveTab] = useState("basic");
-  const { toast } = useToast();
   
   const {
     companyInfo,
@@ -32,8 +29,13 @@ export function CompanyTabContainer() {
     handleBusinessHoursChange,
     handleFileUpload,
     handleSave,
-    loadCompanyInfo
-  } = useCompanyInfo();
+    initialize
+  } = useCompanySettings();
+
+  // Initialize data
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   // Debug logs to track the state
   useEffect(() => {
@@ -67,9 +69,9 @@ export function CompanyTabContainer() {
   // Reload data when save operation completes
   useEffect(() => {
     if (saveComplete) {
-      loadCompanyInfo(false);
+      initialize();
     }
-  }, [saveComplete, loadCompanyInfo]);
+  }, [saveComplete, initialize]);
 
   return (
     <div className="space-y-6">
