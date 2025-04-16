@@ -27,6 +27,7 @@ export function useCompanyBasicInfo() {
     try {
       if (showLoadingState) setLoading(true);
       const { shopId, companyInfo: info } = await companyService.getShopInfo();
+      console.log("Loaded company info from service:", info);
       setCompanyInfo({
         ...info,
         otherIndustry: info.otherIndustry || ""

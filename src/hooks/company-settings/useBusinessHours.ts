@@ -3,9 +3,10 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { companyService } from '@/services/settings/companyService';
 import { handleApiError } from '@/utils/errorHandling';
+import { BusinessHours } from '@/services/settings/companyService';
 
 export function useBusinessHours() {
-  const [businessHours, setBusinessHours] = useState<any[]>([]);
+  const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
