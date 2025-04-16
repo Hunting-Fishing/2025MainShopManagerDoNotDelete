@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { companyService } from "@/services/settings/companyService";
-import { CompanyInfo } from "@/services/settings/companyService";
+import { CompanyInfo } from "@/services/settings/companyService.types";
 import { useBusinessConstants } from "@/hooks/useBusinessConstants";
 import { cleanPhoneNumber } from "@/utils/formatters";
 

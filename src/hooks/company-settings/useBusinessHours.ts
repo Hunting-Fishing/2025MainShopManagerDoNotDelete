@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { companyService } from '@/services/settings/companyService';
 import { handleApiError } from '@/utils/errorHandling';
-import { BusinessHours } from '@/services/settings/companyService';
+import { BusinessHours } from '@/services/settings/companyService.types';
 
 export function useBusinessHours() {
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);

@@ -2,7 +2,7 @@
 import React from "react";
 import { FormField } from "@/components/ui/form-field";
 import { LogoUploadSection } from "./LogoUploadSection";
-import { CompanyInfo } from "@/services/settings/companyService";
+import { CompanyInfo } from "@/services/settings/companyService.types";
 import { formatPhoneNumber } from "@/utils/formatters";
 
 interface BasicInfoSectionProps {

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
-import { BusinessHours } from "./companyService";
+import { BusinessHours } from "./companyService.types";
 
 async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
   try {

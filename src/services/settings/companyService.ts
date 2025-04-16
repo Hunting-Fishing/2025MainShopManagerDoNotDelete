@@ -1,6 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
-import { CompanyInfo } from "./companyService.types";
+import { CompanyInfo, BusinessHours } from "./companyService.types";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/utils/formatters";
 
 /**
@@ -345,3 +345,6 @@ export const companyService = {
   updateBusinessHours,
   addCustomIndustry
 };
+
+// Re-export the types so they can be imported from this module
+export type { CompanyInfo, BusinessHours };
