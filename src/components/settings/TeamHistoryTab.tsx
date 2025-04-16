@@ -61,10 +61,10 @@ export const TeamHistoryTab = () => {
       </div>
 
       {filteredHistory.length === 0 ? (
-        <HistoryEmptyState hasFilters={hasFilters} />
+        <HistoryEmptyState hasFilters={hasFilters} onRefresh={handleRefresh} />
       ) : (
         <HistoryTable records={filteredHistory} />
       )}
     </div>
   );
-};
+}
