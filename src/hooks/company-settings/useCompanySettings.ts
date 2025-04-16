@@ -40,10 +40,16 @@ export function useCompanySettings() {
         await loadBusinessHours(id);
       }
       setInitialized(true);
+      setDataChanged(false); // Reset data changed flag after successful initialization
     } catch (error) {
       console.error("Failed to initialize company settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load company settings",
+        variant: "destructive"
+      });
     }
-  }, [loadCompanyInfo, loadBusinessHours]);
+  }, [loadCompanyInfo, loadBusinessHours, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -68,31 +74,39 @@ export function useCompanySettings() {
   };
 
   const handleSave = async () => {
-    if (!shopId) return;
+    if (!shopId) {
+      toast({
+        title: "Error",
+        description: "No shop ID available, cannot save",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       setSaving(true);
       setSaveComplete(false);
       
+      console.log("Saving company info:", companyInfo);
       const result = await companyService.updateCompanyInfo(shopId, companyInfo);
       console.log("Company info save result:", result);
       
       if (result && result.data) {
         setCompanyInfo(result.data);
+      } else {
+        console.warn("No data returned from updateCompanyInfo");
       }
       
       if (businessHours && businessHours.length > 0) {
+        console.log("Updating business hours for shop", shopId, "with data:", businessHours);
         const updatedHours = await companyService.updateBusinessHours(shopId, businessHours);
         if (updatedHours) {
           setBusinessHours(updatedHours);
+          console.log("Business hours updated successfully");
+        } else {
+          console.warn("No data returned from updateBusinessHours");
         }
       }
-      
-      toast({
-        title: "Success",
-        description: "Company information saved successfully",
-        variant: "success"
-      });
       
       setDataChanged(false);
       setSaveComplete(true);
@@ -104,6 +118,7 @@ export function useCompanySettings() {
         description: `Failed to save company information: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
+      throw error; // Re-throw to allow the UI component to handle it
     } finally {
       setSaving(false);
     }
@@ -125,8 +140,11 @@ export function useCompanySettings() {
     handleInputChange,
     handleSelectChange,
     handleBusinessHoursChange,
-    handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => 
-      handleFileUpload(e, shopId || ''),
+    handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleFileUpload(e, shopId || '').then(() => {
+        setDataChanged(true); // Mark as changed when logo is uploaded
+      });
+    },
     handleSave,
     initialize
   };

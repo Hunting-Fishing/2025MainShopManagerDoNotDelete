@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,11 @@ import { BusinessInfoSection } from "./BusinessInfoSection";
 import { BusinessHoursSection } from "./BusinessHoursSection";
 import { useCompanySettings } from "@/hooks/company-settings/useCompanySettings";
 import { CompanyTabSkeleton } from "./CompanyTabSkeleton";
+import { useToast } from "@/hooks/use-toast";
 
 export function CompanyTabContainer() {
   const [activeTab, setActiveTab] = useState("basic");
+  const { toast } = useToast();
   
   const {
     companyInfo,
@@ -70,8 +73,26 @@ export function CompanyTabContainer() {
   useEffect(() => {
     if (saveComplete) {
       initialize();
+      toast({
+        title: "Success",
+        description: "Company information saved successfully",
+        variant: "success"
+      });
     }
-  }, [saveComplete, initialize]);
+  }, [saveComplete, initialize, toast]);
+
+  const handleSaveClick = async () => {
+    try {
+      await handleSave();
+    } catch (error) {
+      console.error("Error saving company information:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save company information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -130,7 +151,7 @@ export function CompanyTabContainer() {
                 <div className="flex justify-end mt-6">
                   <Button 
                     className={`${dataChanged ? 'bg-esm-blue-600 hover:bg-esm-blue-700' : 'bg-gray-300 hover:bg-gray-400'}`}
-                    onClick={handleSave}
+                    onClick={handleSaveClick}
                     disabled={saving || !dataChanged}
                   >
                     {saving ? (
