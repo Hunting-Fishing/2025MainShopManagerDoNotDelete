@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -11,6 +12,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+
+// Import all the previously missing components with correct paths
+import { VehicleDetailsField } from "./fields/VehicleDetailsField";
+import { CommonServicesChecklist } from "./fields/CommonServicesChecklist";
+import { CustomerInfoSection } from "./CustomerInfoSection";
+import { WorkOrderStatusSection } from "./WorkOrderStatusSection";
+import { AssignmentSection } from "./AssignmentSection";
+import { WorkOrderDescriptionField } from "./fields/WorkOrderDescriptionField";
+import { NotesSection } from "./NotesSection";
+import { WorkOrderInventorySection } from "./WorkOrderInventorySection";
+import { SaveAsTemplateDialog } from "./templates/SaveAsTemplateDialog";
+import { FormActions } from "./FormActions";
+import { TimeTrackingSection } from "./TimeTrackingSection";
 
 interface WorkOrderFormProps {
   technicians: string[];
