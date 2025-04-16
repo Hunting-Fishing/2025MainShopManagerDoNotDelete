@@ -58,7 +58,10 @@ export function useStaffMembers(roleFilter?: string) {
               staff.user_roles[0]?.roles) {
             // Correctly access the role name
             const rolesData = staff.user_roles[0].roles;
-            if (rolesData && typeof rolesData === 'object' && 'name' in rolesData) {
+            if (rolesData && 
+                typeof rolesData === 'object' && 
+                'name' in rolesData && 
+                typeof rolesData.name === 'string') {
               role = rolesData.name;
             }
           }
