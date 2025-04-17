@@ -27,6 +27,32 @@ export default function CreateTeamMember() {
         department: data.department
       });
       
+      // Process the skills to extract skill names and proficiency levels
+      const processedSkills = data.skills?.map(skillEntry => {
+        // If the skill contains proficiency data in format "skill|proficiency"
+        if (skillEntry.includes('|')) {
+          const [skill] = skillEntry.split('|');
+          return skill;
+        }
+        return skillEntry;
+      }) || [];
+
+      // Process skill proficiency data for the skills_with_proficiency table
+      const skillsWithProficiency = data.skills?.map(skillEntry => {
+        // Default proficiency if not specified
+        let skill = skillEntry;
+        let proficiency = 'expert';
+        
+        // If the skill contains proficiency data
+        if (skillEntry.includes('|')) {
+          const parts = skillEntry.split('|');
+          skill = parts[0];
+          proficiency = parts[1] || proficiency;
+        }
+        
+        return { skill_name: skill, proficiency_level: proficiency };
+      }) || [];
+      
       // Create team member record in our team_members table
       const { data: teamMemberData, error: createError } = await supabase
         .from('team_members')
@@ -115,11 +141,11 @@ export default function CreateTeamMember() {
       }
 
       // Add skills if provided
-      if (data.skills && data.skills.length > 0) {
+      if (processedSkills && processedSkills.length > 0) {
         const { error: skillsError } = await supabase
           .from('team_member_skills')
           .insert(
-            data.skills.map(skill => ({
+            processedSkills.map(skill => ({
               team_member_id: teamMemberData.id,
               skill_name: skill
             }))
@@ -129,6 +155,27 @@ export default function CreateTeamMember() {
           console.error("Error creating skills:", skillsError);
           // Continue with the process even if skills creation fails
         }
+      }
+
+      // Add skills with proficiency levels if supported by your DB schema
+      if (skillsWithProficiency.length > 0) {
+        // If you have a separate table for skills with proficiency:
+        // Uncomment and adapt this code if you create a table for skills with proficiency
+        /*
+        const { error: proficiencyError } = await supabase
+          .from('team_member_skills_proficiency')
+          .insert(
+            skillsWithProficiency.map(item => ({
+              team_member_id: teamMemberData.id,
+              skill_name: item.skill_name,
+              proficiency_level: item.proficiency_level
+            }))
+          );
+
+        if (proficiencyError) {
+          console.error("Error creating skill proficiencies:", proficiencyError);
+        }
+        */
       }
 
       // Find the role ID for the selected role

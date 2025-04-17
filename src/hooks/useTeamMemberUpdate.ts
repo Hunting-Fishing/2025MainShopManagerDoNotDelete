@@ -116,8 +116,34 @@ export function useTeamMemberUpdate() {
           );
       }
       
+      // Process skills to separate skill name from proficiency
+      const processedSkills = formData.skills?.map(skillEntry => {
+        // If the skill contains proficiency data
+        if (skillEntry.includes('|')) {
+          const [skill] = skillEntry.split('|');
+          return skill;
+        }
+        return skillEntry;
+      }) || [];
+
+      // Extract skill proficiency pairs
+      const skillsWithProficiency = formData.skills?.map(skillEntry => {
+        // Default proficiency if not specified
+        let skill = skillEntry;
+        let proficiency = 'expert';
+        
+        // If the skill contains proficiency data
+        if (skillEntry.includes('|')) {
+          const parts = skillEntry.split('|');
+          skill = parts[0];
+          proficiency = parts[1] || proficiency;
+        }
+        
+        return { skill_name: skill, proficiency_level: proficiency };
+      }) || [];
+      
       // Handle skills
-      if (formData.skills && formData.skills.length > 0) {
+      if (processedSkills && processedSkills.length > 0) {
         // Delete existing skills
         await supabase
           .from('team_member_skills')
@@ -128,12 +154,35 @@ export function useTeamMemberUpdate() {
         await supabase
           .from('team_member_skills')
           .insert(
-            formData.skills.map(skill => ({
+            processedSkills.map(skill => ({
               team_member_id: memberId,
               skill_name: skill,
             }))
           );
       }
+
+      // Handle skill proficiencies if you have a separate table
+      // Uncomment and adapt if you create a separate table for proficiencies
+      /*
+      if (skillsWithProficiency.length > 0) {
+        // Delete existing skill proficiencies
+        await supabase
+          .from('team_member_skills_proficiency')
+          .delete()
+          .eq('team_member_id', memberId);
+          
+        // Insert new skill proficiencies
+        await supabase
+          .from('team_member_skills_proficiency')
+          .insert(
+            skillsWithProficiency.map(item => ({
+              team_member_id: memberId,
+              skill_name: item.skill_name,
+              proficiency_level: item.proficiency_level
+            }))
+          );
+      }
+      */
 
       // Get user info for history record
       const { data: { user } } = await supabase.auth.getUser();
