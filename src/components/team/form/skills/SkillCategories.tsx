@@ -7,7 +7,9 @@ import {
   maintenanceSkills,
   performanceSkills,
   getAllVehicleManufacturers,
-  getAllCommercialVehicles
+  getAllCommercialVehicles,
+  vehicleManufacturers,
+  commercialVehicles
 } from './categories';
 
 // Define the category interface
@@ -16,6 +18,7 @@ export interface SkillCategory {
   name: string;
   icon: ReactNode;
   skills: string[];
+  subCategories?: Record<string, string[]>;
 }
 
 // Define the skill categories
@@ -48,13 +51,15 @@ export const skillCategories: SkillCategory[] = [
     id: 'vehicles',
     name: 'Vehicle Manufacturers',
     icon: <Car className="h-4 w-4 mr-2" />,
-    skills: getAllVehicleManufacturers()
+    skills: getAllVehicleManufacturers(),
+    subCategories: vehicleManufacturers
   },
   {
     id: 'commercial-vehicles',
     name: 'Commercial & Specialty Vehicles',
     icon: <Truck className="h-4 w-4 mr-2" />,
-    skills: getAllCommercialVehicles()
+    skills: getAllCommercialVehicles(),
+    subCategories: commercialVehicles
   }
 ];
 
