@@ -2170,6 +2170,24 @@ export type Database = {
           },
         ]
       }
+      employment_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       equipment: {
         Row: {
           category: string
@@ -6094,6 +6112,24 @@ export type Database = {
           },
         ]
       }
+      skill_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       sms_logs: {
         Row: {
           customer_id: string | null
@@ -6174,6 +6210,82 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      team_member_certifications: {
+        Row: {
+          certification_name: string
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          team_member_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          certification_name: string
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          team_member_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          certification_name?: string
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          team_member_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_certifications_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_member_emergency_contacts: {
+        Row: {
+          contact_name: string
+          created_at: string | null
+          id: string
+          phone: string
+          relationship: string
+          team_member_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string | null
+          id?: string
+          phone: string
+          relationship: string
+          team_member_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string | null
+          id?: string
+          phone?: string
+          relationship?: string
+          team_member_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_emergency_contacts_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_member_history: {
         Row: {
@@ -6287,45 +6399,131 @@ export type Database = {
           },
         ]
       }
+      team_member_skills: {
+        Row: {
+          created_at: string | null
+          id: string
+          proficiency_level: string | null
+          skill_name: string
+          team_member_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          proficiency_level?: string | null
+          skill_name: string
+          team_member_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          proficiency_level?: string | null
+          skill_name?: string
+          team_member_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_skills_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
+          access_financials: boolean | null
+          admin_privileges: boolean | null
+          banking_info_on_file: boolean | null
+          can_close_jobs: boolean | null
+          can_create_work_orders: boolean | null
           created_at: string | null
           department: string | null
           email: string
+          employee_id: string | null
+          employment_type: string | null
           first_name: string | null
           id: string
           job_title: string | null
           last_name: string | null
           notes: string | null
+          on_call_after_hours: boolean | null
+          pay_rate: number | null
+          pay_type: string | null
           phone: string | null
+          primary_location: string | null
+          shift_end: string | null
+          shift_start: string | null
+          start_date: string | null
           status: string | null
+          supervisor_id: string | null
+          tax_form_submitted: boolean | null
           updated_at: string | null
+          work_at_other_locations: boolean | null
+          work_days: string[] | null
         }
         Insert: {
+          access_financials?: boolean | null
+          admin_privileges?: boolean | null
+          banking_info_on_file?: boolean | null
+          can_close_jobs?: boolean | null
+          can_create_work_orders?: boolean | null
           created_at?: string | null
           department?: string | null
           email: string
+          employee_id?: string | null
+          employment_type?: string | null
           first_name?: string | null
           id?: string
           job_title?: string | null
           last_name?: string | null
           notes?: string | null
+          on_call_after_hours?: boolean | null
+          pay_rate?: number | null
+          pay_type?: string | null
           phone?: string | null
+          primary_location?: string | null
+          shift_end?: string | null
+          shift_start?: string | null
+          start_date?: string | null
           status?: string | null
+          supervisor_id?: string | null
+          tax_form_submitted?: boolean | null
           updated_at?: string | null
+          work_at_other_locations?: boolean | null
+          work_days?: string[] | null
         }
         Update: {
+          access_financials?: boolean | null
+          admin_privileges?: boolean | null
+          banking_info_on_file?: boolean | null
+          can_close_jobs?: boolean | null
+          can_create_work_orders?: boolean | null
           created_at?: string | null
           department?: string | null
           email?: string
+          employee_id?: string | null
+          employment_type?: string | null
           first_name?: string | null
           id?: string
           job_title?: string | null
           last_name?: string | null
           notes?: string | null
+          on_call_after_hours?: boolean | null
+          pay_rate?: number | null
+          pay_type?: string | null
           phone?: string | null
+          primary_location?: string | null
+          shift_end?: string | null
+          shift_start?: string | null
+          start_date?: string | null
           status?: string | null
+          supervisor_id?: string | null
+          tax_form_submitted?: boolean | null
           updated_at?: string | null
+          work_at_other_locations?: boolean | null
+          work_days?: string[] | null
         }
         Relationships: []
       }

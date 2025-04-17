@@ -1,4 +1,3 @@
-
 export interface TeamMember {
   id: string;
   name?: string;
@@ -20,6 +19,24 @@ export interface TeamMember {
   notes?: string;
   joinDate?: string;
   lastActive?: string;
+  work_days?: string[];
+  shift_start?: string;
+  shift_end?: string;
+  on_call_after_hours?: boolean;
+  start_date?: string;
+  employment_type?: string;
+  employee_id?: string;
+  supervisor_id?: string;
+  primary_location?: string;
+  work_at_other_locations?: boolean;
+  admin_privileges?: boolean;
+  access_financials?: boolean;
+  can_create_work_orders?: boolean;
+  can_close_jobs?: boolean;
+  pay_rate?: number;
+  pay_type?: string;
+  banking_info_on_file?: boolean;
+  tax_form_submitted?: boolean;
   recentActivity?: Array<{
     type: string;
     date: string;
@@ -35,7 +52,29 @@ export interface TeamMember {
   }>;
 }
 
-// Additional interfaces for team management
+export interface EmergencyContact {
+  id?: string;
+  team_member_id?: string;
+  contact_name: string;
+  phone: string;
+  relationship: string;
+}
+
+export interface Certification {
+  id?: string;
+  team_member_id?: string;
+  certification_name: string;
+  issue_date?: string;
+  expiry_date?: string;
+}
+
+export interface Skill {
+  id?: string;
+  team_member_id?: string;
+  skill_name: string;
+  proficiency_level?: string;
+}
+
 export interface Role {
   id: string;
   name: string;
@@ -47,7 +86,6 @@ export interface Role {
   priority: number; // Added priority field for role ordering
 }
 
-// Unified interface for role management
 export interface RoleManagement {
   roles: Role[];
   addRole: (role: Omit<Role, 'id' | 'createdAt' | 'updatedAt'>) => Role;
@@ -57,7 +95,6 @@ export interface RoleManagement {
   getRoleByName: (name: string) => Role | null;
 }
 
-// Interface for tracking status changes - stored as activities in work_order_activities
 export interface TechnicianStatusChange {
   id: string;
   technicianId: string;
@@ -68,7 +105,6 @@ export interface TechnicianStatusChange {
   changedBy: string;
 }
 
-// Interface for flagged activities - stored as activities in work_order_activities
 export interface FlaggedActivity {
   id: string;
   technicianId: string;
