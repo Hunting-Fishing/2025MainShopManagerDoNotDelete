@@ -1,4 +1,3 @@
-
 // Vehicle manufacturers categorized by region
 export const vehicleManufacturers = {
   northAmerican: [
@@ -63,15 +62,63 @@ export const vehicleManufacturers = {
     'Polestar',
     'Rivian',
     'Tesla'
-  ]
+  ],
+  
+  atvUtv: {
+    name: 'ATV / UTV Manufacturers',
+    skills: [
+      'Polaris',
+      'Can-Am (BRP)',
+      'Yamaha',
+      'Honda',
+      'Kawasaki',
+      'Suzuki',
+      'Arctic Cat',
+      'CF Moto',
+      'Kymco',
+      'Hisun',
+      'Segway Powersports',
+      'Tracker Off Road',
+      'Massimo',
+      'Tao Motor',
+      'SSR Motorsports',
+      'Linhai'
+    ]
+  },
+  
+  workUtilityAtvUtv: {
+    name: 'Work Utility ATV/UTV',
+    skills: [
+      'John Deere Gator',
+      'Kubota RTV',
+      'Bobcat Utility Vehicles',
+      'Mahindra ROXOR',
+      'Kioti Mechron',
+      'Gravely Atlas',
+      'JCB Workmax'
+    ]
+  },
+  
+  europeanNicheAtvUtv: {
+    name: 'European & Niche ATV/UTV',
+    skills: [
+      'TGB (Taiwan Golden Bee)',
+      'Access Motor',
+      'GOES',
+      'Quadzilla'
+    ]
+  }
 };
 
-// Combine all manufacturers into a single sorted array
+// Update the getAllVehicleManufacturers function to include new categories
 export const getAllVehicleManufacturers = () => {
   return [
     ...vehicleManufacturers.northAmerican,
     ...vehicleManufacturers.european,
     ...vehicleManufacturers.asian,
-    ...vehicleManufacturers.electricAndOther
+    ...vehicleManufacturers.electricAndOther,
+    ...vehicleManufacturers.atvUtv.skills,
+    ...vehicleManufacturers.workUtilityAtvUtv.skills,
+    ...vehicleManufacturers.europeanNicheAtvUtv.skills
   ].sort((a, b) => a.localeCompare(b));
 };
