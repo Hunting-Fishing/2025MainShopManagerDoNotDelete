@@ -1,6 +1,5 @@
-
 import React, { ReactNode } from 'react';
-import { Wrench, Zap, Clipboard, PenTool, Car, Truck, Construction } from "lucide-react";
+import { Wrench, Zap, Clipboard, PenTool, Car, Truck, Construction, Bike } from "lucide-react";
 import {
   mechanicalSkills,
   electricalSkills,
@@ -14,7 +13,6 @@ import {
   getAllEquipmentSkills
 } from './categories';
 
-// Define the category interface with more specific types
 export interface SkillCategory {
   id: string;
   name: string;
@@ -23,11 +21,62 @@ export interface SkillCategory {
   subCategories?: Record<string, string[] | { name: string; skills: string[] }>;
 }
 
-// Improved function to correctly handle both array and object subcategories
+const atvUtvCategories = {
+  recreational: {
+    name: 'Recreational ATV/UTV',
+    skills: [
+      'Polaris',
+      'Can-Am (BRP)',
+      'Yamaha',
+      'Honda',
+      'Kawasaki',
+      'Suzuki',
+      'Arctic Cat',
+      'CF Moto',
+      'Kymco',
+      'Hisun',
+      'Segway Powersports',
+      'Tracker Off Road',
+      'Massimo',
+      'Tao Motor',
+      'SSR Motorsports',
+      'Linhai'
+    ]
+  },
+  workUtility: {
+    name: 'Work Utility ATV/UTV',
+    skills: [
+      'John Deere Gator',
+      'Kubota RTV',
+      'Bobcat Utility Vehicles',
+      'Mahindra ROXOR',
+      'Kioti Mechron',
+      'Gravely Atlas',
+      'JCB Workmax'
+    ]
+  },
+  europeanNiche: {
+    name: 'European & Niche ATV/UTV',
+    skills: [
+      'TGB (Taiwan Golden Bee)',
+      'Access Motor',
+      'GOES',
+      'Quadzilla'
+    ]
+  }
+};
+
+const getAllAtvUtvSkills = () => {
+  return [
+    ...atvUtvCategories.recreational.skills,
+    ...atvUtvCategories.workUtility.skills,
+    ...atvUtvCategories.europeanNiche.skills
+  ].sort((a, b) => a.localeCompare(b));
+};
+
 const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => {
   const result: Record<string, string[] | { name: string; skills: string[] }> = {};
   
-  // Traditional array categories
   if (Array.isArray(categories.northAmerican)) {
     result.northAmerican = categories.northAmerican;
     result.european = categories.european;
@@ -35,7 +84,6 @@ const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => 
     result.electricAndOther = categories.electricAndOther;
   }
 
-  // Object-style categories (preserve the full objects)
   if ('atvUtv' in categories && categories.atvUtv) {
     result.atvUtv = categories.atvUtv;
   }
@@ -81,7 +129,19 @@ export const skillCategories: SkillCategory[] = [
     name: 'Vehicle Manufacturers',
     icon: <Car className="h-4 w-4 mr-2" />,
     skills: getAllVehicleManufacturers(),
-    subCategories: formatVehicleSubCategories(vehicleManufacturers)
+    subCategories: {
+      northAmerican: vehicleManufacturers.northAmerican,
+      european: vehicleManufacturers.european,
+      asian: vehicleManufacturers.asian,
+      electricAndOther: vehicleManufacturers.electricAndOther
+    }
+  },
+  {
+    id: 'atv-utv',
+    name: 'ATV & UTV',
+    icon: <Bike className="h-4 w-4 mr-2" />,
+    skills: getAllAtvUtvSkills(),
+    subCategories: atvUtvCategories
   },
   {
     id: 'commercial-vehicles',
@@ -99,7 +159,6 @@ export const skillCategories: SkillCategory[] = [
   }
 ];
 
-// Proficiency levels
 export const proficiencyLevels = [
   { value: 'beginner', label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
