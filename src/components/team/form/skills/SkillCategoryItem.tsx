@@ -28,7 +28,7 @@ export function SkillCategoryItem({
   const hasSubCategories = category.subCategories && Object.keys(category.subCategories).length > 0;
 
   return (
-    <AccordionItem key={category.id} value={category.id}>
+    <AccordionItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
       <AccordionTrigger className="px-4 hover:no-underline">
         <div className="flex items-center">
           {category.icon}
@@ -38,48 +38,42 @@ export function SkillCategoryItem({
       <AccordionContent className="px-4 pt-2 pb-4">
         {hasSubCategories ? (
           Object.entries(category.subCategories!).map(([subCategoryKey, subCategoryData]) => {
-            // Handle when subCategoryData is an array of strings (regular vehicle categories)
+            // Format the subcategory display name
+            let displayName = formatSubCategoryName(subCategoryKey);
+            let subCategorySkills: string[] = [];
+            
+            // Handle both formats: array of strings or object with name and skills
             if (Array.isArray(subCategoryData)) {
-              const subCategoryName = formatSubCategoryName(subCategoryKey);
-              const filteredSubSkills = subCategoryData.filter(skill => 
-                filteredSkills.length === 0 || filteredSkills.includes(skill)
-              );
+              // Format 1: array of strings
+              subCategorySkills = subCategoryData;
+            } else if (typeof subCategoryData === 'object' && subCategoryData !== null) {
+              // Format 2: object with name and skills properties
+              if ('name' in subCategoryData && typeof subCategoryData.name === 'string') {
+                displayName = subCategoryData.name;
+              }
               
-              if (filteredSubSkills.length === 0) return null;
-              
-              return (
-                <div key={subCategoryKey} className="mb-4">
-                  <h4 className="text-sm font-medium mb-2 text-primary">
-                    {subCategoryName}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {filteredSubSkills.map(skill => renderSkillItem(skill))}
-                  </div>
-                </div>
-              );
-            } 
-            // Handle when subCategoryData is an object with name and skills (ATV/UTV categories)
-            else {
-              const name = 'name' in subCategoryData ? subCategoryData.name : formatSubCategoryName(subCategoryKey);
-              const skills = 'skills' in subCategoryData ? subCategoryData.skills : [];
-              
-              const filteredSubSkills = skills.filter(skill => 
-                filteredSkills.length === 0 || filteredSkills.includes(skill)
-              );
-              
-              if (filteredSubSkills.length === 0) return null;
-              
-              return (
-                <div key={subCategoryKey} className="mb-4">
-                  <h4 className="text-sm font-medium mb-2 text-primary">
-                    {name}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {filteredSubSkills.map(skill => renderSkillItem(skill))}
-                  </div>
-                </div>
-              );
+              if ('skills' in subCategoryData && Array.isArray(subCategoryData.skills)) {
+                subCategorySkills = subCategoryData.skills;
+              }
             }
+            
+            // Filter skills based on search query if provided
+            const filteredSubSkills = filteredSkills.length === 0 
+              ? subCategorySkills 
+              : subCategorySkills.filter(skill => filteredSkills.includes(skill));
+            
+            if (filteredSubSkills.length === 0) return null;
+            
+            return (
+              <div key={subCategoryKey} className="mb-4">
+                <h4 className="text-sm font-medium mb-2 text-primary">
+                  {displayName}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {filteredSubSkills.map(skill => renderSkillItem(skill))}
+                </div>
+              </div>
+            );
           })
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -94,9 +88,11 @@ export function SkillCategoryItem({
   );
 
   function formatSubCategoryName(key: string): string {
+    // Format camelCase to Title Case with spaces
     return key
       .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase());
+      .replace(/^./, str => str.toUpperCase())
+      .trim();
   }
 
   function renderSkillItem(skill: string) {

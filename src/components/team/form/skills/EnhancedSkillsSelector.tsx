@@ -27,14 +27,32 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
 
   const selectedSkills = field.value || [];
 
+  // Helper function to find skills in subcategories
+  const findSkillsInSubcategories = (category: any) => {
+    if (!category.subCategories) return [];
+    
+    const allSkills: string[] = [];
+    
+    Object.values(category.subCategories).forEach((subCategory: any) => {
+      if (Array.isArray(subCategory)) {
+        allSkills.push(...subCategory);
+      } else if (subCategory && typeof subCategory === 'object' && 'skills' in subCategory) {
+        allSkills.push(...subCategory.skills);
+      }
+    });
+    
+    return allSkills;
+  };
+
   // Auto-expand categories that have matching skills when searching
   useEffect(() => {
     if (skillSearch) {
+      const searchLower = skillSearch.toLowerCase();
       const matchingCategories = skillCategories
         .filter(category => {
           // Check if any skills in the category match the search
           const categoryMatches = category.skills.some(skill => 
-            skill.toLowerCase().includes(skillSearch.toLowerCase())
+            skill.toLowerCase().includes(searchLower)
           );
           
           // Also check skills in subcategories
@@ -42,11 +60,11 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
             Object.values(category.subCategories).some(subCategory => {
               if (Array.isArray(subCategory)) {
                 return subCategory.some(skill => 
-                  skill.toLowerCase().includes(skillSearch.toLowerCase())
+                  skill.toLowerCase().includes(searchLower)
                 );
-              } else if ('skills' in subCategory) {
+              } else if (typeof subCategory === 'object' && subCategory !== null && 'skills' in subCategory) {
                 return subCategory.skills.some(skill => 
-                  skill.toLowerCase().includes(skillSearch.toLowerCase())
+                  skill.toLowerCase().includes(searchLower)
                 );
               }
               return false;
@@ -97,13 +115,22 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
     }
   };
 
-  const getFilteredSkills = (categorySkills: string[]) => {
-    if (!skillSearch) return categorySkills;
+  const getFilteredSkills = (category: any) => {
+    if (!skillSearch) return [];
     
     const searchLower = skillSearch.toLowerCase();
-    return categorySkills.filter(skill => 
+    
+    // Filter main category skills
+    const mainSkills = category.skills.filter(skill => 
       skill.toLowerCase().includes(searchLower)
     );
+    
+    // Also include skills from subcategories that match
+    const subCategorySkills = findSkillsInSubcategories(category)
+      .filter(skill => skill.toLowerCase().includes(searchLower));
+    
+    // Combine and remove duplicates
+    return [...new Set([...mainSkills, ...subCategorySkills])];
   };
 
   const handleAccordionChange = (value: string | string[]) => {
@@ -155,15 +182,14 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
           className="w-full"
         >
           {skillCategories.map(category => {
-            const filteredSkills = getFilteredSkills(category.skills);
+            const filteredSkills = getFilteredSkills(category);
             
             // Only hide categories when actively searching and no results found
             const shouldHideCategory = skillSearch && filteredSkills.length === 0 && 
-              // Also check subcategories when searching
               (!category.subCategories || Object.values(category.subCategories).every(subCat => {
                 if (Array.isArray(subCat)) {
                   return !subCat.some(skill => skill.toLowerCase().includes(skillSearch.toLowerCase()));
-                } else if ('skills' in subCat) {
+                } else if (typeof subCat === 'object' && subCat !== null && 'skills' in subCat) {
                   return !subCat.skills.some(skill => skill.toLowerCase().includes(skillSearch.toLowerCase()));
                 }
                 return true;

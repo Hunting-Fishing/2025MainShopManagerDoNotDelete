@@ -23,10 +23,11 @@ export interface SkillCategory {
   subCategories?: Record<string, string[] | { name: string; skills: string[] }>;
 }
 
+// Improved function to correctly handle both array and object subcategories
 const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => {
   const result: Record<string, string[] | { name: string; skills: string[] }> = {};
   
-  // Handle traditional arrays for regular vehicle categories
+  // Traditional array categories
   if (Array.isArray(categories.northAmerican)) {
     result.northAmerican = categories.northAmerican;
     result.european = categories.european;
@@ -34,14 +35,16 @@ const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => 
     result.electricAndOther = categories.electricAndOther;
   }
 
-  // Handle object format for ATV/UTV categories - preserve the full objects
-  if ('atvUtv' in categories) {
+  // Object-style categories (preserve the full objects)
+  if ('atvUtv' in categories && categories.atvUtv) {
     result.atvUtv = categories.atvUtv;
   }
-  if ('workUtilityAtvUtv' in categories) {
+  
+  if ('workUtilityAtvUtv' in categories && categories.workUtilityAtvUtv) {
     result.workUtilityAtvUtv = categories.workUtilityAtvUtv;
   }
-  if ('europeanNicheAtvUtv' in categories) {
+  
+  if ('europeanNicheAtvUtv' in categories && categories.europeanNicheAtvUtv) {
     result.europeanNicheAtvUtv = categories.europeanNicheAtvUtv;
   }
 
