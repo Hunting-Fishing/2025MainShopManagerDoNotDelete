@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { ReactNode } from 'react';
 import { Wrench, Zap, Clipboard, PenTool, Car } from "lucide-react";
 
 // Define the category interface
