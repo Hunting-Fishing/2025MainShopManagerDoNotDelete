@@ -14,7 +14,7 @@ export const teamMemberFormSchema = z.object({
   notes: z.string().optional(),
   
   // Work Schedule
-  work_days: z.array(z.string()).optional(),
+  work_days: z.array(z.string()).optional().default([]),
   shift_start: z.string().optional(),
   shift_end: z.string().optional(),
   on_call_after_hours: z.boolean().optional().default(false),
@@ -54,9 +54,9 @@ export const teamMemberFormSchema = z.object({
       issue_date: z.string().optional(),
       expiry_date: z.string().optional()
     })
-  ).optional(),
+  ).optional().default([]),
   
-  skills: z.array(z.string()).optional()
+  skills: z.array(z.string()).optional().default([])
 });
 
 export type TeamMemberFormValues = z.infer<typeof teamMemberFormSchema>;

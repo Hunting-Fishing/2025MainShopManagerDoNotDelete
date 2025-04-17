@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { MultiSelect } from "@/components/ui/multi-select";
 
 interface CertificationsSkillsFieldsProps {
   control: Control<TeamMemberFormValues>;
@@ -90,12 +89,32 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
           <FormItem>
             <FormLabel>Skills / Specialties</FormLabel>
             <FormControl>
-              <MultiSelect
-                options={availableSkills}
-                selected={field.value || []}
-                onChange={field.onChange}
-                placeholder="Select skills..."
-              />
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2 border rounded-md p-2 bg-background">
+                  {availableSkills.map((skill) => (
+                    <Badge
+                      key={skill.value}
+                      variant={field.value?.includes(skill.value) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const currentValues = field.value || [];
+                        if (currentValues.includes(skill.value)) {
+                          field.onChange(currentValues.filter(val => val !== skill.value));
+                        } else {
+                          field.onChange([...currentValues, skill.value]);
+                        }
+                      }}
+                    >
+                      {skill.label}
+                    </Badge>
+                  ))}
+                </div>
+                {field.value?.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Selected: {field.value?.join(", ")}
+                  </div>
+                )}
+              </div>
             </FormControl>
             <FormMessage />
           </FormItem>
