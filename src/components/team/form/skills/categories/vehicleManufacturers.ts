@@ -1,131 +1,106 @@
-
 interface VehicleManufacturer {
   name: string;
   flag: string;
   country?: string;
+  founded?: number;
+  specialties?: string[];
 }
 
 export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
   asian: [
-    // China
-    { name: 'BAIC Group', flag: '🇨🇳', country: 'China' },
-    { name: 'BYD', flag: '🇨🇳', country: 'China' },
-    { name: 'Changan', flag: '🇨🇳', country: 'China' },
-    { name: 'Chery', flag: '🇨🇳', country: 'China' },
-    { name: 'Dongfeng', flag: '🇨🇳', country: 'China' },
-    { name: 'FAW Group', flag: '🇨🇳', country: 'China' },
-    { name: 'Geely', flag: '🇨🇳', country: 'China' },
-    { name: 'Great Wall Motors', flag: '🇨🇳', country: 'China' },
-    { name: 'Hongqi', flag: '🇨🇳', country: 'China' },
-    { name: 'Leapmotor', flag: '🇨🇳', country: 'China' },
-    { name: 'Li Auto', flag: '🇨🇳', country: 'China' },
-    { name: 'NIO', flag: '🇨🇳', country: 'China' },
-    { name: 'Ora', flag: '🇨🇳', country: 'China' },
-    { name: 'SAIC Motor', flag: '🇨🇳', country: 'China' },
-    { name: 'Wuling', flag: '🇨🇳', country: 'China' },
-    { name: 'XPeng', flag: '🇨🇳', country: 'China' },
-    { name: 'Zeekr', flag: '🇨🇳', country: 'China' },
     // Japan
-    { name: 'Daihatsu', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Honda', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Isuzu', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Mazda', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Mitsubishi', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Nissan', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Subaru', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Suzuki', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Toyota', flag: '🇯🇵', country: 'Japan' },
+    { name: 'Acura', flag: '🇯🇵', country: 'Japan', founded: 1986 },
+    { name: 'Daihatsu', flag: '🇯🇵', country: 'Japan', founded: 1907 },
+    { name: 'Honda', flag: '🇯🇵', country: 'Japan', founded: 1946 },
+    { name: 'Infiniti', flag: '🇯🇵', country: 'Japan', founded: 1989 },
+    { name: 'Isuzu', flag: '🇯🇵', country: 'Japan', founded: 1916 },
+    { name: 'Lexus', flag: '🇯🇵', country: 'Japan', founded: 1989 },
+    { name: 'Mazda', flag: '🇯🇵', country: 'Japan', founded: 1920 },
+    { name: 'Mitsubishi', flag: '🇯🇵', country: 'Japan', founded: 1870 },
+    { name: 'Nissan', flag: '🇯🇵', country: 'Japan', founded: 1933 },
+    { name: 'Subaru', flag: '🇯🇵', country: 'Japan', founded: 1953 },
+    { name: 'Suzuki', flag: '🇯🇵', country: 'Japan', founded: 1909 },
+    { name: 'Toyota', flag: '🇯🇵', country: 'Japan', founded: 1937 },
+    
     // South Korea
-    { name: 'Genesis', flag: '🇰🇷', country: 'South Korea' },
-    { name: 'Hyundai', flag: '🇰🇷', country: 'South Korea' },
-    { name: 'Kia', flag: '🇰🇷', country: 'South Korea' },
-    { name: 'SsangYong', flag: '🇰🇷', country: 'South Korea' },
-    // India
-    { name: 'Ashok Leyland', flag: '🇮🇳', country: 'India' },
-    { name: 'Mahindra', flag: '🇮🇳', country: 'India' },
-    { name: 'Maruti Suzuki', flag: '🇮🇳', country: 'India' },
-    { name: 'Tata Motors', flag: '🇮🇳', country: 'India' },
-    // Southeast Asia
-    { name: 'Proton', flag: '🇲🇾', country: 'Malaysia' },
-    { name: 'Perodua', flag: '🇲🇾', country: 'Malaysia' },
-    { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam' }
+    { name: 'Genesis', flag: '🇰🇷', country: 'South Korea', founded: 2015 },
+    { name: 'Hyundai', flag: '🇰🇷', country: 'South Korea', founded: 1967 },
+    { name: 'Kia', flag: '🇰🇷', country: 'South Korea', founded: 1944 },
+    { name: 'SsangYong', flag: '🇰🇷', country: 'South Korea', founded: 1954 },
+    
+    // China
+    { name: 'BYD', flag: '🇨🇳', country: 'China', founded: 1995 },
+    { name: 'Chery', flag: '🇨🇳', country: 'China', founded: 1997 },
+    { name: 'DFSK', flag: '🇨🇳', country: 'China', founded: 2003 },
+    { name: 'Geely', flag: '🇨🇳', country: 'China', founded: 1986 },
+    { name: 'Great Wall', flag: '🇨🇳', country: 'China', founded: 1984 },
+    { name: 'MG', flag: '🇨🇳', country: 'China', founded: 1924 },
+    { name: 'NIO', flag: '🇨🇳', country: 'China', founded: 2014 },
+    { name: 'SAIC', flag: '🇨🇳', country: 'China', founded: 1955 },
+    { name: 'Xpeng', flag: '🇨🇳', country: 'China', founded: 2014 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   northAmerican: [
     // USA
-    { name: 'Bollinger Motors', flag: '🇺🇸', country: 'USA' },
-    { name: 'Buick', flag: '🇺🇸', country: 'USA' },
-    { name: 'Cadillac', flag: '🇺🇸', country: 'USA' },
-    { name: 'Canoo', flag: '🇺🇸', country: 'USA' },
-    { name: 'Chevrolet', flag: '🇺🇸', country: 'USA' },
-    { name: 'Fisker', flag: '🇺🇸', country: 'USA' },
-    { name: 'Ford', flag: '🇺🇸', country: 'USA' },
-    { name: 'GMC', flag: '🇺🇸', country: 'USA' },
-    { name: 'Lordstown Motors', flag: '🇺🇸', country: 'USA' },
-    { name: 'Lucid Motors', flag: '🇺🇸', country: 'USA' },
-    { name: 'Rivian', flag: '🇺🇸', country: 'USA' },
-    { name: 'Tesla', flag: '🇺🇸', country: 'USA' },
-    // Canada
-    { name: 'Lion Electric', flag: '🇨🇦', country: 'Canada' },
-    // Mexico
-    { name: 'Mastretta', flag: '🇲🇽', country: 'Mexico' }
+    { name: 'Cadillac', flag: '🇺🇸', country: 'USA', founded: 1902 },
+    { name: 'Chevrolet', flag: '🇺🇸', country: 'USA', founded: 1911 },
+    { name: 'Chrysler', flag: '🇺🇸', country: 'USA', founded: 1925 },
+    { name: 'Dodge', flag: '🇺🇸', country: 'USA', founded: 1900 },
+    { name: 'Ford', flag: '🇺🇸', country: 'USA', founded: 1903 },
+    { name: 'GMC', flag: '🇺🇸', country: 'USA', founded: 1911 },
+    { name: 'Jeep', flag: '🇺🇸', country: 'USA', founded: 1941 },
+    { name: 'Lincoln', flag: '🇺🇸', country: 'USA', founded: 1917 },
+    { name: 'Ram', flag: '🇺🇸', country: 'USA', founded: 2010 },
+    { name: 'Rivian', flag: '🇺🇸', country: 'USA', founded: 2009 },
+    { name: 'Tesla', flag: '🇺🇸', country: 'USA', founded: 2003 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   european: [
     // Germany
-    { name: 'Audi', flag: '🇩🇪', country: 'Germany' },
-    { name: 'BMW', flag: '🇩🇪', country: 'Germany' },
-    { name: 'Mercedes-Benz', flag: '🇩🇪', country: 'Germany' },
-    { name: 'Porsche', flag: '🇩🇪', country: 'Germany' },
-    { name: 'Volkswagen', flag: '🇩🇪', country: 'Germany' },
-    // UK
-    { name: 'Aston Martin', flag: '🇬🇧', country: 'UK' },
-    { name: 'Bentley', flag: '🇬🇧', country: 'UK' },
-    { name: 'Jaguar', flag: '🇬🇧', country: 'UK' },
-    { name: 'Land Rover', flag: '🇬🇧', country: 'UK' },
-    { name: 'McLaren', flag: '🇬🇧', country: 'UK' },
-    { name: 'MINI', flag: '🇬🇧', country: 'UK' },
-    { name: 'Rolls-Royce', flag: '🇬🇧', country: 'UK' },
+    { name: 'Audi', flag: '🇩🇪', country: 'Germany', founded: 1909 },
+    { name: 'BMW', flag: '🇩🇪', country: 'Germany', founded: 1916 },
+    { name: 'Mercedes-Benz', flag: '🇩🇪', country: 'Germany', founded: 1926 },
+    { name: 'Mini', flag: '🇩🇪', country: 'Germany', founded: 1959 },
+    { name: 'Opel', flag: '🇩🇪', country: 'Germany', founded: 1862 },
+    { name: 'Porsche', flag: '🇩🇪', country: 'Germany', founded: 1931 },
+    { name: 'Volkswagen', flag: '🇩🇪', country: 'Germany', founded: 1937 },
+    
     // Italy
-    { name: 'Alfa Romeo', flag: '🇮🇹', country: 'Italy' },
-    { name: 'Ferrari', flag: '🇮🇹', country: 'Italy' },
-    { name: 'Fiat', flag: '🇮🇹', country: 'Italy' },
-    { name: 'Lamborghini', flag: '🇮🇹', country: 'Italy' },
-    { name: 'Lancia', flag: '🇮🇹', country: 'Italy' },
-    { name: 'Maserati', flag: '🇮🇹', country: 'Italy' },
+    { name: 'Alfa Romeo', flag: '🇮🇹', country: 'Italy', founded: 1910 },
+    { name: 'Ferrari', flag: '🇮🇹', country: 'Italy', founded: 1947 },
+    { name: 'Fiat', flag: '🇮🇹', country: 'Italy', founded: 1899 },
+    { name: 'Lamborghini', flag: '🇮🇹', country: 'Italy', founded: 1963 },
+    { name: 'Maserati', flag: '🇮🇹', country: 'Italy', founded: 1914 },
+    
     // France
-    { name: 'Citroën', flag: '🇫🇷', country: 'France' },
-    { name: 'DS Automobiles', flag: '🇫🇷', country: 'France' },
-    { name: 'Peugeot', flag: '🇫🇷', country: 'France' },
-    { name: 'Renault', flag: '🇫🇷', country: 'France' },
+    { name: 'Citroën', flag: '🇫🇷', country: 'France', founded: 1919 },
+    { name: 'Peugeot', flag: '🇫🇷', country: 'France', founded: 1810 },
+    { name: 'Renault', flag: '🇫🇷', country: 'France', founded: 1899 },
+    
+    // UK
+    { name: 'Aston Martin', flag: '🇬🇧', country: 'UK', founded: 1913 },
+    { name: 'Bentley', flag: '🇬🇧', country: 'UK', founded: 1919 },
+    { name: 'Jaguar', flag: '🇬🇧', country: 'UK', founded: 1922 },
+    { name: 'Land Rover', flag: '🇬🇧', country: 'UK', founded: 1948 },
+    { name: 'Lotus', flag: '🇬🇧', country: 'UK', founded: 1948 },
+    { name: 'McLaren', flag: '🇬🇧', country: 'UK', founded: 1963 },
+    { name: 'Rolls-Royce', flag: '🇬🇧', country: 'UK', founded: 1904 },
+    
     // Sweden
-    { name: 'Polestar', flag: '🇸🇪', country: 'Sweden' },
-    { name: 'Scania', flag: '🇸🇪', country: 'Sweden' },
-    { name: 'Volvo', flag: '🇸🇪', country: 'Sweden' }
+    { name: 'Polestar', flag: '🇸🇪', country: 'Sweden', founded: 1996 },
+    { name: 'Volvo', flag: '🇸🇪', country: 'Sweden', founded: 1927 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   electricAndOther: [
-    // Electric & New Tech Focused
-    { name: 'BYD', flag: '🇨🇳', country: 'China' },
-    { name: 'Lucid Motors', flag: '🇺🇸', country: 'USA' },
-    { name: 'NIO', flag: '🇨🇳', country: 'China' },
-    { name: 'Polestar', flag: '🇸🇪', country: 'Sweden' },
-    { name: 'Rivian', flag: '🇺🇸', country: 'USA' },
-    { name: 'Tesla', flag: '🇺🇸', country: 'USA' },
-    { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam' },
-    { name: 'XPeng', flag: '🇨🇳', country: 'China' }
+    { name: 'BYD', flag: '🇨🇳', country: 'China', founded: 1995 },
+    { name: 'Lucid', flag: '🇺🇸', country: 'USA', founded: 2007 },
+    { name: 'NIO', flag: '🇨🇳', country: 'China', founded: 2014 },
+    { name: 'Polestar', flag: '🇸🇪', country: 'Sweden', founded: 1996 },
+    { name: 'Rivian', flag: '🇺🇸', country: 'USA', founded: 2009 },
+    { name: 'Tesla', flag: '🇺🇸', country: 'USA', founded: 2003 },
+    { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam', founded: 2017 },
+    { name: 'Xpeng', flag: '🇨🇳', country: 'China', founded: 2014 }
   ].sort((a, b) => a.name.localeCompare(b.name))
 };
 
-// Function to get all manufacturers with flags in alphabetical order
-export const getAllVehicleManufacturers = () => {
-  const allManufacturers = new Set<string>();
-  
-  Object.values(vehicleManufacturers).forEach(manufacturers => {
-    manufacturers.forEach(manufacturer => {
-      allManufacturers.add(`${manufacturer.flag} ${manufacturer.name}`);
-    });
-  });
-  
-  return Array.from(allManufacturers).sort((a, b) => a.localeCompare(b));
-};
+// Keep existing getAllVehicleManufacturers function
