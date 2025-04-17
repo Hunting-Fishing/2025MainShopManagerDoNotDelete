@@ -1,110 +1,98 @@
 
 import React, { useState } from 'react';
-import { Control, useFormContext, useWatch } from "react-hook-form";
 import { Accordion } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
-import { TeamMemberFormValues } from "../formValidation";
-import { Search } from "lucide-react";
-import { skillCategories, proficiencyLevels } from './SkillCategories';
+import { Control, useController } from "react-hook-form";
+import { TeamMemberFormValues } from "@/components/team/form/formValidation";
+import { skillCategories } from './SkillCategories';
+import { Wrench } from 'lucide-react';
+import { SkillCategoryItem } from './SkillCategoryItem';
 import { SelectedSkillBadges } from './SelectedSkillBadges';
 import { CustomSkillInput } from './CustomSkillInput';
-import { SkillCategoryItem } from './SkillCategoryItem';
 
 interface EnhancedSkillsSelectorProps {
   control: Control<TeamMemberFormValues>;
 }
 
 export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps) {
-  const { setValue } = useFormContext<TeamMemberFormValues>();
-  const selectedSkills = useWatch({
-    control,
-    name: 'skills',
-    defaultValue: []
-  });
-  
-  const [searchQuery, setSearchQuery] = useState('');
+  const [skillSearch, setSkillSearch] = useState('');
   const [newSkill, setNewSkill] = useState('');
   const [selectedProficiency, setSelectedProficiency] = useState('intermediate');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['mechanical']);
 
-  // Helper to check if a skill is already selected
+  const { field } = useController({
+    name: 'skills',
+    control
+  });
+
+  // Current skills from the form field
+  const selectedSkills = field.value || [];
+
+  // Check if a skill is selected
   const isSkillSelected = (skill: string) => {
-    return selectedSkills.some((selected: string) => 
-      selected.split('|')[0] === skill
-    );
+    return selectedSkills.some((s: string) => s.startsWith(`${skill}|`));
   };
 
-  // Get the proficiency level for a selected skill
+  // Get proficiency for a selected skill
   const getProficiencyForSkill = (skill: string) => {
-    const found = selectedSkills.find((selected: string) => 
-      selected.split('|')[0] === skill
-    );
-    return found ? found.split('|')[1] || 'intermediate' : 'intermediate';
+    const found = selectedSkills.find((s: string) => s.startsWith(`${skill}|`));
+    return found ? found.split('|')[1] : 'intermediate';
   };
 
   // Add a skill with proficiency
   const addSkill = (skill: string, proficiency: string) => {
-    // Check if it already exists
-    if (!isSkillSelected(skill)) {
-      const newValue = [...selectedSkills, `${skill}|${proficiency}`];
-      setValue('skills', newValue);
-    }
+    const updatedSkills = [...selectedSkills, `${skill}|${proficiency}`];
+    field.onChange(updatedSkills);
   };
 
   // Remove a skill
-  const removeSkill = (skillToRemove: string) => {
-    const updatedSkills = selectedSkills.filter((skillItem: string) => {
-      const [skill] = skillItem.split('|');
-      return skill !== skillToRemove;
-    });
-    setValue('skills', updatedSkills);
+  const removeSkill = (skill: string) => {
+    const updatedSkills = selectedSkills.filter(
+      (s: string) => !s.startsWith(`${skill}|`)
+    );
+    field.onChange(updatedSkills);
   };
 
-  // Handle adding a custom skill
+  // Add a custom skill
   const handleAddCustomSkill = () => {
-    if (newSkill.trim() && !isSkillSelected(newSkill.trim())) {
+    if (newSkill.trim()) {
       addSkill(newSkill.trim(), selectedProficiency);
       setNewSkill('');
     }
   };
 
-  // Filter skills based on search query
-  const getFilteredSkills = (skills: string[]) => {
-    if (!searchQuery) return skills;
-    return skills.filter(skill => 
-      skill.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  };
-
-  // Handle category expansion
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(current => 
-      current.includes(categoryId) 
-        ? current.filter(id => id !== categoryId)
-        : [...current, categoryId]
+  // Filter skills based on search
+  const getFilteredSkills = (categorySkills: string[]) => {
+    if (!skillSearch) return categorySkills;
+    
+    return categorySkills.filter(skill => 
+      skill.toLowerCase().includes(skillSearch.toLowerCase())
     );
   };
 
   return (
     <div className="space-y-4">
-      {/* Search bar */}
+      {/* Search input */}
       <div className="relative">
-        <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-        <Input 
+        <Input
+          type="text"
+          placeholder="Search skills..."
+          value={skillSearch}
+          onChange={(e) => setSkillSearch(e.target.value)}
           className="pl-10"
-          placeholder="Search skills..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
         />
+        <Wrench className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
       </div>
 
       {/* Selected skills display */}
-      <SelectedSkillBadges 
-        selectedSkills={selectedSkills} 
-        removeSkill={removeSkill} 
-      />
+      <div className="border rounded-lg p-3 bg-slate-50">
+        <h3 className="text-sm font-medium mb-2">Selected Skills:</h3>
+        <SelectedSkillBadges 
+          selectedSkills={selectedSkills} 
+          removeSkill={removeSkill} 
+        />
+      </div>
 
-      {/* Add custom skill */}
+      {/* Add custom skill input */}
       <CustomSkillInput 
         newSkill={newSkill}
         setNewSkill={setNewSkill}
@@ -113,25 +101,27 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
         handleAddCustomSkill={handleAddCustomSkill}
       />
 
-      {/* Skill categories */}
-      <Accordion 
-        type="multiple" 
-        defaultValue={['mechanical']}
-        className="border rounded-md"
-        value={expandedCategories}
-      >
-        {skillCategories.map(category => (
-          <SkillCategoryItem 
-            key={category.id}
-            category={category}
-            filteredSkills={getFilteredSkills(category.skills)}
-            isSkillSelected={isSkillSelected}
-            getProficiencyForSkill={getProficiencyForSkill}
-            addSkill={addSkill}
-            removeSkill={removeSkill}
-            selectedProficiency={selectedProficiency}
-          />
-        ))}
+      {/* Skills categories accordion */}
+      <Accordion type="single" collapsible className="w-full">
+        {skillCategories.map(category => {
+          const filteredSkills = getFilteredSkills(category.skills);
+          
+          // Skip empty categories when filtering
+          if (skillSearch && filteredSkills.length === 0) return null;
+          
+          return (
+            <SkillCategoryItem
+              key={category.id}
+              category={category}
+              filteredSkills={filteredSkills}
+              isSkillSelected={isSkillSelected}
+              getProficiencyForSkill={getProficiencyForSkill}
+              addSkill={addSkill}
+              removeSkill={removeSkill}
+              selectedProficiency={selectedProficiency}
+            />
+          );
+        })}
       </Accordion>
     </div>
   );

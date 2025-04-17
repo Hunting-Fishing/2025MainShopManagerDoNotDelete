@@ -1,34 +1,54 @@
 
-// Available roles and departments
-export const availableRoles = ["Owner", "Administrator", "Technician", "Service Advisor", "Manager", "Parts Manager", "Reception", "Other Staff"];
+// Available roles for team members
+export const availableRoles = [
+  'Manager',
+  'Technician',
+  'Service Writer',
+  'Parts Manager',
+  'Administrative',
+  'Apprentice',
+  'Shop Helper',
+  'Customer Service'
+];
 
-// Map display roles to database enum values
-export const roleValueMapping: Record<string, string> = {
-  "Owner": "owner",
-  "Administrator": "admin", 
-  "Manager": "manager",
-  "Parts Manager": "parts_manager",
-  "Service Advisor": "service_advisor",
-  "Technician": "technician",
-  "Reception": "reception",
-  "Other Staff": "other_staff",
-  "Customer Service": "reception" // Alias for backward compatibility
-};
-
+// Available departments for team members
 export const availableDepartments = [
-  "Management", 
-  "Executive",
-  "Field Service", 
-  "Administration", 
-  "Customer Support",
-  "Operations",
-  "Shop Floor",
-  "Service Bay",
-  "Mobile Service",
-  "Diagnostics",
-  "Front Office",
-  "Service Desk",
-  "Reception",
-  "General",
-  "Other"
+  'Management',
+  'Service',
+  'Parts',
+  'Field Service',
+  'Sales',
+  'Administration',
+  'Finance',
+  'Training'
+];
+
+// Employment types
+export const employmentTypes = [
+  'Full-time',
+  'Part-time',
+  'Contract',
+  'Temporary',
+  'Intern',
+  'Apprentice'
+];
+
+// Pay types
+export const payTypes = [
+  'Hourly',
+  'Salary',
+  'Commission',
+  'Flat Rate',
+  'Hybrid'
+];
+
+// Days of week
+export const daysOfWeek = [
+  { value: 'monday', label: 'Monday' },
+  { value: 'tuesday', label: 'Tuesday' },
+  { value: 'wednesday', label: 'Wednesday' },
+  { value: 'thursday', label: 'Thursday' },
+  { value: 'friday', label: 'Friday' },
+  { value: 'saturday', label: 'Saturday' },
+  { value: 'sunday', label: 'Sunday' }
 ];
