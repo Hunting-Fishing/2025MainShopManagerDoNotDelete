@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -27,11 +28,16 @@ export function SkillCategoryItem({
 }: SkillCategoryItemProps) {
   const hasSubCategories = category.subCategories && Object.keys(category.subCategories).length > 0;
   
+  // Fixed regex to detect emoji flags
   const renderManufacturerBadge = (skill: string) => {
-    const hasFlag = /\p{Emoji_Flag_Sequence}/u.test(skill);
+    // Using regular expression to check for emoji (flag) at the beginning
+    const hasFlag = /^\p{Emoji_Presentation}\s/u.test(skill) || /^\p{Regional_Indicator}\p{Regional_Indicator}\s/u.test(skill);
     if (!hasFlag) return skill;
 
-    const [flag, name] = skill.split(' ');
+    const parts = skill.split(' ');
+    const flag = parts[0];
+    const name = parts.slice(1).join(' ');
+    
     return (
       <div className="flex items-center gap-2">
         <span className="text-lg">{flag}</span>
@@ -111,7 +117,9 @@ export function SkillCategoryItem({
   function renderSkillItem(skill: string) {
     const isSelected = isSkillSelected(skill);
     const currentProficiency = getProficiencyForSkill(skill);
-    const hasFlag = /\p{Emoji_Flag_Sequence}/u.test(skill);
+    
+    // Simple check for emoji flag at the beginning of the string
+    const hasFlag = skill.match(/^\S+\s/) && /\p{Emoji}/u.test(skill.split(' ')[0]);
     
     return (
       <div 

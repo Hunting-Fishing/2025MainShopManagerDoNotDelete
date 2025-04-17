@@ -1,3 +1,4 @@
+
 interface VehicleManufacturer {
   name: string;
   flag: string;
@@ -103,4 +104,15 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
   ].sort((a, b) => a.name.localeCompare(b.name))
 };
 
-// Keep existing getAllVehicleManufacturers function
+// Add this function to get all vehicle manufacturers
+export const getAllVehicleManufacturers = () => {
+  const allManufacturers: string[] = [];
+  
+  Object.values(vehicleManufacturers).forEach(categoryManufacturers => {
+    categoryManufacturers.forEach(manufacturer => {
+      allManufacturers.push(`${manufacturer.flag} ${manufacturer.name}`);
+    });
+  });
+  
+  return allManufacturers.sort();
+};
