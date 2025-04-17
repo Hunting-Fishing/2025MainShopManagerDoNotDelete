@@ -1,3 +1,4 @@
+
 import React, { ReactNode } from 'react';
 import { Wrench, Zap, Clipboard, PenTool, Car, Truck, Construction, Bike } from "lucide-react";
 import {
@@ -12,6 +13,7 @@ import {
   equipmentSkills,
   getAllEquipmentSkills
 } from './categories';
+import { groupedAtvUtvBrands, getAllAtvUtvBrands } from './categories/atvUtvBrands';
 
 export interface SkillCategory {
   id: string;
