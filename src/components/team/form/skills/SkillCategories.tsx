@@ -1,3 +1,4 @@
+
 import React, { ReactNode } from 'react';
 import { Wrench, Zap, Clipboard, PenTool, Car, Truck, Construction, Bike } from "lucide-react";
 import {
@@ -74,7 +75,7 @@ const getAllAtvUtvSkills = () => {
   ].sort((a, b) => a.localeCompare(b));
 };
 
-const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => {
+const formatVehicleSubCategories = (categories: typeof vehicleManufacturers): Record<string, string[] | { name: string; skills: string[] }> => {
   const result: Record<string, string[] | { name: string; skills: string[] }> = {};
   
   if (Array.isArray(categories.northAmerican)) {
@@ -83,19 +84,7 @@ const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => 
     result.asian = categories.asian;
     result.electricAndOther = categories.electricAndOther;
   }
-
-  if ('atvUtv' in categories && categories.atvUtv) {
-    result.atvUtv = categories.atvUtv;
-  }
   
-  if ('workUtilityAtvUtv' in categories && categories.workUtilityAtvUtv) {
-    result.workUtilityAtvUtv = categories.workUtilityAtvUtv;
-  }
-  
-  if ('europeanNicheAtvUtv' in categories && categories.europeanNicheAtvUtv) {
-    result.europeanNicheAtvUtv = categories.europeanNicheAtvUtv;
-  }
-
   return result;
 };
 
