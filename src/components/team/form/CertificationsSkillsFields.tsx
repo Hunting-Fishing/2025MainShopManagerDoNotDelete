@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Control } from "react-hook-form";
+import { Control, useFieldArray } from "react-hook-form";
 import { TeamMemberFormValues } from "./formValidation";
 import { Trash } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,37 +18,28 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
   const [issueDate, setIssueDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
 
-  const { field: certificationsField } = control._formValues.certifications ? 
-    { field: { value: control._formValues.certifications, onChange: (val: any) => {} } } : 
-    { field: { value: [], onChange: (val: any) => {} } };
+  // Use useFieldArray for proper form handling
+  const { fields: certificationsFields, append: appendCertification, remove: removeCertification } = useFieldArray({
+    control,
+    name: "certifications"
+  });
 
   const handleAddCertification = () => {
     if (certName) {
-      const existingCerts = certificationsField.value || [];
       const newCert = {
         certification_name: certName,
         issue_date: issueDate || undefined,
         expiry_date: expiryDate || undefined
       };
       
-      control._formState.dirtyFields.certifications = true;
-      control._fields.certifications.value = [...existingCerts, newCert];
-      control._formValues.certifications = [...existingCerts, newCert];
+      // Use the append method from useFieldArray
+      appendCertification(newCert);
       
       // Reset form fields
       setCertName('');
       setIssueDate('');
       setExpiryDate('');
     }
-  };
-
-  const handleRemoveCertification = (index: number) => {
-    const existingCerts = certificationsField.value || [];
-    existingCerts.splice(index, 1);
-    
-    control._formState.dirtyFields.certifications = true;
-    control._fields.certifications.value = [...existingCerts];
-    control._formValues.certifications = [...existingCerts];
   };
 
   return (
@@ -111,7 +102,7 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
         </div>
         
         {/* List of added certifications */}
-        {certificationsField.value && certificationsField.value.length > 0 && (
+        {certificationsFields.length > 0 && (
           <div className="mt-4 border rounded-md overflow-hidden">
             <table className="w-full">
               <thead>
@@ -123,8 +114,8 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
                 </tr>
               </thead>
               <tbody>
-                {certificationsField.value.map((cert: any, index: number) => (
-                  <tr key={index} className="border-t">
+                {certificationsFields.map((cert, index) => (
+                  <tr key={cert.id} className="border-t">
                     <td className="px-4 py-2">{cert.certification_name}</td>
                     <td className="px-4 py-2">{cert.issue_date || "-"}</td>
                     <td className="px-4 py-2">{cert.expiry_date || "-"}</td>
@@ -133,7 +124,7 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
                         type="button" 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleRemoveCertification(index)}
+                        onClick={() => removeCertification(index)}
                       >
                         <Trash className="h-4 w-4 text-destructive" />
                       </Button>

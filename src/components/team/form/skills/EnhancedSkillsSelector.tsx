@@ -1,27 +1,17 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Control, useController } from 'react-hook-form';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { TeamMemberFormValues } from '../formValidation';
-import { Search, Plus, X, Wrench, Zap, Tools, Flame, PaintRoller, Star, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect } from 'react';
+import { Control, useFormContext, useWatch } from "react-hook-form";
+import { 
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger 
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { TeamMemberFormValues } from "../formValidation";
+import { Button } from "@/components/ui/button";
+import { Wrench, Zap, Clipboard, PenTool, Search, X, Plus } from "lucide-react";
 
-interface SkillCategory {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  skills: string[];
-}
-
-interface EnhancedSkillsSelectorProps {
-  control: Control<TeamMemberFormValues>;
-}
-
-// Predefined skill categories with their skills
-const PREDEFINED_CATEGORIES: SkillCategory[] = [
+// Define the skill categories
+const skillCategories = [
   {
     id: 'mechanical',
     name: 'Mechanical Systems',
@@ -32,11 +22,9 @@ const PREDEFINED_CATEGORIES: SkillCategory[] = [
       'Fuel System',
       'Drivetrain',
       'Transmission',
-      'Suspension',
       'Brakes',
-      'Steering',
-      'Exhaust',
-    ].sort(),
+      'Suspension'
+    ].sort()
   },
   {
     id: 'electrical',
@@ -47,294 +35,272 @@ const PREDEFINED_CATEGORIES: SkillCategory[] = [
       'ECU Programming',
       'Hybrid/EV Systems',
       'ADAS Calibration',
-      'Wiring Repair',
-      'Battery Service',
-      'Lighting',
-      'Starting/Charging',
-    ].sort(),
+      'Wiring',
+      'Battery Systems'
+    ].sort()
   },
   {
     id: 'maintenance',
     name: 'Maintenance & Service',
-    icon: <Tools className="h-4 w-4 mr-2" />,
+    icon: <Clipboard className="h-4 w-4 mr-2" />,
     skills: [
       'Oil Changes',
       'Tire Rotation',
       'Tire Balancing',
       'Brake Service',
       'Fluid Flushes',
-      'Filter Replacement',
-      'Inspections',
-      'Scheduled Maintenance',
-    ].sort(),
+      'Tune-ups',
+      'Inspections'
+    ].sort()
   },
   {
-    id: 'performance',
+    id: 'custom',
     name: 'Performance & Custom Work',
-    icon: <Flame className="h-4 w-4 mr-2" />,
+    icon: <PenTool className="h-4 w-4 mr-2" />,
     skills: [
-      'Exhaust Mods',
+      'Exhaust Modifications',
       'Suspension Lifts',
-      'Tuning',
-      'Reprogramming',
+      'Tuning & Reprogramming',
       'Performance Upgrades',
-      'Custom Fabrication',
-      'Turbo/Supercharger',
-      'Dyno Testing',
-    ].sort(),
-  },
-  {
-    id: 'body',
-    name: 'Body & Interior',
-    icon: <PaintRoller className="h-4 w-4 mr-2" />,
-    skills: [
-      'Interior Repairs',
-      'Cosmetic Detailing',
-      'Lighting Upgrades',
-      'Window Tinting',
-      'Paint Correction',
-      'Panel Repair',
-      'Upholstery',
-      'Accessories Installation',
-    ].sort(),
-  },
+      'Custom Fabrication'
+    ].sort()
+  }
 ];
 
-// Proficiency levels with visual representation
-const PROFICIENCY_LEVELS = [
-  { id: 'beginner', label: 'Beginner', stars: 1 },
-  { id: 'intermediate', label: 'Intermediate', stars: 3 },
-  { id: 'expert', label: 'Expert', stars: 5 },
+// Proficiency levels
+const proficiencyLevels = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'expert', label: 'Expert' }
 ];
+
+interface EnhancedSkillsSelectorProps {
+  control: Control<TeamMemberFormValues>;
+}
 
 export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps) {
-  const { field } = useController({
-    name: 'skills',
+  const { setValue } = useFormContext<TeamMemberFormValues>();
+  const selectedSkills = useWatch({
     control,
+    name: 'skills',
+    defaultValue: []
   });
-
+  
   const [searchQuery, setSearchQuery] = useState('');
+  const [newSkill, setNewSkill] = useState('');
+  const [selectedProficiency, setSelectedProficiency] = useState('intermediate');
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['mechanical']);
-  const [customSkill, setCustomSkill] = useState('');
 
-  // Parse the stored skills array into skill objects with proficiency
-  const parseSkills = (skillArray: string[]): { 
-    name: string; 
-    proficiency: string;
-    isCustom?: boolean;
-  }[] => {
-    return skillArray.map(skillItem => {
-      if (skillItem.includes('|')) {
-        const [name, proficiency] = skillItem.split('|');
-        
-        // Check if this is a custom skill (not in any predefined category)
-        const isCustom = !PREDEFINED_CATEGORIES.some(
-          category => category.skills.includes(name)
-        );
-        
-        return { name, proficiency, isCustom };
-      }
-      return { name: skillItem, proficiency: 'expert', isCustom: true };
-    });
+  // Helper to check if a skill is already selected
+  const isSkillSelected = (skill: string) => {
+    return selectedSkills.some((selected: string) => 
+      selected.split('|')[0] === skill
+    );
   };
 
-  // Convert skill objects back to the storage format
-  const formatForStorage = (skillObjects: { name: string; proficiency: string }[]): string[] => {
-    return skillObjects.map(skill => `${skill.name}|${skill.proficiency}`);
+  // Get the proficiency level for a selected skill
+  const getProficiencyForSkill = (skill: string) => {
+    const found = selectedSkills.find((selected: string) => 
+      selected.split('|')[0] === skill
+    );
+    return found ? found.split('|')[1] || 'intermediate' : 'intermediate';
   };
 
-  const selectedSkills = useMemo(() => parseSkills(field.value || []), [field.value]);
-
-  const addSkill = (skillName: string, proficiency: string = 'intermediate') => {
-    const normalizedName = skillName.trim();
-    if (!normalizedName) return;
-    
-    const isAlreadySelected = selectedSkills.some(skill => skill.name.toLowerCase() === normalizedName.toLowerCase());
-    
-    if (!isAlreadySelected) {
-      const updatedSkills = [
-        ...selectedSkills, 
-        { name: normalizedName, proficiency, isCustom: true }
-      ];
-      field.onChange(formatForStorage(updatedSkills));
+  // Add a skill with proficiency
+  const addSkill = (skill: string, proficiency: string) => {
+    // Check if it already exists
+    if (!isSkillSelected(skill)) {
+      const newValue = [...selectedSkills, `${skill}|${proficiency}`];
+      setValue('skills', newValue);
     }
-    
-    setCustomSkill('');
   };
 
+  // Remove a skill
   const removeSkill = (skillToRemove: string) => {
-    const updatedSkills = selectedSkills.filter(
-      skill => skill.name !== skillToRemove
-    );
-    field.onChange(formatForStorage(updatedSkills));
+    const updatedSkills = selectedSkills.filter((skillItem: string) => {
+      const [skill] = skillItem.split('|');
+      return skill !== skillToRemove;
+    });
+    setValue('skills', updatedSkills);
   };
 
-  const updateProficiency = (skillName: string, newProficiency: string) => {
-    const updatedSkills = selectedSkills.map(skill => 
-      skill.name === skillName 
-        ? { ...skill, proficiency: newProficiency } 
-        : skill
-    );
-    field.onChange(formatForStorage(updatedSkills));
+  // Handle adding a custom skill
+  const handleAddCustomSkill = () => {
+    if (newSkill.trim() && !isSkillSelected(newSkill.trim())) {
+      addSkill(newSkill.trim(), selectedProficiency);
+      setNewSkill('');
+    }
   };
 
+  // Filter skills based on search query
+  const getFilteredSkills = (skills: string[]) => {
+    if (!searchQuery) return skills;
+    return skills.filter(skill => 
+      skill.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
+  // Handle category expansion
   const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => 
-      prev.includes(categoryId)
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
+    setExpandedCategories(current => 
+      current.includes(categoryId) 
+        ? current.filter(id => id !== categoryId)
+        : [...current, categoryId]
     );
   };
 
-  const filteredCategories = useMemo(() => {
-    if (!searchQuery) return PREDEFINED_CATEGORIES;
-    
-    return PREDEFINED_CATEGORIES.map(category => ({
-      ...category,
-      skills: category.skills.filter(skill => 
-        skill.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
-    })).filter(category => category.skills.length > 0);
-  }, [searchQuery]);
-
-  // Sort the selected skills alphabetically for display
-  const sortedSelectedSkills = useMemo(() => {
-    return [...selectedSkills].sort((a, b) => a.name.localeCompare(b.name));
-  }, [selectedSkills]);
+  // Sort skills alphabetically for display
+  const sortedSelectedSkills = [...selectedSkills].sort((a: string, b: string) => {
+    const skillA = a.split('|')[0];
+    const skillB = b.split('|')[0];
+    return skillA.localeCompare(skillB);
+  });
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search skills..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-        <div className="flex space-x-2">
-          <Input
-            placeholder="Add custom skill..."
-            value={customSkill}
-            onChange={(e) => setCustomSkill(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addSkill(customSkill);
-              }
-            }}
-          />
-          <Button 
-            type="button" 
-            size="icon" 
-            onClick={() => addSkill(customSkill)}
-            disabled={!customSkill.trim()}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+        <Input 
+          className="pl-10"
+          placeholder="Search skills..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
-      {/* Selected Skills Summary */}
-      <div className="mb-4">
-        <div className="text-sm font-medium mb-2">Selected Skills:</div>
-        <div className="flex flex-wrap gap-2">
-          {sortedSelectedSkills.length === 0 ? (
-            <div className="text-sm text-muted-foreground italic">No skills selected</div>
-          ) : (
-            sortedSelectedSkills.map(skill => (
-              <Badge 
-                key={skill.name}
-                variant={skill.isCustom ? "success" : "default"}
-                className="flex items-center gap-1 py-1 pr-1"
+      {/* Selected skills display */}
+      <div className="flex flex-wrap gap-2 min-h-[40px]">
+        {sortedSelectedSkills.map((skillItem: string) => {
+          const [skill, proficiency] = skillItem.split('|');
+          let badgeColor = "bg-blue-100 text-blue-800";
+          
+          if (proficiency === 'beginner') {
+            badgeColor = "bg-gray-100 text-gray-800";
+          } else if (proficiency === 'expert') {
+            badgeColor = "bg-green-100 text-green-800";
+          }
+          
+          // Check if it's a custom skill (not in any category)
+          const isCustomSkill = !skillCategories.some(category => 
+            category.skills.includes(skill)
+          );
+          
+          return (
+            <Badge 
+              key={skill} 
+              className={`${isCustomSkill ? 'bg-purple-100 text-purple-800' : badgeColor} px-2 py-1 flex items-center`}
+            >
+              {skill}
+              <span className="ml-2 text-xs">({proficiency})</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-1 h-4 w-4 p-0" 
+                onClick={() => removeSkill(skill)}
               >
-                <div className="flex items-center">
-                  {skill.name}
-                  <span className="mx-1 text-xs opacity-70">
-                    {/* Show stars based on proficiency */}
-                    {Array.from({ length: PROFICIENCY_LEVELS.find(p => p.id === skill.proficiency)?.stars || 1 }).map((_, i) => (
-                      <Star key={i} className="inline h-3 w-3 fill-current" />
-                    ))}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 rounded-full"
-                  onClick={() => removeSkill(skill.name)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            ))
-          )}
-        </div>
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          );
+        })}
       </div>
 
-      {/* Skills Categorized List */}
+      {/* Add custom skill */}
+      <div className="flex gap-2 items-center border rounded-md p-3 bg-muted/50">
+        <Input
+          placeholder="Add custom skill..."
+          value={newSkill}
+          onChange={(e) => setNewSkill(e.target.value)}
+          className="flex-1"
+        />
+        <select 
+          className="border rounded p-2 bg-white"
+          value={selectedProficiency}
+          onChange={(e) => setSelectedProficiency(e.target.value)}
+        >
+          {proficiencyLevels.map(level => (
+            <option key={level.value} value={level.value}>
+              {level.label}
+            </option>
+          ))}
+        </select>
+        <Button 
+          variant="secondary" 
+          size="sm"
+          onClick={handleAddCustomSkill}
+          disabled={!newSkill.trim()}
+        >
+          <Plus className="h-4 w-4 mr-1" /> Add
+        </Button>
+      </div>
+
+      {/* Skill categories */}
       <Accordion 
         type="multiple" 
-        value={expandedCategories} 
-        onValueChange={setExpandedCategories}
+        defaultValue={['mechanical']}
         className="border rounded-md"
+        value={expandedCategories}
       >
-        {filteredCategories.map(category => (
-          <AccordionItem value={category.id} key={category.id}>
-            <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-accent">
+        {skillCategories.map(category => (
+          <AccordionItem key={category.id} value={category.id}>
+            <AccordionTrigger 
+              className="px-4 hover:no-underline"
+              onClick={() => toggleCategory(category.id)}
+            >
               <div className="flex items-center">
                 {category.icon}
                 <span>{category.name}</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-4 pt-1 pb-3">
+            <AccordionContent className="px-4 pt-2 pb-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {category.skills.map(skill => {
-                  // Check if this skill is already selected
-                  const selectedSkill = selectedSkills.find(s => s.name === skill);
+                {getFilteredSkills(category.skills).map(skill => {
+                  const isSelected = isSkillSelected(skill);
+                  const currentProficiency = getProficiencyForSkill(skill);
                   
                   return (
-                    <div key={skill} className="flex flex-col border rounded-md p-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={`skill-${skill.replace(/\s+/g, '-')}`}
-                            checked={!!selectedSkill}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                addSkill(skill);
-                              } else {
-                                removeSkill(skill);
-                              }
-                            }}
-                            className="mr-2"
-                          />
-                          <label htmlFor={`skill-${skill.replace(/\s+/g, '-')}`}>{skill}</label>
-                        </div>
+                    <div key={skill} className="flex items-center justify-between p-2 border rounded hover:bg-gray-50">
+                      <div className="flex-1">
+                        <span>{skill}</span>
                       </div>
                       
-                      {selectedSkill && (
-                        <div className="mt-2 flex justify-between items-center text-xs">
-                          <div className="flex space-x-1">
-                            {PROFICIENCY_LEVELS.map(level => (
-                              <button
-                                key={level.id}
-                                type="button"
-                                onClick={() => updateProficiency(skill, level.id)}
-                                className={cn(
-                                  "px-2 py-1 rounded text-xs",
-                                  selectedSkill.proficiency === level.id 
-                                    ? "bg-primary text-primary-foreground" 
-                                    : "bg-secondary hover:bg-secondary/80"
-                                )}
-                              >
+                      {isSelected ? (
+                        <div className="flex items-center gap-2">
+                          <select 
+                            className="border rounded p-1 text-xs"
+                            value={currentProficiency}
+                            onChange={(e) => {
+                              // Remove the old entry
+                              removeSkill(skill);
+                              // Add with new proficiency
+                              addSkill(skill, e.target.value);
+                            }}
+                          >
+                            {proficiencyLevels.map(level => (
+                              <option key={level.value} value={level.value}>
                                 {level.label}
-                              </button>
+                              </option>
                             ))}
-                          </div>
+                          </select>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => removeSkill(skill)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-7"
+                          onClick={() => addSkill(skill, selectedProficiency)}
+                        >
+                          Add
+                        </Button>
                       )}
                     </div>
                   );
