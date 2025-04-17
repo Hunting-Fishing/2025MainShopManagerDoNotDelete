@@ -24,9 +24,9 @@ export interface SkillCategory {
 }
 
 const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => {
-  const result: Record<string, string[]> = {};
+  const result: Record<string, string[] | { name: string; skills: string[] }> = {};
   
-  // Handle traditional arrays
+  // Handle traditional arrays for regular vehicle categories
   if (Array.isArray(categories.northAmerican)) {
     result.northAmerican = categories.northAmerican;
     result.european = categories.european;
@@ -34,15 +34,15 @@ const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => 
     result.electricAndOther = categories.electricAndOther;
   }
 
-  // Handle object format for ATV/UTV categories
+  // Handle object format for ATV/UTV categories - preserve the full objects
   if ('atvUtv' in categories) {
-    result['ATV and UTV'] = categories.atvUtv.skills;
+    result.atvUtv = categories.atvUtv;
   }
   if ('workUtilityAtvUtv' in categories) {
-    result['Work Utility Vehicles'] = categories.workUtilityAtvUtv.skills;
+    result.workUtilityAtvUtv = categories.workUtilityAtvUtv;
   }
   if ('europeanNicheAtvUtv' in categories) {
-    result['European & Niche ATV/UTV'] = categories.europeanNicheAtvUtv.skills;
+    result.europeanNicheAtvUtv = categories.europeanNicheAtvUtv;
   }
 
   return result;

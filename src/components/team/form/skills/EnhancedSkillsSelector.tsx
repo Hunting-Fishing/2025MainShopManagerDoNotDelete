@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Accordion } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Control, useController } from "react-hook-form";
@@ -26,6 +26,48 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
   });
 
   const selectedSkills = field.value || [];
+
+  // Auto-expand categories that have matching skills when searching
+  useEffect(() => {
+    if (skillSearch) {
+      const matchingCategories = skillCategories
+        .filter(category => {
+          // Check if any skills in the category match the search
+          const categoryMatches = category.skills.some(skill => 
+            skill.toLowerCase().includes(skillSearch.toLowerCase())
+          );
+          
+          // Also check skills in subcategories
+          const subCategoryMatches = category.subCategories ? 
+            Object.values(category.subCategories).some(subCategory => {
+              if (Array.isArray(subCategory)) {
+                return subCategory.some(skill => 
+                  skill.toLowerCase().includes(skillSearch.toLowerCase())
+                );
+              } else if ('skills' in subCategory) {
+                return subCategory.skills.some(skill => 
+                  skill.toLowerCase().includes(skillSearch.toLowerCase())
+                );
+              }
+              return false;
+            }) : false;
+            
+          return categoryMatches || subCategoryMatches;
+        })
+        .map(category => category.id);
+      
+      // Add matching categories to expanded list if not already there
+      setExpandedCategories(prev => {
+        const newExpanded = [...prev];
+        matchingCategories.forEach(id => {
+          if (!newExpanded.includes(id)) {
+            newExpanded.push(id);
+          }
+        });
+        return newExpanded;
+      });
+    }
+  }, [skillSearch]);
 
   const isSkillSelected = (skill: string) => {
     return selectedSkills.some((s: string) => s.startsWith(`${skill}|`));
@@ -64,11 +106,15 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
     );
   };
 
-  const handleAccordionChange = (value: string) => {
-    if (expandedCategories.includes(value)) {
-      setExpandedCategories(expandedCategories.filter(id => id !== value));
+  const handleAccordionChange = (value: string | string[]) => {
+    if (Array.isArray(value)) {
+      setExpandedCategories(value);
     } else {
-      setExpandedCategories([...expandedCategories, value]);
+      if (expandedCategories.includes(value)) {
+        setExpandedCategories(expandedCategories.filter(id => id !== value));
+      } else {
+        setExpandedCategories([...expandedCategories, value]);
+      }
     }
   };
 
@@ -105,19 +151,25 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
         <Accordion 
           type="multiple" 
           value={expandedCategories}
-          onValueChange={(value) => {
-            if (Array.isArray(value)) {
-              setExpandedCategories(value);
-            } else {
-              handleAccordionChange(value);
-            }
-          }}
+          onValueChange={handleAccordionChange}
           className="w-full"
         >
           {skillCategories.map(category => {
             const filteredSkills = getFilteredSkills(category.skills);
             
-            if (skillSearch && filteredSkills.length === 0) return null;
+            // Only hide categories when actively searching and no results found
+            const shouldHideCategory = skillSearch && filteredSkills.length === 0 && 
+              // Also check subcategories when searching
+              (!category.subCategories || Object.values(category.subCategories).every(subCat => {
+                if (Array.isArray(subCat)) {
+                  return !subCat.some(skill => skill.toLowerCase().includes(skillSearch.toLowerCase()));
+                } else if ('skills' in subCat) {
+                  return !subCat.skills.some(skill => skill.toLowerCase().includes(skillSearch.toLowerCase()));
+                }
+                return true;
+              }));
+            
+            if (shouldHideCategory) return null;
             
             return (
               <SkillCategoryItem
