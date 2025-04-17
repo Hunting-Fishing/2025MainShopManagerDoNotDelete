@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -36,37 +37,37 @@ export function SkillCategoryItem({
       </AccordionTrigger>
       <AccordionContent className="px-4 pt-2 pb-4">
         {hasSubCategories ? (
-          // Render skills organized by subcategories
           Object.entries(category.subCategories!).map(([subCategoryKey, subCategoryData]) => {
-            // Handle both formats of subcategories
-            const isObjectFormat = typeof subCategoryData === 'object' && !Array.isArray(subCategoryData) && 'skills' in subCategoryData;
-            
-            const subCategoryName = isObjectFormat
-              ? subCategoryData.name
-              : formatSubCategoryName(subCategoryKey);
-                
-            const skills = isObjectFormat
-              ? subCategoryData.skills
-              : (subCategoryData as string[]);
-                
+            const skills = Array.isArray(subCategoryData) 
+              ? subCategoryData 
+              : 'skills' in subCategoryData 
+                ? subCategoryData.skills 
+                : [];
+
+            const subCategoryName = Array.isArray(subCategoryData)
+              ? formatSubCategoryName(subCategoryKey)
+              : 'name' in subCategoryData
+                ? subCategoryData.name
+                : subCategoryKey;
+
+            const filteredSubSkills = skills.filter(skill => 
+              filteredSkills.length === 0 || filteredSkills.includes(skill)
+            );
+
+            if (filteredSubSkills.length === 0) return null;
+
             return (
               <div key={subCategoryKey} className="mb-4">
                 <h4 className="text-sm font-medium mb-2 text-primary">
                   {subCategoryName}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {skills
-                    .filter(skill => 
-                      !filteredSkills.length || 
-                      filteredSkills.includes(skill)
-                    )
-                    .map(skill => renderSkillItem(skill))}
+                  {filteredSubSkills.map(skill => renderSkillItem(skill))}
                 </div>
               </div>
             );
           })
         ) : (
-          // Render skills without subcategories
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {filteredSkills.map(skill => renderSkillItem(skill))}
           </div>
@@ -76,11 +77,9 @@ export function SkillCategoryItem({
   );
 
   function formatSubCategoryName(key: string): string {
-    // Convert camelCase to Title Case with spaces
     return key
       .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase())
-      .replace(/([A-Z]) ([A-Z])/g, '$1$2'); // Fix adjacent capitals like "R V" to "RV"
+      .replace(/^./, str => str.toUpperCase());
   }
 
   function renderSkillItem(skill: string) {
@@ -99,9 +98,7 @@ export function SkillCategoryItem({
               className="border rounded p-1 text-xs"
               value={currentProficiency}
               onChange={(e) => {
-                // Remove the old entry
                 removeSkill(skill);
-                // Add with new proficiency
                 addSkill(skill, e.target.value);
               }}
             >

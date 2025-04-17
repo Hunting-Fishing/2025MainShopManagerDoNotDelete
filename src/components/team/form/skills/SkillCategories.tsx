@@ -14,7 +14,7 @@ import {
   getAllEquipmentSkills
 } from './categories';
 
-// Define the category interface
+// Define the category interface with more specific types
 export interface SkillCategory {
   id: string;
   name: string;
@@ -23,7 +23,31 @@ export interface SkillCategory {
   subCategories?: Record<string, string[] | { name: string; skills: string[] }>;
 }
 
-// Define the skill categories
+const formatVehicleSubCategories = (categories: typeof vehicleManufacturers) => {
+  const result: Record<string, string[]> = {};
+  
+  // Handle traditional arrays
+  if (Array.isArray(categories.northAmerican)) {
+    result.northAmerican = categories.northAmerican;
+    result.european = categories.european;
+    result.asian = categories.asian;
+    result.electricAndOther = categories.electricAndOther;
+  }
+
+  // Handle object format for ATV/UTV categories
+  if ('atvUtv' in categories) {
+    result['ATV and UTV'] = categories.atvUtv.skills;
+  }
+  if ('workUtilityAtvUtv' in categories) {
+    result['Work Utility Vehicles'] = categories.workUtilityAtvUtv.skills;
+  }
+  if ('europeanNicheAtvUtv' in categories) {
+    result['European & Niche ATV/UTV'] = categories.europeanNicheAtvUtv.skills;
+  }
+
+  return result;
+};
+
 export const skillCategories: SkillCategory[] = [
   {
     id: 'mechanical',
@@ -54,7 +78,7 @@ export const skillCategories: SkillCategory[] = [
     name: 'Vehicle Manufacturers',
     icon: <Car className="h-4 w-4 mr-2" />,
     skills: getAllVehicleManufacturers(),
-    subCategories: vehicleManufacturers
+    subCategories: formatVehicleSubCategories(vehicleManufacturers)
   },
   {
     id: 'commercial-vehicles',
