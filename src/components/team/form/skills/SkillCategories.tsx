@@ -51,15 +51,26 @@ const getAllAtvUtvSkills = () => {
   ].sort((a, b) => a.localeCompare(b));
 };
 
-const formatVehicleSubCategories = (categories: typeof vehicleManufacturers): Record<string, string[] | { name: string; skills: string[] }> => {
-  const result: Record<string, string[] | { name: string; skills: string[] }> = {};
-  
-  if (Array.isArray(categories.northAmerican)) {
-    result.northAmerican = categories.northAmerican;
-    result.european = categories.european;
-    result.asian = categories.asian;
-    result.electricAndOther = categories.electricAndOther;
-  }
+// Format vehicle manufacturers into the expected structure
+const formatVehicleSubCategories = () => {
+  const result: Record<string, { name: string; skills: string[] }> = {
+    northAmerican: {
+      name: 'North American Manufacturers',
+      skills: vehicleManufacturers.northAmerican.map(m => `${m.flag} ${m.name}`)
+    },
+    european: {
+      name: 'European Manufacturers',
+      skills: vehicleManufacturers.european.map(m => `${m.flag} ${m.name}`)
+    },
+    asian: {
+      name: 'Asian Manufacturers',
+      skills: vehicleManufacturers.asian.map(m => `${m.flag} ${m.name}`)
+    },
+    electricAndOther: {
+      name: 'Electric & New Tech',
+      skills: vehicleManufacturers.electricAndOther.map(m => `${m.flag} ${m.name}`)
+    }
+  };
   
   return result;
 };
@@ -94,12 +105,7 @@ export const skillCategories: SkillCategory[] = [
     name: 'Vehicle Manufacturers',
     icon: <Car className="h-4 w-4 mr-2" />,
     skills: getAllVehicleManufacturers(),
-    subCategories: {
-      northAmerican: vehicleManufacturers.northAmerican,
-      european: vehicleManufacturers.european,
-      asian: vehicleManufacturers.asian,
-      electricAndOther: vehicleManufacturers.electricAndOther
-    }
+    subCategories: formatVehicleSubCategories()
   },
   {
     id: 'atv-utv',
