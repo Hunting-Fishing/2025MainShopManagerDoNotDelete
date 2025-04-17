@@ -5,18 +5,23 @@ import { vehicleManufacturers } from "@/components/team/form/skills/categories/v
 export function VehicleSkillsManager() {
   const initialCategories = [
     {
-      name: 'North American',
-      skills: vehicleManufacturers.northAmerican
+      name: 'Asian Manufacturers',
+      skills: vehicleManufacturers.asian.map(m => `${m.flag} ${m.name}`)
     },
     {
-      name: 'European',
-      skills: vehicleManufacturers.european
+      name: 'North American Manufacturers',
+      skills: vehicleManufacturers.northAmerican.map(m => `${m.flag} ${m.name}`)
     },
     {
-      name: 'Asian',
-      skills: vehicleManufacturers.asian
+      name: 'European Manufacturers',
+      skills: vehicleManufacturers.european.map(m => `${m.flag} ${m.name}`)
+    },
+    {
+      name: 'Electric & New Tech',
+      skills: vehicleManufacturers.electricAndOther.map(m => `${m.flag} ${m.name}`)
     }
   ];
 
   return <BaseSkillManager initialCategories={initialCategories} title="Vehicle Manufacturers" />;
 }
+
