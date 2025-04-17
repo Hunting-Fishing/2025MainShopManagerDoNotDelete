@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Wrench, Zap, Clipboard, PenTool, Car } from "lucide-react";
+import { Wrench, Zap, Clipboard, PenTool, Car, Truck } from "lucide-react";
 
 // Define the category interface
 export interface SkillCategory {
@@ -122,6 +122,38 @@ export const skillCategories: SkillCategory[] = [
       'Vauxhall',
       'Volkswagen',
       'Volvo'
+    ].sort()
+  },
+  {
+    id: 'commercial-vehicles',
+    name: 'Commercial & Specialty Vehicles',
+    icon: <Truck className="h-4 w-4 mr-2" />,
+    skills: [
+      'Blue Bird',
+      'Coachmen',
+      'Crysteel',
+      'DAF',
+      'Gillig',
+      'IC Bus',
+      'Jayco',
+      'Mack',
+      'MAN',
+      'Morgan Olson',
+      'Navistar',
+      'New Flyer',
+      'Prevost',
+      'Reading Truck Group',
+      'Scania',
+      'Spartan Motors',
+      'Sterling',
+      'Thomas Built Buses',
+      'Thor Industries',
+      'Tiffin Motorhomes',
+      'Utilimaster',
+      'Volvo Trucks',
+      'Western Star',
+      'Winnebago',
+      'Workhorse Group'
     ].sort()
   }
 ];
