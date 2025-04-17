@@ -38,21 +38,34 @@ export function SkillCategoryItem({
       <AccordionContent className="px-4 pt-2 pb-4">
         {hasSubCategories ? (
           // Render skills organized by subcategories
-          Object.entries(category.subCategories!).map(([subCategoryKey, subCategorySkills]) => (
-            <div key={subCategoryKey} className="mb-4">
-              <h4 className="text-sm font-medium mb-2 text-primary">
-                {formatSubCategoryName(subCategoryKey)}
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {subCategorySkills
-                  .filter(skill => 
-                    !filteredSkills.length || 
-                    filteredSkills.includes(skill)
-                  )
-                  .map(skill => renderSkillItem(skill))}
+          Object.entries(category.subCategories!).map(([subCategoryKey, subCategoryData]) => {
+            // Handle both formats of subcategories
+            const subCategoryName = 
+              typeof subCategoryData === 'object' && 'name' in subCategoryData 
+                ? subCategoryData.name 
+                : formatSubCategoryName(subCategoryKey);
+                
+            const skills = 
+              typeof subCategoryData === 'object' && 'skills' in subCategoryData
+                ? subCategoryData.skills
+                : subCategoryData as string[];
+                
+            return (
+              <div key={subCategoryKey} className="mb-4">
+                <h4 className="text-sm font-medium mb-2 text-primary">
+                  {subCategoryName}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {skills
+                    .filter(skill => 
+                      !filteredSkills.length || 
+                      filteredSkills.includes(skill)
+                    )
+                    .map(skill => renderSkillItem(skill))}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           // Render skills without subcategories
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

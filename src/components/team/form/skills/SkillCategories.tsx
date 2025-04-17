@@ -1,3 +1,4 @@
+
 import React, { ReactNode } from 'react';
 import { Wrench, Zap, Clipboard, PenTool, Car, Truck, Construction } from "lucide-react";
 import {
@@ -19,7 +20,7 @@ export interface SkillCategory {
   name: string;
   icon: ReactNode;
   skills: string[];
-  subCategories?: Record<string, string[]>;
+  subCategories?: Record<string, string[]> | Record<string, { name: string; skills: string[] }>;
 }
 
 // Define the skill categories
