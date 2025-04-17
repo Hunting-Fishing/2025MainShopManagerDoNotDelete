@@ -129,30 +129,37 @@ export const skillCategories: SkillCategory[] = [
     name: 'Commercial & Specialty Vehicles',
     icon: <Truck className="h-4 w-4 mr-2" />,
     skills: [
-      'Blue Bird',
-      'Coachmen',
-      'Crysteel',
+      // Heavy-Duty Trucks / Commercial Brands
       'DAF',
-      'Gillig',
-      'IC Bus',
-      'Jayco',
       'Mack',
       'MAN',
-      'Morgan Olson',
       'Navistar',
-      'New Flyer',
-      'Prevost',
-      'Reading Truck Group',
       'Scania',
-      'Spartan Motors',
       'Sterling',
-      'Thomas Built Buses',
-      'Thor Industries',
-      'Tiffin Motorhomes',
-      'Utilimaster',
       'Volvo Trucks',
       'Western Star',
+      
+      // Bus / Shuttle Manufacturers
+      'Blue Bird',
+      'Gillig',
+      'IC Bus',
+      'New Flyer',
+      'Prevost',
+      'Thomas Built Buses',
+      
+      // Recreational / RV Manufacturers
+      'Coachmen',
+      'Jayco',
+      'Thor Industries',
+      'Tiffin Motorhomes',
       'Winnebago',
+      
+      // Utility / Work Truck Builders
+      'Crysteel',
+      'Morgan Olson',
+      'Reading Truck Group',
+      'Spartan Motors',
+      'Utilimaster',
       'Workhorse Group'
     ].sort()
   }
