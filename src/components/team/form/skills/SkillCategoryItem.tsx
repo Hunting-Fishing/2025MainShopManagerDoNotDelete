@@ -152,14 +152,28 @@ export function SkillCategoryItem({
                     {displayName}
                   </h4>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div 
+                  className="grid gap-2"
+                  style={{
+                    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                    gridAutoFlow: "column",
+                    gridTemplateRows: "repeat(10, auto)",
+                  }}
+                >
                   {filteredSubSkills.map(skill => renderSkillItem(skill))}
                 </div>
               </div>
             );
           })
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div 
+            className="grid gap-2"
+            style={{
+              gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+              gridAutoFlow: "column",
+              gridTemplateRows: "repeat(10, auto)",
+            }}
+          >
             {filteredSkills.length > 0 
               ? filteredSkills.map(skill => renderSkillItem(skill))
               : category.skills.map(skill => renderSkillItem(skill))
@@ -170,4 +184,3 @@ export function SkillCategoryItem({
     </AccordionItem>
   );
 }
-
