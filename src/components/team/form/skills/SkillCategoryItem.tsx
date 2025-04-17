@@ -6,6 +6,7 @@ import { Car, Factory, X } from "lucide-react";
 import { proficiencyLevels } from './SkillCategories';
 import type { SkillCategory } from './SkillCategories';
 import { cn } from "@/lib/utils";
+import * as flags from 'country-flag-icons/react/3x2';
 
 interface SkillCategoryItemProps {
   category: SkillCategory;
@@ -28,6 +29,26 @@ export function SkillCategoryItem({
 }: SkillCategoryItemProps) {
   const hasSubCategories = category.subCategories && Object.keys(category.subCategories).length > 0;
   
+  const getCountryCode = (flag: string): string => {
+    // Map emoji flags to ISO country codes
+    const emojiToCode: { [key: string]: string } = {
+      '🇯🇵': 'JP',
+      '🇰🇷': 'KR',
+      '🇨🇳': 'CN',
+      '🇺🇸': 'US',
+      '🇩🇪': 'DE',
+      '🇮🇹': 'IT',
+      '🇫🇷': 'FR',
+      '🇬🇧': 'GB',
+      '🇸🇪': 'SE',
+      '🇨🇦': 'CA',
+      '🇹🇼': 'TW',
+      '🇮🇳': 'IN',
+      '🇻🇳': 'VN'
+    };
+    return emojiToCode[flag] || '';
+  };
+
   const renderManufacturerBadge = (skill: string): React.ReactNode => {
     const hasFlag = /^\p{Emoji_Presentation}\s/u.test(skill) || /^\p{Regional_Indicator}\p{Regional_Indicator}\s/u.test(skill);
     if (!hasFlag) return skill;
@@ -35,10 +56,16 @@ export function SkillCategoryItem({
     const parts = skill.split(' ');
     const flag = parts[0];
     const name = parts.slice(1).join(' ');
+    const countryCode = getCountryCode(flag);
+    const FlagComponent = countryCode ? (flags as any)[countryCode] : null;
     
     return (
       <div className="flex items-center gap-2">
-        <span className="text-lg">{flag}</span>
+        {FlagComponent ? (
+          <FlagComponent className="h-4 w-6" />
+        ) : (
+          <span className="text-lg">{flag}</span>
+        )}
         <span>{name}</span>
       </div>
     );
