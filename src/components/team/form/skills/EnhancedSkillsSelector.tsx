@@ -13,8 +13,8 @@ interface EnhancedSkillsSelectorProps {
 }
 
 export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps) {
-  const [newSkill, setNewSkill] = useState('');
-  const [selectedProficiency, setSelectedProficiency] = useState('intermediate');
+  const [newSkill, setNewSkill] = useState<string>('');
+  const [selectedProficiency, setSelectedProficiency] = useState<string>('intermediate');
 
   const { field } = useController({
     name: 'skills',
@@ -30,28 +30,28 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
 
   const selectedSkills = field.value || [];
 
-  const isSkillSelected = (skill: string) => {
+  const isSkillSelected = (skill: string): boolean => {
     return selectedSkills.some((s: string) => s.startsWith(`${skill}|`));
   };
 
-  const getProficiencyForSkill = (skill: string) => {
+  const getProficiencyForSkill = (skill: string): string => {
     const found = selectedSkills.find((s: string) => s.startsWith(`${skill}|`));
     return found ? found.split('|')[1] : 'intermediate';
   };
 
-  const addSkill = (skill: string, proficiency: string) => {
+  const addSkill = (skill: string, proficiency: string): void => {
     const updatedSkills = [...selectedSkills, `${skill}|${proficiency}`];
     field.onChange(updatedSkills);
   };
 
-  const removeSkill = (skill: string) => {
+  const removeSkill = (skill: string): void => {
     const updatedSkills = selectedSkills.filter(
       (s: string) => !s.startsWith(`${skill}|`)
     );
     field.onChange(updatedSkills);
   };
 
-  const handleAddCustomSkill = () => {
+  const handleAddCustomSkill = (): void => {
     if (newSkill.trim()) {
       addSkill(newSkill.trim(), selectedProficiency);
       setNewSkill('');
@@ -94,3 +94,4 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
     </div>
   );
 }
+

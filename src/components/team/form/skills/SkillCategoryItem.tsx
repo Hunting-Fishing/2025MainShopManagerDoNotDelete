@@ -28,9 +28,7 @@ export function SkillCategoryItem({
 }: SkillCategoryItemProps) {
   const hasSubCategories = category.subCategories && Object.keys(category.subCategories).length > 0;
   
-  // Fixed regex to detect emoji flags
-  const renderManufacturerBadge = (skill: string) => {
-    // Using regular expression to check for emoji (flag) at the beginning
+  const renderManufacturerBadge = (skill: string): React.ReactNode => {
     const hasFlag = /^\p{Emoji_Presentation}\s/u.test(skill) || /^\p{Regional_Indicator}\p{Regional_Indicator}\s/u.test(skill);
     if (!hasFlag) return skill;
 
@@ -42,6 +40,71 @@ export function SkillCategoryItem({
       <div className="flex items-center gap-2">
         <span className="text-lg">{flag}</span>
         <span>{name}</span>
+      </div>
+    );
+  };
+
+  const formatSubCategoryName = (key: string): string => {
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .trim();
+  };
+
+  const renderSkillItem = (skill: string) => {
+    const isSelected = isSkillSelected(skill);
+    const currentProficiency = getProficiencyForSkill(skill);
+    
+    const hasFlag = skill.match(/^\S+\s/) && /\p{Emoji}/u.test(skill.split(' ')[0]);
+    
+    return (
+      <div 
+        key={skill} 
+        className={cn(
+          "flex items-center justify-between p-2 border rounded",
+          "hover:bg-gray-50 transition-colors duration-200",
+          hasFlag && "bg-slate-50"
+        )}
+      >
+        <div className="flex-1">
+          {renderManufacturerBadge(skill)}
+        </div>
+        
+        {isSelected ? (
+          <div className="flex items-center gap-2">
+            <select 
+              className="border rounded p-1 text-xs"
+              value={currentProficiency}
+              onChange={(e) => {
+                removeSkill(skill);
+                addSkill(skill, e.target.value);
+              }}
+            >
+              {proficiencyLevels.map(level => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => removeSkill(skill)}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-7"
+            onClick={() => addSkill(skill, selectedProficiency)}
+          >
+            Add
+          </Button>
+        )}
       </div>
     );
   };
@@ -106,70 +169,5 @@ export function SkillCategoryItem({
       </AccordionContent>
     </AccordionItem>
   );
-
-  function formatSubCategoryName(key: string): string {
-    return key
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase())
-      .trim();
-  }
-
-  function renderSkillItem(skill: string) {
-    const isSelected = isSkillSelected(skill);
-    const currentProficiency = getProficiencyForSkill(skill);
-    
-    // Simple check for emoji flag at the beginning of the string
-    const hasFlag = skill.match(/^\S+\s/) && /\p{Emoji}/u.test(skill.split(' ')[0]);
-    
-    return (
-      <div 
-        key={skill} 
-        className={cn(
-          "flex items-center justify-between p-2 border rounded",
-          "hover:bg-gray-50 transition-colors duration-200",
-          hasFlag && "bg-slate-50"
-        )}
-      >
-        <div className="flex-1">
-          {renderManufacturerBadge(skill)}
-        </div>
-        
-        {isSelected ? (
-          <div className="flex items-center gap-2">
-            <select 
-              className="border rounded p-1 text-xs"
-              value={currentProficiency}
-              onChange={(e) => {
-                removeSkill(skill);
-                addSkill(skill, e.target.value);
-              }}
-            >
-              {proficiencyLevels.map(level => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => removeSkill(skill)}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        ) : (
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="h-7"
-            onClick={() => addSkill(skill, selectedProficiency)}
-          >
-            Add
-          </Button>
-        )}
-      </div>
-    );
-  }
 }
+
