@@ -12,18 +12,19 @@ interface CertificationsSkillsFieldsProps {
   control: Control<TeamMemberFormValues>;
 }
 
+// Predefined skills list - sorted alphabetically
 const availableSkills = [
-  { label: "Transmission", value: "Transmission" },
-  { label: "Diagnostics", value: "Diagnostics" },
   { label: "A/C", value: "A/C" },
-  { label: "Electrical", value: "Electrical" },
   { label: "Brakes", value: "Brakes" },
+  { label: "Diagnostics", value: "Diagnostics" },
+  { label: "Electrical", value: "Electrical" },
   { label: "Engine", value: "Engine" },
-  { label: "Suspension", value: "Suspension" },
   { label: "Exhaust", value: "Exhaust" },
-  { label: "Tire Service", value: "Tire Service" },
   { label: "Oil Change", value: "Oil Change" },
-];
+  { label: "Suspension", value: "Suspension" },
+  { label: "Tire Service", value: "Tire Service" },
+  { label: "Transmission", value: "Transmission" },
+].sort((a, b) => a.label.localeCompare(b.label));
 
 export function CertificationsSkillsFields({ control }: CertificationsSkillsFieldsProps) {
   const { fields, append, remove } = useFieldArray({
@@ -32,7 +33,9 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
   });
 
   const [newCert, setNewCert] = useState("");
+  const [newSkill, setNewSkill] = useState("");
 
+  // Handle certification addition
   const handleAddCertification = () => {
     if (newCert.trim()) {
       append({ certification_name: newCert, issue_date: "", expiry_date: "" });
@@ -90,6 +93,31 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
             <FormLabel>Skills / Specialties</FormLabel>
             <FormControl>
               <div className="space-y-2">
+                {/* Custom skill input */}
+                <div className="flex gap-2 mb-2">
+                  <Input 
+                    placeholder="Add custom skill..." 
+                    value={newSkill}
+                    onChange={(e) => setNewSkill(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={() => {
+                      const skillValue = newSkill.trim();
+                      if (skillValue && !field.value?.includes(skillValue)) {
+                        field.onChange([...(field.value || []), skillValue]);
+                        setNewSkill("");
+                      }
+                    }}
+                    variant="outline"
+                    size="icon"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Skills selection */}
                 <div className="flex flex-wrap gap-2 border rounded-md p-2 bg-background">
                   {availableSkills.map((skill) => (
                     <Badge
@@ -108,10 +136,25 @@ export function CertificationsSkillsFields({ control }: CertificationsSkillsFiel
                       {skill.label}
                     </Badge>
                   ))}
+                  
+                  {/* Display custom skills as badges */}
+                  {field.value?.filter(skill => !availableSkills.some(s => s.value === skill)).map((customSkill) => (
+                    <Badge
+                      key={customSkill}
+                      variant="default"
+                      className="cursor-pointer bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        field.onChange(field.value?.filter(val => val !== customSkill) || []);
+                      }}
+                    >
+                      {customSkill} <X className="h-3 w-3 ml-1" />
+                    </Badge>
+                  ))}
                 </div>
+                
                 {field.value?.length > 0 && (
                   <div className="text-sm text-muted-foreground">
-                    Selected: {field.value?.join(", ")}
+                    Selected: {field.value?.sort().join(", ")}
                   </div>
                 )}
               </div>
