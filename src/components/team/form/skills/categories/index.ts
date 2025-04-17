@@ -6,3 +6,5 @@ export * from './mechanicalSkills';
 export * from './electricalSkills';
 export * from './maintenanceSkills';
 export * from './performanceSkills';
+export * from './equipmentSkills';
+

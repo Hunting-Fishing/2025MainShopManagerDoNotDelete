@@ -1,6 +1,5 @@
-
 import React, { ReactNode } from 'react';
-import { Wrench, Zap, Clipboard, PenTool, Car, Truck } from "lucide-react";
+import { Wrench, Zap, Clipboard, PenTool, Car, Truck, Construction } from "lucide-react";
 import {
   mechanicalSkills,
   electricalSkills,
@@ -9,7 +8,9 @@ import {
   getAllVehicleManufacturers,
   getAllCommercialVehicles,
   vehicleManufacturers,
-  commercialVehicles
+  commercialVehicles,
+  equipmentSkills,
+  getAllEquipmentSkills
 } from './categories';
 
 // Define the category interface
@@ -60,6 +61,13 @@ export const skillCategories: SkillCategory[] = [
     icon: <Truck className="h-4 w-4 mr-2" />,
     skills: getAllCommercialVehicles(),
     subCategories: commercialVehicles
+  },
+  {
+    id: 'equipment',
+    name: 'Heavy Equipment & Machinery',
+    icon: <Construction className="h-4 w-4 mr-2" />,
+    skills: getAllEquipmentSkills(),
+    subCategories: equipmentSkills
   }
 ];
 
