@@ -1,114 +1,129 @@
+
 interface VehicleManufacturer {
   name: string;
   flag: string;
   country?: string;
 }
 
-interface RegionalManufacturers {
-  [key: string]: VehicleManufacturer[];
-}
-
 export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
   asian: [
     // China
+    { name: 'BAIC Group', flag: '🇨🇳', country: 'China' },
     { name: 'BYD', flag: '🇨🇳', country: 'China' },
-    { name: 'Geely', flag: '🇨🇳', country: 'China' },
-    { name: 'Great Wall', flag: '🇨🇳', country: 'China' },
-    { name: 'NIO', flag: '🇨🇳', country: 'China' },
-    { name: 'XPeng', flag: '🇨🇳', country: 'China' },
-    { name: 'Li Auto', flag: '🇨🇳', country: 'China' },
-    { name: 'SAIC', flag: '🇨🇳', country: 'China' },
+    { name: 'Changan', flag: '🇨🇳', country: 'China' },
     { name: 'Chery', flag: '🇨🇳', country: 'China' },
+    { name: 'Dongfeng', flag: '🇨🇳', country: 'China' },
+    { name: 'FAW Group', flag: '🇨🇳', country: 'China' },
+    { name: 'Geely', flag: '🇨🇳', country: 'China' },
+    { name: 'Great Wall Motors', flag: '🇨🇳', country: 'China' },
+    { name: 'Hongqi', flag: '🇨🇳', country: 'China' },
+    { name: 'Leapmotor', flag: '🇨🇳', country: 'China' },
+    { name: 'Li Auto', flag: '🇨🇳', country: 'China' },
+    { name: 'NIO', flag: '🇨🇳', country: 'China' },
+    { name: 'Ora', flag: '🇨🇳', country: 'China' },
+    { name: 'SAIC Motor', flag: '🇨🇳', country: 'China' },
+    { name: 'Wuling', flag: '🇨🇳', country: 'China' },
+    { name: 'XPeng', flag: '🇨🇳', country: 'China' },
+    { name: 'Zeekr', flag: '🇨🇳', country: 'China' },
     // Japan
-    { name: 'Toyota', flag: '🇯🇵', country: 'Japan' },
+    { name: 'Daihatsu', flag: '🇯🇵', country: 'Japan' },
     { name: 'Honda', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Nissan', flag: '🇯🇵', country: 'Japan' },
-    { name: 'Suzuki', flag: '🇯🇵', country: 'Japan' },
+    { name: 'Isuzu', flag: '🇯🇵', country: 'Japan' },
     { name: 'Mazda', flag: '🇯🇵', country: 'Japan' },
     { name: 'Mitsubishi', flag: '🇯🇵', country: 'Japan' },
+    { name: 'Nissan', flag: '🇯🇵', country: 'Japan' },
     { name: 'Subaru', flag: '🇯🇵', country: 'Japan' },
+    { name: 'Suzuki', flag: '🇯🇵', country: 'Japan' },
+    { name: 'Toyota', flag: '🇯🇵', country: 'Japan' },
     // South Korea
+    { name: 'Genesis', flag: '🇰🇷', country: 'South Korea' },
     { name: 'Hyundai', flag: '🇰🇷', country: 'South Korea' },
     { name: 'Kia', flag: '🇰🇷', country: 'South Korea' },
-    { name: 'Genesis', flag: '🇰🇷', country: 'South Korea' },
+    { name: 'SsangYong', flag: '🇰🇷', country: 'South Korea' },
     // India
-    { name: 'Tata Motors', flag: '🇮🇳', country: 'India' },
+    { name: 'Ashok Leyland', flag: '🇮🇳', country: 'India' },
     { name: 'Mahindra', flag: '🇮🇳', country: 'India' },
     { name: 'Maruti Suzuki', flag: '🇮🇳', country: 'India' },
-    // Other Asian
-    { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam' },
+    { name: 'Tata Motors', flag: '🇮🇳', country: 'India' },
+    // Southeast Asia
     { name: 'Proton', flag: '🇲🇾', country: 'Malaysia' },
-    { name: 'Perodua', flag: '🇲🇾', country: 'Malaysia' }
-  ],
+    { name: 'Perodua', flag: '🇲🇾', country: 'Malaysia' },
+    { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam' }
+  ].sort((a, b) => a.name.localeCompare(b.name)),
 
   northAmerican: [
     // USA
-    { name: 'Ford', flag: '🇺🇸', country: 'USA' },
-    { name: 'Chevrolet', flag: '🇺🇸', country: 'USA' },
-    { name: 'GMC', flag: '🇺🇸', country: 'USA' },
-    { name: 'Cadillac', flag: '🇺🇸', country: 'USA' },
+    { name: 'Bollinger Motors', flag: '🇺🇸', country: 'USA' },
     { name: 'Buick', flag: '🇺🇸', country: 'USA' },
-    { name: 'Ram', flag: '🇺🇸', country: 'USA' },
-    { name: 'Jeep', flag: '🇺🇸', country: 'USA' },
-    { name: 'Tesla', flag: '🇺🇸', country: 'USA' },
+    { name: 'Cadillac', flag: '🇺🇸', country: 'USA' },
+    { name: 'Canoo', flag: '🇺🇸', country: 'USA' },
+    { name: 'Chevrolet', flag: '🇺🇸', country: 'USA' },
+    { name: 'Fisker', flag: '🇺🇸', country: 'USA' },
+    { name: 'Ford', flag: '🇺🇸', country: 'USA' },
+    { name: 'GMC', flag: '🇺🇸', country: 'USA' },
+    { name: 'Lordstown Motors', flag: '🇺🇸', country: 'USA' },
+    { name: 'Lucid Motors', flag: '🇺🇸', country: 'USA' },
     { name: 'Rivian', flag: '🇺🇸', country: 'USA' },
-    { name: 'Lucid', flag: '🇺🇸', country: 'USA' },
+    { name: 'Tesla', flag: '🇺🇸', country: 'USA' },
     // Canada
-    { name: 'Lion Electric', flag: '🇨🇦', country: 'Canada' }
-  ],
+    { name: 'Lion Electric', flag: '🇨🇦', country: 'Canada' },
+    // Mexico
+    { name: 'Mastretta', flag: '🇲🇽', country: 'Mexico' }
+  ].sort((a, b) => a.name.localeCompare(b.name)),
 
   european: [
     // Germany
-    { name: 'Volkswagen', flag: '🇩🇪', country: 'Germany' },
     { name: 'Audi', flag: '🇩🇪', country: 'Germany' },
     { name: 'BMW', flag: '🇩🇪', country: 'Germany' },
     { name: 'Mercedes-Benz', flag: '🇩🇪', country: 'Germany' },
     { name: 'Porsche', flag: '🇩🇪', country: 'Germany' },
+    { name: 'Volkswagen', flag: '🇩🇪', country: 'Germany' },
     // UK
-    { name: 'Jaguar', flag: '🇬🇧', country: 'UK' },
-    { name: 'Land Rover', flag: '🇬🇧', country: 'UK' },
     { name: 'Aston Martin', flag: '🇬🇧', country: 'UK' },
     { name: 'Bentley', flag: '🇬🇧', country: 'UK' },
+    { name: 'Jaguar', flag: '🇬🇧', country: 'UK' },
+    { name: 'Land Rover', flag: '🇬🇧', country: 'UK' },
     { name: 'McLaren', flag: '🇬🇧', country: 'UK' },
+    { name: 'MINI', flag: '🇬🇧', country: 'UK' },
     { name: 'Rolls-Royce', flag: '🇬🇧', country: 'UK' },
     // Italy
-    { name: 'Ferrari', flag: '🇮🇹', country: 'Italy' },
-    { name: 'Lamborghini', flag: '🇮🇹', country: 'Italy' },
-    { name: 'Maserati', flag: '🇮🇹', country: 'Italy' },
     { name: 'Alfa Romeo', flag: '🇮🇹', country: 'Italy' },
+    { name: 'Ferrari', flag: '🇮🇹', country: 'Italy' },
     { name: 'Fiat', flag: '🇮🇹', country: 'Italy' },
+    { name: 'Lamborghini', flag: '🇮🇹', country: 'Italy' },
+    { name: 'Lancia', flag: '🇮🇹', country: 'Italy' },
+    { name: 'Maserati', flag: '🇮🇹', country: 'Italy' },
     // France
-    { name: 'Renault', flag: '🇫🇷', country: 'France' },
-    { name: 'Peugeot', flag: '🇫🇷', country: 'France' },
     { name: 'Citroën', flag: '🇫🇷', country: 'France' },
+    { name: 'DS Automobiles', flag: '🇫🇷', country: 'France' },
+    { name: 'Peugeot', flag: '🇫🇷', country: 'France' },
+    { name: 'Renault', flag: '🇫🇷', country: 'France' },
     // Sweden
-    { name: 'Volvo', flag: '🇸🇪', country: 'Sweden' },
-    { name: 'Polestar', flag: '🇸🇪', country: 'Sweden' }
-  ],
+    { name: 'Polestar', flag: '🇸🇪', country: 'Sweden' },
+    { name: 'Scania', flag: '🇸🇪', country: 'Sweden' },
+    { name: 'Volvo', flag: '🇸🇪', country: 'Sweden' }
+  ].sort((a, b) => a.name.localeCompare(b.name)),
 
   electricAndOther: [
+    // Electric & New Tech Focused
+    { name: 'BYD', flag: '🇨🇳', country: 'China' },
+    { name: 'Lucid Motors', flag: '🇺🇸', country: 'USA' },
     { name: 'NIO', flag: '🇨🇳', country: 'China' },
-    { name: 'XPeng', flag: '🇨🇳', country: 'China' },
-    { name: 'Tesla', flag: '🇺🇸', country: 'USA' },
-    { name: 'Rivian', flag: '🇺🇸', country: 'USA' },
-    { name: 'Lucid', flag: '🇺🇸', country: 'USA' },
     { name: 'Polestar', flag: '🇸🇪', country: 'Sweden' },
-    { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam' }
-  ]
+    { name: 'Rivian', flag: '🇺🇸', country: 'USA' },
+    { name: 'Tesla', flag: '🇺🇸', country: 'USA' },
+    { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam' },
+    { name: 'XPeng', flag: '🇨🇳', country: 'China' }
+  ].sort((a, b) => a.name.localeCompare(b.name))
 };
 
-// Function to get vehicle display name with flag
-const getVehicleDisplayName = (manufacturer: VehicleManufacturer): string => {
-  return `${manufacturer.flag} ${manufacturer.name}`;
-};
-
-// Update getAllVehicleManufacturers to return display names with flags
+// Function to get all manufacturers with flags in alphabetical order
 export const getAllVehicleManufacturers = () => {
   const allManufacturers = new Set<string>();
   
   Object.values(vehicleManufacturers).forEach(manufacturers => {
     manufacturers.forEach(manufacturer => {
-      allManufacturers.add(getVehicleDisplayName(manufacturer));
+      allManufacturers.add(`${manufacturer.flag} ${manufacturer.name}`);
     });
   });
   

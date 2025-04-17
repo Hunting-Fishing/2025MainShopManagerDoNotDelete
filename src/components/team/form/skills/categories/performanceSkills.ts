@@ -1,9 +1,9 @@
 
-// Performance and custom work skills
+// Performance and custom work skills - alphabetically sorted
 export const performanceSkills = [
+  'Custom Fabrication',
   'Exhaust Modifications',
-  'Suspension Lifts',
-  'Tuning & Reprogramming',
   'Performance Upgrades',
-  'Custom Fabrication'
+  'Suspension Lifts',
+  'Tuning & Reprogramming'
 ].sort();

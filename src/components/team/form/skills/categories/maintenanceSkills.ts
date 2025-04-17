@@ -1,11 +1,11 @@
 
-// Maintenance and service skills
+// Maintenance and service skills - alphabetically sorted
 export const maintenanceSkills = [
-  'Oil Changes',
-  'Tire Rotation',
-  'Tire Balancing',
   'Brake Service',
   'Fluid Flushes',
-  'Tune-ups',
-  'Inspections'
+  'Inspections',
+  'Oil Changes',
+  'Tire Balancing',
+  'Tire Rotation',
+  'Tune-ups'
 ].sort();

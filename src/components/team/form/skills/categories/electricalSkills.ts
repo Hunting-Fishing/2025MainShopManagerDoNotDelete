@@ -1,10 +1,10 @@
 
-// Electrical system skills
+// Electrical system skills - alphabetically sorted
 export const electricalSkills = [
+  'ADAS Calibration',
+  'Battery Systems',
   'Diagnostics',
   'ECU Programming',
   'Hybrid/EV Systems',
-  'ADAS Calibration',
-  'Wiring',
-  'Battery Systems'
+  'Wiring'
 ].sort();

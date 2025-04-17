@@ -1,11 +1,11 @@
 
-// Mechanical system skills
+// Mechanical system skills - alphabetically sorted
 export const mechanicalSkills = [
-  'Engine Repair',
-  'Cooling System',
-  'Fuel System',
-  'Drivetrain',
-  'Transmission',
   'Brakes',
-  'Suspension'
+  'Cooling System',
+  'Drivetrain',
+  'Engine Repair',
+  'Fuel System',
+  'Suspension',
+  'Transmission'
 ].sort();
