@@ -20,7 +20,7 @@ export interface SkillCategory {
   name: string;
   icon: ReactNode;
   skills: string[];
-  subCategories?: Record<string, string[]> | Record<string, { name: string; skills: string[] }>;
+  subCategories?: Record<string, string[] | { name: string; skills: string[] }>;
 }
 
 // Define the skill categories

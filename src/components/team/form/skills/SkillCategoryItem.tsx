@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -40,15 +39,15 @@ export function SkillCategoryItem({
           // Render skills organized by subcategories
           Object.entries(category.subCategories!).map(([subCategoryKey, subCategoryData]) => {
             // Handle both formats of subcategories
-            const subCategoryName = 
-              typeof subCategoryData === 'object' && 'name' in subCategoryData 
-                ? subCategoryData.name 
-                : formatSubCategoryName(subCategoryKey);
+            const isObjectFormat = typeof subCategoryData === 'object' && !Array.isArray(subCategoryData) && 'skills' in subCategoryData;
+            
+            const subCategoryName = isObjectFormat
+              ? subCategoryData.name
+              : formatSubCategoryName(subCategoryKey);
                 
-            const skills = 
-              typeof subCategoryData === 'object' && 'skills' in subCategoryData
-                ? subCategoryData.skills
-                : subCategoryData as string[];
+            const skills = isObjectFormat
+              ? subCategoryData.skills
+              : (subCategoryData as string[]);
                 
             return (
               <div key={subCategoryKey} className="mb-4">
