@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GeneralTab } from "./GeneralTab";
 import { AppearanceTab } from "./AppearanceTab";
@@ -9,7 +10,7 @@ import { SkillsTab } from "./SkillsTab";
 
 export function SettingsLayout() {
   return (
-    <Tabs defaultValue="account" className="space-y-6">
+    <Tabs defaultValue="general" className="space-y-6">
       <TabsList>
         <TabsTrigger value="general">
           General
@@ -52,7 +53,6 @@ export function SettingsLayout() {
       <TabsContent value="security">
         <SecurityTab />
       </TabsContent>
-      
       <TabsContent value="skills">
         <SkillsTab />
       </TabsContent>
