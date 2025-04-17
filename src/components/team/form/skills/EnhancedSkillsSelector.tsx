@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Accordion } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
@@ -24,27 +23,22 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
     control
   });
 
-  // Current skills from the form field
   const selectedSkills = field.value || [];
 
-  // Check if a skill is selected
   const isSkillSelected = (skill: string) => {
     return selectedSkills.some((s: string) => s.startsWith(`${skill}|`));
   };
 
-  // Get proficiency for a selected skill
   const getProficiencyForSkill = (skill: string) => {
     const found = selectedSkills.find((s: string) => s.startsWith(`${skill}|`));
     return found ? found.split('|')[1] : 'intermediate';
   };
 
-  // Add a skill with proficiency
   const addSkill = (skill: string, proficiency: string) => {
     const updatedSkills = [...selectedSkills, `${skill}|${proficiency}`];
     field.onChange(updatedSkills);
   };
 
-  // Remove a skill
   const removeSkill = (skill: string) => {
     const updatedSkills = selectedSkills.filter(
       (s: string) => !s.startsWith(`${skill}|`)
@@ -52,7 +46,6 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
     field.onChange(updatedSkills);
   };
 
-  // Add a custom skill
   const handleAddCustomSkill = () => {
     if (newSkill.trim()) {
       addSkill(newSkill.trim(), selectedProficiency);
@@ -60,22 +53,21 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
     }
   };
 
-  // Filter skills based on search
   const getFilteredSkills = (categorySkills: string[]) => {
     if (!skillSearch) return categorySkills;
     
+    const searchLower = skillSearch.toLowerCase();
     return categorySkills.filter(skill => 
-      skill.toLowerCase().includes(skillSearch.toLowerCase())
+      skill.toLowerCase().includes(searchLower)
     );
   };
 
   return (
     <div className="space-y-4">
-      {/* Search input */}
       <div className="relative">
         <Input
           type="text"
-          placeholder="Search skills..."
+          placeholder="Search skills or vehicle models..."
           value={skillSearch}
           onChange={(e) => setSkillSearch(e.target.value)}
           className="pl-10"
@@ -83,16 +75,14 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
         <Wrench className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
       </div>
 
-      {/* Selected skills display */}
       <div className="border rounded-lg p-3 bg-slate-50">
-        <h3 className="text-sm font-medium mb-2">Selected Skills:</h3>
+        <h3 className="text-sm font-medium mb-2">Selected Skills & Vehicles:</h3>
         <SelectedSkillBadges 
           selectedSkills={selectedSkills} 
           removeSkill={removeSkill} 
         />
       </div>
 
-      {/* Add custom skill input */}
       <CustomSkillInput 
         newSkill={newSkill}
         setNewSkill={setNewSkill}
@@ -101,28 +91,28 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
         handleAddCustomSkill={handleAddCustomSkill}
       />
 
-      {/* Skills categories accordion */}
-      <Accordion type="single" collapsible className="w-full">
-        {skillCategories.map(category => {
-          const filteredSkills = getFilteredSkills(category.skills);
-          
-          // Skip empty categories when filtering
-          if (skillSearch && filteredSkills.length === 0) return null;
-          
-          return (
-            <SkillCategoryItem
-              key={category.id}
-              category={category}
-              filteredSkills={filteredSkills}
-              isSkillSelected={isSkillSelected}
-              getProficiencyForSkill={getProficiencyForSkill}
-              addSkill={addSkill}
-              removeSkill={removeSkill}
-              selectedProficiency={selectedProficiency}
-            />
-          );
-        })}
-      </Accordion>
+      <div className="max-h-[600px] overflow-y-auto">
+        <Accordion type="single" collapsible className="w-full">
+          {skillCategories.map(category => {
+            const filteredSkills = getFilteredSkills(category.skills);
+            
+            if (skillSearch && filteredSkills.length === 0) return null;
+            
+            return (
+              <SkillCategoryItem
+                key={category.id}
+                category={category}
+                filteredSkills={filteredSkills}
+                isSkillSelected={isSkillSelected}
+                getProficiencyForSkill={getProficiencyForSkill}
+                addSkill={addSkill}
+                removeSkill={removeSkill}
+                selectedProficiency={selectedProficiency}
+              />
+            );
+          })}
+        </Accordion>
+      </div>
     </div>
   );
 }

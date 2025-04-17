@@ -1,6 +1,5 @@
-
-import { Wrench, Zap, Clipboard, PenTool } from "lucide-react";
-import { ReactNode } from "react";
+import React from 'react';
+import { Wrench, Zap, Clipboard, PenTool, Car } from "lucide-react";
 
 // Define the category interface
 export interface SkillCategory {
@@ -63,6 +62,53 @@ export const skillCategories: SkillCategory[] = [
       'Tuning & Reprogramming',
       'Performance Upgrades',
       'Custom Fabrication'
+    ].sort()
+  },
+  {
+    id: 'vehicles',
+    name: 'Vehicle Makes & Models',
+    icon: <Car className="h-4 w-4 mr-2" />,
+    skills: [
+      'Ford F-150',
+      'Ford Explorer',
+      'Ford Escape',
+      'Ford Mustang',
+      'Chevrolet Silverado',
+      'Chevrolet Malibu',
+      'Chevrolet Equinox',
+      'Chevrolet Tahoe',
+      'Toyota Camry',
+      'Toyota Corolla',
+      'Toyota RAV4',
+      'Toyota Tacoma',
+      'Honda Accord',
+      'Honda Civic',
+      'Honda CR-V',
+      'Honda Pilot',
+      'Nissan Altima',
+      'Nissan Sentra',
+      'Nissan Rogue',
+      'Nissan Frontier',
+      'BMW 3 Series',
+      'BMW 5 Series',
+      'BMW X3',
+      'BMW X5',
+      'Mercedes-Benz C-Class',
+      'Mercedes-Benz E-Class',
+      'Mercedes-Benz GLC',
+      'Mercedes-Benz GLE',
+      'Volkswagen Jetta',
+      'Volkswagen Passat',
+      'Volkswagen Tiguan',
+      'Volkswagen Atlas',
+      'Audi A4',
+      'Audi Q5',
+      'Audi A6',
+      'Audi Q7',
+      'Subaru Outback',
+      'Subaru Forester',
+      'Subaru Impreza',
+      'Subaru Crosstrek'
     ].sort()
   }
 ];
