@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Accordion } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
   const [skillSearch, setSkillSearch] = useState('');
   const [newSkill, setNewSkill] = useState('');
   const [selectedProficiency, setSelectedProficiency] = useState('intermediate');
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   const { field } = useController({
     name: 'skills',
@@ -62,6 +64,14 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
     );
   };
 
+  const handleAccordionChange = (value: string) => {
+    if (expandedCategories.includes(value)) {
+      setExpandedCategories(expandedCategories.filter(id => id !== value));
+    } else {
+      setExpandedCategories([...expandedCategories, value]);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -92,7 +102,18 @@ export function EnhancedSkillsSelector({ control }: EnhancedSkillsSelectorProps)
       />
 
       <div className="max-h-[600px] overflow-y-auto">
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion 
+          type="multiple" 
+          value={expandedCategories}
+          onValueChange={(value) => {
+            if (Array.isArray(value)) {
+              setExpandedCategories(value);
+            } else {
+              handleAccordionChange(value);
+            }
+          }}
+          className="w-full"
+        >
           {skillCategories.map(category => {
             const filteredSkills = getFilteredSkills(category.skills);
             
