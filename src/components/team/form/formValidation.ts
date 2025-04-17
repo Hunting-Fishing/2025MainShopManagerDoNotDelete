@@ -56,6 +56,7 @@ export const teamMemberFormSchema = z.object({
     })
   ).optional().default([]),
   
+  // Enhanced skills format supporting proficiency levels (format: "skill_name|proficiency_level")
   skills: z.array(z.string()).optional().default([])
 });
 
