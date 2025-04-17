@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 import { Wrench, Zap, Clipboard, PenTool, Car, Truck, Construction, Bike } from "lucide-react";
 import {
@@ -25,45 +24,19 @@ export interface SkillCategory {
 const atvUtvCategories = {
   recreational: {
     name: 'Recreational ATV/UTV',
-    skills: [
-      'Polaris',
-      'Can-Am (BRP)',
-      'Yamaha',
-      'Honda',
-      'Kawasaki',
-      'Suzuki',
-      'Arctic Cat',
-      'CF Moto',
-      'Kymco',
-      'Hisun',
-      'Segway Powersports',
-      'Tracker Off Road',
-      'Massimo',
-      'Tao Motor',
-      'SSR Motorsports',
-      'Linhai'
-    ]
+    skills: groupedAtvUtvBrands.recreational.map(brand => `${brand.flag} ${brand.name}`)
   },
   workUtility: {
     name: 'Work Utility ATV/UTV',
-    skills: [
-      'John Deere Gator',
-      'Kubota RTV',
-      'Bobcat Utility Vehicles',
-      'Mahindra ROXOR',
-      'Kioti Mechron',
-      'Gravely Atlas',
-      'JCB Workmax'
-    ]
+    skills: groupedAtvUtvBrands.workUtility.map(brand => `${brand.flag} ${brand.name}`)
   },
-  europeanNiche: {
-    name: 'European & Niche ATV/UTV',
-    skills: [
-      'TGB (Taiwan Golden Bee)',
-      'Access Motor',
-      'GOES',
-      'Quadzilla'
-    ]
+  electric: {
+    name: 'Electric & New Tech',
+    skills: groupedAtvUtvBrands.electric.map(brand => `${brand.flag} ${brand.name}`)
+  },
+  global: {
+    name: 'Global & Niche Brands',
+    skills: groupedAtvUtvBrands.european.map(brand => `${brand.flag} ${brand.name}`)
   }
 };
 
@@ -71,7 +44,8 @@ const getAllAtvUtvSkills = () => {
   return [
     ...atvUtvCategories.recreational.skills,
     ...atvUtvCategories.workUtility.skills,
-    ...atvUtvCategories.europeanNiche.skills
+    ...atvUtvCategories.electric.skills,
+    ...atvUtvCategories.global.skills
   ].sort((a, b) => a.localeCompare(b));
 };
 
