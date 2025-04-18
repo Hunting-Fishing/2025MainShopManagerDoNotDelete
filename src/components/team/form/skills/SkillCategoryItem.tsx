@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { proficiencyLevels } from './SkillCategories';
 import type { SkillCategory } from './SkillCategories';
 import { cn } from "@/lib/utils";
 import * as flags from 'country-flag-icons/react/3x2';
+import { ManufacturerLogo } from './components/ManufacturerLogo';
 
 interface SkillCategoryItemProps {
   category: SkillCategory;
@@ -30,7 +30,6 @@ export function SkillCategoryItem({
   const hasSubCategories = category.subCategories && Object.keys(category.subCategories).length > 0;
   
   const getCountryCode = (flag: string): string => {
-    // Map emoji flags to ISO country codes
     const emojiToCode: { [key: string]: string } = {
       '🇯🇵': 'JP',
       '🇰🇷': 'KR',
@@ -61,11 +60,10 @@ export function SkillCategoryItem({
     
     return (
       <div className="flex items-center gap-2">
-        {FlagComponent ? (
-          <FlagComponent className="h-4 w-6" />
-        ) : (
-          <span className="text-lg">{flag}</span>
-        )}
+        <div className="flex items-center gap-1">
+          {FlagComponent && <FlagComponent className="h-4 w-6" />}
+          <ManufacturerLogo manufacturer={name} />
+        </div>
         <span>{name}</span>
       </div>
     );

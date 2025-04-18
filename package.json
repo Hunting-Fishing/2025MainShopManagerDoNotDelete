@@ -49,6 +49,7 @@
     "@types/file-saver": "^2.0.7",
     "@types/jest": "^29.5.14",
     "@types/uuid": "^10.0.0",
+    "car-makes-icons": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
