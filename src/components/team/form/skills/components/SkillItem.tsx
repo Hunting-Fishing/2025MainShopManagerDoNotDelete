@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { proficiencyLevels } from '../SkillCategories';
 import { ManufacturerLogo } from './ManufacturerLogo';
+import { getCountryCode } from '@/utils/countryCodeMapper';
 import * as flags from 'country-flag-icons/react/3x2';
 import { cn } from "@/lib/utils";
 
@@ -26,16 +27,6 @@ export const SkillItem = ({
 }: SkillItemProps) => {
   const hasFlag = skill.match(/^\S+\s/) && /\p{Emoji}/u.test(skill.split(' ')[0]);
   
-  const getCountryCode = (flag: string): string => {
-    const emojiToCode: { [key: string]: string } = {
-      '🇯🇵': 'JP', '🇰🇷': 'KR', '🇨🇳': 'CN', '🇺🇸': 'US',
-      '🇩🇪': 'DE', '🇮🇹': 'IT', '🇫🇷': 'FR', '🇬🇧': 'GB',
-      '🇸🇪': 'SE', '🇨🇦': 'CA', '🇹🇼': 'TW', '🇮🇳': 'IN',
-      '🇻🇳': 'VN'
-    };
-    return emojiToCode[flag] || '';
-  };
-
   const renderSkillContent = () => {
     if (!hasFlag) return skill;
 
