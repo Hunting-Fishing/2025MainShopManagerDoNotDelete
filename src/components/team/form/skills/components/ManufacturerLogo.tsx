@@ -2,10 +2,17 @@
 import React from 'react';
 import { Car } from 'lucide-react';
 
-// Import car logos, but handle potential import failure
-let carLogos: any = {};
+// Define the type for the car-makes-icons module
+interface CarLogos {
+  [key: string]: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
+// Import car logos with proper typing and error handling
+let carMakesIcons: CarLogos = {};
 try {
-  carLogos = require('car-makes-icons');
+  // Dynamic import to avoid TypeScript errors
+  carMakesIcons = require('car-makes-icons');
+  console.log('Available car logos:', Object.keys(carMakesIcons));
 } catch (error) {
   console.error('Failed to load car-makes-icons:', error);
 }
@@ -16,23 +23,35 @@ interface ManufacturerLogoProps {
 }
 
 export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: ManufacturerLogoProps) => {
-  const normalizedName = manufacturer.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // Normalize the manufacturer name to match the format in car-makes-icons
+  const normalizedName = manufacturer.toLowerCase().trim();
   
+  // Map of common manufacturer name variants to their standardized names in the car-makes-icons package
   const logoMap: { [key: string]: string } = {
     'vw': 'volkswagen',
     'chevy': 'chevrolet',
     'mercedes': 'mercedesbenz',
     'mercedesbenz': 'mercedesbenz',
-    'landrover': 'land-rover'
+    'landrover': 'land-rover',
+    'alfa': 'alfaromeo',
+    'alfa romeo': 'alfaromeo',
+    'aston': 'astonmartin',
+    'aston martin': 'astonmartin'
   };
-
+  
+  // Get the correct logo name
   const logoName = logoMap[normalizedName] || normalizedName;
   
-  // Check if carLogos is properly loaded and contains the logo
-  if (carLogos && Object.keys(carLogos).length > 0) {
-    const LogoComponent = carLogos[logoName];
+  // Debug log to help identify available logos
+  console.log(`Looking for logo: ${logoName} for manufacturer: ${manufacturer}`);
+  
+  // Check if carMakesIcons is properly loaded and contains the logo
+  if (Object.keys(carMakesIcons).length > 0) {
+    const LogoComponent = carMakesIcons[logoName];
     if (LogoComponent) {
       return <LogoComponent className={className} />;
+    } else {
+      console.log(`No logo found for ${logoName}`);
     }
   }
 

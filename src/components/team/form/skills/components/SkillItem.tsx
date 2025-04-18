@@ -38,11 +38,11 @@ export const SkillItem = ({
 
     return (
       <div className="flex items-center gap-2">
+        {FlagComponent && <FlagComponent className="h-4 w-6" />}
         <div className="flex items-center gap-1">
-          {FlagComponent && <FlagComponent className="h-4 w-6" />}
           <ManufacturerLogo manufacturer={name} />
+          <span>{name}</span>
         </div>
-        <span>{name}</span>
       </div>
     );
   };
