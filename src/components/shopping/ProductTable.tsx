@@ -27,7 +27,7 @@ export function ProductTable({ products, onViewDetails }: ProductTableProps) {
           {products.map((product) => (
             <TableRow key={product.id}>
               <TableCell className="font-medium">{product.title}</TableCell>
-              <TableCell>${product.price?.toFixed(2)}</TableCell>
+              <TableCell>${product.price?.toFixed(2) || '0.00'}</TableCell>
               <TableCell>
                 <Badge variant="outline" className={
                   product.is_available 

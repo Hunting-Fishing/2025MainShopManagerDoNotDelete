@@ -22,7 +22,13 @@ export function ProductGrid({ products, isLoading, emptyMessage, onProductClick 
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product) => (
         <div key={product.id} onClick={() => onProductClick?.(product)} className="cursor-pointer">
-          <ProductCard {...product} />
+          <ProductCard 
+            title={product.title}
+            price={product.price}
+            image={product.image_url}
+            rating={product.average_rating}
+            status={product.is_available ? "In Stock" : "Out of Stock"}
+          />
         </div>
       ))}
     </div>

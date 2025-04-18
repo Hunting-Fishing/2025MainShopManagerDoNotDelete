@@ -66,7 +66,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
                   </div>
                 )}
               </div>
-              <span className="text-2xl font-bold">${product.price?.toFixed(2)}</span>
+              <span className="text-2xl font-bold">${product.price?.toFixed(2) || '0.00'}</span>
             </div>
 
             <Button className="w-full">

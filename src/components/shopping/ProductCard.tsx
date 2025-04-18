@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { ShoppingCart, Star } from "lucide-react";
 
 interface ProductCardProps {
   title: string;
-  price: number;
+  price?: number;
   image?: string;
   rating?: number;
   status?: string;
@@ -17,7 +16,7 @@ interface ProductCardProps {
   };
 }
 
-export function ProductCard({ title, price, image, rating, status, seller }: ProductCardProps) {
+export function ProductCard({ title, price = 0, image, rating, status, seller }: ProductCardProps) {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'in stock':
