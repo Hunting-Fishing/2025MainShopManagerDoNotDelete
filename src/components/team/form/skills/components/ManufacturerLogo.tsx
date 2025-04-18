@@ -20,22 +20,17 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
   useEffect(() => {
     const loadIcon = async () => {
       try {
-        const { data, error } = await supabase.storage
+        // getPublicUrl doesn't return an error, just the data with publicUrl
+        const { data } = await supabase.storage
           .from('Automotive-Icons')
           .getPublicUrl(`${normalizedName}.svg`);
           
-        if (error) {
-          console.error('Error loading manufacturer icon:', error);
-          setLoaded(true);
-          return;
-        }
-
         if (data) {
           setIconUrl(data.publicUrl);
-          setLoaded(true);
         }
       } catch (err) {
         console.error('Error loading manufacturer icon:', err);
+      } finally {
         setLoaded(true);
       }
     };
