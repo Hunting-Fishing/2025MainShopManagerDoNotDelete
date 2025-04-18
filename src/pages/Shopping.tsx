@@ -15,6 +15,10 @@ import { useAuthUser } from '@/hooks/useAuthUser';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { EnhancedProductFilters } from '@/components/shopping/EnhancedProductFilters';
+import { ProductTable } from '@/components/shopping/ProductTable';
+import { ProductDetailsModal } from '@/components/shopping/ProductDetailsModal';
+import { LayoutGrid, Table } from 'lucide-react';
+import { Product } from '@/types/shopping';
 
 export default function Shopping() {
   const { products, isLoading, filterOptions, updateFilters } = useProducts();
@@ -25,6 +29,8 @@ export default function Shopping() {
   const [activeTab, setActiveTab] = useState<string>('all-products');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showWishlist, setShowWishlist] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handleSearch = (searchTerm: string) => {
     updateFilters({ search: searchTerm });
@@ -44,11 +50,33 @@ export default function Shopping() {
     }
   };
 
+  const handleViewDetails = (product: Product) => {
+    setSelectedProduct(product);
+  };
+
   return (
     <ResponsiveContainer className="py-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">Shop</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            className={viewMode === 'grid' ? 'bg-gray-100' : ''}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className={viewMode === 'table' ? 'bg-gray-100' : ''}
+          >
+            <Table className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       
@@ -92,11 +120,19 @@ export default function Shopping() {
               />
               
               <div className="mt-6">
-                <ProductGrid
-                  products={products}
-                  isLoading={isLoading}
-                  emptyMessage="No products found matching your filters."
-                />
+                {viewMode === 'grid' ? (
+                  <ProductGrid
+                    products={products}
+                    isLoading={isLoading}
+                    emptyMessage="No products found matching your filters."
+                    onProductClick={handleViewDetails}
+                  />
+                ) : (
+                  <ProductTable 
+                    products={products}
+                    onViewDetails={handleViewDetails}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -130,6 +166,12 @@ export default function Shopping() {
           </div>
         </TabsContent>
       </Tabs>
+      
+      <ProductDetailsModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
       
       <WishlistPanel
         visible={showWishlist}
