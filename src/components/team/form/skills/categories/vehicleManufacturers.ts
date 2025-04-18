@@ -27,6 +27,7 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'Hyundai', flag: '🇰🇷', country: 'South Korea', founded: 1967 },
     { name: 'Kia', flag: '🇰🇷', country: 'South Korea', founded: 1944 },
     { name: 'SsangYong', flag: '🇰🇷', country: 'South Korea', founded: 1954 },
+    { name: 'Daewoo', flag: '🇰🇷', country: 'South Korea', founded: 1967 },
     
     // China
     { name: 'BYD', flag: '🇨🇳', country: 'China', founded: 1995 },
@@ -38,13 +39,18 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'NIO', flag: '🇨🇳', country: 'China', founded: 2014 },
     { name: 'SAIC', flag: '🇨🇳', country: 'China', founded: 1955 },
     { name: 'Xpeng', flag: '🇨🇳', country: 'China', founded: 2014 },
-    { name: 'Daewoo', flag: '🇰🇷', country: 'South Korea', founded: 1967 },
     { name: 'FAW', flag: '🇨🇳', country: 'China', founded: 1953 },
     { name: 'Haval', flag: '🇨🇳', country: 'China', founded: 2013 },
     { name: 'Hongqi', flag: '🇨🇳', country: 'China', founded: 1958 },
+    { name: 'Wey', flag: '🇨🇳', country: 'China', founded: 2016 },
+    { name: 'Zeekr', flag: '🇨🇳', country: 'China', founded: 2021 },
+    
+    // Other Asian
     { name: 'Perodua', flag: '🇲🇾', country: 'Malaysia', founded: 1993 },
     { name: 'Proton', flag: '🇲🇾', country: 'Malaysia', founded: 1983 },
-    { name: 'Tata', flag: '🇮🇳', country: 'India', founded: 1945 }
+    { name: 'Tata', flag: '🇮🇳', country: 'India', founded: 1945 },
+    { name: 'Mahindra', flag: '🇮🇳', country: 'India', founded: 1945 },
+    { name: 'Maruti Suzuki', flag: '🇮🇳', country: 'India', founded: 1981 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   northAmerican: [
@@ -68,7 +74,14 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'Oldsmobile', flag: '🇺🇸', country: 'USA', founded: 1897 },
     { name: 'Plymouth', flag: '🇺🇸', country: 'USA', founded: 1928 },
     { name: 'Pontiac', flag: '🇺🇸', country: 'USA', founded: 1926 },
-    { name: 'Saturn', flag: '🇺🇸', country: 'USA', founded: 1985 }
+    { name: 'Saturn', flag: '🇺🇸', country: 'USA', founded: 1985 },
+    
+    // Additional US manufacturers
+    { name: 'Karma', flag: '🇺🇸', country: 'USA', founded: 2015 },
+    { name: 'Lordstown', flag: '🇺🇸', country: 'USA', founded: 2018 },
+    { name: 'Lucid', flag: '🇺🇸', country: 'USA', founded: 2007 },
+    { name: 'Panoz', flag: '🇺🇸', country: 'USA', founded: 1989 },
+    { name: 'SSC', flag: '🇺🇸', country: 'USA', founded: 1999 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   european: [
@@ -80,6 +93,7 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'Opel', flag: '🇩🇪', country: 'Germany', founded: 1862 },
     { name: 'Porsche', flag: '🇩🇪', country: 'Germany', founded: 1931 },
     { name: 'Volkswagen', flag: '🇩🇪', country: 'Germany', founded: 1937 },
+    { name: 'Smart', flag: '🇩🇪', country: 'Germany', founded: 1994 },
     
     // Italy
     { name: 'Alfa Romeo', flag: '🇮🇹', country: 'Italy', founded: 1910 },
@@ -87,11 +101,15 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'Fiat', flag: '🇮🇹', country: 'Italy', founded: 1899 },
     { name: 'Lamborghini', flag: '🇮🇹', country: 'Italy', founded: 1963 },
     { name: 'Maserati', flag: '🇮🇹', country: 'Italy', founded: 1914 },
+    { name: 'Lancia', flag: '🇮🇹', country: 'Italy', founded: 1906 },
+    { name: 'Pagani', flag: '🇮🇹', country: 'Italy', founded: 1992 },
     
     // France
     { name: 'Citroën', flag: '🇫🇷', country: 'France', founded: 1919 },
     { name: 'Peugeot', flag: '🇫🇷', country: 'France', founded: 1810 },
     { name: 'Renault', flag: '🇫🇷', country: 'France', founded: 1899 },
+    { name: 'Alpine', flag: '🇫🇷', country: 'France', founded: 1955 },
+    { name: 'DS', flag: '🇫🇷', country: 'France', founded: 2014 },
     
     // UK
     { name: 'Aston Martin', flag: '🇬🇧', country: 'UK', founded: 1913 },
@@ -104,7 +122,24 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     
     // Sweden
     { name: 'Polestar', flag: '🇸🇪', country: 'Sweden', founded: 1996 },
-    { name: 'Volvo', flag: '🇸🇪', country: 'Sweden', founded: 1927 }
+    { name: 'Volvo', flag: '🇸🇪', country: 'Sweden', founded: 1927 },
+    { name: 'Koenigsegg', flag: '🇸🇪', country: 'Sweden', founded: 1994 },
+    
+    // Spain
+    { name: 'SEAT', flag: '🇪🇸', country: 'Spain', founded: 1950 },
+    { name: 'Cupra', flag: '🇪🇸', country: 'Spain', founded: 2018 },
+    
+    // Czech Republic
+    { name: 'Skoda', flag: '🇨🇿', country: 'Czech Republic', founded: 1895 },
+    
+    // Netherlands
+    { name: 'Spyker', flag: '🇳🇱', country: 'Netherlands', founded: 2000 },
+    
+    // Romania
+    { name: 'Dacia', flag: '🇷🇴', country: 'Romania', founded: 1966 },
+    
+    // Croatia
+    { name: 'Rimac', flag: '🇭🇷', country: 'Croatia', founded: 2009 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   electricAndOther: [
@@ -122,7 +157,10 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'Karma', flag: '🇺🇸', country: 'USA', founded: 2015 },
     { name: 'Lightyear', flag: '🇳🇱', country: 'Netherlands', founded: 2016 },
     { name: 'Lordstown', flag: '🇺🇸', country: 'USA', founded: 2018 },
-    { name: 'Rimac', flag: '🇭🇷', country: 'Croatia', founded: 2009 }
+    { name: 'Rimac', flag: '🇭🇷', country: 'Croatia', founded: 2009 },
+    { name: 'Aiways', flag: '🇨🇳', country: 'China', founded: 2017 },
+    { name: 'Ora', flag: '🇨🇳', country: 'China', founded: 2018 },
+    { name: 'Weltmeister', flag: '🇨🇳', country: 'China', founded: 2015 }
   ].sort((a, b) => a.name.localeCompare(b.name))
 };
 
