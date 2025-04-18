@@ -4,16 +4,22 @@ export const emojiToCountryCode: { [key: string]: string } = {
   '🇸🇪': 'SE', '🇨🇦': 'CA', '🇹🇼': 'TW', '🇮🇳': 'IN',
   '🇻🇳': 'VN', '🇲🇾': 'MY', '🇪🇸': 'ES', '🇷🇴': 'RO',
   '🇨🇿': 'CZ', '🇳🇱': 'NL', '🇭🇷': 'HR', '🇦🇹': 'AT',
-  '🇧🇪': 'BE', '🇨🇭': 'CH', '🇵🇱': 'PL', '🇵🇹': 'PT'
+  '🇧🇪': 'BE', '🇨🇭': 'CH', '🇵🇱': 'PL', '🇵🇹': 'PT',
+  '🇷🇺': 'RU', '🇦🇺': 'AU', '🇧🇷': 'BR', '🇺🇦': 'UA',
+  '🇭🇺': 'HU', '🇸🇰': 'SK', '🇧🇬': 'BG', '🇩🇰': 'DK',
+  '🇫🇮': 'FI', '🇬🇷': 'GR', '🇮🇪': 'IE', '🇱🇺': 'LU',
+  '🇳🇴': 'NO', '🇷🇸': 'RS', '🇸🇮': 'SI', '🇹🇷': 'TR',
+  '🇲🇽': 'MX', '🇦🇷': 'AR', '🇮🇱': 'IL', '🇿🇦': 'ZA',
+  '🇮🇷': 'IR', '🇲🇦': 'MA', '🇹🇭': 'TH', '🇵🇭': 'PH',
+  '🇮🇩': 'ID', '🇰🇭': 'KH', '🇱🇦': 'LA', '🇲🇲': 'MM',
+  '🇳🇿': 'NZ', '🇵🇰': 'PK', '🇸🇬': 'SG', '🇱🇰': 'LK'
 };
 
 export const getCountryCode = (flag: string): string => {
   return emojiToCountryCode[flag] || '';
 };
 
-// Comprehensive mapping for manufacturer names to standardized formats for icon display
 export const getStandardizedManufacturerName = (name: string): string => {
-  // First normalize the input
   const normalizedInput = name.trim().toLowerCase();
   
   const nameMap: { [key: string]: string } = {
@@ -39,7 +45,7 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'fiat': 'fiat',
     'jaguar': 'jaguar',
     'lamborghini': 'lamborghini',
-    'maserati': 'maserati', 
+    'maserati': 'maserati',
     'mini': 'mini',
     'porsche': 'porsche',
     'volvo': 'volvo',
@@ -48,6 +54,27 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'renault': 'renault',
     'rolls-royce': 'rollsroyce',
     'rolls royce': 'rollsroyce',
+    'saab': 'saab',
+    'seat': 'seat',
+    'skoda': 'skoda',
+    'smart': 'smart',
+    'alpina': 'alpina',
+    'artega': 'artega',
+    'donkervoort': 'donkervoort',
+    'gumpert': 'gumpert',
+    'wiesmann': 'wiesmann',
+    'pagani': 'pagani',
+    'koenigsegg': 'koenigsegg',
+    'spyker': 'spyker',
+    'morgan': 'morgan',
+    'caterham': 'caterham',
+    'noble': 'noble',
+    'tvr': 'tvr',
+    'venturi': 'venturi',
+    'alpine': 'alpine',
+    'ds': 'ds',
+    'lancia': 'lancia',
+    'maybach': 'maybach',
     
     // Asian
     'honda': 'honda',
@@ -67,6 +94,22 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'isuzu': 'isuzu',
     'daewoo': 'daewoo',
     'dacia': 'dacia',
+    'perodua': 'perodua',
+    'proton': 'proton',
+    'tata': 'tata',
+    'mahindra': 'mahindra',
+    'maruti': 'maruti',
+    'holden': 'holden',
+    'great wall': 'greatwall',
+    'haval': 'haval',
+    'hongqi': 'hongqi',
+    'saic': 'saic',
+    'wey': 'wey',
+    'changan': 'changan',
+    'geely': 'geely',
+    'foton': 'foton',
+    'brilliance': 'brilliance',
+    'lifan': 'lifan',
     
     // American
     'ford': 'ford',
@@ -79,6 +122,15 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'buick': 'buick',
     'ram': 'ram',
     'eagle': 'eagle',
+    'pontiac': 'pontiac',
+    'saturn': 'saturn',
+    'mercury': 'mercury',
+    'oldsmobile': 'oldsmobile',
+    'hummer': 'hummer',
+    'plymouth': 'plymouth',
+    'packard': 'packard',
+    'delorean': 'delorean',
+    'studebaker': 'studebaker',
     
     // Electric & New
     'tesla': 'tesla',
@@ -89,17 +141,15 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'byd': 'byd',
     'polestar': 'polestar',
     'vinfast': 'vinfast',
-    'great wall': 'greatwall',
-    'great-wall': 'greatwall',
-    'mg': 'mg',
-    'geely': 'geely',
-    'genesis': 'genesis',
-    'chery': 'chery',
-    'dfsk': 'dfsk',
-    'saic': 'saic',
-    'fisker': 'fisker'
+    'li auto': 'liauto',
+    'fisker': 'fisker',
+    'faraday': 'faraday',
+    'karma': 'karma',
+    'canoo': 'canoo',
+    'arrival': 'arrival',
+    'lordstown': 'lordstown',
+    'rimac': 'rimac'
   };
   
-  // From the screenshot we can see the name is just lowercase with no hyphens
   return nameMap[normalizedInput] || normalizedInput;
 };
