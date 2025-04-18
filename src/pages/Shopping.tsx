@@ -54,7 +54,7 @@ export default function Shopping() {
       
       <EnhancedProductFilters 
         onFilterChange={(filters) => {
-          updateFilters({ categoryIds: filters });
+          updateFilters({ categoryId: filters[0] });
         }}
       />
       
