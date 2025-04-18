@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.5",
     "@hello-pangea/dnd": "^16.3.0",
     "@hookform/resolvers": "^3.9.0",
     "@json2csv/plainjs": "^7.0.6",

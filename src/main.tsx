@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -9,6 +8,10 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { NotificationsProvider } from '@/context/notifications';
+import '@fontsource/inter/400.css';  // Regular
+import '@fontsource/inter/500.css';  // Medium
+import '@fontsource/inter/600.css';  // Semi-bold
+import '@fontsource/inter/700.css';  // Bold
 
 // Create a client for React Query
 const queryClient = new QueryClient({
