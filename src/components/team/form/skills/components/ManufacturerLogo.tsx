@@ -24,36 +24,16 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
       try {
         console.log(`Attempting to load icon for: ${manufacturer} (normalized: ${normalizedName})`);
         
-        // First, check if the file exists in the bucket
-        const { data: fileData, error: fileError } = await supabase.storage
+        // First, try to get the public URL directly
+        const { data } = await supabase.storage
           .from('Automotive-Icons')
-          .list('', {
-            search: `${normalizedName}.svg`
-          });
-        
-        if (fileError) {
-          console.error('Error checking file existence:', fileError);
-          setLoadError(true);
-          return;
-        }
-
-        const fileExists = fileData && fileData.length > 0;
-        
-        if (fileExists) {
-          // If file exists, get the public URL
-          const { data } = await supabase.storage
-            .from('Automotive-Icons')
-            .getPublicUrl(`${normalizedName}.svg`);
-            
-          if (data && data.publicUrl) {
-            console.log(`Icon found for ${manufacturer}:`, data.publicUrl);
-            setIconUrl(data.publicUrl);
-          } else {
-            console.log(`No icon URL returned for ${manufacturer}`);
-            setLoadError(true);
-          }
+          .getPublicUrl(`${normalizedName}.svg`);
+          
+        if (data && data.publicUrl) {
+          console.log(`Icon found for ${manufacturer}:`, data.publicUrl);
+          setIconUrl(data.publicUrl);
         } else {
-          console.log(`No icon found for ${manufacturer} (${normalizedName}.svg)`);
+          console.log(`No icon URL returned for ${manufacturer} (${normalizedName}.svg)`);
           setLoadError(true);
         }
       } catch (err) {
