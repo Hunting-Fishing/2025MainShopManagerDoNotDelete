@@ -25,10 +25,10 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
         // The icon filename format based on the Supabase storage screenshot (lowercase, no hyphens)
         const iconFilename = `${normalizedName.replace(/-/g, '')}.svg`;
         
-        // Get the public URL using the vehicle-icons bucket
+        // Get the public URL using the vehicle-icons bucket with Automotive-Icons subfolder
         const { data } = await supabase.storage
           .from('vehicle-icons')
-          .getPublicUrl(iconFilename);
+          .getPublicUrl(`Automotive-Icons/${iconFilename}`);
           
         if (data && data.publicUrl) {
           console.log(`Icon found for ${manufacturer}:`, data.publicUrl);
@@ -51,7 +51,7 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
           const alternativeFilename = `${normalizedName}.svg`;
           const { data: altData } = await supabase.storage
             .from('vehicle-icons')
-            .getPublicUrl(alternativeFilename);
+            .getPublicUrl(`Automotive-Icons/${alternativeFilename}`);
             
           if (altData && altData.publicUrl) {
             console.log(`Icon found for ${manufacturer} using alternative name:`, altData.publicUrl);
@@ -95,3 +95,5 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
     />
   );
 };
+
+export default ManufacturerLogo;
