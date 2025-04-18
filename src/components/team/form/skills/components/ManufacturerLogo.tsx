@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Car } from 'lucide-react';
+import 'car-makes-icons/dist/style.css';
 
 // Define the type for the car-makes-icons module
 interface CarLogos {
@@ -42,19 +43,19 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
   // Get the correct logo name
   const logoName = logoMap[normalizedName] || normalizedName;
   
-  // Debug log to help identify available logos
-  console.log(`Looking for logo: ${logoName} for manufacturer: ${manufacturer}`);
-  
   // Check if carMakesIcons is properly loaded and contains the logo
   if (Object.keys(carMakesIcons).length > 0) {
     const LogoComponent = carMakesIcons[logoName];
     if (LogoComponent) {
-      return <LogoComponent className={className} />;
-    } else {
-      console.log(`No logo found for ${logoName}`);
+      return (
+        <div className={`car-make-icon car-make-icon-${logoName}`}>
+          <LogoComponent className={className} />
+        </div>
+      );
     }
+    console.log(`No logo found for ${logoName}`);
   }
 
-  // Fallback to a generic car icon if logo isn't available
+  // Fallback to generic car icon
   return <Car className={className} />;
 };

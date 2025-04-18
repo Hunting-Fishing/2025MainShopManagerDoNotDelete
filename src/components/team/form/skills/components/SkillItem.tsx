@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -39,8 +38,8 @@ export const SkillItem = ({
     return (
       <div className="flex items-center gap-2">
         {FlagComponent && <FlagComponent className="h-4 w-6" />}
-        <div className="flex items-center gap-1">
-          <ManufacturerLogo manufacturer={name} />
+        <div className="flex items-center gap-2">
+          <ManufacturerLogo manufacturer={name} className="h-5 w-5" />
           <span>{name}</span>
         </div>
       </div>
