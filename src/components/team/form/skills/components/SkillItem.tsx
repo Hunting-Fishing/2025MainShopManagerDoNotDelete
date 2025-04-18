@@ -39,9 +39,7 @@ export const SkillItem = ({
       <div className="flex items-center gap-2">
         {FlagComponent && <FlagComponent className="h-4 w-6" />}
         <div className="flex items-center gap-2">
-          <div className="h-5 w-5 flex items-center justify-center">
-            <ManufacturerLogo manufacturer={name} />
-          </div>
+          <ManufacturerLogo manufacturer={name} />
           <span>{name}</span>
         </div>
       </div>

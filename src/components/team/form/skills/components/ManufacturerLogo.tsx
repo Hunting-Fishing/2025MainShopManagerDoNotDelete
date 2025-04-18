@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getStandardizedManufacturerName } from '@/utils/countryCodeMapper';
 
 interface ManufacturerLogoProps {
   manufacturer: string;
@@ -13,7 +14,7 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
   const [iconUrl, setIconUrl] = useState<string | null>(null);
   
   // Normalize the manufacturer name to match our icon filenames
-  const normalizedName = manufacturer.toLowerCase().trim()
+  const normalizedName = getStandardizedManufacturerName(manufacturer)
     .replace(/[\s-]+/g, '-') // Replace spaces and hyphens with single hyphen
     .replace(/[^a-z0-9-]/g, ''); // Remove any other special characters
   
