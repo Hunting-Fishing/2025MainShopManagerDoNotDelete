@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ShoppingHeader } from '@/components/shopping/ShoppingHeader';
 import { ProductFilters } from '@/components/shopping/ProductFilters';
@@ -15,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { EnhancedProductFilters } from '@/components/shopping/EnhancedProductFilters';
 
 export default function Shopping() {
   const { products, isLoading, filterOptions, updateFilters } = useProducts();
@@ -46,24 +46,22 @@ export default function Shopping() {
 
   return (
     <ResponsiveContainer className="py-6">
-      <ShoppingHeader
-        onSearch={handleSearch}
-        onToggleFilters={() => setShowMobileFilters(true)}
-        onToggleWishlist={() => setShowWishlist(true)}
-      />
-      
-      {isAdmin && (
-        <div className="flex justify-end mb-4">
-          <Button onClick={() => navigate('/shopping/admin')}>
-            Admin Dashboard
-          </Button>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">Shop</h1>
         </div>
-      )}
+      </div>
+      
+      <EnhancedProductFilters 
+        onFilterChange={(filters) => {
+          updateFilters({ categoryIds: filters });
+        }}
+      />
       
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="all-products">All Products</TabsTrigger>
-          <TabsTrigger value="user-suggestions">
+          <TabsTrigger value="all-products" className="rounded-full">All Products</TabsTrigger>
+          <TabsTrigger value="user-suggestions" className="rounded-full">
             User Suggestions
             <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-800">New</Badge>
           </TabsTrigger>
