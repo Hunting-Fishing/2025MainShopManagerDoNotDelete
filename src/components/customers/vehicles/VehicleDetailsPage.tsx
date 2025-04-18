@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -170,7 +169,7 @@ export function VehicleDetailsPage() {
                     </p>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full" onClick={() => navigate(`/work-orders/new?vehicleId=${vehicleId}&vehicleInfo=${vehicle.year} ${vehicle.make} ${vehicle.model}&customerId=${customerId}`)}>
+                    <Button className="w-full" onClick={() => navigate(`/work-orders/new?vehicleId=${vehicleId}&vehicleInfo=${encodeURIComponent(`${vehicle.year} ${vehicle.make} ${vehicle.model}`)}&customerId=${customerId}&customerName=${encodeURIComponent(customerName)}`)}>
                       Create New Work Order
                     </Button>
                   </CardFooter>
