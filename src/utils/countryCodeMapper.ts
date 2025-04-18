@@ -12,6 +12,9 @@ export const getCountryCode = (flag: string): string => {
 
 // Comprehensive mapping for manufacturer names to standardized formats for icon display
 export const getStandardizedManufacturerName = (name: string): string => {
+  // First normalize the input
+  const normalizedInput = name.trim().toLowerCase();
+  
   const nameMap: { [key: string]: string } = {
     // European
     'vw': 'volkswagen',
@@ -36,6 +39,8 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'opel': 'opel',
     'peugeot': 'peugeot',
     'renault': 'renault',
+    'rolls-royce': 'rolls-royce',
+    'rolls royce': 'rolls-royce',
     
     // Asian
     'honda': 'honda',
@@ -50,6 +55,9 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'suzuki': 'suzuki',
     'infiniti': 'infiniti',
     'acura': 'acura',
+    'ssangyong': 'ssangyong',
+    'daihatsu': 'daihatsu',
+    'isuzu': 'isuzu',
     
     // American
     'ford': 'ford',
@@ -61,8 +69,24 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'chrysler': 'chrysler',
     'buick': 'buick',
     'ram': 'ram',
-    'tesla': 'tesla'
+    
+    // Electric & New
+    'tesla': 'tesla',
+    'rivian': 'rivian',
+    'lucid': 'lucid',
+    'nio': 'nio',
+    'xpeng': 'xpeng',
+    'byd': 'byd',
+    'polestar': 'polestar',
+    'vinfast': 'vinfast',
+    'great wall': 'great-wall',
+    'mg': 'mg',
+    'geely': 'geely',
+    'genesis': 'genesis',
+    'chery': 'chery',
+    'dfsk': 'dfsk',
+    'saic': 'saic'
   };
   
-  return nameMap[name.toLowerCase().trim()] || name.toLowerCase().trim();
+  return nameMap[normalizedInput] || normalizedInput;
 };

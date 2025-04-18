@@ -24,7 +24,7 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
       try {
         console.log(`Attempting to load icon for: ${manufacturer} (normalized: ${normalizedName})`);
         
-        // First, try to get the public URL directly
+        // Get the public URL directly
         const { data } = await supabase.storage
           .from('Automotive-Icons')
           .getPublicUrl(`${normalizedName}.svg`);
@@ -32,6 +32,19 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
         if (data && data.publicUrl) {
           console.log(`Icon found for ${manufacturer}:`, data.publicUrl);
           setIconUrl(data.publicUrl);
+          
+          // Verify the URL is accessible with a HEAD request
+          fetch(data.publicUrl, { method: 'HEAD' })
+            .then(response => {
+              if (!response.ok) {
+                console.error(`Icon URL is not accessible: ${data.publicUrl}`);
+                setLoadError(true);
+              }
+            })
+            .catch(err => {
+              console.error(`Error checking icon URL: ${err}`);
+              setLoadError(true);
+            });
         } else {
           console.log(`No icon URL returned for ${manufacturer} (${normalizedName}.svg)`);
           setLoadError(true);
@@ -63,7 +76,10 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
       src={iconUrl} 
       alt={`${manufacturer} logo`}
       className={className}
-      onError={() => setLoadError(true)}
+      onError={() => {
+        console.error(`Failed to load image for ${manufacturer} from ${iconUrl}`);
+        setLoadError(true);
+      }}
     />
   );
 };
