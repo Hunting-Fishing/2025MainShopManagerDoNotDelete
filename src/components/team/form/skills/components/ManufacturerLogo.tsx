@@ -15,19 +15,20 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
   const [loadError, setLoadError] = useState(false);
   
   // Normalize the manufacturer name to match our icon filenames
-  const normalizedName = getStandardizedManufacturerName(manufacturer)
-    .replace(/[\s-]+/g, '-') // Replace spaces and hyphens with single hyphen
-    .replace(/[^a-z0-9-]/g, ''); // Remove any other special characters
+  const normalizedName = getStandardizedManufacturerName(manufacturer);
   
   useEffect(() => {
     const loadIcon = async () => {
       try {
         console.log(`Attempting to load icon for: ${manufacturer} (normalized: ${normalizedName})`);
         
-        // Get the public URL directly
+        // The icon filename format based on the Supabase storage screenshot (lowercase, no hyphens)
+        const iconFilename = `${normalizedName.replace(/-/g, '')}.svg`;
+        
+        // Get the public URL using the vehicle-icons bucket
         const { data } = await supabase.storage
-          .from('Automotive-Icons')
-          .getPublicUrl(`${normalizedName}.svg`);
+          .from('vehicle-icons')
+          .getPublicUrl(iconFilename);
           
         if (data && data.publicUrl) {
           console.log(`Icon found for ${manufacturer}:`, data.publicUrl);
@@ -46,8 +47,19 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
               setLoadError(true);
             });
         } else {
-          console.log(`No icon URL returned for ${manufacturer} (${normalizedName}.svg)`);
-          setLoadError(true);
+          // Try alternative format if the first attempt failed
+          const alternativeFilename = `${normalizedName}.svg`;
+          const { data: altData } = await supabase.storage
+            .from('vehicle-icons')
+            .getPublicUrl(alternativeFilename);
+            
+          if (altData && altData.publicUrl) {
+            console.log(`Icon found for ${manufacturer} using alternative name:`, altData.publicUrl);
+            setIconUrl(altData.publicUrl);
+          } else {
+            console.log(`No icon URL returned for ${manufacturer}`);
+            setLoadError(true);
+          }
         }
       } catch (err) {
         console.error(`Error loading manufacturer icon for ${manufacturer}:`, err);

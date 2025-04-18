@@ -21,26 +21,32 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'volkswagen': 'volkswagen',
     'chevy': 'chevrolet',
     'chevrolet': 'chevrolet',
-    'mercedes': 'mercedesbenz',
-    'mercedes-benz': 'mercedesbenz',
+    'mercedes': 'mercedes',
+    'mercedes-benz': 'mercedes',
     'bmw': 'bmw',
     'audi': 'audi',
-    'landrover': 'land-rover',
-    'land rover': 'land-rover',
+    'landrover': 'landrover',
+    'land rover': 'landrover',
     'alfa': 'alfaromeo',
     'alfa romeo': 'alfaromeo',
     'aston': 'astonmartin',
     'aston martin': 'astonmartin',
-    'mini': 'mini',
+    'bentley': 'bentley',
+    'bugatti': 'bugatti',
+    'citroen': 'citroen',
+    'ferrari': 'ferrari',
     'fiat': 'fiat',
+    'jaguar': 'jaguar',
+    'lamborghini': 'lamborghini',
+    'maserati': 'maserati', 
+    'mini': 'mini',
     'porsche': 'porsche',
     'volvo': 'volvo',
-    'jaguar': 'jaguar',
     'opel': 'opel',
     'peugeot': 'peugeot',
     'renault': 'renault',
-    'rolls-royce': 'rolls-royce',
-    'rolls royce': 'rolls-royce',
+    'rolls-royce': 'rollsroyce',
+    'rolls royce': 'rollsroyce',
     
     // Asian
     'honda': 'honda',
@@ -58,6 +64,8 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'ssangyong': 'ssangyong',
     'daihatsu': 'daihatsu',
     'isuzu': 'isuzu',
+    'daewoo': 'daewoo',
+    'dacia': 'dacia',
     
     // American
     'ford': 'ford',
@@ -69,6 +77,7 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'chrysler': 'chrysler',
     'buick': 'buick',
     'ram': 'ram',
+    'eagle': 'eagle',
     
     // Electric & New
     'tesla': 'tesla',
@@ -79,14 +88,17 @@ export const getStandardizedManufacturerName = (name: string): string => {
     'byd': 'byd',
     'polestar': 'polestar',
     'vinfast': 'vinfast',
-    'great wall': 'great-wall',
+    'great wall': 'greatwall',
+    'great-wall': 'greatwall',
     'mg': 'mg',
     'geely': 'geely',
     'genesis': 'genesis',
     'chery': 'chery',
     'dfsk': 'dfsk',
-    'saic': 'saic'
+    'saic': 'saic',
+    'fisker': 'fisker'
   };
   
+  // From the screenshot we can see the name is just lowercase with no hyphens
   return nameMap[normalizedInput] || normalizedInput;
 };
