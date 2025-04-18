@@ -1,6 +1,14 @@
 
 import React from 'react';
-import * as carLogos from 'car-makes-icons';
+import { Car } from 'lucide-react';
+
+// Import car logos, but handle potential import failure
+let carLogos: any = {};
+try {
+  carLogos = require('car-makes-icons');
+} catch (error) {
+  console.error('Failed to load car-makes-icons:', error);
+}
 
 interface ManufacturerLogoProps {
   manufacturer: string;
@@ -19,11 +27,15 @@ export const ManufacturerLogo = ({ manufacturer, className = "h-5 w-5" }: Manufa
   };
 
   const logoName = logoMap[normalizedName] || normalizedName;
-  const LogoComponent = (carLogos as any)[logoName];
-
-  if (!LogoComponent) {
-    return null;
+  
+  // Check if carLogos is properly loaded and contains the logo
+  if (carLogos && Object.keys(carLogos).length > 0) {
+    const LogoComponent = carLogos[logoName];
+    if (LogoComponent) {
+      return <LogoComponent className={className} />;
+    }
   }
 
-  return <LogoComponent className={className} />;
+  // Fallback to a generic car icon if logo isn't available
+  return <Car className={className} />;
 };
