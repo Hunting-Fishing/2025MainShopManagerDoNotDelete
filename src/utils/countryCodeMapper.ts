@@ -1,69 +1,18 @@
 export const emojiToCountryCode: { [key: string]: string } = {
-  // European Countries
-  '🇦🇩': 'AD', // Andorra
-  '🇦🇹': 'AT', // Austria
-  '🇦🇿': 'AZ', // Azerbaijan
-  '🇧🇪': 'BE', // Belgium
-  '🇭🇷': 'HR', // Croatia
-  '🇨🇿': 'CZ', // Czech Republic
-  '🇩🇰': 'DK', // Denmark
-  '🇪🇪': 'EE', // Estonia
-  '🇫🇮': 'FI', // Finland
-  '🇫🇷': 'FR', // France
-  '🇩🇪': 'DE', // Germany
-  '🇭🇺': 'HU', // Hungary
-  '🇱🇮': 'LI', // Liechtenstein
-  '🇱🇻': 'LV', // Latvia
-  '🇱🇹': 'LT', // Lithuania
-  '🇲🇨': 'MC', // Monaco
-  '🇳🇱': 'NL', // Netherlands
-  '🇳🇴': 'NO', // Norway
-  '🇵🇱': 'PL', // Poland
-  '🇵🇹': 'PT', // Portugal
-  '🇷🇴': 'RO', // Romania
-  '🇷🇺': 'RU', // Russia
-  '🇷🇸': 'RS', // Serbia
-  '🇸🇰': 'SK', // Slovakia
-  '🇸🇮': 'SI', // Slovenia
-  '🇪🇸': 'ES', // Spain
-  '🇸🇪': 'SE', // Sweden
-  '🇨🇭': 'CH', // Switzerland
-  '🇺🇦': 'UA', // Ukraine
-  '🇬🇧': 'GB', // United Kingdom
-
-  // Asian Countries
-  '🇨🇳': 'CN', // China
-  '🇮🇳': 'IN', // India
-  '🇮🇷': 'IR', // Iran
-  '🇮🇱': 'IL', // Israel
-  '🇯🇵': 'JP', // Japan
-  '🇰🇷': 'KR', // South Korea
-  '🇲🇾': 'MY', // Malaysia
-  '🇵🇰': 'PK', // Pakistan
-  '🇸🇬': 'SG', // Singapore
-  '🇱🇰': 'LK', // Sri Lanka
-  '🇹🇼': 'TW', // Taiwan
-  '🇹🇭': 'TH', // Thailand
-  '🇺🇿': 'UZ', // Uzbekistan
-  '🇻🇳': 'VN', // Vietnam
-  '🇦🇪': 'AE', // United Arab Emirates
-
-  // Americas
-  '🇦🇷': 'AR', // Argentina
-  '🇧🇷': 'BR', // Brazil
-  '🇨🇦': 'CA', // Canada
-  '🇲🇽': 'MX', // Mexico
-  '🇺🇸': 'US', // USA
-
-  // Africa
-  '🇲🇦': 'MA', // Morocco
-  '🇳🇬': 'NG', // Nigeria
-  '🇿🇦': 'ZA', // South Africa
-  '🇹🇳': 'TN', // Tunisia
-
-  // Oceania
-  '🇦🇺': 'AU', // Australia
-  '🇳🇿': 'NZ'  // New Zealand
+  '🇯🇵': 'JP', '🇰🇷': 'KR', '🇨🇳': 'CN', '🇺🇸': 'US',
+  '🇩🇪': 'DE', '🇮🇹': 'IT', '🇫🇷': 'FR', '🇬🇧': 'GB',
+  '🇸🇪': 'SE', '🇨🇦': 'CA', '🇹🇼': 'TW', '🇮🇳': 'IN',
+  '🇻🇳': 'VN', '🇲🇾': 'MY', '🇪🇸': 'ES', '🇷🇴': 'RO',
+  '🇨🇿': 'CZ', '🇳🇱': 'NL', '🇭🇷': 'HR', '🇦🇹': 'AT',
+  '🇧🇪': 'BE', '🇨🇭': 'CH', '🇵🇱': 'PL', '🇵🇹': 'PT',
+  '🇷🇺': 'RU', '🇦🇺': 'AU', '🇧🇷': 'BR', '🇺🇦': 'UA',
+  '🇭🇺': 'HU', '🇸🇰': 'SK', '🇧🇬': 'BG', '🇩🇰': 'DK',
+  '🇫🇮': 'FI', '🇬🇷': 'GR', '🇮🇪': 'IE', '🇱🇺': 'LU',
+  '🇳🇴': 'NO', '🇷🇸': 'RS', '🇸🇮': 'SI', '🇹🇷': 'TR',
+  '🇲🇽': 'MX', '🇦🇷': 'AR', '🇮🇱': 'IL', '🇿🇦': 'ZA',
+  '🇮🇷': 'IR', '🇲🇦': 'MA', '🇹🇭': 'TH', '🇵🇭': 'PH',
+  '🇮🇩': 'ID', '🇰🇭': 'KH', '🇱🇦': 'LA', '🇲🇲': 'MM',
+  '🇳🇿': 'NZ', '🇵🇰': 'PK', '🇸🇬': 'SG', '🇱🇰': 'LK'
 };
 
 export const getCountryCode = (flag: string): string => {
