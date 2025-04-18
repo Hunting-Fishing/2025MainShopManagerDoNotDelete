@@ -7,11 +7,11 @@ interface StatusBadgeProps {
 }
 
 const statusStyles = {
-  active: "bg-green-100 text-green-800 border-green-200",
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  completed: "bg-blue-100 text-blue-800 border-blue-200",
-  cancelled: "bg-red-100 text-red-800 border-red-200",
-  draft: "bg-gray-100 text-gray-800 border-gray-200",
+  active: "bg-green-100 text-green-800 border-green-300",
+  pending: "bg-amber-100 text-amber-800 border-amber-300",
+  completed: "bg-blue-100 text-blue-800 border-blue-300",
+  cancelled: "bg-red-100 text-red-800 border-red-300",
+  draft: "bg-gray-100 text-gray-800 border-gray-300",
 } as const;
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -20,7 +20,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 
   return (
     <span className={cn(
-      "px-3 py-1 text-sm font-medium rounded-full border",
+      "px-3 py-1 text-sm font-medium rounded-full border shadow-sm transition-all hover:shadow-md",
       style,
       className
     )}>

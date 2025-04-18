@@ -29,25 +29,25 @@ export function StatsCards({ stats, isLoading = false }: StatsCardsProps) {
         title="Active Work Orders"
         value={stats.activeWorkOrders}
         change={stats.workOrderChange}
-        className="bg-gradient-to-br from-blue-50 to-white"
+        className="bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-all duration-200"
       />
       <StatsCard
         title="Team Members"
         value={stats.teamMembers}
         change={stats.teamChange}
-        className="bg-gradient-to-br from-purple-50 to-white"
+        className="bg-gradient-to-br from-purple-50 to-white hover:shadow-lg transition-all duration-200"
       />
       <StatsCard
         title="Inventory Items"
         value={stats.inventoryItems}
         change={stats.inventoryChange}
-        className="bg-gradient-to-br from-green-50 to-white"
+        className="bg-gradient-to-br from-green-50 to-white hover:shadow-lg transition-all duration-200"
       />
       <StatsCard
         title="Avg. Completion Time"
         value={stats.avgCompletionTime}
         change={stats.completionTimeChange}
-        className="bg-gradient-to-br from-amber-50 to-white"
+        className="bg-gradient-to-br from-amber-50 to-white hover:shadow-lg transition-all duration-200"
       />
     </div>
   );
@@ -64,7 +64,7 @@ function StatsCard({ title, value, change, className }: StatsCardProps) {
   const isPositive = change?.includes('+');
   
   return (
-    <Card className={`p-6 shadow-lg rounded-xl border border-gray-100 transition-transform hover:scale-[1.02] ${className}`}>
+    <Card className={`p-6 shadow-md rounded-xl border border-gray-100 transition-transform hover:scale-[1.02] ${className}`}>
       <p className="text-sm font-medium text-gray-500">{title}</p>
       <div className="flex items-center justify-between mt-2">
         <h3 className="text-2xl font-bold">{value}</h3>
