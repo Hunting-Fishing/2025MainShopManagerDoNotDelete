@@ -1,97 +1,82 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardStats } from "@/types/dashboard";
-import { UsersRound, PackageOpen, ClipboardCheckIcon, Clock, Star, BarChart3 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 interface StatsCardsProps {
   stats: DashboardStats;
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
-export function StatsCards({ stats, isLoading }: StatsCardsProps) {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Active Work Orders</CardTitle>
-          <ClipboardCheckIcon className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.activeWorkOrders}</div>
-          <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.workOrderChange} from last month`}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-          <UsersRound className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.teamMembers}</div>
-          <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.teamChange} change`}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Inventory Items</CardTitle>
-          <PackageOpen className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.inventoryItems}</div>
-          <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.inventoryChange} from last month`}
-          </p>
-        </CardContent>
-      </Card>
+export function StatsCards({ stats, isLoading = false }: StatsCardsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="p-6 shadow-lg rounded-xl border border-gray-100">
+            <Skeleton className="h-7 w-[100px] mb-4" />
+            <Skeleton className="h-5 w-[60px]" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Avg. Completion Time</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? "—" : stats.avgCompletionTime}</div>
-          <p className="text-xs text-muted-foreground">
-            {isLoading ? "" : `${stats.completionTimeChange} from previous period`}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Customer Satisfaction</CardTitle>
-          <Star className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {isLoading ? "—" : stats.customerSatisfaction ? `${stats.customerSatisfaction}/5` : "N/A"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Based on customer feedback
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Scheduling Efficiency</CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {isLoading ? "—" : stats.schedulingEfficiency || "N/A"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Resource utilization rate
-          </p>
-        </CardContent>
-      </Card>
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        title="Active Work Orders"
+        value={stats.activeWorkOrders}
+        change={stats.workOrderChange}
+        className="bg-gradient-to-br from-blue-50 to-white"
+      />
+      <StatsCard
+        title="Team Members"
+        value={stats.teamMembers}
+        change={stats.teamChange}
+        className="bg-gradient-to-br from-purple-50 to-white"
+      />
+      <StatsCard
+        title="Inventory Items"
+        value={stats.inventoryItems}
+        change={stats.inventoryChange}
+        className="bg-gradient-to-br from-green-50 to-white"
+      />
+      <StatsCard
+        title="Avg. Completion Time"
+        value={stats.avgCompletionTime}
+        change={stats.completionTimeChange}
+        className="bg-gradient-to-br from-amber-50 to-white"
+      />
     </div>
+  );
+}
+
+interface StatsCardProps {
+  title: string;
+  value: string | number;
+  change: string;
+  className?: string;
+}
+
+function StatsCard({ title, value, change, className }: StatsCardProps) {
+  const isPositive = change?.includes('+');
+  
+  return (
+    <Card className={`p-6 shadow-lg rounded-xl border border-gray-100 transition-transform hover:scale-[1.02] ${className}`}>
+      <p className="text-sm font-medium text-gray-500">{title}</p>
+      <div className="flex items-center justify-between mt-2">
+        <h3 className="text-2xl font-bold">{value}</h3>
+        {change && (
+          <span className={`flex items-center text-sm font-medium ${
+            isPositive ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {isPositive ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
+            {change}
+          </span>
+        )}
+      </div>
+    </Card>
   );
 }
