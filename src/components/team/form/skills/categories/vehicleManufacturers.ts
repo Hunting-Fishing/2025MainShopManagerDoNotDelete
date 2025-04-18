@@ -1,4 +1,3 @@
-
 interface VehicleManufacturer {
   name: string;
   flag: string;
@@ -38,7 +37,14 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'MG', flag: '🇨🇳', country: 'China', founded: 1924 },
     { name: 'NIO', flag: '🇨🇳', country: 'China', founded: 2014 },
     { name: 'SAIC', flag: '🇨🇳', country: 'China', founded: 1955 },
-    { name: 'Xpeng', flag: '🇨🇳', country: 'China', founded: 2014 }
+    { name: 'Xpeng', flag: '🇨🇳', country: 'China', founded: 2014 },
+    { name: 'Daewoo', flag: '🇰🇷', country: 'South Korea', founded: 1967 },
+    { name: 'FAW', flag: '🇨🇳', country: 'China', founded: 1953 },
+    { name: 'Haval', flag: '🇨🇳', country: 'China', founded: 2013 },
+    { name: 'Hongqi', flag: '🇨🇳', country: 'China', founded: 1958 },
+    { name: 'Perodua', flag: '🇲🇾', country: 'Malaysia', founded: 1993 },
+    { name: 'Proton', flag: '🇲🇾', country: 'Malaysia', founded: 1983 },
+    { name: 'Tata', flag: '🇮🇳', country: 'India', founded: 1945 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   northAmerican: [
@@ -53,7 +59,16 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'Lincoln', flag: '🇺🇸', country: 'USA', founded: 1917 },
     { name: 'Ram', flag: '🇺🇸', country: 'USA', founded: 2010 },
     { name: 'Rivian', flag: '🇺🇸', country: 'USA', founded: 2009 },
-    { name: 'Tesla', flag: '🇺🇸', country: 'USA', founded: 2003 }
+    { name: 'Tesla', flag: '🇺🇸', country: 'USA', founded: 2003 },
+    { name: 'Buick', flag: '🇺🇸', country: 'USA', founded: 1903 },
+    { name: 'Eagle', flag: '🇺🇸', country: 'USA', founded: 1988 },
+    { name: 'Fisker', flag: '🇺🇸', country: 'USA', founded: 2007 },
+    { name: 'Hummer', flag: '🇺🇸', country: 'USA', founded: 1992 },
+    { name: 'Mercury', flag: '🇺🇸', country: 'USA', founded: 1938 },
+    { name: 'Oldsmobile', flag: '🇺🇸', country: 'USA', founded: 1897 },
+    { name: 'Plymouth', flag: '🇺🇸', country: 'USA', founded: 1928 },
+    { name: 'Pontiac', flag: '🇺🇸', country: 'USA', founded: 1926 },
+    { name: 'Saturn', flag: '🇺🇸', country: 'USA', founded: 1985 }
   ].sort((a, b) => a.name.localeCompare(b.name)),
 
   european: [
@@ -100,11 +115,17 @@ export const vehicleManufacturers: Record<string, VehicleManufacturer[]> = {
     { name: 'Rivian', flag: '🇺🇸', country: 'USA', founded: 2009 },
     { name: 'Tesla', flag: '🇺🇸', country: 'USA', founded: 2003 },
     { name: 'VinFast', flag: '🇻🇳', country: 'Vietnam', founded: 2017 },
-    { name: 'Xpeng', flag: '🇨🇳', country: 'China', founded: 2014 }
+    { name: 'Xpeng', flag: '🇨🇳', country: 'China', founded: 2014 },
+    { name: 'Arrival', flag: '🇬🇧', country: 'UK', founded: 2015 },
+    { name: 'Canoo', flag: '🇺🇸', country: 'USA', founded: 2017 },
+    { name: 'Faraday Future', flag: '🇺🇸', country: 'USA', founded: 2014 },
+    { name: 'Karma', flag: '🇺🇸', country: 'USA', founded: 2015 },
+    { name: 'Lightyear', flag: '🇳🇱', country: 'Netherlands', founded: 2016 },
+    { name: 'Lordstown', flag: '🇺🇸', country: 'USA', founded: 2018 },
+    { name: 'Rimac', flag: '🇭🇷', country: 'Croatia', founded: 2009 }
   ].sort((a, b) => a.name.localeCompare(b.name))
 };
 
-// Add this function to get all vehicle manufacturers
 export const getAllVehicleManufacturers = () => {
   const allManufacturers: string[] = [];
   

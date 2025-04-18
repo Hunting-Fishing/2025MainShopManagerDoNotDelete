@@ -1,9 +1,14 @@
-
 export const emojiToCountryCode: { [key: string]: string } = {
   '🇯🇵': 'JP', '🇰🇷': 'KR', '🇨🇳': 'CN', '🇺🇸': 'US',
   '🇩🇪': 'DE', '🇮🇹': 'IT', '🇫🇷': 'FR', '🇬🇧': 'GB',
   '🇸🇪': 'SE', '🇨🇦': 'CA', '🇹🇼': 'TW', '🇮🇳': 'IN',
-  '🇻🇳': 'VN'
+  '🇻🇳': 'VN',
+  '🇲🇾': 'MY', // Malaysia
+  '🇪🇸': 'ES', // Spain
+  '🇷🇴': 'RO', // Romania
+  '🇨🇿': 'CZ', // Czech Republic
+  '🇳🇱': 'NL', // Netherlands
+  '🇭🇷': 'HR'  // Croatia
 };
 
 export const getCountryCode = (flag: string): string => {
