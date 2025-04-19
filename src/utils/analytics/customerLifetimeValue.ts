@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Customer } from "@/types/customer";
 
 /**
  * Calculate the customer's lifetime value based on their purchase history
@@ -16,7 +17,7 @@ export const calculateCustomerLifetimeValue = async (customerId: string): Promis
       .single();
       
     if (loyaltyData && !loyaltyError && loyaltyData.lifetime_value) {
-      return parseFloat(loyaltyData.lifetime_value);
+      return parseFloat(loyaltyData.lifetime_value.toString());
     }
     
     // If not in loyalty table, calculate from invoices
@@ -32,7 +33,7 @@ export const calculateCustomerLifetimeValue = async (customerId: string): Promis
     
     // Sum all invoice totals
     const lifetimeValue = invoices?.reduce((sum, invoice) => {
-      return sum + (parseFloat(invoice.total) || 0);
+      return sum + (parseFloat(invoice.total?.toString() || '0') || 0);
     }, 0) || 0;
     
     return lifetimeValue;
@@ -66,7 +67,7 @@ export const getCustomerLifetimeValuePercentile = async (customerId: string): Pr
     
     // Extract all CLV values and sort them
     const allValues = (loyaltyData || [])
-      .map(item => parseFloat(item.lifetime_value) || 0)
+      .map(item => parseFloat(item.lifetime_value?.toString() || '0') || 0)
       .sort((a, b) => a - b);
     
     // Find how many values are less than the current customer's CLV
@@ -124,7 +125,7 @@ export const predictFutureCustomerValue = async (customerId: string): Promise<nu
     const recencyFactor = Math.max(0.8, 1 - (daysSinceLastPurchase / 365)); // Range from 0.8 to 1.0
     
     // Calculate average invoice value
-    const avgValue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0) / invoiceCount;
+    const avgValue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total?.toString() || '0') || 0), 0) / invoiceCount;
     
     // Predict future value based on current value with adjustments for frequency and recency
     const growthMultiplier = 1 + (0.1 * Math.min(purchaseFrequency, 5) * recencyFactor);
@@ -149,17 +150,19 @@ export const getCustomersWithSegments = async () => {
     }
     
     // Calculate segments for each customer
-    for (const customer of customers) {
+    const customersWithCLV = await Promise.all(customers.map(async (customer) => {
       // Ensure segments is at least an array
       customer.segments = customer.segments || [];
       
-      // Calculate CLV if not already present
-      if (!customer.clv) {
-        customer.clv = await calculateCustomerLifetimeValue(customer.id);
-      }
-    }
+      // Calculate CLV and add it to customer object
+      const clv = await calculateCustomerLifetimeValue(customer.id);
+      return {
+        ...customer,
+        clv
+      };
+    }));
     
-    return customers;
+    return customersWithCLV;
   } catch (error) {
     console.error('Error fetching customers with segments:', error);
     return [];
@@ -184,7 +187,7 @@ export const getAverageCustomerLifetimeValue = async (): Promise<number> => {
     }
     
     const sum = data.reduce((total, record) => {
-      return total + (parseFloat(record.lifetime_value) || 0);
+      return total + (parseFloat(record.lifetime_value?.toString() || '0') || 0);
     }, 0);
     
     return sum / data.length;

@@ -33,9 +33,17 @@ export default function CustomerAnalytics() {
         // Prepare segment data
         const segments: Record<string, number> = {};
         customersWithSegments.forEach(customer => {
-          if (customer.segments && Array.isArray(customer.segments)) {
-            customer.segments.forEach(segment => {
-              segments[segment] = (segments[segment] || 0) + 1;
+          const customerSegments = Array.isArray(customer.segments) 
+            ? customer.segments 
+            : typeof customer.segments === 'object' && customer.segments
+              ? Object.values(customer.segments)
+              : [];
+              
+          if (Array.isArray(customerSegments)) {
+            customerSegments.forEach(segment => {
+              if (typeof segment === 'string') {
+                segments[segment] = (segments[segment] || 0) + 1;
+              }
             });
           }
         });
@@ -103,8 +111,11 @@ export default function CustomerAnalytics() {
   }
 
   // Calculate stats for the dashboard
-  const highValueCustomers = customers.filter(c => (c.clv || 0) > averageClv * 1.5).length;
-  const atRiskCustomers = customers.filter(c => c.segments?.includes('at_risk')).length;
+  const highValueCustomers = customers.filter(c => ((c as any).clv || 0) > averageClv * 1.5).length;
+  const atRiskCustomers = customers.filter(c => {
+    const segments = Array.isArray(c.segments) ? c.segments : [];
+    return segments.includes('at_risk');
+  }).length;
 
   return (
     <div className="space-y-6">
