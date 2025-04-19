@@ -1,9 +1,9 @@
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReactFlow, Background, Controls, MiniMap, useNodesState, useEdgesState, addEdge, Node, Edge } from '@xyflow/react';
 import { useState } from 'react';
-import '@xyflow/react/dist/style.css';
+import { useNodesState, useEdgesState, addEdge, Node, Edge } from '@xyflow/react';
+import { FlowTypeSelector } from "./workflow/FlowTypeSelector";
+import { WorkflowEditor } from "./workflow/WorkflowEditor";
 
 const workflowInitialNodes: Node[] = [
   {
@@ -42,12 +42,6 @@ export function WorkflowsTab() {
 
   const onConnect = (params: any) => setEdges((eds) => addEdge(params, eds));
 
-  const workflowTypes = [
-    { id: 'customer-onboarding', name: 'Customer Onboarding' },
-    { id: 'service-request', name: 'Service Request' },
-    { id: 'maintenance', name: 'Maintenance Schedule' },
-  ];
-
   return (
     <div className="space-y-6">
       <Card>
@@ -58,33 +52,17 @@ export function WorkflowsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-4">
-            {workflowTypes.map((workflow) => (
-              <Button
-                key={workflow.id}
-                variant={selectedWorkflow === workflow.id ? "default" : "outline"}
-                onClick={() => setSelectedWorkflow(workflow.id)}
-              >
-                {workflow.name}
-              </Button>
-            ))}
-          </div>
-          
-          <div className="w-full h-[600px] border rounded-lg">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              fitView
-              className="bg-background"
-            >
-              <Background />
-              <Controls />
-              <MiniMap className="bg-background border rounded-lg" />
-            </ReactFlow>
-          </div>
+          <FlowTypeSelector 
+            selectedWorkflow={selectedWorkflow} 
+            onSelect={setSelectedWorkflow}
+          />
+          <WorkflowEditor
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+          />
         </CardContent>
       </Card>
     </div>

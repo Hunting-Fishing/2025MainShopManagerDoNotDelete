@@ -12,7 +12,6 @@ import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 import WorkOrderCreate from "./pages/WorkOrderCreate";
 import WorkOrders from "./pages/WorkOrders";
-import FlowchartTest from "./pages/FlowchartTest";
 
 const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return <CustomerDataProvider>{children}</CustomerDataProvider>;
@@ -95,6 +94,3 @@ export const routeDefinitions = [
     ],
   },
 ];
-
-// This is commented out to avoid creating another router instance
-// export const router = createBrowserRouter(routeDefinitions);
