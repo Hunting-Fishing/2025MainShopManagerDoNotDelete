@@ -6,6 +6,7 @@ export interface WorkOrderInventoryItem {
   category: string;
   quantity: number;
   unitPrice: number;
+  totalPrice?: number; // Added totalPrice property
   itemStatus?: 'in-stock' | 'ordered' | 'special-order' | 'used-part' | 'misc';
   estimatedArrivalDate?: string;
   supplierName?: string;

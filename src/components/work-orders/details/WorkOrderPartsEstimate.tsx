@@ -17,7 +17,11 @@ interface WorkOrderPartsEstimateProps {
 }
 
 export function WorkOrderPartsEstimate({ items }: WorkOrderPartsEstimateProps) {
-  const estimateTotal = items.reduce((sum, item) => sum + (item.totalPrice || item.quantity * item.unitPrice), 0);
+  const calculateItemTotal = (item: WorkOrderInventoryItem): number => {
+    return item.totalPrice !== undefined ? item.totalPrice : (item.quantity * item.unitPrice);
+  };
+  
+  const estimateTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
   
   if (items.length === 0) {
     return null;
@@ -50,7 +54,7 @@ export function WorkOrderPartsEstimate({ items }: WorkOrderPartsEstimateProps) {
                 <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
                 <TableCell className="text-right">
-                  ${((item.totalPrice || (item.quantity * item.unitPrice))).toFixed(2)}
+                  ${calculateItemTotal(item).toFixed(2)}
                 </TableCell>
               </TableRow>
             ))}

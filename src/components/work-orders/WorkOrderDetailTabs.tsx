@@ -8,7 +8,7 @@ import { WorkOrderHistory } from "./history/WorkOrderHistory";
 import { WorkOrderActions } from "./actions/WorkOrderActions";
 import { updateWorkOrder } from "@/utils/workOrders";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderPartsEstimate } from "./details/WorkOrderPartsEstimate";
+import { WorkOrderInventoryItems } from "./details/WorkOrderInventoryItems";
 
 interface WorkOrderDetailTabsProps {
   workOrder: WorkOrder;
@@ -101,9 +101,7 @@ export function WorkOrderDetailTabs({
         <TabsContent value="details" className="space-y-6 mt-6">
           <WorkOrderDetails workOrder={workOrder} />
           
-          {workOrder.inventoryItems && workOrder.inventoryItems.length > 0 && (
-            <WorkOrderPartsEstimate items={workOrder.inventoryItems} />
-          )}
+          <WorkOrderInventoryItems workOrder={workOrder} />
         </TabsContent>
         <TabsContent value="time" className="mt-6">
           <TimeTrackingTab

@@ -1,290 +1,294 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Package, Plus, Search, Trash2, Calculator } from "lucide-react";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { InventoryItemExtended } from "@/types/inventory";
+import { Package, Plus, Search, X } from "lucide-react";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
-import { getAllInventoryItems } from "@/services/inventory";
-import { toast } from "@/hooks/use-toast";
-import { 
+import { v4 as uuidv4 } from 'uuid';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Combobox } from '../fields/Combobox';
+import { supabase } from '@/lib/supabase';
+import { InventoryItem } from '@/types/inventory';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface WorkOrderPartsEstimatorProps {
-  initialItems?: WorkOrderInventoryItem[];
+  initialItems: WorkOrderInventoryItem[];
   onItemsChange: (items: WorkOrderInventoryItem[]) => void;
   readOnly?: boolean;
 }
 
-export function WorkOrderPartsEstimator({ 
-  initialItems = [], 
+export function WorkOrderPartsEstimator({
+  initialItems = [],
   onItemsChange,
   readOnly = false
 }: WorkOrderPartsEstimatorProps) {
   const [items, setItems] = useState<WorkOrderInventoryItem[]>(initialItems);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
-  const [selectedItem, setSelectedItem] = useState<InventoryItemExtended | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  
-  const { checkItemAvailability } = useInventoryManager();
+  const [searchResults, setSearchResults] = useState<InventoryItem[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Fetch all inventory items on component mount
   useEffect(() => {
-    const fetchInventory = async () => {
-      setLoading(true);
-      try {
-        const data = await getAllInventoryItems();
-        setInventoryItems(data);
-        setFilteredItems(data);
-      } catch (error) {
-        console.error("Error fetching inventory items:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load inventory items",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
+    setItems(initialItems);
+  }, [initialItems]);
+
+  const calculateItemTotal = (item: WorkOrderInventoryItem): number => {
+    return item.totalPrice !== undefined ? item.totalPrice : (item.quantity * item.unitPrice);
+  };
+
+  const estimateTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+
+  const handleAddItem = async (inventoryItem: InventoryItem) => {
+    const newItem: WorkOrderInventoryItem = {
+      id: uuidv4(),
+      name: inventoryItem.name,
+      sku: inventoryItem.sku || '',
+      category: inventoryItem.category || 'General',
+      quantity: 1,
+      unitPrice: inventoryItem.price,
+      totalPrice: inventoryItem.price,
+      itemStatus: 'in-stock',
+      supplierName: inventoryItem.supplier || ''
     };
 
-    fetchInventory();
-  }, []);
+    const updatedItems = [...items, newItem];
+    setItems(updatedItems);
+    onItemsChange(updatedItems);
+    setIsAddDialogOpen(false);
+  };
 
-  // Filter items based on search term
-  useEffect(() => {
+  const handleQuantityChange = (id: string, quantity: number) => {
+    if (quantity < 1) quantity = 1;
+    
+    const updatedItems = items.map(item => {
+      if (item.id === id) {
+        const newQuantity = quantity;
+        const total = newQuantity * item.unitPrice;
+        return { 
+          ...item, 
+          quantity: newQuantity,
+          totalPrice: total
+        };
+      }
+      return item;
+    });
+    
+    setItems(updatedItems);
+    onItemsChange(updatedItems);
+  };
+
+  const handleRemoveItem = (id: string) => {
+    const updatedItems = items.filter(item => item.id !== id);
+    setItems(updatedItems);
+    onItemsChange(updatedItems);
+  };
+
+  const searchInventory = async () => {
     if (!searchTerm.trim()) {
-      setFilteredItems(inventoryItems);
+      setSearchResults([]);
       return;
     }
-    
-    const lowercasedSearch = searchTerm.toLowerCase();
-    const filtered = inventoryItems.filter(item => 
-      item.name.toLowerCase().includes(lowercasedSearch) || 
-      item.sku.toLowerCase().includes(lowercasedSearch) ||
-      item.category.toLowerCase().includes(lowercasedSearch)
-    );
-    
-    setFilteredItems(filtered);
-  }, [searchTerm, inventoryItems]);
 
-  // Add item to estimate
-  const handleAddItem = async () => {
-    if (!selectedItem) return;
-    
-    // Check if we already have this item in the list
-    const existingItemIndex = items.findIndex(item => item.id === selectedItem.id);
-    
-    // Check availability in inventory
-    const availability = await checkItemAvailability(selectedItem.id, quantity);
-    
-    if (!availability.available) {
-      toast({
-        title: "Inventory Warning",
-        description: availability.message,
-        variant: "warning"
-      });
-    }
-    
-    if (existingItemIndex >= 0) {
-      // Update quantity if item already exists
-      const updatedItems = [...items];
-      updatedItems[existingItemIndex].quantity += quantity;
-      updatedItems[existingItemIndex].totalPrice = 
-        updatedItems[existingItemIndex].quantity * updatedItems[existingItemIndex].unitPrice;
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .or(`name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`)
+        .limit(10);
+
+      if (error) throw error;
       
-      setItems(updatedItems);
-      onItemsChange(updatedItems);
-    } else {
-      // Add new item
-      const newItem: WorkOrderInventoryItem = {
-        id: selectedItem.id,
-        name: selectedItem.name,
-        sku: selectedItem.sku,
-        category: selectedItem.category,
-        quantity: quantity,
-        unitPrice: selectedItem.unitPrice,
-        itemStatus: availability.available ? 'in-stock' : 'ordered',
-        totalPrice: selectedItem.unitPrice * quantity
-      };
-      
-      const newItems = [...items, newItem];
-      setItems(newItems);
-      onItemsChange(newItems);
-    }
-    
-    // Reset selection
-    setSelectedItem(null);
-    setQuantity(1);
-    
-    toast({
-      title: "Item Added",
-      description: `${selectedItem.name} added to estimate`,
-    });
-  };
-  
-  // Remove item from estimate
-  const handleRemoveItem = (index: number) => {
-    const updatedItems = items.filter((_, i) => i !== index);
-    setItems(updatedItems);
-    onItemsChange(updatedItems);
-  };
-  
-  // Update item quantity
-  const handleQuantityChange = (index: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    
-    const updatedItems = [...items];
-    updatedItems[index].quantity = newQuantity;
-    updatedItems[index].totalPrice = updatedItems[index].unitPrice * newQuantity;
-    
-    setItems(updatedItems);
-    onItemsChange(updatedItems);
-  };
-  
-  // Calculate total estimate
-  const estimateTotal = items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-  
-  const handleItemSelect = (itemId: string) => {
-    const item = inventoryItems.find(i => i.id === itemId);
-    if (item) {
-      setSelectedItem(item);
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching inventory:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader className="bg-slate-50 pb-3 border-b">
-        <CardTitle className="text-lg font-medium flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Parts Estimation
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="p-4">
-        {!readOnly && (
-          <div className="mb-6 p-4 bg-slate-50 rounded-md">
-            <h3 className="font-medium mb-3">Add Parts to Estimate</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="md:col-span-2">
-                <Label htmlFor="part-selection" className="mb-1 block">Select Part</Label>
-                <Combobox
-                  items={filteredItems.map(item => ({
-                    label: `${item.name} (${item.sku})`,
-                    value: item.id
-                  }))}
-                  placeholder="Search parts..."
-                  onItemSelected={handleItemSelect}
-                  isDisabled={loading}
-                />
+    <div className="space-y-4">
+      {!readOnly && (
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Parts & Materials</h3>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-1">
+                <Plus className="h-4 w-4" /> Add Part
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Part from Inventory</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Search by name or SKU..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={searchInventory} className="flex items-center gap-1">
+                    <Search className="h-4 w-4" /> Search
+                  </Button>
+                </div>
+
+                <ScrollArea className="h-[300px] border rounded-md">
+                  {isSearching ? (
+                    <div className="flex justify-center items-center h-full">
+                      <p>Searching...</p>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {searchResults.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{item.name}</TableCell>
+                            <TableCell>{item.sku}</TableCell>
+                            <TableCell>${item.price.toFixed(2)}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                onClick={() => handleAddItem(item)}
+                              >
+                                Add
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center p-4">
+                      {searchTerm ? "No results found" : "Search for parts"}
+                    </div>
+                  )}
+                </ScrollArea>
               </div>
-              <div>
-                <Label htmlFor="quantity" className="mb-1 block">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button 
-                  onClick={handleAddItem} 
-                  disabled={!selectedItem || loading}
-                  className="w-full"
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Add to Estimate
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {items.length > 0 ? (
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+
+      {items.length > 0 ? (
+        <>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Part</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
                 <TableHead>Unit Price</TableHead>
-                <TableHead>Quantity</TableHead>
+                {!readOnly && <TableHead>Quantity</TableHead>}
                 <TableHead className="text-right">Total</TableHead>
                 {!readOnly && <TableHead></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item, index) => (
-                <TableRow key={index}>
+              {items.map((item) => (
+                <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>{item.sku}</TableCell>
-                  <TableCell>{item.category}</TableCell>
                   <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
-                  <TableCell>
-                    {readOnly ? (
-                      item.quantity
-                    ) : (
-                      <Input
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 1)}
-                        className="w-16 h-8"
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">${(item.totalPrice || 0).toFixed(2)}</TableCell>
                   {!readOnly && (
                     <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleRemoveItem(index)}
+                      <div className="flex items-center w-20">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-r-none"
+                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                        >
+                          -
+                        </Button>
+                        <Input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
+                          className="h-8 text-center rounded-none w-10"
+                          min={1}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-l-none"
+                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                  <TableCell className="text-right">${calculateItemTotal(item).toFixed(2)}</TableCell>
+                  {!readOnly && (
+                    <TableCell>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="text-red-500 h-8 w-8"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <X className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   )}
                 </TableRow>
               ))}
+              <TableRow>
+                <TableCell 
+                  colSpan={readOnly ? 3 : 4} 
+                  className="text-right font-semibold"
+                >
+                  Total:
+                </TableCell>
+                <TableCell className="text-right font-bold">
+                  ${estimateTotal.toFixed(2)}
+                </TableCell>
+                {!readOnly && <TableCell></TableCell>}
+              </TableRow>
             </TableBody>
           </Table>
-        ) : (
-          <div className="text-center p-8 text-muted-foreground">
-            <Package className="mx-auto h-12 w-12 text-slate-300 mb-2" />
-            <p>No parts added to this estimate yet.</p>
-            {!readOnly && <p className="text-sm">Search for parts above to add them to your estimate.</p>}
-          </div>
-        )}
-      </CardContent>
-      
-      {items.length > 0 && (
-        <CardFooter className="flex justify-between pt-2 border-t bg-slate-50">
-          <div className="flex items-center">
-            <Calculator className="h-5 w-5 text-slate-500 mr-2" />
-            <span className="font-medium text-slate-600">Total Estimate:</span>
-          </div>
-          <span className="text-lg font-bold">${estimateTotal.toFixed(2)}</span>
-        </CardFooter>
+        </>
+      ) : (
+        <div className="border border-dashed rounded-md p-8 text-center">
+          <Package className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+          <h3 className="text-lg font-medium mb-1">No Parts Added</h3>
+          <p className="text-slate-500 mb-4">
+            Add parts and materials to estimate costs for this work order.
+          </p>
+          {!readOnly && (
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Add First Part
+            </Button>
+          )}
+        </div>
       )}
-    </Card>
+    </div>
   );
 }
