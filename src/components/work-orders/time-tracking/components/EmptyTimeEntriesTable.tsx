@@ -2,7 +2,12 @@
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function EmptyTimeEntriesTable() {
+interface EmptyTimeEntriesTableProps {
+  onAddEntry: () => void;
+  onStartTimer: () => void;
+}
+
+export function EmptyTimeEntriesTable({ onAddEntry, onStartTimer }: EmptyTimeEntriesTableProps) {
   return (
     <div className="text-center p-8 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center">
       <div className="bg-blue-100 p-3 rounded-full mb-4">
@@ -17,12 +22,14 @@ export function EmptyTimeEntriesTable() {
           variant="outline"
           size="sm"
           className="border-blue-500 text-blue-600 hover:bg-blue-50"
+          onClick={onAddEntry}
         >
           Add Time Entry
         </Button>
         <Button 
           size="sm"
           className="bg-blue-600 hover:bg-blue-700"
+          onClick={onStartTimer}
         >
           Start Timer
         </Button>
