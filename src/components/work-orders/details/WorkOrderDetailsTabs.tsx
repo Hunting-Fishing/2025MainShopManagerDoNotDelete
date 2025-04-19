@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -17,6 +16,7 @@ import { WorkOrderStatusTimeline } from "@/components/work-orders/details/WorkOr
 import { TimeTrackingSection } from "@/components/work-orders/time-tracking/TimeTrackingSection";
 import { WorkOrderActivitiesSection } from "@/components/work-orders/WorkOrderActivitiesSection";
 import { StatusUpdateButton } from '@/components/work-orders/StatusUpdateButton';
+import { Button } from '@/components/ui/button';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
