@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { getWorkOrderActivities } from "@/utils/workOrders/activity";
+import { getWorkOrderActivity } from "@/utils/workOrders/activity";
 import { Loader2, AlertTriangle, Check, X, PlayCircle, Clock, CalendarClock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -33,7 +33,7 @@ export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProp
     const fetchActivities = async () => {
       setLoading(true);
       try {
-        const activitiesData = await getWorkOrderActivities(workOrderId);
+        const activitiesData = await getWorkOrderActivity(workOrderId);
         setActivities(activitiesData);
         setError(null);
       } catch (err) {

@@ -4,13 +4,22 @@ import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder"
 import { generateWorkOrderId } from "../generators";
 import { mapAppModelToDatabase } from "../mappers";
 
-export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> => {
+export const createWorkOrder = async (
+  workOrderData: Omit<WorkOrder, "id" | "date">
+): Promise<WorkOrder> => {
   try {
     const workOrderId = generateWorkOrderId();
     const currentDate = new Date().toISOString();
 
+    // Create a complete WorkOrder by adding the missing properties
+    const completeWorkOrderData: WorkOrder = {
+      ...workOrderData,
+      id: workOrderId,
+      date: currentDate
+    };
+
     // Map the data for Supabase
-    const dbWorkOrderData = mapAppModelToDatabase(workOrderData);
+    const dbWorkOrderData = mapAppModelToDatabase(completeWorkOrderData);
 
     // Insert the work order
     const { data, error } = await supabase

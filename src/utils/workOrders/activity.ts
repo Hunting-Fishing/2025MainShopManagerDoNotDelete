@@ -52,3 +52,6 @@ export async function getWorkOrderActivity(workOrderId: string) {
     return [];
   }
 }
+
+// Add an alias that matches what components are expecting
+export const getWorkOrderActivities = getWorkOrderActivity;

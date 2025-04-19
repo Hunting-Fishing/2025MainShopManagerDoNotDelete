@@ -24,3 +24,30 @@ export const formatTimeInHoursAndMinutes = (minutes: number): string => {
   
   return `${hours}h ${mins}m`;
 };
+
+/**
+ * Formats a currency amount
+ * 
+ * @param amount Number to format as currency
+ * @param locale Locale to use for formatting (default: 'en-US')
+ * @param currency Currency code to use (default: 'USD')
+ * @returns Formatted currency string
+ */
+export const formatCurrency = (
+  amount?: number | string | null,
+  locale = 'en-US',
+  currency = 'USD'
+): string => {
+  if (amount === undefined || amount === null) return '';
+  
+  // Convert string to number if needed
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  // Format as currency
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericAmount);
+};
