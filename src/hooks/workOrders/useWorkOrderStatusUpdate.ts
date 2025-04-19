@@ -1,63 +1,65 @@
 
 import { useState } from "react";
-import { WorkOrder } from "@/types/workOrder";
-import { isValidStatusTransition } from "@/utils/workOrders/statusManagement";
-import { updateWorkOrder } from "@/utils/workOrders/crud";
-import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
+import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
+import { supabase } from "@/lib/supabase";
+import { handleStatusTransition, generateStatusChangeMessage } from "@/utils/workOrders/statusManagement";
 import { toast } from "@/hooks/use-toast";
+import { updateWorkOrder } from "@/utils/workOrders";
+import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
 
-export const useWorkOrderStatusUpdate = () => {
-  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+export function useWorkOrderStatusUpdate() {
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const updateStatus = async (
     workOrder: WorkOrder,
-    newStatus: WorkOrder["status"],
+    newStatus: WorkOrderStatusType,
     userId: string,
     userName: string
   ): Promise<WorkOrder | null> => {
+    if (workOrder.status === newStatus) {
+      return workOrder; // No change needed
+    }
+    
     setIsUpdating(true);
-
+    
     try {
-      // Check if the status transition is valid
-      if (!isValidStatusTransition(workOrder.status, newStatus)) {
-        toast({
-          title: "Invalid Status Change",
-          description: `Cannot change status from ${workOrder.status} to ${newStatus}`,
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      // Create an updated work order object
-      const updatedWorkOrder: WorkOrder = {
+      // Get updates based on the transition
+      const updates = handleStatusTransition(workOrder, newStatus);
+      
+      // Update the work order with new status
+      const updatedWorkOrder = await updateWorkOrder({
         ...workOrder,
-        status: newStatus,
-        lastUpdatedBy: userName,
-        lastUpdatedAt: new Date().toISOString(),
-      };
-
-      // Update the work order in the database
-      await updateWorkOrder(updatedWorkOrder);
-
-      // Record the status change activity
+        ...updates,
+        lastUpdatedBy: userId,
+        lastUpdatedAt: new Date().toISOString()
+      });
+      
+      // Record this activity
+      const activityMessage = generateStatusChangeMessage(
+        workOrder.status,
+        newStatus,
+        userName
+      );
+      
       await recordWorkOrderActivity(
-        `Status changed from ${workOrder.status} to ${newStatus}`,
+        activityMessage,
         workOrder.id,
         userId,
         userName
       );
-
+      
+      // Show success message
       toast({
         title: "Status Updated",
-        description: `Work order status changed to ${newStatus}`,
+        description: `Work order status is now ${newStatus}`,
       });
-
+      
       return updatedWorkOrder;
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.error("Failed to update work order status:", error);
       toast({
-        title: "Status Update Failed",
-        description: "An error occurred while updating the status.",
+        title: "Update Failed",
+        description: "Could not update work order status",
         variant: "destructive",
       });
       return null;
@@ -67,4 +69,4 @@ export const useWorkOrderStatusUpdate = () => {
   };
 
   return { updateStatus, isUpdating };
-};
+}

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { WorkOrder } from "@/types/workOrder";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +10,15 @@ interface WorkOrderTechniciansPerformanceProps {
 
 export function WorkOrderTechniciansPerformance({ workOrders }: WorkOrderTechniciansPerformanceProps) {
   // Group work orders by technician
-  const technicianData = React.useMemo(() => {
+  const technicianData = useMemo(() => {
     const techStats: Record<string, { 
       completed: number; 
       inProgress: number; 
       pending: number;
       total: number;
       avgCompletionTime?: number;
+      totalCompletionTime: number;
+      completedCount: number;
     }> = {};
 
     workOrders.forEach(order => {
@@ -28,7 +30,9 @@ export function WorkOrderTechniciansPerformance({ workOrders }: WorkOrderTechnic
           completed: 0,
           inProgress: 0,
           pending: 0,
-          total: 0
+          total: 0,
+          totalCompletionTime: 0,
+          completedCount: 0
         };
       }
 
@@ -36,6 +40,22 @@ export function WorkOrderTechniciansPerformance({ workOrders }: WorkOrderTechnic
       switch (order.status) {
         case 'completed':
           techStats[tech].completed += 1;
+          
+          // Calculate completion time if available
+          if (order.startTime && order.endTime) {
+            try {
+              const startTime = new Date(order.startTime);
+              const endTime = new Date(order.endTime);
+              const completionTime = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // in hours
+              
+              if (!isNaN(completionTime) && completionTime > 0) {
+                techStats[tech].totalCompletionTime += completionTime;
+                techStats[tech].completedCount += 1;
+              }
+            } catch (e) {
+              console.error("Error calculating completion time:", e);
+            }
+          }
           break;
         case 'in-progress':
           techStats[tech].inProgress += 1;
@@ -49,28 +69,13 @@ export function WorkOrderTechniciansPerformance({ workOrders }: WorkOrderTechnic
       techStats[tech].total += 1;
     });
 
-    // Calculate completion times for completed orders
-    workOrders
-      .filter(wo => wo.status === 'completed' && wo.technician)
-      .forEach(order => {
-        const tech = order.technician;
-        if (!tech) return;
-        
-        if (order.startTime && order.endTime) {
-          const startTime = new Date(order.startTime).getTime();
-          const endTime = new Date(order.endTime).getTime();
-          const completionTime = (endTime - startTime) / (1000 * 60 * 60); // in hours
-          
-          if (!isNaN(completionTime) && completionTime > 0) {
-            const currentTotal = techStats[tech].avgCompletionTime || 0;
-            const currentCount = techStats[tech].completed;
-            
-            // Update running average
-            techStats[tech].avgCompletionTime = 
-              (currentTotal * (currentCount - 1) + completionTime) / currentCount;
-          }
-        }
-      });
+    // Calculate average completion time
+    Object.keys(techStats).forEach(tech => {
+      if (techStats[tech].completedCount > 0) {
+        techStats[tech].avgCompletionTime = 
+          techStats[tech].totalCompletionTime / techStats[tech].completedCount;
+      }
+    });
 
     // Convert to array for chart
     return Object.entries(techStats).map(([name, stats]) => ({

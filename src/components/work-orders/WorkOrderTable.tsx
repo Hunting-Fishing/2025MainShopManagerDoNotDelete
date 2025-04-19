@@ -1,62 +1,172 @@
 
-import React from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import React, { useState } from "react";
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
+} from "@/components/ui/table";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, FileText, Edit, Trash, Clock } from "lucide-react";
+import { StatusBadge } from "./StatusBadge";
+import { PriorityBadge } from "./PriorityBadge";
 import { WorkOrder } from "@/types/workOrder";
-import { formatDate } from "@/utils/workOrders/formatters";
-import { statusConfig, priorityConfig } from "@/utils/workOrders/statusManagement";
+import { format } from "date-fns";
+import { Link } from "react-router-dom";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 
 interface WorkOrderTableProps {
   workOrders: WorkOrder[];
-  onViewWorkOrder?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function WorkOrderTable({ workOrders, onViewWorkOrder }: WorkOrderTableProps) {
+export function WorkOrderTable({ workOrders, onDelete }: WorkOrderTableProps) {
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
+  const toggleRowExpanded = (id: string) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  if (!workOrders || workOrders.length === 0) {
+    return (
+      <div className="text-center py-10 border rounded-md bg-slate-50">
+        <h3 className="text-lg font-medium">No work orders found</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Try adjusting your filters or create a new work order
+        </p>
+        <Button asChild className="mt-4">
+          <Link to="/work-orders/create">Create Work Order</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="border rounded-md overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-slate-50">
           <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Customer</TableHead>
+            <TableHead className="w-[200px]">Customer</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Technician</TableHead>
             <TableHead>Due Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {workOrders.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                No work orders found
-              </TableCell>
-            </TableRow>
-          ) : (
-            workOrders.map((workOrder) => (
-              <TableRow 
-                key={workOrder.id} 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => onViewWorkOrder && onViewWorkOrder(workOrder.id)}
+          {workOrders.map((workOrder) => (
+            <React.Fragment key={workOrder.id}>
+              <TableRow
+                className={expandedRows[workOrder.id] ? "border-b-0" : ""}
+                onClick={() => toggleRowExpanded(workOrder.id)}
               >
-                <TableCell className="font-mono text-xs">{workOrder.id.substring(0, 8)}</TableCell>
-                <TableCell>{workOrder.customer}</TableCell>
-                <TableCell className="max-w-[200px] truncate">{workOrder.description}</TableCell>
-                <TableCell>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusConfig[workOrder.status]?.color}`}>
-                    {statusConfig[workOrder.status]?.label || workOrder.status}
-                  </span>
+                <TableCell className="font-medium">
+                  {workOrder.customer}
+                </TableCell>
+                <TableCell className="max-w-[300px] truncate">
+                  {workOrder.description}
                 </TableCell>
                 <TableCell>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${priorityConfig[workOrder.priority]?.color}`}>
-                    {priorityConfig[workOrder.priority]?.label || workOrder.priority}
-                  </span>
+                  <StatusBadge status={workOrder.status} />
+                </TableCell>
+                <TableCell>
+                  <PriorityBadge priority={workOrder.priority} />
                 </TableCell>
                 <TableCell>{workOrder.technician}</TableCell>
-                <TableCell>{formatDate(workOrder.dueDate)}</TableCell>
+                <TableCell>
+                  {workOrder.dueDate ? format(new Date(workOrder.dueDate), "MMM dd, yyyy") : "N/A"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link to={`/work-orders/${workOrder.id}`} className="flex items-center cursor-pointer">
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Details
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to={`/work-orders/${workOrder.id}/edit`} className="flex items-center cursor-pointer">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to={`/work-orders/${workOrder.id}/time-tracking`} className="flex items-center cursor-pointer">
+                          <Clock className="h-4 w-4 mr-2" />
+                          Time Tracking
+                        </Link>
+                      </DropdownMenuItem>
+                      {onDelete && (
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(workOrder.id);
+                          }}
+                          className="text-red-600"
+                        >
+                          <Trash className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
-            ))
-          )}
+              
+              {expandedRows[workOrder.id] && (
+                <TableRow>
+                  <TableCell colSpan={7} className="bg-slate-50 p-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium mb-1">Location</h4>
+                        <p className="text-sm">{workOrder.location || "N/A"}</p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-1">Service Type</h4>
+                        <p className="text-sm">{workOrder.serviceType || "N/A"}</p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-1">Billable Hours</h4>
+                        <p className="text-sm">
+                          {workOrder.totalBillableTime 
+                            ? formatTimeInHoursAndMinutes(workOrder.totalBillableTime) 
+                            : "0h 0m"}
+                        </p>
+                      </div>
+                      
+                      <div className="col-span-3">
+                        <h4 className="text-sm font-medium mb-1">Notes</h4>
+                        <p className="text-sm text-gray-600">{workOrder.notes || "No notes"}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </React.Fragment>
+          ))}
         </TableBody>
       </Table>
     </div>

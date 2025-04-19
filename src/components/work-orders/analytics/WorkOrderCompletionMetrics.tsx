@@ -1,220 +1,257 @@
 
-import React from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
+import React, { useMemo } from "react";
 import { WorkOrder } from "@/types/workOrder";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate } from "@/utils/workOrders/formatters";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { differenceInHours, differenceInDays, format, parseISO } from "date-fns";
 
 interface WorkOrderCompletionMetricsProps {
   workOrders: WorkOrder[];
 }
 
 export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMetricsProps) {
-  // Calculate average completion time overall
-  const averageCompletionTime = React.useMemo(() => {
-    const completedOrders = workOrders.filter(
-      wo => wo.status === 'completed' && wo.startTime && wo.endTime
-    );
+  // Calculate metrics for completed work orders
+  const completionData = useMemo(() => {
+    const completed = workOrders.filter(wo => wo.status === 'completed' && wo.startTime && wo.endTime);
     
-    if (completedOrders.length === 0) return 0;
+    if (completed.length === 0) {
+      return { avgCompletionTime: 0, workOrders: [] };
+    }
     
-    const totalCompletionTime = completedOrders.reduce((sum, order) => {
-      if (!order.startTime || !order.endTime) return sum;
+    // Calculate average time to completion
+    const totalHours = completed.reduce((total, wo) => {
+      const startDate = wo.startTime ? new Date(wo.startTime) : null;
+      const endDate = wo.endTime ? new Date(wo.endTime) : null;
       
-      const startTime = new Date(order.startTime).getTime();
-      const endTime = new Date(order.endTime).getTime();
-      const completionHours = (endTime - startTime) / (1000 * 60 * 60);
-      
-      return isNaN(completionHours) ? sum : sum + completionHours;
+      if (!startDate || !endDate) return total;
+      return total + differenceInHours(endDate, startDate);
     }, 0);
     
-    return totalCompletionTime / completedOrders.length;
-  }, [workOrders]);
-
-  // Calculate average turnaround time (from creation to completion)
-  const averageTurnaroundTime = React.useMemo(() => {
-    const completedOrders = workOrders.filter(
-      wo => wo.status === 'completed' && wo.createdAt && wo.endTime
-    );
-    
-    if (completedOrders.length === 0) return 0;
-    
-    const totalTurnaroundTime = completedOrders.reduce((sum, order) => {
-      if (!order.createdAt || !order.endTime) return sum;
-      
-      const createTime = new Date(order.createdAt).getTime();
-      const endTime = new Date(order.endTime).getTime();
-      const turnaroundHours = (endTime - createTime) / (1000 * 60 * 60);
-      
-      return isNaN(turnaroundHours) ? sum : sum + turnaroundHours;
-    }, 0);
-    
-    return totalTurnaroundTime / completedOrders.length;
-  }, [workOrders]);
-
-  // Calculate completion rate percentage
-  const completionRate = React.useMemo(() => {
-    if (workOrders.length === 0) return 0;
-    
-    const completedCount = workOrders.filter(wo => wo.status === 'completed').length;
-    return (completedCount / workOrders.length) * 100;
-  }, [workOrders]);
-
-  // Calculate average time-to-completion by month
-  const monthlyCompletionTimes = React.useMemo(() => {
-    const completedByMonth: Record<string, { total: number, count: number }> = {};
-    
-    workOrders
-      .filter(wo => wo.status === 'completed' && wo.endTime)
-      .forEach(order => {
-        if (!order.endTime) return;
-        
-        const endDate = new Date(order.endTime);
-        const monthYear = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
-        
-        if (!completedByMonth[monthYear]) {
-          completedByMonth[monthYear] = { total: 0, count: 0 };
-        }
-        
-        if (order.startTime && order.endTime) {
-          const startTime = new Date(order.startTime).getTime();
-          const endTime = new Date(order.endTime).getTime();
-          const completionHours = (endTime - startTime) / (1000 * 60 * 60);
-          
-          if (!isNaN(completionHours) && completionHours > 0) {
-            completedByMonth[monthYear].total += completionHours;
-            completedByMonth[monthYear].count += 1;
-          }
-        }
-      });
-    
-    // Convert to array for chart
-    return Object.entries(completedByMonth)
-      .map(([month, data]) => ({
-        month,
-        "Avg Hours": data.count > 0 ? +(data.total / data.count).toFixed(1) : 0,
-        "Orders Completed": data.count
-      }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-      
-  }, [workOrders]);
-
-  // Calculate overdue rates
-  const overdueStats = React.useMemo(() => {
-    const total = workOrders.length;
-    if (total === 0) return { overduePercentage: 0, overdueCount: 0 };
-    
-    const now = new Date();
-    const overdueCount = workOrders.filter(wo => {
-      if (wo.status === 'completed' || wo.status === 'cancelled') return false;
-      if (!wo.dueDate) return false;
-      
-      const dueDate = new Date(wo.dueDate);
-      return dueDate < now;
-    }).length;
+    const avgCompletionTime = totalHours / completed.length;
     
     return {
-      overduePercentage: (overdueCount / total) * 100,
-      overdueCount
+      avgCompletionTime,
+      workOrders: completed
     };
   }, [workOrders]);
+
+  // Calculate metrics for turnaround time (from creation to completion)
+  const turnaroundData = useMemo(() => {
+    const completed = workOrders.filter(wo => wo.status === 'completed' && wo.createdAt && wo.endTime);
+    
+    if (completed.length === 0) {
+      return { avgTurnaroundTime: 0, workOrders: [] };
+    }
+    
+    // Calculate average time to completion
+    const totalHours = completed.reduce((total, wo) => {
+      const creationDate = wo.createdAt ? new Date(wo.createdAt) : null;
+      const completionDate = wo.endTime ? new Date(wo.endTime) : null;
+      
+      if (!creationDate || !completionDate) return total;
+      return total + differenceInHours(completionDate, creationDate);
+    }, 0);
+    
+    const avgTurnaroundTime = totalHours / completed.length;
+    
+    return {
+      avgTurnaroundTime,
+      workOrders: completed
+    };
+  }, [workOrders]);
+
+  // Calculate on-time completion rate
+  const onTimeCompletionData = useMemo(() => {
+    const completed = workOrders.filter(wo => 
+      wo.status === 'completed' && 
+      wo.endTime && 
+      wo.dueDate
+    );
+    
+    if (completed.length === 0) {
+      return { onTimeRate: 0, totalCompleted: 0, onTimeCount: 0 };
+    }
+    
+    // Count on-time completions
+    const onTimeCount = completed.filter(wo => {
+      const endDate = wo.endTime ? new Date(wo.endTime) : null;
+      const dueDate = wo.dueDate ? new Date(wo.dueDate) : null;
+      
+      if (!endDate || !dueDate) return false;
+      return endDate <= dueDate;
+    }).length;
+    
+    const onTimeRate = (onTimeCount / completed.length) * 100;
+    
+    return {
+      onTimeRate,
+      totalCompleted: completed.length,
+      onTimeCount
+    };
+  }, [workOrders]);
+
+  // Calculate metrics for in-progress work orders
+  const inProgressData = useMemo(() => {
+    const inProgress = workOrders.filter(wo => 
+      wo.status === 'in-progress' && 
+      wo.startTime
+    );
+    
+    if (inProgress.length === 0) {
+      return { avgAge: 0, workOrders: [] };
+    }
+    
+    // Calculate average age of in-progress work orders
+    const totalDays = inProgress.reduce((total, wo) => {
+      const startDate = wo.startTime ? new Date(wo.startTime) : null;
+      const today = new Date();
+      
+      if (!startDate) return total;
+      return total + differenceInDays(today, startDate);
+    }, 0);
+    
+    const avgAge = totalDays / inProgress.length;
+    
+    return {
+      avgAge,
+      workOrders: inProgress
+    };
+  }, [workOrders]);
+
+  // Prepare data for monthly completion chart
+  const monthlyCompletionData = useMemo(() => {
+    const lastSixMonths = Array.from({ length: 6 }).map((_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      date.setDate(1); // First day of month
+      return date;
+    }).reverse();
+    
+    return lastSixMonths.map(month => {
+      const monthStart = new Date(month);
+      const monthEnd = new Date(month);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+      
+      // Filter work orders completed in this month
+      const completionsInMonth = workOrders.filter(wo => {
+        if (wo.status !== 'completed' || !wo.endTime) return false;
+        
+        const endDate = new Date(wo.endTime);
+        return endDate >= monthStart && endDate < monthEnd;
+      }).length;
+      
+      return {
+        month: format(month, 'MMM yyyy'),
+        completions: completionsInMonth,
+      };
+    });
+  }, [workOrders]);
+  
+  // Generate colors for the bars based on values
+  const getBarColor = (value: number) => {
+    const max = Math.max(...monthlyCompletionData.map(item => item.completions));
+    if (max === 0) return '#10B981'; // Default green if no completions
+    
+    const normalizedValue = value / max;
+    if (normalizedValue > 0.7) return '#10B981'; // Green for high values
+    if (normalizedValue > 0.3) return '#3B82F6'; // Blue for medium values
+    return '#FBBF24'; // Yellow for low values
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Work Order Completion Metrics</CardTitle>
-        <CardDescription>Analysis of completion times and performance metrics</CardDescription>
+        <CardDescription>
+          Analysis of work order completion rates and times
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* KPI Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <h4 className="text-sm text-gray-500 mb-1">Avg Completion Time</h4>
-            <div className="text-2xl font-semibold">{averageCompletionTime.toFixed(1)} hrs</div>
+        {workOrders.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">No work order data available</p>
           </div>
-          
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <h4 className="text-sm text-gray-500 mb-1">Avg Turnaround Time</h4>
-            <div className="text-2xl font-semibold">{averageTurnaroundTime.toFixed(1)} hrs</div>
+        ) : (
+          <div className="space-y-8">
+            {/* Monthly completion chart */}
+            <div>
+              <h4 className="font-medium mb-4">Completions by Month</h4>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={monthlyCompletionData}
+                    margin={{ top: 5, right: 20, left: 0, bottom: 25 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      allowDecimals={false}
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value} completions`, 'Completions']}
+                      labelFormatter={(label) => `${label}`}
+                    />
+                    <Bar dataKey="completions" radius={[4, 4, 0, 0]}>
+                      {monthlyCompletionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getBarColor(entry.completions)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Key metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h5 className="text-sm font-medium text-muted-foreground mb-1">Avg. Completion Time</h5>
+                <p className="text-2xl font-bold">
+                  {completionData.avgCompletionTime.toFixed(1)} hrs
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on {completionData.workOrders.length} completed orders
+                </p>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h5 className="text-sm font-medium text-muted-foreground mb-1">Avg. Turnaround Time</h5>
+                <p className="text-2xl font-bold">
+                  {turnaroundData.avgTurnaroundTime.toFixed(1)} hrs
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  From creation to completion
+                </p>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h5 className="text-sm font-medium text-muted-foreground mb-1">On-Time Completion</h5>
+                <p className="text-2xl font-bold">
+                  {onTimeCompletionData.onTimeRate.toFixed(0)}%
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {onTimeCompletionData.onTimeCount} of {onTimeCompletionData.totalCompleted} on time
+                </p>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h5 className="text-sm font-medium text-muted-foreground mb-1">Avg. Age (In Progress)</h5>
+                <p className="text-2xl font-bold">
+                  {inProgressData.avgAge.toFixed(1)} days
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {inProgressData.workOrders.length} orders in progress
+                </p>
+              </div>
+            </div>
           </div>
-          
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <h4 className="text-sm text-gray-500 mb-1">Completion Rate</h4>
-            <div className="text-2xl font-semibold">{completionRate.toFixed(1)}%</div>
-          </div>
-          
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <h4 className="text-sm text-gray-500 mb-1">Overdue Rate</h4>
-            <div className="text-2xl font-semibold">{overdueStats.overduePercentage.toFixed(1)}%</div>
-            <div className="text-xs text-gray-500">{overdueStats.overdueCount} work orders</div>
-          </div>
-        </div>
-        
-        {/* Monthly Completion Times Chart */}
-        <div className="h-80 w-full mb-6">
-          <h3 className="text-lg font-medium mb-2">Monthly Completion Times</h3>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart
-              data={monthlyCompletionTimes}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-              <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-              <Tooltip />
-              <Legend />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="Avg Hours"
-                stroke="#8884d8"
-                activeDot={{ r: 8 }}
-              />
-              <Line yAxisId="right" type="monotone" dataKey="Orders Completed" stroke="#82ca9d" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {/* Status Distribution */}
-        <div>
-          <h3 className="text-lg font-medium mb-2">Status Distribution</h3>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={[
-                  {
-                    name: "Pending",
-                    count: workOrders.filter(wo => wo.status === 'pending').length,
-                    fill: "#FBBF24"
-                  },
-                  {
-                    name: "In Progress",
-                    count: workOrders.filter(wo => wo.status === 'in-progress').length,
-                    fill: "#3B82F6"
-                  },
-                  {
-                    name: "Completed",
-                    count: workOrders.filter(wo => wo.status === 'completed').length,
-                    fill: "#10B981"
-                  },
-                  {
-                    name: "Cancelled",
-                    count: workOrders.filter(wo => wo.status === 'cancelled').length,
-                    fill: "#6B7280"
-                  }
-                ]}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" name="Count" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
