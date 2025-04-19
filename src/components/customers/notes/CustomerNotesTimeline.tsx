@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,6 +78,7 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
+  // Fix the type issue by ensuring the function can accept the CustomerNote parameter
   const handleNoteAdded = (newNote: CustomerNote) => {
     setNotes([newNote, ...notes]);
     if (onNoteAdded) {

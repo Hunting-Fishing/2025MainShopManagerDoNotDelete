@@ -1,4 +1,5 @@
 
+import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
 import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";

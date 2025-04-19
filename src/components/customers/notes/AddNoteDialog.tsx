@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Customer } from "@/types/customer";
+import { Customer, CustomerNote } from "@/types/customer";
 import { addCustomerNote } from "@/services/customer/customerNotesService";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
@@ -13,7 +13,7 @@ interface AddNoteDialogProps {
   customer: Customer;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNoteAdded?: () => void;
+  onNoteAdded?: (note: CustomerNote) => void;
 }
 
 export function AddNoteDialog({ customer, open, onOpenChange, onNoteAdded }: AddNoteDialogProps) {
@@ -42,12 +42,12 @@ export function AddNoteDialog({ customer, open, onOpenChange, onNoteAdded }: Add
       const createdBy = user?.displayName || user?.email || "System";
       
       // Call the API to add the note
-      await addCustomerNote(
-        customer.id,
-        content.trim(),
+      const newNote = await addCustomerNote({
+        customer_id: customer.id,
+        content: content.trim(),
         category,
-        createdBy
-      );
+        created_by: createdBy
+      });
       
       toast({
         title: "Note added",
@@ -56,7 +56,7 @@ export function AddNoteDialog({ customer, open, onOpenChange, onNoteAdded }: Add
       
       // Close dialog and notify parent
       onOpenChange(false);
-      if (onNoteAdded) onNoteAdded();
+      if (onNoteAdded) onNoteAdded(newNote);
       
       // Reset form
       setContent("");

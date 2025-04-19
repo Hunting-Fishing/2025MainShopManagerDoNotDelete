@@ -25,26 +25,23 @@ export const getCustomerNotes = async (customerId: string): Promise<CustomerNote
   }
 };
 
+interface AddNoteParams {
+  customer_id: string;
+  content: string;
+  category: 'service' | 'sales' | 'follow-up' | 'general';
+  created_by: string;
+}
+
 /**
  * Add a new note for a customer
  */
 export const addCustomerNote = async (
-  customerId: string,
-  content: string,
-  category: 'service' | 'sales' | 'follow-up' | 'general',
-  createdBy: string
+  noteData: AddNoteParams
 ): Promise<CustomerNote> => {
   try {
-    const newNote = {
-      customer_id: customerId,
-      content,
-      category,
-      created_by: createdBy,
-    };
-
     const { data, error } = await supabase
       .from("customer_notes")
-      .insert(newNote)
+      .insert(noteData)
       .select()
       .single();
       
