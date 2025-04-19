@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { statusConfig, isStatusTransitionAllowed } from "@/utils/workOrders/statusManagement";
-import { useWorkOrderStatusUpdate } from "@/hooks/workOrders/useWorkOrderStatusUpdate";
+import { useWorkOrderStatusManager } from "@/hooks/workOrders/useWorkOrderStatusManager";
 import { Loader2 } from "lucide-react";
 
 interface StatusCellProps {
@@ -19,7 +19,7 @@ interface StatusCellProps {
 }
 
 export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: StatusCellProps) => {
-  const { updateStatus, isUpdating } = useWorkOrderStatusUpdate();
+  const { updateStatus, isUpdating } = useWorkOrderStatusManager();
   const currentStatus = workOrder.status;
   const statusColor = statusConfig[currentStatus]?.color || "";
 

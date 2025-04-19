@@ -2,10 +2,8 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { WorkOrder } from "@/types/workOrder";
-import { updateWorkOrder } from "@/utils/workOrders";
-import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
 import { Check, X, RefreshCcw, Play } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { useWorkOrderStatusManager } from "@/hooks/workOrders/useWorkOrderStatusManager";
 
 interface StatusUpdateButtonProps {
   workOrder: WorkOrder;
@@ -24,7 +22,7 @@ export const StatusUpdateButton: React.FC<StatusUpdateButtonProps> = ({
   onStatusUpdate,
   size = "default"
 }) => {
-  const [isUpdating, setIsUpdating] = React.useState(false);
+  const { updateStatus, isUpdating } = useWorkOrderStatusManager();
 
   // Determine button appearance based on status
   const getButtonVariant = () => {
@@ -66,66 +64,9 @@ export const StatusUpdateButton: React.FC<StatusUpdateButtonProps> = ({
   };
 
   const handleStatusUpdate = async () => {
-    setIsUpdating(true);
-    try {
-      // Create updated work order object
-      const updatedWorkOrder = {
-        ...workOrder,
-        status: newStatus,
-        lastUpdatedBy: userName,
-        lastUpdatedAt: new Date().toISOString()
-      };
-      
-      // Capture status-specific timestamps
-      if (newStatus === "in-progress" && workOrder.status !== "in-progress") {
-        updatedWorkOrder.startTime = new Date().toISOString();
-      } else if (newStatus === "completed") {
-        updatedWorkOrder.endTime = new Date().toISOString();
-      }
-      
-      // Update work order in database
-      await updateWorkOrder(updatedWorkOrder);
-      
-      // Record activity
-      const action = getActionLabel();
-      await recordWorkOrderActivity(
-        action,
-        workOrder.id,
-        userId,
-        userName
-      );
-      
-      // Call parent callback
+    const updatedWorkOrder = await updateStatus(workOrder, newStatus, userId, userName);
+    if (updatedWorkOrder) {
       onStatusUpdate(updatedWorkOrder);
-      
-      // Show success message
-      toast({
-        title: "Status Updated",
-        description: `Work order ${workOrder.id.substring(0, 8)} has been ${newStatus.replace('-', ' ')}.`,
-      });
-    } catch (error) {
-      console.error("Error updating work order status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update work order status",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Get appropriate action label for activity record
-  const getActionLabel = () => {
-    switch(newStatus) {
-      case "completed": return "Completed";
-      case "cancelled": return "Cancelled";
-      case "in-progress": 
-        return workOrder.status === "completed" || workOrder.status === "cancelled" 
-          ? "Reopened" 
-          : "Started";
-      case "pending": return "Reopened";
-      default: return "Updated";
     }
   };
 
