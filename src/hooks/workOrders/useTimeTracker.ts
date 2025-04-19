@@ -93,15 +93,15 @@ export function useTimeTracker(workOrderId: string) {
   // Fix: Ensure fetchTimeEntries function always returns a value that can be checked for truthiness
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
-      // The key fix: Call fetchTimeEntries() and store the result without immediately checking it
+      // Directly await the result of fetchTimeEntries
       const entries = await fetchTimeEntries();
       
-      // Proper null/undefined check before trying to use the result
+      // If entries is null or undefined, return an empty array
       if (!entries) {
         return [];
       }
       
-      // Ensure we return an array
+      // If entries is an array, return it; otherwise, return an empty array
       return Array.isArray(entries) ? entries : [];
     } catch (error) {
       console.error('Error fetching time entries:', error);
