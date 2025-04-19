@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { TimeEntry } from '@/types/workOrder';
 import { toast } from '@/hooks/use-toast';
@@ -89,11 +90,16 @@ export function useTimeTracker(workOrderId: string) {
     }
   };
 
-  // Ensure fetchEntries always returns an array and is explicitly typed
+  // Fix: Ensure fetchTimeEntries function always returns a value that can be checked for truthiness
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
-      // Explicitly await the result and provide a default empty array if undefined
-      const entries = await fetchTimeEntries() || [];
+      // The key fix: Call fetchTimeEntries() and store the result without immediately checking it
+      const entries = await fetchTimeEntries();
+      
+      // Proper null/undefined check before trying to use the result
+      if (!entries) {
+        return [];
+      }
       
       // Ensure we return an array
       return Array.isArray(entries) ? entries : [];
