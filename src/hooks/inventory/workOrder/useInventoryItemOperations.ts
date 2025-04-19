@@ -42,7 +42,7 @@ export const useInventoryItemOperations = (
   }, [selectedItems, checkItemAvailability]);
 
   // Handle adding inventory item
-  const handleAddItem = (item: InventoryItemExtended) => {
+  const handleAddItem = useCallback((item: InventoryItemExtended) => {
     const currentItems = form.getValues("inventoryItems") || [];
     
     // Check if item already exists
@@ -108,16 +108,16 @@ export const useInventoryItemOperations = (
         setShowInventoryDialog(false);
       });
     }
-  };
+  }, [form, checkItemAvailability]);
 
   // Handle removing inventory item
-  const handleRemoveItem = (id: string) => {
+  const handleRemoveItem = useCallback((id: string) => {
     const currentItems = form.getValues("inventoryItems") || [];
     form.setValue("inventoryItems", currentItems.filter(item => item.id !== id));
-  };
+  }, [form]);
 
   // Handle updating item quantity
-  const handleUpdateQuantity = (id: string, quantity: number) => {
+  const handleUpdateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity < 1) return;
     
     const currentItems = form.getValues("inventoryItems") || [];
@@ -160,7 +160,7 @@ export const useInventoryItemOperations = (
       
       form.setValue("inventoryItems", updatedItems);
     }
-  };
+  }, [form, checkItemAvailability]);
 
   return {
     showInventoryDialog,
