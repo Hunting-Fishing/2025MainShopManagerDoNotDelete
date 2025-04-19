@@ -13,3 +13,12 @@ export const formatRelativeTime = (dateString: string): string => {
   return date.toLocaleDateString();
 };
 
+export const formatDate = (date: string | Date): string => {
+  const parsedDate = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(parsedDate);
+};
+
