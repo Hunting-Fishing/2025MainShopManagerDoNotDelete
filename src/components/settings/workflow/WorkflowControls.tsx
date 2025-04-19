@@ -11,7 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { NodeToolbar } from '@xyflow/react';
+import { NodeToolbar, Position } from '@xyflow/react';
 
 interface WorkflowControlsProps {
   onAddNode: (type: string) => void;
@@ -153,7 +153,7 @@ export function WorkflowNodeToolbar({ node, onNodeEdit, onNodeDelete }: Workflow
   return (
     <NodeToolbar 
       node={node} 
-      position="top" 
+      position={Position.Top} 
       offset={10}
       className="bg-white rounded-md shadow-md border p-2 flex items-center space-x-2"
     >

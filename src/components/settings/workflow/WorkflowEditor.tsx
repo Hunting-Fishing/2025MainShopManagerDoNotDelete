@@ -1,4 +1,3 @@
-
 import { 
   ReactFlow, 
   Background, 
@@ -8,8 +7,7 @@ import {
   useReactFlow, 
   Panel, 
   applyEdgeChanges, 
-  applyNodeChanges,
-  useZoomPanHelper
+  applyNodeChanges
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
