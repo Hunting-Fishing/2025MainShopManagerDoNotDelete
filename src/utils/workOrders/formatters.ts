@@ -1,5 +1,6 @@
 
 import { WorkOrder, TimeEntry } from '@/types/workOrder';
+import { format, parseISO } from 'date-fns';
 
 // Format time in hours and minutes
 export function formatTimeInHoursAndMinutes(minutes: number): string {
@@ -12,6 +13,17 @@ export function formatTimeInHoursAndMinutes(minutes: number): string {
     return `${hours}h`;
   } else {
     return `${hours}h ${remainingMinutes}m`;
+  }
+}
+
+// Format date
+export function formatDate(dateString: string): string {
+  try {
+    if (!dateString) return 'N/A';
+    return format(parseISO(dateString), 'MMM dd, yyyy');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid date';
   }
 }
 
