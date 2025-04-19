@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -16,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, FileText, Edit, Trash, Clock } from "lucide-react";
+import { MoreHorizontal, FileText, Edit, Trash, Clock, Loader2 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { PriorityBadge } from "./PriorityBadge";
 import { WorkOrder } from "@/types/workOrder";
@@ -24,12 +23,13 @@ import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 
-interface WorkOrderTableProps {
+export interface WorkOrderTableProps {
   workOrders: WorkOrder[];
   onDelete?: (id: string) => void;
+  loading?: boolean;
 }
 
-export function WorkOrderTable({ workOrders, onDelete }: WorkOrderTableProps) {
+export function WorkOrderTable({ workOrders, onDelete, loading = false }: WorkOrderTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   const toggleRowExpanded = (id: string) => {
@@ -38,6 +38,15 @@ export function WorkOrderTable({ workOrders, onDelete }: WorkOrderTableProps) {
       [id]: !prev[id]
     }));
   };
+
+  if (loading) {
+    return (
+      <div className="border rounded-md p-8 flex flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
+        <p className="text-muted-foreground">Loading work orders...</p>
+      </div>
+    );
+  }
 
   if (!workOrders || workOrders.length === 0) {
     return (
