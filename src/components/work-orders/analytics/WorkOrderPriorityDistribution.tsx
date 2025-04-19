@@ -60,6 +60,8 @@ export function WorkOrderPriorityDistribution({ workOrders }: WorkOrderPriorityD
 
     completedOrders.forEach(order => {
       const priority = order.priority || 'medium';
+      if (!order.startTime || !order.endTime) return;
+      
       const startTime = new Date(order.startTime).getTime();
       const endTime = new Date(order.endTime).getTime();
       const completionTimeHours = (endTime - startTime) / (1000 * 60 * 60);
@@ -73,8 +75,8 @@ export function WorkOrderPriorityDistribution({ workOrders }: WorkOrderPriorityD
     return Object.keys(priorityTimeData).map(priority => ({
       name: priorityConfig[priority as keyof typeof priorityConfig]?.label || priority,
       "Avg. Time (hours)": priorityTimeData[priority].count > 0 
-        ? (priorityTimeData[priority].total / priorityTimeData[priority].count).toFixed(1)
-        : "0",
+        ? Number((priorityTimeData[priority].total / priorityTimeData[priority].count).toFixed(1))
+        : 0,
       Count: priorityTimeData[priority].count
     }));
   }, [workOrders]);

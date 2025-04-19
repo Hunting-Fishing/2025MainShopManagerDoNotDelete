@@ -54,6 +54,7 @@ export function WorkOrderTechniciansPerformance({ workOrders }: WorkOrderTechnic
       .filter(wo => wo.status === 'completed' && wo.technician)
       .forEach(order => {
         const tech = order.technician;
+        if (!tech) return;
         
         if (order.startTime && order.endTime) {
           const startTime = new Date(order.startTime).getTime();

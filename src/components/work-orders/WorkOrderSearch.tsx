@@ -12,13 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter, X } from "lucide-react";
 import { statusConfig, priorityConfig } from "@/utils/workOrders/statusManagement";
 import { DatePicker } from "@/components/ui/date-picker";
-import { format } from 'date-fns';
-
-interface WorkOrderSearchProps {
-  onFilterChange: (filters: WorkOrderFilters) => void;
-  technicians: string[];
-  isLoading?: boolean;
-}
 
 export interface WorkOrderFilters {
   searchQuery: string;
@@ -27,6 +20,12 @@ export interface WorkOrderFilters {
   technician: string | null;
   dateFrom: Date | null;
   dateTo: Date | null;
+}
+
+export interface WorkOrderSearchProps {
+  onFilterChange: (filters: WorkOrderFilters) => void;
+  technicians: string[];
+  isLoading?: boolean;
 }
 
 export const WorkOrderSearch: React.FC<WorkOrderSearchProps> = ({
@@ -84,12 +83,14 @@ export const WorkOrderSearch: React.FC<WorkOrderSearchProps> = ({
             className="pl-8"
             value={filters.searchQuery}
             onChange={handleInputChange}
+            disabled={isLoading}
           />
         </div>
         <Button 
           variant="outline" 
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
+          disabled={isLoading}
         >
           <Filter className="h-4 w-4 mr-2" />
           Filters
@@ -100,6 +101,7 @@ export const WorkOrderSearch: React.FC<WorkOrderSearchProps> = ({
             size="icon" 
             onClick={clearFilters}
             className="text-red-500"
+            disabled={isLoading}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -113,6 +115,7 @@ export const WorkOrderSearch: React.FC<WorkOrderSearchProps> = ({
             <Select 
               value={filters.status || ''} 
               onValueChange={(value) => handleFilterChange('status', value || null)}
+              disabled={isLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Any status" />
@@ -133,6 +136,7 @@ export const WorkOrderSearch: React.FC<WorkOrderSearchProps> = ({
             <Select 
               value={filters.priority || ''} 
               onValueChange={(value) => handleFilterChange('priority', value || null)}
+              disabled={isLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Any priority" />
@@ -153,6 +157,7 @@ export const WorkOrderSearch: React.FC<WorkOrderSearchProps> = ({
             <Select 
               value={filters.technician || ''} 
               onValueChange={(value) => handleFilterChange('technician', value || null)}
+              disabled={isLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Any technician" />
@@ -175,12 +180,14 @@ export const WorkOrderSearch: React.FC<WorkOrderSearchProps> = ({
                 date={filters.dateFrom}
                 setDate={(date) => handleFilterChange('dateFrom', date)}
                 placeholder="From"
+                disabled={isLoading}
               />
               <span className="text-muted-foreground">-</span>
               <DatePicker
                 date={filters.dateTo}
                 setDate={(date) => handleFilterChange('dateTo', date)}
                 placeholder="To"
+                disabled={isLoading}
               />
             </div>
           </div>

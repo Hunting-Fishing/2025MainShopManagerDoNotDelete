@@ -1,260 +1,221 @@
 
 import React from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
 import { WorkOrder } from "@/types/workOrder";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from "recharts";
-import { format, parseISO, differenceInDays, differenceInHours, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { formatDate } from "@/utils/workOrders/formatters";
 
 interface WorkOrderCompletionMetricsProps {
   workOrders: WorkOrder[];
 }
 
 export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMetricsProps) {
-  const completedOrders = workOrders.filter(wo => wo.status === 'completed');
-  
-  // Calculate average completion time
-  const completionTimeData = React.useMemo(() => {
-    let totalCompletionTime = 0;
-    let count = 0;
+  // Calculate average completion time overall
+  const averageCompletionTime = React.useMemo(() => {
+    const completedOrders = workOrders.filter(
+      wo => wo.status === 'completed' && wo.startTime && wo.endTime
+    );
     
-    completedOrders.forEach(order => {
-      // Access using camelCase properties
-      if (order.startTime && order.endTime) {
-        const startTime = new Date(order.startTime).getTime();
-        const endTime = new Date(order.endTime).getTime();
-        const completionTime = (endTime - startTime) / (1000 * 60 * 60); // in hours
-        
-        if (!isNaN(completionTime) && completionTime > 0) {
-          totalCompletionTime += completionTime;
-          count++;
-        }
-      }
-    });
+    if (completedOrders.length === 0) return 0;
     
-    const avgCompletionTime = count > 0 ? totalCompletionTime / count : 0;
-    
-    // Calculate time from creation to completion
-    let totalLeadTime = 0;
-    let leadTimeCount = 0;
-    
-    completedOrders.forEach(order => {
-      if (order.createdAt && order.endTime) {
-        const creationTime = new Date(order.createdAt).getTime();
-        const completionTime = new Date(order.endTime).getTime();
-        const leadTime = (completionTime - creationTime) / (1000 * 60 * 60); // in hours
-        
-        if (!isNaN(leadTime) && leadTime > 0) {
-          totalLeadTime += leadTime;
-          leadTimeCount++;
-        }
-      }
-    });
-    
-    const avgLeadTime = leadTimeCount > 0 ? totalLeadTime / leadTimeCount : 0;
-    
-    return {
-      avgCompletionTime: avgCompletionTime.toFixed(1),
-      avgLeadTime: avgLeadTime.toFixed(1),
-      completionCount: count,
-    };
-  }, [completedOrders]);
-  
-  // Calculate completion trends over time
-  const completionTrendData = React.useMemo(() => {
-    // Group completed orders by day
-    const completionsByDay: Record<string, { count: number, avgTime: number }> = {};
-    
-    completedOrders.forEach(order => {
-      if (!order.endTime) return;
+    const totalCompletionTime = completedOrders.reduce((sum, order) => {
+      if (!order.startTime || !order.endTime) return sum;
       
-      const dateKey = format(new Date(order.endTime), 'yyyy-MM-dd');
+      const startTime = new Date(order.startTime).getTime();
+      const endTime = new Date(order.endTime).getTime();
+      const completionHours = (endTime - startTime) / (1000 * 60 * 60);
       
-      if (!completionsByDay[dateKey]) {
-        completionsByDay[dateKey] = { count: 0, avgTime: 0 };
-      }
-      
-      completionsByDay[dateKey].count += 1;
-      
-      if (order.startTime) {
-        const startTime = new Date(order.startTime).getTime();
-        const endTime = new Date(order.endTime).getTime();
-        const completionTime = (endTime - startTime) / (1000 * 60 * 60); // in hours
-        
-        if (!isNaN(completionTime) && completionTime > 0) {
-          const currentTotal = completionsByDay[dateKey].avgTime * (completionsByDay[dateKey].count - 1);
-          completionsByDay[dateKey].avgTime = 
-            (currentTotal + completionTime) / completionsByDay[dateKey].count;
-        }
-      }
-    });
+      return isNaN(completionHours) ? sum : sum + completionHours;
+    }, 0);
     
-    // Convert to array and sort by date
-    return Object.entries(completionsByDay)
-      .map(([date, data]) => ({
-        date,
-        count: data.count,
-        avgTime: parseFloat(data.avgTime.toFixed(1))
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [completedOrders]);
+    return totalCompletionTime / completedOrders.length;
+  }, [workOrders]);
 
-  // On-time completion metrics
-  const onTimeMetrics = React.useMemo(() => {
-    let onTimeCount = 0;
-    let lateCount = 0;
+  // Calculate average turnaround time (from creation to completion)
+  const averageTurnaroundTime = React.useMemo(() => {
+    const completedOrders = workOrders.filter(
+      wo => wo.status === 'completed' && wo.createdAt && wo.endTime
+    );
     
-    completedOrders.forEach(order => {
-      if (order.dueDate && order.endTime) {
-        const dueDate = new Date(order.dueDate);
-        const completionDate = new Date(order.endTime);
+    if (completedOrders.length === 0) return 0;
+    
+    const totalTurnaroundTime = completedOrders.reduce((sum, order) => {
+      if (!order.createdAt || !order.endTime) return sum;
+      
+      const createTime = new Date(order.createdAt).getTime();
+      const endTime = new Date(order.endTime).getTime();
+      const turnaroundHours = (endTime - createTime) / (1000 * 60 * 60);
+      
+      return isNaN(turnaroundHours) ? sum : sum + turnaroundHours;
+    }, 0);
+    
+    return totalTurnaroundTime / completedOrders.length;
+  }, [workOrders]);
+
+  // Calculate completion rate percentage
+  const completionRate = React.useMemo(() => {
+    if (workOrders.length === 0) return 0;
+    
+    const completedCount = workOrders.filter(wo => wo.status === 'completed').length;
+    return (completedCount / workOrders.length) * 100;
+  }, [workOrders]);
+
+  // Calculate average time-to-completion by month
+  const monthlyCompletionTimes = React.useMemo(() => {
+    const completedByMonth: Record<string, { total: number, count: number }> = {};
+    
+    workOrders
+      .filter(wo => wo.status === 'completed' && wo.endTime)
+      .forEach(order => {
+        if (!order.endTime) return;
         
-        if (completionDate <= dueDate) {
-          onTimeCount++;
-        } else {
-          lateCount++;
+        const endDate = new Date(order.endTime);
+        const monthYear = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (!completedByMonth[monthYear]) {
+          completedByMonth[monthYear] = { total: 0, count: 0 };
         }
-      }
-    });
+        
+        if (order.startTime && order.endTime) {
+          const startTime = new Date(order.startTime).getTime();
+          const endTime = new Date(order.endTime).getTime();
+          const completionHours = (endTime - startTime) / (1000 * 60 * 60);
+          
+          if (!isNaN(completionHours) && completionHours > 0) {
+            completedByMonth[monthYear].total += completionHours;
+            completedByMonth[monthYear].count += 1;
+          }
+        }
+      });
     
-    const total = onTimeCount + lateCount;
-    const onTimePercentage = total > 0 ? (onTimeCount / total * 100).toFixed(1) : "0";
+    // Convert to array for chart
+    return Object.entries(completedByMonth)
+      .map(([month, data]) => ({
+        month,
+        "Avg Hours": data.count > 0 ? +(data.total / data.count).toFixed(1) : 0,
+        "Orders Completed": data.count
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+      
+  }, [workOrders]);
+
+  // Calculate overdue rates
+  const overdueStats = React.useMemo(() => {
+    const total = workOrders.length;
+    if (total === 0) return { overduePercentage: 0, overdueCount: 0 };
+    
+    const now = new Date();
+    const overdueCount = workOrders.filter(wo => {
+      if (wo.status === 'completed' || wo.status === 'cancelled') return false;
+      if (!wo.dueDate) return false;
+      
+      const dueDate = new Date(wo.dueDate);
+      return dueDate < now;
+    }).length;
     
     return {
-      onTimeCount,
-      lateCount,
-      onTimePercentage,
-      total
+      overduePercentage: (overdueCount / total) * 100,
+      overdueCount
     };
-  }, [completedOrders]);
+  }, [workOrders]);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold">{completionTimeData.avgCompletionTime}h</div>
-            <div className="text-sm text-muted-foreground">Average Work Time</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold">{completionTimeData.avgLeadTime}h</div>
-            <div className="text-sm text-muted-foreground">Average Lead Time</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold">{onTimeMetrics.onTimePercentage}%</div>
-            <div className="text-sm text-muted-foreground">On-Time Completion</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Completion Trends</CardTitle>
-          <CardDescription>Work orders completed over time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={completionTrendData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(dateStr) => format(parseISO(dateStr), 'MM/dd')}
-                />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip 
-                  labelFormatter={(dateStr) => format(parseISO(dateStr as string), 'MMM dd, yyyy')}
-                />
-                <Legend />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="count" 
-                  name="Completed Orders" 
-                  stroke="#8884d8" 
-                  activeDot={{ r: 8 }} 
-                />
-                <Line 
-                  yAxisId="right"
-                  type="monotone" 
-                  dataKey="avgTime" 
-                  name="Avg. Hours" 
-                  stroke="#82ca9d" 
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>On-Time Delivery Performance</CardTitle>
-          <CardDescription>Completed work orders vs. due dates</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center">
-          <div className="w-48 h-48 relative flex items-center justify-center mb-4">
-            <svg className="w-full h-full" viewBox="0 0 100 100">
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="45" 
-                fill="transparent" 
-                stroke="#f3f4f6" 
-                strokeWidth="10" 
-              />
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="45" 
-                fill="transparent" 
-                stroke="#10B981" 
-                strokeWidth="10" 
-                strokeDasharray={`${Number(onTimeMetrics.onTimePercentage) * 2.83} 283`} 
-                strokeDashoffset="-70.75" 
-                transform="rotate(-90 50 50)" 
-              />
-              <text 
-                x="50" 
-                y="50" 
-                textAnchor="middle" 
-                dominantBaseline="middle" 
-                className="text-2xl font-bold"
-                fill="#0f172a"
-              >
-                {onTimeMetrics.onTimePercentage}%
-              </text>
-            </svg>
+    <Card>
+      <CardHeader>
+        <CardTitle>Work Order Completion Metrics</CardTitle>
+        <CardDescription>Analysis of completion times and performance metrics</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* KPI Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-slate-50 p-4 rounded-lg">
+            <h4 className="text-sm text-gray-500 mb-1">Avg Completion Time</h4>
+            <div className="text-2xl font-semibold">{averageCompletionTime.toFixed(1)} hrs</div>
           </div>
           
-          <div className="grid grid-cols-2 gap-8 w-full max-w-xs">
-            <div className="flex flex-col items-center">
-              <div className="text-xl font-bold text-green-600">{onTimeMetrics.onTimeCount}</div>
-              <div className="text-sm text-muted-foreground">On Time</div>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="text-xl font-bold text-red-500">{onTimeMetrics.lateCount}</div>
-              <div className="text-sm text-muted-foreground">Late</div>
-            </div>
+          <div className="bg-slate-50 p-4 rounded-lg">
+            <h4 className="text-sm text-gray-500 mb-1">Avg Turnaround Time</h4>
+            <div className="text-2xl font-semibold">{averageTurnaroundTime.toFixed(1)} hrs</div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          
+          <div className="bg-slate-50 p-4 rounded-lg">
+            <h4 className="text-sm text-gray-500 mb-1">Completion Rate</h4>
+            <div className="text-2xl font-semibold">{completionRate.toFixed(1)}%</div>
+          </div>
+          
+          <div className="bg-slate-50 p-4 rounded-lg">
+            <h4 className="text-sm text-gray-500 mb-1">Overdue Rate</h4>
+            <div className="text-2xl font-semibold">{overdueStats.overduePercentage.toFixed(1)}%</div>
+            <div className="text-xs text-gray-500">{overdueStats.overdueCount} work orders</div>
+          </div>
+        </div>
+        
+        {/* Monthly Completion Times Chart */}
+        <div className="h-80 w-full mb-6">
+          <h3 className="text-lg font-medium mb-2">Monthly Completion Times</h3>
+          <ResponsiveContainer width="100%" height="90%">
+            <LineChart
+              data={monthlyCompletionTimes}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+              <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+              <Tooltip />
+              <Legend />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="Avg Hours"
+                stroke="#8884d8"
+                activeDot={{ r: 8 }}
+              />
+              <Line yAxisId="right" type="monotone" dataKey="Orders Completed" stroke="#82ca9d" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        
+        {/* Status Distribution */}
+        <div>
+          <h3 className="text-lg font-medium mb-2">Status Distribution</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  {
+                    name: "Pending",
+                    count: workOrders.filter(wo => wo.status === 'pending').length,
+                    fill: "#FBBF24"
+                  },
+                  {
+                    name: "In Progress",
+                    count: workOrders.filter(wo => wo.status === 'in-progress').length,
+                    fill: "#3B82F6"
+                  },
+                  {
+                    name: "Completed",
+                    count: workOrders.filter(wo => wo.status === 'completed').length,
+                    fill: "#10B981"
+                  },
+                  {
+                    name: "Cancelled",
+                    count: workOrders.filter(wo => wo.status === 'cancelled').length,
+                    fill: "#6B7280"
+                  }
+                ]}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" name="Count" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
