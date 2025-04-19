@@ -1,122 +1,191 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Edit,
+  Printer,
+  Share,
+  Clock,
+  MoreHorizontal,
+  ArrowLeft
+} from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
-import { deleteWorkOrder } from "@/utils/workOrders";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Pencil, Trash, ArrowLeft } from "lucide-react";
-import WorkOrderDetailsHeader from "@/components/work-orders/details/WorkOrderDetailsHeader";
-import { WorkOrderDetailsTabs } from "@/components/work-orders/details/WorkOrderDetailsTabs";
-import { WorkOrderChatButton } from "@/components/work-orders/WorkOrderChatButton";
+import { Link } from "react-router-dom";
+import { WorkOrderDetailsTabs } from "./details/WorkOrderDetailsTabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfileStore } from "@/stores/profileStore";
 import { TimeEntry } from "@/types/workOrder";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 
 interface WorkOrderDetailsViewProps {
   workOrder: WorkOrder;
+  onUpdateTimeEntries?: (entries: TimeEntry[]) => void;
 }
 
-export default function WorkOrderDetailsView({ workOrder }: WorkOrderDetailsViewProps) {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+export default function WorkOrderDetailsView({
+  workOrder,
+  onUpdateTimeEntries = () => {}
+}: WorkOrderDetailsViewProps) {
+  const { user } = useAuth();
+  const profile = useProfileStore(state => state.profile);
   
-  const handleDelete = async () => {
-    try {
-      await deleteWorkOrder(workOrder.id);
-      
-      toast({
-        title: "Work Order Deleted",
-        description: `Work order ${workOrder.id} has been deleted.`,
-        variant: "success",
-      });
-      
-      navigate("/work-orders");
-    } catch (error) {
-      console.error("Error deleting work order:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete work order.",
-        variant: "destructive",
-      });
-    }
+  const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
+    onUpdateTimeEntries(entries);
   };
 
-  const handleUpdateTimeEntries = async (updatedEntries: TimeEntry[]) => {
-    // Implementation to update time entries
-    console.log("Updated time entries:", updatedEntries);
-  };
+  // Calculate total billable time
+  const totalBillableTime = workOrder.timeEntries 
+    ? workOrder.timeEntries
+        .filter(entry => entry.billable)
+        .reduce((total, entry) => total + (entry.duration || 0), 0)
+    : 0;
 
   return (
     <div className="space-y-6">
-      {/* Header with basic info and actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => navigate("/work-orders")}
-          className="w-fit"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Work Orders
-        </Button>
-        
-        <div className="flex space-x-2">
-          <WorkOrderChatButton 
-            workOrderId={workOrder.id} 
-            workOrderName={`${workOrder.id}: ${workOrder.description}`}
-          />
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate(`/work-orders/${workOrder.id}/edit`)}
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-2"
+            asChild
           >
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
+            <Link to="/work-orders">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Work Order #{workOrder.id}</h1>
+            <p className="text-muted-foreground">
+              {workOrder.customer}{workOrder.vehicleMake && workOrder.vehicleModel 
+                ? ` • ${workOrder.vehicleMake} ${workOrder.vehicleModel}` 
+                : ''}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex gap-2 self-end sm:self-auto">
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/work-orders/${workOrder.id}/edit`}>
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Link>
           </Button>
           
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
+          <Button variant="outline" size="sm">
+            <Printer className="h-4 w-4 mr-1" />
+            Print
+          </Button>
+          
+          <Button variant="outline" size="sm">
+            <Share className="h-4 w-4 mr-1" />
+            Share
+          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Work Order</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this work order? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                Create Invoice
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Duplicate Work Order
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-red-500">
+                Cancel Work Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
-      {/* Work Order Details Header */}
-      <WorkOrderDetailsHeader workOrder={workOrder} onDelete={handleDelete} />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold capitalize">
+              {workOrder.status}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Last updated: {workOrder.lastUpdatedAt ? new Date(workOrder.lastUpdatedAt).toLocaleDateString() : 'N/A'}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                Billable Time
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatTimeInHoursAndMinutes(totalBillableTime)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {workOrder.timeEntries?.length || 0} time entries
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Parts & Inventory
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {workOrder.inventoryItems?.length || 0} items
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total value: ${workOrder.inventoryItems?.reduce((total, item) => total + (item.unitPrice * item.quantity), 0).toFixed(2) || "0.00"}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Cost
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${workOrder.total_cost?.toFixed(2) || "0.00"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Not yet invoiced
+            </p>
+          </CardContent>
+        </Card>
+      </div>
       
-      {/* Work Order Content Tabs */}
+      {/* Main content with tabs */}
       <WorkOrderDetailsTabs 
         workOrder={workOrder} 
-        onUpdateTimeEntries={handleUpdateTimeEntries} 
+        onUpdateTimeEntries={handleUpdateTimeEntries}
       />
     </div>
   );

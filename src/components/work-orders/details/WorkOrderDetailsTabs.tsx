@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { WorkOrder } from "@/data/workOrdersData";
 import { TimeEntry } from "@/types/workOrder";
-import { WorkOrderInventoryItems } from "@/components/work-orders/details/WorkOrderInventoryItems";
+import { WorkOrderInventoryTable } from "@/components/work-orders/inventory/WorkOrderInventoryTable";
 import { WorkOrderNotes } from "@/components/work-orders/details/WorkOrderNotes";
 import { WorkOrderStatusTimeline } from "@/components/work-orders/details/WorkOrderStatusTimeline";
-import { WorkOrderTimeTracking } from "@/components/work-orders/details/WorkOrderTimeTracking";
+import { WorkOrderTimeTracking } from "@/components/work-orders/time-tracking/TimeTrackingSection";
 import { WorkOrderActivityHistory } from "@/components/work-orders/details/WorkOrderActivityHistory";
 import { CallLogger } from '@/components/calls/CallLogger';
 
@@ -76,14 +76,19 @@ export function WorkOrderDetailsTabs({ workOrder, onUpdateTimeEntries }: WorkOrd
       </TabsContent>
       
       <TabsContent value="time" className="space-y-4 mt-4">
-        <WorkOrderTimeTracking 
-          workOrder={workOrder} 
+        <TimeTrackingSection 
+          workOrderId={workOrder.id} 
+          timeEntries={workOrder.timeEntries || []}
           onUpdateTimeEntries={onUpdateTimeEntries}
         />
       </TabsContent>
       
       <TabsContent value="inventory" className="space-y-4 mt-4">
-        <WorkOrderInventoryItems workOrder={workOrder} />
+        <WorkOrderInventoryTable
+          workOrderId={workOrder.id}
+          onRemoveItem={(id) => console.log("Remove item", id)}
+          onUpdateItem={(id, updates) => console.log("Update item", id, updates)}
+        />
       </TabsContent>
       
       <TabsContent value="notes" className="space-y-4 mt-4">

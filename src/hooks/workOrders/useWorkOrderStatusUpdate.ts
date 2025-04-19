@@ -1,8 +1,8 @@
 
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
-import { updateWorkOrder } from "@/utils/workOrders";
-import { updateWorkOrderStatus } from "@/utils/workOrders/statusManagement";
+import { isValidStatusTransition } from "@/utils/workOrders/statusManagement";
 import { toast } from "@/hooks/use-toast";
 
 export const useWorkOrderStatusUpdate = () => {
@@ -13,24 +13,41 @@ export const useWorkOrderStatusUpdate = () => {
     newStatus: WorkOrderStatusType,
     userId: string,
     userName: string
-  ) => {
+  ): Promise<WorkOrder | null> => {
+    if (!isValidStatusTransition(workOrder.status, newStatus)) {
+      toast({
+        title: "Invalid Status Transition",
+        description: `Cannot change status from '${workOrder.status}' to '${newStatus}'`,
+        variant: "destructive"
+      });
+      return null;
+    }
+
     setIsUpdating(true);
 
     try {
-      // First validate and record the status change
-      const success = await updateWorkOrderStatus(workOrder, newStatus, userId, userName);
+      // Update the work order status
+      const { data, error } = await supabase
+        .from('work_orders')
+        .update({ status: newStatus })
+        .eq('id', workOrder.id)
+        .select('*')
+        .single();
 
-      if (!success) {
-        throw new Error("Status update validation failed");
-      }
+      if (error) throw error;
 
-      // Update the work order
-      const updatedWorkOrder = await updateWorkOrder({
-        ...workOrder,
-        status: newStatus,
-        lastUpdatedBy: userName,
-        lastUpdatedAt: new Date().toISOString()
+      // Record the activity
+      await supabase.rpc('record_work_order_activity', {
+        p_action: `status_changed_to_${newStatus}`,
+        p_work_order_id: workOrder.id,
+        p_user_id: userId,
+        p_user_name: userName
       });
+
+      const updatedWorkOrder = {
+        ...workOrder,
+        status: newStatus
+      };
 
       toast({
         title: "Status Updated",
@@ -39,11 +56,11 @@ export const useWorkOrderStatusUpdate = () => {
 
       return updatedWorkOrder;
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.error("Error updating work order status:", error);
       toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update status",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to update work order status",
+        variant: "destructive"
       });
       return null;
     } finally {
@@ -51,8 +68,5 @@ export const useWorkOrderStatusUpdate = () => {
     }
   };
 
-  return {
-    updateStatus,
-    isUpdating
-  };
+  return { updateStatus, isUpdating };
 };

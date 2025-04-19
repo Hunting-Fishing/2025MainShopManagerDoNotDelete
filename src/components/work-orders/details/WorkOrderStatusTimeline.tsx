@@ -1,74 +1,89 @@
 
 import React from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, MapPin, User, AlertTriangle } from "lucide-react";
-import { WorkOrder } from "@/data/workOrdersData";
-import { formatDate } from "@/utils/workOrderUtils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WorkOrder } from "@/types/workOrder";
+import { formatDate } from "@/utils/workOrders/formatters";
+import { ClipboardList } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { statusConfig } from "@/utils/workOrders/statusManagement";
 
 interface WorkOrderStatusTimelineProps {
   workOrder: WorkOrder;
 }
 
 export function WorkOrderStatusTimeline({ workOrder }: WorkOrderStatusTimelineProps) {
+  // For a real implementation, we would fetch the status history from the backend
+  // For now, we'll just show the current status
+  
+  const statusInfo = statusConfig[workOrder.status];
+  
   return (
     <Card>
-      <CardHeader className="bg-slate-50 border-b">
-        <CardTitle className="text-lg">Work Order Details</CardTitle>
+      <CardHeader className="pb-3">
+        <div className="flex items-center">
+          <ClipboardList className="h-5 w-5 mr-2 text-muted-foreground" />
+          <CardTitle className="text-lg">Work Order Details</CardTitle>
+        </div>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-md font-medium mb-4">Basic Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <Calendar className="h-5 w-5 text-slate-500 mr-3 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Date Created</p>
-                  <p className="text-slate-900">{formatDate(workOrder.date)}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <Clock className="h-5 w-5 text-slate-500 mr-3 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Due Date</p>
-                  <p className="text-slate-900">{formatDate(workOrder.dueDate)}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <MapPin className="h-5 w-5 text-slate-500 mr-3 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Location</p>
-                  <p className="text-slate-900">{workOrder.location}</p>
-                </div>
-              </div>
+      
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">ID</div>
+            <div>{workOrder.id}</div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Customer</div>
+            <div>{workOrder.customer}</div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Technician</div>
+            <div>{workOrder.technician || "Unassigned"}</div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Created Date</div>
+            <div>{formatDate(workOrder.date)}</div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Due Date</div>
+            <div>{formatDate(workOrder.dueDate)}</div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Priority</div>
+            <div className="capitalize">{workOrder.priority}</div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Status</div>
+            <div>
+              <span className={cn(
+                "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+                statusInfo.color
+              )}>
+                {statusInfo.label}
+              </span>
             </div>
           </div>
-
-          <div>
-            <h3 className="text-md font-medium mb-4">Assignment</h3>
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <User className="h-5 w-5 text-slate-500 mr-3 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Assigned Technician</p>
-                  <p className="text-slate-900">{workOrder.technician}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <AlertTriangle className={`h-5 w-5 mr-3 mt-0.5 ${
-                  workOrder.priority === 'high' ? 'text-red-500' : 
-                  workOrder.priority === 'medium' ? 'text-yellow-500' : 'text-green-500'
-                }`} />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Priority</p>
-                  <p className="text-slate-900 capitalize">{workOrder.priority}</p>
-                </div>
-              </div>
-            </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Location</div>
+            <div>{workOrder.location || "N/A"}</div>
           </div>
+          
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-muted-foreground">Service Type</div>
+            <div>{workOrder.serviceType || "N/A"}</div>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-sm font-medium text-muted-foreground">Description</div>
+          <div className="whitespace-pre-wrap">{workOrder.description}</div>
         </div>
       </CardContent>
     </Card>
