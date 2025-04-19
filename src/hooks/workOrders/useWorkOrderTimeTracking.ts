@@ -15,7 +15,6 @@ export const useWorkOrderTimeTracking = (workOrderId: string) => {
       id: crypto.randomUUID(),
       employeeId,
       employeeName,
-      workOrderId,
       startTime: new Date().toISOString(),
       endTime: null,
       duration: 0,
@@ -26,7 +25,7 @@ export const useWorkOrderTimeTracking = (workOrderId: string) => {
       const { error } = await supabase
         .from('work_order_time_entries')
         .insert({
-          ...newEntry,
+          id: newEntry.id,
           work_order_id: workOrderId,
           employee_id: employeeId,
           employee_name: employeeName,
