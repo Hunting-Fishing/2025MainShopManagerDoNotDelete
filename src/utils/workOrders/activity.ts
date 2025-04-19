@@ -1,4 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
+import { WorkOrder } from "@/types/workOrder"; // Add import for WorkOrder type
+import { generateStatusChangeMessage } from "./statusManagement"; // Import from statusManagement
 
 // Record work order activity for audit trail
 export async function recordWorkOrderActivity(

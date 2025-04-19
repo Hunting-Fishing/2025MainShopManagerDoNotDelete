@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { statusConfig, getStatusIcon } from "@/utils/workOrders/statusManagement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { WorkOrder } from "@/types/workOrder"; // Add this import for WorkOrder type
 
 interface StatusActivity {
   id: string;
