@@ -7211,6 +7211,8 @@ export type Database = {
           end_time: string | null
           estimated_hours: number | null
           id: string
+          invoice_id: string | null
+          invoiced_at: string | null
           service_category_id: string | null
           service_type: string | null
           start_time: string | null
@@ -7229,6 +7231,8 @@ export type Database = {
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
+          invoice_id?: string | null
+          invoiced_at?: string | null
           service_category_id?: string | null
           service_type?: string | null
           start_time?: string | null
@@ -7247,6 +7251,8 @@ export type Database = {
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
+          invoice_id?: string | null
+          invoiced_at?: string | null
           service_category_id?: string | null
           service_type?: string | null
           start_time?: string | null
@@ -7262,6 +7268,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {

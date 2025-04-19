@@ -1,120 +1,114 @@
-
 import React, { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WorkOrder, TimeEntry } from "@/types/workOrder";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/card";
+import { WorkOrder } from "@/types/workOrder";
 import { WorkOrderDetails } from "./details/WorkOrderDetails";
-import { TimeTrackingTab } from "./time-tracking/TimeTrackingTab"; 
+import { WorkOrderPartsEstimate } from "./details/WorkOrderPartsEstimate";
+import { WorkOrderTimeTracking } from "./details/WorkOrderTimeTracking";
 import { WorkOrderHistory } from "./history/WorkOrderHistory";
 import { WorkOrderActions } from "./actions/WorkOrderActions";
-import { updateWorkOrder } from "@/utils/workOrders";
+import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderInventoryItems } from "./details/WorkOrderInventoryItems";
+import { CreateInvoiceButton } from "./actions/CreateInvoiceButton";
+import { WorkOrderInvoiceStatus } from "./details/WorkOrderInvoiceStatus";
 
 interface WorkOrderDetailTabsProps {
   workOrder: WorkOrder;
-  onTimeEntriesUpdate: (entries: TimeEntry[]) => void;
+  onTimeEntriesUpdate: (entries: any[]) => void;
   userId: string;
   userName: string;
   onStatusUpdate: (updatedWorkOrder: WorkOrder) => void;
 }
 
-export function WorkOrderDetailTabs({
-  workOrder,
-  onTimeEntriesUpdate,
-  userId,
-  userName,
-  onStatusUpdate
-}: WorkOrderDetailTabsProps) {
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>(workOrder.timeEntries || []);
+export function WorkOrderDetailTabs({ workOrder, onTimeEntriesUpdate, userId, userName, onStatusUpdate }) {
+  const [currentStatus, setCurrentStatus] = useState(workOrder.status);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (workOrder.timeEntries) {
-      setTimeEntries(workOrder.timeEntries);
-    }
-  }, [workOrder.timeEntries]);
-
-  const handleTimeEntryAdd = (newEntry: TimeEntry) => {
-    const updatedEntries = [...timeEntries, newEntry];
-    setTimeEntries(updatedEntries);
-    onTimeEntriesUpdate(updatedEntries);
-  };
-
-  const handleTimeEntryUpdate = (updatedEntry: TimeEntry) => {
-    const updatedEntries = timeEntries.map(entry => 
-      entry.id === updatedEntry.id ? updatedEntry : entry
-    );
-    setTimeEntries(updatedEntries);
-    onTimeEntriesUpdate(updatedEntries);
-  };
-
-  const handleTimeEntryDelete = (entryId: string) => {
-    const updatedEntries = timeEntries.filter(entry => entry.id !== entryId);
-    setTimeEntries(updatedEntries);
-    onTimeEntriesUpdate(updatedEntries);
-  };
-
-  const handleStatusChange = async (newStatus: "pending" | "in-progress" | "completed" | "cancelled") => {
+  // Handler to update the status of the work order
+  const handleStatusChange = async (newStatus: WorkOrder["status"]) => {
+    setLoading(true);
     try {
-      const updatedWorkOrder: WorkOrder = {
-        ...workOrder,
-        status: newStatus,
-        lastUpdatedBy: userName,
-        lastUpdatedAt: new Date().toISOString()
-      };
-      
-      // If changing to completed, set the end time
-      if (newStatus === "completed" && !updatedWorkOrder.endTime) {
-        updatedWorkOrder.endTime = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('work_orders')
+        .update({ status: newStatus })
+        .eq('id', workOrder.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
       }
+
+      setCurrentStatus(newStatus);
       
-      await updateWorkOrder(updatedWorkOrder);
-      
+      // Optimistically update the work order in the UI
+      const updatedWorkOrder = { ...workOrder, status: newStatus };
+      onStatusUpdate(updatedWorkOrder);
+
+      // Record activity
+      await supabase.from('work_order_activities').insert([
+        {
+          work_order_id: workOrder.id,
+          action: 'status_updated',
+          user_id: userId,
+          user_name: userName,
+          details: {
+            oldStatus: workOrder.status,
+            newStatus: newStatus,
+          },
+        },
+      ]);
+
       toast({
         title: "Status Updated",
-        description: `Work order status changed to ${newStatus}`,
+        description: `Work order status updated to ${newStatus}.`,
       });
-      
-      onStatusUpdate(updatedWorkOrder);
     } catch (error) {
       console.error("Error updating work order status:", error);
       toast({
         title: "Error",
-        description: "Failed to update work order status",
-        variant: "destructive"
+        description: "Failed to update work order status.",
+        variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <WorkOrderActions 
-        currentStatus={workOrder.status} 
-        onStatusChange={handleStatusChange} 
-      />
-      
+      <div className="flex items-center justify-between">
+        <WorkOrderActions
+          currentStatus={workOrder.status}
+          onStatusChange={handleStatusChange}
+        />
+        <CreateInvoiceButton workOrder={workOrder} />
+      </div>
+
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-grid">
+        <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="time-tracking">Time Tracking</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="details" className="space-y-6 mt-6">
           <WorkOrderDetails workOrder={workOrder} />
-          
-          <WorkOrderInventoryItems workOrder={workOrder} />
+          <WorkOrderInvoiceStatus workOrder={workOrder} />
+          {workOrder.inventoryItems && workOrder.inventoryItems.length > 0 && (
+            <WorkOrderPartsEstimate items={workOrder.inventoryItems} />
+          )}
         </TabsContent>
-        <TabsContent value="time" className="mt-6">
-          <TimeTrackingTab
-            workOrderId={workOrder.id}
-            timeEntries={timeEntries}
-            onAddTimeEntry={handleTimeEntryAdd}
-            onUpdateTimeEntry={handleTimeEntryUpdate}
-            onDeleteTimeEntry={handleTimeEntryDelete}
+
+        <TabsContent value="time-tracking" className="space-y-6 mt-6">
+          <WorkOrderTimeTracking
+            workOrder={workOrder}
+            onTimeEntriesUpdate={onTimeEntriesUpdate}
             userId={userId}
             userName={userName}
           />
         </TabsContent>
-        <TabsContent value="history" className="mt-6">
+
+        <TabsContent value="history" className="space-y-6 mt-6">
           <WorkOrderHistory workOrderId={workOrder.id} />
         </TabsContent>
       </Tabs>

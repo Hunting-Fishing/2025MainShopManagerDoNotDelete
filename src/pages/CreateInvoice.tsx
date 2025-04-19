@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -14,7 +13,7 @@ import {
 } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 
-export default function InvoiceCreate() {
+export default function CreateInvoice() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -99,6 +98,52 @@ export default function InvoiceCreate() {
     }
   }, [workOrdersData, inventoryData, staffData]);
 
+  useEffect(() => {
+    if (workOrderId && workOrdersData) {
+      // Find the work order from the data
+      const workOrder = workOrdersData.find(wo => wo.id === workOrderId);
+      
+      if (workOrder) {
+        // Pre-fill invoice with work order data
+        setInvoice(prev => ({
+          ...prev,
+          workOrderId: workOrder.id,
+          customer: workOrder.customer,
+          customerEmail: workOrder.customerEmail || '',
+          customerAddress: workOrder.customerAddress || '',
+          description: workOrder.description || '',
+          date: new Date().toISOString().split('T')[0],
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          items: [
+            ...(workOrder.inventoryItems?.map(item => ({
+              id: item.id,
+              name: item.name,
+              description: '',
+              quantity: item.quantity,
+              price: item.unitPrice,
+              total: item.quantity * item.unitPrice,
+              sku: item.sku,
+              category: item.category
+            })) || []),
+            ...(workOrder.timeEntries?.filter(entry => entry.billable).map(entry => ({
+              id: item.id,
+              name: 'Labor',
+              description: entry.notes || 'Service labor',
+              quantity: entry.duration / 60, // Convert minutes to hours
+              price: 85, // Default hourly rate
+              total: (entry.duration / 60) * 85,
+              hours: true
+            })) || [])
+          ],
+          assignedStaff: [workOrder.technician].filter(Boolean).map(tech => ({
+            id: crypto.randomUUID(),
+            name: tech
+          }))
+        }));
+      }
+    }
+  }, [workOrderId, workOrdersData]);
+
   const {
     invoice,
     subtotal,
@@ -154,6 +199,22 @@ export default function InvoiceCreate() {
     handleAddInventoryItem(invoiceItem);
   };
 
+  const handleRemoveItemAdapter = (id: string) => {
+    handleRemoveItem(id);
+  };
+
+  const handleUpdateItemQuantityAdapter = (id: string, quantity: number) => {
+    handleUpdateItemQuantity(id, quantity);
+  };
+
+  const handleUpdateItemDescriptionAdapter = (id: string, description: string) => {
+    handleUpdateItemDescription(id, description);
+  };
+
+  const handleUpdateItemPriceAdapter = (id: string, price: number) => {
+    handleUpdateItemPrice(id, price);
+  };
+
   const handleAddLaborItemAdapter = () => {
     const laborItem: InvoiceItem = {
       id: crypto.randomUUID(),
@@ -191,10 +252,10 @@ export default function InvoiceCreate() {
       handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
-      handleRemoveItem={handleRemoveItem}
-      handleUpdateItemQuantity={handleUpdateItemQuantity}
-      handleUpdateItemDescription={handleUpdateItemDescription}
-      handleUpdateItemPrice={handleUpdateItemPrice}
+      handleRemoveItem={handleRemoveItemAdapter}
+      handleUpdateItemQuantity={handleUpdateItemQuantityAdapter}
+      handleUpdateItemDescription={handleUpdateItemDescriptionAdapter}
+      handleUpdateItemPrice={handleUpdateItemPriceAdapter}
       handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}
