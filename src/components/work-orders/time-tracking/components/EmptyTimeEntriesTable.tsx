@@ -1,13 +1,14 @@
 
-import React from "react";
 import { Clock } from "lucide-react";
 
 export function EmptyTimeEntriesTable() {
   return (
-    <div className="text-center py-10 border rounded">
-      <Clock className="mx-auto h-10 w-10 text-slate-300" />
-      <p className="mt-2 text-slate-500">No time entries recorded</p>
-      <p className="text-sm text-slate-400">Time entries will appear here once added</p>
+    <div className="text-center p-8 bg-slate-50 border rounded-lg">
+      <Clock className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+      <h3 className="text-lg font-medium text-slate-900 mb-2">No Time Entries</h3>
+      <p className="text-sm text-slate-500">
+        Start tracking time for this work order using the timer controls above.
+      </p>
     </div>
   );
 }
