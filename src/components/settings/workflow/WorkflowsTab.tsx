@@ -16,12 +16,12 @@ export function WorkflowsTab() {
   
   const currentWorkflow = workflows?.[0];
   
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    currentWorkflow?.nodes as WorkflowNode[] || []
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>(
+    (currentWorkflow?.nodes || []) as WorkflowNode[]
   );
   
   const [edges, setEdges, onEdgesChange] = useEdgesState(
-    currentWorkflow?.edges as WorkflowEdge[] || []
+    (currentWorkflow?.edges || []) as WorkflowEdge[]
   );
 
   const onConnect = (params: any) => {
