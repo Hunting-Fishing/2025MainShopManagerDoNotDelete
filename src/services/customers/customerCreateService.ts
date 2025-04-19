@@ -93,7 +93,7 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
       const noteData = {
         customer_id: data.id,
         content: notes.trim(),
-        category: 'general',
+        category: 'general' as 'service' | 'sales' | 'follow-up' | 'general',
         created_by: 'System'
       };
       
