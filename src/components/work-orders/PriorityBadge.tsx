@@ -1,8 +1,7 @@
 
 import React from "react";
-import { priorityConfig } from "@/utils/workOrders/statusManagement";
 import { WorkOrder } from "@/types/workOrder";
-import { ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 
 interface PriorityBadgeProps {
   priority: WorkOrder["priority"];
@@ -10,23 +9,30 @@ interface PriorityBadgeProps {
 }
 
 export const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = "" }) => {
-  const config = priorityConfig[priority] || priorityConfig["medium"];
-  
-  const PriorityIcon = () => {
-    switch (priority) {
-      case "high":
-        return <ArrowUp className="h-3.5 w-3.5 mr-1" />;
-      case "low":
-        return <ArrowDown className="h-3.5 w-3.5 mr-1" />;
-      default:
-        return <Minus className="h-3.5 w-3.5 mr-1" />;
+  const config = {
+    "low": {
+      label: "Low",
+      color: "bg-green-100 text-green-800 border border-green-200",
+      icon: <ArrowDown className="h-3.5 w-3.5 mr-1" />
+    },
+    "medium": {
+      label: "Medium",
+      color: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      icon: <Minus className="h-3.5 w-3.5 mr-1" />
+    },
+    "high": {
+      label: "High",
+      color: "bg-red-100 text-red-800 border border-red-200",
+      icon: <ArrowUp className="h-3.5 w-3.5 mr-1" />
     }
   };
   
+  const priorityConfig = config[priority] || config["medium"];
+  
   return (
-    <span className={`text-sm px-3 py-1 rounded-full font-medium border inline-flex items-center ${config.color} ${className}`}>
-      <PriorityIcon />
-      {config.label}
+    <span className={`text-sm px-3 py-1 rounded-full font-medium inline-flex items-center ${priorityConfig.color} ${className}`}>
+      {priorityConfig.icon}
+      {priorityConfig.label}
     </span>
   );
 };

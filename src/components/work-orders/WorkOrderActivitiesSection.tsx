@@ -1,18 +1,20 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { History, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
+import { getWorkOrderActivities } from "@/utils/workOrders/activity";
+import { Loader2, AlertTriangle, Check, X, PlayCircle, Clock, CalendarClock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
 
 interface ActivityItem {
   id: string;
+  work_order_id: string;
   action: string;
-  timestamp: string;
+  user_id: string;
   user_name: string;
-  flagged: boolean;
+  timestamp: string;
+  flagged?: boolean;
   flag_reason?: string;
 }
 
@@ -20,40 +22,31 @@ interface WorkOrderActivitiesSectionProps {
   workOrderId: string;
 }
 
-export function WorkOrderActivitiesSection({ workOrderId }: WorkOrderActivitiesSectionProps) {
+export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProps> = ({ 
+  workOrderId 
+}) => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchActivities = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('work_order_activities')
-        .select('*')
-        .eq('work_order_id', workOrderId)
-        .order('timestamp', { ascending: false });
-      
-      if (error) throw error;
-      
-      setActivities(data || []);
-    } catch (err) {
-      console.error("Error fetching work order activities:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchActivities();
-    setRefreshing(false);
-  };
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchActivities = async () => {
+      setLoading(true);
+      try {
+        const activitiesData = await getWorkOrderActivities(workOrderId);
+        setActivities(activitiesData);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching work order activities:", err);
+        setError("Failed to load activity history");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchActivities();
-    
-    // Set up real-time subscription for new activities
+
+    // Set up real-time listener for new activities
     const channel = supabase
       .channel('work-order-activities')
       .on(
@@ -65,81 +58,104 @@ export function WorkOrderActivitiesSection({ workOrderId }: WorkOrderActivitiesS
           filter: `work_order_id=eq.${workOrderId}`
         },
         (payload) => {
-          setActivities(prev => [payload.new as ActivityItem, ...prev]);
+          setActivities(current => [payload.new as ActivityItem, ...current]);
         }
       )
       .subscribe();
-    
+
     return () => {
       supabase.removeChannel(channel);
     };
   }, [workOrderId]);
 
+  // Render icon based on activity type
+  const getActivityIcon = (action: string) => {
+    switch(action) {
+      case "Created":
+        return <CalendarClock className="h-4 w-4 text-blue-500" />;
+      case "Updated":
+        return <Clock className="h-4 w-4 text-amber-500" />;
+      case "Completed":
+        return <Check className="h-4 w-4 text-green-500" />;
+      case "Cancelled":
+        return <X className="h-4 w-4 text-red-500" />;
+      case "Started":
+        return <PlayCircle className="h-4 w-4 text-indigo-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-slate-500" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <Loader2 className="h-6 w-6 text-primary animate-spin mr-2" />
+        <p>Loading activity history...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-6 text-red-500">
+        <AlertTriangle className="h-6 w-6 mr-2" />
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (activities.length === 0) {
+    return (
+      <div className="p-6 text-center bg-slate-50 border rounded-lg">
+        <Clock className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+        <h3 className="text-lg font-medium mb-1">No Activity Yet</h3>
+        <p className="text-slate-500">
+          There is no recorded activity for this work order yet.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between bg-slate-50 border-b">
-        <div className="flex items-center">
-          <History className="h-5 w-5 mr-2 text-slate-500" />
-          <CardTitle className="text-lg">Activity History</CardTitle>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+      <CardHeader>
+        <CardTitle className="text-lg">Activity History</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        {loading ? (
-          <div className="p-4 space-y-4">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="flex gap-3 items-start">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/4" />
-                </div>
+      <CardContent className="space-y-4">
+        <div className="space-y-3">
+          {activities.map((activity) => (
+            <div 
+              key={activity.id} 
+              className={`p-3 border rounded-lg flex items-start ${activity.flagged ? 'bg-red-50 border-red-200' : 'bg-slate-50'}`}
+            >
+              <div className="mr-3">
+                {getActivityIcon(activity.action)}
               </div>
-            ))}
-          </div>
-        ) : activities.length === 0 ? (
-          <div className="p-6 text-center text-slate-500">
-            No activity recorded for this work order yet.
-          </div>
-        ) : (
-          <ul className="divide-y">
-            {activities.map((activity) => (
-              <li 
-                key={activity.id}
-                className={`p-4 ${activity.flagged ? 'bg-red-50' : ''}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-semibold text-sm">
-                    {activity.user_name?.substring(0, 2).toUpperCase() || 'SY'}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm">
-                      <span className="font-medium">{activity.user_name || 'System'}</span>{' '}
-                      {activity.action}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {format(new Date(activity.timestamp), 'MMM d, yyyy • h:mm a')}
-                    </p>
-                    {activity.flagged && activity.flag_reason && (
-                      <div className="mt-2 p-2 bg-red-100 rounded text-xs text-red-800">
-                        <strong>Flagged:</strong> {activity.flag_reason}
-                      </div>
+              <div className="flex-grow">
+                <div className="flex justify-between mb-1">
+                  <span className="font-medium flex items-center">
+                    {activity.action} 
+                    {activity.flagged && (
+                      <Badge variant="destructive" className="ml-2">
+                        Flagged
+                      </Badge>
                     )}
-                  </div>
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                  </span>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                <p className="text-sm text-slate-700">by {activity.user_name}</p>
+                {activity.flagged && activity.flag_reason && (
+                  <p className="text-sm text-red-600 mt-2 bg-red-50 p-2 rounded">
+                    Flag reason: {activity.flag_reason}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
-}
+};
