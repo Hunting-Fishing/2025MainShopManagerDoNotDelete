@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { calculateCustomerLifetimeValue, getAverageCustomerLifetimeValue, getCustomersWithSegments } from '@/utils/analytics/customerLifetimeValue';
@@ -13,6 +14,8 @@ export default function CustomerAnalytics() {
   const [averageClv, setAverageClv] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
+  const [segmentData, setSegmentData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [clvData, setClvData] = useState<{ name: string; value: number }[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -26,6 +29,60 @@ export default function CustomerAnalytics() {
         const customersWithSegments = await getCustomersWithSegments();
         setCustomers(customersWithSegments);
         setTotalCustomers(customersWithSegments.length);
+        
+        // Prepare segment data
+        const segments: Record<string, number> = {};
+        customersWithSegments.forEach(customer => {
+          if (customer.segments && Array.isArray(customer.segments)) {
+            customer.segments.forEach(segment => {
+              segments[segment] = (segments[segment] || 0) + 1;
+            });
+          }
+        });
+        
+        // Convert to chart data format
+        const segColors = {
+          high_value: '#10B981', // green
+          medium_value: '#3B82F6', // blue
+          low_value: '#6B7280', // gray
+          new: '#8B5CF6', // purple
+          at_risk: '#F59E0B', // amber
+          loyal: '#4F46E5', // indigo
+          inactive: '#EF4444', // red
+        };
+        
+        const segmentChartData = Object.entries(segments).map(([name, value]) => ({
+          name: name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          value,
+          color: segColors[name as keyof typeof segColors] || '#6B7280'
+        }));
+        
+        setSegmentData(segmentChartData);
+        
+        // Prepare CLV distribution data
+        const clvRanges: Record<string, number> = {
+          '$0-$500': 0,
+          '$501-$1,000': 0,
+          '$1,001-$2,000': 0,
+          '$2,001-$5,000': 0,
+          '$5,001+': 0
+        };
+        
+        customersWithSegments.forEach(customer => {
+          const clv = (customer as any).clv || 0;
+          if (clv <= 500) clvRanges['$0-$500']++;
+          else if (clv <= 1000) clvRanges['$501-$1,000']++;
+          else if (clv <= 2000) clvRanges['$1,001-$2,000']++;
+          else if (clv <= 5000) clvRanges['$2,001-$5,000']++;
+          else clvRanges['$5,001+']++;
+        });
+        
+        const clvChartData = Object.entries(clvRanges).map(([name, value]) => ({
+          name,
+          value
+        }));
+        
+        setClvData(clvChartData);
       } catch (error) {
         console.error("Error loading customer analytics:", error);
       } finally {
@@ -129,7 +186,7 @@ export default function CustomerAnalytics() {
                 <CardTitle>Customer Segments Distribution</CardTitle>
               </CardHeader>
               <CardContent className="h-80">
-                <CustomerSegmentChart />
+                <CustomerSegmentChart data={segmentData} />
               </CardContent>
             </Card>
             
@@ -138,7 +195,7 @@ export default function CustomerAnalytics() {
                 <CardTitle>Lifetime Value Distribution</CardTitle>
               </CardHeader>
               <CardContent className="h-80">
-                <CustomerLifetimeValueChart />
+                <CustomerLifetimeValueChart data={clvData} />
               </CardContent>
             </Card>
           </div>
@@ -151,7 +208,7 @@ export default function CustomerAnalytics() {
               <CardTitle>Customer Segments Analysis</CardTitle>
             </CardHeader>
             <CardContent>
-              <CustomerSegmentChart />
+              <CustomerSegmentChart data={segmentData} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -163,7 +220,7 @@ export default function CustomerAnalytics() {
               <CardTitle>Lifetime Value Analysis</CardTitle>
             </CardHeader>
             <CardContent>
-              <CustomerLifetimeValueChart />
+              <CustomerLifetimeValueChart data={clvData} />
             </CardContent>
           </Card>
         </TabsContent>

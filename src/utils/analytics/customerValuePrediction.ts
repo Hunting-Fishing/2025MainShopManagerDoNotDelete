@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { calculateCustomerLifetimeValue } from "./customerLifetimeValue";
 
@@ -95,3 +94,9 @@ export const getOptimalContactTime = async (customerId: string): Promise<string>
     return "Next month";
   }
 };
+
+/**
+ * Predict future customer value based on past performance
+ * This is an alias for the function in customerLifetimeValue.ts
+ */
+export { predictFutureCustomerValue } from "./customerLifetimeValue";

@@ -7,6 +7,8 @@ import { createCustomer, clearDraftCustomer } from '@/services/customer/customer
 
 export const useCustomerSubmit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,6 +31,9 @@ export const useCustomerSubmit = () => {
         description: `${formData.first_name} ${formData.last_name} was created successfully.`,
       });
       
+      setIsSuccess(true);
+      setNewCustomerId(result.id);
+      
       navigate(`/customers/${result.id}`);
       return result;
     } catch (err: any) {
@@ -50,6 +55,8 @@ export const useCustomerSubmit = () => {
   return {
     handleSubmit,
     isSubmitting,
+    isSuccess,
+    newCustomerId,
     error,
   };
 };

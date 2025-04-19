@@ -62,29 +62,10 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
     }
   };
 
-  // Filter notes based on search query and category
-  const filteredNotes = notes.filter(note => {
-    const matchesSearch = searchQuery === "" || 
-      note.content.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = categoryFilter === "" || 
-      note.category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  });
-
-  // Sort notes by date (newest first)
-  const sortedNotes = [...filteredNotes].sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
-  // Fix the type issue by ensuring the function can accept the CustomerNote parameter
-  const handleNoteAdded = (newNote: CustomerNote) => {
+  const handleNoteAdded = onNoteAdded ? (newNote: CustomerNote) => {
     setNotes([newNote, ...notes]);
-    if (onNoteAdded) {
-      onNoteAdded(newNote);
-    }
-  };
+    onNoteAdded(newNote);
+  } : undefined;
 
   const getCategoryIcon = (category: string) => {
     switch(category) {

@@ -1,6 +1,7 @@
-
 import { supabase } from "@/lib/supabase";
 import { calculateCustomerLifetimeValue } from "./customerLifetimeValue";
+
+export type CustomerSegmentType = 'high_value' | 'medium_value' | 'low_value' | 'new' | 'at_risk' | 'loyal' | 'inactive';
 
 /**
  * Calculate the retention risk score for a customer (0-100)
