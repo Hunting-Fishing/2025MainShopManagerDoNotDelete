@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileSpreadsheet, FileCsv, FileText, FileJson, Download, FileX2 } from "lucide-react";
+import { FileSpreadsheet, Files, FileText, FileJson, Download, FileX2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WorkOrdersExportMenuProps {
@@ -116,7 +116,7 @@ export function WorkOrdersExportMenu({ workOrders }: WorkOrdersExportMenuProps) 
         <DropdownMenuLabel>Export Options</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleExportAll("csv")}>
-          <FileCsv className="mr-2 h-4 w-4 text-blue-600" />
+          <Files className="mr-2 h-4 w-4 text-blue-600" />
           Export as CSV
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleExportAll("excel")}>

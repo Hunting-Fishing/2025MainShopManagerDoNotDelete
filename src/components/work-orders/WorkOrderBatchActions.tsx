@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { CheckSquare, ChevronDown, Loader2, ClipboardList, UserCheck, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { WorkOrder } from '@/types/workOrder';
+import { WorkOrder, WorkOrderStatusType } from '@/types/workOrder';
 import { updateWorkOrder } from '@/utils/workOrders';
 import { statusMap } from '@/utils/workOrders';
 
@@ -36,7 +36,7 @@ export function WorkOrderBatchActions({
 }: WorkOrderBatchActionsProps) {
   const [isProcessing, setIsProcessing] = React.useState(false);
 
-  const handleBatchStatusChange = async (status: string) => {
+  const handleBatchStatusChange = async (status: WorkOrderStatusType) => {
     if (selectedWorkOrders.length === 0) {
       toast({
         title: "No work orders selected",
@@ -54,7 +54,7 @@ export function WorkOrderBatchActions({
       
       // Update each selected work order
       const promises = selectedWorkOrders.map(async (workOrder) => {
-        const updatedWorkOrder = { ...workOrder, status };
+        const updatedWorkOrder = { ...workOrder, status: status as WorkOrderStatusType };
         
         // Update the work order in the database
         await updateWorkOrder(updatedWorkOrder);
@@ -149,28 +149,28 @@ export function WorkOrderBatchActions({
           <DropdownMenuLabel>Change Status To</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
-            onClick={() => handleBatchStatusChange('pending')}
+            onClick={() => handleBatchStatusChange("pending")}
             disabled={isProcessing}
           >
             <div className="h-2 w-2 rounded-full bg-yellow-400 mr-2" />
             Pending
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={() => handleBatchStatusChange('in-progress')}
+            onClick={() => handleBatchStatusChange("in-progress")}
             disabled={isProcessing}
           >
             <div className="h-2 w-2 rounded-full bg-blue-500 mr-2" />
             In Progress
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={() => handleBatchStatusChange('completed')}
+            onClick={() => handleBatchStatusChange("completed")}
             disabled={isProcessing}
           >
             <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
             Completed
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={() => handleBatchStatusChange('cancelled')}
+            onClick={() => handleBatchStatusChange("cancelled")}
             disabled={isProcessing}
           >
             <div className="h-2 w-2 rounded-full bg-red-500 mr-2" />
