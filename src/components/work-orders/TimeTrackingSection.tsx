@@ -1,9 +1,11 @@
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimeEntry } from "@/types/workOrder";
-import { format } from "date-fns";
+import { Clock, Play, Pause } from "lucide-react";
+import { useWorkOrderTimeTracking } from "@/hooks/workOrders/useWorkOrderTimeTracking";
+import { formatRelativeTime } from "@/utils/dateUtils";
 
 interface TimeTrackingSectionProps {
   workOrderId: string;
@@ -11,109 +13,127 @@ interface TimeTrackingSectionProps {
   onUpdateTimeEntries: (entries: TimeEntry[]) => void;
 }
 
-export const TimeTrackingSection: React.FC<TimeTrackingSectionProps> = ({ 
+export function TimeTrackingSection({
   workOrderId,
   timeEntries,
   onUpdateTimeEntries
-}) => {
-  const [isTracking, setIsTracking] = useState(false);
-  const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
+}: TimeTrackingSectionProps) {
+  const {
+    isTracking,
+    activeEntry,
+    startTimeTracking,
+    stopTimeTracking,
+    fetchTimeEntries
+  } = useWorkOrderTimeTracking(workOrderId);
 
-  const startTimeTracking = () => {
-    if (isTracking) return;
-    
-    const newEntry: TimeEntry = {
-      id: `temp-${Date.now()}`,
-      employeeId: "current-user", // In a real app, this would be the current user's ID
-      employeeName: "Current User", // In a real app, this would be the current user's name
-      startTime: new Date().toISOString(),
-      endTime: null,
-      duration: 0,
-      billable: true
+  useEffect(() => {
+    const loadTimeEntries = async () => {
+      const entries = await fetchTimeEntries();
+      onUpdateTimeEntries(entries);
     };
     
-    setCurrentEntry(newEntry);
-    setIsTracking(true);
+    loadTimeEntries();
+  }, [workOrderId]);
+
+  // Current user info would come from auth context in a real app
+  const currentUser = {
+    id: "current-user",
+    name: "Current User"
   };
 
-  const stopTimeTracking = () => {
-    if (!isTracking || !currentEntry) return;
-    
-    const now = new Date();
-    const startTime = new Date(currentEntry.startTime);
-    const durationInMinutes = Math.round((now.getTime() - startTime.getTime()) / (1000 * 60));
-    
-    const updatedEntry: TimeEntry = {
-      ...currentEntry,
-      endTime: now.toISOString(),
-      duration: durationInMinutes
-    };
-    
-    const updatedEntries = [...timeEntries, updatedEntry];
-    onUpdateTimeEntries(updatedEntries);
-    
-    setCurrentEntry(null);
-    setIsTracking(false);
+  const handleStartTracking = () => {
+    startTimeTracking(currentUser.id, currentUser.name);
   };
+
+  const handleStopTracking = async () => {
+    const completedEntry = await stopTimeTracking();
+    if (completedEntry) {
+      onUpdateTimeEntries([completedEntry, ...timeEntries]);
+    }
+  };
+
+  const totalBillableTime = timeEntries.reduce((total, entry) => {
+    return entry.billable ? total + (entry.duration || 0) : total;
+  }, 0);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Time Tracking</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4">
+    <Card className="mt-6">
+      <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
+        <div className="flex items-center">
+          <Clock className="h-5 w-5 mr-2 text-slate-500" />
+          <CardTitle className="text-lg">Time Tracking</CardTitle>
+        </div>
+        <div className="flex gap-2">
           {isTracking ? (
-            <Button variant="destructive" onClick={stopTimeTracking}>
-              Stop Tracking
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-red-500" 
+              onClick={handleStopTracking}
+            >
+              <Pause className="mr-1 h-4 w-4" />
+              Stop Timer
             </Button>
           ) : (
-            <Button variant="default" onClick={startTimeTracking}>
-              Start Tracking
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-green-500" 
+              onClick={handleStartTracking}
+            >
+              <Play className="mr-1 h-4 w-4" />
+              Start Timer
             </Button>
           )}
         </div>
-        
-        {isTracking && currentEntry && (
-          <div className="text-sm text-muted-foreground mb-4">
-            Currently tracking time since {format(new Date(currentEntry.startTime), "h:mm a")}
+      </CardHeader>
+      
+      <CardContent className="p-6">
+        {activeEntry && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded flex justify-between items-center">
+            <div>
+              <p className="font-medium">Timer Running</p>
+              <p className="text-sm text-slate-500">
+                Started: {formatRelativeTime(activeEntry.startTime)}
+              </p>
+            </div>
           </div>
         )}
         
         {timeEntries.length > 0 ? (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Time Entries</h4>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2">Staff</th>
-                  <th className="text-left py-2">Start</th>
-                  <th className="text-left py-2">End</th>
-                  <th className="text-right py-2">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {timeEntries.map(entry => (
-                  <tr key={entry.id} className="border-b">
-                    <td className="py-2">{entry.employeeName}</td>
-                    <td className="py-2">{format(new Date(entry.startTime), "MMM d, h:mm a")}</td>
-                    <td className="py-2">
-                      {entry.endTime ? format(new Date(entry.endTime), "MMM d, h:mm a") : "Ongoing"}
-                    </td>
-                    <td className="py-2 text-right">
-                      {entry.duration} {entry.duration === 1 ? "minute" : "minutes"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            <div className="flex justify-between mb-4">
+              <p className="text-sm text-slate-500">Total Billable Time</p>
+              <p className="font-medium">{totalBillableTime} minutes</p>
+            </div>
+            
+            <div className="border rounded-md divide-y">
+              {timeEntries.map((entry) => (
+                <div key={entry.id} className="p-4 flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{entry.employeeName}</p>
+                    <p className="text-sm text-slate-500">
+                      {formatRelativeTime(entry.startTime)}
+                      {entry.endTime ? ` - ${formatRelativeTime(entry.endTime)}` : ' - Ongoing'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{entry.duration || 0} minutes</p>
+                    <p className="text-sm text-slate-500">
+                      {entry.billable ? 'Billable' : 'Non-billable'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
-          <div className="text-center py-4 text-gray-500">
-            No time entries yet.
+          <div className="text-center py-6 text-gray-500">
+            <p>No time entries yet</p>
+            <p className="text-sm">Start the timer to begin tracking time</p>
           </div>
         )}
       </CardContent>
     </Card>
   );
-};
+}
