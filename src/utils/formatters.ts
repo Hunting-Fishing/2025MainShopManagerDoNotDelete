@@ -25,6 +25,19 @@ export const formatPhoneNumber = (phoneNumber?: string): string => {
 };
 
 /**
+ * Cleans a phone number by removing all non-digit characters
+ * 
+ * @param phoneNumber The phone number to clean
+ * @returns Phone number with only digits
+ */
+export const cleanPhoneNumber = (phoneNumber?: string): string => {
+  if (!phoneNumber) return '';
+  
+  // Remove all non-digits and return just the numbers
+  return phoneNumber.replace(/\D/g, '');
+};
+
+/**
  * Formats a currency amount
  * 
  * @param amount Number to format as currency
