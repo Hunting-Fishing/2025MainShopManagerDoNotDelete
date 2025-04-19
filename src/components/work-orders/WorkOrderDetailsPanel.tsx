@@ -6,8 +6,11 @@ import { StatusBadge } from "./StatusBadge";
 import { PriorityBadge } from "./PriorityBadge";
 import { CalendarDays, MapPin, User, Wrench, ClipboardList } from "lucide-react";
 import { StatusUpdateButton } from "./StatusUpdateButton";
+import { StatusUpdateDialog } from "./StatusUpdateDialog";
 import { getNextStatusOptions } from "@/utils/workOrders/statusManagement";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { WorkOrderStatusHistory } from "./details/WorkOrderStatusHistory";
 
 interface WorkOrderDetailsPanelProps {
   workOrder: WorkOrder;
@@ -108,10 +111,23 @@ export function WorkOrderDetailsPanel({
                   size="sm"
                 />
               ))}
+              
+              <StatusUpdateDialog 
+                workOrder={workOrder} 
+                userId={userId} 
+                userName={userName} 
+                onStatusUpdate={onStatusUpdate}
+              >
+                <Button variant="outline" size="sm">
+                  More Status Options
+                </Button>
+              </StatusUpdateDialog>
             </div>
           </div>
         </CardContent>
       </Card>
+      
+      <WorkOrderStatusHistory workOrderId={workOrder.id} />
     </div>
   );
 }

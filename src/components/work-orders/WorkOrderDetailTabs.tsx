@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkOrder } from "@/types/workOrder";
@@ -9,6 +8,7 @@ import { WorkOrderHistory } from "./history/WorkOrderHistory";
 import { WorkOrderActions } from "./actions/WorkOrderActions";
 import { CreateInvoiceButton } from "./actions/CreateInvoiceButton";
 import { WorkOrderInvoiceStatus } from "./details/WorkOrderInvoiceStatus";
+import { WorkOrderStatusHistory } from "./details/WorkOrderStatusHistory";
 import { useWorkOrderStatusManager } from "@/hooks/workOrders/useWorkOrderStatusManager";
 import { toast } from "@/hooks/use-toast";
 
@@ -46,6 +46,7 @@ export function WorkOrderDetailTabs({ workOrder, onTimeEntriesUpdate, userId, us
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="time-tracking">Time Tracking</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="status">Status Timeline</TabsTrigger>
         </TabsList>
         
         <TabsContent value="details" className="space-y-6 mt-6">
@@ -67,6 +68,10 @@ export function WorkOrderDetailTabs({ workOrder, onTimeEntriesUpdate, userId, us
 
         <TabsContent value="history" className="space-y-6 mt-6">
           <WorkOrderHistory workOrderId={workOrder.id} />
+        </TabsContent>
+        
+        <TabsContent value="status" className="space-y-6 mt-6">
+          <WorkOrderStatusHistory workOrderId={workOrder.id} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Record work order activity for audit trail
@@ -123,5 +122,42 @@ export async function getFlaggedActivities() {
   } catch (err) {
     console.error("Error in getFlaggedActivities:", err);
     return [];
+  }
+}
+
+/**
+ * Record a status change in the work order activities
+ */
+export async function recordStatusChange(
+  workOrderId: string,
+  oldStatus: string,
+  newStatus: string,
+  userId: string,
+  userName: string
+): Promise<boolean> {
+  try {
+    const message = generateStatusChangeMessage(
+      oldStatus as WorkOrder["status"],
+      newStatus as WorkOrder["status"],
+      userName
+    );
+    
+    // Record the actual activity
+    const success = await recordWorkOrderActivity(
+      message,
+      workOrderId,
+      userId,
+      userName,
+      { 
+        oldStatus, 
+        newStatus,
+        timestamp: new Date().toISOString()
+      }
+    );
+    
+    return success;
+  } catch (err) {
+    console.error("Error recording status change:", err);
+    return false;
   }
 }

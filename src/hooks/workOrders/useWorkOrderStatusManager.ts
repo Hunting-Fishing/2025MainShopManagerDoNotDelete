@@ -3,12 +3,11 @@ import { useState } from "react";
 import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { toast } from "@/hooks/use-toast";
 import { updateWorkOrder } from "@/utils/workOrders";
-import { handleStatusTransition, generateStatusChangeMessage } from "@/utils/workOrders/statusManagement";
-import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
+import { handleStatusTransition, generateStatusChangeMessage, isStatusTransitionAllowed } from "@/utils/workOrders/statusManagement";
+import { recordWorkOrderActivity, recordStatusChange } from "@/utils/workOrders/activity";
 
 /**
  * Hook for managing work order status updates
- * Consolidates functionality from useWorkOrderStatus and useWorkOrderStatusUpdate
  */
 export function useWorkOrderStatusManager() {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -27,8 +26,19 @@ export function useWorkOrderStatusManager() {
     userId: string,
     userName: string
   ): Promise<WorkOrder | null> => {
+    // Check if this is a valid transition
+    if (!isStatusTransitionAllowed(workOrder.status, newStatus)) {
+      toast({
+        title: "Invalid Status Change",
+        description: `Cannot change from ${workOrder.status} to ${newStatus}`,
+        variant: "destructive",
+      });
+      return workOrder; // Return original work order
+    }
+    
+    // If no actual change, just return
     if (workOrder.status === newStatus) {
-      return workOrder; // No change needed
+      return workOrder;
     }
     
     setIsUpdating(true);
@@ -45,16 +55,11 @@ export function useWorkOrderStatusManager() {
         lastUpdatedAt: new Date().toISOString()
       });
       
-      // Record this activity
-      const activityMessage = generateStatusChangeMessage(
+      // Record this status change activity
+      await recordStatusChange(
+        workOrder.id,
         workOrder.status,
         newStatus,
-        userName
-      );
-      
-      await recordWorkOrderActivity(
-        activityMessage,
-        workOrder.id,
         userId,
         userName
       );
