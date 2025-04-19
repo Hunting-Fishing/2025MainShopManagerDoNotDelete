@@ -1,5 +1,5 @@
 
-import { Node as FlowNode, Edge as FlowEdge } from '@xyflow/react';
+import { Node, Edge, NodeProps } from '@xyflow/react';
 
 // Define workflow types
 export type WorkflowNodeData = {
@@ -7,8 +7,8 @@ export type WorkflowNodeData = {
   [key: string]: any;
 };
 
-export type WorkflowNode = FlowNode<WorkflowNodeData>;
-export type WorkflowEdge = FlowEdge;
+export type WorkflowNode = Node<WorkflowNodeData>;
+export type WorkflowEdge = Edge;
 
 export interface Workflow {
   id: string;

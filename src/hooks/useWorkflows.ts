@@ -35,8 +35,8 @@ export function useWorkflows(workflowType?: string) {
       const { error } = await supabase
         .from('workflows')
         .update({
-          nodes: nodes,
-          edges: edges 
+          nodes: JSON.stringify(nodes),
+          edges: JSON.stringify(edges)
         })
         .eq('id', id);
 
