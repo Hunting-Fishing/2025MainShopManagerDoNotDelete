@@ -89,7 +89,7 @@ export function useTimeTracker(workOrderId: string) {
     }
   };
 
-  // Ensure fetchEntries always returns an array
+  // Ensure fetchEntries always returns an array and is explicitly typed
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
       const entries = await fetchTimeEntries();
@@ -101,7 +101,7 @@ export function useTimeTracker(workOrderId: string) {
         description: "Failed to fetch time entries",
         variant: "destructive"
       });
-      return []; // Return an empty array on error
+      return []; // Always return an array, even on error
     }
   };
 
@@ -111,6 +111,6 @@ export function useTimeTracker(workOrderId: string) {
     isTracking,
     handleStartTimer,
     handleStopTimer,
-    fetchTimeEntries: fetchEntries
+    fetchTimeEntries: fetchEntries // Explicitly assign the function
   };
 }
