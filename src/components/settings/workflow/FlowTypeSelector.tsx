@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Activity, UserRoundCheck, Tool } from 'lucide-react';
+import { Activity, UserRoundCheck, Wrench } from 'lucide-react';
 
 interface FlowTypeSelectorProps {
   selectedWorkflow: string;
@@ -23,7 +23,7 @@ const workflowTypes = [
   { 
     id: 'maintenance', 
     name: 'Maintenance Schedule', 
-    icon: <Tool className="h-4 w-4 mr-2" />,
+    icon: <Wrench className="h-4 w-4 mr-2" />,
     color: 'bg-purple-600'
   },
 ];
