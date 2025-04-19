@@ -1,9 +1,8 @@
 
-// Export all activity tracking functions from this index file
+// Explicit re-export to avoid ambiguity
 export * from './workOrderActivity';
 export * from './communicationActivity';
 export * from './technicianActivity';
 
-// Re-export getFlaggedActivities from flaggedActivity instead of workOrderActivity
-// to resolve the ambiguity
-export * from './flaggedActivity';
+// Explicitly re-export flagged activities to remove any naming conflicts
+export { getFlaggedActivities } from './flaggedActivity';
