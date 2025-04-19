@@ -22,15 +22,44 @@ export function useWorkflows(workflowType?: string) {
       }
       
       // Parse nodes and edges from JSON to proper objects with proper types
-      return (data || []).map(workflow => ({
-        ...workflow,
-        nodes: Array.isArray(workflow.nodes) 
-          ? workflow.nodes 
-          : JSON.parse(workflow.nodes as unknown as string),
-        edges: Array.isArray(workflow.edges) 
-          ? workflow.edges 
-          : JSON.parse(workflow.edges as unknown as string)
-      })) as Workflow[];
+      return (data || []).map(workflow => {
+        let parsedNodes: WorkflowNode[];
+        let parsedEdges: WorkflowEdge[];
+        
+        try {
+          // Handle both array and JSON string formats
+          parsedNodes = Array.isArray(workflow.nodes) 
+            ? workflow.nodes 
+            : JSON.parse(workflow.nodes as unknown as string);
+            
+          // Ensure each node has the required 'label' property
+          parsedNodes = parsedNodes.map(node => ({
+            ...node,
+            data: {
+              label: node.data?.label || 'No Label',
+              ...node.data
+            }
+          }));
+        } catch (e) {
+          console.error('Error parsing nodes:', e);
+          parsedNodes = [];
+        }
+        
+        try {
+          parsedEdges = Array.isArray(workflow.edges) 
+            ? workflow.edges 
+            : JSON.parse(workflow.edges as unknown as string);
+        } catch (e) {
+          console.error('Error parsing edges:', e);
+          parsedEdges = [];
+        }
+        
+        return {
+          ...workflow,
+          nodes: parsedNodes,
+          edges: parsedEdges
+        } as Workflow;
+      });
     }
   });
 

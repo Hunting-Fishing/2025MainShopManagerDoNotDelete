@@ -2,10 +2,10 @@
 import { Node, Edge, NodeProps } from '@xyflow/react';
 
 // Define workflow node data type
-export type WorkflowNodeData = {
+export interface WorkflowNodeData {
   label: string;
   [key: string]: any;
-};
+}
 
 // Define workflow node type that extends the React Flow Node type
 export type WorkflowNode = Node<WorkflowNodeData>;

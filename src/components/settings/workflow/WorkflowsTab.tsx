@@ -16,12 +16,16 @@ export function WorkflowsTab() {
   
   const currentWorkflow = workflows?.[0];
   
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    (currentWorkflow?.nodes || []) as WorkflowNode[]
+  // Initialize with empty arrays if no workflow data is available
+  const initialNodes = currentWorkflow?.nodes || [];
+  const initialEdges = currentWorkflow?.edges || [];
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>(
+    initialNodes as WorkflowNode[]
   );
   
   const [edges, setEdges, onEdgesChange] = useEdgesState(
-    (currentWorkflow?.edges || []) as WorkflowEdge[]
+    initialEdges as WorkflowEdge[]
   );
 
   const onConnect = (params: any) => {
@@ -37,8 +41,8 @@ export function WorkflowsTab() {
       try {
         await updateWorkflow.mutateAsync({
           id: currentWorkflow.id,
-          nodes,
-          edges
+          nodes: nodes as WorkflowNode[],
+          edges: edges as WorkflowEdge[]
         });
         toast({
           title: "Success",
@@ -74,8 +78,8 @@ export function WorkflowsTab() {
             onSelect={handleWorkflowSelect}
           />
           <WorkflowEditor
-            nodes={nodes}
-            edges={edges}
+            nodes={nodes as WorkflowNode[]}
+            edges={edges as WorkflowEdge[]}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
