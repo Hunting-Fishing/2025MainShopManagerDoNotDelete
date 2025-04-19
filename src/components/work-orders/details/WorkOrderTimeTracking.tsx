@@ -2,16 +2,17 @@
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Clock, AlertTriangle } from "lucide-react";
-import { WorkOrder } from "@/data/workOrdersData";
-import { TimeEntry } from "@/types/workOrder";
-import { formatTimeInHoursAndMinutes } from "@/data/workOrdersData";
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 
 interface WorkOrderTimeTrackingProps {
   workOrder: WorkOrder;
-  onUpdateTimeEntries: (entries: TimeEntry[]) => void;
+  onTimeEntriesUpdate: (entries: TimeEntry[]) => void;
+  userId: string;
+  userName: string;
 }
 
-export function WorkOrderTimeTracking({ workOrder, onUpdateTimeEntries }: WorkOrderTimeTrackingProps) {
+export function WorkOrderTimeTracking({ workOrder, onTimeEntriesUpdate, userId, userName }: WorkOrderTimeTrackingProps) {
   const timeEntries = workOrder.timeEntries || [];
   const totalTime = timeEntries.reduce((total, entry) => total + entry.duration, 0);
   const totalBillableTime = timeEntries.reduce((total, entry) => {

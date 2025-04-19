@@ -1,17 +1,9 @@
 
-import React from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { WorkOrder } from "@/types/workOrder";
-import { 
-  ClipboardList, 
-  CalendarDays, 
-  User, 
-  MapPin,
-  Car
-} from "lucide-react";
-import { format } from "date-fns";
-import { WorkOrderPriorityBadge } from "../WorkOrderPriorityBadge";
-import { WorkOrderStatusBadge } from "../WorkOrderStatusBadge";
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { WorkOrder } from '@/types/workOrder';
+import { Wrench, MapPin, Calendar, Clock, User, AlertCircle, FileText } from 'lucide-react';
 
 interface WorkOrderDetailsProps {
   workOrder: WorkOrder;
@@ -22,102 +14,117 @@ export function WorkOrderDetails({ workOrder }: WorkOrderDetailsProps) {
     try {
       return format(new Date(dateString), 'MMM dd, yyyy');
     } catch (error) {
-      return dateString;
+      return 'Invalid date';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (workOrder.status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'completed':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-slate-100 text-slate-800 border-slate-200';
+    }
+  };
+
+  const getPriorityColor = () => {
+    switch (workOrder.priority) {
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'high':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-slate-100 text-slate-800 border-slate-200';
     }
   };
 
   return (
     <Card>
-      <CardHeader className="bg-slate-50 pb-3 border-b">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <ClipboardList className="mr-2 h-5 w-5" />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <FileText className="h-5 w-5" />
           Work Order Details
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          {/* Header with ID, status and priority */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
             <div>
-              <h2 className="text-xl font-semibold">{workOrder.description}</h2>
-              <p className="text-sm text-slate-500">ID: {workOrder.id}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <WorkOrderStatusBadge status={workOrder.status} />
-              <WorkOrderPriorityBadge priority={workOrder.priority} />
-            </div>
-          </div>
-
-          {/* Details grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left column */}
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-slate-500 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Customer</p>
-                  <p>{workOrder.customer}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-slate-500 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Technician</p>
-                  <p>{workOrder.technician}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-slate-500 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Location</p>
-                  <p>{workOrder.location}</p>
-                </div>
-              </div>
+              <h3 className="font-semibold text-sm text-slate-500 mb-1">Customer</h3>
+              <p className="font-medium">{workOrder.customer}</p>
             </div>
 
-            {/* Right column */}
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <CalendarDays className="h-5 w-5 text-slate-500 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Created Date</p>
-                  <p>{formatDate(workOrder.date)}</p>
-                </div>
-              </div>
+            <div>
+              <h3 className="font-semibold text-sm text-slate-500 mb-1">Description</h3>
+              <p>{workOrder.description || "No description provided"}</p>
+            </div>
 
-              <div className="flex items-start gap-3">
-                <CalendarDays className="h-5 w-5 text-slate-500 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Due Date</p>
-                  <p>{formatDate(workOrder.dueDate)}</p>
-                </div>
-              </div>
+            <div>
+              <h3 className="font-semibold text-sm text-slate-500 mb-1">Status</h3>
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}>
+                {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
+              </span>
+            </div>
 
-              {workOrder.vehicleDetails && (
-                <div className="flex items-start gap-3">
-                  <Car className="h-5 w-5 text-slate-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">Vehicle</p>
-                    <p>
-                      {workOrder.vehicleDetails.year} {workOrder.vehicleDetails.make} {workOrder.vehicleDetails.model}
-                      {workOrder.vehicleDetails.licensePlate && ` (${workOrder.vehicleDetails.licensePlate})`}
-                    </p>
-                  </div>
-                </div>
-              )}
+            <div>
+              <h3 className="font-semibold text-sm text-slate-500 mb-1">Priority</h3>
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getPriorityColor()}`}>
+                {workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)}
+              </span>
             </div>
           </div>
 
-          {/* Notes section */}
-          {workOrder.notes && (
-            <div className="pt-4 border-t">
-              <p className="text-sm font-medium text-slate-500 mb-2">Notes</p>
-              <p className="whitespace-pre-line">{workOrder.notes}</p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2">
+              <User className="h-4 w-4 text-slate-500 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-sm text-slate-500">Technician</h3>
+                <p>{workOrder.technician || "Unassigned"}</p>
+              </div>
             </div>
-          )}
+
+            <div className="flex items-start gap-2">
+              <MapPin className="h-4 w-4 text-slate-500 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-sm text-slate-500">Location</h3>
+                <p>{workOrder.location || "No location specified"}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <Calendar className="h-4 w-4 text-slate-500 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-sm text-slate-500">Created Date</h3>
+                <p>{workOrder.date ? formatDate(workOrder.date) : "Not specified"}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <Clock className="h-4 w-4 text-slate-500 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-sm text-slate-500">Due Date</h3>
+                <p>{workOrder.dueDate ? formatDate(workOrder.dueDate) : "Not specified"}</p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {workOrder.notes && (
+          <div className="mt-6">
+            <h3 className="font-semibold text-sm text-slate-500 mb-2">Notes</h3>
+            <div className="bg-slate-50 p-3 rounded border">
+              <p className="whitespace-pre-wrap text-sm">{workOrder.notes}</p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,32 +1,24 @@
 
-import { TimeEntry } from "@/types/workOrder";
-
-// Format date for display
-export const formatDate = (dateStr: string | undefined): string => {
-  if (!dateStr) return "N/A";
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Invalid date";
-  }
-};
+import { WorkOrder, TimeEntry } from '@/types/workOrder';
 
 // Format time in hours and minutes
-export const formatTimeInHoursAndMinutes = (minutes: number): string => {
-  if (!minutes) return '0h 0m';
-  
+export function formatTimeInHoursAndMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
   
-  if (hours > 0) {
+  if (hours === 0) {
+    return `${remainingMinutes}m`;
+  } else if (remainingMinutes === 0) {
+    return `${hours}h`;
+  } else {
     return `${hours}h ${remainingMinutes}m`;
   }
-  
-  return `${remainingMinutes}m`;
-};
+}
+
+// Format currency
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+}

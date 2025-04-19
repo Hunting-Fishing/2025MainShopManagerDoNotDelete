@@ -1,117 +1,83 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import {
-  PlayCircle,
-  CheckCircle,
-  XCircle,
-  PauseCircle,
-  Clock,
-  AlertTriangle
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { WorkOrderStatusType } from "@/types/workOrder";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { WorkOrderStatusType } from '@/types/workOrder';
+import { CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react';
 
 interface WorkOrderActionsProps {
   currentStatus: WorkOrderStatusType;
   onStatusChange: (newStatus: WorkOrderStatusType) => void;
 }
 
-export function WorkOrderActions({
-  currentStatus,
-  onStatusChange
+export function WorkOrderActions({ 
+  currentStatus, 
+  onStatusChange 
 }: WorkOrderActionsProps) {
-  // Define the available actions based on the current status
-  const getActionButtons = () => {
-    switch (currentStatus) {
-      case "pending":
+  const getStatusButton = (status: WorkOrderStatusType) => {
+    switch (status) {
+      case 'pending':
         return (
-          <>
-            <Button
-              className="flex items-center gap-1"
-              onClick={() => onStatusChange("in-progress")}
-            >
-              <PlayCircle className="h-4 w-4" />
-              Start Work
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex items-center gap-1"
-              onClick={() => onStatusChange("cancelled")}
-            >
-              <XCircle className="h-4 w-4" />
-              Cancel
-            </Button>
-          </>
+          <Button 
+            onClick={() => onStatusChange('pending')}
+            variant={currentStatus === 'pending' ? 'default' : 'outline'}
+            size="sm"
+            disabled={currentStatus === 'pending'}
+            className="flex items-center gap-2"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Pending
+          </Button>
         );
-
-      case "in-progress":
+      case 'in-progress':
         return (
-          <>
-            <Button
-              className="bg-green-600 hover:bg-green-700 flex items-center gap-1"
-              onClick={() => onStatusChange("completed")}
-            >
-              <CheckCircle className="h-4 w-4" />
-              Mark Completed
-            </Button>
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => onStatusChange("pending")}
-            >
-              <PauseCircle className="h-4 w-4" />
-              On Hold
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex items-center gap-1"
-              onClick={() => onStatusChange("cancelled")}
-            >
-              <XCircle className="h-4 w-4" />
-              Cancel
-            </Button>
-          </>
+          <Button 
+            onClick={() => onStatusChange('in-progress')}
+            variant={currentStatus === 'in-progress' ? 'default' : 'outline'}
+            size="sm"
+            disabled={currentStatus === 'in-progress'}
+            className="flex items-center gap-2"
+          >
+            <Clock className="h-4 w-4" />
+            In Progress
+          </Button>
         );
-
-      case "completed":
+      case 'completed':
         return (
-          <>
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => onStatusChange("in-progress")}
-            >
-              <Clock className="h-4 w-4" />
-              Reopen
-            </Button>
-          </>
+          <Button 
+            onClick={() => onStatusChange('completed')}
+            variant={currentStatus === 'completed' ? 'default' : 'outline'}
+            size="sm"
+            disabled={currentStatus === 'completed'}
+            className="flex items-center gap-2"
+          >
+            <CheckCircle className="h-4 w-4" />
+            Complete
+          </Button>
         );
-
-      case "cancelled":
+      case 'cancelled':
         return (
-          <>
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => onStatusChange("pending")}
-            >
-              <AlertTriangle className="h-4 w-4" />
-              Reopen as Pending
-            </Button>
-          </>
+          <Button 
+            onClick={() => onStatusChange('cancelled')}
+            variant={currentStatus === 'cancelled' ? 'destructive' : 'outline'}
+            size="sm"
+            disabled={currentStatus === 'cancelled'}
+            className="flex items-center gap-2"
+          >
+            <XCircle className="h-4 w-4" />
+            Cancel
+          </Button>
         );
-
       default:
         return null;
     }
   };
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex flex-wrap gap-2">{getActionButtons()}</div>
-      </CardContent>
-    </Card>
+    <div className="flex flex-wrap gap-2">
+      {getStatusButton('pending')}
+      {getStatusButton('in-progress')}
+      {getStatusButton('completed')}
+      {getStatusButton('cancelled')}
+    </div>
   );
 }

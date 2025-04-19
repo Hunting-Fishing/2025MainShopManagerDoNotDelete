@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useInvoiceForm } from "@/hooks/useInvoiceForm";
 import { InvoiceCreateLayout } from "@/components/invoices/InvoiceCreateLayout";
@@ -72,6 +73,8 @@ export default function CreateInvoice() {
         technician_id: wo.technician_id,
         total_cost: wo.total_cost,
         estimated_hours: wo.estimated_hours,
+        invoice_id: wo.invoice_id,
+        invoiced_at: wo.invoiced_at
       }));
       setWorkOrders(formattedWorkOrders);
     }
@@ -115,18 +118,18 @@ export default function CreateInvoice() {
           date: new Date().toISOString().split('T')[0],
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           items: [
-            ...(workOrder.inventoryItems?.map(item => ({
-              id: item.id,
-              name: item.name,
+            ...(workOrder.inventoryItems?.map(inventoryItem => ({
+              id: inventoryItem.id,
+              name: inventoryItem.name,
               description: '',
-              quantity: item.quantity,
-              price: item.unitPrice,
-              total: item.quantity * item.unitPrice,
-              sku: item.sku,
-              category: item.category
+              quantity: inventoryItem.quantity,
+              price: inventoryItem.unitPrice,
+              total: inventoryItem.quantity * inventoryItem.unitPrice,
+              sku: inventoryItem.sku,
+              category: inventoryItem.category
             })) || []),
             ...(workOrder.timeEntries?.filter(entry => entry.billable).map(entry => ({
-              id: item.id,
+              id: entry.id,
               name: 'Labor',
               description: entry.notes || 'Service labor',
               quantity: entry.duration / 60, // Convert minutes to hours

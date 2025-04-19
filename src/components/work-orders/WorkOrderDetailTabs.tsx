@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkOrder } from "@/types/workOrder";
 import { WorkOrderDetails } from "./details/WorkOrderDetails";
 import { WorkOrderPartsEstimate } from "./details/WorkOrderPartsEstimate";

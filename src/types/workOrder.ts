@@ -1,3 +1,4 @@
+
 // Define the inventory item interface for work orders
 export interface WorkOrderInventoryItem {
   id: string;
@@ -102,6 +103,9 @@ export interface WorkOrder {
     odometer?: string;
     licensePlate?: string;
   };
+  // Invoice fields
+  invoice_id?: string;
+  invoiced_at?: string;
 }
 
 // Define status map type
