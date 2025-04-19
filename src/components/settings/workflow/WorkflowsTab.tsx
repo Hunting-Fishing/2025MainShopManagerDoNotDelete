@@ -8,6 +8,7 @@ import { useWorkflows } from "@/hooks/useWorkflows";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function WorkflowsTab() {
   const [selectedWorkflow, setSelectedWorkflow] = useState('customer-onboarding');
@@ -121,17 +122,19 @@ export function WorkflowsTab() {
           />
           
           <div className="mt-4">
-            <ReactFlowProvider>
-              <WorkflowEditor
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onSave={handleSaveWorkflow}
-                isSaving={updateWorkflow.isPending}
-              />
-            </ReactFlowProvider>
+            <TooltipProvider>
+              <ReactFlowProvider>
+                <WorkflowEditor
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  onSave={handleSaveWorkflow}
+                  isSaving={updateWorkflow.isPending}
+                />
+              </ReactFlowProvider>
+            </TooltipProvider>
           </div>
         </CardContent>
       </Card>
