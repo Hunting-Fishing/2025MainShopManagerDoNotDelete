@@ -1,4 +1,3 @@
-
 // Define the inventory item interface for work orders
 export interface WorkOrderInventoryItem {
   id: string;
@@ -109,3 +108,15 @@ export type WorkOrderStatusType = "pending" | "in-progress" | "completed" | "can
 
 // Define priority map type
 export type WorkOrderPriorityType = "low" | "medium" | "high";
+
+// Define search parameters for work orders
+export interface WorkOrderSearchParams {
+  status?: string[];
+  priority?: string[];
+  technicianId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  searchTerm?: string;
+  page?: number;
+  pageSize?: number;
+}

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { WorkOrder } from "@/types/workOrder";
-import { searchWorkOrders, WorkOrderSearchParams } from "@/utils/workOrders/workOrderSearch";
+import { WorkOrder, WorkOrderSearchParams } from "@/types/workOrder";
+import { searchWorkOrders } from "@/utils/workOrders/workOrderSearch";
 import { toast } from "@/hooks/use-toast";
 
 export const useWorkOrderSearch = () => {
@@ -16,8 +16,8 @@ export const useWorkOrderSearch = () => {
     try {
       const result = await searchWorkOrders({
         ...params,
-        page: page,
-        pageSize: pageSize
+        page,
+        pageSize
       });
 
       setWorkOrders(result.workOrders);
