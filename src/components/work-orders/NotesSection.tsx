@@ -1,32 +1,26 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StickyNote } from "lucide-react";
 
 interface NotesSectionProps {
-  form: UseFormReturn<WorkOrderFormValues>;
+  notes: string;
 }
 
-export const NotesSection: React.FC<NotesSectionProps> = ({ form }) => {
+export function NotesSection({ notes }: NotesSectionProps) {
   return (
-    <FormField
-      control={form.control}
-      name="notes"
-      render={({ field }) => (
-        <FormItem className="col-span-1 md:col-span-2">
-          <FormLabel>Additional Notes</FormLabel>
-          <FormControl>
-            <Textarea
-              placeholder="Enter any additional details or instructions"
-              className="min-h-[100px]"
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        <StickyNote className="h-5 w-5 text-muted-foreground" />
+        <CardTitle className="text-lg">Notes</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {notes ? (
+          <div className="whitespace-pre-wrap">{notes}</div>
+        ) : (
+          <div className="text-muted-foreground italic">No notes available</div>
+        )}
+      </CardContent>
+    </Card>
   );
-};
+}

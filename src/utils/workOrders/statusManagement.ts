@@ -61,3 +61,39 @@ export const statusConfig = {
     description: "Work has been cancelled"
   }
 };
+
+/**
+ * Priority configuration for badge display
+ */
+export const priorityConfig = {
+  "low": {
+    label: "Low",
+    color: "bg-green-100 text-green-800 border-green-300",
+    icon: "ArrowDown",
+    description: "Can be addressed when time permits"
+  },
+  "medium": {
+    label: "Medium",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    icon: "Minus",
+    description: "Should be addressed in reasonable timeframe"
+  },
+  "high": {
+    label: "High", 
+    color: "bg-red-100 text-red-800 border-red-300",
+    icon: "ArrowUp",
+    description: "Requires immediate attention"
+  }
+};
+
+/**
+ * Get the next status options based on current status
+ * @param currentStatus Current work order status
+ * @returns Array of next possible statuses with their configurations
+ */
+export const getNextStatusOptions = (currentStatus: WorkOrder['status']) => {
+  return getAvailableStatusTransitions(currentStatus).map(status => ({
+    status,
+    ...statusConfig[status]
+  }));
+};
