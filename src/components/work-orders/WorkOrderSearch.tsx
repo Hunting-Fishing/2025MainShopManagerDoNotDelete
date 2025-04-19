@@ -1,159 +1,156 @@
-
-import { useState } from "react";
+import React, { useState } from 'react';
+import { useWorkOrderSearch } from "@/hooks/workOrders/useWorkOrderSearch";
+import { WorkOrderSearchParams } from "@/utils/workOrders/workOrderSearch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuTrigger, 
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-  DropdownMenuCheckboxItem
-} from "@/components/ui/dropdown-menu";
-import { CheckSquare, Filter, Search } from "lucide-react";
-import { statusMap, priorityMap } from "@/utils/workOrders";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2 } from "lucide-react";
 
-export interface WorkOrderSearchProps {
-  technicians: string[];
-  onSearch: (term: string) => void;
-  onStatusFilterChange: (statuses: string[]) => void;
-  onPriorityFilterChange: (priorities: string[]) => void;
-  onTechnicianFilterChange: (technicians: string[]) => void;
-}
+export const WorkOrderSearch: React.FC = () => {
+  const { 
+    workOrders, 
+    total, 
+    loading, 
+    searchOrders, 
+    page, 
+    setPage 
+  } = useWorkOrderSearch();
 
-export function WorkOrderSearch({ 
-  technicians = [], 
-  onSearch,
-  onStatusFilterChange,
-  onPriorityFilterChange,
-  onTechnicianFilterChange
-}: WorkOrderSearchProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [selectedTechnicians, setSelectedTechnicians] = useState<string[]>([]);
+  const [searchParams, setSearchParams] = useState<WorkOrderSearchParams>({});
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleSearchSubmit = () => {
-    onSearch(searchTerm);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearchSubmit();
-    }
-  };
-
-  const handleStatusToggle = (status: string) => {
-    setSelectedStatuses(prev => {
-      const newSelection = prev.includes(status)
-        ? prev.filter(s => s !== status)
-        : [...prev, status];
-      
-      onStatusFilterChange(newSelection);
-      return newSelection;
-    });
-  };
-
-  const handlePriorityToggle = (priority: string) => {
-    setSelectedPriorities(prev => {
-      const newSelection = prev.includes(priority)
-        ? prev.filter(p => p !== priority)
-        : [...prev, priority];
-      
-      onPriorityFilterChange(newSelection);
-      return newSelection;
-    });
-  };
-
-  const handleTechnicianToggle = (technician: string) => {
-    setSelectedTechnicians(prev => {
-      const newSelection = prev.includes(technician)
-        ? prev.filter(t => t !== technician)
-        : [...prev, technician];
-      
-      onTechnicianFilterChange(newSelection);
-      return newSelection;
-    });
+  const handleSearch = () => {
+    searchOrders(searchParams);
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-2">
-      <div className="relative flex-1">
-        <Input
-          placeholder="Search work orders..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          onKeyDown={handleKeyDown}
-          className="pr-10"
+    <div className="space-y-4">
+      <div className="flex space-x-2">
+        <Input 
+          placeholder="Search work orders" 
+          onChange={(e) => setSearchParams({
+            ...searchParams,
+            query: e.target.value
+          })}
         />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-0 top-0 h-full"
-          onClick={handleSearchSubmit}
-        >
-          <Search className="h-4 w-4" />
+        <Button onClick={handleSearch} disabled={loading}>
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Search"}
         </Button>
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            <span className="hidden md:inline">Filters</span>
-            {(selectedStatuses.length > 0 || selectedPriorities.length > 0 || selectedTechnicians.length > 0) && (
-              <span className="inline-flex items-center justify-center h-5 w-5 text-xs font-medium bg-primary text-primary-foreground rounded-full">
-                {selectedStatuses.length + selectedPriorities.length + selectedTechnicians.length}
-              </span>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>Status</DropdownMenuLabel>
-          {Object.entries(statusMap).map(([key, value]) => (
-            <DropdownMenuCheckboxItem
-              key={key}
-              checked={selectedStatuses.includes(key)}
-              onCheckedChange={() => handleStatusToggle(key)}
-            >
-              {value}
-            </DropdownMenuCheckboxItem>
+      <div className="flex space-x-4">
+        <div>
+          <h4>Status</h4>
+          {['pending', 'in-progress', 'completed', 'cancelled'].map(status => (
+            <div key={status} className="flex items-center space-x-2">
+              <Checkbox 
+                onCheckedChange={(checked) => {
+                  const currentStatuses = searchParams.status || [];
+                  setSearchParams({
+                    ...searchParams,
+                    status: checked 
+                      ? [...currentStatuses, status] 
+                      : currentStatuses.filter(s => s !== status)
+                  });
+                }}
+              />
+              <span>{status}</span>
+            </div>
           ))}
-
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Priority</DropdownMenuLabel>
-          {Object.entries(priorityMap).map(([key, value]) => (
-            <DropdownMenuCheckboxItem
-              key={key}
-              checked={selectedPriorities.includes(key)}
-              onCheckedChange={() => handlePriorityToggle(key)}
-            >
-              {value.label}
-            </DropdownMenuCheckboxItem>
+        </div>
+        <div>
+          <h4>Priority</h4>
+          {['low', 'medium', 'high'].map(priority => (
+            <div key={priority} className="flex items-center space-x-2">
+              <Checkbox 
+                onCheckedChange={(checked) => {
+                  const currentPriorities = searchParams.priority || [];
+                  setSearchParams({
+                    ...searchParams,
+                    priority: checked 
+                      ? [...currentPriorities, priority] 
+                      : currentPriorities.filter(p => p !== priority)
+                  });
+                }}
+              />
+              <span>{priority}</span>
+            </div>
           ))}
+        </div>
+        <div>
+          <h4>Date Range</h4>
+          <div className="space-y-2">
+            <div>
+              <label className="text-sm">From</label>
+              <Input 
+                type="date" 
+                onChange={(e) => setSearchParams({
+                  ...searchParams,
+                  dateFrom: e.target.value
+                })}
+              />
+            </div>
+            <div>
+              <label className="text-sm">To</label>
+              <Input 
+                type="date" 
+                onChange={(e) => setSearchParams({
+                  ...searchParams,
+                  dateTo: e.target.value
+                })}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {technicians.length > 0 && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Technician</DropdownMenuLabel>
-              {technicians.map((technician) => (
-                <DropdownMenuCheckboxItem
-                  key={technician}
-                  checked={selectedTechnicians.includes(technician)}
-                  onCheckedChange={() => handleTechnicianToggle(technician)}
-                >
-                  {technician}
-                </DropdownMenuCheckboxItem>
+      {/* Work Order Results Table */}
+      {workOrders.length > 0 && (
+        <div>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 text-left">ID</th>
+                <th className="p-2 text-left">Description</th>
+                <th className="p-2 text-left">Customer</th>
+                <th className="p-2 text-left">Status</th>
+                <th className="p-2 text-left">Priority</th>
+                <th className="p-2 text-left">Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workOrders.map(order => (
+                <tr key={order.id} className="border-t">
+                  <td className="p-2">{order.id}</td>
+                  <td className="p-2">{order.description}</td>
+                  <td className="p-2">{order.customer}</td>
+                  <td className="p-2">{order.status}</td>
+                  <td className="p-2">{order.priority}</td>
+                  <td className="p-2">{new Date(order.dueDate).toLocaleDateString()}</td>
+                </tr>
               ))}
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            </tbody>
+          </table>
+          <div className="mt-4 flex justify-between items-center">
+            <p>Total Results: {total}</p>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                disabled={page === 1 || loading}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </Button>
+              <Button 
+                variant="outline" 
+                disabled={page * 10 >= total || loading}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
