@@ -2,15 +2,14 @@
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { InventoryItemExtended } from "@/types/inventory";
-import { type AutoReorderSettings } from "@/hooks/inventory/useInventoryManager";
 import { ReorderDialog } from "./ReorderDialog";
 import { AutoReorderDialog } from "./AutoReorderDialog";
 
 interface AlertItemRowProps {
   item: InventoryItemExtended;
-  autoReorderSettings: Record<string, AutoReorderSettings>;
-  reorderItem: (itemId: string, quantity: number) => void;
-  enableAutoReorder: (itemId: string, threshold: number, quantity: number) => void;
+  autoReorderSettings: { enabled: boolean } | Record<string, { enabled: boolean, threshold?: number, quantity?: number }>;
+  reorderItem: (itemId: string, quantity: number) => Promise<boolean>;
+  enableAutoReorder: (itemId: string, threshold: number, quantity: number) => Promise<boolean>;
 }
 
 export function AlertItemRow({ 

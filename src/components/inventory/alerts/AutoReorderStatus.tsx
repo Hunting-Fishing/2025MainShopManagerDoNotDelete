@@ -11,9 +11,7 @@ import { supabase } from "@/lib/supabase";
 
 interface AutoReorderStatusProps {
   items: any[];
-  autoReorderSettings: {
-    enabled: boolean;
-  };
+  autoReorderSettings: { enabled: boolean };
 }
 
 export function AutoReorderStatus({ items, autoReorderSettings }: AutoReorderStatusProps) {

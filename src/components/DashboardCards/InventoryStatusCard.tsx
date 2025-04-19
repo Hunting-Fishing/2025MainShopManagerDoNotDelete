@@ -42,8 +42,7 @@ export function InventoryStatusCard() {
             </div>
             <Progress
               value={lowStockItems.length > 0 ? 100 : 0}
-              className="h-2"
-              indicatorClassName="bg-amber-500"
+              className="h-2 bg-secondary"
             />
           </div>
           
@@ -54,8 +53,7 @@ export function InventoryStatusCard() {
             </div>
             <Progress
               value={outOfStockItems.length > 0 ? 100 : 0}
-              className="h-2"
-              indicatorClassName="bg-red-500"
+              className="h-2 bg-secondary"
             />
           </div>
 

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { InventoryItemExtended } from '@/types/inventory';
@@ -22,7 +23,9 @@ export const useInventoryManager = () => {
   const [loading, setLoading] = useState(false);
   const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
-  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
+  const [autoReorderSettings, setAutoReorderSettings] = useState<{ enabled: boolean }>({
+    enabled: false
+  });
 
   // Fetch inventory alerts (low stock and out of stock)
   const checkInventoryAlerts = useCallback(async () => {

@@ -10,9 +10,9 @@ export function LowStockAlerts() {
   const { 
     lowStockItems, 
     outOfStockItems, 
+    autoReorderSettings,
     reorderItem,
-    enableAutoReorder,
-    autoReorderSettings 
+    enableAutoReorder
   } = useInventoryManager();
   
   const allAlertItems = [...lowStockItems, ...outOfStockItems];
