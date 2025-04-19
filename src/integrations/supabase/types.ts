@@ -3215,6 +3215,57 @@ export type Database = {
           },
         ]
       }
+      inventory_adjustments: {
+        Row: {
+          adjusted_by: string | null
+          adjustment_type: string
+          created_at: string | null
+          id: string
+          inventory_item_id: string | null
+          notes: string | null
+          quantity: number
+          updated_at: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          adjusted_by?: string | null
+          adjustment_type: string
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          notes?: string | null
+          quantity: number
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          adjusted_by?: string | null
+          adjustment_type?: string
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          notes?: string | null
+          quantity?: number
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_adjustments_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_adjustments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_auto_reorder: {
         Row: {
           created_at: string
@@ -7419,6 +7470,10 @@ export type Database = {
       calculate_ab_test_winner: {
         Args: { campaign_id: string; criteria?: string }
         Returns: string
+      }
+      check_inventory_availability: {
+        Args: { item_id: string; requested_quantity: number }
+        Returns: boolean
       }
       count_email_events: {
         Args: { campaign_id_param: string; event_type_param: string }
