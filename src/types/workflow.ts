@@ -1,5 +1,5 @@
 
-import { Node, Edge, NodeBase } from '@xyflow/react';
+import { Node, Edge } from '@xyflow/react';
 
 // Define workflow node data type
 export interface WorkflowNodeData {
