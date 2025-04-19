@@ -16,7 +16,7 @@ const workOrderFormSchema = z.object({
   technician: z.string().optional(),
   technician_id: z.string().optional(),
   date: z.string().optional(),
-  dueDate: z.string().min(1, "Due date is required"),
+  dueDate: z.string().min(1, "Due date is required"),  // Keep as string for this form
   location: z.string().optional(),
   notes: z.string().optional(),
   vehicle_id: z.string().optional(),

@@ -15,7 +15,7 @@ export type WorkOrderFormFieldValues = {
   priority: "low" | "medium" | "high";
   technician: string;
   location: string;
-  dueDate: Date;
+  dueDate: Date;  // This is explicitly a Date object
   notes?: string;
   inventoryItems?: any[];
 };

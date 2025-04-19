@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StickyNote } from "lucide-react";
@@ -16,8 +17,9 @@ interface NotesSectionStringProps extends NotesSectionBaseProps {
   form?: never;
 }
 
+// Use a more generic type for the form to accommodate both WorkOrderFormValues and WorkOrderFormFieldValues
 interface NotesSectionFormProps extends NotesSectionBaseProps {
-  form: UseFormReturn<WorkOrderFormValues | WorkOrderFormFieldValues>;
+  form: UseFormReturn<any>;
   notes?: never;
 }
 
