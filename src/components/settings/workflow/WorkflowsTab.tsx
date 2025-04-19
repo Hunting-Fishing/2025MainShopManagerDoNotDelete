@@ -20,7 +20,7 @@ export function WorkflowsTab() {
   const initialNodes = currentWorkflow?.nodes || [];
   const initialEdges = currentWorkflow?.edges || [];
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>(
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode['data']>(
     initialNodes as WorkflowNode[]
   );
   
