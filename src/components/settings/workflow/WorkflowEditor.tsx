@@ -1,5 +1,5 @@
 
-import { ReactFlow, Background, Controls, MiniMap, useReactFlow, Panel } from '@xyflow/react';
+import { ReactFlow, Background, Controls, MiniMap, useReactFlow, Panel, applyEdgeChanges, applyNodeChanges } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 import { nodeTypes } from './CustomNodes';
@@ -28,13 +28,15 @@ export function WorkflowEditor({
   const reactFlowInstance = useReactFlow();
 
   const onAddNode = useCallback((type: string) => {
+    const position = reactFlowInstance.project({
+      x: Math.random() * 300 + 100,
+      y: Math.random() * 300 + 100
+    });
+    
     const newNode: WorkflowNode = {
       id: `node_${Date.now()}`,
       type,
-      position: {
-        x: Math.random() * 300 + 50,
-        y: Math.random() * 300 + 50
-      },
+      position,
       data: {
         label: type === 'start' ? 'Start' : 
                type === 'end' ? 'End' : 
@@ -63,7 +65,7 @@ export function WorkflowEditor({
   }, [reactFlowInstance]);
 
   return (
-    <div className="w-full h-[600px] border rounded-lg bg-background">
+    <div className="w-full h-[650px] border rounded-xl bg-background shadow-sm">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -71,6 +73,10 @@ export function WorkflowEditor({
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        defaultEdgeOptions={{
+          animated: true,
+          style: { stroke: '#999', strokeWidth: 2 }
+        }}
         fitView
         attributionPosition="bottom-right"
         className="bg-slate-50"
@@ -92,9 +98,17 @@ export function WorkflowEditor({
           />
         </Panel>
         
-        <Background color="#ddd" gap={16} />
-        <Controls />
-        <MiniMap className="bg-white border rounded-lg shadow-sm" />
+        <Background color="#ddd" gap={16} variant="dots" />
+        <Controls className="bg-white rounded-lg border shadow-sm" />
+        <MiniMap 
+          className="bg-white border rounded-lg shadow-sm" 
+          nodeColor={(n) => {
+            if (n.type === 'start') return '#10b981';
+            if (n.type === 'end') return '#ef4444'; 
+            if (n.type === 'decision') return '#eab308';
+            return '#3b82f6';
+          }}
+        />
       </ReactFlow>
     </div>
   );
