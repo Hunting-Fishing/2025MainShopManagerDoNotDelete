@@ -83,12 +83,22 @@ export function useTimeTracker(workOrderId: string) {
     }
   };
 
+  // Make sure this function returns the actual entries rather than just being called for side effects
+  const fetchEntries = async () => {
+    try {
+      return await fetchTimeEntries();
+    } catch (error) {
+      console.error('Error fetching time entries:', error);
+      return [];
+    }
+  };
+
   return {
     activeTimer,
     elapsedTime,
     isTracking,
     handleStartTimer,
     handleStopTimer,
-    fetchTimeEntries
+    fetchTimeEntries: fetchEntries
   };
 }
