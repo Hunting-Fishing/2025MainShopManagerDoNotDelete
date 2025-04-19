@@ -1,12 +1,13 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TimeEntry } from "@/types/workOrder";
 import { Clock, Play, Pause } from "lucide-react";
-import { useWorkOrderTimeTracking } from "@/hooks/workOrders/useWorkOrderTimeTracking";
 import { formatRelativeTime } from "@/utils/dateUtils";
-import { supabase } from "@/lib/supabase";
+import { TimeTrackingMetrics } from "./TimeTrackingMetrics";
+import { useTimeTracker } from "@/hooks/workOrders/useTimeTracker";
+import { format } from "date-fns";
 
 interface TimeTrackingSectionProps {
   workOrderId: string;
@@ -20,14 +21,14 @@ export function TimeTrackingSection({
   onUpdateTimeEntries
 }: TimeTrackingSectionProps) {
   const {
+    activeTimer,
     isTracking,
-    activeEntry,
-    startTimeTracking,
-    stopTimeTracking,
+    handleStartTimer,
+    handleStopTimer,
     fetchTimeEntries
-  } = useWorkOrderTimeTracking(workOrderId);
+  } = useTimeTracker(workOrderId);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const loadTimeEntries = async () => {
       const entries = await fetchTimeEntries();
       onUpdateTimeEntries(entries);
@@ -36,26 +37,12 @@ export function TimeTrackingSection({
     loadTimeEntries();
   }, [workOrderId, fetchTimeEntries, onUpdateTimeEntries]);
 
-  // Current user info would come from auth context in a real app
-  const currentUser = {
-    id: "current-user",
-    name: "Current User"
-  };
-
-  const handleStartTracking = () => {
-    startTimeTracking(currentUser.id, currentUser.name);
-  };
-
-  const handleStopTracking = async () => {
-    const completedEntry = await stopTimeTracking();
+  const handleTimerStop = async () => {
+    const completedEntry = await handleStopTimer();
     if (completedEntry) {
       onUpdateTimeEntries([completedEntry, ...timeEntries]);
     }
   };
-
-  const totalBillableTime = timeEntries.reduce((total, entry) => {
-    return entry.billable ? total + (entry.duration || 0) : total;
-  }, 0);
 
   return (
     <Card className="mt-6">
@@ -70,7 +57,7 @@ export function TimeTrackingSection({
               variant="outline" 
               size="sm" 
               className="text-red-500" 
-              onClick={handleStopTracking}
+              onClick={handleTimerStop}
             >
               <Pause className="mr-1 h-4 w-4" />
               Stop Timer
@@ -80,7 +67,7 @@ export function TimeTrackingSection({
               variant="outline" 
               size="sm" 
               className="text-green-500" 
-              onClick={handleStartTracking}
+              onClick={handleStartTimer}
             >
               <Play className="mr-1 h-4 w-4" />
               Start Timer
@@ -90,32 +77,29 @@ export function TimeTrackingSection({
       </CardHeader>
       
       <CardContent className="p-6">
-        {activeEntry && (
+        {activeTimer && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded flex justify-between items-center">
             <div>
               <p className="font-medium">Timer Running</p>
               <p className="text-sm text-slate-500">
-                Started: {formatRelativeTime(activeEntry.startTime)}
+                Started: {formatRelativeTime(activeTimer.startTime)}
               </p>
             </div>
           </div>
         )}
         
+        <TimeTrackingMetrics timeEntries={timeEntries} />
+        
         {timeEntries.length > 0 ? (
           <div className="space-y-4">
-            <div className="flex justify-between mb-4">
-              <p className="text-sm text-slate-500">Total Billable Time</p>
-              <p className="font-medium">{totalBillableTime} minutes</p>
-            </div>
-            
             <div className="border rounded-md divide-y">
               {timeEntries.map((entry) => (
                 <div key={entry.id} className="p-4 flex justify-between items-center">
                   <div>
                     <p className="font-medium">{entry.employeeName}</p>
                     <p className="text-sm text-slate-500">
-                      {formatRelativeTime(entry.startTime)}
-                      {entry.endTime ? ` - ${formatRelativeTime(entry.endTime)}` : ' - Ongoing'}
+                      {format(new Date(entry.startTime), 'MMM d, h:mm a')}
+                      {entry.endTime ? ` - ${format(new Date(entry.endTime), 'h:mm a')}` : ' - Ongoing'}
                     </p>
                   </div>
                   <div className="text-right">
