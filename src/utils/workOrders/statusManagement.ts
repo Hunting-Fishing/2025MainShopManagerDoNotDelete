@@ -47,6 +47,31 @@ export const isStatusTransitionAllowed = (
 };
 
 /**
+ * Returns the available status options for the given current status
+ */
+export const getNextStatusOptions = (
+  currentStatus: WorkOrder["status"]
+): { label: string; status: WorkOrder["status"]; color: string }[] => {
+  // Define allowed transitions
+  const allowedTransitions: Record<string, string[]> = {
+    "pending": ["in-progress", "cancelled"],
+    "in-progress": ["completed", "cancelled", "pending"],
+    "completed": ["in-progress", "pending"],
+    "cancelled": ["in-progress", "pending"]
+  };
+  
+  // Get allowed next statuses
+  const nextStatuses = allowedTransitions[currentStatus] || [];
+  
+  // Map to objects with label and color
+  return nextStatuses.map(status => ({
+    label: statusConfig[status].label,
+    status: status as WorkOrder["status"],
+    color: statusConfig[status].color
+  }));
+};
+
+/**
  * Handles side effects of status changes
  */
 export const handleStatusTransition = (
