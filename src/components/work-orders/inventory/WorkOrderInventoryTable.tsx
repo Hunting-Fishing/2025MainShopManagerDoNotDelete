@@ -8,19 +8,33 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface WorkOrderInventoryTableProps {
-  workOrderId: string;
+  workOrderId?: string;
+  items?: WorkOrderInventoryItem[];
   onRemoveItem: (id: string) => void;
-  onUpdateItem: (id: string, updates: Partial<WorkOrderInventoryItem>) => void;
+  onUpdateItem?: (id: string, updates: Partial<WorkOrderInventoryItem>) => void;
+  onUpdateQuantity?: (id: string, quantity: number) => void;
 }
 
 export function WorkOrderInventoryTable({
   workOrderId,
+  items: propItems,
   onRemoveItem,
-  onUpdateItem
+  onUpdateItem,
+  onUpdateQuantity
 }: WorkOrderInventoryTableProps) {
   const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
 
+  // If items are passed as props, use them
   useEffect(() => {
+    if (propItems) {
+      setItems(propItems);
+    }
+  }, [propItems]);
+
+  // If workOrderId is provided, fetch items from supabase
+  useEffect(() => {
+    if (!workOrderId || propItems) return; // Skip if items are provided via props
+
     const fetchItems = async () => {
       const { data } = await supabase
         .from('work_order_inventory_items')
@@ -55,7 +69,16 @@ export function WorkOrderInventoryTable({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workOrderId]);
+  }, [workOrderId, propItems]);
+
+  // Handle quantity updates
+  const handleQuantityUpdate = (itemId: string, newQuantity: number) => {
+    if (onUpdateQuantity) {
+      onUpdateQuantity(itemId, newQuantity);
+    } else if (onUpdateItem) {
+      onUpdateItem(itemId, { quantity: newQuantity });
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -104,7 +127,7 @@ export function WorkOrderInventoryTable({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onUpdateItem(item.id, { quantity: item.quantity + 1 })}
+                    onClick={() => handleQuantityUpdate(item.id, item.quantity + 1)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
