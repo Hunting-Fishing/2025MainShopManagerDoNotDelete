@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from 'react';
-import { useNodesState, useEdgesState, addEdge } from '@xyflow/react';
+import { useState, useCallback } from 'react';
+import { useNodesState, useEdgesState, addEdge, ReactFlowProvider } from '@xyflow/react';
 import { FlowTypeSelector } from "./FlowTypeSelector";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { useWorkflows } from "@/hooks/useWorkflows";
@@ -28,9 +28,38 @@ export function WorkflowsTab() {
     initialEdges as WorkflowEdge[]
   );
 
-  const onConnect = (params: any) => {
+  const onConnect = useCallback((params: any) => {
     setEdges((eds) => addEdge(params, eds));
-  };
+  }, [setEdges]);
+
+  const handleSaveWorkflow = useCallback(async () => {
+    if (!currentWorkflow) {
+      toast({
+        title: "Error",
+        description: "No workflow selected to save",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateWorkflow.mutateAsync({
+        id: currentWorkflow.id,
+        nodes: nodes as WorkflowNode[],
+        edges: edges as WorkflowEdge[]
+      });
+      toast({
+        title: "Success",
+        description: "Workflow saved successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save workflow",
+        variant: "destructive",
+      });
+    }
+  }, [currentWorkflow, nodes, edges, updateWorkflow, toast]);
 
   const handleWorkflowSelect = async (type: string) => {
     // Save current workflow before switching if it exists
@@ -77,13 +106,17 @@ export function WorkflowsTab() {
             selectedWorkflow={selectedWorkflow} 
             onSelect={handleWorkflowSelect}
           />
-          <WorkflowEditor
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-          />
+          <ReactFlowProvider>
+            <WorkflowEditor
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onSave={handleSaveWorkflow}
+              isSaving={updateWorkflow.isPending}
+            />
+          </ReactFlowProvider>
         </CardContent>
       </Card>
     </div>
