@@ -1,3 +1,4 @@
+
 import { 
   ReactFlow, 
   Background, 
@@ -7,16 +8,18 @@ import {
   useReactFlow, 
   Panel, 
   applyEdgeChanges, 
-  applyNodeChanges
+  applyNodeChanges,
+  useKeyPress
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 import { nodeTypes } from './CustomNodes';
 import { WorkflowControls, WorkflowNodeToolbar } from './WorkflowControls';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Grid3X3, Save, Trash2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Grid3X3, Save, Trash2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface WorkflowEditorProps {
   nodes: WorkflowNode[];
@@ -39,9 +42,22 @@ export function WorkflowEditor({
 }: WorkflowEditorProps) {
   const reactFlowInstance = useReactFlow();
   const [showGrid, setShowGrid] = useState(true);
+  const { toast } = useToast();
   
   // Track if workflow has been modified
   const [isModified, setIsModified] = useState(false);
+  
+  // Track selected nodes for keyboard shortcuts
+  const [selectedNodes, setSelectedNodes] = useState<WorkflowNode[]>([]);
+
+  useEffect(() => {
+    const handleSelectedNodes = () => {
+      const selected = nodes.filter(node => node.selected);
+      setSelectedNodes(selected);
+    };
+    
+    handleSelectedNodes();
+  }, [nodes]);
 
   const onAddNode = useCallback((type: string) => {
     const position = {
@@ -76,11 +92,79 @@ export function WorkflowEditor({
     setIsModified(true);
   }, [reactFlowInstance]);
 
+  const handleNodeDuplicate = useCallback((id: string) => {
+    // Find the node to duplicate
+    const nodeToDuplicate = nodes.find(node => node.id === id);
+    
+    if (nodeToDuplicate) {
+      const newNode: WorkflowNode = {
+        ...nodeToDuplicate,
+        id: `node_${Date.now()}`,
+        position: {
+          x: nodeToDuplicate.position.x + 50,
+          y: nodeToDuplicate.position.y + 50
+        },
+        selected: false
+      };
+      
+      reactFlowInstance.addNodes(newNode);
+      toast({
+        title: "Node Duplicated",
+        description: "A copy of the node has been created."
+      });
+      setIsModified(true);
+    }
+  }, [nodes, reactFlowInstance, toast]);
+
   const handleNodeDelete = useCallback((id: string) => {
     reactFlowInstance.setNodes(nds => nds.filter(node => node.id !== id));
     reactFlowInstance.setEdges(eds => eds.filter(edge => edge.source !== id && edge.target !== id));
     setIsModified(true);
   }, [reactFlowInstance]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Delete key - delete selected nodes
+      if (event.key === 'Delete' && selectedNodes.length > 0) {
+        const nodesToDelete = selectedNodes.map(node => node.id);
+        reactFlowInstance.setNodes(nds => 
+          nds.filter(node => !nodesToDelete.includes(node.id))
+        );
+        reactFlowInstance.setEdges(eds => 
+          eds.filter(edge => 
+            !nodesToDelete.includes(edge.source) && 
+            !nodesToDelete.includes(edge.target)
+          )
+        );
+        setIsModified(true);
+      }
+      
+      // Ctrl+D - duplicate selected nodes
+      if (event.key === 'd' && (event.ctrlKey || event.metaKey) && selectedNodes.length > 0) {
+        event.preventDefault();
+        const newNodes = selectedNodes.map(node => ({
+          ...node,
+          id: `node_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+          position: {
+            x: node.position.x + 50,
+            y: node.position.y + 50
+          },
+          selected: false
+        }));
+        
+        reactFlowInstance.addNodes(newNodes);
+        toast({
+          title: `${newNodes.length} Node(s) Duplicated`,
+          description: "Copies of the selected nodes have been created."
+        });
+        setIsModified(true);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [reactFlowInstance, selectedNodes, toast]);
 
   // Custom node change handler to track modifications
   const handleNodesChange = useCallback((changes: any) => {
@@ -199,7 +283,8 @@ export function WorkflowEditor({
               key={node.id} 
               node={node} 
               onNodeEdit={handleNodeEdit} 
-              onNodeDelete={handleNodeDelete} 
+              onNodeDelete={handleNodeDelete}
+              onNodeDuplicate={handleNodeDuplicate}
             />
           ))}
           
@@ -208,6 +293,7 @@ export function WorkflowEditor({
               onAddNode={onAddNode}
               onSave={handleSave}
               isSaving={isSaving}
+              nodeCount={nodes.length}
             />
           </Panel>
           

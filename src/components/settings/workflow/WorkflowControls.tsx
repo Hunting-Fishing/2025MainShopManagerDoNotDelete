@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Save, Plus, GitBranch, PlusSquare, CircleHelp, CircleOff, Flag } from 'lucide-react';
+import { PlayCircle, Save, Plus, GitBranch, PlusSquare, CircleHelp, CircleOff, Flag, Copy, Trash2, Edit } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card } from '@/components/ui/card';
 import { WorkflowNode } from '@/types/workflow';
@@ -17,19 +17,26 @@ interface WorkflowControlsProps {
   onAddNode: (type: string) => void;
   onSave: () => void;
   isSaving: boolean;
+  nodeCount?: number;
 }
 
 interface WorkflowNodeToolbarProps {
   node: WorkflowNode;
   onNodeEdit: (id: string, data: any) => void;
   onNodeDelete: (id: string) => void;
+  onNodeDuplicate?: (id: string) => void;
 }
 
-export function WorkflowControls({ onAddNode, onSave, isSaving }: WorkflowControlsProps) {
+export function WorkflowControls({ onAddNode, onSave, isSaving, nodeCount = 0 }: WorkflowControlsProps) {
   return (
     <Card className="p-3 w-auto space-y-3 shadow-md border-gray-200 bg-white bg-opacity-95">
-      <div className="font-medium text-sm text-gray-700 mb-2 flex items-center">
-        <GitBranch className="h-4 w-4 mr-1.5 text-indigo-600" /> Add Node
+      <div className="font-medium text-sm text-gray-700 mb-2 flex items-center justify-between">
+        <div className="flex items-center">
+          <GitBranch className="h-4 w-4 mr-1.5 text-indigo-600" /> Add Node
+        </div>
+        <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded-full">
+          {nodeCount} nodes
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <NodeButton
@@ -60,6 +67,15 @@ export function WorkflowControls({ onAddNode, onSave, isSaving }: WorkflowContro
           color="red"
           onClick={() => onAddNode('end')}
         />
+      </div>
+      <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
+        <kbd className="px-2 py-1 bg-gray-100 rounded text-gray-700 mr-1">Delete</kbd> 
+        Remove node
+        <br />
+        <kbd className="px-2 py-1 bg-gray-100 rounded text-gray-700 mr-1">Ctrl</kbd>
+        <kbd className="px-2 py-1 bg-gray-100 rounded text-gray-700 mr-1">+</kbd>
+        <kbd className="px-2 py-1 bg-gray-100 rounded text-gray-700 mr-1">D</kbd> 
+        Duplicate node
       </div>
     </Card>
   );
@@ -132,7 +148,7 @@ function NodeButton({
   );
 }
 
-export function WorkflowNodeToolbar({ node, onNodeEdit, onNodeDelete }: WorkflowNodeToolbarProps) {
+export function WorkflowNodeToolbar({ node, onNodeEdit, onNodeDelete, onNodeDuplicate }: WorkflowNodeToolbarProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [label, setLabel] = useState(node.data.label || '');
   
@@ -150,9 +166,15 @@ export function WorkflowNodeToolbar({ node, onNodeEdit, onNodeDelete }: Workflow
     setIsEditing(false);
   };
   
+  const handleDuplicate = () => {
+    if (onNodeDuplicate) {
+      onNodeDuplicate(node.id);
+    }
+  };
+  
   return (
     <NodeToolbar 
-      nodeId={node.id}  // Change from 'node={node}' to 'nodeId={node.id}'
+      nodeId={node.id}
       position={Position.Top} 
       offset={10}
       className="bg-white rounded-md shadow-md border p-2 flex items-center space-x-2"
@@ -164,7 +186,7 @@ export function WorkflowNodeToolbar({ node, onNodeEdit, onNodeDelete }: Workflow
             size="sm"
             className="h-7 px-2 text-xs"
           >
-            Edit
+            <Edit className="h-3 w-3 mr-1" /> Edit
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-72 p-3">
@@ -199,13 +221,25 @@ export function WorkflowNodeToolbar({ node, onNodeEdit, onNodeDelete }: Workflow
           </div>
         </PopoverContent>
       </Popover>
+      
+      {onNodeDuplicate && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          onClick={handleDuplicate}
+        >
+          <Copy className="h-3 w-3 mr-1" /> Duplicate
+        </Button>
+      )}
+      
       <Button 
         variant="ghost" 
         size="sm" 
         className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
         onClick={() => onNodeDelete(node.id)}
       >
-        Delete
+        <Trash2 className="h-3 w-3 mr-1" /> Delete
       </Button>
     </NodeToolbar>
   );
