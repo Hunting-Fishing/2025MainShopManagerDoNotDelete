@@ -152,7 +152,7 @@ export function WorkflowNodeToolbar({ node, onNodeEdit, onNodeDelete }: Workflow
   
   return (
     <NodeToolbar 
-      node={node} 
+      nodeId={node.id}  // Change from 'node={node}' to 'nodeId={node.id}'
       position={Position.Top} 
       offset={10}
       className="bg-white rounded-md shadow-md border p-2 flex items-center space-x-2"
