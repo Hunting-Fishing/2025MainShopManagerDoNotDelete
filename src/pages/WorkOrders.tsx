@@ -4,6 +4,8 @@ import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
 import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
 import WorkOrdersPagination from "@/components/work-orders/WorkOrdersPagination";
+import { WorkOrderStats } from "@/components/work-orders/WorkOrderStats";
+import { WorkOrderBatchActions } from "@/components/work-orders/WorkOrderBatchActions";
 import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -12,13 +14,21 @@ import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders"
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
   const [selectedTechnician, setSelectedTechnician] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<{ 
+    from: Date | undefined; 
+    to: Date | undefined 
+  }>({ from: undefined, to: undefined });
+  const [serviceCategory, setServiceCategory] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [technicians, setTechnicians] = useState<string[]>([]);
+  const [selectedWorkOrders, setSelectedWorkOrders] = useState<WorkOrder[]>([]);
+  const [isSelectAll, setIsSelectAll] = useState(false);
   
-  const itemsPerPage = 5; // Number of work orders to show per page
+  const itemsPerPage = 10; // Number of work orders to show per page
 
   // Fetch work orders from Supabase
   useEffect(() => {
@@ -97,19 +107,43 @@ export default function WorkOrders() {
 
   // Filter work orders based on search query and filters
   const filteredWorkOrders: WorkOrder[] = workOrders.filter((order) => {
+    // Search filter
     const matchesSearch = 
       !searchQuery ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.description.toLowerCase().includes(searchQuery.toLowerCase());
     
+    // Status filter
     const matchesStatus = 
       statusFilter.length === 0 || statusFilter.includes(order.status);
+      
+    // Priority filter
+    const matchesPriority = 
+      priorityFilter.length === 0 || priorityFilter.includes(order.priority);
     
+    // Technician filter
     const matchesTechnician = 
       selectedTechnician === "all" || order.technician === selectedTechnician;
     
-    return matchesSearch && matchesStatus && matchesTechnician;
+    // Service category filter
+    const matchesCategory =
+      serviceCategory === "all" || 
+      order.service_category_id === serviceCategory;
+    
+    // Date range filter
+    const orderDate = new Date(order.date);
+    const matchesDateRange =
+      !dateRange.from || 
+      (orderDate >= dateRange.from && 
+        (!dateRange.to || orderDate <= dateRange.to));
+    
+    return matchesSearch && 
+           matchesStatus && 
+           matchesPriority && 
+           matchesTechnician && 
+           matchesCategory && 
+           matchesDateRange;
   });
 
   // Calculate pagination values
@@ -125,13 +159,31 @@ export default function WorkOrders() {
   const resetFilters = () => {
     setSearchQuery("");
     setStatusFilter([]);
+    setPriorityFilter([]);
     setSelectedTechnician("all");
+    setDateRange({ from: undefined, to: undefined });
+    setServiceCategory("all");
     setCurrentPage(1); // Reset to first page when filters change
   };
 
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  // Handle work order selection
+  const handleSelectWorkOrder = (workOrder: WorkOrder, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedWorkOrders([...selectedWorkOrders, workOrder]);
+    } else {
+      setSelectedWorkOrders(selectedWorkOrders.filter(wo => wo.id !== workOrder.id));
+      setIsSelectAll(false);
+    }
+  };
+
+  // Handle batch action completion
+  const handleBatchActionComplete = () => {
+    // Refresh the current page if needed
   };
 
   if (loading) {
@@ -146,20 +198,44 @@ export default function WorkOrders() {
     <div className="space-y-6">
       <WorkOrdersHeader workOrders={filteredWorkOrders} />
       
+      {/* Dashboard Stats */}
+      <WorkOrderStats />
+      
+      {/* Batch Actions */}
+      <WorkOrderBatchActions
+        selectedWorkOrders={selectedWorkOrders}
+        setSelectedWorkOrders={setSelectedWorkOrders}
+        allWorkOrders={currentItems}
+        setAllWorkOrders={setWorkOrders}
+        isSelectAll={isSelectAll}
+        setIsSelectAll={setIsSelectAll}
+        onBatchActionComplete={handleBatchActionComplete}
+      />
+      
       {/* Filters and search */}
       <WorkOrderFilters 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
+        priorityFilter={priorityFilter}
+        setPriorityFilter={setPriorityFilter}
         selectedTechnician={selectedTechnician}
         setSelectedTechnician={setSelectedTechnician}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        serviceCategory={serviceCategory}
+        setServiceCategory={setServiceCategory}
         technicians={technicians}
         resetFilters={resetFilters}
       />
 
       {/* Work Orders table */}
-      <WorkOrdersTable workOrders={currentItems} />
+      <WorkOrdersTable 
+        workOrders={currentItems} 
+        selectedWorkOrders={selectedWorkOrders}
+        onSelectWorkOrder={handleSelectWorkOrder}
+      />
       
       {/* Pagination */}
       {filteredWorkOrders.length > 0 && (

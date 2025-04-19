@@ -1,8 +1,17 @@
 
 import { exportToCSV, exportToExcel, exportToPDF } from "@/utils/export";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { WorkOrder } from "@/data/workOrdersData";
-import { ExportMenuBase } from "../invoices/ExportMenuBase";
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FileSpreadsheet, FileCsv, FileText, FileJson, Download, FileX2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WorkOrdersExportMenuProps {
@@ -12,7 +21,7 @@ interface WorkOrdersExportMenuProps {
 export function WorkOrdersExportMenu({ workOrders }: WorkOrdersExportMenuProps) {
   const isMobile = useIsMobile();
   
-  const handleExportAll = (format: "csv" | "excel" | "pdf") => {
+  const handleExportAll = (format: "csv" | "excel" | "pdf" | "json") => {
     console.log(`Exporting all work orders as ${format}`);
     
     if (workOrders.length === 0) {
@@ -36,6 +45,9 @@ export function WorkOrdersExportMenu({ workOrders }: WorkOrdersExportMenuProps) 
       technician: order.technician,
       location: order.location || "N/A",
       billableTime: order.totalBillableTime ? `${order.totalBillableTime} minutes` : "N/A",
+      serviceType: order.serviceType || order.service_type || "N/A",
+      createdAt: order.createdAt || "N/A",
+      notes: order.notes || "N/A",
     }));
 
     // Define columns for PDF export
@@ -50,6 +62,7 @@ export function WorkOrdersExportMenu({ workOrders }: WorkOrdersExportMenuProps) 
       { header: "Technician", dataKey: "technician" },
       { header: "Location", dataKey: "location" },
       { header: "Billable Time", dataKey: "billableTime" },
+      { header: "Service Type", dataKey: "serviceType" },
     ];
 
     try {
@@ -63,6 +76,18 @@ export function WorkOrdersExportMenu({ workOrders }: WorkOrdersExportMenuProps) 
         case "pdf":
           exportToPDF(exportData, "Work_Orders_List", columns);
           break;
+        case "json":
+          // Export as JSON
+          const jsonString = JSON.stringify(exportData, null, 2);
+          const blob = new Blob([jsonString], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "Work_Orders_List.json";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          break;
       }
 
       toast({
@@ -70,14 +95,48 @@ export function WorkOrdersExportMenu({ workOrders }: WorkOrdersExportMenuProps) 
         description: `Work orders exported as ${format.toUpperCase()}`,
       });
     } catch (error) {
-      throw error; // Let base component handle the error
+      console.error("Export error:", error);
+      toast({
+        title: "Export failed",
+        description: `Failed to export as ${format.toUpperCase()}`,
+        variant: "destructive"
+      });
     }
   };
 
   return (
-    <ExportMenuBase 
-      onExport={handleExportAll} 
-      buttonText={isMobile ? "Export" : "Export All"} 
-    />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          {isMobile ? "Export" : "Export All"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleExportAll("csv")}>
+          <FileCsv className="mr-2 h-4 w-4 text-blue-600" />
+          Export as CSV
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleExportAll("excel")}>
+          <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
+          Export as Excel
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleExportAll("pdf")}>
+          <FileText className="mr-2 h-4 w-4 text-red-600" />
+          Export as PDF
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleExportAll("json")}>
+          <FileJson className="mr-2 h-4 w-4 text-yellow-600" />
+          Export as JSON
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={workOrders.length === 0} className="text-muted-foreground">
+          <FileX2 className="mr-2 h-4 w-4" />
+          {workOrders.length} work order{workOrders.length === 1 ? '' : 's'} available
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
