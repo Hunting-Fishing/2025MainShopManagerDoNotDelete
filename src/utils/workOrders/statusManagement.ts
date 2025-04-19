@@ -95,3 +95,60 @@ export const getNextStatusOptions = (currentStatus: WorkOrder["status"]): Status
       return [];
   }
 };
+
+// Check if a status transition is allowed
+export const isStatusTransitionAllowed = (
+  currentStatus: WorkOrder["status"], 
+  newStatus: WorkOrder["status"]
+): boolean => {
+  if (currentStatus === newStatus) {
+    return false; // No change needed
+  }
+  
+  // Get list of allowed next statuses
+  const allowedTransitions = getNextStatusOptions(currentStatus);
+  
+  // Check if the new status is in the list of allowed transitions
+  return allowedTransitions.some(transition => transition.status === newStatus);
+};
+
+// Generate updates when transitioning to a new status
+export const handleStatusTransition = (
+  workOrder: WorkOrder, 
+  newStatus: WorkOrder["status"]
+): Partial<WorkOrder> => {
+  const updates: Partial<WorkOrder> = { status: newStatus };
+  
+  // Add any status-specific updates
+  if (newStatus === "in-progress" && workOrder.status !== "in-progress") {
+    updates.startTime = new Date().toISOString();
+  } else if (newStatus === "completed" && !workOrder.endTime) {
+    updates.endTime = new Date().toISOString();
+  }
+  
+  return updates;
+};
+
+// Generate human-readable message for status changes
+export const generateStatusChangeMessage = (
+  oldStatus: WorkOrder["status"],
+  newStatus: WorkOrder["status"],
+  userName: string
+): string => {
+  const statusLabels = {
+    pending: "Pending",
+    "in-progress": "In Progress",
+    completed: "Completed",
+    cancelled: "Cancelled"
+  };
+  
+  if (oldStatus === "completed" || oldStatus === "cancelled") {
+    if (newStatus === "in-progress") {
+      return `Work order reopened and marked as In Progress by ${userName}`;
+    } else if (newStatus === "pending") {
+      return `Work order reopened and marked as Pending by ${userName}`;
+    }
+  }
+  
+  return `Status changed from ${statusLabels[oldStatus]} to ${statusLabels[newStatus]} by ${userName}`;
+};
