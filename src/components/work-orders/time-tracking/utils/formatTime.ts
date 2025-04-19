@@ -1,6 +1,4 @@
 
-// Format time functions that can be used across components
-
 /**
  * Format date for display
  */
