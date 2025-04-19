@@ -7,19 +7,46 @@ import { MessageSquare, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { updateWorkOrder } from "@/utils/workOrders/crud";
 import { WorkOrder } from "@/types/workOrder";
+import { UseFormReturn } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 
 interface NotesSectionProps {
-  workOrder: WorkOrder;
+  workOrder?: WorkOrder;
   onNotesUpdate?: (updatedWorkOrder: WorkOrder) => void;
+  form?: UseFormReturn<any>; // Add form prop as optional
 }
 
-export function NotesSection({ workOrder, onNotesUpdate }: NotesSectionProps) {
-  const [notes, setNotes] = useState(workOrder.notes || "");
+export function NotesSection({ workOrder, onNotesUpdate, form }: NotesSectionProps) {
+  // If form is provided, render the form version
+  if (form) {
+    return (
+      <FormField
+        control={form.control}
+        name="notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Notes</FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder="Add any notes or comments about this work order"
+                className="min-h-[150px]"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+  
+  // For non-form version (detail view)
+  const [notes, setNotes] = useState(workOrder?.notes || "");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (notes === workOrder.notes) {
+    if (!workOrder || notes === workOrder.notes) {
       setIsEditing(false);
       return;
     }
@@ -74,7 +101,7 @@ export function NotesSection({ workOrder, onNotesUpdate }: NotesSectionProps) {
             variant="outline" 
             size="sm" 
             onClick={() => {
-              setNotes(workOrder.notes || "");
+              setNotes(workOrder?.notes || "");
               setIsEditing(false);
             }}
           >
@@ -102,7 +129,7 @@ export function NotesSection({ workOrder, onNotesUpdate }: NotesSectionProps) {
           </div>
         ) : (
           <div className="min-h-[100px] whitespace-pre-wrap">
-            {workOrder.notes ? (
+            {workOrder?.notes ? (
               workOrder.notes
             ) : (
               <p className="text-slate-500 italic">

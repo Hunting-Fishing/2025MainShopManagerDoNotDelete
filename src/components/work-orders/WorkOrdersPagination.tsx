@@ -1,12 +1,8 @@
 
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import React from "react";
+import { Pagination } from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface WorkOrdersPaginationProps {
   currentPage: number;
@@ -43,37 +39,38 @@ export default function WorkOrdersPagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <Pagination className="mt-4">
-      <PaginationContent>
-        {/* Previous button */}
-        <PaginationItem>
-          <PaginationPrevious 
-            onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
-            className={currentPage === 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-          />
-        </PaginationItem>
-        
-        {/* Page numbers */}
-        {pageNumbers.map((number) => (
-          <PaginationItem key={number}>
-            <PaginationLink
-              isActive={currentPage === number}
-              onClick={() => onPageChange(number)}
-              className="cursor-pointer"
-            >
-              {number}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
-        
-        {/* Next button */}
-        <PaginationItem>
-          <PaginationNext
-            onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
-            className={currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-          />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
+    <div className="flex items-center justify-center gap-2 mt-4">
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      
+      {pageNumbers.map((number) => (
+        <Button
+          key={number}
+          variant={currentPage === number ? "default" : "outline"}
+          size="sm"
+          className={`h-8 w-8 ${currentPage === number ? "bg-indigo-600 hover:bg-indigo-700" : ""}`}
+          onClick={() => onPageChange(number)}
+        >
+          {number}
+        </Button>
+      ))}
+      
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }
