@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { updateWorkOrder } from "@/utils/workOrders/crud";
+import { updateWorkOrder } from "@/utils/workOrders";
 import { WorkOrder } from "@/types/workOrder";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";

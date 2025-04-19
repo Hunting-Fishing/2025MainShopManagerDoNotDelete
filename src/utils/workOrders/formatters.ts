@@ -1,36 +1,26 @@
 
-import { WorkOrder, TimeEntry } from '@/types/workOrder';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 
-// Format time in hours and minutes
-export function formatTimeInHoursAndMinutes(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  
-  if (hours === 0) {
-    return `${remainingMinutes}m`;
-  } else if (remainingMinutes === 0) {
-    return `${hours}h`;
-  } else {
-    return `${hours}h ${remainingMinutes}m`;
-  }
-}
-
-// Format date
-export function formatDate(dateString: string): string {
+// Format a date string into a human-readable format
+export const formatDate = (dateString: string): string => {
   try {
-    if (!dateString) return 'N/A';
-    return format(parseISO(dateString), 'MMM dd, yyyy');
+    const date = new Date(dateString);
+    return format(date, 'MMM d, yyyy');
   } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'Invalid date';
+    console.error("Error formatting date:", error);
+    return dateString || 'N/A';
   }
-}
+};
 
-// Format currency
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-}
+// Format time in minutes to hours and minutes
+export const formatTimeInHoursAndMinutes = (minutes: number): string => {
+  if (minutes === 0) return '0h 0m';
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  
+  return `${hours}h ${mins}m`;
+};

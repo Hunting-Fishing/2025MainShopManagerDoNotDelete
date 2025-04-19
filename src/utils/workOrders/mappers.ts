@@ -1,171 +1,92 @@
 
-import { WorkOrder, TimeEntry, DbTimeEntry, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
+import { WorkOrder, TimeEntry, DbTimeEntry } from '@/types/workOrder';
 
-// Map time entry from DB format to app format
-export const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
-  id: entry.id,
-  employeeId: entry.employee_id,
-  employeeName: entry.employee_name,
-  startTime: entry.start_time,
-  endTime: entry.end_time,
-  duration: entry.duration,
-  notes: entry.notes || '',
-  billable: entry.billable || false
-});
-
-// Database to app model mapping
-export const mapDatabaseToAppModel = (data: any): WorkOrder => {
-  const customers = data.customers as any || {};
-  const profiles = data.profiles as any || {};
-  const statusValue = data.status || 'pending';
-  
-  // Ensure status is one of the allowed values
-  let typedStatus: WorkOrderStatusType = "pending";
-  if (statusValue === "in-progress" || statusValue === "completed" || statusValue === "cancelled") {
-    typedStatus = statusValue;
-  }
-  
-  // Map time entries if they exist
-  const timeEntries: TimeEntry[] = data.work_order_time_entries 
-    ? data.work_order_time_entries.map((entry: any) => mapTimeEntryFromDb(entry))
+// Map database model to application model
+export const mapDatabaseToAppModel = (dbData: any): WorkOrder => {
+  // Extract time entries if available
+  const timeEntries = dbData.work_order_time_entries 
+    ? dbData.work_order_time_entries.map(mapTimeEntryFromDb)
     : [];
-  
-  const workOrder: WorkOrder = {
-    id: data.id,
-    date: data.created_at,
-    customer: `${customers?.first_name || ''} ${customers?.last_name || ''}`.trim(),
-    description: data.description || '',
-    status: typedStatus,
-    priority: determinePriority(data) as WorkOrderPriorityType,
-    technician: `${profiles?.first_name || ''} ${profiles?.last_name || ''}`.trim() || 'Unassigned',
-    location: data.location || '',
-    dueDate: data.end_time || '',
-    notes: data.notes || '',
+
+  // Map the database model to the application model
+  return {
+    id: dbData.id,
+    customer: dbData.customers ? `${dbData.customers.first_name} ${dbData.customers.last_name}`.trim() : 'Unknown',
+    customer_id: dbData.customer_id,
+    description: dbData.description || '',
+    status: dbData.status || 'pending',
+    priority: dbData.priority || 'medium',
+    technician: dbData.profiles ? `${dbData.profiles.first_name} ${dbData.profiles.last_name}`.trim() : 'Unassigned',
+    technician_id: dbData.technician_id,
+    date: dbData.created_at,
+    dueDate: dbData.due_date || '',
+    location: dbData.location || '',
+    notes: dbData.notes || '',
+    inventoryItems: dbData.inventory_items || [],
     timeEntries: timeEntries,
-    totalBillableTime: timeEntries.reduce((sum, entry) => 
-      sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
-    createdBy: data.created_by || 'System',
-    createdAt: data.created_at,
-    lastUpdatedBy: data.updated_by || '',
-    lastUpdatedAt: data.updated_at,
-    vehicle_id: data.vehicle_id,
-    vehicleId: data.vehicle_id,
+    totalBillableTime: timeEntries.reduce((total, entry) => 
+      entry.billable ? total + entry.duration : total, 0),
+    createdAt: dbData.created_at,
+    lastUpdatedAt: dbData.updated_at,
+    vehicle_id: dbData.vehicle_id,
+    vehicle_make: dbData.vehicle_make,
+    vehicle_model: dbData.vehicle_model,
+    service_type: dbData.service_type,
+    service_category: dbData.service_category,
+    service_category_id: dbData.service_category_id,
+    total_cost: dbData.total_cost,
+    estimated_hours: dbData.estimated_hours,
+    // Add other fields as necessary
   };
-  
-  // Handle service category and type safely
-  if (data.service_category_id !== undefined) {
-    workOrder.service_category_id = data.service_category_id;
-  }
-  
-  if (data.service_type !== undefined) {
-    workOrder.service_type = data.service_type;
-    workOrder.serviceType = data.service_type;
-  }
-  
-  if (data.service_category !== undefined) {
-    workOrder.serviceCategory = data.service_category;
-    workOrder.service_category = data.service_category;
-  }
-  
-  return workOrder;
 };
 
-// Helper function to convert camelCase to snake_case for database storage
-export const mapAppModelToDatabase = (workOrder: Partial<WorkOrder>) => {
-  const result: any = {};
-
-  // Handle specific field mappings
-  if (workOrder.serviceCategory !== undefined) {
-    result.service_category = workOrder.serviceCategory;
-  } else if (workOrder.service_category !== undefined) {
-    result.service_category = workOrder.service_category;
-  }
-  
-  if (workOrder.serviceType !== undefined) {
-    result.service_type = workOrder.serviceType;
-  } else if (workOrder.service_type !== undefined) {
-    result.service_type = workOrder.service_type;
-  }
-  
-  if (workOrder.service_category_id !== undefined) {
-    result.service_category_id = workOrder.service_category_id;
-  }
-
-  // Handle vehicle properties
-  if (workOrder.vehicleId !== undefined) {
-    result.vehicle_id = workOrder.vehicleId;
-  } else if (workOrder.vehicle_id !== undefined) {
-    result.vehicle_id = workOrder.vehicle_id;
-  }
-
-  if (workOrder.vehicleMake !== undefined) {
-    result.vehicle_make = workOrder.vehicleMake;
-  } else if (workOrder.vehicle_make !== undefined) {
-    result.vehicle_make = workOrder.vehicle_make;
-  }
-
-  if (workOrder.vehicleModel !== undefined) {
-    result.vehicle_model = workOrder.vehicleModel;
-  } else if (workOrder.vehicle_model !== undefined) {
-    result.vehicle_model = workOrder.vehicle_model;
-  }
-
-  // Standard fields
-  result.description = workOrder.description;
-  result.status = workOrder.status;
-  result.customer_id = typeof workOrder.customer !== 'string' ? workOrder.customer : null;
-  result.technician_id = typeof workOrder.technician !== 'string' ? workOrder.technician : null;
-  result.location = workOrder.location;
-  result.notes = workOrder.notes || '';
-  result.end_time = workOrder.dueDate; // Map dueDate to end_time for database
-  result.priority = workOrder.priority;
-  result.total_cost = workOrder.total_cost || 0;
-  result.estimated_hours = workOrder.estimated_hours || null;
-
-  return result;
+// Map application model to database model
+export const mapAppModelToDatabase = (workOrder: WorkOrder): any => {
+  return {
+    id: workOrder.id,
+    customer_id: workOrder.customer_id,
+    description: workOrder.description,
+    status: workOrder.status,
+    priority: workOrder.priority,
+    technician_id: workOrder.technician_id,
+    due_date: workOrder.dueDate,
+    location: workOrder.location,
+    notes: workOrder.notes,
+    vehicle_id: workOrder.vehicle_id,
+    service_type: workOrder.serviceType || workOrder.service_type,
+    service_category_id: workOrder.service_category_id,
+    total_cost: workOrder.total_cost,
+    estimated_hours: workOrder.estimated_hours,
+    // Add other fields as necessary but omit timeEntries and inventoryItems
+    // as they are typically stored in separate tables
+  };
 };
 
-// Helper function to determine priority based on work order properties
-export const determinePriority = (workOrder: any): WorkOrderPriorityType => {
-  // If the priority is already set, use it
-  if (workOrder.priority) {
-    if (["low", "medium", "high"].includes(workOrder.priority)) {
-      return workOrder.priority as WorkOrderPriorityType;
-    }
-  }
-  
-  // Logic to determine priority based on creation time
-  const hoursSinceCreation = Math.floor(
-    (new Date().getTime() - new Date(workOrder.created_at).getTime()) / (1000 * 60 * 60)
-  );
-  
-  if (hoursSinceCreation > 48) return "high";
-  if (hoursSinceCreation > 24) return "medium";
-  return "low";
+// Map database time entry to application time entry
+export const mapTimeEntryFromDb = (dbEntry: DbTimeEntry): TimeEntry => {
+  return {
+    id: dbEntry.id,
+    employeeId: dbEntry.employee_id,
+    employeeName: dbEntry.employee_name,
+    startTime: dbEntry.start_time,
+    endTime: dbEntry.end_time,
+    duration: dbEntry.duration,
+    notes: dbEntry.notes,
+    billable: dbEntry.billable
+  };
 };
 
-// Export status and priority mappings for UI consistency
-export const statusMap: Record<string, string> = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-  "cancelled": "Cancelled"
-};
-
-export const priorityMap: Record<
-  string, 
-  { label: string; classes: string; }
-> = {
-  "low": {
-    label: "Low",
-    classes: "bg-slate-100 text-slate-700"
-  },
-  "medium": {
-    label: "Medium",
-    classes: "bg-blue-100 text-blue-700"
-  },
-  "high": {
-    label: "High", 
-    classes: "bg-red-100 text-red-700"
-  }
+// Map application time entry to database time entry
+export const mapTimeEntryToDb = (entry: TimeEntry, workOrderId: string): DbTimeEntry => {
+  return {
+    id: entry.id,
+    employee_id: entry.employeeId,
+    employee_name: entry.employeeName,
+    start_time: entry.startTime,
+    end_time: entry.endTime,
+    duration: entry.duration,
+    notes: entry.notes,
+    billable: entry.billable,
+    work_order_id: workOrderId
+  };
 };

@@ -2,13 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
-import { findWorkOrderById } from "@/utils/workOrders/crud";
+import { findWorkOrderById, deleteWorkOrder } from "@/utils/workOrders";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { WorkOrderDetailTabs } from "@/components/work-orders/WorkOrderDetailTabs";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { deleteWorkOrder } from '@/utils/workOrders/crud';
 
 export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();

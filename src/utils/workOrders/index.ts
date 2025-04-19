@@ -4,6 +4,7 @@ export * from './queries/findWorkOrder';
 export * from './mutations/createWorkOrder';
 export * from './mutations/updateWorkOrder';
 export * from './mutations/deleteWorkOrder';
+export * from './queries/getTechnicians';
 export * from './generators';
 export * from './formatters';
 export * from './mappers';
