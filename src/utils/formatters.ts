@@ -1,86 +1,86 @@
 
 /**
- * Format a number as currency
+ * Formats a phone number to US format (XXX) XXX-XXXX
+ * 
+ * @param phoneNumber The phone number to format
+ * @returns Formatted phone number string
  */
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2
-  }).format(value);
-};
-
-/**
- * Format a phone number to standard US format (XXX) XXX-XXXX
- */
-export const formatPhoneNumber = (phone: string | undefined): string => {
-  if (!phone) return '';
+export const formatPhoneNumber = (phoneNumber?: string): string => {
+  if (!phoneNumber) return '';
   
-  // Clean the input first
-  const cleaned = cleanPhoneNumber(phone);
+  // Remove all non-digits
+  const cleaned = phoneNumber.replace(/\D/g, '');
   
-  // Format the phone number
-  if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
-  } else if (cleaned.length > 10) {
-    // For international numbers or longer formats
-    return `+${cleaned}`;
+  // Check if it's a valid US number
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  } else if (cleaned.length > 0) {
+    // Return whatever digits we have if it doesn't match the pattern
+    return cleaned;
   }
   
-  // If the number doesn't match expected formats, return as is
-  return phone;
+  return '';
 };
 
 /**
- * Clean a phone number to only contain digits
+ * Formats a currency amount
+ * 
+ * @param amount Number to format as currency
+ * @param locale Locale to use for formatting (default: 'en-US')
+ * @param currency Currency code to use (default: 'USD')
+ * @returns Formatted currency string
  */
-export const cleanPhoneNumber = (phone: string | undefined): string => {
-  if (!phone) return '';
+export const formatCurrency = (
+  amount?: number | string | null,
+  locale = 'en-US',
+  currency = 'USD'
+): string => {
+  if (amount === undefined || amount === null) return '';
   
-  // Remove all non-digit characters
-  return phone.replace(/\D/g, '');
+  // Convert string to number if needed
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  // Format as currency
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericAmount);
 };
 
 /**
- * Format date as MM/DD/YYYY
+ * Formats a percentage value
+ * 
+ * @param value Number to format as percentage
+ * @param decimalPlaces Number of decimal places to show (default: 1)
+ * @returns Formatted percentage string
  */
-export const formatDate = (date: string | Date | undefined): string => {
-  if (!date) return '';
+export const formatPercentage = (
+  value?: number | null, 
+  decimalPlaces = 1
+): string => {
+  if (value === undefined || value === null) return '';
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  return dateObj.toLocaleDateString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric'
-  });
+  return `${value.toFixed(decimalPlaces)}%`;
 };
 
 /**
- * Format time as HH:MM AM/PM
+ * Truncates text to a specific length and adds ellipsis if needed
+ * 
+ * @param text Text to truncate
+ * @param maxLength Maximum length before truncation (default: 50)
+ * @returns Truncated text string with ellipsis if needed
  */
-export const formatTime = (time: string | Date | undefined): string => {
-  if (!time) return '';
+export const truncateText = (
+  text?: string | null,
+  maxLength = 50
+): string => {
+  if (!text) return '';
   
-  const dateObj = typeof time === 'string' ? new Date(time) : time;
+  if (text.length <= maxLength) return text;
   
-  return dateObj.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  });
-};
-
-/**
- * Format percentage
- */
-export const formatPercentage = (value: number): string => {
-  return `${(value * 100).toFixed(1)}%`;
-};
-
-/**
- * Format large numbers with commas
- */
-export const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('en-US').format(value);
+  return `${text.substring(0, maxLength)}...`;
 };

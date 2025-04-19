@@ -10,6 +10,9 @@ import { WorkOrder } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { WorkOrderCardView } from "@/components/work-orders/WorkOrderCardView";
 
 export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,8 +30,20 @@ export default function WorkOrders() {
   const [technicians, setTechnicians] = useState<string[]>([]);
   const [selectedWorkOrders, setSelectedWorkOrders] = useState<WorkOrder[]>([]);
   const [isSelectAll, setIsSelectAll] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [advancedSearchCriteria, setAdvancedSearchCriteria] = useState<any>(null);
   
   const itemsPerPage = 10; // Number of work orders to show per page
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
+  // Set card view as default on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode("card");
+    } else {
+      setViewMode("table");
+    }
+  }, [isMobile]);
 
   // Fetch work orders from Supabase
   useEffect(() => {
@@ -105,6 +120,12 @@ export default function WorkOrders() {
     fetchWorkOrders();
   }, []);
 
+  // Apply advanced search criteria
+  const applyAdvancedSearch = (criteria: any) => {
+    setAdvancedSearchCriteria(criteria);
+    setCurrentPage(1); // Reset to first page
+  };
+
   // Filter work orders based on search query and filters
   const filteredWorkOrders: WorkOrder[] = workOrders.filter((order) => {
     // Search filter
@@ -138,12 +159,48 @@ export default function WorkOrders() {
       (orderDate >= dateRange.from && 
         (!dateRange.to || orderDate <= dateRange.to));
     
+    // Advanced search criteria
+    let matchesAdvancedCriteria = true;
+    if (advancedSearchCriteria) {
+      // Handle status filtering from advanced search
+      if (!advancedSearchCriteria.includeCompletedWorkOrders && order.status === "completed") {
+        matchesAdvancedCriteria = false;
+      }
+      if (!advancedSearchCriteria.includeCancelledWorkOrders && order.status === "cancelled") {
+        matchesAdvancedCriteria = false;
+      }
+      
+      // Handle customer ID filtering
+      if (advancedSearchCriteria.customerId && order.customer_id !== advancedSearchCriteria.customerId) {
+        matchesAdvancedCriteria = false;
+      }
+      
+      // Handle vehicle ID filtering
+      if (advancedSearchCriteria.vehicleId && order.vehicle_id !== advancedSearchCriteria.vehicleId) {
+        matchesAdvancedCriteria = false;
+      }
+      
+      // Handle billable hours filtering
+      if (advancedSearchCriteria.minBillableHours !== undefined && 
+          (order.totalBillableTime === undefined || 
+           order.totalBillableTime / 60 < advancedSearchCriteria.minBillableHours)) {
+        matchesAdvancedCriteria = false;
+      }
+      
+      if (advancedSearchCriteria.maxBillableHours !== undefined && 
+          (order.totalBillableTime !== undefined && 
+           order.totalBillableTime / 60 > advancedSearchCriteria.maxBillableHours)) {
+        matchesAdvancedCriteria = false;
+      }
+    }
+    
     return matchesSearch && 
            matchesStatus && 
            matchesPriority && 
            matchesTechnician && 
            matchesCategory && 
-           matchesDateRange;
+           matchesDateRange &&
+           matchesAdvancedCriteria;
   });
 
   // Calculate pagination values
@@ -163,6 +220,7 @@ export default function WorkOrders() {
     setSelectedTechnician("all");
     setDateRange({ from: undefined, to: undefined });
     setServiceCategory("all");
+    setAdvancedSearchCriteria(null);
     setCurrentPage(1); // Reset to first page when filters change
   };
 
@@ -228,14 +286,36 @@ export default function WorkOrders() {
         setServiceCategory={setServiceCategory}
         technicians={technicians}
         resetFilters={resetFilters}
+        applyAdvancedSearch={applyAdvancedSearch}
       />
 
-      {/* Work Orders table */}
-      <WorkOrdersTable 
-        workOrders={currentItems} 
-        selectedWorkOrders={selectedWorkOrders}
-        onSelectWorkOrder={handleSelectWorkOrder}
-      />
+      {/* View toggle */}
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "card")} className="w-full">
+        <div className="flex justify-end mb-4">
+          <TabsList>
+            <TabsTrigger value="table" className="px-3">Table View</TabsTrigger>
+            <TabsTrigger value="card" className="px-3">Card View</TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="table" className="mt-0">
+          {/* Work Orders table */}
+          <WorkOrdersTable 
+            workOrders={currentItems} 
+            selectedWorkOrders={selectedWorkOrders}
+            onSelectWorkOrder={handleSelectWorkOrder}
+          />
+        </TabsContent>
+
+        <TabsContent value="card" className="mt-0">
+          {/* Work Orders card view */}
+          <WorkOrderCardView 
+            workOrders={currentItems} 
+            selectedWorkOrders={selectedWorkOrders}
+            onSelectWorkOrder={handleSelectWorkOrder}
+          />
+        </TabsContent>
+      </Tabs>
       
       {/* Pagination */}
       {filteredWorkOrders.length > 0 && (

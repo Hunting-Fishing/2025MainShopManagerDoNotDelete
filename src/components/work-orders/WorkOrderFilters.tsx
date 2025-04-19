@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Search, Calendar, Filter } from "lucide-react";
+import { Search, Calendar, Filter, FileText, Bookmark } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,18 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
+import { WorkOrderAdvancedSearch } from "./WorkOrderAdvancedSearch";
+import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface WorkOrderFiltersProps {
   searchQuery: string;
@@ -44,6 +56,20 @@ interface WorkOrderFiltersProps {
   setServiceCategory: (category: string) => void;
   technicians: string[];
   resetFilters: () => void;
+  applyAdvancedSearch?: (criteria: any) => void;
+}
+
+interface SavedFilter {
+  id: string;
+  name: string;
+  filter: {
+    statusFilter: string[];
+    priorityFilter: string[];
+    selectedTechnician: string;
+    serviceCategory: string;
+    dateRange: { from: string | null; to: string | null };
+    searchQuery: string;
+  };
 }
 
 const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
@@ -61,10 +87,14 @@ const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
   setServiceCategory,
   technicians,
   resetFilters,
+  applyAdvancedSearch
 }) => {
   const [serviceCategories, setServiceCategories] = useState<{ id: string; name: string }[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isFetchingCategories, setIsFetchingCategories] = useState(false);
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+  const [newFilterName, setNewFilterName] = useState("");
+  const [saveFilterOpen, setSaveFilterOpen] = useState(false);
 
   // Fetch service categories when dropdown is opened
   React.useEffect(() => {
@@ -103,6 +133,95 @@ const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
       setPriorityFilter(priorityFilter.filter(p => p !== priority));
     } else {
       setPriorityFilter([...priorityFilter, priority]);
+    }
+  };
+  
+  const handleSaveFilter = () => {
+    if (!newFilterName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for your filter",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newFilter: SavedFilter = {
+      id: `filter-${Date.now()}`, // Simple unique ID
+      name: newFilterName,
+      filter: {
+        statusFilter,
+        priorityFilter,
+        selectedTechnician,
+        serviceCategory,
+        dateRange: { 
+          from: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : null,
+          to: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : null 
+        },
+        searchQuery
+      }
+    };
+    
+    setSavedFilters([...savedFilters, newFilter]);
+    setNewFilterName('');
+    setSaveFilterOpen(false);
+    
+    toast({
+      title: "Filter saved",
+      description: `Your filter "${newFilterName}" has been saved`
+    });
+  };
+  
+  const handleApplySavedFilter = (filter: SavedFilter) => {
+    setStatusFilter(filter.filter.statusFilter);
+    setPriorityFilter(filter.filter.priorityFilter);
+    setSelectedTechnician(filter.filter.selectedTechnician);
+    setServiceCategory(filter.filter.serviceCategory);
+    setSearchQuery(filter.filter.searchQuery);
+    
+    // Handle date conversion
+    const from = filter.filter.dateRange.from ? new Date(filter.filter.dateRange.from) : undefined;
+    const to = filter.filter.dateRange.to ? new Date(filter.filter.dateRange.to) : undefined;
+    
+    setDateRange({ from, to });
+    
+    toast({
+      title: "Filter applied",
+      description: `Applied filter: ${filter.name}`
+    });
+  };
+  
+  const handleDeleteSavedFilter = (id: string) => {
+    setSavedFilters(savedFilters.filter(filter => filter.id !== id));
+    toast({
+      title: "Filter deleted",
+      description: "Your saved filter has been deleted"
+    });
+  };
+
+  const handleAdvancedSearch = (criteria: any) => {
+    if (applyAdvancedSearch) {
+      applyAdvancedSearch(criteria);
+    }
+    
+    // Also update basic filters where applicable
+    if (!criteria.includeCompletedWorkOrders && !criteria.includeCancelledWorkOrders) {
+      setStatusFilter(['pending', 'in-progress']);
+    } else if (!criteria.includeCompletedWorkOrders) {
+      setStatusFilter(statusFilter.filter(s => s !== 'completed'));
+    } else if (!criteria.includeCancelledWorkOrders) {
+      setStatusFilter(statusFilter.filter(s => s !== 'cancelled'));
+    }
+    
+    if (criteria.startDateRange || criteria.endDateRange) {
+      setDateRange({
+        from: criteria.startDateRange,
+        to: criteria.endDateRange
+      });
+    }
+    
+    if (criteria.description) {
+      setSearchQuery(criteria.description);
     }
   };
 
@@ -267,6 +386,9 @@ const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
           </SelectContent>
         </Select>
 
+        {/* Advanced Search Button */}
+        <WorkOrderAdvancedSearch onSearch={handleAdvancedSearch} />
+        
         {/* Reset Filters */}
         <Button 
           variant={activeFilterCount > 0 ? "default" : "ghost"} 
@@ -281,7 +403,67 @@ const WorkOrderFilters: React.FC<WorkOrderFiltersProps> = ({
             </Badge>
           )}
         </Button>
+        
+        {/* Save Filters Button */}
+        <Dialog open={saveFilterOpen} onOpenChange={setSaveFilterOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon" className="h-10 w-10">
+              <Bookmark className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Save Filter</DialogTitle>
+              <DialogDescription>
+                Save your current filter settings for quick access later.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="filter-name">Filter Name</Label>
+                <Input 
+                  id="filter-name" 
+                  value={newFilterName} 
+                  onChange={(e) => setNewFilterName(e.target.value)}
+                  placeholder="Enter a name for this filter"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setSaveFilterOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveFilter}>Save Filter</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
+      
+      {/* Saved Filters Display */}
+      {savedFilters.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          <span className="text-sm font-medium text-gray-500 mr-2">Saved Filters:</span>
+          {savedFilters.map((filter) => (
+            <Badge 
+              key={filter.id} 
+              variant="outline" 
+              className="cursor-pointer bg-gray-50 hover:bg-gray-100"
+              onClick={() => handleApplySavedFilter(filter)}
+            >
+              {filter.name}
+              <span 
+                className="ml-2 text-gray-400 hover:text-red-500" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteSavedFilter(filter.id);
+                }}
+              >
+                ×
+              </span>
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
