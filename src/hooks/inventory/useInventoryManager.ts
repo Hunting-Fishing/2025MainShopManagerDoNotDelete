@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { InventoryItemExtended } from '@/types/inventory';
@@ -10,6 +9,12 @@ interface InventoryAvailability {
   availableQuantity?: number;
 }
 
+export interface AutoReorderSettings {
+  enabled: boolean;
+  threshold?: number;
+  quantity?: number;
+}
+
 /**
  * Hook for managing inventory operations across the application
  */
@@ -17,7 +22,7 @@ export const useInventoryManager = () => {
   const [loading, setLoading] = useState(false);
   const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
-  const [autoReorderSettings, setAutoReorderSettings] = useState({ enabled: false });
+  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
 
   // Fetch inventory alerts (low stock and out of stock)
   const checkInventoryAlerts = useCallback(async () => {
@@ -196,6 +201,55 @@ export const useInventoryManager = () => {
     }
   }, [checkItemAvailability]);
 
+  // Enable auto-reordering for an item
+  const enableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
+    try {
+      // In a real app, this would connect to a backend API
+      // For demo, we'll just update the local state
+      setAutoReorderSettings(prev => ({
+        ...prev,
+        [itemId]: { enabled: true, threshold, quantity }
+      }));
+      
+      toast({
+        title: "Auto-reorder enabled",
+        description: `Auto-reorder has been enabled for this item`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error enabling auto-reorder:", error);
+      toast({
+        title: "Error",
+        description: "Failed to enable auto-reorder",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  // Reorder an inventory item manually
+  const reorderItem = async (itemId: string, quantity: number) => {
+    try {
+      // In a real app, this would connect to a purchasing API
+      // For demo, we'll just show a toast notification
+      toast({
+        title: "Order Placed",
+        description: `Ordered ${quantity} units of this item`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error placing order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to place order",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   // Pre-load inventory alerts when the hook is first used
   useEffect(() => {
     checkInventoryAlerts();
@@ -209,6 +263,8 @@ export const useInventoryManager = () => {
     checkInventoryAlerts,
     checkItemAvailability,
     reserveInventory,
-    consumeWorkOrderInventory
+    consumeWorkOrderInventory,
+    enableAutoReorder,
+    reorderItem
   };
 };

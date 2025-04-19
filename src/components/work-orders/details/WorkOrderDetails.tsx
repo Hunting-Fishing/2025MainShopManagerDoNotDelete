@@ -7,7 +7,7 @@ import { WorkOrderStatusBadge } from "@/components/work-orders/WorkOrderStatusBa
 import { WorkOrderPriorityBadge } from "@/components/work-orders/WorkOrderPriorityBadge";
 import { Separator } from "@/components/ui/separator";
 import { WorkOrderInventoryItems } from "./WorkOrderInventoryItems";
-import { Clock, MapPin, Tool, User } from "lucide-react";
+import { Clock, MapPin, Wrench, User } from "lucide-react";
 
 interface WorkOrderDetailsProps {
   workOrder: WorkOrder;
@@ -45,7 +45,7 @@ export function WorkOrderDetails({ workOrder }: WorkOrderDetailsProps) {
               <div className="space-y-1">
                 <div className="text-sm font-medium text-muted-foreground">Technician</div>
                 <div className="flex items-center space-x-2">
-                  <Tool className="h-4 w-4 text-muted-foreground" />
+                  <Wrench className="h-4 w-4 text-muted-foreground" />
                   <div>{workOrder.technician || "Unassigned"}</div>
                 </div>
               </div>
