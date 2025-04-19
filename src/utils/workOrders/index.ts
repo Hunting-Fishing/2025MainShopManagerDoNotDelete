@@ -1,9 +1,12 @@
 
 // Re-export all work order utility functions
+export * from './queries/findWorkOrder';
+export * from './mutations/createWorkOrder';
+export * from './mutations/updateWorkOrder';
+export * from './mutations/deleteWorkOrder';
 export * from './generators';
 export * from './formatters';
 export * from './mappers';
-export * from './crud';
 export * from './activity';
 
 // Define standard status and priority maps as the single source of truth
