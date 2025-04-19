@@ -1,24 +1,41 @@
-import { Customer } from "@/types/customer";
-import { supabase } from "@/lib/supabase";
+
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Calculate customer lifetime value based on their purchase history
+ * Calculate the customer's lifetime value based on their purchase history
+ * @param customerId The ID of the customer
+ * @returns The calculated lifetime value
  */
 export const calculateCustomerLifetimeValue = async (customerId: string): Promise<number> => {
   try {
-    // Get all invoices for this customer
-    const { data: invoices, error } = await supabase
-      .from('invoices')
-      .select('total_amount')
-      .eq('customer_id', customerId);
+    // First, check if the customer already has CLV stored in the customer_loyalty table
+    const { data: loyaltyData, error: loyaltyError } = await supabase
+      .from("customer_loyalty")
+      .select("lifetime_value")
+      .eq("customer_id", customerId)
+      .single();
       
-    if (error) {
-      console.error("Error fetching invoices for CLV calculation:", error);
-      throw error;
+    if (loyaltyData && !loyaltyError && loyaltyData.lifetime_value) {
+      return parseFloat(loyaltyData.lifetime_value);
     }
     
-    // Sum up all invoice amounts
-    return invoices?.reduce((sum, invoice) => sum + (parseFloat(invoice.total_amount) || 0), 0) || 0;
+    // If not in loyalty table, calculate from invoices
+    const { data: invoices, error: invoicesError } = await supabase
+      .from("invoices")
+      .select("total")
+      .eq("customer_id", customerId);
+      
+    if (invoicesError) {
+      console.error("Error fetching customer invoices for CLV calculation:", invoicesError);
+      return 0;
+    }
+    
+    // Sum all invoice totals
+    const lifetimeValue = invoices?.reduce((sum, invoice) => {
+      return sum + (parseFloat(invoice.total) || 0);
+    }, 0) || 0;
+    
+    return lifetimeValue;
   } catch (error) {
     console.error("Error calculating customer lifetime value:", error);
     return 0;
@@ -26,164 +43,120 @@ export const calculateCustomerLifetimeValue = async (customerId: string): Promis
 };
 
 /**
- * Get number of years customer has been active
- */
-export const getCustomerTenure = async (customerId: string): Promise<number> => {
-  try {
-    // Get customer creation date
-    const { data: customer, error } = await supabase
-      .from('customers')
-      .select('created_at')
-      .eq('id', customerId)
-      .single();
-      
-    if (error || !customer) {
-      console.error("Error fetching customer for tenure calculation:", error);
-      return 0;
-    }
-    
-    const creationDate = new Date(customer.created_at);
-    const currentDate = new Date();
-    const diffTime = Math.abs(currentDate.getTime() - creationDate.getTime());
-    const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-    
-    return Math.max(diffYears, 0.1); // Minimum tenure of 0.1 years to avoid division by zero
-  } catch (error) {
-    console.error("Error calculating customer tenure:", error);
-    return 0.1; // Default to 0.1 years
-  }
-};
-
-/**
- * Predict future customer value based on past performance
- */
-export const predictFutureCustomerValue = async (customerId: string): Promise<number> => {
-  try {
-    // Fetch the customer first
-    const { data: customer, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('id', customerId)
-      .single();
-      
-    if (error || !customer) {
-      console.error("Error fetching customer for future value prediction:", error);
-      return 0;
-    }
-    
-    // Get current lifetime value
-    const currentValue = await calculateCustomerLifetimeValue(customerId);
-    
-    // Get customer tenure
-    const tenure = await getCustomerTenure(customerId);
-    
-    // Calculate average annual value
-    const annualValue = currentValue / tenure;
-    
-    // Predict future value (next 3 years)
-    const futureYears = 3;
-    const retentionRate = 0.85; // Assume 85% retention rate
-    let futureValue = 0;
-    
-    for (let year = 1; year <= futureYears; year++) {
-      futureValue += annualValue * Math.pow(retentionRate, year);
-    }
-    
-    return parseFloat((currentValue + futureValue).toFixed(2));
-  } catch (error) {
-    console.error("Error predicting future customer value:", error);
-    return 0;
-  }
-};
-
-/**
- * Get customer CLV percentile compared to all other customers
+ * Get the percentile rank of a customer's lifetime value compared to all customers
+ * @param customerId The ID of the customer
+ * @returns The percentile (0-100)
  */
 export const getCustomerLifetimeValuePercentile = async (customerId: string): Promise<number> => {
   try {
-    // Get current customer's CLV
-    const customerClv = await calculateCustomerLifetimeValue(customerId);
-    if (customerClv === 0) return 0;
+    const clv = await calculateCustomerLifetimeValue(customerId);
     
-    // Get all customers CLVs
+    // If we have no value, return 0 percentile
+    if (clv === 0) return 0;
+    
+    // Get all customer lifetime values for comparison
+    const { data: loyaltyData, error: loyaltyError } = await supabase
+      .from("customer_loyalty")
+      .select("lifetime_value");
+      
+    if (loyaltyError) {
+      console.error("Error fetching loyalty data for percentile calculation:", loyaltyError);
+      return 50; // Default to middle percentile on error
+    }
+    
+    // Extract all CLV values and sort them
+    const allValues = (loyaltyData || [])
+      .map(item => parseFloat(item.lifetime_value) || 0)
+      .sort((a, b) => a - b);
+    
+    // Find how many values are less than the current customer's CLV
+    const lessThanCount = allValues.filter(value => value < clv).length;
+    
+    // Calculate percentile
+    if (allValues.length === 0) return 50; // Default if no values
+    
+    const percentile = Math.round((lessThanCount / allValues.length) * 100);
+    return percentile;
+  } catch (error) {
+    console.error("Error calculating CLV percentile:", error);
+    return 50; // Default to middle percentile on error
+  }
+};
+
+/**
+ * Predict the future value of a customer based on historical data and trends
+ * @param customerId The ID of the customer
+ * @returns The predicted future value
+ */
+export const predictFutureCustomerValue = async (customerId: string): Promise<number> => {
+  try {
+    const currentValue = await calculateCustomerLifetimeValue(customerId);
+    
+    // Get customer's purchase history to analyze frequency
+    const { data: invoices, error: invoicesError } = await supabase
+      .from("invoices")
+      .select("total, date")
+      .eq("customer_id", customerId)
+      .order("date", { ascending: false });
+      
+    if (invoicesError) {
+      console.error("Error fetching customer invoice history:", invoicesError);
+      // Simple prediction - 20% growth
+      return currentValue * 1.2;
+    }
+    
+    // If they have no purchase history, make a simple prediction
+    if (!invoices || invoices.length === 0) {
+      return currentValue * 1.2; // Simple 20% growth assumption
+    }
+    
+    // Analyze purchase frequency and recency for more advanced prediction
+    const invoiceCount = invoices.length;
+    const timeSpan = invoiceCount > 1 
+      ? (new Date().getTime() - new Date(invoices[invoiceCount-1].date).getTime()) / (1000 * 3600 * 24 * 365)
+      : 1; // Default to 1 year if only one invoice
+    
+    const purchaseFrequency = invoiceCount / (timeSpan || 1);
+    
+    // Calculate recency factor - more recent purchases suggest higher future value
+    const mostRecentDate = new Date(invoices[0].date).getTime();
+    const daysSinceLastPurchase = (new Date().getTime() - mostRecentDate) / (1000 * 3600 * 24);
+    const recencyFactor = Math.max(0.8, 1 - (daysSinceLastPurchase / 365)); // Range from 0.8 to 1.0
+    
+    // Calculate average invoice value
+    const avgValue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0) / invoiceCount;
+    
+    // Predict future value based on current value with adjustments for frequency and recency
+    const growthMultiplier = 1 + (0.1 * Math.min(purchaseFrequency, 5) * recencyFactor);
+    return currentValue * growthMultiplier;
+  } catch (error) {
+    console.error("Error predicting future customer value:", error);
+    return await calculateCustomerLifetimeValue(customerId) * 1.2; // Fall back to simple prediction
+  }
+};
+
+/**
+ * Get customers with their associated segments
+ */
+export const getCustomersWithSegments = async () => {
+  try {
     const { data: customers, error } = await supabase
       .from('customers')
-      .select('id');
-      
+      .select('*,loyalty:customer_loyalty(*)');
+    
     if (error) {
-      console.error("Error fetching customers for percentile calculation:", error);
       throw error;
     }
     
-    // Calculate CLV for each customer and count how many have lower CLV
-    let lowerCount = 0;
-    let totalCount = customers?.length || 1; // Avoid division by zero
-    
-    for (const customer of (customers || [])) {
-      if (customer.id === customerId) continue; // Skip current customer
+    // Calculate segments for each customer
+    for (const customer of customers) {
+      // Ensure segments is at least an array
+      customer.segments = customer.segments || [];
       
-      const otherClv = await calculateCustomerLifetimeValue(customer.id);
-      if (otherClv < customerClv) {
-        lowerCount++;
+      // Calculate CLV if not already present
+      if (!customer.clv) {
+        customer.clv = await calculateCustomerLifetimeValue(customer.id);
       }
-    }
-    
-    // Calculate percentile
-    return Math.round((lowerCount / (totalCount - 1)) * 100);
-  } catch (error) {
-    console.error("Error calculating customer CLV percentile:", error);
-    return 0;
-  }
-};
-
-/**
- * Get average CLV across all customers
- */
-export const getAverageCustomerLifetimeValue = async (): Promise<number> => {
-  try {
-    // Get all customers
-    const { data: customers, error } = await supabase
-      .from('customers')
-      .select('id');
-      
-    if (error || !customers || customers.length === 0) {
-      console.error("Error fetching customers for average CLV calculation:", error);
-      return 0;
-    }
-    
-    // Calculate CLV for each customer
-    let totalClv = 0;
-    for (const customer of customers) {
-      const clv = await calculateCustomerLifetimeValue(customer.id);
-      totalClv += clv;
-    }
-    
-    // Calculate average
-    return totalClv / customers.length;
-  } catch (error) {
-    console.error("Error calculating average CLV:", error);
-    return 0;
-  }
-};
-
-/**
- * Get an array of customers with their segment information
- */
-export const getCustomersWithSegments = async (): Promise<Customer[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*');
-      
-    if (error) throw error;
-    
-    const customers = data as Customer[];
-    
-    // Add CLV to each customer
-    for (const customer of customers) {
-      const clvValue = await calculateCustomerLifetimeValue(customer.id);
-      // Add clv as a custom property
-      (customer as any).clv = clvValue;
     }
     
     return customers;
@@ -193,27 +166,30 @@ export const getCustomersWithSegments = async (): Promise<Customer[]> => {
   }
 };
 
-export interface CustomerSegmentType {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-}
-
 /**
- * Get all customer segments defined in the system
+ * Get the average customer lifetime value across all customers
  */
-export const getCustomerSegments = async (): Promise<CustomerSegmentType[]> => {
+export const getAverageCustomerLifetimeValue = async (): Promise<number> => {
   try {
     const { data, error } = await supabase
-      .from('customer_segments')
-      .select('*');
-      
-    if (error) throw error;
+      .from('customer_loyalty')
+      .select('lifetime_value');
     
-    return data as CustomerSegmentType[];
+    if (error) {
+      throw error;
+    }
+    
+    if (!data || data.length === 0) {
+      return 0;
+    }
+    
+    const sum = data.reduce((total, record) => {
+      return total + (parseFloat(record.lifetime_value) || 0);
+    }, 0);
+    
+    return sum / data.length;
   } catch (error) {
-    console.error('Error fetching customer segments:', error);
-    return [];
+    console.error('Error calculating average CLV:', error);
+    return 0;
   }
 };

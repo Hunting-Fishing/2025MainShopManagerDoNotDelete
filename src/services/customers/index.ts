@@ -4,50 +4,24 @@ import { CustomerNote } from "@/types/customer";
 import { checkDuplicateCustomers, searchCustomers, getCustomersWithVehicles } from "./customerSearchService";
 import { createCustomer } from "./customerCreateService";
 import { clearDraftCustomer, saveDraftCustomer, getDraftCustomer } from "./customerDraftService";
+import { getCustomerNotes as fetchCustomerNotes, addCustomerNote as addNote } from "@/services/customer/customerNotesService";
 
-export const getCustomerNotes = async (customerId: string): Promise<CustomerNote[]> => {
-  const { data, error } = await supabase
-    .from('customer_notes')
-    .select('*')
-    .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+// Re-export the getCustomerNotes function using the consolidated implementation
+export const getCustomerNotes = fetchCustomerNotes;
 
-  if (error) {
-    console.error("Error fetching customer notes:", error);
-    throw error;
-  }
-
-  return data.map(note => ({
-    ...note,
-    category: note.category as "service" | "sales" | "follow-up" | "general"
-  })) || [];
-};
-
+// Legacy wrapper for addCustomerNote to maintain backwards compatibility
 export const addCustomerNote = async (
   customerId: string,
   content: string,
   category: 'service' | 'sales' | 'follow-up' | 'general',
   createdBy: string
 ): Promise<CustomerNote> => {
-  const newNote = {
+  return await addNote({
     customer_id: customerId,
     content,
     category,
-    created_by: createdBy,
-  };
-
-  const { data, error } = await supabase
-    .from('customer_notes')
-    .insert(newNote)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error adding customer note:", error);
-    throw error;
-  }
-
-  return data as CustomerNote;
+    created_by: createdBy
+  });
 };
 
 // Re-export functions from customerSearchService
