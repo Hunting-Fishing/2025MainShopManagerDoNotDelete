@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { TimeEntry, WorkOrder } from "@/types/workOrder";
+import { TimeEntry } from "@/types/workOrder";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 
@@ -168,74 +168,6 @@ export const useWorkOrderTimeTracking = (workOrderId: string) => {
     }
   };
 
-  const updateTimeEntry = async (entryId: string, updates: Partial<TimeEntry>) => {
-    setLoading(true);
-    try {
-      const dbUpdates: Record<string, any> = {};
-      
-      if (updates.billable !== undefined) dbUpdates.billable = updates.billable;
-      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
-      if (updates.startTime !== undefined) dbUpdates.start_time = updates.startTime;
-      if (updates.endTime !== undefined) dbUpdates.end_time = updates.endTime;
-      if (updates.duration !== undefined) dbUpdates.duration = updates.duration;
-      
-      const { data, error } = await supabase
-        .from('work_order_time_entries')
-        .update(dbUpdates)
-        .eq('id', entryId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Time Entry Updated",
-        description: "Time entry has been updated"
-      });
-
-      return data;
-    } catch (error) {
-      console.error('Error updating time entry:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update time entry",
-        variant: "destructive"
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteTimeEntry = async (entryId: string) => {
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('work_order_time_entries')
-        .delete()
-        .eq('id', entryId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Time Entry Deleted",
-        description: "Time entry has been removed"
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Error deleting time entry:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete time entry",
-        variant: "destructive"
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     isTracking,
     activeEntry,
@@ -243,7 +175,5 @@ export const useWorkOrderTimeTracking = (workOrderId: string) => {
     startTimeTracking,
     stopTimeTracking,
     fetchTimeEntries,
-    updateTimeEntry,
-    deleteTimeEntry
   };
 };
