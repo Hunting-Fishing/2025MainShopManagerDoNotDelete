@@ -9,12 +9,12 @@ import {
   History,
   Phone
 } from "lucide-react";
-import { WorkOrder } from "@/data/workOrdersData";
+import { WorkOrder } from "@/types/workOrder";
 import { TimeEntry } from "@/types/workOrder";
 import { WorkOrderInventoryTable } from "@/components/work-orders/inventory/WorkOrderInventoryTable";
 import { WorkOrderNotes } from "@/components/work-orders/details/WorkOrderNotes";
 import { WorkOrderStatusTimeline } from "@/components/work-orders/details/WorkOrderStatusTimeline";
-import { WorkOrderTimeTracking } from "@/components/work-orders/time-tracking/TimeTrackingSection";
+import { TimeTrackingSection } from "@/components/work-orders/time-tracking/TimeTrackingSection";
 import { WorkOrderActivityHistory } from "@/components/work-orders/details/WorkOrderActivityHistory";
 import { CallLogger } from '@/components/calls/CallLogger';
 
@@ -85,9 +85,9 @@ export function WorkOrderDetailsTabs({ workOrder, onUpdateTimeEntries }: WorkOrd
       
       <TabsContent value="inventory" className="space-y-4 mt-4">
         <WorkOrderInventoryTable
-          workOrderId={workOrder.id}
+          items={workOrder.inventoryItems || []}
           onRemoveItem={(id) => console.log("Remove item", id)}
-          onUpdateItem={(id, updates) => console.log("Update item", id, updates)}
+          onUpdateQuantity={(id, quantity) => console.log("Update item quantity", id, quantity)}
         />
       </TabsContent>
       

@@ -1,10 +1,12 @@
 
 import { WorkOrder } from "@/types/workOrder";
 
+type WorkOrderStatusType = WorkOrder['status'];
+
 /**
  * Valid workflow status transitions for work orders
  */
-const validTransitions = {
+const validTransitions: Record<WorkOrderStatusType, WorkOrderStatusType[]> = {
   "pending": ["in-progress", "cancelled"],
   "in-progress": ["completed", "cancelled"],
   "completed": ["in-progress"], // Allow reopening a completed work order

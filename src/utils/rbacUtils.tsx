@@ -40,16 +40,27 @@ export const PERMISSIONS: Record<string, Permission[]> = {
  * Hook to check user permissions
  */
 export const usePermission = () => {
-  const { user, userRole } = useAuth();
+  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string>('guest');
   const [permissions, setPermissions] = useState<Permission[]>([]);
 
   useEffect(() => {
-    if (user && userRole && PERMISSIONS[userRole]) {
+    // For this simplified version, we'll just use 'guest' as default
+    // In a real app, you'd fetch the role from the user profile
+    if (user) {
+      setUserRole('user'); // Default to 'user' role if authenticated
+    } else {
+      setUserRole('guest');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (userRole && PERMISSIONS[userRole]) {
       setPermissions(PERMISSIONS[userRole]);
     } else {
       setPermissions(PERMISSIONS.guest || []);
     }
-  }, [user, userRole]);
+  }, [userRole]);
 
   // Check if user has permission for a specific resource and action
   const hasPermission = (resource: ResourceType, action: ActionType): boolean => {
@@ -58,7 +69,7 @@ export const usePermission = () => {
     );
   };
 
-  return { permissions, hasPermission };
+  return { permissions, hasPermission, userRole };
 };
 
 /**
