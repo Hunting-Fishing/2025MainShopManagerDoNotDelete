@@ -1,175 +1,174 @@
 
-import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getFlaggedActivities, unflagWorkOrderActivity } from "@/utils/workOrders/activity";
-import { Loader2, AlertTriangle, Flag, Check, X, ExternalLink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { format, formatDistanceToNow } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { getFlaggedActivities } from '@/utils/workOrders/activity';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { WorkOrderStatusBadge } from './WorkOrderStatusBadge';
+import { toast } from '@/hooks/use-toast';
 
 export function FlaggedActivitiesList() {
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resolving, setResolving] = useState<Record<string, boolean>>({});
 
-  const fetchFlaggedActivities = async () => {
+  useEffect(() => {
+    loadFlaggedActivities();
+  }, []);
+
+  const loadFlaggedActivities = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await getFlaggedActivities();
       setActivities(data);
-      setError(null);
     } catch (err) {
-      console.error("Error fetching flagged activities:", err);
-      setError("Failed to load flagged activities");
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load flagged activities';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: "Could not load flagged activities",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchFlaggedActivities();
-  }, []);
-
-  const handleUnflag = async (activityId: string) => {
-    try {
-      const success = await unflagWorkOrderActivity(activityId);
-      if (success) {
-        setActivities(activities.filter(activity => activity.id !== activityId));
-        toast({
-          title: "Flag Removed",
-          description: "The flag has been removed from this activity",
-        });
-      }
-    } catch (err) {
-      console.error("Error unflagging activity:", err);
-      toast({
-        title: "Error",
-        description: "Failed to remove flag",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleResolve = async (activityId: string) => {
+    setResolving(prev => ({ ...prev, [activityId]: true }));
     try {
-      // In a real app, you might have a more complex resolution process
-      // For now, we'll just unflag the item
+      // Import on demand to avoid circular dependencies
+      const { unflagWorkOrderActivity } = await import('@/utils/workOrders/activity');
+      
       const success = await unflagWorkOrderActivity(activityId);
+      
       if (success) {
-        setActivities(activities.filter(activity => activity.id !== activityId));
+        // Remove the resolved activity from the list
+        setActivities(prev => prev.filter(activity => activity.id !== activityId));
+        
         toast({
-          title: "Issue Resolved",
-          description: "The flagged activity has been marked as resolved",
+          title: "Activity Resolved",
+          description: "The flagged activity has been resolved",
         });
       }
     } catch (err) {
-      console.error("Error resolving flagged activity:", err);
       toast({
         title: "Error",
         description: "Failed to resolve flagged activity",
         variant: "destructive",
       });
+    } finally {
+      setResolving(prev => ({ ...prev, [activityId]: false }));
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <Loader2 className="h-6 w-6 text-primary animate-spin mr-2" />
-        <p>Loading flagged activities...</p>
+      <div className="flex justify-center items-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading flagged activities...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-6 text-red-500">
-        <AlertTriangle className="h-6 w-6 mr-2" />
-        <p>{error}</p>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <AlertTriangle className="h-10 w-10 text-yellow-500 mb-4" />
+            <h3 className="text-xl font-medium">Error Loading Activities</h3>
+            <p className="text-muted-foreground mt-2">{error}</p>
+            <Button onClick={loadFlaggedActivities} className="mt-4">
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (activities.length === 0) {
     return (
-      <div className="p-6 text-center bg-slate-50 border rounded-lg">
-        <Flag className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-        <h3 className="text-lg font-medium mb-1">No Flagged Activities</h3>
-        <p className="text-slate-500">
-          There are currently no flagged activities that require attention.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <CheckCircle2 className="h-10 w-10 text-green-500 mb-4" />
+            <h3 className="text-xl font-medium">No Flagged Activities</h3>
+            <p className="text-muted-foreground mt-2">
+              There are currently no flagged activities that require attention.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="bg-amber-50">
-        <CardTitle className="flex items-center text-lg">
-          <Flag className="h-5 w-5 mr-2 text-amber-600" />
-          Flagged Activities
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 mt-4">
-        <div className="space-y-4">
-          {activities.map((activity) => (
-            <Card key={activity.id} className="bg-red-50 border-red-200">
-              <CardContent className="pt-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-medium flex items-center">
-                      {activity.action}
-                      <Badge variant="destructive" className="ml-2">Flagged</Badge>
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Work Order: {activity.work_orders?.id || "Unknown"}
-                    </p>
+    <div className="space-y-6">
+      {activities.map((activity) => (
+        <Card key={activity.id} className="overflow-hidden">
+          <CardHeader className="bg-slate-50 pb-2">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-lg">
+                  {activity.work_orders?.description || 'Work Order Activity'}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {format(new Date(activity.created_at), 'MMM d, yyyy · h:mm a')}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                {activity.work_orders?.status && (
+                  <WorkOrderStatusBadge status={activity.work_orders.status} />
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleResolve(activity.id)}
+                  disabled={resolving[activity.id]}
+                >
+                  {resolving[activity.id] ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  {resolving[activity.id] ? 'Resolving...' : 'Resolve Flag'}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-start gap-2 mb-2">
+                  <div className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
+                    Flagged
                   </div>
-                  <p className="text-xs text-slate-500">
-                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                  </p>
+                  <p className="text-sm">{activity.flag_reason}</p>
                 </div>
-
-                <div className="bg-white p-3 rounded border border-red-200 my-3">
-                  <p className="text-sm font-medium text-red-700">Flag reason:</p>
-                  <p className="text-sm text-red-600">{activity.flag_reason}</p>
+                
+                <div className="bg-slate-50 p-3 rounded border text-sm">
+                  <span className="font-medium">{activity.user_name}</span>: {activity.action}
                 </div>
-
-                <div className="flex justify-between items-center mt-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
+              </div>
+              
+              {activity.work_orders && (
+                <div className="mt-2 text-sm">
+                  <p className="font-medium">Work Order ID:</p> 
+                  <a 
+                    href={`/work-orders/${activity.work_orders.id}`} 
+                    className="text-blue-600 hover:underline"
                   >
-                    <Link to={`/work-orders/${activity.work_order_id}`}>
-                      <ExternalLink className="h-4 w-4 mr-1" /> View Work Order
-                    </Link>
-                  </Button>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleUnflag(activity.id)}
-                    >
-                      <X className="h-4 w-4 mr-1" /> Unflag
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm"
-                      onClick={() => handleResolve(activity.id)}
-                    >
-                      <Check className="h-4 w-4 mr-1" /> Mark Resolved
-                    </Button>
-                  </div>
+                    {activity.work_orders.id}
+                  </a>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }

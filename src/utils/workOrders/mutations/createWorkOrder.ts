@@ -1,73 +1,36 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { WorkOrder, WorkOrderInventoryItem, TimeEntry } from "@/types/workOrder";
-import { generateWorkOrderId } from "../generators";
-import { mapAppModelToDatabase } from "../mappers";
+import { WorkOrder } from "@/types/workOrder";
+import { supabase } from "@/lib/supabase";
+import { v4 as uuidv4 } from "uuid";
 
-export const createWorkOrder = async (
-  workOrderData: Omit<WorkOrder, "id" | "date">
-): Promise<WorkOrder> => {
+/**
+ * Create a new work order in the database
+ * @param workOrder - Work order data without id and date
+ * @returns The created work order with id and date
+ */
+export async function createWorkOrder(workOrderData: Omit<WorkOrder, "id" | "date">): Promise<WorkOrder> {
   try {
-    const workOrderId = generateWorkOrderId();
-    const currentDate = new Date().toISOString();
-
-    // Create a complete WorkOrder by adding the missing properties
-    const completeWorkOrderData: WorkOrder = {
-      ...workOrderData,
-      id: workOrderId,
-      date: currentDate
-    };
-
-    // Map the data for Supabase
-    const dbWorkOrderData = mapAppModelToDatabase(completeWorkOrderData);
-
-    // Insert the work order
-    const { data, error } = await supabase
-      .from('work_orders')
-      .insert(dbWorkOrderData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating work order:", error);
-      throw new Error(error.message);
-    }
-
-    // Create base work order with required fields
-    const baseWorkOrder: WorkOrder = {
-      id: data.id,
-      date: data.created_at,
-      customer: workOrderData.customer,
-      description: data.description,
-      status: data.status as WorkOrder["status"],
-      priority: workOrderData.priority,
-      technician: workOrderData.technician,
-      location: workOrderData.location,
-      dueDate: data.end_time || '',
-      notes: workOrderData.notes,
-      inventoryItems: workOrderData.inventoryItems || [],
-      timeEntries: workOrderData.timeEntries || [],
-      totalBillableTime: workOrderData.totalBillableTime || 0,
-      createdBy: workOrderData.createdBy || 'System',
-      createdAt: data.created_at,
-      lastUpdatedBy: workOrderData.lastUpdatedBy,
-      lastUpdatedAt: data.updated_at,
-      vehicle_id: data.vehicle_id,
-      vehicleId: data.vehicle_id,
+    // Generate a new ID and set the date
+    const newWorkOrder: WorkOrder = {
+      id: uuidv4(),
+      date: new Date().toISOString(),
+      ...workOrderData
     };
     
-    // Handle service category assignment
-    if (workOrderData.serviceCategory) {
-      baseWorkOrder.serviceCategory = workOrderData.serviceCategory;
-      baseWorkOrder.service_category = workOrderData.serviceCategory;
-    } else if (workOrderData.service_category) {
-      baseWorkOrder.serviceCategory = workOrderData.service_category;
-      baseWorkOrder.service_category = workOrderData.service_category;
+    const { data, error } = await supabase
+      .from('work_orders')
+      .insert(newWorkOrder)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error creating work order:", error);
+      throw new Error(`Failed to create work order: ${error.message}`);
     }
-
-    return baseWorkOrder;
+    
+    return data as WorkOrder;
   } catch (err) {
     console.error("Error in createWorkOrder:", err);
     throw err;
   }
-};
+}
