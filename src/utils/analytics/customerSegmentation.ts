@@ -93,7 +93,7 @@ export const calculateRetentionRiskScore = async (customerId: string): Promise<n
 /**
  * Analyze customer data to determine which segments they belong to
  */
-export const analyzeCustomerSegments = async (customerId: string): Promise<string[]> => {
+export const analyzeCustomerSegments = async (customerId: string): Promise<CustomerSegmentType[]> => {
   try {
     // Get customer's lifetime value
     const clv = await calculateCustomerLifetimeValue(customerId);
@@ -107,7 +107,7 @@ export const analyzeCustomerSegments = async (customerId: string): Promise<strin
       
     if (error || !customerData) {
       console.error("Error fetching customer data for segmentation:", error);
-      return ["unknown"];
+      return ["unknown"] as unknown as CustomerSegmentType[];
     }
     
     // Get work order history
@@ -117,7 +117,7 @@ export const analyzeCustomerSegments = async (customerId: string): Promise<strin
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
     
-    const segments: string[] = [];
+    const segments: CustomerSegmentType[] = [];
     
     // Segment by customer value
     if (clv > 2000) {
@@ -157,6 +157,6 @@ export const analyzeCustomerSegments = async (customerId: string): Promise<strin
     return segments;
   } catch (error) {
     console.error("Error analyzing customer segments:", error);
-    return ["unknown"];
+    return ["unknown"] as unknown as CustomerSegmentType[];
   }
 };

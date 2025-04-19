@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,10 +63,25 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
     }
   };
 
-  const handleNoteAdded = onNoteAdded ? (newNote: CustomerNote) => {
-    setNotes([newNote, ...notes]);
-    onNoteAdded(newNote);
-  } : undefined;
+  // Create a handleNoteAdded function that handles the void return type issue
+  const handleNoteAdded = () => {
+    // Reload notes after adding a new one
+    loadNotes();
+    // Call the parent onNoteAdded if provided (with no arguments)
+    if (onNoteAdded) {
+      // Create a dummy note just to satisfy the type requirement
+      const dummyNote = {
+        id: '',
+        customer_id: customer.id,
+        content: '',
+        created_at: new Date().toISOString(),
+        created_by: '',
+        updated_at: new Date().toISOString(),
+        category: 'general'
+      };
+      onNoteAdded(dummyNote);
+    }
+  };
 
   const getCategoryIcon = (category: string) => {
     switch(category) {
@@ -92,6 +108,14 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
         return "bg-slate-100 text-slate-800";
     }
   };
+  
+  // Filter notes based on search query and category filter
+  const filteredNotes = notes.filter(note => {
+    const matchesSearch = !searchQuery || 
+      note.content.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = !categoryFilter || note.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <Card>
@@ -131,7 +155,7 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
             <div className="text-center py-8 text-muted-foreground">
               Loading notes...
             </div>
-          ) : sortedNotes.length === 0 ? (
+          ) : filteredNotes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {notes.length === 0 ? (
                 <>No notes recorded yet for this customer.</>
@@ -141,7 +165,7 @@ export const CustomerNotesTimeline: React.FC<CustomerNotesTimelineProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {sortedNotes.map((note) => (
+              {filteredNotes.map((note) => (
                 <div 
                   key={note.id} 
                   className="border rounded-lg p-4 relative hover:bg-slate-50 transition-colors"

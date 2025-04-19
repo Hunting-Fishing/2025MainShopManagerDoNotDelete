@@ -109,6 +109,7 @@ export const CustomerSegmentBadges: React.FC<CustomerSegmentBadgesProps> = ({
     const fetchSegments = async () => {
       setLoading(true);
       try {
+        // Make sure we get properly typed segments from the function
         const customerSegments = await analyzeCustomerSegments(customerId);
         setSegments(customerSegments);
       } catch (error) {
