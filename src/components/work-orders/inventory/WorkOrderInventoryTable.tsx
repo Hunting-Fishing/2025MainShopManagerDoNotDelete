@@ -17,13 +17,15 @@ export interface WorkOrderInventoryTableProps {
   items: WorkOrderInventoryItem[];
   onRemoveItem: (id: string) => void;
   onUpdateQuantity: (id: string, quantity: number) => void;
+  onUpdateItem?: (id: string, updates: Partial<WorkOrderInventoryItem>) => void;
   workOrderId?: string;
 }
 
 export function WorkOrderInventoryTable({ 
   items, 
   onRemoveItem, 
-  onUpdateQuantity, 
+  onUpdateQuantity,
+  onUpdateItem,
   workOrderId 
 }: WorkOrderInventoryTableProps) {
   // Calculate total inventory value
@@ -31,6 +33,15 @@ export function WorkOrderInventoryTable({
     (sum, item) => sum + item.unitPrice * item.quantity,
     0
   );
+
+  // Handle item update - either use the provided onUpdateItem or fallback to onUpdateQuantity
+  const handleUpdateQuantity = (id: string, quantity: number) => {
+    if (onUpdateItem) {
+      onUpdateItem(id, { quantity });
+    } else {
+      onUpdateQuantity(id, quantity);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -72,7 +83,7 @@ export function WorkOrderInventoryTable({
                         variant="outline" 
                         size="sm"
                         className="h-7 w-7 p-0"
-                        onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        onClick={() => handleUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
                         disabled={item.quantity <= 1}
                       >
                         -
@@ -82,7 +93,7 @@ export function WorkOrderInventoryTable({
                         variant="outline" 
                         size="sm"
                         className="h-7 w-7 p-0"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                       >
                         +
                       </Button>

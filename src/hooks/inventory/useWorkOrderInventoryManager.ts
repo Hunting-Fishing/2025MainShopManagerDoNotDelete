@@ -1,11 +1,38 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { WorkOrderInventoryItem } from '@/types/workOrder';
 import { toast } from '@/hooks/use-toast';
 
 export const useWorkOrderInventoryManager = (workOrderId: string) => {
   const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
+
+  const fetchInventoryItems = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('work_order_inventory_items')
+        .select('*')
+        .eq('work_order_id', workOrderId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      setItems(data || []);
+      return data;
+    } catch (error) {
+      console.error('Error fetching inventory items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load inventory items",
+        variant: "destructive"
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [workOrderId]);
 
   const addInventoryItem = async (item: Omit<WorkOrderInventoryItem, 'id'>) => {
     setLoading(true);
@@ -21,6 +48,8 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
 
       if (error) throw error;
 
+      setItems(prevItems => [...prevItems, data]);
+      
       toast({
         title: "Item Added",
         description: `${item.name} has been added to the work order`,
@@ -50,6 +79,8 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
 
       if (error) throw error;
 
+      setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+      
       toast({
         title: "Item Removed",
         description: "Item has been removed from the work order",
@@ -81,6 +112,12 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
 
       if (error) throw error;
 
+      setItems(prevItems => 
+        prevItems.map(item => 
+          item.id === itemId ? { ...item, ...updates } : item
+        )
+      );
+      
       toast({
         title: "Item Updated",
         description: "Inventory item has been updated",
@@ -100,33 +137,9 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
     }
   };
 
-  const fetchInventoryItems = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('work_order_inventory_items')
-        .select('*')
-        .eq('work_order_id', workOrderId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching inventory items:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load inventory items",
-        variant: "destructive"
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     loading,
+    items,
     addInventoryItem,
     removeInventoryItem,
     updateInventoryItem,

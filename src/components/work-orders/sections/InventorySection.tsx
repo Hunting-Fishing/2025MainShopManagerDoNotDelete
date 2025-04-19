@@ -1,10 +1,11 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { useWorkOrderInventoryManager } from "@/hooks/inventory/useWorkOrderInventoryManager";
 import { AddInventoryItemDialog } from "../inventory/AddInventoryItemDialog";
 import { Package } from "lucide-react";
 import { WorkOrderInventoryTable } from "../inventory/WorkOrderInventoryTable";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface InventorySectionProps {
   workOrderId: string;
@@ -13,15 +14,23 @@ interface InventorySectionProps {
 export function InventorySection({ workOrderId }: InventorySectionProps) {
   const {
     loading,
+    items,
     addInventoryItem,
     removeInventoryItem,
     updateInventoryItem,
     fetchInventoryItems
   } = useWorkOrderInventoryManager(workOrderId);
+  
+  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
 
   useEffect(() => {
-    fetchInventoryItems();
-  }, [workOrderId]);
+    const loadItems = async () => {
+      const fetchedItems = await fetchInventoryItems();
+      setInventoryItems(fetchedItems || []);
+    };
+    
+    loadItems();
+  }, [workOrderId, fetchInventoryItems]);
 
   return (
     <Card>
@@ -35,8 +44,10 @@ export function InventorySection({ workOrderId }: InventorySectionProps) {
       <CardContent>
         <WorkOrderInventoryTable
           workOrderId={workOrderId}
+          items={inventoryItems}
           onRemoveItem={removeInventoryItem}
           onUpdateItem={updateInventoryItem}
+          onUpdateQuantity={(id, quantity) => updateInventoryItem(id, { quantity })}
         />
       </CardContent>
     </Card>
