@@ -28,10 +28,11 @@ export function WorkflowEditor({
   const reactFlowInstance = useReactFlow();
 
   const onAddNode = useCallback((type: string) => {
-    const position = reactFlowInstance.project({
+    // Use viewport.getCenter() instead of project which doesn't exist
+    const position = {
       x: Math.random() * 300 + 100,
       y: Math.random() * 300 + 100
-    });
+    };
     
     const newNode: WorkflowNode = {
       id: `node_${Date.now()}`,
