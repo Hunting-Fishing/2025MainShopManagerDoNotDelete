@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Form } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
@@ -12,10 +12,12 @@ import { WorkOrderStatusSection } from "../WorkOrderStatusSection";
 import { AssignmentSection } from "../AssignmentSection";
 import { WorkOrderDescriptionField } from "../fields/WorkOrderDescriptionField";
 import { NotesSection } from "../NotesSection";
-import { WorkOrderInventorySection } from "../WorkOrderInventorySection";
+import { WorkOrderInventorySection } from "../inventory/WorkOrderInventorySection";
 import { TimeTrackingSection } from "./TimeTrackingSection";
 import { SaveAsTemplateDialog } from "../templates/SaveAsTemplateDialog";
 import { FormActions } from "../FormActions";
+import { WorkOrderPartsEstimator } from "../parts/WorkOrderPartsEstimator";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 interface WorkOrderFormLayoutProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -58,6 +60,15 @@ export const WorkOrderFormLayout: React.FC<WorkOrderFormLayoutProps> = ({
   onSaveTemplate,
   onServiceChecked,
 }) => {
+  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>(
+    form.getValues('inventoryItems') || []
+  );
+
+  const handleInventoryItemsChange = (items: WorkOrderInventoryItem[]) => {
+    setInventoryItems(items);
+    form.setValue('inventoryItems', items);
+  };
+
   return (
     <div className="rounded-lg border border-slate-200 p-6 bg-white">
       {error && (
@@ -102,7 +113,12 @@ export const WorkOrderFormLayout: React.FC<WorkOrderFormLayoutProps> = ({
             
             <NotesSection form={form} />
 
-            <WorkOrderInventorySection form={form} />
+            <div className="col-span-1 md:col-span-2">
+              <WorkOrderPartsEstimator 
+                initialItems={inventoryItems} 
+                onItemsChange={handleInventoryItemsChange}
+              />
+            </div>
           </div>
 
           <TimeTrackingSection 

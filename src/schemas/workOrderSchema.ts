@@ -9,7 +9,9 @@ export const inventoryItemSchema = z.object({
   sku: z.string(),
   category: z.string(),
   quantity: z.number().min(1),
-  unitPrice: z.number()
+  unitPrice: z.number(),
+  totalPrice: z.number().optional(),
+  itemStatus: z.enum(['in-stock', 'ordered', 'special-order', 'used-part', 'misc']).optional()
 });
 
 // Form schema validation

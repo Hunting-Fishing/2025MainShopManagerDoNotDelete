@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
-import { WorkOrderTemplate } from "@/types/workOrder";
+import { WorkOrderTemplate, WorkOrderInventoryItem } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { toast } from "@/hooks/use-toast";
@@ -22,8 +22,9 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { form, onSubmit, isSubmitting, error, setTimeEntries } = useWorkOrderForm();
+  const { form, onSubmit, isSubmitting, error, setTimeEntries, setFormValues } = useWorkOrderForm();
   const [timeEntries, setLocalTimeEntries] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
