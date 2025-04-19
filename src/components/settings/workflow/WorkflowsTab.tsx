@@ -16,7 +16,7 @@ export function WorkflowsTab() {
   
   const currentWorkflow = workflows?.[0];
   
-  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>(
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode['data']>(
     (currentWorkflow?.nodes || []) as WorkflowNode[]
   );
   
@@ -74,8 +74,8 @@ export function WorkflowsTab() {
             onSelect={handleWorkflowSelect}
           />
           <WorkflowEditor
-            nodes={nodes}
-            edges={edges}
+            nodes={nodes as WorkflowNode[]}
+            edges={edges as WorkflowEdge[]}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}

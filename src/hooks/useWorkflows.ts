@@ -24,8 +24,12 @@ export function useWorkflows(workflowType?: string) {
       // Parse nodes and edges from JSON to proper objects with proper types
       return (data || []).map(workflow => ({
         ...workflow,
-        nodes: Array.isArray(workflow.nodes) ? workflow.nodes : JSON.parse(workflow.nodes as unknown as string),
-        edges: Array.isArray(workflow.edges) ? workflow.edges : JSON.parse(workflow.edges as unknown as string)
+        nodes: Array.isArray(workflow.nodes) 
+          ? workflow.nodes 
+          : JSON.parse(workflow.nodes as unknown as string),
+        edges: Array.isArray(workflow.edges) 
+          ? workflow.edges 
+          : JSON.parse(workflow.edges as unknown as string)
       })) as Workflow[];
     }
   });
