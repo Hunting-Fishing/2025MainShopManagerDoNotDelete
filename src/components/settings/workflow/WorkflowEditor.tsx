@@ -2,7 +2,7 @@
 import { ReactFlow, Background, Controls, MiniMap, useReactFlow, Panel } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
-import { nodeTypes, TaskNode, DecisionNode, StartNode, EndNode } from './CustomNodes';
+import { nodeTypes } from './CustomNodes';
 import { WorkflowControls, WorkflowNodeToolbar } from './WorkflowControls';
 import { useCallback } from 'react';
 
@@ -32,8 +32,8 @@ export function WorkflowEditor({
       id: `node_${Date.now()}`,
       type,
       position: {
-        x: Math.random() * 300,
-        y: Math.random() * 300
+        x: Math.random() * 300 + 50,
+        y: Math.random() * 300 + 50
       },
       data: {
         label: type === 'start' ? 'Start' : 
@@ -73,6 +73,7 @@ export function WorkflowEditor({
         nodeTypes={nodeTypes}
         fitView
         attributionPosition="bottom-right"
+        className="bg-slate-50"
       >
         {nodes.map((node) => (
           <WorkflowNodeToolbar 
@@ -91,9 +92,9 @@ export function WorkflowEditor({
           />
         </Panel>
         
-        <Background />
+        <Background color="#ddd" gap={16} />
         <Controls />
-        <MiniMap className="bg-background border rounded-lg" />
+        <MiniMap className="bg-white border rounded-lg shadow-sm" />
       </ReactFlow>
     </div>
   );

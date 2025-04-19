@@ -2,5 +2,9 @@
 import { WorkflowsTab as WorkflowContent } from "./workflow/WorkflowsTab";
 
 export function WorkflowsTab() {
-  return <WorkflowContent />;
+  return (
+    <div data-testid="workflows-tab">
+      <WorkflowContent />
+    </div>
+  );
 }

@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useCallback } from 'react';
-import { useNodesState, useEdgesState, addEdge, ReactFlowProvider } from '@xyflow/react';
+import { useNodesState, useEdgesState, addEdge, ReactFlowProvider, ReactFlow } from '@xyflow/react';
 import { FlowTypeSelector } from "./FlowTypeSelector";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { useWorkflows } from "@/hooks/useWorkflows";
@@ -29,7 +29,14 @@ export function WorkflowsTab() {
   );
 
   const onConnect = useCallback((params: any) => {
-    setEdges((eds) => addEdge(params, eds));
+    setEdges((eds) => addEdge(
+      { 
+        ...params, 
+        animated: true, 
+        style: { stroke: '#999', strokeWidth: 2 } 
+      }, 
+      eds
+    ));
   }, [setEdges]);
 
   const handleSaveWorkflow = useCallback(async () => {
@@ -58,6 +65,7 @@ export function WorkflowsTab() {
         description: "Failed to save workflow",
         variant: "destructive",
       });
+      console.error("Error saving workflow:", error);
     }
   }, [currentWorkflow, nodes, edges, updateWorkflow, toast]);
 
@@ -75,21 +83,26 @@ export function WorkflowsTab() {
         });
         toast({
           title: "Success",
-          description: "Workflow saved successfully",
+          description: "Workflow saved before switching",
         });
       } catch (error) {
         toast({
           title: "Error",
-          description: "Failed to save workflow",
+          description: "Failed to save workflow before switching",
           variant: "destructive",
         });
+        console.error("Error saving workflow before switching:", error);
       }
     }
     setSelectedWorkflow(type);
   };
 
   if (isLoading) {
-    return <LoadingSpinner size="lg" />;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
   return (
@@ -106,17 +119,20 @@ export function WorkflowsTab() {
             selectedWorkflow={selectedWorkflow} 
             onSelect={handleWorkflowSelect}
           />
-          <ReactFlowProvider>
-            <WorkflowEditor
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onSave={handleSaveWorkflow}
-              isSaving={updateWorkflow.isPending}
-            />
-          </ReactFlowProvider>
+          
+          <div className="mt-4">
+            <ReactFlowProvider>
+              <WorkflowEditor
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onSave={handleSaveWorkflow}
+                isSaving={updateWorkflow.isPending}
+              />
+            </ReactFlowProvider>
+          </div>
         </CardContent>
       </Card>
     </div>
