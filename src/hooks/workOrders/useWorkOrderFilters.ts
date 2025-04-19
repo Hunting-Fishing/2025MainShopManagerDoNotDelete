@@ -18,6 +18,10 @@ export const useWorkOrderFilters = () => {
     return { priority: priorities };
   }, []);
 
+  const handleServiceCategoryFilter = useCallback((categoryId: string | null) => {
+    return categoryId ? { service_category_id: categoryId } : {};
+  }, []);
+
   const handleTechnicianFilter = useCallback((selectedTechs: string[]) => {
     if (selectedTechs.length > 0) {
       return { technicianId: selectedTechs[0] };
@@ -35,6 +39,7 @@ export const useWorkOrderFilters = () => {
     handleSearch,
     handleStatusFilter,
     handlePriorityFilter,
+    handleServiceCategoryFilter,
     handleTechnicianFilter
   };
 };

@@ -31,6 +31,7 @@ export default function WorkOrdersPage() {
     handleSearch,
     handleStatusFilter,
     handlePriorityFilter,
+    handleServiceCategoryFilter,
     handleTechnicianFilter
   } = useWorkOrderFilters();
 
@@ -113,6 +114,7 @@ export default function WorkOrdersPage() {
         onSearch={(searchTerm) => searchOrders(handleSearch(searchTerm))}
         onStatusFilterChange={(statuses) => searchOrders(handleStatusFilter(statuses))}
         onPriorityFilterChange={(priorities) => searchOrders(handlePriorityFilter(priorities))}
+        onServiceCategoryChange={(categoryId) => searchOrders(handleServiceCategoryFilter(categoryId))}
         onTechnicianFilterChange={(techs) => searchOrders(handleTechnicianFilter(techs))}
         technicians={technicians}
       />

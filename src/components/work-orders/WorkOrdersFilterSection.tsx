@@ -12,6 +12,7 @@ interface WorkOrdersFilterSectionProps {
   onSearch: (searchTerm: string) => void;
   onStatusFilterChange: (statuses: string[]) => void;
   onPriorityFilterChange: (priorities: string[]) => void;
+  onServiceCategoryChange: (categoryId: string | null) => void;
   onTechnicianFilterChange: (techs: string[]) => void;
   technicians: string[];
 }
@@ -24,6 +25,7 @@ export const WorkOrdersFilterSection: React.FC<WorkOrdersFilterSectionProps> = (
   onSearch,
   onStatusFilterChange,
   onPriorityFilterChange,
+  onServiceCategoryChange,
   onTechnicianFilterChange,
   technicians
 }) => {
@@ -50,6 +52,7 @@ export const WorkOrdersFilterSection: React.FC<WorkOrdersFilterSectionProps> = (
           onSearch={onSearch}
           onStatusFilterChange={onStatusFilterChange}
           onPriorityFilterChange={onPriorityFilterChange}
+          onServiceCategoryChange={onServiceCategoryChange}
           onTechnicianFilterChange={onTechnicianFilterChange}
           technicians={technicians}
         />
