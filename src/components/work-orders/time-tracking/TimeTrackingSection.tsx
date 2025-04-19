@@ -6,7 +6,7 @@ import { TimeEntry } from "@/types/workOrder";
 import { Clock, Play, Pause } from "lucide-react";
 import { formatRelativeTime } from "@/utils/dateUtils";
 import { TimeTrackingMetrics } from "./TimeTrackingMetrics";
-import { useTimeTracker } from "@/hooks/workOrders/useTimeTracker";
+import { useWorkOrderTimeManagement } from "@/hooks/workOrders/useWorkOrderTimeManagement";
 import { format } from "date-fns";
 
 interface TimeTrackingSectionProps {
@@ -21,12 +21,12 @@ export function TimeTrackingSection({
   onUpdateTimeEntries
 }: TimeTrackingSectionProps) {
   const {
-    activeTimer,
+    activeEntry,
     isTracking,
-    handleStartTimer,
-    handleStopTimer,
+    startTimeTracking,
+    stopTimeTracking,
     fetchTimeEntries
-  } = useTimeTracker(workOrderId);
+  } = useWorkOrderTimeManagement(workOrderId);
 
   React.useEffect(() => {
     const loadTimeEntries = async () => {
@@ -37,8 +37,19 @@ export function TimeTrackingSection({
     loadTimeEntries();
   }, [workOrderId, fetchTimeEntries, onUpdateTimeEntries]);
 
-  const handleTimerStop = async () => {
-    const completedEntry = await handleStopTimer();
+  const handleStartTimer = async () => {
+    // In a real app, these would come from auth context
+    const userId = "current-user";
+    const userName = "Current User";
+    
+    const newEntry = await startTimeTracking(userId, userName);
+    if (newEntry) {
+      onUpdateTimeEntries([newEntry, ...timeEntries]);
+    }
+  };
+
+  const handleStopTimer = async () => {
+    const completedEntry = await stopTimeTracking();
     if (completedEntry) {
       onUpdateTimeEntries([completedEntry, ...timeEntries]);
     }
@@ -57,7 +68,7 @@ export function TimeTrackingSection({
               variant="outline" 
               size="sm" 
               className="text-red-500" 
-              onClick={handleTimerStop}
+              onClick={handleStopTimer}
             >
               <Pause className="mr-1 h-4 w-4" />
               Stop Timer
@@ -77,12 +88,12 @@ export function TimeTrackingSection({
       </CardHeader>
       
       <CardContent className="p-6">
-        {activeTimer && (
+        {activeEntry && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded flex justify-between items-center">
             <div>
               <p className="font-medium">Timer Running</p>
               <p className="text-sm text-slate-500">
-                Started: {formatRelativeTime(activeTimer.startTime)}
+                Started: {formatRelativeTime(activeEntry.startTime)}
               </p>
             </div>
           </div>
