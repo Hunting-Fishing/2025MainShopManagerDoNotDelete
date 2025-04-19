@@ -11,19 +11,13 @@ import Team from "./pages/Team";
 import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 import WorkOrderCreate from "./pages/WorkOrderCreate";
-import WorkOrders from "./pages/WorkOrders"; // Import the WorkOrders component
+import WorkOrders from "./pages/WorkOrders";
 import FlowchartTest from "./pages/FlowchartTest";
 
-// The router exported from this file is not currently being used
-// since we're defining routes in App.tsx directly.
-// This file is kept for reference or future use if needed.
-
-// Create a context provider component if it doesn't exist
 const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return <CustomerDataProvider>{children}</CustomerDataProvider>;
 };
 
-// Define routes but don't create router instance here
 export const routeDefinitions = [
   {
     path: "/",
@@ -80,7 +74,7 @@ export const routeDefinitions = [
       },
       {
         path: "work-orders/new",
-        element: <WorkOrderCreate />, // Add a new route for /work-orders/new that also points to WorkOrderCreate
+        element: <WorkOrderCreate />,
       },
       {
         path: "work-orders/:workOrderId",
@@ -97,10 +91,6 @@ export const routeDefinitions = [
       {
         path: "invoices/:invoiceId",
         element: <>Invoice Details</>,
-      },
-      {
-        path: "flowchart",
-        element: <FlowchartTest />,
       },
     ],
   },

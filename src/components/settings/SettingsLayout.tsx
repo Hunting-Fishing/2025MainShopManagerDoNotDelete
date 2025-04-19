@@ -7,32 +7,20 @@ import { IntegrationsTab } from "./IntegrationsTab";
 import { SecurityTab } from "./SecurityTab";
 import { BrandingTab } from "./BrandingTab";
 import { SkillsTab } from "./SkillsTab";
+import { WorkflowsTab } from "./WorkflowsTab";
 
 export function SettingsLayout() {
   return (
     <Tabs defaultValue="general" className="space-y-6">
       <TabsList>
-        <TabsTrigger value="general">
-          General
-        </TabsTrigger>
-        <TabsTrigger value="appearance">
-          Appearance
-        </TabsTrigger>
-        <TabsTrigger value="branding">
-          Branding
-        </TabsTrigger>
-        <TabsTrigger value="notifications">
-          Notifications
-        </TabsTrigger>
-        <TabsTrigger value="integrations">
-          Integrations
-        </TabsTrigger>
-        <TabsTrigger value="security">
-          Security
-        </TabsTrigger>
-        <TabsTrigger value="skills">
-          Skills
-        </TabsTrigger>
+        <TabsTrigger value="general">General</TabsTrigger>
+        <TabsTrigger value="appearance">Appearance</TabsTrigger>
+        <TabsTrigger value="branding">Branding</TabsTrigger>
+        <TabsTrigger value="workflows">Workflows</TabsTrigger>
+        <TabsTrigger value="notifications">Notifications</TabsTrigger>
+        <TabsTrigger value="integrations">Integrations</TabsTrigger>
+        <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsTrigger value="skills">Skills</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general">
@@ -43,6 +31,9 @@ export function SettingsLayout() {
       </TabsContent>
       <TabsContent value="branding">
         <BrandingTab />
+      </TabsContent>
+      <TabsContent value="workflows">
+        <WorkflowsTab />
       </TabsContent>
       <TabsContent value="notifications">
         <NotificationsTab />
