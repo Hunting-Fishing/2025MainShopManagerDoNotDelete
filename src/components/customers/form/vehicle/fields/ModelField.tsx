@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HelpCircle, Loader2 } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseFieldProps } from "./BaseFieldTypes";
 import { CarModel } from "@/types/vehicle";
@@ -84,7 +84,7 @@ export const ModelField: React.FC<ModelFieldProps> = ({
               <SelectTrigger className="bg-white">
                 {isLoading ? (
                   <div className="flex items-center">
-                    <LoadingSpinner size="sm" className="mr-2" />
+                    <LoadingSpinner className="mr-2" size="sm" />
                     <span>Loading models...</span>
                   </div>
                 ) : (

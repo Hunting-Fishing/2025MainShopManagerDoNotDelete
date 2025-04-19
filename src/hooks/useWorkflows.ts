@@ -1,18 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-
-export interface Workflow {
-  id: string;
-  name: string;
-  description: string | null;
-  workflow_type: string;
-  is_active: boolean;
-  nodes: Node[];
-  edges: Edge[];
-  created_at: string;
-  updated_at: string;
-}
+import { Workflow, WorkflowNode, WorkflowEdge, WorkflowUpdatePayload } from '@/types/workflow';
 
 export function useWorkflows(workflowType?: string) {
   const queryClient = useQueryClient();
@@ -32,15 +21,23 @@ export function useWorkflows(workflowType?: string) {
         throw error;
       }
       
-      return data as Workflow[];
+      // Parse nodes and edges from JSON to proper objects
+      return (data || []).map(workflow => ({
+        ...workflow,
+        nodes: Array.isArray(workflow.nodes) ? workflow.nodes : JSON.parse(workflow.nodes as unknown as string),
+        edges: Array.isArray(workflow.edges) ? workflow.edges : JSON.parse(workflow.edges as unknown as string)
+      })) as Workflow[];
     }
   });
 
   const updateWorkflow = useMutation({
-    mutationFn: async ({ id, nodes, edges }: { id: string; nodes: Node[]; edges: Edge[] }) => {
+    mutationFn: async ({ id, nodes, edges }: WorkflowUpdatePayload) => {
       const { error } = await supabase
         .from('workflows')
-        .update({ nodes, edges })
+        .update({
+          nodes: nodes as any,
+          edges: edges as any
+        })
         .eq('id', id);
 
       if (error) throw error;

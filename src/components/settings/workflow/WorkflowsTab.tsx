@@ -7,6 +7,7 @@ import { WorkflowEditor } from "./WorkflowEditor";
 import { useWorkflows } from "@/hooks/useWorkflows";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
+import { WorkflowNode, WorkflowEdge } from "@/types/workflow"; 
 
 export function WorkflowsTab() {
   const [selectedWorkflow, setSelectedWorkflow] = useState('customer-onboarding');
@@ -14,8 +15,12 @@ export function WorkflowsTab() {
   const { toast } = useToast();
   
   const currentWorkflow = workflows?.[0];
-  const [nodes, setNodes, onNodesChange] = useNodesState(currentWorkflow?.nodes || []);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(currentWorkflow?.edges || []);
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode["data"]>(
+    currentWorkflow?.nodes || []
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    currentWorkflow?.edges || []
+  );
 
   const onConnect = (params: any) => {
     setEdges((eds) => addEdge(params, eds));
@@ -46,7 +51,7 @@ export function WorkflowsTab() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner size="lg" />;
   }
 
   return (

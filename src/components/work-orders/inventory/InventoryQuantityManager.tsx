@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +23,6 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch the inventory item from the database
   useEffect(() => {
     const fetchItem = async () => {
       try {
@@ -50,16 +48,13 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
     }
   }, [itemId]);
   
-  // Determine if quantity is valid
   const isInvalidQuantity = React.useMemo(() => {
     if (!inventoryItem) return false;
-    // If maxAllowed is specified, use it, otherwise use the inventory item's quantity
     const max = maxAllowed !== undefined ? maxAllowed : inventoryItem.quantity;
     return quantity > max;
   }, [inventoryItem, quantity, maxAllowed]);
 
   const handleQuantityChange = (newQuantity: number) => {
-    // Don't allow negative quantities
     if (newQuantity < 1) return;
     
     if (inventoryItem && maxAllowed === undefined && newQuantity > inventoryItem.quantity) {
@@ -68,7 +63,6 @@ export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> =
         description: `Only ${inventoryItem.quantity} units available in stock`,
         variant: "destructive"
       });
-      // Set to maximum available
       onUpdateQuantity(itemId, inventoryItem.quantity);
       return;
     }

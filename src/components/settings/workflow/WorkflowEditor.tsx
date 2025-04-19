@@ -1,10 +1,11 @@
 
-import { ReactFlow, Background, Controls, MiniMap, Node, Edge } from '@xyflow/react';
+import { ReactFlow, Background, Controls, MiniMap } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
 interface WorkflowEditorProps {
-  nodes: Node[];
-  edges: Edge[];
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
   onNodesChange: (changes: any) => void;
   onEdgesChange: (changes: any) => void;
   onConnect: (params: any) => void;
