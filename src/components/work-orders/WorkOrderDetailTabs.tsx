@@ -55,7 +55,7 @@ export function WorkOrderDetailTabs({
       </TabsContent>
       
       <TabsContent value="notes" className="space-y-4">
-        <NotesSection notes={workOrder.notes || ""} />
+        <NotesSection workOrder={workOrder} onNotesUpdate={onStatusUpdate} />
       </TabsContent>
       
       <TabsContent value="activity" className="space-y-4">

@@ -1,71 +1,115 @@
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StickyNote } from "lucide-react";
-import { UseFormReturn } from "react-hook-form";
-import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import React, { useState } from "react";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { WorkOrderFormValues } from "@/hooks/useWorkOrderForm";
-import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
+import { MessageSquare, Save } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { updateWorkOrder } from "@/utils/workOrders/crud";
+import { WorkOrder } from "@/types/workOrder";
 
-interface NotesSectionBaseProps {
-  className?: string;
+interface NotesSectionProps {
+  workOrder: WorkOrder;
+  onNotesUpdate?: (updatedWorkOrder: WorkOrder) => void;
 }
 
-interface NotesSectionStringProps extends NotesSectionBaseProps {
-  notes: string;
-  form?: never;
-}
+export function NotesSection({ workOrder, onNotesUpdate }: NotesSectionProps) {
+  const [notes, setNotes] = useState(workOrder.notes || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-// Use a more generic type for the form to accommodate both WorkOrderFormValues and WorkOrderFormFieldValues
-interface NotesSectionFormProps extends NotesSectionBaseProps {
-  form: UseFormReturn<any>;
-  notes?: never;
-}
+  const handleSave = async () => {
+    if (notes === workOrder.notes) {
+      setIsEditing(false);
+      return;
+    }
 
-export type NotesSectionProps = NotesSectionStringProps | NotesSectionFormProps;
-
-export function NotesSection({ notes, form, className }: NotesSectionProps) {
-  if (form) {
-    return (
-      <Card className={className}>
-        <CardHeader className="flex flex-row items-center gap-2 pb-2">
-          <StickyNote className="h-5 w-5 text-muted-foreground" />
-          <CardTitle className="text-lg">Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Enter any additional notes here" 
-                    className="min-h-[120px]" 
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </CardContent>
-      </Card>
-    );
-  }
+    setIsSaving(true);
+    try {
+      const updatedWorkOrder = await updateWorkOrder({
+        ...workOrder,
+        notes,
+        lastUpdatedAt: new Date().toISOString()
+      });
+      
+      if (onNotesUpdate) {
+        onNotesUpdate(updatedWorkOrder);
+      }
+      
+      toast({
+        title: "Notes Updated",
+        description: "Work order notes have been saved",
+      });
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      toast({
+        title: "Error",
+        description: "Could not save notes",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <Card className={className}>
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        <StickyNote className="h-5 w-5 text-muted-foreground" />
-        <CardTitle className="text-lg">Notes</CardTitle>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="flex items-center">
+          <MessageSquare className="h-5 w-5 mr-2 text-slate-500" />
+          <CardTitle className="text-lg">Notes</CardTitle>
+        </div>
+        {!isEditing ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsEditing(true)}
+          >
+            Edit Notes
+          </Button>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setNotes(workOrder.notes || "");
+              setIsEditing(false);
+            }}
+          >
+            Cancel
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
-        {notes ? (
-          <div className="whitespace-pre-wrap">{notes}</div>
+        {isEditing ? (
+          <div className="space-y-4">
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add notes about this work order..."
+              className="min-h-[150px]"
+            />
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? "Saving..." : "Save Notes"}
+            </Button>
+          </div>
         ) : (
-          <div className="text-muted-foreground italic">No notes available</div>
+          <div className="min-h-[100px] whitespace-pre-wrap">
+            {workOrder.notes ? (
+              workOrder.notes
+            ) : (
+              <p className="text-slate-500 italic">
+                No notes have been added to this work order yet.
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
