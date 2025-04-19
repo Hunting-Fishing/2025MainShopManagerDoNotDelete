@@ -55,3 +55,73 @@ export async function getWorkOrderActivity(workOrderId: string) {
 
 // Add an alias that matches what components are expecting
 export const getWorkOrderActivities = getWorkOrderActivity;
+
+// Flag a work order activity for review
+export async function flagWorkOrderActivity(
+  activityId: string, 
+  flagReason: string
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('work_order_activities')
+      .update({ 
+        flagged: true,
+        flag_reason: flagReason
+      })
+      .eq('id', activityId);
+
+    if (error) {
+      console.error("Error flagging work order activity:", error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Error in flagWorkOrderActivity:", err);
+    return false;
+  }
+}
+
+// Unflag a work order activity
+export async function unflagWorkOrderActivity(activityId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('work_order_activities')
+      .update({ 
+        flagged: false,
+        flag_reason: null 
+      })
+      .eq('id', activityId);
+
+    if (error) {
+      console.error("Error unflagging work order activity:", error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Error in unflagWorkOrderActivity:", err);
+    return false;
+  }
+}
+
+// Get flagged activities
+export async function getFlaggedActivities() {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_activities')
+      .select('*, work_orders!inner(*)')
+      .eq('flagged', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching flagged activities:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Error in getFlaggedActivities:", err);
+    return [];
+  }
+}

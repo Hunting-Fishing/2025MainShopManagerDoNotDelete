@@ -9,6 +9,7 @@ export * from './generators';
 export * from './formatters';
 export * from './mappers';
 export * from './activity';
+export * from './statusManagement';
 
 // Define standard status and priority maps as the single source of truth
 export const statusMap = {

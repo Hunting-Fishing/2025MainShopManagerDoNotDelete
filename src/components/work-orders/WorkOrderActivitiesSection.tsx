@@ -2,10 +2,31 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { getWorkOrderActivity } from "@/utils/workOrders/activity";
-import { Loader2, AlertTriangle, Check, X, PlayCircle, Clock, CalendarClock } from "lucide-react";
+import { useWorkOrderActivities } from "@/hooks/workOrders/useWorkOrderActivities";
+import { 
+  Loader2, 
+  AlertTriangle, 
+  Check, 
+  X, 
+  PlayCircle, 
+  Clock, 
+  CalendarClock,
+  Flag,
+  AlertOctagon
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ActivityItem {
   id: string;
@@ -25,25 +46,20 @@ interface WorkOrderActivitiesSectionProps {
 export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProps> = ({ 
   workOrderId 
 }) => {
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    activities, 
+    loading, 
+    error, 
+    fetchActivities,
+    flagActivity,
+    unflagActivity
+  } = useWorkOrderActivities(workOrderId);
+  
+  const [flagReason, setFlagReason] = useState("");
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
-    const fetchActivities = async () => {
-      setLoading(true);
-      try {
-        const activitiesData = await getWorkOrderActivity(workOrderId);
-        setActivities(activitiesData);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching work order activities:", err);
-        setError("Failed to load activity history");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchActivities();
 
     // Set up real-time listener for new activities
@@ -58,7 +74,8 @@ export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProp
           filter: `work_order_id=eq.${workOrderId}`
         },
         (payload) => {
-          setActivities(current => [payload.new as ActivityItem, ...current]);
+          // Update activities when a new one is added
+          fetchActivities();
         }
       )
       .subscribe();
@@ -66,7 +83,7 @@ export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProp
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workOrderId]);
+  }, [workOrderId, fetchActivities]);
 
   // Render icon based on activity type
   const getActivityIcon = (action: string) => {
@@ -84,6 +101,23 @@ export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProp
       default:
         return <Clock className="h-4 w-4 text-slate-500" />;
     }
+  };
+
+  const handleFlagActivity = (activityId: string) => {
+    setSelectedActivityId(activityId);
+    setFlagReason("");
+    setDialogOpen(true);
+  };
+
+  const handleSubmitFlag = async () => {
+    if (selectedActivityId && flagReason.trim()) {
+      await flagActivity(selectedActivityId, flagReason);
+      setDialogOpen(false);
+    }
+  };
+
+  const handleUnflagActivity = async (activityId: string) => {
+    await unflagActivity(activityId);
   };
 
   if (loading) {
@@ -123,7 +157,7 @@ export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProp
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          {activities.map((activity) => (
+          {activities.map((activity: ActivityItem) => (
             <div 
               key={activity.id} 
               className={`p-3 border rounded-lg flex items-start ${activity.flagged ? 'bg-red-50 border-red-200' : 'bg-slate-50'}`}
@@ -137,7 +171,7 @@ export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProp
                     {activity.action} 
                     {activity.flagged && (
                       <Badge variant="destructive" className="ml-2">
-                        Flagged
+                        <AlertOctagon className="h-3 w-3 mr-1" /> Flagged
                       </Badge>
                     )}
                   </span>
@@ -151,10 +185,52 @@ export const WorkOrderActivitiesSection: React.FC<WorkOrderActivitiesSectionProp
                     Flag reason: {activity.flag_reason}
                   </p>
                 )}
+                <div className="flex justify-end mt-2">
+                  {activity.flagged ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs" 
+                      onClick={() => handleUnflagActivity(activity.id)}
+                    >
+                      <X className="h-3 w-3 mr-1" /> Remove Flag
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs text-amber-600 hover:text-amber-700"
+                      onClick={() => handleFlagActivity(activity.id)}
+                    >
+                      <Flag className="h-3 w-3 mr-1" /> Flag
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Flag Activity</DialogTitle>
+              <DialogDescription>
+                Provide a reason for flagging this activity. Flags help identify issues that need attention.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={flagReason}
+              onChange={(e) => setFlagReason(e.target.value)}
+              placeholder="Enter the reason for flagging this activity..."
+              className="min-h-[100px]"
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSubmitFlag} disabled={!flagReason.trim()}>Flag Activity</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
