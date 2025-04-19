@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { TimeEntry } from '@/types/workOrder';
 import { toast } from '@/hooks/use-toast';
@@ -93,7 +94,7 @@ export function useTimeTracker(workOrderId: string) {
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
       const entries = await fetchTimeEntries();
-      return entries || []; // Explicitly return an array
+      return entries || []; // Explicitly return an array, handling potential null/undefined
     } catch (error) {
       console.error('Error fetching time entries:', error);
       toast({
@@ -114,3 +115,4 @@ export function useTimeTracker(workOrderId: string) {
     fetchTimeEntries: fetchEntries // Explicitly assign the function
   };
 }
+
