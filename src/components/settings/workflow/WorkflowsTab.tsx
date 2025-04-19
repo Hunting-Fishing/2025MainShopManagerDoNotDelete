@@ -15,9 +15,11 @@ export function WorkflowsTab() {
   const { toast } = useToast();
   
   const currentWorkflow = workflows?.[0];
+  
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode["data"]>(
     currentWorkflow?.nodes || []
   );
+  
   const [edges, setEdges, onEdgesChange] = useEdgesState(
     currentWorkflow?.edges || []
   );
@@ -28,12 +30,15 @@ export function WorkflowsTab() {
 
   const handleWorkflowSelect = async (type: string) => {
     // Save current workflow before switching if it exists
-    if (currentWorkflow && (nodes !== currentWorkflow.nodes || edges !== currentWorkflow.edges)) {
+    if (currentWorkflow && (
+      JSON.stringify(nodes) !== JSON.stringify(currentWorkflow.nodes) || 
+      JSON.stringify(edges) !== JSON.stringify(currentWorkflow.edges)
+    )) {
       try {
         await updateWorkflow.mutateAsync({
           id: currentWorkflow.id,
-          nodes,
-          edges
+          nodes: nodes as WorkflowNode[],
+          edges: edges as WorkflowEdge[]
         });
         toast({
           title: "Success",
@@ -69,8 +74,8 @@ export function WorkflowsTab() {
             onSelect={handleWorkflowSelect}
           />
           <WorkflowEditor
-            nodes={nodes}
-            edges={edges}
+            nodes={nodes as WorkflowNode[]}
+            edges={edges as WorkflowEdge[]}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}

@@ -21,7 +21,7 @@ export function useWorkflows(workflowType?: string) {
         throw error;
       }
       
-      // Parse nodes and edges from JSON to proper objects
+      // Parse nodes and edges from JSON to proper objects with proper types
       return (data || []).map(workflow => ({
         ...workflow,
         nodes: Array.isArray(workflow.nodes) ? workflow.nodes : JSON.parse(workflow.nodes as unknown as string),
@@ -35,8 +35,8 @@ export function useWorkflows(workflowType?: string) {
       const { error } = await supabase
         .from('workflows')
         .update({
-          nodes: nodes as any,
-          edges: edges as any
+          nodes: nodes,
+          edges: edges 
         })
         .eq('id', id);
 
