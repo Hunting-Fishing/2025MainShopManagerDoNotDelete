@@ -93,9 +93,14 @@ export function useTimeTracker(workOrderId: string) {
   // Ensure fetchEntries always returns an array and is explicitly typed
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
-      // Explicitly await the result and ensure it's always an array
       const entries = await fetchTimeEntries();
-      // TypeScript sees this as possibly void, so we need to be explicit
+      
+      // Explicitly handle potential void or null/undefined return
+      if (entries === undefined || entries === null) {
+        return [];
+      }
+      
+      // Ensure we return an array
       return Array.isArray(entries) ? entries : [];
     } catch (error) {
       console.error('Error fetching time entries:', error);
