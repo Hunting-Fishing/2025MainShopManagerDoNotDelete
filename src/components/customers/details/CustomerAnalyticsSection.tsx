@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Customer } from '@/types/customer';
-import { calculateCustomerLifetimeValue, getCustomerLifetimeValuePercentile, predictFutureCustomerValue } from '@/utils/analytics/customerLifetimeValue';
+import { calculateCustomerLifetimeValue, getCustomerLifetimeValuePercentile } from '@/utils/analytics/customerLifetimeValue';
 import { analyzeCustomerSegments, calculateRetentionRiskScore } from '@/utils/analytics/customerSegmentation';
 import { getRecommendedNextServices, getOptimalContactTime } from '@/utils/analytics/customerValuePrediction';
 import { Progress } from '@/components/ui/progress';
@@ -40,7 +40,7 @@ export function CustomerAnalyticsSection({ customer }: CustomerAnalyticsSectionP
         const riskScore = await calculateRetentionRiskScore(customer.id);
         setRetentionRisk(riskScore);
         
-        // Get predicted future value
+        // Get predicted future value - pass the customer ID, not the customer object
         const futureValue = await predictFutureCustomerValue(customer.id);
         setPredictedValue(futureValue);
         

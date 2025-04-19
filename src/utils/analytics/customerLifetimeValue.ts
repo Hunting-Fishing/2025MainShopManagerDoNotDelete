@@ -56,15 +56,97 @@ export const getCustomerTenure = async (customerId: string): Promise<number> => 
 };
 
 /**
+ * Get customer CLV percentile compared to all other customers
+ */
+export const getCustomerLifetimeValuePercentile = async (customerId: string): Promise<number> => {
+  try {
+    // Get current customer's CLV
+    const customerClv = await calculateCustomerLifetimeValue(customerId);
+    if (customerClv === 0) return 0;
+    
+    // Get all customers CLVs
+    const { data: customers, error } = await supabase
+      .from('customers')
+      .select('id');
+      
+    if (error) {
+      console.error("Error fetching customers for percentile calculation:", error);
+      throw error;
+    }
+    
+    // Calculate CLV for each customer and count how many have lower CLV
+    let lowerCount = 0;
+    let totalCount = customers?.length || 1; // Avoid division by zero
+    
+    for (const customer of (customers || [])) {
+      if (customer.id === customerId) continue; // Skip current customer
+      
+      const otherClv = await calculateCustomerLifetimeValue(customer.id);
+      if (otherClv < customerClv) {
+        lowerCount++;
+      }
+    }
+    
+    // Calculate percentile
+    return Math.round((lowerCount / (totalCount - 1)) * 100);
+  } catch (error) {
+    console.error("Error calculating customer CLV percentile:", error);
+    return 0;
+  }
+};
+
+/**
+ * Get average CLV across all customers
+ */
+export const getAverageCustomerLifetimeValue = async (): Promise<number> => {
+  try {
+    // Get all customers
+    const { data: customers, error } = await supabase
+      .from('customers')
+      .select('id');
+      
+    if (error || !customers || customers.length === 0) {
+      console.error("Error fetching customers for average CLV calculation:", error);
+      return 0;
+    }
+    
+    // Calculate CLV for each customer
+    let totalClv = 0;
+    for (const customer of customers) {
+      const clv = await calculateCustomerLifetimeValue(customer.id);
+      totalClv += clv;
+    }
+    
+    // Calculate average
+    return totalClv / customers.length;
+  } catch (error) {
+    console.error("Error calculating average CLV:", error);
+    return 0;
+  }
+};
+
+/**
  * Predict future customer value based on past performance
  */
-export const predictFutureCustomerValue = async (customer: Customer): Promise<number> => {
+export const predictFutureCustomerValue = async (customerId: string): Promise<number> => {
   try {
+    // Fetch the customer first
+    const { data: customer, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', customerId)
+      .single();
+      
+    if (error || !customer) {
+      console.error("Error fetching customer for future value prediction:", error);
+      return 0;
+    }
+    
     // Get current lifetime value
-    const currentValue = await calculateCustomerLifetimeValue(customer.id);
+    const currentValue = await calculateCustomerLifetimeValue(customerId);
     
     // Get customer tenure
-    const tenure = await getCustomerTenure(customer.id);
+    const tenure = await getCustomerTenure(customerId);
     
     // Calculate average annual value
     const annualValue = currentValue / tenure;
@@ -100,7 +182,8 @@ export const getCustomersWithSegments = async (): Promise<Customer[]> => {
     
     // Add CLV to each customer
     for (const customer of customers) {
-      customer.clv = await calculateCustomerLifetimeValue(customer.id);
+      const clvValue = await calculateCustomerLifetimeValue(customer.id);
+      customer.clv = clvValue;
     }
     
     return customers;

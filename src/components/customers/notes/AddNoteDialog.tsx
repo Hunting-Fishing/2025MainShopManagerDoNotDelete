@@ -4,59 +4,60 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Customer, CustomerNote } from "@/types/customer";
 import { addCustomerNote } from "@/services/customer/customerNotesService";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
+import { Customer } from "@/types/customer";
 
 interface AddNoteDialogProps {
   customer: Customer;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNoteAdded?: (note: CustomerNote) => void;
+  onNoteAdded?: () => void;
 }
 
 export function AddNoteDialog({ customer, open, onOpenChange, onNoteAdded }: AddNoteDialogProps) {
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState<'service' | 'sales' | 'follow-up' | 'general'>('general');
+  const [category, setCategory] = useState('general');
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!content.trim()) {
       toast({
         title: "Error",
         description: "Note content cannot be empty",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-    
+
     setSubmitting(true);
-    
     try {
       // Get the user's name or default to "System"
       const createdBy = user?.displayName || user?.email || "System";
       
-      // Call the API to add the note
-      const newNote = await addCustomerNote({
+      // Create the note data object according to the API requirements
+      const noteData = {
         customer_id: customer.id,
         content: content.trim(),
-        category,
+        category: category as 'service' | 'sales' | 'follow-up' | 'general',
         created_by: createdBy
-      });
+      };
+      
+      // Call the API to add the note with the correct parameter structure
+      await addCustomerNote(noteData);
       
       toast({
         title: "Note added",
-        description: "Customer note has been added successfully",
+        description: "Customer note has been added successfully"
       });
       
       // Close dialog and notify parent
       onOpenChange(false);
-      if (onNoteAdded) onNoteAdded(newNote);
+      if (onNoteAdded) onNoteAdded();
       
       // Reset form
       setContent("");
@@ -66,7 +67,7 @@ export function AddNoteDialog({ customer, open, onOpenChange, onNoteAdded }: Add
       toast({
         title: "Error",
         description: "Failed to add customer note. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setSubmitting(false);
@@ -86,9 +87,9 @@ export function AddNoteDialog({ customer, open, onOpenChange, onNoteAdded }: Add
               <label htmlFor="note-category" className="text-sm font-medium">
                 Category
               </label>
-              <Select
+              <Select 
                 value={category}
-                onValueChange={(value) => setCategory(value as 'service' | 'sales' | 'follow-up' | 'general')}
+                onValueChange={(value) => setCategory(value)}
               >
                 <SelectTrigger id="note-category">
                   <SelectValue placeholder="Select category" />
