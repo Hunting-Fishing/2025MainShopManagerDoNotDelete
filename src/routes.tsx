@@ -1,4 +1,3 @@
-
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import ErrorPage from "./pages/error-page";
@@ -13,6 +12,7 @@ import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 import WorkOrderCreate from "./pages/WorkOrderCreate";
 import WorkOrders from "./pages/WorkOrders"; // Import the WorkOrders component
+import FlowchartTest from "./pages/FlowchartTest";
 
 // The router exported from this file is not currently being used
 // since we're defining routes in App.tsx directly.
@@ -97,6 +97,10 @@ export const routeDefinitions = [
       {
         path: "invoices/:invoiceId",
         element: <>Invoice Details</>,
+      },
+      {
+        path: "flowchart",
+        element: <FlowchartTest />,
       },
     ],
   },
