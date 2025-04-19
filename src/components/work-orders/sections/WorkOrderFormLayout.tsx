@@ -105,6 +105,11 @@ export const WorkOrderFormLayout: React.FC<WorkOrderFormLayoutProps> = ({
             <WorkOrderInventorySection form={form} />
           </div>
 
+          <TimeTrackingSection 
+            timeEntries={timeEntries}
+            onUpdateTimeEntries={onUpdateTimeEntries}
+          />
+
           <div className="flex justify-between items-center">
             <SaveAsTemplateDialog 
               formValues={form.getValues()} 
@@ -117,11 +122,6 @@ export const WorkOrderFormLayout: React.FC<WorkOrderFormLayoutProps> = ({
           </div>
         </form>
       </Form>
-
-      <TimeTrackingSection 
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={onUpdateTimeEntries}
-      />
     </div>
   );
 };
