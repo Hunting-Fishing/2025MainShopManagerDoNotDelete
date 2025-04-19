@@ -37,7 +37,7 @@ export const getAvailableStatusTransitions = (
 };
 
 /**
- * Status for badge display
+ * Status configuration for badge display
  */
 export const statusConfig = {
   "pending": {
