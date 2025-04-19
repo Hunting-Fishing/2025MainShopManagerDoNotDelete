@@ -93,8 +93,10 @@ export function useTimeTracker(workOrderId: string) {
   // Ensure fetchEntries always returns an array and is explicitly typed
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
+      // Explicitly await the result and ensure it's always an array
       const entries = await fetchTimeEntries();
-      return entries || []; // Explicitly return an array, handling potential null/undefined
+      // TypeScript sees this as possibly void, so we need to be explicit
+      return Array.isArray(entries) ? entries : [];
     } catch (error) {
       console.error('Error fetching time entries:', error);
       toast({
@@ -115,4 +117,3 @@ export function useTimeTracker(workOrderId: string) {
     fetchTimeEntries: fetchEntries // Explicitly assign the function
   };
 }
-
