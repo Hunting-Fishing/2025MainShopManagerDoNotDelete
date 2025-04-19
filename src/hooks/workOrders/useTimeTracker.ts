@@ -50,10 +50,13 @@ export function useTimeTracker(workOrderId: string) {
         "Current User"
       );
       
+      // Fixed: Check if timer is defined before using it
       if (timer) {
         setActiveTimer(timer);
         localStorage.setItem(`timer_${workOrderId}`, JSON.stringify(timer));
+        return timer;
       }
+      return null;
     } catch (error) {
       console.error('Error starting timer:', error);
       toast({
@@ -61,11 +64,14 @@ export function useTimeTracker(workOrderId: string) {
         description: "Failed to start timer",
         variant: "destructive"
       });
+      return null;
     }
   };
 
   const handleStopTimer = async () => {
     try {
+      if (!activeTimer) return null;
+      
       const completedEntry = await stopTimeTracking();
       if (completedEntry) {
         setActiveTimer(null);
@@ -80,13 +86,15 @@ export function useTimeTracker(workOrderId: string) {
         description: "Failed to stop timer",
         variant: "destructive"
       });
+      return null;
     }
   };
 
   // Make sure this function returns the actual entries rather than just being called for side effects
   const fetchEntries = async () => {
     try {
-      return await fetchTimeEntries();
+      const entries = await fetchTimeEntries();
+      return entries || []; // Ensure we always return an array
     } catch (error) {
       console.error('Error fetching time entries:', error);
       return [];
