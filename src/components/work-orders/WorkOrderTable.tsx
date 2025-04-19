@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Table, 
@@ -27,9 +28,21 @@ export interface WorkOrderTableProps {
   workOrders: WorkOrder[];
   onDelete?: (id: string) => void;
   loading?: boolean;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  onPageChange?: (page: number) => void;
 }
 
-export function WorkOrderTable({ workOrders, onDelete, loading = false }: WorkOrderTableProps) {
+export function WorkOrderTable({ 
+  workOrders, 
+  onDelete, 
+  loading = false,
+  page = 1,
+  pageSize = 10,
+  total = 0,
+  onPageChange
+}: WorkOrderTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   const toggleRowExpanded = (id: string) => {
@@ -38,6 +51,8 @@ export function WorkOrderTable({ workOrders, onDelete, loading = false }: WorkOr
       [id]: !prev[id]
     }));
   };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   if (loading) {
     return (
@@ -80,7 +95,7 @@ export function WorkOrderTable({ workOrders, onDelete, loading = false }: WorkOr
           {workOrders.map((workOrder) => (
             <React.Fragment key={workOrder.id}>
               <TableRow
-                className={expandedRows[workOrder.id] ? "border-b-0" : ""}
+                className={`${expandedRows[workOrder.id] ? "border-b-0" : ""} hover:bg-slate-50 cursor-pointer transition-colors`}
                 onClick={() => toggleRowExpanded(workOrder.id)}
               >
                 <TableCell className="font-medium">
@@ -101,7 +116,7 @@ export function WorkOrderTable({ workOrders, onDelete, loading = false }: WorkOr
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon">
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Open menu</span>
@@ -178,6 +193,58 @@ export function WorkOrderTable({ workOrders, onDelete, loading = false }: WorkOr
           ))}
         </TableBody>
       </Table>
+      
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <div className="text-sm text-gray-500">
+            Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, total)} of {total} results
+          </div>
+          <div className="flex gap-1">
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={page === 1}
+              onClick={() => onPageChange && onPageChange(page - 1)}
+            >
+              Previous
+            </Button>
+            
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              // Show pages around current page
+              let pageNum: number;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (page <= 3) {
+                pageNum = i + 1;
+              } else if (page >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = page - 2 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={page === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onPageChange && onPageChange(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={page === totalPages}
+              onClick={() => onPageChange && onPageChange(page + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

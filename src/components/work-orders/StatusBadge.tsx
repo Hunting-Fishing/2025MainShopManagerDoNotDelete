@@ -12,7 +12,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ""
   const config = statusConfig[status] || statusConfig["pending"];
   
   return (
-    <span className={`text-sm px-3 py-1 rounded-full font-medium border ${config.color} ${className}`}>
+    <span className={`text-sm px-3 py-1 rounded-full font-medium border inline-flex items-center ${config.color} ${className}`}>
       {config.label}
     </span>
   );
