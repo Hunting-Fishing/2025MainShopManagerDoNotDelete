@@ -200,4 +200,4 @@ export const InteractionsList: React.FC<InteractionsListProps> = ({
       )}
     </Card>
   );
-}
+};

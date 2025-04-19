@@ -2,7 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 
-// Search customers
+/**
+ * Search customers by name, email, or phone
+ */
 export const searchCustomers = async (query: string): Promise<Customer[]> => {
   const { data, error } = await supabase
     .from("customers")
@@ -15,10 +17,12 @@ export const searchCustomers = async (query: string): Promise<Customer[]> => {
     throw error;
   }
 
-  return (data || []).map(customer => adaptCustomerForUI(customer as Customer));
+  return (data || []).map(customer => adaptCustomerForUI(customer));
 };
 
-// Check for potential duplicate customers
+/**
+ * Check for potential duplicate customers
+ */
 export const checkDuplicateCustomers = async (
   firstName: string, 
   lastName: string, 
@@ -52,51 +56,5 @@ export const checkDuplicateCustomers = async (
     throw error;
   }
 
-  return (data || []).map(customer => adaptCustomerForUI(customer as Customer));
-};
-
-// Get customers with their vehicles
-export const getCustomersWithVehicles = async (): Promise<Customer[]> => {
-  try {
-    // First get all customers
-    const { data, error } = await supabase
-      .from("customers")
-      .select("*")
-      .order("last_name", { ascending: true });
-      
-    if (error) {
-      console.error("Error fetching customers:", error);
-      throw error;
-    }
-    
-    const customers = (data || []).map(customer => adaptCustomerForUI(customer as Customer));
-    
-    // For each customer, get their vehicles
-    const customersWithVehicles = await Promise.all(
-      customers.map(async (customer) => {
-        try {
-          // Fetch vehicles for this customer
-          const { data: vehiclesData, error: vehiclesError } = await supabase
-            .from("vehicles")
-            .select("*")
-            .eq("customer_id", customer.id);
-            
-          if (vehiclesError) {
-            console.error(`Error fetching vehicles for customer ${customer.id}:`, vehiclesError);
-            return { ...customer, vehicles: [] };
-          }
-          
-          return { ...customer, vehicles: vehiclesData || [] };
-        } catch (error) {
-          console.error(`Error fetching vehicles for customer ${customer.id}:`, error);
-          return { ...customer, vehicles: [] };
-        }
-      })
-    );
-    
-    return customersWithVehicles;
-  } catch (error) {
-    console.error("Error fetching customers with vehicles:", error);
-    throw error;
-  }
+  return (data || []).map(customer => adaptCustomerForUI(customer));
 };

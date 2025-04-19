@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CustomerFormValues } from "./CustomerFormSchema";
-import { checkDuplicateCustomers } from "@/services/customers";
+import { checkDuplicateCustomers } from "@/services/customer/customerSearchService";
 import { CustomerCreate } from "@/types/customer";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";

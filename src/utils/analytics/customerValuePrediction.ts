@@ -1,7 +1,6 @@
 
-import { Customer } from "@/types/customer";
-import { calculateCustomerLifetimeValue } from "./customerLifetimeValue";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateCustomerLifetimeValue } from "./customerLifetimeValue";
 
 /**
  * Predicts future customer lifetime value based on historical data
@@ -32,7 +31,7 @@ export const predictFutureCustomerValue = async (customerId: string, timeframeMo
     
     // Analyze growth rate over time
     // In a real implementation, this would use more sophisticated ML algorithms
-    // but for demo purposes, we'll implement a simple growth model
+    // but for now, we'll implement a simple growth model
     
     // Group orders by quarters
     const quarterlyData: Record<string, number> = {};
@@ -96,7 +95,7 @@ export const getRecommendedNextServices = async (customerId: string): Promise<st
     
     // In a real implementation, this would analyze the service history 
     // and use ML to predict what services are most likely needed next
-    // For demo purposes, we'll return reasonable recommendations based on
+    // For now, we'll return reasonable recommendations based on
     // basic patterns like time since last service
     
     const lastServiceDate = new Date(workOrders[0].created_at);
@@ -133,7 +132,7 @@ export const getOptimalContactTime = async (customerId: string): Promise<string>
       return "Next month";
     }
     
-    // Simple logic for demo purposes
+    // Simple logic for now
     // In production, this would analyze patterns in customer responsiveness
     
     // See when last service was performed

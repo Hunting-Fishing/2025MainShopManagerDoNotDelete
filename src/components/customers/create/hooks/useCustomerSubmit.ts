@@ -3,7 +3,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
-import { createCustomer, clearDraftCustomer, addCustomerNote } from "@/services/customers";
+import { createCustomer } from "@/services/customer/customerCreateService";
+import { clearDraftCustomer } from "@/services/customer/customerDraftService";
+import { addCustomerNote } from "@/services/customer/customerNotesService";
 import { handleApiError } from "@/utils/errorHandling";
 import { 
   processHouseholdData, 
