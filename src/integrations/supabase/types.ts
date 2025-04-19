@@ -7273,6 +7273,42 @@ export type Database = {
           },
         ]
       }
+      workflows: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          edges: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          nodes: Json | null
+          updated_at: string | null
+          workflow_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          edges?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          nodes?: Json | null
+          updated_at?: string | null
+          workflow_type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          edges?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          nodes?: Json | null
+          updated_at?: string | null
+          workflow_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       customer_referrals_view: {
