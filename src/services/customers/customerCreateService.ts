@@ -89,7 +89,16 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
   // If there's a note, add it to the customer_notes table
   if (notes && notes.trim()) {
     try {
-      await addCustomerNote(data.id, notes, 'general', 'System');
+      // Create the note data object according to the API requirements
+      const noteData = {
+        customer_id: data.id,
+        content: notes.trim(),
+        category: 'general',
+        created_by: 'System'
+      };
+      
+      // Call addCustomerNote with the correct parameter structure
+      await addCustomerNote(noteData);
     } catch (noteError) {
       console.error("Error adding initial customer note:", noteError);
     }
