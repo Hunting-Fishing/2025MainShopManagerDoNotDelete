@@ -119,4 +119,5 @@ export interface WorkOrderSearchParams {
   searchTerm?: string;
   page?: number;
   pageSize?: number;
+  service_category_id?: string; // Added this field to support service category filtering
 }

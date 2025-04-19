@@ -10,6 +10,7 @@ export interface WorkOrderSearchParams {
   dateTo?: string;
   page?: number;
   pageSize?: number;
+  service_category_id?: string; // Added service category ID parameter
 }
 
 export const searchWorkOrders = async (params: WorkOrderSearchParams) => {
@@ -40,6 +41,11 @@ export const searchWorkOrders = async (params: WorkOrderSearchParams) => {
 
   if (params.dateTo) {
     query = query.lte('created_at', params.dateTo);
+  }
+
+  // Add filter for service_category_id
+  if (params.service_category_id) {
+    query = query.eq('service_category_id', params.service_category_id);
   }
 
   const page = params.page || 1;

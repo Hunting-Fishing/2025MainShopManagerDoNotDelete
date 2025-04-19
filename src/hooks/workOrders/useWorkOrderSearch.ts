@@ -59,6 +59,11 @@ export function useWorkOrderSearch() {
         );
       }
       
+      // Apply service category filter
+      if (updatedParams.service_category_id) {
+        query = query.eq('service_category_id', updatedParams.service_category_id);
+      }
+      
       // Apply pagination
       const pageToUse = updatedParams.page || 1;
       const pageSizeToUse = updatedParams.pageSize || 10;
@@ -92,6 +97,7 @@ export function useWorkOrderSearch() {
         startTime: order.start_time,
         endTime: order.end_time,
         serviceType: order.service_type,
+        service_category_id: order.service_category_id,
         vehicleMake: order.vehicle_make,
         vehicleModel: order.vehicle_model,
         total_cost: order.total_cost,
