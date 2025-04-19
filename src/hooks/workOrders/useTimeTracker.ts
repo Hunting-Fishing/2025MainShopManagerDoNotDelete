@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { TimeEntry } from '@/types/workOrder';
 import { toast } from '@/hooks/use-toast';
@@ -14,7 +13,6 @@ export function useTimeTracker(workOrderId: string) {
     fetchTimeEntries
   } = useWorkOrderTimeTracking(workOrderId);
 
-  // Handle browser refresh sync
   useEffect(() => {
     const storedTimer = localStorage.getItem(`timer_${workOrderId}`);
     if (storedTimer) {
@@ -23,7 +21,6 @@ export function useTimeTracker(workOrderId: string) {
     }
   }, [workOrderId]);
 
-  // Update elapsed time every second when timer is running
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -50,7 +47,6 @@ export function useTimeTracker(workOrderId: string) {
         "Current User"
       );
       
-      // Fixed: Check if timer is defined before using it
       if (timer) {
         setActiveTimer(timer);
         localStorage.setItem(`timer_${workOrderId}`, JSON.stringify(timer));
@@ -90,18 +86,14 @@ export function useTimeTracker(workOrderId: string) {
     }
   };
 
-  // Fix: Ensure fetchTimeEntries function always returns a value that can be checked for truthiness
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
-      // Directly await the result of fetchTimeEntries
       const entries = await fetchTimeEntries();
       
-      // If entries is null or undefined, return an empty array
       if (!entries) {
         return [];
       }
       
-      // If entries is an array, return it; otherwise, return an empty array
       return Array.isArray(entries) ? entries : [];
     } catch (error) {
       console.error('Error fetching time entries:', error);
@@ -110,7 +102,7 @@ export function useTimeTracker(workOrderId: string) {
         description: "Failed to fetch time entries",
         variant: "destructive"
       });
-      return []; // Always return an array, even on error
+      return [];
     }
   };
 
@@ -120,6 +112,6 @@ export function useTimeTracker(workOrderId: string) {
     isTracking,
     handleStartTimer,
     handleStopTimer,
-    fetchTimeEntries: fetchEntries // Explicitly assign the function
+    fetchTimeEntries: fetchEntries
   };
 }
