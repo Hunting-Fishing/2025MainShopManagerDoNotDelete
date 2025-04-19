@@ -1,176 +1,263 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Customer } from "@/types/customer";
-import { SmsLogsTable } from "@/components/sms/SmsLogsTable";
-import { SmsTemplatesList } from "@/components/sms/SmsTemplatesList";
-import { CustomerLifetimeValueCard } from "@/components/analytics/CustomerLifetimeValueCard";
-import { CustomerSegmentBadges } from "@/components/analytics/CustomerSegmentBadges";
-import { ChartContainer } from "@/components/analytics/ChartContainer";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Customer } from '@/types/customer';
+import { calculateCustomerLifetimeValue, getCustomerLifetimeValuePercentile, predictFutureCustomerValue } from '@/utils/analytics/customerLifetimeValue';
+import { analyzeCustomerSegments, calculateRetentionRiskScore } from '@/utils/analytics/customerSegmentation';
+import { getRecommendedNextServices, getOptimalContactTime } from '@/utils/analytics/customerValuePrediction';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, TrendingUp, AlertCircle, BadgeCheck, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 interface CustomerAnalyticsSectionProps {
   customer: Customer;
 }
 
-export const CustomerAnalyticsSection: React.FC<CustomerAnalyticsSectionProps> = ({ 
-  customer 
-}) => {
-  const [timeRange, setTimeRange] = useState<'6m' | '1y' | 'all'>('1y');
-  
-  // Sample data for customer value over time
-  const clvHistoryData = [
-    { month: 'Jan', value: 145 },
-    { month: 'Feb', value: 210 },
-    { month: 'Mar', value: 320 },
-    { month: 'Apr', value: 340 },
-    { month: 'May', value: 450 },
-    { month: 'Jun', value: 480 },
-    { month: 'Jul', value: 520 },
-    { month: 'Aug', value: 590 },
-    { month: 'Sep', value: 620 },
-    { month: 'Oct', value: 700 },
-    { month: 'Nov', value: 820 },
-    { month: 'Dec', value: 900 },
-  ];
-  
-  // Sample service category data
-  const serviceCategoryData = [
-    { name: 'Repair', value: 65 },
-    { name: 'Maintenance', value: 25 },
-    { name: 'Upgrade', value: 10 },
-  ];
+export function CustomerAnalyticsSection({ customer }: CustomerAnalyticsSectionProps) {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [clv, setClv] = useState<number | null>(null);
+  const [clvPercentile, setClvPercentile] = useState<number | null>(null);
+  const [retentionRisk, setRetentionRisk] = useState<number | null>(null);
+  const [predictedValue, setPredictedValue] = useState<number | null>(null);
+  const [recommendedServices, setRecommendedServices] = useState<string[]>([]);
+  const [optimalContactTime, setOptimalContactTime] = useState<string>('');
+  const [segments, setSegments] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadCustomerAnalytics = async () => {
+      setLoading(true);
+      try {
+        // Get customer lifetime value
+        const customerClv = await calculateCustomerLifetimeValue(customer.id);
+        setClv(customerClv);
+        
+        // Get CLV percentile
+        const percentile = await getCustomerLifetimeValuePercentile(customer.id);
+        setClvPercentile(percentile);
+        
+        // Get retention risk score
+        const riskScore = await calculateRetentionRiskScore(customer.id);
+        setRetentionRisk(riskScore);
+        
+        // Get predicted future value
+        const futureValue = await predictFutureCustomerValue(customer.id);
+        setPredictedValue(futureValue);
+        
+        // Get recommended services
+        const services = await getRecommendedNextServices(customer.id);
+        setRecommendedServices(services);
+        
+        // Get optimal contact time
+        const contactTime = await getOptimalContactTime(customer.id);
+        setOptimalContactTime(contactTime);
+        
+        // Get customer segments
+        const customerSegments = await analyzeCustomerSegments(customer.id);
+        setSegments(customerSegments);
+      } catch (error) {
+        console.error("Error loading customer analytics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (customer?.id) {
+      loadCustomerAnalytics();
+    }
+  }, [customer]);
+
+  const formatCurrency = (value: number | null) => {
+    if (value === null) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  const getRiskColor = (score: number | null) => {
+    if (score === null) return 'bg-gray-200';
+    if (score < 30) return 'bg-green-500';
+    if (score < 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const getSegmentBadgeColor = (segment: string) => {
+    switch(segment) {
+      case 'high_value': return 'bg-purple-100 text-purple-800 border border-purple-300';
+      case 'loyal': return 'bg-blue-100 text-blue-800 border border-blue-300';
+      case 'at_risk': return 'bg-amber-100 text-amber-800 border border-amber-300';
+      case 'inactive': return 'bg-red-100 text-red-800 border border-red-300';
+      case 'new': return 'bg-green-100 text-green-800 border border-green-300';
+      default: return 'bg-gray-100 text-gray-800 border border-gray-300';
+    }
+  };
+
+  const getSegmentDisplayName = (segment: string) => {
+    switch(segment) {
+      case 'high_value': return 'High Value';
+      case 'medium_value': return 'Medium Value';
+      case 'low_value': return 'Low Value';
+      case 'loyal': return 'Loyal Customer';
+      case 'at_risk': return 'At Risk';
+      case 'inactive': return 'Inactive';
+      case 'new': return 'New Customer';
+      default: return segment.replace('_', ' ');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-10">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+        <p className="mt-4 text-sm text-slate-500">Loading customer analytics...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="analytics" className="w-full">
-        <TabsList>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="sms">SMS Communications</TabsTrigger>
-          <TabsTrigger value="templates">SMS Templates</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <CustomerLifetimeValueCard customerId={customer.id} className="h-full" />
-            
-            <Card className="h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold">Customer Segments</CardTitle>
-                <CardDescription>
-                  Assigned customer segments and categories
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CustomerSegmentBadges customerId={customer.id} className="mb-6" />
-                
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Retention Risk</h4>
-                  <div className="w-full bg-gray-100 rounded-full h-2.5">
-                    <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: '40%' }}></div>
+      {/* Customer Value Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center text-slate-500">
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Customer Lifetime Value
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(clv)}</div>
+            {clvPercentile !== null && (
+              <p className="text-sm text-slate-500">
+                Top {100 - clvPercentile}% of all customers
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center text-slate-500">
+              <AlertCircle className="mr-2 h-4 w-4" />
+              Retention Risk
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">{retentionRisk !== null ? `${retentionRisk}%` : 'N/A'}</span>
+                <span className="text-slate-500">
+                  {retentionRisk !== null 
+                    ? (retentionRisk < 30 
+                        ? 'Low Risk' 
+                        : (retentionRisk < 60 ? 'Medium Risk' : 'High Risk')) 
+                    : ''}
+                </span>
+              </div>
+              <Progress value={retentionRisk || 0} className={`h-2 ${getRiskColor(retentionRisk)}`} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center text-slate-500">
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Projected 12mo Value
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(predictedValue)}</div>
+            {clv !== null && predictedValue !== null && (
+              <p className="text-sm text-slate-500">
+                {predictedValue > clv 
+                  ? `+${formatCurrency(predictedValue - clv)} growth expected` 
+                  : `${formatCurrency(predictedValue - clv)} decline projected`}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Customer Segments */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium">Customer Segments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {segments && segments.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {segments.map((segment, index) => (
+                <Badge key={index} className={getSegmentBadgeColor(segment)}>
+                  {getSegmentDisplayName(segment)}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No segments assigned yet</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recommendations */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium flex items-center">
+              <BadgeCheck className="mr-2 h-5 w-5 text-blue-500" />
+              Recommended Services
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {recommendedServices.map((service, index) => (
+                <li key={index} className="flex items-start">
+                  <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm mr-2">
+                    {index + 1}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Medium risk (40%)</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <ChartContainer 
-            title="Value Over Time" 
-            description="Customer value growth over time"
-          >
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={clvHistoryData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`$${value}`, 'Value']} />
-                <Legend />
-                <Line type="monotone" dataKey="value" stroke="#4f46e5" activeDot={{ r: 8 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-          
-          <div className="grid gap-6 md:grid-cols-2">
-            <ChartContainer
-              title="Service Category Distribution"
-              description="Services utilized by category"
-            >
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={serviceCategoryData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
-                  <Bar dataKey="value" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">Customer Cohort Comparison</CardTitle>
-                <CardDescription>Performance versus similar customers</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Revenue</span>
-                      <span className="text-sm font-medium text-green-600">+18%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '118%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Visit Frequency</span>
-                      <span className="text-sm font-medium text-green-600">+5%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '105%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Service Adoption</span>
-                      <span className="text-sm font-medium text-amber-600">-8%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '92%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Retention</span>
-                      <span className="text-sm font-medium text-green-600">+12%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '112%' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="sms">
-          <SmsLogsTable customerId={customer.id} limit={20} />
-        </TabsContent>
-        
-        <TabsContent value="templates">
-          <SmsTemplatesList />
-        </TabsContent>
-      </Tabs>
+                  <span>{service}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium flex items-center">
+              <Calendar className="mr-2 h-5 w-5 text-green-500" />
+              Optimal Contact
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="font-medium">Best Time to Contact</p>
+              <p className="text-slate-500">{optimalContactTime}</p>
+            </div>
+            <Separator />
+            <div>
+              <p className="font-medium">Engagement Tips</p>
+              <ul className="text-sm space-y-1 mt-1">
+                {retentionRisk !== null && retentionRisk > 50 ? (
+                  <>
+                    <li>• Offer a maintenance checkup discount</li>
+                    <li>• Highlight new services relevant to their vehicle</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• Follow up on recent service satisfaction</li>
+                    <li>• Recommend complementary services</li>
+                  </>
+                )}
+                <li>• Schedule their next service appointment</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-};
+}
