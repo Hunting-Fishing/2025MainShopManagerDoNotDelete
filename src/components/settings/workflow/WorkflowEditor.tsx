@@ -1,5 +1,14 @@
-
-import { ReactFlow, Background, Controls, MiniMap, useReactFlow, Panel, applyEdgeChanges, applyNodeChanges } from '@xyflow/react';
+import { 
+  ReactFlow, 
+  Background, 
+  BackgroundVariant, 
+  Controls, 
+  MiniMap, 
+  useReactFlow, 
+  Panel, 
+  applyEdgeChanges, 
+  applyNodeChanges 
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 import { nodeTypes } from './CustomNodes';
@@ -28,7 +37,6 @@ export function WorkflowEditor({
   const reactFlowInstance = useReactFlow();
 
   const onAddNode = useCallback((type: string) => {
-    // Use viewport.getCenter() instead of project which doesn't exist
     const position = {
       x: Math.random() * 300 + 100,
       y: Math.random() * 300 + 100
@@ -61,7 +69,6 @@ export function WorkflowEditor({
 
   const handleNodeDelete = useCallback((id: string) => {
     reactFlowInstance.setNodes(nds => nds.filter(node => node.id !== id));
-    // Also remove any connected edges
     reactFlowInstance.setEdges(eds => eds.filter(edge => edge.source !== id && edge.target !== id));
   }, [reactFlowInstance]);
 
@@ -99,7 +106,7 @@ export function WorkflowEditor({
           />
         </Panel>
         
-        <Background color="#ddd" gap={16} variant="dots" />
+        <Background variant={BackgroundVariant.Dots} color="#ddd" gap={16} />
         <Controls className="bg-white rounded-lg border shadow-sm" />
         <MiniMap 
           className="bg-white border rounded-lg shadow-sm" 
