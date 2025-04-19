@@ -27,9 +27,10 @@ export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMe
     let count = 0;
     
     completedOrders.forEach(order => {
-      if (order.start_time && order.end_time) {
-        const startTime = new Date(order.start_time).getTime();
-        const endTime = new Date(order.end_time).getTime();
+      // Access using camelCase properties
+      if (order.startTime && order.endTime) {
+        const startTime = new Date(order.startTime).getTime();
+        const endTime = new Date(order.endTime).getTime();
         const completionTime = (endTime - startTime) / (1000 * 60 * 60); // in hours
         
         if (!isNaN(completionTime) && completionTime > 0) {
@@ -46,9 +47,9 @@ export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMe
     let leadTimeCount = 0;
     
     completedOrders.forEach(order => {
-      if (order.created_at && order.end_time) {
-        const creationTime = new Date(order.created_at).getTime();
-        const completionTime = new Date(order.end_time).getTime();
+      if (order.createdAt && order.endTime) {
+        const creationTime = new Date(order.createdAt).getTime();
+        const completionTime = new Date(order.endTime).getTime();
         const leadTime = (completionTime - creationTime) / (1000 * 60 * 60); // in hours
         
         if (!isNaN(leadTime) && leadTime > 0) {
@@ -73,9 +74,9 @@ export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMe
     const completionsByDay: Record<string, { count: number, avgTime: number }> = {};
     
     completedOrders.forEach(order => {
-      if (!order.end_time) return;
+      if (!order.endTime) return;
       
-      const dateKey = format(new Date(order.end_time), 'yyyy-MM-dd');
+      const dateKey = format(new Date(order.endTime), 'yyyy-MM-dd');
       
       if (!completionsByDay[dateKey]) {
         completionsByDay[dateKey] = { count: 0, avgTime: 0 };
@@ -83,9 +84,9 @@ export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMe
       
       completionsByDay[dateKey].count += 1;
       
-      if (order.start_time) {
-        const startTime = new Date(order.start_time).getTime();
-        const endTime = new Date(order.end_time).getTime();
+      if (order.startTime) {
+        const startTime = new Date(order.startTime).getTime();
+        const endTime = new Date(order.endTime).getTime();
         const completionTime = (endTime - startTime) / (1000 * 60 * 60); // in hours
         
         if (!isNaN(completionTime) && completionTime > 0) {
@@ -112,9 +113,9 @@ export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMe
     let lateCount = 0;
     
     completedOrders.forEach(order => {
-      if (order.dueDate && order.end_time) {
+      if (order.dueDate && order.endTime) {
         const dueDate = new Date(order.dueDate);
-        const completionDate = new Date(order.end_time);
+        const completionDate = new Date(order.endTime);
         
         if (completionDate <= dueDate) {
           onTimeCount++;
@@ -225,7 +226,7 @@ export function WorkOrderCompletionMetrics({ workOrders }: WorkOrderCompletionMe
                 fill="transparent" 
                 stroke="#10B981" 
                 strokeWidth="10" 
-                strokeDasharray={`${onTimeMetrics.onTimePercentage * 2.83} 283`} 
+                strokeDasharray={`${Number(onTimeMetrics.onTimePercentage) * 2.83} 283`} 
                 strokeDashoffset="-70.75" 
                 transform="rotate(-90 50 50)" 
               />

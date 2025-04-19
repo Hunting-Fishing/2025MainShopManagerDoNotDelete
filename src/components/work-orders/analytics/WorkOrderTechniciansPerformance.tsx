@@ -55,9 +55,9 @@ export function WorkOrderTechniciansPerformance({ workOrders }: WorkOrderTechnic
       .forEach(order => {
         const tech = order.technician;
         
-        if (order.start_time && order.end_time) {
-          const startTime = new Date(order.start_time).getTime();
-          const endTime = new Date(order.end_time).getTime();
+        if (order.startTime && order.endTime) {
+          const startTime = new Date(order.startTime).getTime();
+          const endTime = new Date(order.endTime).getTime();
           const completionTime = (endTime - startTime) / (1000 * 60 * 60); // in hours
           
           if (!isNaN(completionTime) && completionTime > 0) {

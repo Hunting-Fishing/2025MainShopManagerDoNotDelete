@@ -76,6 +76,8 @@ export interface WorkOrder {
   createdAt?: string;
   lastUpdatedBy?: string;
   lastUpdatedAt?: string;
+  startTime?: string; // Added for analytics components
+  endTime?: string;   // Added for analytics components
   // Database field format (snake_case)
   customer_id?: string;
   vehicle_id?: string;

@@ -49,7 +49,7 @@ export function WorkOrderPriorityDistribution({ workOrders }: WorkOrderPriorityD
   // Calculate time to completion by priority
   const timeToCompletionData = React.useMemo(() => {
     const completedOrders = workOrders.filter(
-      wo => wo.status === 'completed' && wo.start_time && wo.end_time
+      wo => wo.status === 'completed' && wo.startTime && wo.endTime
     );
 
     const priorityTimeData: Record<string, { total: number, count: number }> = {
@@ -60,8 +60,8 @@ export function WorkOrderPriorityDistribution({ workOrders }: WorkOrderPriorityD
 
     completedOrders.forEach(order => {
       const priority = order.priority || 'medium';
-      const startTime = new Date(order.start_time!).getTime();
-      const endTime = new Date(order.end_time!).getTime();
+      const startTime = new Date(order.startTime).getTime();
+      const endTime = new Date(order.endTime).getTime();
       const completionTimeHours = (endTime - startTime) / (1000 * 60 * 60);
       
       if (!isNaN(completionTimeHours) && completionTimeHours > 0) {

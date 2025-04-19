@@ -1,307 +1,252 @@
 
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { WorkOrderTable } from "../components/work-orders/WorkOrderTable";
-import { WorkOrderCardView } from "../components/work-orders/WorkOrderCardView";
-import { Button } from "../components/ui/button";
-import { LayoutGrid, List, Plus } from "lucide-react";
-import { WorkOrder } from "../types/workOrder";
-import { useToast } from "../hooks/use-toast";
-import { WorkOrderSearch, WorkOrderFilters } from "../components/work-orders/WorkOrderSearch";
-import { WorkOrderAnalytics } from "../components/work-orders/analytics/WorkOrderAnalytics";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { getUniqueTechnicians } from "../utils/workOrders/crud";
-import { format, parse, isAfter, isBefore } from "date-fns";
-import { supabase } from "../integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Plus, Filter, Grid, List, BarChart } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WorkOrderSearch } from "@/components/work-orders/WorkOrderSearch";
+import { WorkOrderStatusChart } from "@/components/work-orders/analytics/WorkOrderStatusChart";
+import { WorkOrderAnalytics } from "@/components/work-orders/analytics/WorkOrderAnalytics";
+import { WorkOrder } from "@/types/workOrder";
+import { mapDatabaseToAppModel } from "@/utils/workOrders/mappers";
+import { toast } from "@/hooks/use-toast";
 
 export default function WorkOrdersPage() {
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const navigate = useNavigate();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [filteredWorkOrders, setFilteredWorkOrders] = useState<WorkOrder[]>([]);
-  const [selectedWorkOrders, setSelectedWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [technicians, setTechnicians] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState('all');
-  const [filters, setFilters] = useState<WorkOrderFilters>({
-    searchQuery: '',
-    status: null,
-    priority: null,
-    technician: null,
-    dateFrom: null,
-    dateTo: null
-  });
-  
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const [activeView, setActiveView] = useState<'list' | 'grid' | 'analytics'>('list');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
+  const [technicianFilter, setTechnicianFilter] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchWorkOrders = async () => {
-      setLoading(true);
-      try {
-        // Fetch work orders from Supabase
-        const { data, error } = await supabase
-          .from('work_orders')
-          .select(`
-            *,
-            customers (
-              first_name,
-              last_name
-            ),
-            profiles (
-              first_name, 
-              last_name
-            )
-          `)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        
-        // Process and format the work orders for display
-        const processedOrders = data.map(order => ({
-          id: order.id,
-          customer: order.customers ? 
-            `${order.customers.first_name || ''} ${order.customers.last_name || ''}`.trim() : 
-            'Unknown Customer',
-          description: order.description || '',
-          status: order.status as WorkOrder["status"],
-          priority: order.priority as WorkOrder["priority"] || 'medium',
-          technician: order.profiles ? 
-            `${order.profiles.first_name || ''} ${order.profiles.last_name || ''}`.trim() : 
-            'Unassigned',
-          date: order.created_at,
-          dueDate: order.end_time || '',
-          location: order.location || '',
-          notes: order.notes || '',
-          customer_id: order.customer_id,
-          technician_id: order.technician_id,
-          vehicle_id: order.vehicle_id
-        }));
-        
-        setWorkOrders(processedOrders);
-        setFilteredWorkOrders(processedOrders);
-      } catch (error) {
-        console.error('Error fetching work orders:', error);
-        toast({
-          title: "Error",
-          description: "Could not load work orders. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchTechnicians = async () => {
-      try {
-        const techniciansList = await getUniqueTechnicians();
-        setTechnicians(techniciansList);
-      } catch (error) {
-        console.error('Error fetching technicians:', error);
-      }
-    };
-
     fetchWorkOrders();
-    fetchTechnicians();
-  }, [toast]);
+  }, []);
 
-  // Filter work orders based on tab selection and filter criteria
   useEffect(() => {
-    let filtered = [...workOrders];
-    
-    // Apply tab filter
-    if (activeTab !== 'all') {
-      filtered = filtered.filter(wo => wo.status === activeTab);
+    filterWorkOrders();
+  }, [workOrders, searchTerm, statusFilter, priorityFilter, technicianFilter]);
+
+  const fetchWorkOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(`
+          *,
+          customers:customer_id(first_name, last_name),
+          profiles:technician_id(first_name, last_name)
+        `);
+
+      if (error) throw error;
+
+      // Map database records to WorkOrder model
+      const mappedWorkOrders = data.map(record => {
+        // Create a base work order with required fields
+        const baseOrder: WorkOrder = {
+          id: record.id,
+          customer: record.customers ? 
+            `${record.customers.first_name || ''} ${record.customers.last_name || ''}`.trim() : 
+            'Unknown Customer',
+          description: record.description || '',
+          status: (record.status as WorkOrder['status']) || 'pending',
+          priority: (record.priority as WorkOrder['priority']) || 'medium',
+          technician: record.profiles ? 
+            `${record.profiles.first_name || ''} ${record.profiles.last_name || ''}`.trim() : 
+            'Unassigned',
+          date: record.created_at || '',
+          dueDate: record.end_time || '',
+          location: record.location || '',
+          notes: record.notes || '',
+          // Map snake_case to camelCase properties
+          createdAt: record.created_at,
+          lastUpdatedAt: record.updated_at,
+          startTime: record.start_time,
+          endTime: record.end_time
+        };
+        
+        return baseOrder;
+      });
+
+      setWorkOrders(mappedWorkOrders);
+      setFilteredWorkOrders(mappedWorkOrders);
+    } catch (error) {
+      console.error("Error fetching work orders:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load work orders.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    // Apply search filter
-    if (filters.searchQuery) {
-      const query = filters.searchQuery.toLowerCase();
-      filtered = filtered.filter(wo => 
-        wo.customer.toLowerCase().includes(query) ||
-        wo.description.toLowerCase().includes(query) ||
-        wo.id.toLowerCase().includes(query) ||
-        wo.technician.toLowerCase().includes(query) ||
-        wo.location.toLowerCase().includes(query)
+  };
+
+  const filterWorkOrders = () => {
+    let filtered = [...workOrders];
+
+    // Apply search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        wo =>
+          wo.id.toLowerCase().includes(term) ||
+          wo.customer.toLowerCase().includes(term) ||
+          wo.description.toLowerCase().includes(term) ||
+          wo.technician.toLowerCase().includes(term)
       );
     }
-    
+
     // Apply status filter
-    if (filters.status) {
-      filtered = filtered.filter(wo => wo.status === filters.status);
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter(wo => statusFilter.includes(wo.status));
     }
-    
+
     // Apply priority filter
-    if (filters.priority) {
-      filtered = filtered.filter(wo => wo.priority === filters.priority);
+    if (priorityFilter.length > 0) {
+      filtered = filtered.filter(wo => priorityFilter.includes(wo.priority));
     }
-    
+
     // Apply technician filter
-    if (filters.technician) {
-      filtered = filtered.filter(wo => wo.technician === filters.technician);
+    if (technicianFilter.length > 0) {
+      filtered = filtered.filter(wo => technicianFilter.includes(wo.technician));
     }
-    
-    // Apply date range filter
-    if (filters.dateFrom) {
-      filtered = filtered.filter(wo => {
-        const dueDateObj = wo.dueDate ? new Date(wo.dueDate) : null;
-        return dueDateObj && isAfter(dueDateObj, filters.dateFrom);
-      });
-    }
-    
-    if (filters.dateTo) {
-      filtered = filtered.filter(wo => {
-        const dueDateObj = wo.dueDate ? new Date(wo.dueDate) : null;
-        return dueDateObj && isBefore(dueDateObj, filters.dateTo);
-      });
-    }
-    
+
     setFilteredWorkOrders(filtered);
-  }, [workOrders, activeTab, filters]);
-  
-  const handleSelectWorkOrder = (workOrder: WorkOrder, isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedWorkOrders(prev => [...prev, workOrder]);
-    } else {
-      setSelectedWorkOrders(prev => prev.filter(wo => wo.id !== workOrder.id));
-    }
   };
 
-  const createNewWorkOrder = () => {
-    navigate('/work-orders/new');
+  const handleViewWorkOrder = (id: string) => {
+    navigate(`/work-orders/${id}`);
   };
 
-  const handleFilterChange = (newFilters: WorkOrderFilters) => {
-    setFilters(newFilters);
+  const handleCreateWorkOrder = () => {
+    navigate("/work-orders/new");
   };
-  
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    // Reset status filter when changing tabs to avoid confusion
-    setFilters(prev => ({ ...prev, status: null }));
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
   };
-  
-  const totalCounts = {
-    all: workOrders.length,
-    pending: workOrders.filter(wo => wo.status === 'pending').length,
-    'in-progress': workOrders.filter(wo => wo.status === 'in-progress').length,
-    completed: workOrders.filter(wo => wo.status === 'completed').length,
-    cancelled: workOrders.filter(wo => wo.status === 'cancelled').length,
+
+  const handleStatusFilterChange = (statuses: string[]) => {
+    setStatusFilter(statuses);
+  };
+
+  const handlePriorityFilterChange = (priorities: string[]) => {
+    setPriorityFilter(priorities);
+  };
+
+  const handleTechnicianFilterChange = (technicians: string[]) => {
+    setTechnicianFilter(technicians);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Work Orders</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Work Orders</h1>
           <p className="text-muted-foreground">
-            Manage and track all customer work orders
+            Manage and track service work orders
           </p>
         </div>
-
-        <Button onClick={createNewWorkOrder}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Work Order
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleCreateWorkOrder} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Create Work Order
+          </Button>
+        </div>
       </div>
 
-      {/* Tabs, Search & Filters */}
-      <div className="space-y-4">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <TabsList className="border">
-              <TabsTrigger value="all">
-                All ({totalCounts.all})
-              </TabsTrigger>
-              <TabsTrigger value="pending">
-                Pending ({totalCounts.pending})
-              </TabsTrigger>
-              <TabsTrigger value="in-progress">
-                In Progress ({totalCounts["in-progress"]})
-              </TabsTrigger>
-              <TabsTrigger value="completed">
-                Completed ({totalCounts.completed})
-              </TabsTrigger>
-              <TabsTrigger value="cancelled">
-                Cancelled ({totalCounts.cancelled})
-              </TabsTrigger>
-            </TabsList>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant={activeTab === "analytics" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveTab(activeTab === "analytics" ? "all" : "analytics")}
-              >
-                Analytics
-              </Button>
+      <Tabs defaultValue="list" onValueChange={(value) => setActiveView(value as any)}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <TabsList>
+            <TabsTrigger value="list" className="flex items-center gap-1">
+              <List className="h-4 w-4" />
+              <span>List</span>
+            </TabsTrigger>
+            <TabsTrigger value="grid" className="flex items-center gap-1">
+              <Grid className="h-4 w-4" />
+              <span>Grid</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-1">
+              <BarChart className="h-4 w-4" />
+              <span>Analytics</span>
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="border rounded-md flex">
-                <Button
-                  variant={viewMode === 'table' ? 'ghost' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className={viewMode === 'table' ? 'bg-muted' : ''}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'grid' ? 'ghost' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('grid')}
-                  className={viewMode === 'grid' ? 'bg-muted' : ''}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Tabs>
+          <WorkOrderSearch 
+            onSearch={handleSearch}
+            onStatusFilterChange={handleStatusFilterChange}
+            onPriorityFilterChange={handlePriorityFilterChange}
+            onTechnicianFilterChange={handleTechnicianFilterChange}
+            technicians={Array.from(new Set(workOrders.map(wo => wo.technician)))}
+          />
+        </div>
 
-        <WorkOrderSearch
-          onFilterChange={handleFilterChange}
-          technicians={technicians}
-          isLoading={loading}
-        />
-      </div>
-
-      {/* Work Order Content */}
-      {activeTab === "analytics" ? (
-        <WorkOrderAnalytics />
-      ) : (
-        <>
+        <TabsContent value="list" className="space-y-4">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-lg text-slate-500">Loading work orders...</div>
+            <div className="flex justify-center items-center h-64">
+              <p>Loading work orders...</p>
             </div>
           ) : (
-            <>
-              {filteredWorkOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center bg-gray-50 border rounded-md p-8">
-                  <div className="text-lg text-gray-500 mb-2">No work orders found</div>
-                  <div className="text-sm text-gray-400">Try changing your filters or create a new work order</div>
-                </div>
-              ) : (
-                <>
-                  {viewMode === 'table' ? (
-                    <WorkOrderTable
-                      workOrders={filteredWorkOrders}
-                      selectedWorkOrders={selectedWorkOrders}
-                      onSelectWorkOrder={handleSelectWorkOrder}
-                    />
-                  ) : (
-                    <WorkOrderCardView
-                      workOrders={filteredWorkOrders}
-                      selectedWorkOrders={selectedWorkOrders}
-                      onSelectWorkOrder={handleSelectWorkOrder}
-                    />
-                  )}
-                </>
-              )}
-            </>
+            <WorkOrderTable 
+              workOrders={filteredWorkOrders} 
+              onViewWorkOrder={handleViewWorkOrder}
+            />
           )}
-        </>
-      )}
+        </TabsContent>
+
+        <TabsContent value="grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <p>Loading work orders...</p>
+            ) : filteredWorkOrders.length === 0 ? (
+              <p>No work orders found</p>
+            ) : (
+              filteredWorkOrders.map(workOrder => (
+                <Card key={workOrder.id} className="cursor-pointer" onClick={() => handleViewWorkOrder(workOrder.id)}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-medium">{workOrder.customer}</h3>
+                        <p className="text-sm text-muted-foreground">{workOrder.id.substring(0, 8)}</p>
+                      </div>
+                      <StatusBadge status={workOrder.status} />
+                    </div>
+                    <p className="mt-2 text-sm line-clamp-2">{workOrder.description}</p>
+                    <div className="mt-4 flex justify-between text-sm">
+                      <span className="text-muted-foreground">Due: {formatDate(workOrder.dueDate)}</span>
+                      <span>{workOrder.technician}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <WorkOrderAnalytics workOrders={workOrders} />
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+// Helper components
+import { Card, CardContent } from "@/components/ui/card";
+import { statusConfig } from "@/utils/workOrders/statusManagement";
+import { formatDate } from "@/utils/workOrders/formatters";
+
+function StatusBadge({ status }: { status: string }) {
+  const config = statusConfig[status as keyof typeof statusConfig];
+  return (
+    <span className={`text-xs px-2 py-1 rounded-full ${config?.color || 'bg-slate-100 text-slate-800'}`}>
+      {config?.label || status}
+    </span>
   );
 }
