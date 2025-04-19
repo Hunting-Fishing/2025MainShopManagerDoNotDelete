@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { TimeEntry } from '@/types/workOrder';
 import { toast } from '@/hooks/use-toast';
@@ -93,12 +92,8 @@ export function useTimeTracker(workOrderId: string) {
   // Ensure fetchEntries always returns an array and is explicitly typed
   const fetchEntries = async (): Promise<TimeEntry[]> => {
     try {
-      const entries = await fetchTimeEntries();
-      
-      // Explicitly handle potential void or null/undefined return
-      if (entries === undefined || entries === null) {
-        return [];
-      }
+      // Explicitly await the result and provide a default empty array if undefined
+      const entries = await fetchTimeEntries() || [];
       
       // Ensure we return an array
       return Array.isArray(entries) ? entries : [];
