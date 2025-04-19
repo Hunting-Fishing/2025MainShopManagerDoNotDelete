@@ -4,7 +4,15 @@ import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 export interface StatusOption {
   status: WorkOrderStatusType;
   label: string;
+  color: string;
   nextSteps?: string[];
+}
+
+export interface PriorityOption {
+  priority: WorkOrder["priority"];
+  label: string;
+  color: string;
+  icon: string;
 }
 
 // Define the allowed status transitions and configurations
@@ -12,22 +20,48 @@ export const statusConfig: Record<WorkOrderStatusType, StatusOption> = {
   "pending": {
     status: "pending",
     label: "In Queue",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-300",
     nextSteps: ["in-progress", "cancelled"]
   },
   "in-progress": {
     status: "in-progress",
     label: "In Progress",
+    color: "bg-blue-100 text-blue-800 border-blue-300",
     nextSteps: ["completed", "cancelled"]
   },
   "completed": {
     status: "completed",
     label: "Completed",
+    color: "bg-green-100 text-green-800 border-green-300",
     nextSteps: ["in-progress"] // Allow reopening if needed
   },
   "cancelled": {
     status: "cancelled",
     label: "Cancelled",
+    color: "bg-red-100 text-red-800 border-red-300",
     nextSteps: ["pending"] // Allow reactivating if needed
+  }
+};
+
+// Define priority configurations
+export const priorityConfig: Record<string, PriorityOption> = {
+  "low": {
+    priority: "low",
+    label: "Low",
+    color: "bg-green-100 text-green-800 border-green-300",
+    icon: "ArrowDown"
+  },
+  "medium": {
+    priority: "medium",
+    label: "Medium",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    icon: "Minus"
+  },
+  "high": {
+    priority: "high",
+    label: "High",
+    color: "bg-red-100 text-red-800 border-red-300",
+    icon: "ArrowUp"
   }
 };
 
@@ -88,3 +122,4 @@ export const generateStatusChangeMessage = (
   
   return `Status changed from ${prevLabel} to ${newLabel} by ${userName}`;
 };
+

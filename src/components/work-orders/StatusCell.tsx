@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { isValidStatusTransition } from "@/utils/workOrders/statusManagement";
+import { statusConfig, isStatusTransitionAllowed } from "@/utils/workOrders/statusManagement";
 import { useWorkOrderStatusUpdate } from "@/hooks/workOrders/useWorkOrderStatusUpdate";
 import { Loader2 } from "lucide-react";
 
@@ -18,19 +18,10 @@ interface StatusCellProps {
   userName: string;
 }
 
-const getStatusColor = (status: WorkOrder["status"]) => {
-  const colors = {
-    "pending": "bg-yellow-100 text-yellow-800 border-yellow-300",
-    "in-progress": "bg-blue-100 text-blue-800 border-blue-300",
-    "completed": "bg-green-100 text-green-800 border-green-300",
-    "cancelled": "bg-red-100 text-red-800 border-red-300"
-  };
-  return colors[status];
-};
-
 export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: StatusCellProps) => {
   const { updateStatus, isUpdating } = useWorkOrderStatusUpdate();
-  const statusColor = getStatusColor(workOrder.status);
+  const currentStatus = workOrder.status;
+  const statusColor = statusConfig[currentStatus]?.color || "";
 
   const handleStatusChange = async (newStatus: WorkOrder["status"]) => {
     const updatedWorkOrder = await updateStatus(workOrder, newStatus, userId, userName);
@@ -50,21 +41,22 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
           {isUpdating ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            workOrder.status
+            statusConfig[currentStatus]?.label || currentStatus
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        {Object.keys(getStatusColor(workOrder.status)).map((status) => {
-          const isValid = isValidStatusTransition(workOrder.status, status as WorkOrder["status"]);
+        {Object.keys(statusConfig).map((status) => {
+          const statusKey = status as WorkOrder["status"];
+          const isValid = isStatusTransitionAllowed(currentStatus, statusKey);
           return (
             <DropdownMenuItem
               key={status}
-              disabled={!isValid || status === workOrder.status}
-              onClick={() => handleStatusChange(status as WorkOrder["status"])}
+              disabled={!isValid || status === currentStatus}
+              onClick={() => handleStatusChange(statusKey)}
             >
-              <div className={`h-2 w-2 rounded-full mr-2 ${getStatusColor(status as WorkOrder["status"])}`} />
-              {status}
+              <div className={`h-2 w-2 rounded-full mr-2 ${statusConfig[statusKey]?.color || ""}`} />
+              {statusConfig[statusKey]?.label || status}
             </DropdownMenuItem>
           );
         })}
