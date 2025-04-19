@@ -1,46 +1,67 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from 'react';
-import { useNodesState, useEdgesState, addEdge, Node, Edge } from '@xyflow/react';
+import { useNodesState, useEdgesState, addEdge } from '@xyflow/react';
 import { FlowTypeSelector } from "./workflow/FlowTypeSelector";
 import { WorkflowEditor } from "./workflow/WorkflowEditor";
-
-const workflowInitialNodes: Node[] = [
-  {
-    id: 'customer-created',
-    type: 'input',
-    data: { label: 'New Customer Created' },
-    position: { x: 250, y: 0 },
-  },
-  {
-    id: 'send-welcome',
-    data: { label: 'Send Welcome Email' },
-    position: { x: 250, y: 100 },
-  },
-  {
-    id: 'create-workorder',
-    data: { label: 'Create Work Order' },
-    position: { x: 100, y: 200 },
-  },
-  {
-    id: 'schedule-followup',
-    data: { label: 'Schedule Follow-up' },
-    position: { x: 400, y: 200 },
-  },
-];
-
-const workflowInitialEdges: Edge[] = [
-  { id: 'e1-2', source: 'customer-created', target: 'send-welcome' },
-  { id: 'e2-3', source: 'send-welcome', target: 'create-workorder' },
-  { id: 'e2-4', source: 'send-welcome', target: 'schedule-followup' },
-];
+import { useWorkflows } from "@/hooks/useWorkflows";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useToast } from "@/hooks/use-toast";
+import { WorkflowNode, WorkflowEdge } from "@/types/workflow"; 
 
 export function WorkflowsTab() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(workflowInitialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(workflowInitialEdges);
   const [selectedWorkflow, setSelectedWorkflow] = useState('customer-onboarding');
+  const { workflows, isLoading, updateWorkflow } = useWorkflows(selectedWorkflow);
+  const { toast } = useToast();
+  
+  const currentWorkflow = workflows?.[0];
+  
+  // Initialize with empty arrays if no workflow data is available
+  const initialNodes = currentWorkflow?.nodes || [];
+  const initialEdges = currentWorkflow?.edges || [];
 
-  const onConnect = (params: any) => setEdges((eds) => addEdge(params, eds));
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    initialNodes as WorkflowNode[]
+  );
+  
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    initialEdges as WorkflowEdge[]
+  );
+
+  const onConnect = (params: any) => {
+    setEdges((eds) => addEdge(params, eds));
+  };
+
+  const handleWorkflowSelect = async (type: string) => {
+    // Save current workflow before switching if it exists
+    if (currentWorkflow && (
+      JSON.stringify(nodes) !== JSON.stringify(currentWorkflow.nodes) || 
+      JSON.stringify(edges) !== JSON.stringify(currentWorkflow.edges)
+    )) {
+      try {
+        await updateWorkflow.mutateAsync({
+          id: currentWorkflow.id,
+          nodes: nodes as WorkflowNode[],
+          edges: edges as WorkflowEdge[]
+        });
+        toast({
+          title: "Success",
+          description: "Workflow saved successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to save workflow",
+          variant: "destructive",
+        });
+      }
+    }
+    setSelectedWorkflow(type);
+  };
+
+  if (isLoading) {
+    return <LoadingSpinner size="lg" />;
+  }
 
   return (
     <div className="space-y-6">
@@ -54,7 +75,7 @@ export function WorkflowsTab() {
         <CardContent>
           <FlowTypeSelector 
             selectedWorkflow={selectedWorkflow} 
-            onSelect={setSelectedWorkflow}
+            onSelect={handleWorkflowSelect}
           />
           <WorkflowEditor
             nodes={nodes}
