@@ -8,11 +8,19 @@ interface TimeEntriesTableProps {
   timeEntries: TimeEntry[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onAddEntry: () => void;
+  onStartTimer: () => void;
 }
 
-export function TimeEntriesTable({ timeEntries, onEdit, onDelete }: TimeEntriesTableProps) {
+export function TimeEntriesTable({ 
+  timeEntries, 
+  onEdit, 
+  onDelete,
+  onAddEntry,
+  onStartTimer 
+}: TimeEntriesTableProps) {
   if (timeEntries.length === 0) {
-    return <EmptyTimeEntriesTable />;
+    return <EmptyTimeEntriesTable onAddEntry={onAddEntry} onStartTimer={onStartTimer} />;
   }
 
   return (
