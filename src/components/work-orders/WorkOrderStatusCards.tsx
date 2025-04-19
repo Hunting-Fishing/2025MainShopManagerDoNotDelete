@@ -1,14 +1,8 @@
 
-import React, { useMemo } from 'react';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
-import { statusConfig } from "@/utils/workOrders/statusManagement";
-import { 
-  ClipboardList, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  Loader2
-} from "lucide-react";
 
 interface WorkOrderStatusCardsProps {
   workOrders: WorkOrder[];
@@ -16,82 +10,82 @@ interface WorkOrderStatusCardsProps {
 }
 
 export function WorkOrderStatusCards({ workOrders, loading }: WorkOrderStatusCardsProps) {
-  // Calculate counts
-  const counts = useMemo(() => {
-    const result = {
-      pending: 0,
-      'in-progress': 0,
-      completed: 0,
-      cancelled: 0,
-      total: workOrders.length
-    };
-    
-    workOrders.forEach(order => {
-      if (result[order.status as keyof typeof result] !== undefined) {
-        result[order.status as keyof typeof result]++;
-      }
-    });
-    
-    return result;
-  }, [workOrders]);
+  // Calculate counts for each status
+  const statusCounts = {
+    pending: workOrders.filter(wo => wo.status === "pending").length,
+    inProgress: workOrders.filter(wo => wo.status === "in-progress").length,
+    completed: workOrders.filter(wo => wo.status === "completed").length,
+    cancelled: workOrders.filter(wo => wo.status === "cancelled").length,
+  };
+
+  // Calculate counts for each priority
+  const priorityCounts = {
+    low: workOrders.filter(wo => wo.priority === "low").length,
+    medium: workOrders.filter(wo => wo.priority === "medium").length,
+    high: workOrders.filter(wo => wo.priority === "high").length,
+  };
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-pulse">
-        {Array(4).fill(0).map((_, i) => (
-          <div key={i} className="h-24 bg-slate-100 rounded-xl"></div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="flex items-center justify-center h-32 bg-slate-50">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          </Card>
         ))}
       </div>
     );
   }
 
-  const cards = [
-    {
-      title: "In Queue",
-      count: counts.pending,
-      icon: <ClipboardList className="h-5 w-5" />,
-      color: "bg-yellow-50 border-yellow-200 text-yellow-800",
-      iconColor: "text-yellow-500"
-    },
-    {
-      title: "In Progress",
-      count: counts["in-progress"],
-      icon: <Clock className="h-5 w-5" />,
-      color: "bg-blue-50 border-blue-200 text-blue-800",
-      iconColor: "text-blue-500"
-    },
-    {
-      title: "Completed",
-      count: counts.completed,
-      icon: <CheckCircle className="h-5 w-5" />,
-      color: "bg-green-50 border-green-200 text-green-800",
-      iconColor: "text-green-500"
-    },
-    {
-      title: "Cancelled",
-      count: counts.cancelled,
-      icon: <XCircle className="h-5 w-5" />,
-      color: "bg-red-50 border-red-200 text-red-800",
-      iconColor: "text-red-500"
-    }
-  ];
-
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-      {cards.map((card, index) => (
-        <div 
-          key={index} 
-          className={`rounded-xl border p-4 shadow-sm flex items-center justify-between ${card.color}`}
-        >
-          <div>
-            <h3 className="text-sm font-medium">{card.title}</h3>
-            <p className="text-2xl font-bold mt-1">{card.count}</p>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <Card className="border-l-4 border-l-yellow-400">
+        <CardContent className="p-4 flex flex-col justify-between h-full">
+          <div className="text-sm text-slate-500 font-medium">Pending</div>
+          <div className="flex items-end justify-between mt-2">
+            <div className="text-2xl font-bold">{statusCounts.pending}</div>
+            <div className="text-xs text-slate-500">
+              {((statusCounts.pending / workOrders.length) * 100).toFixed(1)}% of total
+            </div>
           </div>
-          <div className={`p-3 rounded-full ${card.color.replace("bg-", "bg-opacity-30 ")} ${card.iconColor}`}>
-            {card.icon}
+        </CardContent>
+      </Card>
+      
+      <Card className="border-l-4 border-l-blue-400">
+        <CardContent className="p-4 flex flex-col justify-between h-full">
+          <div className="text-sm text-slate-500 font-medium">In Progress</div>
+          <div className="flex items-end justify-between mt-2">
+            <div className="text-2xl font-bold">{statusCounts.inProgress}</div>
+            <div className="text-xs text-slate-500">
+              {((statusCounts.inProgress / workOrders.length) * 100).toFixed(1)}% of total
+            </div>
           </div>
-        </div>
-      ))}
+        </CardContent>
+      </Card>
+      
+      <Card className="border-l-4 border-l-green-400">
+        <CardContent className="p-4 flex flex-col justify-between h-full">
+          <div className="text-sm text-slate-500 font-medium">Completed</div>
+          <div className="flex items-end justify-between mt-2">
+            <div className="text-2xl font-bold">{statusCounts.completed}</div>
+            <div className="text-xs text-slate-500">
+              {((statusCounts.completed / workOrders.length) * 100).toFixed(1)}% of total
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="border-l-4 border-l-red-400">
+        <CardContent className="p-4 flex flex-col justify-between h-full">
+          <div className="text-sm text-slate-500 font-medium">High Priority</div>
+          <div className="flex items-end justify-between mt-2">
+            <div className="text-2xl font-bold">{priorityCounts.high}</div>
+            <div className="text-xs text-slate-500">
+              {((priorityCounts.high / workOrders.length) * 100).toFixed(1)}% of total
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

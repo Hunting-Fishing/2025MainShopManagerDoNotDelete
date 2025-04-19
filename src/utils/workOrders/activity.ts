@@ -1,66 +1,52 @@
 
 import { supabase } from "@/lib/supabase";
 
-export const recordWorkOrderActivity = async (
+/**
+ * Record an activity for a work order
+ */
+export async function recordWorkOrderActivity(
   action: string,
   workOrderId: string,
   userId: string,
   userName: string,
   flagged: boolean = false,
   flagReason?: string
-): Promise<{success: boolean; error?: string}> => {
+): Promise<string | null> {
   try {
-    // First check if we have a Supabase function for this
-    try {
-      const { data, error } = await supabase.rpc('record_work_order_activity', {
-        p_action: action,
-        p_work_order_id: workOrderId,
-        p_user_id: userId,
-        p_user_name: userName
-      });
-      
-      if (!error) {
-        return { success: true };
-      }
-      
-      // If RPC call didn't work, fall back to direct insert
-      console.warn("Falling back to direct insert for work order activity", error);
-    } catch (rpcErr) {
-      console.warn("RPC error, falling back to direct insert:", rpcErr);
-    }
-    
-    // Direct insert as fallback
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('work_order_activities')
       .insert({
-        action,
         work_order_id: workOrderId,
+        action,
         user_id: userId,
         user_name: userName,
         flagged,
-        flag_reason: flagReason
-      });
+        flag_reason: flagReason,
+        timestamp: new Date().toISOString()
+      })
+      .select('id')
+      .single();
       
     if (error) throw error;
     
-    return { success: true };
-  } catch (err) {
-    console.error("Error recording work order activity:", err);
-    return { 
-      success: false, 
-      error: err instanceof Error ? err.message : 'Unknown error recording activity'
-    };
+    return data.id;
+  } catch (error) {
+    console.error("Error recording work order activity:", error);
+    return null;
   }
-};
+}
 
-export const flagWorkOrderActivity = async (
+/**
+ * Flag a suspicious activity
+ */
+export async function flagWorkOrderActivity(
   activityId: string,
   flagReason: string
-): Promise<{success: boolean; error?: string}> => {
+): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('work_order_activities')
-      .update({ 
+      .update({
         flagged: true,
         flag_reason: flagReason
       })
@@ -68,12 +54,29 @@ export const flagWorkOrderActivity = async (
       
     if (error) throw error;
     
-    return { success: true };
-  } catch (err) {
-    console.error("Error flagging work order activity:", err);
-    return { 
-      success: false, 
-      error: err instanceof Error ? err.message : 'Unknown error flagging activity'
-    };
+    return true;
+  } catch (error) {
+    console.error("Error flagging activity:", error);
+    return false;
   }
-};
+}
+
+/**
+ * Get all activities for a work order
+ */
+export async function getWorkOrderActivities(workOrderId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_activities')
+      .select('*')
+      .eq('work_order_id', workOrderId)
+      .order('timestamp', { ascending: false });
+      
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error("Error fetching work order activities:", error);
+    return [];
+  }
+}

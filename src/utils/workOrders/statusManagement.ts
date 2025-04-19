@@ -122,4 +122,3 @@ export const generateStatusChangeMessage = (
   
   return `Status changed from ${prevLabel} to ${newLabel} by ${userName}`;
 };
-

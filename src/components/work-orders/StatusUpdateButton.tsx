@@ -1,86 +1,80 @@
 
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { WorkOrder, WorkOrderStatusType } from "@/types/workOrder";
 import { useWorkOrderStatusUpdate } from "@/hooks/workOrders/useWorkOrderStatusUpdate";
-import { WorkOrder } from "@/types/workOrder";
-import { Loader2, CheckCircle } from "lucide-react";
-import { useState, useEffect } from "react";
-import { statusConfig } from "@/utils/workOrders/statusManagement";
+import { Loader2 } from "lucide-react";
 
 interface StatusUpdateButtonProps {
   workOrder: WorkOrder;
-  newStatus: WorkOrder["status"];
+  newStatus: WorkOrderStatusType;
   userId: string;
   userName: string;
   onStatusUpdate: (updatedWorkOrder: WorkOrder) => void;
-  className?: string;
-  variant?: "default" | "outline" | "ghost";
-  size?: "default" | "sm" | "lg";
+  size?: "default" | "sm" | "lg" | "icon";
 }
 
-export const StatusUpdateButton = ({
+export function StatusUpdateButton({
   workOrder,
   newStatus,
   userId,
   userName,
   onStatusUpdate,
-  className = "",
-  variant = "default",
   size = "default"
-}: StatusUpdateButtonProps) => {
+}: StatusUpdateButtonProps) {
   const { updateStatus, isUpdating } = useWorkOrderStatusUpdate();
-  const [showSuccess, setShowSuccess] = useState(false);
-  const config = statusConfig[newStatus];
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (showSuccess) {
-      timer = setTimeout(() => setShowSuccess(false), 2000);
-    }
-    return () => clearTimeout(timer);
-  }, [showSuccess]);
-
-  const handleClick = async () => {
-    const updatedWorkOrder = await updateStatus(workOrder, newStatus, userId, userName);
-    if (updatedWorkOrder) {
-      setShowSuccess(true);
-      onStatusUpdate(updatedWorkOrder);
+  // Define button appearance based on status
+  const getButtonConfig = (status: WorkOrderStatusType) => {
+    switch (status) {
+      case "pending":
+        return { label: "Move to Queue", variant: "outline" as const };
+      case "in-progress":
+        return { label: "Start Work", variant: "default" as const, className: "bg-blue-600 hover:bg-blue-700" };
+      case "completed":
+        return { label: "Complete", variant: "default" as const, className: "bg-green-600 hover:bg-green-700" };
+      case "cancelled":
+        return { label: "Cancel", variant: "outline" as const, className: "text-red-600 border-red-300 hover:bg-red-50" };
+      default:
+        return { label: "Update Status", variant: "outline" as const };
     }
   };
 
-  // Use status-specific colors for the button
-  const buttonColorClass = (() => {
-    if (variant !== "default") return "";
-    
-    switch (newStatus) {
-      case "completed":
-        return "bg-green-600 hover:bg-green-700";
-      case "in-progress":
-        return "bg-blue-600 hover:bg-blue-700";
-      case "cancelled":
-        return "bg-red-600 hover:bg-red-700";
-      default:
-        return ""; // Use default button color
+  const buttonConfig = getButtonConfig(newStatus);
+  
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const updatedWorkOrder = await updateStatus(
+        workOrder,
+        newStatus,
+        userId,
+        userName
+      );
+      
+      if (updatedWorkOrder) {
+        onStatusUpdate(updatedWorkOrder);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    } finally {
+      setLoading(false);
     }
-  })();
+  };
 
   return (
     <Button
-      onClick={handleClick}
-      disabled={isUpdating || showSuccess}
-      variant={variant}
+      variant={buttonConfig.variant}
       size={size}
-      className={`${className} ${buttonColorClass} transition-all duration-200`}
+      className={buttonConfig.className}
+      onClick={handleClick}
+      disabled={loading || isUpdating}
     >
-      {isUpdating ? (
+      {loading ? (
         <Loader2 className="h-4 w-4 animate-spin mr-1" />
-      ) : showSuccess ? (
-        <>
-          <CheckCircle className="h-4 w-4 mr-1" />
-          Updated
-        </>
-      ) : (
-        `Mark as ${config?.label || newStatus}`
-      )}
+      ) : null}
+      {buttonConfig.label}
     </Button>
   );
-};
+}
