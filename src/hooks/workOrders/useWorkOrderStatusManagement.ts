@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { updateWorkOrder } from "@/utils/workOrders";
 import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
 
-export function useWorkOrderStatusUpdate() {
+export function useWorkOrderStatusManagement() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const updateStatus = async (
@@ -17,16 +17,14 @@ export function useWorkOrderStatusUpdate() {
     userName: string
   ): Promise<WorkOrder | null> => {
     if (workOrder.status === newStatus) {
-      return workOrder; // No change needed
+      return workOrder;
     }
     
     setIsUpdating(true);
     
     try {
-      // Get updates based on the transition
       const updates = handleStatusTransition(workOrder, newStatus);
       
-      // Update the work order with new status
       const updatedWorkOrder = await updateWorkOrder({
         ...workOrder,
         ...updates,
@@ -34,21 +32,13 @@ export function useWorkOrderStatusUpdate() {
         lastUpdatedAt: new Date().toISOString()
       });
       
-      // Record this activity
-      const activityMessage = generateStatusChangeMessage(
-        workOrder.status,
-        newStatus,
-        userName
-      );
-      
       await recordWorkOrderActivity(
-        activityMessage,
+        generateStatusChangeMessage(workOrder.status, newStatus, userName),
         workOrder.id,
         userId,
         userName
       );
       
-      // Show success message
       toast({
         title: "Status Updated",
         description: `Work order status is now ${newStatus}`,
@@ -60,7 +50,7 @@ export function useWorkOrderStatusUpdate() {
       toast({
         title: "Update Failed",
         description: "Could not update work order status",
-        variant: "destructive",
+        variant: "destructive"
       });
       return null;
     } finally {
