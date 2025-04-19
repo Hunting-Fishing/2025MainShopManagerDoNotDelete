@@ -2,6 +2,19 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
+ * Define the customer segment types
+ */
+export type CustomerSegmentType = 
+  | 'high_value'
+  | 'medium_value'
+  | 'low_value'
+  | 'loyal'
+  | 'at_risk'
+  | 'inactive'
+  | 'new'
+  | string;
+
+/**
  * Calculate customer retention risk score (0-100)
  * Higher score means higher risk of losing the customer
  */
@@ -68,7 +81,7 @@ export const calculateRetentionRiskScore = async (customerId: string): Promise<n
 /**
  * Analyze customer segments based on behavior and characteristics
  */
-export const analyzeCustomerSegments = async (customerId: string): Promise<string[]> => {
+export const analyzeCustomerSegments = async (customerId: string): Promise<CustomerSegmentType[]> => {
   try {
     // First check if customer has segments assigned in the database
     const { data: segmentAssignments, error: segmentError } = await supabase
@@ -87,7 +100,7 @@ export const analyzeCustomerSegments = async (customerId: string): Promise<strin
         .in("id", segmentIds);
         
       if (segments && segments.length > 0) {
-        return segments.map(s => s.name.toLowerCase().replace(/\s+/g, '_'));
+        return segments.map(s => s.name.toLowerCase().replace(/\s+/g, '_') as CustomerSegmentType);
       }
     }
     
@@ -104,7 +117,7 @@ export const analyzeCustomerSegments = async (customerId: string): Promise<strin
       .select("id, created_at, total_cost")
       .eq("customer_id", customerId);
       
-    const segments: string[] = [];
+    const segments: CustomerSegmentType[] = [];
     
     // New customer segment (less than 90 days)
     if (customer) {
@@ -154,6 +167,38 @@ export const analyzeCustomerSegments = async (customerId: string): Promise<strin
     return segments;
   } catch (error) {
     console.error("Error analyzing customer segments:", error);
+    return [];
+  }
+};
+
+/**
+ * Get a list of all customers with their segment assignments
+ */
+export const getCustomersWithSegments = async () => {
+  try {
+    const { data: customers, error } = await supabase
+      .from("customers")
+      .select("id, first_name, last_name, email");
+      
+    if (error) {
+      console.error("Error fetching customers:", error);
+      return [];
+    }
+    
+    // Get segment data for each customer
+    const customersWithSegments = await Promise.all(
+      customers.map(async (customer) => {
+        const segments = await analyzeCustomerSegments(customer.id);
+        return {
+          ...customer,
+          segments
+        };
+      })
+    );
+    
+    return customersWithSegments;
+  } catch (error) {
+    console.error("Error getting customers with segments:", error);
     return [];
   }
 };

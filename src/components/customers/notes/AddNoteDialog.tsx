@@ -1,45 +1,31 @@
 
-import React, { useState } from "react";
-import { Customer, CustomerNote } from "@/types/customer";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Customer } from "@/types/customer";
+import { addCustomerNote } from "@/services/customer/customerNotesService";
 import { useToast } from "@/hooks/use-toast";
-import { addCustomerNote } from "@/services/customers";
+import { useUser } from "@/hooks/useUser";
 
 interface AddNoteDialogProps {
   customer: Customer;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNoteAdded: (note: CustomerNote) => void;
+  onNoteAdded?: () => void;
 }
 
-export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
-  customer,
-  open,
-  onOpenChange,
-  onNoteAdded,
-}) => {
+export function AddNoteDialog({ customer, open, onOpenChange, onNoteAdded }: AddNoteDialogProps) {
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState<string>("general");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [category, setCategory] = useState<'service' | 'sales' | 'follow-up' | 'general'>('general');
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!content.trim()) {
       toast({
         title: "Error",
@@ -48,94 +34,98 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
       });
       return;
     }
-
-    setIsSubmitting(true);
+    
+    setSubmitting(true);
+    
     try {
-      // Save the note to the database
-      const newNote = await addCustomerNote(
-        customer.id,
-        content,
-        category as 'service' | 'sales' | 'follow-up' | 'general',
-        "Current User" // In a real app, this would be the logged-in user's name
-      );
+      // Get the user's name or default to "System"
+      const createdBy = user?.displayName || user?.email || "System";
       
-      // Call the callback to update the parent component's state
-      onNoteAdded(newNote);
+      // Call the API to add the note
+      await addCustomerNote(
+        customer.id,
+        content.trim(),
+        category,
+        createdBy
+      );
       
       toast({
         title: "Note added",
-        description: "Your note has been added successfully",
+        description: "Customer note has been added successfully",
       });
       
-      // Close the dialog and reset form
+      // Close dialog and notify parent
       onOpenChange(false);
+      if (onNoteAdded) onNoteAdded();
+      
+      // Reset form
       setContent("");
-      setCategory("general");
+      setCategory('general');
     } catch (error) {
-      console.error("Error adding note:", error);
+      console.error("Error adding customer note:", error);
       toast({
         title: "Error",
-        description: "Failed to add note. Please try again.",
+        description: "Failed to add customer note. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Note for {customer.first_name} {customer.last_name}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="service">Service</SelectItem>
-                <SelectItem value="sales">Sales</SelectItem>
-                <SelectItem value="follow-up">Follow-up</SelectItem>
-                <SelectItem value="general">General</SelectItem>
-              </SelectContent>
-            </Select>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="note-category" className="text-sm font-medium">
+                Category
+              </label>
+              <Select
+                value={category}
+                onValueChange={(value) => setCategory(value as 'service' | 'sales' | 'follow-up' | 'general')}
+              >
+                <SelectTrigger id="note-category">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="service">Service</SelectItem>
+                  <SelectItem value="sales">Sales</SelectItem>
+                  <SelectItem value="follow-up">Follow-up</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="note-content" className="text-sm font-medium">
+                Note Content
+              </label>
+              <Textarea
+                id="note-content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Enter your note here..."
+                className="min-h-[100px]"
+              />
+            </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="content">Note</Label>
-            <Textarea
-              id="content"
-              placeholder="Enter your note here..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={5}
-              className="resize-none"
-            />
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setContent("");
-              setCategory("general");
-              onOpenChange(false);
-            }}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Note"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Adding..." : "Add Note"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
-};
+}

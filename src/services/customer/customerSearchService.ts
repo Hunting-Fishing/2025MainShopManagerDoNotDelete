@@ -58,3 +58,31 @@ export const checkDuplicateCustomers = async (
 
   return (data || []).map(customer => adaptCustomerForUI(customer));
 };
+
+/**
+ * Get customers with their associated vehicles
+ */
+export const getCustomersWithVehicles = async (): Promise<Customer[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select(`
+        *,
+        vehicles:customer_vehicles(*)
+      `)
+      .order('last_name', { ascending: true });
+      
+    if (error) {
+      console.error("Error fetching customers with vehicles:", error);
+      throw error;
+    }
+    
+    return (data || []).map((customer: any) => ({
+      ...adaptCustomerForUI(customer),
+      vehicles: customer.vehicles || []
+    }));
+  } catch (error) {
+    console.error("Error in getCustomersWithVehicles:", error);
+    throw error;
+  }
+};

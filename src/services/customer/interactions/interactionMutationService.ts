@@ -1,120 +1,114 @@
 
 import { supabase } from "@/lib/supabase";
-import { CustomerInteraction, InteractionType, InteractionStatus } from "@/types/interaction";
+import { CustomerInteraction } from "@/types/interaction";
 
-// Add a customer interaction
+/**
+ * Add a new interaction for a customer
+ */
 export const addCustomerInteraction = async (
-  interaction: Omit<CustomerInteraction, 'id'>
-): Promise<CustomerInteraction | null> => {
+  interaction: Partial<CustomerInteraction>
+): Promise<CustomerInteraction> => {
   try {
     const { data, error } = await supabase
       .from("customer_interactions")
       .insert({
         ...interaction,
-        type: interaction.type,
-        status: interaction.status
+        date: interaction.date || new Date().toISOString(),
       })
       .select()
       .single();
-    
+      
     if (error) {
       console.error("Error adding customer interaction:", error);
       throw error;
     }
     
-    console.log("Added new interaction:", data);
-    
-    // Ensure proper type casting
-    return {
-      ...data,
-      type: data.type as InteractionType,
-      status: data.status as InteractionStatus
-    } as CustomerInteraction;
+    return data as CustomerInteraction;
   } catch (error) {
     console.error("Error in addCustomerInteraction:", error);
-    return null;
+    throw error;
   }
 };
 
-// Update a customer interaction
+/**
+ * Update an existing customer interaction
+ */
 export const updateCustomerInteraction = async (
   id: string,
-  updates: Partial<CustomerInteraction>
-): Promise<CustomerInteraction | null> => {
+  interaction: Partial<CustomerInteraction>
+): Promise<CustomerInteraction> => {
   try {
     const { data, error } = await supabase
       .from("customer_interactions")
-      .update({
-        ...updates,
-        type: updates.type as InteractionType,
-        status: updates.status as InteractionStatus
-      })
+      .update(interaction)
       .eq("id", id)
       .select()
       .single();
-    
+      
     if (error) {
       console.error("Error updating customer interaction:", error);
       throw error;
     }
     
-    return {
-      ...data,
-      type: data.type as InteractionType,
-      status: data.status as InteractionStatus
-    } as CustomerInteraction;
+    return data as CustomerInteraction;
   } catch (error) {
     console.error("Error in updateCustomerInteraction:", error);
-    return null;
+    throw error;
   }
 };
 
-// Delete a customer interaction
-export const deleteCustomerInteraction = async (id: string): Promise<boolean> => {
+/**
+ * Delete a customer interaction
+ */
+export const deleteCustomerInteraction = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from("customer_interactions")
       .delete()
       .eq("id", id);
-    
+      
     if (error) {
       console.error("Error deleting customer interaction:", error);
       throw error;
     }
-    
-    return true;
   } catch (error) {
     console.error("Error in deleteCustomerInteraction:", error);
-    return false;
+    throw error;
   }
 };
 
-// Complete a follow-up interaction
-export const completeFollowUp = async (id: string): Promise<CustomerInteraction | null> => {
+/**
+ * Mark a follow-up as completed
+ */
+export const completeFollowUp = async (
+  interactionId: string,
+  notes?: string
+): Promise<CustomerInteraction> => {
   try {
+    const updateData: any = {
+      follow_up_completed: true,
+      follow_up_completed_date: new Date().toISOString(),
+    };
+    
+    if (notes) {
+      updateData.follow_up_notes = notes;
+    }
+    
     const { data, error } = await supabase
       .from("customer_interactions")
-      .update({
-        follow_up_completed: true,
-        status: "completed" as InteractionStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", id)
+      .update(updateData)
+      .eq("id", interactionId)
       .select()
       .single();
-    
+      
     if (error) {
       console.error("Error completing follow-up:", error);
       throw error;
     }
     
-    return {
-      ...data,
-      type: data.type as InteractionType,
-      status: data.status as InteractionStatus
-    } as CustomerInteraction;
+    return data as CustomerInteraction;
   } catch (error) {
     console.error("Error in completeFollowUp:", error);
-    return null;
+    throw error;
   }
 };

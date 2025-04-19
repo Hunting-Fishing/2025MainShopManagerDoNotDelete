@@ -1,3 +1,4 @@
+
 import { Customer } from "@/types/customer";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -138,6 +139,73 @@ export const getCustomerLifetimeValuePercentile = async (customerId: string): Pr
     return Math.round((position / sortedValues.length) * 100);
   } catch (error) {
     console.error("Error calculating customer lifetime value percentile:", error);
+    return null;
+  }
+};
+
+/**
+ * Predicts future customer lifetime value based on historical data
+ * and growth patterns (12-month projection by default)
+ */
+export const predictFutureCustomerValue = async (customerId: string, timeframeMonths: number = 12): Promise<number | null> => {
+  try {
+    // Get current CLV
+    const currentClv = await calculateCustomerLifetimeValue(customerId);
+    if (currentClv === null) return null;
+    
+    // Get customer history to determine patterns
+    const { data: workOrders, error: workOrdersError } = await supabase
+      .from("work_orders")
+      .select("id, created_at, total_cost, status")
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: true });
+    
+    if (workOrdersError) {
+      console.error("Error fetching work order data for prediction:", workOrdersError);
+      return null;
+    }
+    
+    if (!workOrders || workOrders.length === 0) {
+      // No history - use default prediction factor (20% increase)
+      return currentClv * 1.2;
+    }
+    
+    // Analyze growth rate over time
+    // Group orders by quarters
+    const quarterlyData: Record<string, number> = {};
+    workOrders.forEach(order => {
+      const orderDate = new Date(order.created_at);
+      const quarter = `${orderDate.getFullYear()}-Q${Math.floor(orderDate.getMonth() / 3) + 1}`;
+      
+      if (!quarterlyData[quarter]) {
+        quarterlyData[quarter] = 0;
+      }
+      
+      quarterlyData[quarter] += order.total_cost || 0;
+    });
+    
+    // Convert to array and sort chronologically
+    const quarters = Object.keys(quarterlyData).sort();
+    
+    // If we have at least 2 quarters of data, calculate growth rate
+    if (quarters.length >= 2) {
+      const oldestQuarterValue = quarterlyData[quarters[0]];
+      const newestQuarterValue = quarterlyData[quarters[quarters.length - 1]];
+      
+      // Calculate quarterly growth rate
+      const numQuarters = quarters.length - 1;
+      const quarterlyGrowthRate = Math.pow(newestQuarterValue / oldestQuarterValue, 1 / numQuarters) - 1;
+      
+      // Calculate projected value based on timeframe
+      const projectedQuarters = timeframeMonths / 3;
+      return currentClv * Math.pow(1 + quarterlyGrowthRate, projectedQuarters);
+    }
+    
+    // Default growth prediction if insufficient historical data
+    return currentClv * 1.25;
+    
+  } catch (error) {
+    console.error("Error predicting future customer value:", error);
     return null;
   }
 };
