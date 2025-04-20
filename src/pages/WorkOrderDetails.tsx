@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/types/workOrder";
@@ -6,6 +7,7 @@ import { TimeEntry } from "@/types/workOrder";
 import { toast } from "@/hooks/use-toast";
 import { WorkOrderDetailsTabs } from "@/components/workOrders/WorkOrderDetailsTabs";
 import { WorkOrderHeader } from "@/components/workOrders/header/WorkOrderHeader";
+import WorkOrderEditForm from "@/components/workOrders/WorkOrderEditForm";
 
 interface WorkOrderDetailsProps {
   edit?: boolean;
