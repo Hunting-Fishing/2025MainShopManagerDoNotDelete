@@ -1,3 +1,4 @@
+
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import ErrorPage from "./pages/error-page";
@@ -11,7 +12,7 @@ import Team from "./pages/Team";
 import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 import WorkOrderCreate from "./pages/WorkOrderCreate";
-import WorkOrders from "./pages/WorkOrders";
+import WorkOrdersPage from "./pages/WorkOrdersPage"; // Updated import path
 
 const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return <CustomerDataProvider>{children}</CustomerDataProvider>;
@@ -65,7 +66,7 @@ export const routeDefinitions = [
       },
       {
         path: "work-orders",
-        element: <WorkOrders />,
+        element: <WorkOrdersPage />, // Updated component reference
       },
       {
         path: "work-orders/create",
