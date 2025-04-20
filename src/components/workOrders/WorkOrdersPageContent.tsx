@@ -63,7 +63,7 @@ export function WorkOrdersPageContent({
   }, [workOrders]);
 
   return (
-    <div className="container mx-auto py-6 space-y-6 animate-fadeIn">
+    <div className="container mx-auto py-4 space-y-4">
       <WorkOrdersPageHeader 
         total={total} 
         currentCount={workOrders.length}
@@ -98,11 +98,13 @@ export function WorkOrdersPageContent({
         </div>
       )}
 
-      <div className="transition-all duration-200 ease-in-out">
-        <ViewModeToggle 
-          viewMode={viewMode} 
-          onViewModeChange={setViewMode} 
-        />
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+        <div className="mb-4">
+          <ViewModeToggle 
+            viewMode={viewMode} 
+            onViewModeChange={setViewMode} 
+          />
+        </div>
 
         {viewMode === 'table' ? (
           <div className="opacity-100 transition-opacity duration-300 ease-in-out">

@@ -10,7 +10,7 @@ export default function WorkOrdersPage() {
         <title>Work Orders | Auto Shop Management</title>
         <meta name="description" content="Manage and track all work orders" />
       </Helmet>
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <div className="min-h-screen bg-white">
         <WorkOrdersContainer />
       </div>
     </>

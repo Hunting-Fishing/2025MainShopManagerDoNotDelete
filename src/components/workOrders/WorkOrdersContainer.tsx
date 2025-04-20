@@ -69,15 +69,11 @@ export function WorkOrdersContainer() {
     fetchTechnicians();
   }, [setLoadingTechnicians, setTechnicians]);
 
-  // Separate the initial load from other search operations
+  // Fix the infinite loop by adding proper dependencies
   useEffect(() => {
-    const loadInitialData = async () => {
-      await searchOrders({});
-      setIsInitialLoad(false);
-    };
-    
     if (isInitialLoad) {
-      loadInitialData();
+      searchOrders({});
+      setIsInitialLoad(false);
     }
   }, [isInitialLoad, searchOrders]);
 

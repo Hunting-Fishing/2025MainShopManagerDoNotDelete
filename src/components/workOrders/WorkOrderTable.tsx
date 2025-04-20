@@ -81,21 +81,21 @@ export const WorkOrderTable: React.FC<WorkOrderTableProps> = ({
   };
 
   return (
-    <div className="rounded-md border bg-white">
+    <>
       <Table>
-        <TableHeader className="bg-muted/50">
+        <TableHeader>
           <TableRow>
             <TableHead className="w-12 checkbox-cell">
               <span className="sr-only">Select</span>
             </TableHead>
-            <TableHead>Work Order</TableHead>
+            <TableHead>ID</TableHead>
             <TableHead>Customer</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Technician</TableHead>
             <TableHead>Vehicle</TableHead>
-            <TableHead>Created</TableHead>
+            <TableHead>Date</TableHead>
             <TableHead>Due Date</TableHead>
           </TableRow>
         </TableHeader>
@@ -209,6 +209,6 @@ export const WorkOrderTable: React.FC<WorkOrderTableProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

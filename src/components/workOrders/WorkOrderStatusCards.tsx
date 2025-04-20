@@ -25,41 +25,41 @@ export function WorkOrderStatusCards({ workOrders, loading }: WorkOrderStatusCar
   }
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-3 transition-all duration-300 ease-in-out">
-      <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 transform hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-        <CardHeader className="pb-2">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+      <Card className="border border-yellow-200 bg-white shadow-sm overflow-hidden">
+        <CardHeader className="pb-2 border-b border-yellow-100">
           <CardTitle className="text-yellow-800 text-lg flex items-center">
             <span className="h-3 w-3 rounded-full bg-yellow-500 mr-2"></span>
             Pending
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-3">
           <div className="text-3xl font-bold text-yellow-700">{pendingCount}</div>
           <p className="text-yellow-600 text-sm mt-1">Work orders awaiting action</p>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 transform hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-        <CardHeader className="pb-2">
+      <Card className="border border-blue-200 bg-white shadow-sm overflow-hidden">
+        <CardHeader className="pb-2 border-b border-blue-100">
           <CardTitle className="text-blue-800 text-lg flex items-center">
             <span className="h-3 w-3 rounded-full bg-blue-500 mr-2"></span>
             In Progress
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-3">
           <div className="text-3xl font-bold text-blue-700">{inProgressCount}</div>
           <p className="text-blue-600 text-sm mt-1">Work orders being processed</p>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 transform hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-        <CardHeader className="pb-2">
+      <Card className="border border-green-200 bg-white shadow-sm overflow-hidden">
+        <CardHeader className="pb-2 border-b border-green-100">
           <CardTitle className="text-green-800 text-lg flex items-center">
             <span className="h-3 w-3 rounded-full bg-green-500 mr-2"></span>
             Completed
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-3">
           <div className="text-3xl font-bold text-green-700">{completedCount}</div>
           <p className="text-green-600 text-sm mt-1">Work orders finalized</p>
         </CardContent>
