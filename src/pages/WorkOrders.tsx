@@ -7,7 +7,6 @@ import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
 import WorkOrdersPagination from '@/components/workOrders/WorkOrdersPagination';
 import { WorkOrderStats } from '@/components/workOrders/WorkOrderStats';
 import { WorkOrderBatchActions } from '@/components/workOrders/WorkOrderBatchActions';
-import { findWorkOrderById } from '@/utils/workOrders';
 import { WorkOrder } from '@/types/workOrder';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -15,7 +14,7 @@ import { Link } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { WorkOrderCardView } from '@/components/workOrders/WorkOrderCardView';
 
-// Mock function for fetching work orders since findWorkOrders doesn't exist
+// Mock function for fetching work orders
 const findWorkOrders = async ({ page, pageSize, search }: { page: number, pageSize: number, search: string }) => {
   // This is a temporary mock implementation
   return {
@@ -24,8 +23,23 @@ const findWorkOrders = async ({ page, pageSize, search }: { page: number, pageSi
   };
 };
 
+// Define required props for components to fix TypeScript errors
 interface WorkOrderBatchActionsProps {
   selectedCount: number;
+  // Add any other required props here
+}
+
+interface WorkOrderFiltersProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  statusFilter: string[];
+  setStatusFilter: (status: string[]) => void;
+  // Add other required props here
+}
+
+interface WorkOrderCardViewProps {
+  workOrders: WorkOrder[];
+  // Add any other required props here
 }
 
 const WorkOrders = () => {
@@ -74,6 +88,15 @@ const WorkOrders = () => {
     });
   };
 
+  // Default props for components that require them
+  const filterProps: WorkOrderFiltersProps = {
+    searchQuery: search,
+    setSearchQuery: handleSearch,
+    statusFilter: [],
+    setStatusFilter: () => {}
+    // Add other required props with sensible defaults
+  };
+
   return (
     <ResponsiveContainer>
       <div className="space-y-6">
@@ -81,11 +104,20 @@ const WorkOrders = () => {
           workOrders={workOrders}
         />
 
-        <WorkOrderFilters />
+        {/* Pass required props to WorkOrderFilters */}
+        <WorkOrderFilters
+          searchQuery={filterProps.searchQuery}
+          setSearchQuery={filterProps.setSearchQuery}
+          statusFilter={filterProps.statusFilter}
+          setStatusFilter={filterProps.setStatusFilter}
+        />
 
         <WorkOrderStats />
 
-        <WorkOrderBatchActions selectedCount={selectedWorkOrders.length} />
+        {/* Fix the props issue for WorkOrderBatchActions */}
+        <WorkOrderBatchActions 
+          selectedCount={selectedWorkOrders.length}
+        />
 
         <Tabs defaultValue="table" className="w-full">
           <TabsList>
@@ -97,14 +129,12 @@ const WorkOrders = () => {
           <TabsContent value="table" className="outline-none">
             <WorkOrdersTable
               workOrders={workOrders}
-              loading={loading}
               selectedWorkOrders={selectedWorkOrders}
               onSelectWorkOrder={handleSelectWorkOrder}
             />
             <WorkOrdersPagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
+              currentPage={page}
+              totalPages={Math.ceil(total / pageSize)}
               onPageChange={handlePageChange}
             />
           </TabsContent>
@@ -113,13 +143,15 @@ const WorkOrders = () => {
           <TabsContent value="card" className="outline-none">
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {workOrders.map((workOrder) => (
-                <WorkOrderCardView key={workOrder.id} workOrder={workOrder} />
+                <WorkOrderCardView 
+                  key={workOrder.id} 
+                  workOrders={[workOrder]} 
+                />
               ))}
             </div>
             <WorkOrdersPagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
+              currentPage={page}
+              totalPages={Math.ceil(total / pageSize)}
               onPageChange={handlePageChange}
             />
           </TabsContent>

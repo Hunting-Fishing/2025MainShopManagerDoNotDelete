@@ -9,10 +9,10 @@ import { toast } from '@/components/ui/use-toast';
 interface DbCalendarEvent {
   id?: string;
   title: string;
-  description?: string; // Make this optional to match usage
+  description?: string;
   start_time: string;
   end_time: string;
-  all_day: boolean;
+  all_day: boolean; // Make all_day required to match usage
   location?: string;
   customer_id?: string;
   work_order_id?: string;
@@ -31,7 +31,7 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     // Convert to strings to match CalendarEvent type
     start: dbEvent.start_time,
     end: dbEvent.end_time,
-    allDay: dbEvent.all_day,
+    all_day: dbEvent.all_day, // Use all_day instead of allDay
     location: dbEvent.location,
     customer_id: dbEvent.customer_id,
     work_order_id: dbEvent.work_order_id,
@@ -69,12 +69,12 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         description: workOrder.notes || '',
         start_time: workOrder.startTime,
         end_time: workOrder.endTime || workOrder.startTime, // Use start time as fallback
-        all_day: false,
+        all_day: false, // Make sure this is always defined
         location: workOrder.location || '',
         customer_id: workOrder.customer_id,
         work_order_id: workOrder.id,
         technician_id: workOrder.technician_id,
-        event_type: "work-order" as "work-order", // Use specific literal type
+        event_type: "work-order", // Use specific literal type
         status: workOrder.status,
         priority: workOrder.priority
       };
