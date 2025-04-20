@@ -17,7 +17,6 @@ import { TimeTrackingSection } from "@/components/workOrders/time-tracking/TimeT
 import { WorkOrderActivitiesSection } from "@/components/workOrders/WorkOrderActivitiesSection";
 import { StatusUpdateButton } from '@/components/workOrders/StatusUpdateButton';
 import { WorkOrderScheduleView } from '@/components/workOrders/calendar/WorkOrderScheduleView';
-import { WorkOrderAttachments } from './attachments/WorkOrderAttachments';
 import { WorkOrderDocumentManager } from './documents/WorkOrderDocumentManager';
 
 interface WorkOrderDetailsTabsProps {
@@ -134,7 +133,6 @@ export function WorkOrderDetailsTabs({
         
         <WorkOrderStatusTimeline workOrder={workOrder} />
         
-        {/* Add quick view of schedule info here */}
         <WorkOrderScheduleView workOrder={workOrder} />
       </TabsContent>
       
