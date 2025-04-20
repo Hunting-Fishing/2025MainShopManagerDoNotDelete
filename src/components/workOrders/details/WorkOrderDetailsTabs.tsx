@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -8,7 +7,8 @@ import {
   MessageSquare,
   History,
   Phone,
-  Calendar
+  Calendar,
+  Bell
 } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
 import { TimeEntry } from "@/types/workOrder";
@@ -21,6 +21,7 @@ import { WorkOrderActivitiesSection } from "@/components/workOrders/WorkOrderAct
 import { StatusUpdateButton } from '@/components/workOrders/StatusUpdateButton';
 import { Button } from '@/components/ui/button';
 import { WorkOrderScheduleView } from '@/components/workOrders/calendar/WorkOrderScheduleView';
+import { WorkOrderNotifications } from '@/components/workOrders/WorkOrderNotifications';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -82,6 +83,13 @@ export function WorkOrderDetailsTabs({
           <History className="h-4 w-4 mr-2" />
           Activity
         </TabsTrigger>
+        <TabsTrigger
+          value="notifications"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <Bell className="h-4 w-4 mr-2" />
+          Notifications
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="details" className="space-y-4 mt-4">
@@ -122,7 +130,6 @@ export function WorkOrderDetailsTabs({
         
         <WorkOrderStatusTimeline workOrder={workOrder} />
         
-        {/* Add quick view of schedule info here */}
         <WorkOrderScheduleView workOrder={workOrder} />
       </TabsContent>
       
@@ -148,6 +155,10 @@ export function WorkOrderDetailsTabs({
       
       <TabsContent value="activity" className="space-y-4 mt-4">
         <WorkOrderActivitiesSection workOrderId={workOrder.id} />
+      </TabsContent>
+      
+      <TabsContent value="notifications" className="space-y-4 mt-4">
+        <WorkOrderNotifications workOrderId={workOrder.id} />
       </TabsContent>
     </Tabs>
   );

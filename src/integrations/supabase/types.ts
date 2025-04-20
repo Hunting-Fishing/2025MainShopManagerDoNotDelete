@@ -4355,6 +4355,33 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          email_enabled: boolean | null
+          id: string
+          preferences: Json | null
+          push_enabled: boolean | null
+          sms_enabled: boolean | null
+          user_id: string
+        }
+        Insert: {
+          email_enabled?: boolean | null
+          id?: string
+          preferences?: Json | null
+          push_enabled?: boolean | null
+          sms_enabled?: boolean | null
+          user_id: string
+        }
+        Update: {
+          email_enabled?: boolean | null
+          id?: string
+          preferences?: Json | null
+          push_enabled?: boolean | null
+          sms_enabled?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           created_at: string | null
@@ -4395,6 +4422,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          subject: string | null
+          trigger_event: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          subject?: string | null
+          trigger_event: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          subject?: string | null
+          trigger_event?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -7125,6 +7188,59 @@ export type Database = {
           },
         ]
       }
+      work_order_notifications: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          notification_type: string
+          recipient_id: string
+          recipient_type: string
+          sent_at: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message: string
+          notification_type: string
+          recipient_id: string
+          recipient_type: string
+          sent_at?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string
+          notification_type?: string
+          recipient_id?: string
+          recipient_type?: string
+          sent_at?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_notifications_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_template_items: {
         Row: {
           category: string | null
@@ -7336,6 +7452,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_rules: {
+        Row: {
+          actions: Json | null
+          conditions: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          next_status: string
+          trigger_status: string
+          updated_at: string | null
+        }
+        Insert: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          next_status: string
+          trigger_status: string
+          updated_at?: string | null
+        }
+        Update: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          next_status?: string
+          trigger_status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       workflows: {
         Row: {

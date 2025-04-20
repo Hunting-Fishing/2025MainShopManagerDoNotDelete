@@ -1,29 +1,26 @@
 
-export interface Notification {
+export interface WorkOrderNotification {
   id: string;
+  workOrderId: string;
+  notificationType: 'status_update' | 'completion' | 'cancellation' | 'assignment';
   title: string;
   message: string;
-  read: boolean;
-  timestamp: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  link?: string;
-  sender?: string;
-  recipient?: string;
-  category?: 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat';
-  priority?: 'low' | 'medium' | 'high';
-  expiresAt?: string;
+  recipientType: 'customer' | 'technician';
+  recipientId: string;
+  status: 'pending' | 'sent' | 'error';
+  sentAt?: string;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type NotificationSubscription = {
-  category: string;
-  enabled: boolean;
-}
-
-export type NotificationPreferences = {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  sound?: string;
-  frequencies?: Record<string, 'realtime' | 'hourly' | 'daily' | 'weekly'>;
-  subscriptions: NotificationSubscription[];
+export interface WorkflowRule {
+  id: string;
+  name: string;
+  description?: string;
+  triggerStatus: string;
+  nextStatus: string;
+  conditions: Record<string, any>;
+  actions: Record<string, any>;
+  isActive: boolean;
 }
