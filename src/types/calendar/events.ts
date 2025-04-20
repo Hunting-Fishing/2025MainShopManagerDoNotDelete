@@ -14,7 +14,7 @@ export interface CalendarEvent {
   technician?: string; 
   technician_id?: string; // Keep for backward compatibility
   color?: string;
-  type?: 'appointment' | 'work-order' | 'reminder' | 'event' | string;
+  type?: 'appointment' | 'work-order' | 'reminder' | 'event' | 'other' | string;
   // Database field format (snake_case) for backward compatibility
   all_day?: boolean;
   start_time?: string;

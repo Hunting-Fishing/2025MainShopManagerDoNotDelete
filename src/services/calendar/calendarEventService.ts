@@ -15,7 +15,7 @@ interface DbCalendarEvent {
   customer_id?: string;
   work_order_id?: string;
   technician_id?: string;
-  event_type: string;
+  event_type: "appointment" | "work-order" | "reminder" | "event" | "other";
   status?: string;
   priority?: string;
   created_by?: string;
@@ -183,7 +183,7 @@ export async function getWorkOrderEvents(): Promise<DbCalendarEvent[]> {
           customer_id: wo.customer_id,
           work_order_id: wo.id,
           technician_id: wo.technician_id,
-          event_type: 'work-order',
+          event_type: 'work-order' as const,
           status: wo.status,
           priority: 'medium', // Default priority
           customer,

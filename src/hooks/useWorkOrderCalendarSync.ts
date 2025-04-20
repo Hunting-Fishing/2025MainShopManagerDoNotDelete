@@ -17,7 +17,7 @@ interface DbCalendarEvent {
   customer_id?: string;
   work_order_id?: string;
   technician_id?: string;
-  event_type: "work-order" | "appointment" | "reminder" | "event" | "other";
+  event_type: "appointment" | "work-order" | "reminder" | "event" | "other";
   status?: string;
   priority?: string;
 }
@@ -73,7 +73,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         customer_id: workOrder.customer_id,
         work_order_id: workOrder.id,
         technician_id: workOrder.technician_id,
-        event_type: "work-order", // Use specific literal type
+        event_type: "work-order", // Use the specific literal type
         status: workOrder.status,
         priority: workOrder.priority
       };
