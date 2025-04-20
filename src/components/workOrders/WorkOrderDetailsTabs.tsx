@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -7,7 +6,8 @@ import {
   Package,
   MessageSquare,
   History,
-  Calendar
+  Calendar,
+  FileText
 } from "lucide-react";
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { WorkOrderInventoryItems } from "@/components/workOrders/details/WorkOrderInventoryItems";
@@ -17,6 +17,7 @@ import { TimeTrackingSection } from "@/components/workOrders/time-tracking/TimeT
 import { WorkOrderActivitiesSection } from "@/components/workOrders/WorkOrderActivitiesSection";
 import { StatusUpdateButton } from '@/components/workOrders/StatusUpdateButton';
 import { WorkOrderScheduleView } from '@/components/workOrders/calendar/WorkOrderScheduleView';
+import { WorkOrderAttachments } from './attachments/WorkOrderAttachments';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -77,6 +78,13 @@ export function WorkOrderDetailsTabs({
         >
           <History className="h-4 w-4 mr-2" />
           Activity
+        </TabsTrigger>
+        <TabsTrigger
+          value="attachments"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          Attachments
         </TabsTrigger>
       </TabsList>
       
@@ -144,6 +152,10 @@ export function WorkOrderDetailsTabs({
       
       <TabsContent value="activity" className="space-y-4 mt-4">
         <WorkOrderActivitiesSection workOrderId={workOrder.id} />
+      </TabsContent>
+      
+      <TabsContent value="attachments" className="space-y-4 mt-4">
+        <WorkOrderAttachments workOrderId={workOrder.id} />
       </TabsContent>
     </Tabs>
   );
