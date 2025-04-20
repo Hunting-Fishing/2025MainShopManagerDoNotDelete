@@ -96,27 +96,31 @@ export function WorkOrdersPageContent({
         />
       )}
 
-      <ViewModeToggle 
-        viewMode={viewMode} 
-        onViewModeChange={setViewMode} 
-      />
-
-      {viewMode === 'table' ? (
-        <WorkOrderTable 
-          workOrders={workOrders} 
-          loading={loading}
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          onPageChange={onPageChange}
-          selectedWorkOrders={selectedWorkOrders}
-          onSelectWorkOrder={onSelectWorkOrder}
+      <div className="transition-all duration-200 ease-in-out">
+        <ViewModeToggle 
+          viewMode={viewMode} 
+          onViewModeChange={setViewMode} 
         />
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          <WorkOrderCardView workOrders={workOrders} />
-        </div>
-      )}
+
+        {viewMode === 'table' ? (
+          <div className="transition-opacity duration-200 ease-in-out">
+            <WorkOrderTable 
+              workOrders={workOrders} 
+              loading={loading}
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={onPageChange}
+              selectedWorkOrders={selectedWorkOrders}
+              onSelectWorkOrder={onSelectWorkOrder}
+            />
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 transition-opacity duration-200 ease-in-out">
+            <WorkOrderCardView workOrders={workOrders} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
