@@ -1,11 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { findWorkOrderById, deleteWorkOrder } from "@/utils/workOrders";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { WorkOrderDetailTabs } from "@/components/workOrders/WorkOrderDetailTabs";
+import { WorkOrderDetailsTabs } from "@/components/workOrders/WorkOrderDetailsTabs";
 import { WorkOrderCalendarButton } from "@/components/workOrders/calendar/WorkOrderCalendarButton";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -17,10 +16,9 @@ export default function WorkOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
-  // User information would come from authentication context in a real app
   const currentUser = {
-    id: "current-user", // Placeholder user ID
-    name: "Current User" // Placeholder user name
+    id: "current-user",
+    name: "Current User"
   };
 
   useEffect(() => {
@@ -141,7 +139,6 @@ export default function WorkOrderDetail() {
         </div>
 
         <div className="flex gap-2">
-          {/* Integrate Calendar Button Here */}
           <WorkOrderCalendarButton workOrder={workOrder} />
           
           <Button
@@ -159,7 +156,7 @@ export default function WorkOrderDetail() {
         </div>
       </div>
 
-      <WorkOrderDetailTabs 
+      <WorkOrderDetailsTabs 
         workOrder={workOrder}
         onTimeEntriesUpdate={handleUpdateTimeEntries}
         userId={currentUser.id}

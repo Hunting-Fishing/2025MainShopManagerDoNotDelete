@@ -22,7 +22,7 @@ export function WorkOrderScheduleView({ workOrder }: WorkOrderScheduleViewProps)
 
   const dueDate = workOrder.dueDate ? formatDateValue(workOrder.dueDate) : 'Not set';
   const startTime = workOrder.startTime ? formatDateValue(workOrder.startTime) : 'Not started';
-  const estimatedHours = workOrder.estimatedHours || 'Not specified';
+  const estimatedHours = workOrder.estimated_hours || 'Not specified';
 
   return (
     <Card>

@@ -5,7 +5,7 @@ import { WorkOrder } from "@/types/workOrder";
 import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrders";
 import { TimeEntry } from "@/types/workOrder";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderDetailTabs } from "@/components/workOrders/WorkOrderDetailTabs";
+import { WorkOrderDetailsTabs } from "@/components/workOrders/WorkOrderDetailsTabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Printer } from "lucide-react";
 import WorkOrderEditForm from "@/components/workOrders/WorkOrderEditForm";
@@ -171,9 +171,9 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
         {edit ? (
           <WorkOrderEditForm workOrder={workOrder} />
         ) : (
-          <WorkOrderDetailTabs
+          <WorkOrderDetailsTabs
             workOrder={workOrder}
-            onTimeEntriesUpdate={handleUpdateTimeEntries}
+            onUpdateTimeEntries={handleUpdateTimeEntries}
             userId={currentUser.id}
             userName={currentUser.name}
             onStatusUpdate={handleStatusUpdate}
