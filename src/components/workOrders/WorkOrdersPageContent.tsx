@@ -8,6 +8,7 @@ import { WorkOrderTable } from './WorkOrderTable';
 import { WorkOrderCardView } from './WorkOrderCardView';
 import { WorkOrderBatchActions } from './WorkOrderBatchActions';
 import { ViewModeToggle } from './ViewModeToggle';
+import { Button } from '@/components/ui/button';
 
 interface WorkOrdersPageContentProps {
   workOrders: WorkOrder[];
@@ -63,7 +64,7 @@ export function WorkOrdersPageContent({
   }, [workOrders]);
 
   return (
-    <div className="container mx-auto py-4 space-y-4">
+    <div className="container mx-auto py-6">
       <WorkOrdersPageHeader 
         total={total} 
         currentCount={workOrders.length}
@@ -72,42 +73,53 @@ export function WorkOrdersPageContent({
         completedCount={statusCounts.completed}
       />
 
-      <WorkOrdersFilterSection
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-        total={total}
-        currentCount={workOrders.length}
-        onSearch={onSearch}
-        onStatusFilterChange={onStatusFilterChange}
-        onPriorityFilterChange={onPriorityFilterChange}
-        onServiceCategoryChange={onServiceCategoryChange}
-        onTechnicianFilterChange={onTechnicianFilterChange}
-        technicians={technicians}
-      />
+      <div className="mt-6">
+        <WorkOrderStatusCards 
+          workOrders={workOrders} 
+          loading={loading} 
+        />
+      </div>
 
-      <WorkOrderStatusCards 
-        workOrders={workOrders} 
-        loading={loading} 
-      />
+      <div className="mt-6">
+        <WorkOrdersFilterSection
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+          total={total}
+          currentCount={workOrders.length}
+          onSearch={onSearch}
+          onStatusFilterChange={onStatusFilterChange}
+          onPriorityFilterChange={onPriorityFilterChange}
+          onServiceCategoryChange={onServiceCategoryChange}
+          onTechnicianFilterChange={onTechnicianFilterChange}
+          technicians={technicians}
+        />
+      </div>
 
       {selectedWorkOrders.length > 0 && (
-        <div className="animate-fadeIn">
+        <div className="mt-4">
           <WorkOrderBatchActions 
             selectedCount={selectedWorkOrders.length}
           />
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-        <div className="mb-4">
-          <ViewModeToggle 
-            viewMode={viewMode} 
-            onViewModeChange={setViewMode} 
-          />
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm mt-4">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <input type="checkbox" className="rounded border-gray-300" />
+            <span className="text-sm text-gray-500">Select All</span>
+          </div>
+          <div>
+            <Button variant="outline" size="sm" className="mr-2">Batch Actions</Button>
+            <ViewModeToggle 
+              viewMode={viewMode} 
+              onViewModeChange={setViewMode} 
+            />
+          </div>
         </div>
 
         {viewMode === 'table' ? (
-          <div className="opacity-100 transition-opacity duration-300 ease-in-out">
+          <div>
             <WorkOrderTable 
               workOrders={workOrders} 
               loading={loading}
@@ -120,7 +132,7 @@ export function WorkOrdersPageContent({
             />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 opacity-100 transition-opacity duration-300 ease-in-out">
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
             <WorkOrderCardView workOrders={workOrders} />
           </div>
         )}

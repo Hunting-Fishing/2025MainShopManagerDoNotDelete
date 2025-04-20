@@ -1,45 +1,28 @@
 
 import React from 'react';
-import { Info } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { LayoutGrid, Table } from "lucide-react";
 
 interface ViewModeToggleProps {
   viewMode: 'table' | 'card';
   onViewModeChange: (mode: 'table' | 'card') => void;
 }
 
-export function ViewModeToggle({ viewMode, onViewModeChange }: ViewModeToggleProps) {
+export const ViewModeToggle: React.FC<ViewModeToggleProps> = ({ 
+  viewMode, 
+  onViewModeChange 
+}) => {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center space-x-2">
-        <h3 className="text-lg font-medium">Work Orders</h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info size={16} className="text-muted-foreground cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>View and manage all work orders</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <Tabs 
-        value={viewMode} 
-        onValueChange={(value) => onViewModeChange(value as 'table' | 'card')}
-        className="w-auto"
-      >
-        <TabsList>
-          <TabsTrigger value="table">Table</TabsTrigger>
-          <TabsTrigger value="card">Card</TabsTrigger>
-        </TabsList>
-      </Tabs>
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-500 mr-2">View:</span>
+      <ToggleGroup type="single" value={viewMode} onValueChange={(val) => val && onViewModeChange(val as 'table' | 'card')}>
+        <ToggleGroupItem value="table" aria-label="Table view" className="h-8 w-8 p-0">
+          <Table className="h-4 w-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="card" aria-label="Card view" className="h-8 w-8 p-0">
+          <LayoutGrid className="h-4 w-4" />
+        </ToggleGroupItem>
+      </ToggleGroup>
     </div>
   );
-}
+};

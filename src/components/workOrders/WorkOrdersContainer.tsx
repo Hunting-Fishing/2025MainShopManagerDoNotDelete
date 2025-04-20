@@ -118,12 +118,14 @@ export function WorkOrdersContainer() {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-5 gap-4">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-28 w-full" />
         </div>
+        <Skeleton className="h-12 w-full" />
         <Skeleton className="h-[400px] w-full" />
       </div>
     );
