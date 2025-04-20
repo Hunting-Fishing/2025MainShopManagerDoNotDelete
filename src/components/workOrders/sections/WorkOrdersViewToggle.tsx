@@ -3,15 +3,15 @@ import React from 'react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LayoutGrid, Table } from "lucide-react";
 
-interface ViewModeToggleProps {
+interface WorkOrdersViewToggleProps {
   viewMode: 'table' | 'card';
   onViewModeChange: (mode: 'table' | 'card') => void;
 }
 
-export const ViewModeToggle: React.FC<ViewModeToggleProps> = ({ 
+export function WorkOrdersViewToggle({ 
   viewMode, 
   onViewModeChange 
-}) => {
+}: WorkOrdersViewToggleProps) {
   return (
     <div className="flex items-center gap-2 bg-white shadow-md rounded-lg p-2 border border-gray-200">
       <span className="text-sm font-medium text-gray-700">View:</span>
@@ -46,4 +46,4 @@ export const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
       </ToggleGroup>
     </div>
   );
-};
+}

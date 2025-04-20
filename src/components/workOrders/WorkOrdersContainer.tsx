@@ -1,11 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { supabase } from '@/lib/supabase';
 import { useWorkOrderSearch } from '@/hooks/workOrders/useWorkOrderSearch';
 import { useWorkOrderFilters } from '@/hooks/workOrders/useWorkOrderFilters';
+import { useWorkOrderViewMode } from '@/hooks/workOrders/useWorkOrderViewMode';
 import { toast } from '@/components/ui/use-toast';
-import { WorkOrdersPageContent } from './WorkOrdersPageContent';
+import { WorkOrdersLayout } from './layout/WorkOrdersLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function WorkOrdersContainer() {
@@ -34,8 +34,9 @@ export function WorkOrdersContainer() {
     handleTechnicianFilter
   } = useWorkOrderFilters();
 
+  const { viewMode, toggleViewMode } = useWorkOrderViewMode();
+
   const [selectedWorkOrders, setSelectedWorkOrders] = useState<WorkOrder[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
@@ -69,7 +70,6 @@ export function WorkOrdersContainer() {
     fetchTechnicians();
   }, [setLoadingTechnicians, setTechnicians]);
 
-  // Fix the infinite loop by adding proper dependencies
   useEffect(() => {
     if (isInitialLoad) {
       searchOrders({});
@@ -113,7 +113,6 @@ export function WorkOrdersContainer() {
     });
   };
 
-  // Show loading state only during the initial load
   if (isInitialLoad && loading) {
     return (
       <div className="container mx-auto py-6 space-y-6">
@@ -132,7 +131,7 @@ export function WorkOrdersContainer() {
   }
 
   return (
-    <WorkOrdersPageContent
+    <WorkOrdersLayout
       workOrders={workOrders}
       loading={loading && !isInitialLoad}
       total={total}
@@ -142,7 +141,7 @@ export function WorkOrdersContainer() {
       setShowFilters={setShowFilters}
       selectedWorkOrders={selectedWorkOrders}
       viewMode={viewMode}
-      setViewMode={setViewMode}
+      setViewMode={toggleViewMode}
       onPageChange={handlePageChange}
       onSelectWorkOrder={handleSelectWorkOrder}
       onSearch={(searchTerm) => searchOrders(handleSearch(searchTerm))}

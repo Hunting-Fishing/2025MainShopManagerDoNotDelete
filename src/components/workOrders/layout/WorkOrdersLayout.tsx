@@ -1,16 +1,16 @@
 
-import React, { useMemo } from 'react';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrdersPageHeader } from './WorkOrdersPageHeader';
-import { WorkOrdersFilterSection } from './WorkOrdersFilterSection';
-import { WorkOrderStatusCards } from './WorkOrderStatusCards';
-import { WorkOrderTable } from './WorkOrderTable';
-import { WorkOrderCardView } from './WorkOrderCardView';
-import { WorkOrderBatchActions } from './WorkOrderBatchActions';
-import { ViewModeToggle } from './ViewModeToggle';
+import React from 'react';
+import { WorkOrder } from "@/types/workOrder";
+import { WorkOrdersPageHeader } from '../sections/WorkOrdersPageHeader';
+import { WorkOrderStatusCards } from '../sections/WorkOrderStatusCards';
+import { WorkOrdersFilterSection } from '../sections/WorkOrdersFilterSection';
+import { WorkOrderBatchActions } from '../sections/WorkOrderBatchActions';
+import { WorkOrdersViewToggle } from '../sections/WorkOrdersViewToggle';
+import { WorkOrderTable } from '../views/WorkOrderTable';
+import { WorkOrderCardView } from '../views/WorkOrderCardView';
 import { Button } from '@/components/ui/button';
 
-interface WorkOrdersPageContentProps {
+interface WorkOrdersLayoutProps {
   workOrders: WorkOrder[];
   loading: boolean;
   total: number;
@@ -31,7 +31,7 @@ interface WorkOrdersPageContentProps {
   technicians: string[];
 }
 
-export function WorkOrdersPageContent({
+export function WorkOrdersLayout({
   workOrders,
   loading,
   total,
@@ -50,27 +50,19 @@ export function WorkOrdersPageContent({
   onServiceCategoryChange,
   onTechnicianFilterChange,
   technicians,
-}: WorkOrdersPageContentProps) {
-  const statusCounts = useMemo(() => {
-    return workOrders.reduce(
-      (counts, wo) => {
-        if (wo.status === "pending") counts.pending++;
-        else if (wo.status === "in-progress") counts.inProgress++;
-        else if (wo.status === "completed") counts.completed++;
-        return counts;
-      },
-      { pending: 0, inProgress: 0, completed: 0 }
-    );
-  }, [workOrders]);
+}: WorkOrdersLayoutProps) {
+  const statusCounts = {
+    pending: workOrders.filter(wo => wo.status === "pending").length,
+    inProgress: workOrders.filter(wo => wo.status === "in-progress").length,
+    completed: workOrders.filter(wo => wo.status === "completed").length
+  };
 
   return (
     <div className="container mx-auto py-6">
       <WorkOrdersPageHeader 
         total={total} 
         currentCount={workOrders.length}
-        pendingCount={statusCounts.pending}
-        inProgressCount={statusCounts.inProgress}
-        completedCount={statusCounts.completed}
+        {...statusCounts}
       />
 
       <div className="mt-6">
@@ -97,9 +89,7 @@ export function WorkOrdersPageContent({
 
       {selectedWorkOrders.length > 0 && (
         <div className="mt-4">
-          <WorkOrderBatchActions 
-            selectedCount={selectedWorkOrders.length}
-          />
+          <WorkOrderBatchActions selectedCount={selectedWorkOrders.length} />
         </div>
       )}
 
@@ -109,9 +99,9 @@ export function WorkOrdersPageContent({
             <input type="checkbox" className="rounded border-gray-300" />
             <span className="text-sm text-gray-500">Select All</span>
           </div>
-          <div>
-            <Button variant="outline" size="sm" className="mr-2">Batch Actions</Button>
-            <ViewModeToggle 
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">Batch Actions</Button>
+            <WorkOrdersViewToggle 
               viewMode={viewMode} 
               onViewModeChange={setViewMode} 
             />
@@ -119,18 +109,16 @@ export function WorkOrdersPageContent({
         </div>
 
         {viewMode === 'table' ? (
-          <div>
-            <WorkOrderTable 
-              workOrders={workOrders} 
-              loading={loading}
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={onPageChange}
-              selectedWorkOrders={selectedWorkOrders}
-              onSelectWorkOrder={onSelectWorkOrder}
-            />
-          </div>
+          <WorkOrderTable 
+            workOrders={workOrders} 
+            loading={loading}
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={onPageChange}
+            selectedWorkOrders={selectedWorkOrders}
+            onSelectWorkOrder={onSelectWorkOrder}
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
             <WorkOrderCardView workOrders={workOrders} />
