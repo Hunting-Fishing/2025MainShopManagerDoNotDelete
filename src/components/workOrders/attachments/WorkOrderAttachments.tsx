@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FileImage, FileText, Upload, FileUp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useWorkOrderAttachments } from "@/hooks/workOrders/useWorkOrderAttachments";
+import { useWorkOrderAttachments, WorkOrderAttachment } from "@/hooks/workOrders/useWorkOrderAttachments";
 import { cn } from "@/lib/utils";
 
 interface WorkOrderAttachmentsProps {

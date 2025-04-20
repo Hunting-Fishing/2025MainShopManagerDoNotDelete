@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
+// Export the interface so it can be used in other files
 export interface WorkOrderAttachment {
   id: string;
   fileName: string;
