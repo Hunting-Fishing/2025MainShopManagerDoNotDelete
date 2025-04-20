@@ -1,36 +1,60 @@
 
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import React, { useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkOrder } from "@/types/workOrder";
+import { Loader2 } from "lucide-react";
 
 interface WorkOrderStatusCardsProps {
   workOrders: WorkOrder[];
   loading: boolean;
 }
 
-export function WorkOrderStatusCards({ workOrders, loading }: WorkOrderStatusCardsProps) {
-  // Calculate counts for each status
-  const statusCounts = {
-    pending: workOrders.filter(wo => wo.status === "pending").length,
-    inProgress: workOrders.filter(wo => wo.status === "in-progress").length,
-    completed: workOrders.filter(wo => wo.status === "completed").length,
-    cancelled: workOrders.filter(wo => wo.status === "cancelled").length,
-  };
+export const WorkOrderStatusCards: React.FC<WorkOrderStatusCardsProps> = ({
+  workOrders,
+  loading,
+}) => {
+  const stats = useMemo(() => {
+    const initial = {
+      pending: 0,
+      inProgress: 0,
+      completed: 0,
+      cancelled: 0,
+      highPriority: 0,
+      overdue: 0,
+    };
 
-  // Calculate counts for each priority
-  const priorityCounts = {
-    low: workOrders.filter(wo => wo.priority === "low").length,
-    medium: workOrders.filter(wo => wo.priority === "medium").length,
-    high: workOrders.filter(wo => wo.priority === "high").length,
-  };
+    if (!workOrders?.length) return initial;
+
+    const now = new Date();
+
+    return workOrders.reduce((acc, order) => {
+      // Count by status
+      if (order.status === "pending") acc.pending++;
+      if (order.status === "in-progress") acc.inProgress++;
+      if (order.status === "completed") acc.completed++;
+      if (order.status === "cancelled") acc.cancelled++;
+      
+      // Count high priority
+      if (order.priority === "high") acc.highPriority++;
+      
+      // Count overdue
+      if (order.dueDate) {
+        const dueDate = new Date(order.dueDate);
+        if (dueDate < now && order.status !== "completed" && order.status !== "cancelled") {
+          acc.overdue++;
+        }
+      }
+      
+      return acc;
+    }, initial);
+  }, [workOrders]);
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="flex items-center justify-center h-32 bg-slate-50">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="flex items-center justify-center h-28">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </Card>
         ))}
       </div>
@@ -38,54 +62,60 @@ export function WorkOrderStatusCards({ workOrders, loading }: WorkOrderStatusCar
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Card className="border-l-4 border-l-yellow-400">
-        <CardContent className="p-4 flex flex-col justify-between h-full">
-          <div className="text-sm text-slate-500 font-medium">Pending</div>
-          <div className="flex items-end justify-between mt-2">
-            <div className="text-2xl font-bold">{statusCounts.pending}</div>
-            <div className="text-xs text-slate-500">
-              {((statusCounts.pending / workOrders.length) * 100).toFixed(1)}% of total
-            </div>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <Card className="bg-yellow-50 border-yellow-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-yellow-800">Pending</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-yellow-800">{stats.pending}</div>
         </CardContent>
       </Card>
-      
-      <Card className="border-l-4 border-l-blue-400">
-        <CardContent className="p-4 flex flex-col justify-between h-full">
-          <div className="text-sm text-slate-500 font-medium">In Progress</div>
-          <div className="flex items-end justify-between mt-2">
-            <div className="text-2xl font-bold">{statusCounts.inProgress}</div>
-            <div className="text-xs text-slate-500">
-              {((statusCounts.inProgress / workOrders.length) * 100).toFixed(1)}% of total
-            </div>
-          </div>
+
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-blue-800">In Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-blue-800">{stats.inProgress}</div>
         </CardContent>
       </Card>
-      
-      <Card className="border-l-4 border-l-green-400">
-        <CardContent className="p-4 flex flex-col justify-between h-full">
-          <div className="text-sm text-slate-500 font-medium">Completed</div>
-          <div className="flex items-end justify-between mt-2">
-            <div className="text-2xl font-bold">{statusCounts.completed}</div>
-            <div className="text-xs text-slate-500">
-              {((statusCounts.completed / workOrders.length) * 100).toFixed(1)}% of total
-            </div>
-          </div>
+
+      <Card className="bg-green-50 border-green-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-green-800">Completed</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-800">{stats.completed}</div>
         </CardContent>
       </Card>
-      
-      <Card className="border-l-4 border-l-red-400">
-        <CardContent className="p-4 flex flex-col justify-between h-full">
-          <div className="text-sm text-slate-500 font-medium">High Priority</div>
-          <div className="flex items-end justify-between mt-2">
-            <div className="text-2xl font-bold">{priorityCounts.high}</div>
-            <div className="text-xs text-slate-500">
-              {((priorityCounts.high / workOrders.length) * 100).toFixed(1)}% of total
-            </div>
-          </div>
+
+      <Card className="bg-red-50 border-red-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-red-800">Cancelled</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-red-800">{stats.cancelled}</div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-rose-50 border-rose-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-rose-800">High Priority</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-rose-800">{stats.highPriority}</div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-orange-50 border-orange-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-orange-800">Overdue</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-orange-800">{stats.overdue}</div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};

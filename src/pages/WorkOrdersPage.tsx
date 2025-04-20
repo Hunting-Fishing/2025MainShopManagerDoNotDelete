@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useMemo } from 'react';
 import { WorkOrdersPageHeader } from "@/components/workOrders/WorkOrdersPageHeader";
 import { WorkOrdersFilterSection } from "@/components/workOrders/WorkOrdersFilterSection";
 import { WorkOrderStatusCards } from "@/components/workOrders/WorkOrderStatusCards";
@@ -6,7 +7,7 @@ import { WorkOrderTable } from "@/components/workOrders/WorkOrderTable";
 import { useWorkOrderSearch } from "@/hooks/workOrders/useWorkOrderSearch";
 import { useWorkOrderFilters } from "@/hooks/workOrders/useWorkOrderFilters";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 export default function WorkOrdersPage() {
   const { 
@@ -33,6 +34,19 @@ export default function WorkOrdersPage() {
     handleServiceCategoryFilter,
     handleTechnicianFilter
   } = useWorkOrderFilters();
+
+  // Calculate status counts
+  const statusCounts = useMemo(() => {
+    return workOrders.reduce(
+      (counts, wo) => {
+        if (wo.status === "pending") counts.pending++;
+        else if (wo.status === "in-progress") counts.inProgress++;
+        else if (wo.status === "completed") counts.completed++;
+        return counts;
+      },
+      { pending: 0, inProgress: 0, completed: 0 }
+    );
+  }, [workOrders]);
 
   // Fetch technicians
   useEffect(() => {
@@ -102,7 +116,10 @@ export default function WorkOrdersPage() {
     <div className="container mx-auto py-6 space-y-6">
       <WorkOrdersPageHeader 
         total={total} 
-        currentCount={workOrders.length} 
+        currentCount={workOrders.length}
+        pendingCount={statusCounts.pending}
+        inProgressCount={statusCounts.inProgress}
+        completedCount={statusCounts.completed}
       />
 
       <WorkOrdersFilterSection

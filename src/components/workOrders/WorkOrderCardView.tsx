@@ -1,12 +1,12 @@
 
-import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User } from 'lucide-react';
-import { WorkOrder } from '@/types/workOrder';
-import { priorityMap } from '@/utils/workOrders';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, Tool, User, MapPin, FileText } from "lucide-react";
+import { WorkOrder } from "@/types/workOrder";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface WorkOrderCardViewProps {
   workOrders: WorkOrder[];
@@ -30,46 +30,110 @@ export const WorkOrderCardView: React.FC<WorkOrderCardViewProps> = ({ workOrders
     }
   };
 
+  const getPriorityClass = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "bg-red-100 text-red-800 border border-red-300";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border border-yellow-300";
+      case "low":
+        return "bg-blue-100 text-blue-800 border border-blue-300";
+      default:
+        return "bg-gray-100 text-gray-800 border border-gray-300";
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), "MMM dd, yyyy");
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
+  if (workOrders.length === 0) {
+    return (
+      <Card className="text-center p-6">
+        <p className="text-muted-foreground">No work orders found</p>
+      </Card>
+    );
+  }
+
   return (
     <>
       {workOrders.map((workOrder) => (
-        <Card key={workOrder.id} className="overflow-hidden">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between items-start">
-              <CardTitle className="text-lg font-medium line-clamp-2">
-                {workOrder.description}
-              </CardTitle>
-              <Badge className={getStatusClass(workOrder.status)}>
-                {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1).replace("-", " ")}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-2">
-            <div className="space-y-2">
-              <div className="flex items-center text-sm">
-                <User className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{workOrder.customer}</span>
-              </div>
-              <div className="flex items-center text-sm">
-                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{workOrder.dueDate}</span>
-              </div>
-              <div className="flex items-center text-sm">
-                <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <Badge
-                  className={
-                    priorityMap[workOrder.priority as keyof typeof priorityMap]?.classes ||
-                    "bg-gray-100 text-gray-800 border border-gray-300"
-                  }
-                >
-                  {priorityMap[workOrder.priority as keyof typeof priorityMap]?.label || workOrder.priority}
+        <Card key={workOrder.id} className="overflow-hidden hover:shadow-md transition-shadow">
+          <CardHeader className="bg-muted/20 pb-2">
+            <div className="flex justify-between">
+              <div className="font-semibold">{workOrder.id.substring(0, 8)}</div>
+              <div className="flex gap-2">
+                <Badge className={getStatusClass(workOrder.status)}>
+                  {workOrder.status.charAt(0).toUpperCase() +
+                    workOrder.status.slice(1).replace("-", " ")}
+                </Badge>
+                <Badge className={getPriorityClass(workOrder.priority)}>
+                  {workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)}
                 </Badge>
               </div>
             </div>
+            <p className="mt-2 font-medium">{workOrder.description}</p>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <User className="h-4 w-4 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-gray-500">Customer</p>
+                  <p>{workOrder.customer || 'Unassigned'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Tool className="h-4 w-4 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-gray-500">Technician</p>
+                  <p>{workOrder.technician || 'Unassigned'}</p>
+                </div>
+              </div>
+
+              {(workOrder.vehicleMake || workOrder.vehicleModel) && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-gray-500">Vehicle</p>
+                    <p>{`${workOrder.vehicleMake || ''} ${workOrder.vehicleModel || ''}`.trim()}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-start gap-2">
+                <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-gray-500">Service Type</p>
+                  <p>{workOrder.serviceType || workOrder.service_type || 'Not specified'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Calendar className="h-4 w-4 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-gray-500">Created</p>
+                  <p>{formatDate(workOrder.date || workOrder.createdAt)}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-gray-500">Due Date</p>
+                  <p>{workOrder.dueDate ? formatDate(workOrder.dueDate) : 'Not set'}</p>
+                </div>
+              </div>
+            </div>
           </CardContent>
-          <CardFooter className="pt-2 flex justify-end">
-            <Button
-              variant="outline"
+          <CardFooter className="bg-muted/10 border-t flex justify-end py-2">
+            <Button 
+              variant="outline" 
               size="sm"
               onClick={() => navigate(`/work-orders/${workOrder.id}`)}
             >
