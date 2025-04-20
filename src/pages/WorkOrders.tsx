@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import WorkOrdersHeader from '@/components/workOrders/WorkOrdersHeader';
@@ -22,25 +21,6 @@ const findWorkOrders = async ({ page, pageSize, search }: { page: number, pageSi
     total: 0
   };
 };
-
-// Define required props for components to fix TypeScript errors
-interface WorkOrderBatchActionsProps {
-  selectedCount: number;
-  // Add any other required props here
-}
-
-interface WorkOrderFiltersProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  statusFilter: string[];
-  setStatusFilter: (status: string[]) => void;
-  // Add other required props here
-}
-
-interface WorkOrderCardViewProps {
-  workOrders: WorkOrder[];
-  // Add any other required props here
-}
 
 const WorkOrders = () => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
@@ -88,15 +68,6 @@ const WorkOrders = () => {
     });
   };
 
-  // Default props for components that require them
-  const filterProps: WorkOrderFiltersProps = {
-    searchQuery: search,
-    setSearchQuery: handleSearch,
-    statusFilter: [],
-    setStatusFilter: () => {}
-    // Add other required props with sensible defaults
-  };
-
   return (
     <ResponsiveContainer>
       <div className="space-y-6">
@@ -104,17 +75,15 @@ const WorkOrders = () => {
           workOrders={workOrders}
         />
 
-        {/* Pass required props to WorkOrderFilters */}
         <WorkOrderFilters
-          searchQuery={filterProps.searchQuery}
-          setSearchQuery={filterProps.setSearchQuery}
-          statusFilter={filterProps.statusFilter}
-          setStatusFilter={filterProps.setStatusFilter}
+          searchQuery={search}
+          setSearchQuery={handleSearch}
+          statusFilter={[]}
+          setStatusFilter={() => {}}
         />
 
         <WorkOrderStats />
 
-        {/* Fix the props issue for WorkOrderBatchActions */}
         <WorkOrderBatchActions 
           selectedCount={selectedWorkOrders.length}
         />
@@ -125,7 +94,6 @@ const WorkOrders = () => {
             <TabsTrigger value="card">Card</TabsTrigger>
           </TabsList>
           
-          {/* Table View */}
           <TabsContent value="table" className="outline-none">
             <WorkOrdersTable
               workOrders={workOrders}
@@ -139,7 +107,6 @@ const WorkOrders = () => {
             />
           </TabsContent>
 
-          {/* Card View */}
           <TabsContent value="card" className="outline-none">
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {workOrders.map((workOrder) => (

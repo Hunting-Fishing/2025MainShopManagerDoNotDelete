@@ -5,7 +5,7 @@ import { CalendarEvent } from '@/types/calendar';
 import { updateCalendarEvent, createCalendarEvent } from '@/services/calendar/calendarEventService';
 import { toast } from '@/components/ui/use-toast';
 
-// Define type for DbCalendarEvent
+// Define type for DbCalendarEvent - make sure it's compatible with both local usage and API expectations
 interface DbCalendarEvent {
   id?: string;
   title: string;
@@ -36,7 +36,7 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     customer_id: dbEvent.customer_id,
     work_order_id: dbEvent.work_order_id,
     technician_id: dbEvent.technician_id,
-    event_type: dbEvent.event_type,
+    type: dbEvent.event_type, // Map event_type to type in CalendarEvent
     status: dbEvent.status,
     priority: dbEvent.priority
   };

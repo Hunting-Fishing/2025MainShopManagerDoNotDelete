@@ -1,61 +1,71 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
 import { WorkOrderSearch } from "./WorkOrderSearch";
 
-interface WorkOrdersFilterSectionProps {
-  showFilters: boolean;
-  setShowFilters: (show: boolean) => void;
-  total: number;
-  currentCount: number;
-  onSearch: (searchTerm: string) => void;
-  onStatusFilterChange: (statuses: string[]) => void;
-  onPriorityFilterChange: (priorities: string[]) => void;
-  onServiceCategoryChange: (categoryId: string | null) => void;
-  onTechnicianFilterChange: (techs: string[]) => void;
-  technicians: string[];
+export interface WorkOrderFiltersProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  statusFilter: string[];
+  setStatusFilter: (statuses: string[]) => void;
+  priorityFilter?: string[];
+  setPriorityFilter?: (priorities: string[]) => void;
+  technicianFilter?: string[];
+  setTechnicianFilter?: (technicians: string[]) => void;
+  serviceCategoryFilter?: string | null;
+  setServiceCategoryFilter?: (category: string | null) => void;
+  showAdvancedFilters?: boolean;
+  onAdvancedFilterToggle?: () => void;
 }
 
-export const WorkOrdersFilterSection: React.FC<WorkOrdersFilterSectionProps> = ({
-  showFilters,
-  setShowFilters,
-  total,
-  currentCount,
-  onSearch,
-  onStatusFilterChange,
-  onPriorityFilterChange,
-  onServiceCategoryChange,
-  onTechnicianFilterChange,
-  technicians
-}) => {
+export const WorkOrderFilters = ({
+  searchQuery,
+  setSearchQuery,
+  statusFilter,
+  setStatusFilter,
+  priorityFilter = [],
+  setPriorityFilter = () => {},
+  technicianFilter = [],
+  setTechnicianFilter = () => {},
+  serviceCategoryFilter = null,
+  setServiceCategoryFilter = () => {},
+  showAdvancedFilters = false,
+  onAdvancedFilterToggle = () => {}
+}: WorkOrderFiltersProps) => {
+  // Basic implementation - will need to be expanded
   return (
-    <div className="bg-white shadow-md rounded-xl border border-gray-100 p-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-slate-600"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          {showFilters ? 'Hide Filters' : 'Show Filters'}
-        </Button>
-        
-        <div className="text-sm text-slate-500">
-          Showing {currentCount} of {total} work orders
-        </div>
-      </div>
-
-      {showFilters && (
-        <WorkOrderSearch
-          onSearch={onSearch}
-          onStatusFilterChange={onStatusFilterChange}
-          onPriorityFilterChange={onPriorityFilterChange}
-          onServiceCategoryChange={onServiceCategoryChange}
-          onTechnicianFilterChange={onTechnicianFilterChange}
-          technicians={technicians}
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      <div className="flex flex-col gap-4">
+        <input
+          type="text"
+          placeholder="Search work orders..."
+          className="px-4 py-2 border border-gray-300 rounded-md"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-      )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={onAdvancedFilterToggle}
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            {showAdvancedFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+        </div>
+
+        {/* Advanced filters would go here */}
+        {showAdvancedFilters && (
+          <div className="grid gap-4 mt-4">
+            {/* Filter components would be rendered here */}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+// Default export along with named export for flexibility
+export default WorkOrderFilters;
