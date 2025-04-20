@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from "react";
-import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
-import { WorkOrderForm } from "@/components/work-orders/WorkOrderForm"; // Verify this import
-import { WorkOrderTemplateSelector } from "@/components/work-orders/templates/WorkOrderTemplateSelector";
+import { WorkOrderFormHeader } from "@/components/workOrders/WorkOrderFormHeader";
+import { WorkOrderForm } from "@/components/workOrders/WorkOrderForm";
+import { WorkOrderTemplateSelector } from "@/components/workOrders/templates/WorkOrderTemplateSelector";
 import { WorkOrderTemplate } from "@/types/workOrder";
 import { useSearchParams } from "react-router-dom";
 import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";

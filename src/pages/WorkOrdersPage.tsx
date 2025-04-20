@@ -1,9 +1,8 @@
-
 import React, { useEffect } from 'react';
-import { WorkOrdersPageHeader } from "@/components/work-orders/WorkOrdersPageHeader";
-import { WorkOrdersFilterSection } from "@/components/work-orders/WorkOrdersFilterSection";
-import { WorkOrderStatusCards } from "@/components/work-orders/WorkOrderStatusCards";
-import { WorkOrderTable } from "@/components/work-orders/WorkOrderTable";
+import { WorkOrdersPageHeader } from "@/components/workOrders/WorkOrdersPageHeader";
+import { WorkOrdersFilterSection } from "@/components/workOrders/WorkOrdersFilterSection";
+import { WorkOrderStatusCards } from "@/components/workOrders/WorkOrderStatusCards";
+import { WorkOrderTable } from "@/components/workOrders/WorkOrderTable";
 import { useWorkOrderSearch } from "@/hooks/workOrders/useWorkOrderSearch";
 import { useWorkOrderFilters } from "@/hooks/workOrders/useWorkOrderFilters";
 import { supabase } from "@/lib/supabase";

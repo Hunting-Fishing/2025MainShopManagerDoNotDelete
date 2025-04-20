@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
+import { WorkOrderFormFieldValues } from "@/types/workOrder"; // Fix to reference type from types folder instead
 import { InventoryItemExtended } from "@/types/inventory";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { WorkOrderInventoryItem } from "@/types/workOrder";

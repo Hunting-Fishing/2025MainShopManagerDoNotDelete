@@ -1,4 +1,3 @@
-
 // Re-export all work order utility functions
 export * from './queries/findWorkOrder';
 export * from './mutations/createWorkOrder';
@@ -12,7 +11,7 @@ export * from './activity';
 export * from './statusManagement';
 
 // Import and re-export time formatting functions from the appropriate utility
-export { formatTimeInHoursAndMinutes } from '../../components/work-orders/time-tracking/utils/formatTime';
+export { formatTimeInHoursAndMinutes } from '../../components/workOrders/time-tracking/utils/formatTime';
 
 // Define standard status and priority maps as the single source of truth
 export const statusMap = {

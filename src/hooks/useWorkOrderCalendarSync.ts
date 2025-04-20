@@ -5,6 +5,42 @@ import { CalendarEvent } from '@/types/calendar';
 import { updateCalendarEvent, createCalendarEvent } from '@/services/calendar/calendarEventService';
 import { toast } from '@/components/ui/use-toast';
 
+// Define missing type for DbCalendarEvent to match CalendarEvent
+interface DbCalendarEvent {
+  id?: string;
+  title: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  all_day: boolean;
+  location: string;
+  customer_id: string;
+  work_order_id: string;
+  technician_id: string;
+  event_type: "work-order" | "appointment" | "reminder" | "event" | "other";
+  status: string;
+  priority: string;
+}
+
+// Helper function to convert DbCalendarEvent to CalendarEvent
+const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
+  return {
+    id: dbEvent.id,
+    title: dbEvent.title,
+    description: dbEvent.description,
+    start: new Date(dbEvent.start_time),
+    end: new Date(dbEvent.end_time),
+    allDay: dbEvent.all_day,
+    location: dbEvent.location,
+    customer_id: dbEvent.customer_id,
+    work_order_id: dbEvent.work_order_id,
+    technician_id: dbEvent.technician_id,
+    event_type: dbEvent.event_type,
+    status: dbEvent.status,
+    priority: dbEvent.priority
+  };
+};
+
 /**
  * This hook manages synchronization between work orders and calendar events
  */
@@ -27,7 +63,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
       }
       
       // Convert work order to calendar event format
-      const eventData = {
+      const eventData: DbCalendarEvent = {
         title: workOrder.description || `Work Order #${workOrder.id.substring(0, 8)}`,
         description: workOrder.notes || '',
         start_time: workOrder.startTime,
@@ -37,7 +73,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         customer_id: workOrder.customer_id,
         work_order_id: workOrder.id,
         technician_id: workOrder.technician_id,
-        event_type: 'work-order',
+        event_type: "work-order", // Use specific literal type
         status: workOrder.status,
         priority: workOrder.priority
       };
@@ -48,7 +84,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         // Update existing event
         const updated = await updateCalendarEvent(calendarEvent.id, eventData);
         if (updated) {
-          setCalendarEvent(updated);
+          setCalendarEvent(convertToCalendarEvent(updated));
           toast({
             title: "Calendar Updated",
             description: "Work order has been updated in the calendar",
@@ -58,7 +94,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         // Create new event
         const created = await createCalendarEvent(eventData);
         if (created) {
-          setCalendarEvent(created);
+          setCalendarEvent(convertToCalendarEvent(created));
           toast({
             title: "Calendar Updated",
             description: "Work order has been added to the calendar",

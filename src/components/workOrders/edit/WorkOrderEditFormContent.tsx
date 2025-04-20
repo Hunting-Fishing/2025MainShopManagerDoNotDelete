@@ -7,12 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 
 // Import components
-import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
-import { WorkOrderStatusSection } from "@/components/work-orders/WorkOrderStatusSection";
-import { AssignmentSection } from "@/components/work-orders/AssignmentSection";
-import { NotesSection } from "@/components/work-orders/NotesSection";
-import { WorkOrderInventoryField } from "@/components/work-orders/inventory/WorkOrderInventoryField";
-import { EditFormActions } from "@/components/work-orders/edit/EditFormActions";
+import { CustomerInfoSection } from "@/components/workOrders/CustomerInfoSection";
+import { WorkOrderStatusSection } from "@/components/workOrders/WorkOrderStatusSection";
+import { AssignmentSection } from "@/components/workOrders/AssignmentSection";
+import { NotesSection } from "@/components/workOrders/NotesSection";
+import { WorkOrderInventoryField } from "@/components/workOrders/inventory/WorkOrderInventoryField";
+import { EditFormActions } from "@/components/workOrders/edit/EditFormActions";
 
 interface WorkOrderEditFormContentProps {
   workOrderId: string;

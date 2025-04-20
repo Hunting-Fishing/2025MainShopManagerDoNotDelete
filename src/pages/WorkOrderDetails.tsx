@@ -5,10 +5,10 @@ import { WorkOrder } from "@/types/workOrder";
 import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrders";
 import { TimeEntry } from "@/types/workOrder";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderDetailTabs } from "@/components/work-orders/WorkOrderDetailTabs";
+import { WorkOrderDetailTabs } from "@/components/workOrders/WorkOrderDetailTabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Printer } from "lucide-react";
-import WorkOrderEditForm from "@/components/work-orders/WorkOrderEditForm";
+import WorkOrderEditForm from "@/components/workOrders/WorkOrderEditForm";
 import { generateWorkOrderPdf } from "@/utils/pdf/workOrderPdf";
 
 interface WorkOrderDetailsProps {

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FlaggedActivitiesList } from '@/components/work-orders/FlaggedActivitiesList';
+import { FlaggedActivitiesList } from '@/components/workOrders/FlaggedActivitiesList';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { WorkOrderFormHeader } from "@/components/work-orders/WorkOrderFormHeader";
+import { WorkOrderFormHeader } from "@/components/workOrders/WorkOrderFormHeader";
 import { ImportCustomersDialog } from "@/components/customers/form/import/ImportCustomersDialog";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";

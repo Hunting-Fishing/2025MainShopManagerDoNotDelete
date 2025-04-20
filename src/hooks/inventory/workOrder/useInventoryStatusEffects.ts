@@ -1,13 +1,14 @@
+
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
+import { WorkOrderFormFieldValues } from "@/types/workOrder"; // Fix to reference type from types folder instead
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**
  * Hook to handle inventory status changes based on work order status
  */
 export const useInventoryStatusEffects = (
-  form: UseFormReturn<WorkOrderFormFieldValues>,
+  form: UseFormReturn<any>,
   consumeWorkOrderInventory: Function,
   reserveInventory: Function
 ) => {
