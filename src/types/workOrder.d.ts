@@ -1,6 +1,6 @@
+
 import { ReactNode } from 'react';
 
-// Add this type if it doesn't exist yet
 export interface WorkOrderFormFieldValues {
   customer: string;
   location: string;

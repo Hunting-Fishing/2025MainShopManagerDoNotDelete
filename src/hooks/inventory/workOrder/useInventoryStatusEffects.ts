@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/types/workOrder"; // Fix to reference type from types folder instead
+import { WorkOrderFormFieldValues } from "@/types/workOrder";
 import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**

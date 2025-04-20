@@ -5,21 +5,21 @@ import { CalendarEvent } from '@/types/calendar';
 import { updateCalendarEvent, createCalendarEvent } from '@/services/calendar/calendarEventService';
 import { toast } from '@/components/ui/use-toast';
 
-// Define missing type for DbCalendarEvent to match CalendarEvent
+// Define type for DbCalendarEvent
 interface DbCalendarEvent {
   id?: string;
   title: string;
-  description: string;
+  description?: string; // Make this optional to match usage
   start_time: string;
   end_time: string;
   all_day: boolean;
-  location: string;
-  customer_id: string;
-  work_order_id: string;
-  technician_id: string;
+  location?: string;
+  customer_id?: string;
+  work_order_id?: string;
+  technician_id?: string;
   event_type: "work-order" | "appointment" | "reminder" | "event" | "other";
-  status: string;
-  priority: string;
+  status?: string;
+  priority?: string;
 }
 
 // Helper function to convert DbCalendarEvent to CalendarEvent
@@ -28,8 +28,9 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     id: dbEvent.id,
     title: dbEvent.title,
     description: dbEvent.description,
-    start: new Date(dbEvent.start_time),
-    end: new Date(dbEvent.end_time),
+    // Convert to strings to match CalendarEvent type
+    start: dbEvent.start_time,
+    end: dbEvent.end_time,
     allDay: dbEvent.all_day,
     location: dbEvent.location,
     customer_id: dbEvent.customer_id,
@@ -73,7 +74,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         customer_id: workOrder.customer_id,
         work_order_id: workOrder.id,
         technician_id: workOrder.technician_id,
-        event_type: "work-order", // Use specific literal type
+        event_type: "work-order" as "work-order", // Use specific literal type
         status: workOrder.status,
         priority: workOrder.priority
       };

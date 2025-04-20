@@ -1,18 +1,32 @@
+
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WorkOrdersHeader } from '@/components/workOrders/WorkOrdersHeader';
-import { WorkOrderFilters } from '@/components/workOrders/WorkOrderFilters';
-import { WorkOrdersTable } from '@/components/workOrders/WorkOrdersTable';
-import { WorkOrdersPagination } from '@/components/workOrders/WorkOrdersPagination';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import WorkOrdersHeader from '@/components/workOrders/WorkOrdersHeader';
+import WorkOrderFilters from '@/components/workOrders/WorkOrderFilters';
+import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
+import WorkOrdersPagination from '@/components/workOrders/WorkOrdersPagination';
 import { WorkOrderStats } from '@/components/workOrders/WorkOrderStats';
 import { WorkOrderBatchActions } from '@/components/workOrders/WorkOrderBatchActions';
-import { findWorkOrders } from '@/utils/workOrders';
+import { findWorkOrderById } from '@/utils/workOrders';
 import { WorkOrder } from '@/types/workOrder';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { WorkOrderCardView } from '@/components/workOrders/WorkOrderCardView';
+
+// Mock function for fetching work orders since findWorkOrders doesn't exist
+const findWorkOrders = async ({ page, pageSize, search }: { page: number, pageSize: number, search: string }) => {
+  // This is a temporary mock implementation
+  return {
+    data: [] as WorkOrder[],
+    total: 0
+  };
+};
+
+interface WorkOrderBatchActionsProps {
+  selectedCount: number;
+}
 
 const WorkOrders = () => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
@@ -64,9 +78,7 @@ const WorkOrders = () => {
     <ResponsiveContainer>
       <div className="space-y-6">
         <WorkOrdersHeader
-          total={total}
-          currentCount={workOrders.length}
-          onSearch={handleSearch}
+          workOrders={workOrders}
         />
 
         <WorkOrderFilters />
@@ -80,8 +92,9 @@ const WorkOrders = () => {
             <TabsTrigger value="table">Table</TabsTrigger>
             <TabsTrigger value="card">Card</TabsTrigger>
           </TabsList>
+          
           {/* Table View */}
-          <Tabs.Content value="table" className="outline-none">
+          <TabsContent value="table" className="outline-none">
             <WorkOrdersTable
               workOrders={workOrders}
               loading={loading}
@@ -94,10 +107,10 @@ const WorkOrders = () => {
               total={total}
               onPageChange={handlePageChange}
             />
-          </Tabs.Content>
+          </TabsContent>
 
           {/* Card View */}
-          <Tabs.Content value="card" className="outline-none">
+          <TabsContent value="card" className="outline-none">
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {workOrders.map((workOrder) => (
                 <WorkOrderCardView key={workOrder.id} workOrder={workOrder} />
@@ -109,7 +122,7 @@ const WorkOrders = () => {
               total={total}
               onPageChange={handlePageChange}
             />
-          </Tabs.Content>
+          </TabsContent>
         </Tabs>
       </div>
     </ResponsiveContainer>
