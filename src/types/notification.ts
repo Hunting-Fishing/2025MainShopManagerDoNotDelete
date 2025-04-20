@@ -1,4 +1,36 @@
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: string;
+  read: boolean;
+  link?: string;
+  category?: string;
+  priority?: 'low' | 'medium' | 'high';
+  sender?: string;
+  recipient?: string;
+  expiresAt?: string;
+}
+
+export interface NotificationSubscription {
+  category: string;
+  enabled: boolean;
+}
+
+export interface NotificationPreferences {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  sound?: 'default' | 'none' | 'soft' | 'loud' | 'bell' | 'chime' | 'alert';
+  frequencies?: {
+    [key: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
+  };
+  subscriptions: NotificationSubscription[];
+}
+
+// Work order specific notification types
 export interface WorkOrderNotification {
   id: string;
   workOrderId: string;
@@ -23,36 +55,4 @@ export interface WorkflowRule {
   conditions: Record<string, any>;
   actions: Record<string, any>;
   isActive: boolean;
-}
-
-// General notification interface
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: string;
-  read: boolean;
-  link?: string;
-  category?: string;
-  priority?: 'low' | 'medium' | 'high';
-  sender?: string;
-  recipient?: string;
-  expiresAt?: string;  // Added the missing expiresAt property
-}
-
-export interface NotificationSubscription {
-  category: string;
-  enabled: boolean;
-}
-
-export interface NotificationPreferences {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  sound?: 'default' | 'none' | 'soft' | 'loud' | 'bell' | 'chime' | 'alert'; // Added additional sound options
-  frequencies?: {
-    [key: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
-  };
-  subscriptions: NotificationSubscription[];
 }

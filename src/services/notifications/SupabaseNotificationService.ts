@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase';
 import { Notification } from '@/types/notification';
@@ -210,7 +209,6 @@ export class SupabaseNotificationService implements INotificationService {
     if (!this.userId) return;
 
     try {
-      // Map our notification model to the database structure
       const dbNotification = {
         id: notification.id,
         user_id: this.userId,
@@ -223,13 +221,9 @@ export class SupabaseNotificationService implements INotificationService {
         category: notification.category,
         priority: notification.priority,
         sender: notification.sender,
-        recipient: notification.recipient
+        recipient: notification.recipient,
+        expires_at: notification.expiresAt
       };
-
-      // Add expiresAt only if it exists in the notification
-      if (notification.expiresAt) {
-        dbNotification['expires_at'] = notification.expiresAt;
-      }
 
       await supabase
         .from('notifications')
