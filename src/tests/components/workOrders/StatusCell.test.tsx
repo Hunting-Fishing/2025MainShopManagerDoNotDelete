@@ -1,4 +1,6 @@
+
 import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { StatusCell } from '@/components/workOrders/StatusCell';
 import { WorkOrder } from '@/types/workOrder';
 
@@ -17,6 +19,7 @@ const mockWorkOrder: WorkOrder = {
   serviceType: 'Repair',
   timeEntries: [],
   inventoryItems: [],
+  date: '2023-01-01', // Adding the required date property
   notes: '',
   total_cost: 0
 };

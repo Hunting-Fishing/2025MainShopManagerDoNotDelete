@@ -1,11 +1,27 @@
+
 import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { StatusUpdateButton } from '@/components/workOrders/StatusUpdateButton';
 import { WorkOrder } from '@/types/workOrder';
 
 const mockWorkOrder: WorkOrder = {
   id: '123',
   status: 'pending',
-  // ... other required fields would go here
+  description: 'Test work order',
+  customer: 'Test Customer',
+  priority: 'medium',
+  dueDate: '2023-12-31',
+  technician: 'Test Tech',
+  date: '2023-01-01',
+  location: 'Test Location',
+  notes: '',
+  inventoryItems: [],
+  timeEntries: [],
+  createdAt: '2023-01-01',
+  lastUpdatedAt: '2023-01-01',
+  lastUpdatedBy: 'user-123',
+  total_cost: 0,
+  serviceType: 'Repair'
 };
 
 const mockUserId = 'user-123';

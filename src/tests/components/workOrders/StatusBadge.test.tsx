@@ -1,5 +1,6 @@
 
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { StatusBadge } from '@/components/workOrders/StatusBadge';
 import { WorkOrder } from '@/types/workOrder';
 
