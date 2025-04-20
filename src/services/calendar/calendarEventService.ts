@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { CalendarEvent, CreateCalendarEventDto } from "@/types/calendar/events";
 import { handleApiError } from "@/utils/errorHandling";
@@ -9,7 +10,7 @@ interface DbCalendarEvent {
   description?: string;
   start_time: string;
   end_time: string;
-  all_day?: boolean;
+  all_day: boolean; // Make all_day required
   location?: string;
   customer_id?: string;
   work_order_id?: string;
@@ -207,9 +208,15 @@ export async function createCalendarEvent(
   eventData: CreateCalendarEventDto
 ): Promise<DbCalendarEvent | null> {
   try {
+    // Ensure all_day is defined before inserting
+    const dataToInsert = {
+      ...eventData,
+      all_day: eventData.all_day ?? false // Default to false if not provided
+    };
+
     const { data, error } = await supabase
       .from('calendar_events')
-      .insert([eventData])
+      .insert([dataToInsert])
       .select()
       .single();
 
@@ -229,9 +236,15 @@ export async function updateCalendarEvent(
   eventData: Partial<DbCalendarEvent>
 ): Promise<DbCalendarEvent | null> {
   try {
+    // Ensure all_day is defined before updating
+    const dataToUpdate = {
+      ...eventData,
+      all_day: eventData.all_day ?? false // Default to false if not provided
+    };
+
     const { data, error } = await supabase
       .from('calendar_events')
-      .update(eventData)
+      .update(dataToUpdate)
       .eq('id', id)
       .select()
       .single();

@@ -34,7 +34,7 @@ export interface CreateCalendarEventDto {
   description?: string;
   start_time: string;
   end_time: string;
-  all_day?: boolean;
+  all_day: boolean; // Make all_day required
   location?: string;
   customer_id?: string;
   work_order_id?: string;
