@@ -1,11 +1,13 @@
+
 import React from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Wrench, User, MapPin, FileText } from "lucide-react";
+import { Calendar, Clock, Wrench, User, MapPin, FileText, Tag, Tool } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface WorkOrderCardViewProps {
   workOrders: WorkOrder[];
@@ -43,6 +45,7 @@ export const WorkOrderCardView: React.FC<WorkOrderCardViewProps> = ({ workOrders
   };
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return "Not set";
     try {
       return format(new Date(dateStr), "MMM dd, yyyy");
     } catch (error) {
@@ -61,10 +64,19 @@ export const WorkOrderCardView: React.FC<WorkOrderCardViewProps> = ({ workOrders
   return (
     <>
       {workOrders.map((workOrder) => (
-        <Card key={workOrder.id} className="overflow-hidden hover:shadow-md transition-shadow">
-          <CardHeader className="bg-muted/20 pb-2">
+        <Card key={workOrder.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-white border border-gray-100">
+          <CardHeader className="bg-gradient-to-r from-indigo-50 to-slate-50 pb-2">
             <div className="flex justify-between">
-              <div className="font-semibold">{workOrder.id.substring(0, 8)}</div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="font-semibold text-indigo-700">{workOrder.id.substring(0, 8)}</div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{workOrder.id}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <div className="flex gap-2">
                 <Badge className={getStatusClass(workOrder.status)}>
                   {workOrder.status.charAt(0).toUpperCase() +
@@ -75,65 +87,85 @@ export const WorkOrderCardView: React.FC<WorkOrderCardViewProps> = ({ workOrders
                 </Badge>
               </div>
             </div>
-            <p className="mt-2 font-medium">{workOrder.description}</p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="mt-2 font-medium line-clamp-2">{workOrder.description}</p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{workOrder.description}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="space-y-3 text-sm">
               <div className="flex items-start gap-2">
-                <User className="h-4 w-4 text-gray-500 mt-0.5" />
+                <User className="h-4 w-4 text-indigo-500 mt-0.5" />
                 <div>
                   <p className="text-gray-500">Customer</p>
-                  <p>{workOrder.customer || 'Unassigned'}</p>
+                  <p className="font-medium">{workOrder.customer || 'Unassigned'}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
-                <Wrench className="h-4 w-4 text-gray-500 mt-0.5" />
+                <Wrench className="h-4 w-4 text-indigo-500 mt-0.5" />
                 <div>
                   <p className="text-gray-500">Technician</p>
-                  <p>{workOrder.technician || 'Unassigned'}</p>
+                  <p className="font-medium">{workOrder.technician || 'Unassigned'}</p>
                 </div>
               </div>
 
               {(workOrder.vehicleMake || workOrder.vehicleModel) && (
                 <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
+                  <MapPin className="h-4 w-4 text-indigo-500 mt-0.5" />
                   <div>
                     <p className="text-gray-500">Vehicle</p>
-                    <p>{`${workOrder.vehicleMake || ''} ${workOrder.vehicleModel || ''}`.trim()}</p>
+                    <p className="font-medium">{`${workOrder.vehicleMake || ''} ${workOrder.vehicleModel || ''}`.trim()}</p>
                   </div>
                 </div>
               )}
 
               <div className="flex items-start gap-2">
-                <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
+                <FileText className="h-4 w-4 text-indigo-500 mt-0.5" />
                 <div>
                   <p className="text-gray-500">Service Type</p>
-                  <p>{workOrder.serviceType || workOrder.service_type || 'Not specified'}</p>
+                  <p className="font-medium">{workOrder.serviceType || workOrder.service_type || 'Not specified'}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
-                <Calendar className="h-4 w-4 text-gray-500 mt-0.5" />
+                <Calendar className="h-4 w-4 text-indigo-500 mt-0.5" />
                 <div>
                   <p className="text-gray-500">Created</p>
-                  <p>{formatDate(workOrder.date || workOrder.createdAt)}</p>
+                  <p className="font-medium">{formatDate(workOrder.date || workOrder.createdAt)}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
-                <Clock className="h-4 w-4 text-gray-500 mt-0.5" />
+                <Clock className="h-4 w-4 text-indigo-500 mt-0.5" />
                 <div>
                   <p className="text-gray-500">Due Date</p>
-                  <p>{workOrder.dueDate ? formatDate(workOrder.dueDate) : 'Not set'}</p>
+                  <p className="font-medium">{workOrder.dueDate ? formatDate(workOrder.dueDate) : 'Not set'}</p>
                 </div>
               </div>
+              
+              {workOrder.total_cost && (
+                <div className="flex items-start gap-2">
+                  <Tag className="h-4 w-4 text-indigo-500 mt-0.5" />
+                  <div>
+                    <p className="text-gray-500">Total Cost</p>
+                    <p className="font-medium">${Number(workOrder.total_cost).toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
-          <CardFooter className="bg-muted/10 border-t flex justify-end py-2">
+          <CardFooter className="bg-gradient-to-r from-slate-50 to-indigo-50 border-t flex justify-end py-3">
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700"
               onClick={() => navigate(`/work-orders/${workOrder.id}`)}
             >
               View Details

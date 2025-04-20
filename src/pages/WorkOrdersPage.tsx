@@ -1,13 +1,19 @@
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { WorkOrdersPageHeader } from "@/components/workOrders/WorkOrdersPageHeader";
 import { WorkOrdersFilterSection } from "@/components/workOrders/WorkOrdersFilterSection";
 import { WorkOrderStatusCards } from "@/components/workOrders/WorkOrderStatusCards";
 import { WorkOrderTable } from "@/components/workOrders/WorkOrderTable";
+import { WorkOrderCardView } from "@/components/workOrders/WorkOrderCardView";
 import { useWorkOrderSearch } from "@/hooks/workOrders/useWorkOrderSearch";
 import { useWorkOrderFilters } from "@/hooks/workOrders/useWorkOrderFilters";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WorkOrderBatchActions } from '@/components/workOrders/WorkOrderBatchActions';
+import { WorkOrder } from '@/types/workOrder';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 export default function WorkOrdersPage() {
   const { 
@@ -34,6 +40,10 @@ export default function WorkOrdersPage() {
     handleServiceCategoryFilter,
     handleTechnicianFilter
   } = useWorkOrderFilters();
+
+  // State for selected work orders (batch actions)
+  const [selectedWorkOrders, setSelectedWorkOrders] = useState<WorkOrder[]>([]);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
   // Calculate status counts
   const statusCounts = useMemo(() => {
@@ -112,6 +122,16 @@ export default function WorkOrdersPage() {
     searchOrders({ page: newPage });
   };
 
+  const handleSelectWorkOrder = (workOrder: WorkOrder, isSelected: boolean) => {
+    setSelectedWorkOrders(prev => {
+      if (isSelected) {
+        return [...prev, workOrder];
+      } else {
+        return prev.filter(wo => wo.id !== workOrder.id);
+      }
+    });
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <WorkOrdersPageHeader 
@@ -140,14 +160,57 @@ export default function WorkOrdersPage() {
         loading={loading} 
       />
 
-      <WorkOrderTable 
-        workOrders={workOrders} 
-        loading={loading}
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        onPageChange={handlePageChange}
-      />
+      {selectedWorkOrders.length > 0 && (
+        <WorkOrderBatchActions 
+          selectedCount={selectedWorkOrders.length}
+        />
+      )}
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-lg font-medium">Work Orders</h3>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info size={16} className="text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View and manage all work orders</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <Tabs 
+          value={viewMode} 
+          onValueChange={(value) => setViewMode(value as 'table' | 'card')}
+          className="w-auto"
+        >
+          <TabsList>
+            <TabsTrigger value="table">Table</TabsTrigger>
+            <TabsTrigger value="card">Card</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {viewMode === 'table' ? (
+        <WorkOrderTable 
+          workOrders={workOrders} 
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={handlePageChange}
+          selectedWorkOrders={selectedWorkOrders}
+          onSelectWorkOrder={handleSelectWorkOrder}
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {workOrders.map((workOrder) => (
+            <WorkOrderCardView 
+              key={workOrder.id} 
+              workOrders={[workOrder]} 
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
