@@ -66,7 +66,7 @@ export const routeDefinitions = [
       },
       {
         path: "work-orders",
-        element: <WorkOrdersPage />, // Updated component reference
+        element: <WorkOrdersPage />,
       },
       {
         path: "work-orders/create",
