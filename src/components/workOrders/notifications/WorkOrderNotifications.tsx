@@ -54,14 +54,14 @@ export function WorkOrderNotifications({ workOrderId }: WorkOrderNotificationsPr
                     notification.status === 'error' && "border-red-200 bg-red-50"
                   )}
                 >
-                  {getNotificationIcon(notification.notification_type)}
+                  {getNotificationIcon(notification.notificationType)}
                   <div className="flex-1 space-y-1">
                     <p className="font-medium">{notification.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {notification.message}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(notification.created_at).toLocaleString()}
+                      {new Date(notification.createdAt).toLocaleString()}
                     </p>
                   </div>
                 </div>
