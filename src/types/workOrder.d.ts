@@ -1,3 +1,4 @@
+
 import { ReactNode } from 'react';
 
 export interface WorkOrderFormFieldValues {
@@ -42,7 +43,12 @@ export interface WorkOrderInventoryItem {
   category: string;
   quantity: number;
   unitPrice: number;
-  itemStatus?: "in-stock" | "special-order" | "out-of-stock";
+  // Updated to match the more comprehensive list in workOrder.ts
+  itemStatus?: "in-stock" | "special-order" | "ordered" | "used-part" | "misc";
+  estimatedArrivalDate?: string;
+  supplierName?: string;
+  supplierOrderRef?: string;
+  notes?: string;
 }
 
 export interface TimeEntry {

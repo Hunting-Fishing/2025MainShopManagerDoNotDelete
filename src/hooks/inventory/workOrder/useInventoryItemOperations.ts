@@ -1,11 +1,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/types/workOrder.d"; // Explicitly reference .d.ts file
+import { WorkOrderFormFieldValues } from "@/types/workOrder.d"; // Import from .d.ts file
 import { InventoryItemExtended } from "@/types/inventory";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
+// Import WorkOrderInventoryItem from the same source as the form values
+import { WorkOrderInventoryItem } from "@/types/workOrder.d";
 
 /**
  * Hook to manage inventory item operations in work orders

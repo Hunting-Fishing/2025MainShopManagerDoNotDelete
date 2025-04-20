@@ -1,10 +1,9 @@
 
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/types/workOrder.d"; // Explicitly reference .d.ts file
+import { WorkOrderFormFieldValues, WorkOrderInventoryItem } from "@/types/workOrder.d"; // Import both from .d.ts file
 import { InventoryItemExtended } from "@/types/inventory";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
 import { useInventoryStatusEffects } from "./useInventoryStatusEffects";
 import { useInventoryItemOperations } from "./useInventoryItemOperations";
 
