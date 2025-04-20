@@ -1,43 +1,73 @@
 
 import { useState } from "react";
 import { WorkOrder } from "@/types/workOrder";
-import { updateWorkOrderPriority } from "@/utils/workOrders/priorityManagement";
-import { useToast } from "@/hooks/use-toast";
+import { calculateWorkOrderPriority, updatePriorityBasedOnDueDate } from "@/utils/workOrders/priorityManagement";
+import { updateWorkOrder } from "@/utils/workOrders";
+import { toast } from "@/hooks/use-toast";
+import { recordWorkOrderActivity } from "@/utils/workOrders/activity";
 
-export const useWorkOrderPriority = (workOrder: WorkOrder) => {
+export function useWorkOrderPriority() {
   const [isUpdating, setIsUpdating] = useState(false);
-  const { toast } = useToast();
 
-  const updatePriority = async (newPriority: WorkOrder["priority"], userId: string) => {
+  const updatePriority = async (
+    workOrder: WorkOrder,
+    newPriority: WorkOrder["priority"],
+    userId: string,
+    userName: string
+  ): Promise<WorkOrder | null> => {
+    if (workOrder.priority === newPriority) {
+      return workOrder;
+    }
+    
     setIsUpdating(true);
+    
     try {
-      const { success, error } = await updateWorkOrderPriority(
+      const updatedWorkOrder = await updateWorkOrder({
+        ...workOrder,
+        priority: newPriority,
+        lastUpdatedBy: userId,
+        lastUpdatedAt: new Date().toISOString()
+      });
+      
+      await recordWorkOrderActivity(
+        `Priority changed from ${workOrder.priority} to ${newPriority} by ${userName}`,
         workOrder.id,
-        newPriority,
-        userId
+        userId,
+        userName
       );
-
-      if (!success) {
-        throw new Error(error);
-      }
-
+      
       toast({
         title: "Priority Updated",
-        description: `Work order priority changed to ${newPriority}`,
+        description: `Work order priority is now ${newPriority}`,
       });
+      
+      return updatedWorkOrder;
     } catch (error) {
+      console.error("Failed to update work order priority:", error);
       toast({
-        title: "Error",
-        description: "Failed to update priority",
-        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update work order priority",
+        variant: "destructive"
       });
+      return null;
     } finally {
       setIsUpdating(false);
     }
   };
 
-  return {
-    isUpdating,
-    updatePriority,
+  const recalculatePriority = async (
+    workOrder: WorkOrder,
+    userId: string,
+    userName: string
+  ): Promise<WorkOrder | null> => {
+    const calculatedPriority = calculateWorkOrderPriority(workOrder);
+    
+    if (workOrder.priority === calculatedPriority) {
+      return workOrder;
+    }
+    
+    return updatePriority(workOrder, calculatedPriority, userId, userName);
   };
-};
+
+  return { updatePriority, recalculatePriority, isUpdating };
+}
