@@ -2,9 +2,12 @@
 import { NotificationPreferences } from '@/types/notification';
 
 export const defaultPreferences: NotificationPreferences = {
-  email: true,
-  push: false,
-  inApp: true,
+  emailEnabled: true,
+  smsEnabled: false,
+  pushEnabled: true,
+  email: true, // For backward compatibility
+  push: false, // For backward compatibility
+  inApp: true, // For backward compatibility
   sound: 'default',
   frequencies: {
     system: 'realtime',

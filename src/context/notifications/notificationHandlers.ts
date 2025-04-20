@@ -1,4 +1,3 @@
-
 import { Notification, NotificationPreferences } from '@/types/notification';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
@@ -84,7 +83,7 @@ export const createHandleNewNotificationHandler = (
       sub => sub.category === notification.category
     );
     
-    if (!preferences.inApp || (categorySubscription && !categorySubscription.enabled)) {
+    if ((preferences.inApp === false) || (categorySubscription && !categorySubscription.enabled)) {
       console.log('Notification filtered by preferences:', notification);
       return;
     }

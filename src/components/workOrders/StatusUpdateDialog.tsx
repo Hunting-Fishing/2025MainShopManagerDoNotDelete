@@ -25,7 +25,7 @@ export function StatusUpdateDialog({
   children 
 }: StatusUpdateDialogProps) {
   const { updateStatus, isUpdating } = useWorkOrderStatusManager();
-  const { handleStatusChange } = useWorkOrderAutomation();
+  const { handleStatusChange: handleAutomation } = useWorkOrderAutomation();
   const [open, setOpen] = React.useState(false);
   const [automationPending, setAutomationPending] = React.useState(false);
   const nextStatusOptions = getNextStatusOptions(workOrder.status);
@@ -39,7 +39,7 @@ export function StatusUpdateDialog({
       
       // After updating status, we check if automation rules should run
       try {
-        await handleStatusChange(updatedWorkOrder);
+        await handleAutomation(updatedWorkOrder);
       } catch (error) {
         console.error("Automation error:", error);
       } finally {

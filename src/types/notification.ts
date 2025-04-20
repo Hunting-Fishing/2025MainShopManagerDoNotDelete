@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 // Notification for system-wide notifications
 export interface Notification {
   id: string;
-  timestamp: Date;
+  timestamp: string; // Changed from Date to string for compatibility
   title: string;
   message: string;
   read: boolean;
@@ -13,6 +13,8 @@ export interface Notification {
   sender?: string;
   recipient?: string;
   category?: string;
+  priority?: 'low' | 'medium' | 'high'; // Added priority property
+  expiresAt?: string; // Added expiresAt property
 }
 
 // Notification preferences for users
@@ -20,6 +22,11 @@ export interface NotificationPreferences {
   emailEnabled: boolean;
   smsEnabled: boolean;
   pushEnabled: boolean;
+  sound?: 'default' | 'none' | 'gentle' | 'loud'; // Added sound property
+  email?: boolean; // For backward compatibility
+  push?: boolean; // For backward compatibility
+  inApp?: boolean; // For backward compatibility
+  frequencies?: Record<string, 'realtime' | 'hourly' | 'daily' | 'weekly'>; // Added frequencies
   subscriptions: NotificationSubscription[];
 }
 
