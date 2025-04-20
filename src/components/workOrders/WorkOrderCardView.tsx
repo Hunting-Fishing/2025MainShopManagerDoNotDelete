@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Tool, User, MapPin, FileText } from "lucide-react";
+import { Calendar, Clock, Wrench, User, MapPin, FileText } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -89,7 +88,7 @@ export const WorkOrderCardView: React.FC<WorkOrderCardViewProps> = ({ workOrders
               </div>
 
               <div className="flex items-start gap-2">
-                <Tool className="h-4 w-4 text-gray-500 mt-0.5" />
+                <Wrench className="h-4 w-4 text-gray-500 mt-0.5" />
                 <div>
                   <p className="text-gray-500">Technician</p>
                   <p>{workOrder.technician || 'Unassigned'}</p>
