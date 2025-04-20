@@ -22,37 +22,43 @@ export function WorkOrderScheduleView({ workOrder }: WorkOrderScheduleViewProps)
 
   const dueDate = workOrder.dueDate ? formatDateValue(workOrder.dueDate) : 'Not set';
   const startTime = workOrder.startTime ? formatDateValue(workOrder.startTime) : 'Not started';
-  const estimatedHours = workOrder.estimated_hours || 'Not specified';
+  
+  // Use estimated_hours if available, fallback to estimated_hours for backward compatibility
+  const estimatedHours = workOrder.estimated_hours ?? 'Not specified';
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Schedule Information</CardTitle>
+    <Card className="shadow-md border-gray-100 bg-white">
+      <CardHeader className="pb-3 border-b">
+        <CardTitle className="text-lg font-medium">Schedule Information</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-slate-50 rounded-lg border">
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
             <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-5 w-5 text-slate-500" />
+              <Calendar className="h-5 w-5 text-indigo-600" />
               <h4 className="font-medium">Due Date</h4>
             </div>
-            <p>{dueDate}</p>
+            <p className="text-slate-700">{dueDate}</p>
           </div>
           
-          <div className="p-4 bg-slate-50 rounded-lg border">
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
             <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-5 w-5 text-slate-500" />
+              <Clock className="h-5 w-5 text-indigo-600" />
               <h4 className="font-medium">Estimated Time</h4>
             </div>
-            <p>{typeof estimatedHours === 'number' ? `${estimatedHours} hours` : estimatedHours}</p>
+            <p className="text-slate-700">{typeof estimatedHours === 'number' ? `${estimatedHours} hours` : estimatedHours}</p>
           </div>
         </div>
         
-        <div className="flex justify-end">
-          <button className="text-sm text-blue-600 hover:text-blue-800" onClick={() => alert('Calendar integration will be available soon!')}>
-            View in Calendar
-          </button>
-        </div>
+        {workOrder.startTime && (
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <h4 className="font-medium text-blue-800">Scheduled Time</h4>
+            </div>
+            <p className="text-blue-700">{startTime}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

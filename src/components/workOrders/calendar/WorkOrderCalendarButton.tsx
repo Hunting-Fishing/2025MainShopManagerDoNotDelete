@@ -6,13 +6,23 @@ import { useWorkOrderCalendarSync } from "@/hooks/useWorkOrderCalendarSync";
 import { WorkOrder } from "@/types/workOrder";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface WorkOrderCalendarButtonProps {
   workOrder: WorkOrder;
 }
 
 export function WorkOrderCalendarButton({ workOrder }: WorkOrderCalendarButtonProps) {
-  const { syncWithCalendar, isLoading, hasCalendarEvent } = useWorkOrderCalendarSync(workOrder);
+  const navigate = useNavigate();
+  const { syncWithCalendar, isLoading, hasCalendarEvent, calendarEvent } = useWorkOrderCalendarSync(workOrder);
+  
+  const navigateToCalendar = () => {
+    if (workOrder.startTime) {
+      navigate(`/calendar?date=${format(new Date(workOrder.startTime), 'yyyy-MM-dd')}&workOrderId=${workOrder.id}`);
+    } else {
+      navigate('/calendar');
+    }
+  };
   
   return (
     <Popover>
@@ -70,14 +80,7 @@ export function WorkOrderCalendarButton({ workOrder }: WorkOrderCalendarButtonPr
             
             <Button 
               className="w-full"
-              onClick={() => {
-                // Navigate to the calendar view focused on this event
-                if (workOrder.startTime) {
-                  window.location.href = `/calendar?date=${format(new Date(workOrder.startTime), 'yyyy-MM-dd')}`;
-                } else {
-                  window.location.href = '/calendar';
-                }
-              }}
+              onClick={navigateToCalendar}
             >
               View in Calendar
             </Button>

@@ -1,113 +1,58 @@
 
-import { format, isPast, isToday, startOfDay } from "date-fns";
-import { cn } from "@/lib/utils";
-import { CalendarEvent } from "@/types/calendar";
-import { priorityMap } from "@/data/workOrdersData";
-import { ShiftChatIndicator } from "./ShiftChatIndicator";
-import { ChatRoom } from "@/types/chat";
-import { useNavigate } from "react-router-dom";
+import React from 'react';
+import { format } from 'date-fns';
+import { CalendarDayProps } from '@/types/calendar';
+import { cn } from '@/lib/utils';
+import { WorkOrderCalendarEvent } from './WorkOrderCalendarEvent';
 
-interface CalendarDayProps {
-  date: Date;
-  events: CalendarEvent[];
-  isCurrentMonth?: boolean;
-  isToday?: boolean;
-  onEventClick: (event: CalendarEvent) => void;
-  currentTime?: Date;
-  shiftChats?: ChatRoom[];
-}
-
-export function CalendarDay({ 
-  date, 
-  events, 
-  isCurrentMonth = true, 
-  isToday = false,
-  onEventClick,
-  currentTime = new Date(),
-  shiftChats = []
-}: CalendarDayProps) {
-  const navigate = useNavigate();
+export function CalendarDay({ date, isCurrentMonth = true, isToday = false, events }: CalendarDayProps) {
+  const dayNumber = format(date, 'd');
+  const workOrderEvents = events.filter(event => event.type === 'work-order' || event.work_order_id);
+  const otherEvents = events.filter(event => event.type !== 'work-order' && !event.work_order_id);
   
-  // Check if this date is in the past
-  const isPastDate = isPast(startOfDay(date)) && !isToday;
-  
-  // Sort events by priority (high first)
-  const sortedEvents = [...events].sort((a, b) => {
-    const priorityOrder = { "high": 0, "medium": 1, "low": 2 };
-    return priorityOrder[a.priority as keyof typeof priorityOrder] - 
-           priorityOrder[b.priority as keyof typeof priorityOrder];
+  // Sort events by priority (high, medium, low) and then by start time
+  const sortedWorkOrderEvents = [...workOrderEvents].sort((a, b) => {
+    // First by priority
+    const priorityOrder: Record<string, number> = { 'high': 0, 'medium': 1, 'low': 2 };
+    const aPriority = priorityOrder[a.priority || 'medium'] || 1;
+    const bPriority = priorityOrder[b.priority || 'medium'] || 1;
+    
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+    
+    // Then by start time
+    return new Date(a.start).getTime() - new Date(b.start).getTime();
   });
-
-  // Limit the number of events displayed
-  const maxVisibleEvents = 3;
-  const visibleEvents = sortedEvents.slice(0, maxVisibleEvents);
-  const hiddenEventsCount = sortedEvents.length - maxVisibleEvents;
-
-  // Handle shift chat click
-  const handleShiftChatClick = (room: ChatRoom) => {
-    navigate(`/chat/${room.id}`);
-  };
-
+  
   return (
-    <div 
-      className={cn(
-        "min-h-[120px] border p-1 relative",
-        !isCurrentMonth && "bg-slate-50",
-        isToday && "bg-blue-50",
-        isPastDate && "bg-red-50 bg-opacity-30"
-      )}
-    >
-      {/* Past date overlay */}
-      {isPastDate && (
-        <div className="absolute inset-0 bg-red-100 bg-opacity-20 pointer-events-none z-10">
-          <div className="absolute top-1 right-1">
-            <span className="text-xs text-red-500 font-medium px-1 rounded bg-white bg-opacity-70">
-              Past
-            </span>
-          </div>
-        </div>
-      )}
-      
-      <div className="flex justify-between mb-1">
-        <span 
-          className={cn(
-            "text-sm font-medium",
-            !isCurrentMonth && "text-slate-400",
-            isToday && "rounded-full bg-blue-600 text-white h-6 w-6 flex items-center justify-center"
-          )}
-        >
-          {format(date, "d")}
-        </span>
-      </div>
-
-      <div className="space-y-1">
-        {visibleEvents.map((event) => (
+    <div className={cn(
+      "h-full min-h-[8rem] border border-gray-200 p-1",
+      !isCurrentMonth && "bg-gray-50/50 text-gray-400",
+      isToday && "bg-blue-50/50",
+    )}>
+      <p className={cn(
+        "text-xs font-medium text-right p-1",
+        isToday && "bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-auto"
+      )}>
+        {dayNumber}
+      </p>
+      <div className="space-y-1 mt-1 max-h-[calc(100%-2rem)] overflow-y-auto">
+        {/* Render work order events first with special styling */}
+        {sortedWorkOrderEvents.map((event) => (
+          <WorkOrderCalendarEvent key={event.id} event={event} />
+        ))}
+        
+        {/* Render other events with normal styling */}
+        {otherEvents.map((event) => (
           <div 
             key={event.id}
-            onClick={() => onEventClick(event)}
-            className={cn(
-              "px-2 py-1 text-xs rounded truncate cursor-pointer relative z-20",
-              priorityMap[event.priority].classes.replace("text-xs font-medium", "")
-            )}
+            className="bg-gray-100 text-xs p-1 rounded truncate border border-gray-200 cursor-pointer"
           >
-            <div className="font-medium truncate">{event.title}</div>
-            <div className="text-[10px] truncate">{event.technician}</div>
+            {event.title}
           </div>
         ))}
-
-        {hiddenEventsCount > 0 && (
-          <div className="text-xs text-slate-500 px-2 relative z-20">
-            + {hiddenEventsCount} more
-          </div>
-        )}
       </div>
-      
-      {/* Shift Chat Indicator */}
-      <ShiftChatIndicator 
-        date={date}
-        chatRooms={shiftChats}
-        onClick={handleShiftChatClick}
-      />
     </div>
   );
 }

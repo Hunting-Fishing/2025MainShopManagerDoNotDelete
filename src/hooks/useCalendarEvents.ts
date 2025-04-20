@@ -1,132 +1,93 @@
+
 import { useState, useEffect } from 'react';
-import { CalendarEvent } from '@/types/calendar/events';
-import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
-import { getShiftChats } from '@/services/calendar/shiftChatService';
-import { ChatRoom } from '@/types/chat';
-import { format, startOfMonth, endOfMonth, addMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { supabase } from '@/lib/supabase';
+import { CalendarEvent, ShiftChat } from '@/types/calendar/events';
+import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 
 export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'day') {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [shiftChats, setShiftChats] = useState<ChatRoom[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [shiftChats, setShiftChats] = useState<ShiftChat[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCalendarData = async () => {
+    const fetchEvents = async () => {
       setIsLoading(true);
       setError(null);
-
+      
       try {
-        // Determine date range based on view
-        let startDate: Date, endDate: Date;
+        let startDate: Date;
+        let endDate: Date;
         
+        // Calculate date range based on view
         if (view === 'month') {
-          startDate = startOfWeek(startOfMonth(currentDate));
-          endDate = endOfWeek(endOfMonth(currentDate));
+          startDate = startOfMonth(currentDate);
+          endDate = endOfMonth(currentDate);
         } else if (view === 'week') {
           startDate = startOfWeek(currentDate);
           endDate = endOfWeek(currentDate);
-        } else { // day view
+        } else {
+          // day view
           startDate = currentDate;
-          endDate = currentDate;
+          endDate = addDays(currentDate, 1);
         }
-
-        // Format dates for API calls
-        const startDateStr = format(startDate, 'yyyy-MM-dd');
-        const endDateStr = format(endDate, 'yyyy-MM-dd');
-
+        
+        // Format dates for query
+        const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+        const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+        
         // Fetch calendar events
-        const [dbCalendarEvents, dbWorkOrderEvents, shiftChatsData] = await Promise.all([
-          getCalendarEvents(startDateStr, endDateStr),
-          getWorkOrderEvents(),
-          getShiftChats(startDateStr, endDateStr)
-        ]);
-
-        // Format shift chats as ChatRoom objects for the calendar
-        const formattedShiftChats: ChatRoom[] = shiftChatsData.map(shift => ({
-          id: shift.chat_room_id,
-          name: shift.shift_name,
-          type: 'group',
-          created_at: shift.created_at,
-          updated_at: shift.updated_at,
-          metadata: {
-            is_shift_chat: true,
-            shift_date: shift.shift_date,
-            shift_name: shift.shift_name,
-            shift_time: {
-              start: shift.start_time,
-              end: shift.end_time
-            }
-          }
-        }));
-
-        // Transform database events to CalendarEvent format for UI
-        const calendarEvents: CalendarEvent[] = dbCalendarEvents.map(event => ({
+        const { data: calendarEvents, error: calendarError } = await supabase
+          .from('calendar_events')
+          .select('*')
+          .gte('start_time', formattedStartDate)
+          .lte('start_time', formattedEndDate);
+          
+        if (calendarError) throw calendarError;
+        
+        // Fetch shift chats for the same period
+        const { data: shiftChatData, error: shiftError } = await supabase
+          .from('shift_chats')
+          .select('*')
+          .gte('shift_date', formattedStartDate)
+          .lte('shift_date', formattedEndDate);
+          
+        if (shiftError) throw shiftError;
+        
+        // Map the database results to our CalendarEvent type
+        const mappedEvents: CalendarEvent[] = calendarEvents.map((event) => ({
           id: event.id,
           title: event.title,
           start: event.start_time,
           end: event.end_time,
           allDay: event.all_day,
           description: event.description,
-          location: event.location || '',
-          status: event.status || '',
-          priority: event.priority || 'medium',
-          customer: event.customer || '',
-          technician: event.technician || '',
+          location: event.location,
+          workOrderId: event.work_order_id,
+          status: event.status,
+          priority: event.priority,
+          customer: event.customer,
           technician_id: event.technician_id,
           type: event.event_type,
-          workOrderId: event.work_order_id,
+          // Include the original fields for compatibility
+          all_day: event.all_day,
           start_time: event.start_time,
           end_time: event.end_time,
-          all_day: event.all_day,
           customer_id: event.customer_id,
           work_order_id: event.work_order_id
         }));
-
-        // Transform work order events to CalendarEvent format
-        const workOrderEvents: CalendarEvent[] = dbWorkOrderEvents.map(event => ({
-          id: event.id,
-          title: event.title,
-          start: event.start_time,
-          end: event.end_time,
-          allDay: event.all_day || false,
-          description: event.description,
-          location: event.location || '',
-          status: event.status || '',
-          priority: event.priority || 'medium',
-          customer: event.customer || '',
-          technician: event.technician || '',
-          technician_id: event.technician_id,
-          type: 'work-order',
-          workOrderId: event.id,
-          start_time: event.start_time,
-          end_time: event.end_time,
-          all_day: event.all_day,
-          customer_id: event.customer_id,
-          work_order_id: event.id
-        }));
-
-        // Combine and filter events
-        const combinedEvents = [
-          ...calendarEvents,
-          ...workOrderEvents.filter(wo => {
-            return !calendarEvents.some(event => 
-              event.workOrderId === wo.id && event.type === 'work-order'
-            );
-          })
-        ];
-
-        setEvents(combinedEvents);
-        setShiftChats(formattedShiftChats);
+        
+        setEvents(mappedEvents);
+        setShiftChats(shiftChatData || []);
       } catch (err) {
-        console.error("Error fetching calendar data:", err);
-        setError("Failed to load calendar data. Please try again.");
+        console.error('Error fetching calendar data:', err);
+        setError(err instanceof Error ? err.message : 'Error fetching calendar data');
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchCalendarData();
+    
+    fetchEvents();
   }, [currentDate, view]);
 
   return { events, shiftChats, isLoading, error };

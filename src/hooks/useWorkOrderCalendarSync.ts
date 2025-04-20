@@ -2,8 +2,12 @@
 import { useState, useEffect } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { CalendarEvent } from '@/types/calendar';
-import { updateCalendarEvent, createCalendarEvent } from '@/services/calendar/calendarEventService';
-import { toast } from '@/components/ui/use-toast';
+import { 
+  updateCalendarEvent, 
+  createCalendarEvent, 
+  getCalendarEventByWorkOrderId 
+} from '@/services/calendar/calendarEventService';
+import { toast } from '@/hooks/use-toast';
 
 // Define type for DbCalendarEvent with all_day as a required property
 interface DbCalendarEvent {
@@ -119,9 +123,19 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
     const fetchCalendarEvent = async () => {
       if (!workOrder?.id) return;
       
-      // Logic to fetch any existing calendar event for this work order
-      // This would typically query the calendar_events table for any events with this work_order_id
-      // For now, we'll just leave this as a stub since we don't have the exact implementation
+      setIsLoading(true);
+      try {
+        // Fetch existing calendar event for this work order
+        const existingEvent = await getCalendarEventByWorkOrderId(workOrder.id);
+        
+        if (existingEvent) {
+          setCalendarEvent(convertToCalendarEvent(existingEvent));
+        }
+      } catch (err) {
+        console.error("Error fetching calendar event:", err);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     fetchCalendarEvent();
