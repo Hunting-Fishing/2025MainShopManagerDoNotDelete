@@ -6,7 +6,7 @@ import { WorkOrderTemplate, WorkOrderInventoryItem } from "@/types/workOrder";
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { toast } from "@/hooks/use-toast";
-import { useWorkOrderInitialization } from "@/hooks/work-orders/useWorkOrderInitialization";
+import { useWorkOrderInitialization } from "@/hooks/workOrders/useWorkOrderInitialization";
 import { WorkOrderFormLayout } from "./sections/WorkOrderFormLayout";
 
 interface WorkOrderFormProps {
