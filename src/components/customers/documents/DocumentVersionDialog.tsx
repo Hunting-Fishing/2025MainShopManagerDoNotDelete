@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { CustomerDocument } from '@/types/document';
 import { uploadDocumentVersion } from '@/services/documentService';
+
+interface UploadVersionResult {
+  version_number: number;
+}
 
 interface DocumentVersionDialogProps {
   document: CustomerDocument;
@@ -52,7 +55,7 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
         document.id,
         file,
         versionNotes || undefined
-      );
+      ) as UploadVersionResult;
       
       if (result) {
         toast({
