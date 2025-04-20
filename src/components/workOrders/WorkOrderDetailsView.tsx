@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfileStore } from "@/stores/profileStore";
 import { TimeEntry } from "@/types/workOrder";
 import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
+import { useWorkOrderAutomation } from '@/hooks/workOrders/useWorkOrderAutomation';
 
 interface WorkOrderDetailsViewProps {
   workOrder: WorkOrder;
@@ -36,11 +36,16 @@ export default function WorkOrderDetailsView({
   const { user } = useAuth();
   const profile = useProfileStore(state => state.profile);
   
+  const { handleStatusChange } = useWorkOrderAutomation();
+  
   const handleUpdateTimeEntries = (entries: TimeEntry[]) => {
     onUpdateTimeEntries(entries);
   };
 
-  // Calculate total billable time
+  const handleWorkOrderUpdate = async (updatedWorkOrder: WorkOrder) => {
+    await handleStatusChange(updatedWorkOrder);
+  };
+
   const totalBillableTime = workOrder.timeEntries 
     ? workOrder.timeEntries
         .filter(entry => entry.billable)
