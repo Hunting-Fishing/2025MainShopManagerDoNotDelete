@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useWorkOrderNotifications } from '@/hooks/workOrders/useWorkOrderNotifications';
-import { AlertCircle, Bell, CheckCircle, Clock } from 'lucide-react';
+import { AlertCircle, Bell, CheckCircle, Clock, Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -21,8 +21,25 @@ export function WorkOrderNotifications({ workOrderId }: WorkOrderNotificationsPr
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'cancellation':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'assignment':
+        return <Info className="h-4 w-4 text-purple-500" />;
       default:
         return <Bell className="h-4 w-4 text-slate-500" />;
+    }
+  };
+
+  const getNotificationStyles = (type: string) => {
+    switch (type) {
+      case 'status_update':
+        return "bg-blue-50 border-blue-200";
+      case 'completion':
+        return "bg-green-50 border-green-200";
+      case 'cancellation':
+        return "bg-red-50 border-red-200";
+      case 'assignment':
+        return "bg-purple-50 border-purple-200";
+      default:
+        return "bg-slate-50 border-slate-200";
     }
   };
 
@@ -51,6 +68,7 @@ export function WorkOrderNotifications({ workOrderId }: WorkOrderNotificationsPr
                   key={notification.id}
                   className={cn(
                     "flex items-start gap-3 rounded-lg border p-3",
+                    getNotificationStyles(notification.notificationType),
                     notification.status === 'error' && "border-red-200 bg-red-50"
                   )}
                 >
@@ -63,6 +81,11 @@ export function WorkOrderNotifications({ workOrderId }: WorkOrderNotificationsPr
                     <p className="text-xs text-muted-foreground">
                       {new Date(notification.createdAt).toLocaleString()}
                     </p>
+                    {notification.status === 'error' && notification.errorMessage && (
+                      <p className="text-xs text-red-500 mt-1">
+                        Error: {notification.errorMessage}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
