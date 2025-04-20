@@ -7150,6 +7150,53 @@ export type Database = {
           },
         ]
       }
+      work_order_documents: {
+        Row: {
+          category: string | null
+          description: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          metadata: Json | null
+          uploaded_at: string | null
+          uploaded_by: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          description?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          description?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_documents_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_inventory_items: {
         Row: {
           category: string
@@ -7237,6 +7284,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "work_order_notifications_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_signatures: {
+        Row: {
+          created_at: string | null
+          id: string
+          signature_type: string
+          signature_url: string
+          signed_at: string | null
+          signed_by: string
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          signature_type: string
+          signature_url: string
+          signed_at?: string | null
+          signed_by: string
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          signature_type?: string
+          signature_url?: string
+          signed_at?: string | null
+          signed_by?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_signatures_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"

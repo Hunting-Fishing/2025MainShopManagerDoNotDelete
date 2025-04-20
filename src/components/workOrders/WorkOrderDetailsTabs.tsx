@@ -18,6 +18,7 @@ import { WorkOrderActivitiesSection } from "@/components/workOrders/WorkOrderAct
 import { StatusUpdateButton } from '@/components/workOrders/StatusUpdateButton';
 import { WorkOrderScheduleView } from '@/components/workOrders/calendar/WorkOrderScheduleView';
 import { WorkOrderAttachments } from './attachments/WorkOrderAttachments';
+import { WorkOrderDocumentManager } from './documents/WorkOrderDocumentManager';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;
@@ -85,6 +86,13 @@ export function WorkOrderDetailsTabs({
         >
           <FileText className="h-4 w-4 mr-2" />
           Attachments
+        </TabsTrigger>
+        <TabsTrigger
+          value="documents"
+          className="flex items-center data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          Documents & Signatures
         </TabsTrigger>
       </TabsList>
       
@@ -156,6 +164,10 @@ export function WorkOrderDetailsTabs({
       
       <TabsContent value="attachments" className="space-y-4 mt-4">
         <WorkOrderAttachments workOrderId={workOrder.id} />
+      </TabsContent>
+      
+      <TabsContent value="documents" className="space-y-4 mt-4">
+        <WorkOrderDocumentManager workOrderId={workOrder.id} />
       </TabsContent>
     </Tabs>
   );
