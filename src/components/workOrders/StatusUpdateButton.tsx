@@ -11,6 +11,7 @@ interface StatusUpdateButtonProps {
   userId: string;
   userName: string;
   onStatusUpdate: (updatedWorkOrder: WorkOrder) => void;
+  size?: "xs" | "sm" | "default" | "lg" | "icon";
 }
 
 export function StatusUpdateButton({
@@ -18,7 +19,8 @@ export function StatusUpdateButton({
   newStatus,
   userId,
   userName,
-  onStatusUpdate
+  onStatusUpdate,
+  size = "default"
 }: StatusUpdateButtonProps) {
   const { updateStatus, isUpdating } = useWorkOrderStatusManagement();
   const StatusIcon = getStatusIcon(newStatus);
@@ -34,7 +36,7 @@ export function StatusUpdateButton({
   return (
     <Button
       variant="outline"
-      size="sm"
+      size={size}
       onClick={handleClick}
       disabled={isUpdating || workOrder.status === newStatus}
       className={`${config.color} border-2`}
