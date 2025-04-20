@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -27,6 +26,7 @@ import Shopping from '@/pages/Shopping';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import ServiceReminders from '@/pages/ServiceReminders';
+import Equipment from '@/pages/Equipment';
 
 const AppRoutes = () => {
   return (
@@ -77,7 +77,7 @@ const AppRoutes = () => {
         <Route path="/inventory" element={<Inventory />} />
         
         {/* Equipment */}
-        <Route path="/equipment" element={<Dashboard />} />
+        <Route path="/equipment" element={<Equipment />} />
         <Route path="/equipment/repair-plans/create" element={<CreateRepairPlan />} />
         
         {/* Maintenance */}
