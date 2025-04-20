@@ -38,11 +38,10 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
           variant="ghost" 
           className={cn(
             'w-[130px] justify-center',
+            'border-2 transition-all duration-200',
+            'shadow-sm hover:shadow-md',
+            'transform hover:scale-102 active:scale-98',
             statusColor,
-            'border-2 relative',
-            'shadow-sm transition-all duration-200',
-            'hover:shadow-md hover:scale-102 active:scale-98',
-            'focus:outline-none focus:ring-2 focus:ring-offset-2',
             'font-medium'
           )}
           disabled={isUpdating}
@@ -54,11 +53,15 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-white border border-gray-100 shadow-lg rounded-xl p-1">
+      <DropdownMenuContent 
+        className="bg-white rounded-lg border border-gray-100 shadow-lg p-1 min-w-[160px]"
+        align="end"
+      >
         {Object.keys(statusConfig).map((status) => {
           const statusKey = status as WorkOrder["status"];
           const isValid = isStatusTransitionAllowed(currentStatus, statusKey);
           const config = statusConfig[statusKey];
+          const StatusIcon = config.icon;
           
           return (
             <DropdownMenuItem
@@ -66,14 +69,13 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
               disabled={!isValid || status === currentStatus}
               onClick={() => handleStatusChange(statusKey)}
               className={cn(
+                'my-1 rounded-md transition-all duration-200',
+                'flex items-center gap-2 px-3 py-2',
                 isValid && status !== currentStatus ? config.color : '',
-                'my-1 rounded-lg cursor-pointer',
-                'transition-all duration-200',
-                'hover:scale-102 active:scale-98',
-                !isValid || status === currentStatus ? 'opacity-50' : 'hover:shadow-sm'
+                !isValid || status === currentStatus ? 'opacity-50' : 'hover:scale-102 active:scale-98',
               )}
             >
-              <div className="h-2 w-2 rounded-full mr-2 bg-current" />
+              <StatusIcon className="h-4 w-4" />
               {config?.label || status}
             </DropdownMenuItem>
           );
@@ -81,4 +83,4 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+}
