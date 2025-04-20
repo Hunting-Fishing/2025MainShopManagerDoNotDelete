@@ -5,14 +5,14 @@ import { CalendarEvent } from '@/types/calendar';
 import { updateCalendarEvent, createCalendarEvent } from '@/services/calendar/calendarEventService';
 import { toast } from '@/components/ui/use-toast';
 
-// Define type for DbCalendarEvent - make sure it's compatible with both local usage and API expectations
+// Define type for DbCalendarEvent with all_day as a required property
 interface DbCalendarEvent {
   id?: string;
   title: string;
   description?: string;
   start_time: string;
   end_time: string;
-  all_day: boolean; // Make all_day required to match usage
+  all_day: boolean; // all_day is required
   location?: string;
   customer_id?: string;
   work_order_id?: string;
@@ -31,7 +31,7 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     // Convert to strings to match CalendarEvent type
     start: dbEvent.start_time,
     end: dbEvent.end_time,
-    all_day: dbEvent.all_day, // Use all_day instead of allDay
+    all_day: dbEvent.all_day,
     location: dbEvent.location,
     customer_id: dbEvent.customer_id,
     work_order_id: dbEvent.work_order_id,
