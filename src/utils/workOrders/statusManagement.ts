@@ -2,6 +2,12 @@
 import { WorkOrder } from "@/types/workOrder";
 import { CheckCircle, Clock, Play, XCircle } from "lucide-react";
 
+// Define the type for the next steps to handle the readonly issue
+type NextStep = {
+  status: WorkOrder["status"];
+  label: string;
+};
+
 // Enhanced status configuration with more detailed metadata
 export const statusConfig = {
   "pending": {
@@ -13,7 +19,7 @@ export const statusConfig = {
     nextSteps: [
       { status: "in-progress" as WorkOrder["status"], label: "Start Work" },
       { status: "cancelled" as WorkOrder["status"], label: "Cancel Order" }
-    ]
+    ] as NextStep[]
   },
   "in-progress": {
     label: "In Progress", 
@@ -25,7 +31,7 @@ export const statusConfig = {
       { status: "completed" as WorkOrder["status"], label: "Complete Work" },
       { status: "cancelled" as WorkOrder["status"], label: "Cancel Work" },
       { status: "pending" as WorkOrder["status"], label: "Pause Work" }
-    ]
+    ] as NextStep[]
   },
   "completed": {
     label: "Completed",
@@ -35,7 +41,7 @@ export const statusConfig = {
     allowedTransitions: ["in-progress"] as WorkOrder["status"][],
     nextSteps: [
       { status: "in-progress" as WorkOrder["status"], label: "Reopen Work" }
-    ]
+    ] as NextStep[]
   },
   "cancelled": {
     label: "Cancelled",
@@ -46,9 +52,9 @@ export const statusConfig = {
     nextSteps: [
       { status: "pending" as WorkOrder["status"], label: "Reactivate Order" },
       { status: "in-progress" as WorkOrder["status"], label: "Resume Work" }
-    ]
+    ] as NextStep[]
   }
-} as const;
+};
 
 // Get the appropriate icon component for a status
 export const getStatusIcon = (status: WorkOrder["status"]) => {
