@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
@@ -21,28 +20,16 @@ import '@fontsource/inter/700.css';  // Bold
 import '@fontsource/inter/800.css';  // Extra Bold
 import '@fontsource/inter/900.css';  // Black
 
-// Create a client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
-
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <HelmetProvider>
-      <BrowserRouter>
-        <ThemeProvider>
-          <LanguageProvider>
-            <NotificationsProvider>
-              <App />
-            </NotificationsProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </BrowserRouter>
+      <ThemeProvider>
+        <LanguageProvider>
+          <NotificationsProvider>
+            <App />
+          </NotificationsProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </HelmetProvider>
   </React.StrictMode>
 );

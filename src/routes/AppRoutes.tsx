@@ -19,13 +19,19 @@ import Analytics from '@/pages/Analytics';
 import EmailTemplates from '@/pages/EmailTemplates';
 import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
 import CreateRepairPlan from '@/pages/CreateRepairPlan';
+import Inventory from '@/pages/Inventory';
+import Maintenance from '@/pages/Maintenance';
+import Forms from '@/pages/Forms';
+import Shopping from '@/pages/Shopping';
+import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route element={<Layout />}>
         {/* Dashboard */}
-        <Route path="/" element={<WorkOrdersPage />} />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         
         {/* Work Orders */}
@@ -54,14 +60,26 @@ const AppRoutes = () => {
         <Route path="/chat/:roomId" element={<Chat />} />
         
         {/* Reports & Analytics */}
-        <Route path="/reports" element={<Analytics />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/analytics" element={<Analytics />} />
         
         {/* Marketing */}
         <Route path="/email-templates" element={<EmailTemplates />} />
         <Route path="/email-sequences/:id" element={<EmailSequenceDetails />} />
+        <Route path="/marketing" element={<EmailTemplates />} />
+        
+        {/* Inventory */}
+        <Route path="/inventory" element={<Inventory />} />
         
         {/* Equipment */}
+        <Route path="/equipment" element={<Dashboard />} />
         <Route path="/equipment/repair-plans/create" element={<CreateRepairPlan />} />
+        
+        {/* Additional Pages */}
+        <Route path="/maintenance" element={<Maintenance />} />
+        <Route path="/forms" element={<Forms />} />
+        <Route path="/shopping" element={<Shopping />} />
+        <Route path="/settings" element={<Settings />} />
         
         {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />
