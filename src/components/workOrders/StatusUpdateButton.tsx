@@ -5,6 +5,7 @@ import { WorkOrder } from '@/types/workOrder';
 import { useWorkOrderStatusManagement } from '@/hooks/workOrders/useWorkOrderStatusManagement';
 import { getStatusIcon, statusConfig } from '@/utils/workOrders/statusManagement';
 import { Loader2, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StatusUpdateButtonProps {
   workOrder: WorkOrder;
@@ -36,9 +37,7 @@ export function StatusUpdateButton({
       onStatusUpdate(updatedWorkOrder);
       if (showAutomation) {
         setAutomating(true);
-        setTimeout(() => {
-          setAutomating(false);
-        }, 2000); // Reset after 2 seconds
+        setTimeout(() => setAutomating(false), 2000);
       }
     }
   };
@@ -49,7 +48,11 @@ export function StatusUpdateButton({
       size={size}
       onClick={handleClick}
       disabled={isUpdating || workOrder.status === newStatus || automating}
-      className={`${config.color} border-2 relative shadow-sm hover:shadow-md transition-all`}
+      className={cn(
+        config.color,
+        'border-2 relative shadow-sm hover:shadow-md transition-all duration-300',
+        'hover:scale-102 active:scale-98'
+      )}
     >
       {isUpdating || automating ? (
         automating ? (
