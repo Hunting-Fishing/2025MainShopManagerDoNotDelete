@@ -7,6 +7,8 @@ import { WorkOrderSignature } from './WorkOrderSignature';
 import { FileUploader } from './FileUploader';
 import { DocumentList } from './DocumentList';
 import { uploadWorkOrderDocument, getWorkOrderDocuments } from '@/services/documentService';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { FileText, Pen } from 'lucide-react';
 
 interface WorkOrderDocumentManagerProps {
   workOrderId: string;
@@ -15,6 +17,7 @@ interface WorkOrderDocumentManagerProps {
 export function WorkOrderDocumentManager({ workOrderId }: WorkOrderDocumentManagerProps) {
   const [documents, setDocuments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     loadDocuments();
@@ -63,10 +66,16 @@ export function WorkOrderDocumentManager({ workOrderId }: WorkOrderDocumentManag
         <CardTitle>Documents & Signatures</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="documents">
-          <TabsList>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="signatures">Signatures</TabsTrigger>
+        <Tabs defaultValue="documents" className={isMobile ? "space-y-3" : ""}>
+          <TabsList className={isMobile ? "w-full grid grid-cols-2 mb-2" : ""}>
+            <TabsTrigger value="documents" className="flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              <span>Documents</span>
+            </TabsTrigger>
+            <TabsTrigger value="signatures" className="flex items-center gap-1">
+              <Pen className="h-4 w-4" />
+              <span>Signatures</span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="documents" className="space-y-4">
