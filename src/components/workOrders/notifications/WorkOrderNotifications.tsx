@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useWorkOrderNotifications } from '@/hooks/useWorkOrderNotifications';
+import { useWorkOrderNotifications } from '@/hooks/workOrders/useWorkOrderNotifications';
 import { AlertCircle, Bell, CheckCircle, Clock } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,14 +54,14 @@ export function WorkOrderNotifications({ workOrderId }: WorkOrderNotificationsPr
                     notification.status === 'error' && "border-red-200 bg-red-50"
                   )}
                 >
-                  {getNotificationIcon(notification.notificationType)}
+                  {getNotificationIcon(notification.notification_type)}
                   <div className="flex-1 space-y-1">
                     <p className="font-medium">{notification.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {notification.message}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(notification.createdAt).toLocaleString()}
+                      {new Date(notification.created_at).toLocaleString()}
                     </p>
                   </div>
                 </div>

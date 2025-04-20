@@ -1,4 +1,3 @@
-
 import React from "react";
 import { WorkOrder } from "@/types/workOrder";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { getNextStatusOptions } from "@/utils/workOrders/statusManagement";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { WorkOrderStatusHistory } from "./details/WorkOrderStatusHistory";
+import { WorkOrderNotifications } from "./notifications/WorkOrderNotifications";
 
 interface WorkOrderDetailsPanelProps {
   workOrder: WorkOrder;
@@ -127,7 +127,10 @@ export function WorkOrderDetailsPanel({
         </CardContent>
       </Card>
       
-      <WorkOrderStatusHistory workOrderId={workOrder.id} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <WorkOrderStatusHistory workOrderId={workOrder.id} />
+        <WorkOrderNotifications workOrderId={workOrder.id} />
+      </div>
     </div>
   );
 }
