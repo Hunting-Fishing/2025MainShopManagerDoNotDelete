@@ -41,10 +41,13 @@ export function StatusBadge({
       role="status"
     >
       {showIcon && (
-        <StatusIcon className={cn(
-          'mr-1.5 transition-transform',
-          'group-hover:rotate-3'
-        )} />
+        <StatusIcon 
+          data-testid="status-icon"
+          className={cn(
+            'mr-1.5 transition-transform',
+            'group-hover:rotate-3'
+          )} 
+        />
       )}
       {config.label}
     </span>
