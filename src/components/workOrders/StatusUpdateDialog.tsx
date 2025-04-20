@@ -80,11 +80,13 @@ export function StatusUpdateDialog({
             <div className="grid grid-cols-2 gap-3 pt-2">
               {nextStatusOptions.map((option) => {
                 const StatusIcon = getStatusIcon(option.status);
+                const statusStyle = statusConfig[option.status].color;
+                
                 return (
                   <Button
                     key={option.status}
                     variant="outline"
-                    className={`${option.color} justify-start`}
+                    className={`${statusStyle} justify-start`}
                     onClick={() => handleStatusChange(option.status)}
                     disabled={isUpdating || automationPending}
                   >
