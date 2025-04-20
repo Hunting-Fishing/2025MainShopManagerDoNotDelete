@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { WorkOrder } from "@/types/workOrder";
 import { statusConfig, getStatusIcon, getNextStatusOptions } from "@/utils/workOrders/statusManagement";
 import { useWorkOrderStatusManager } from "@/hooks/workOrders";
-import { Loader2 } from "lucide-react";
+import { useWorkOrderAutomation } from "@/hooks/workOrders/useWorkOrderAutomation";
+import { Loader2, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface StatusUpdateDialogProps {
   workOrder: WorkOrder;
@@ -23,14 +25,29 @@ export function StatusUpdateDialog({
   children 
 }: StatusUpdateDialogProps) {
   const { updateStatus, isUpdating } = useWorkOrderStatusManager();
+  const { handleStatusChange } = useWorkOrderAutomation();
   const [open, setOpen] = React.useState(false);
+  const [automationPending, setAutomationPending] = React.useState(false);
   const nextStatusOptions = getNextStatusOptions(workOrder.status);
 
   const handleStatusChange = async (newStatus: WorkOrder["status"]) => {
+    setAutomationPending(true);
     const updatedWorkOrder = await updateStatus(workOrder, newStatus, userId, userName);
+    
     if (updatedWorkOrder) {
       onStatusUpdate(updatedWorkOrder);
-      setOpen(false);
+      
+      // After updating status, we check if automation rules should run
+      try {
+        await handleStatusChange(updatedWorkOrder);
+      } catch (error) {
+        console.error("Automation error:", error);
+      } finally {
+        setAutomationPending(false);
+        setOpen(false);
+      }
+    } else {
+      setAutomationPending(false);
     }
   };
 
@@ -41,7 +58,12 @@ export function StatusUpdateDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Update Work Order Status</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Update Work Order Status
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 ml-2">
+              <Zap className="h-3 w-3 mr-1" /> Auto-workflows enabled
+            </Badge>
+          </DialogTitle>
         </DialogHeader>
         <div className="py-4">
           <div className="mb-4">
@@ -64,7 +86,7 @@ export function StatusUpdateDialog({
                     variant="outline"
                     className={`${option.color} justify-start`}
                     onClick={() => handleStatusChange(option.status)}
-                    disabled={isUpdating}
+                    disabled={isUpdating || automationPending}
                   >
                     <StatusIcon className="h-4 w-4 mr-2" />
                     {option.label}
@@ -74,10 +96,10 @@ export function StatusUpdateDialog({
             </div>
           </div>
           
-          {isUpdating && (
+          {(isUpdating || automationPending) && (
             <div className="flex justify-center items-center mt-4">
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              <p>Updating status...</p>
+              <p>{isUpdating ? "Updating status..." : "Running automation workflows..."}</p>
             </div>
           )}
         </div>

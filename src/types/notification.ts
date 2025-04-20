@@ -1,17 +1,26 @@
 
+import { ReactNode } from "react";
+
+// Notification for system-wide notifications
 export interface Notification {
   id: string;
+  timestamp: Date;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: string;
   read: boolean;
+  type: string;
   link?: string;
-  category?: string;
-  priority?: 'low' | 'medium' | 'high';
   sender?: string;
   recipient?: string;
-  expiresAt?: string;
+  category?: string;
+}
+
+// Notification preferences for users
+export interface NotificationPreferences {
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  pushEnabled: boolean;
+  subscriptions: NotificationSubscription[];
 }
 
 export interface NotificationSubscription {
@@ -19,40 +28,34 @@ export interface NotificationSubscription {
   enabled: boolean;
 }
 
-export interface NotificationPreferences {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  sound?: 'default' | 'none' | 'soft' | 'loud' | 'bell' | 'chime' | 'alert';
-  frequencies?: {
-    [key: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
-  };
-  subscriptions: NotificationSubscription[];
-}
-
-// Work order specific notification types
+// Work order specific notifications
 export interface WorkOrderNotification {
   id: string;
   workOrderId: string;
-  notificationType: 'status_update' | 'completion' | 'cancellation' | 'assignment';
+  notificationType: "status_update" | "assignment" | "completion" | "cancellation" | "schedule_update" | "automation";
   title: string;
   message: string;
-  recipientType: 'customer' | 'technician';
+  recipientType: "technician" | "customer" | "admin" | "system";
   recipientId: string;
-  status: 'pending' | 'sent' | 'error';
+  status: "pending" | "sent" | "error";
   sentAt?: string;
   errorMessage?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface WorkflowRule {
-  id: string;
-  name: string;
-  description?: string;
-  triggerStatus: string;
-  nextStatus: string;
-  conditions: Record<string, any>;
-  actions: Record<string, any>;
-  isActive: boolean;
+// Notification system context type
+export interface NotificationsContextProps {
+  notifications: Notification[];
+  unreadCount: number;
+  connectionStatus: boolean;
+  preferences: NotificationPreferences;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  clearNotification: (id: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
+  updatePreferences: (newPrefs: Partial<NotificationPreferences>) => void;
+  updateSubscription: (category: string, enabled: boolean) => void;
+  triggerTestNotification: () => void;
 }

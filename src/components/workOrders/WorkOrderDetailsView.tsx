@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,7 +8,8 @@ import {
   Share,
   Clock,
   MoreHorizontal,
-  ArrowLeft
+  ArrowLeft,
+  Zap
 } from "lucide-react";
 import { WorkOrder } from "@/types/workOrder";
 import { Link } from "react-router-dom";
@@ -23,6 +25,7 @@ import { useProfileStore } from "@/stores/profileStore";
 import { TimeEntry } from "@/types/workOrder";
 import { formatTimeInHoursAndMinutes } from "@/utils/workOrders";
 import { useWorkOrderAutomation } from '@/hooks/workOrders/useWorkOrderAutomation';
+import { Badge } from "@/components/ui/badge";
 
 interface WorkOrderDetailsViewProps {
   workOrder: WorkOrder;
@@ -35,6 +38,7 @@ export default function WorkOrderDetailsView({
 }: WorkOrderDetailsViewProps) {
   const { user } = useAuth();
   const profile = useProfileStore(state => state.profile);
+  const [automationApplied, setAutomationApplied] = useState(false);
   
   const { handleStatusChange } = useWorkOrderAutomation();
   
@@ -43,7 +47,19 @@ export default function WorkOrderDetailsView({
   };
 
   const handleWorkOrderUpdate = async (updatedWorkOrder: WorkOrder) => {
-    await handleStatusChange(updatedWorkOrder);
+    // Trigger workflow automation
+    try {
+      setAutomationApplied(true);
+      await handleStatusChange(updatedWorkOrder);
+      
+      // Reset the automation applied flag after 3 seconds
+      setTimeout(() => {
+        setAutomationApplied(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Error in workflow automation:", error);
+      setAutomationApplied(false);
+    }
   };
 
   const totalBillableTime = workOrder.timeEntries 
@@ -69,7 +85,14 @@ export default function WorkOrderDetailsView({
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Work Order #{workOrder.id}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">Work Order #{workOrder.id}</h1>
+              {automationApplied && (
+                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 animate-pulse">
+                  <Zap className="h-3 w-3 mr-1" /> Automation Active
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground">
               {workOrder.customer}{workOrder.vehicleMake && workOrder.vehicleModel 
                 ? ` • ${workOrder.vehicleMake} ${workOrder.vehicleModel}` 
@@ -191,6 +214,9 @@ export default function WorkOrderDetailsView({
       <WorkOrderDetailsTabs 
         workOrder={workOrder} 
         onUpdateTimeEntries={handleUpdateTimeEntries}
+        onStatusUpdate={handleWorkOrderUpdate}
+        userId={user?.id || ''}
+        userName={profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}` : 'User'}
       />
     </div>
   );

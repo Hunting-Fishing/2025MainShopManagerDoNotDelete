@@ -14,7 +14,7 @@ export function useWorkOrderNotifications(workOrderId?: string) {
 
     // Subscribe to real-time notifications
     const channel = supabase
-      .channel('work-order-notifications-' + workOrderId)
+      .channel(`work-order-notifications-${workOrderId}`)
       .on(
         'postgres_changes',
         {
@@ -42,9 +42,13 @@ export function useWorkOrderNotifications(workOrderId?: string) {
           
           setNotifications(current => [...current, notification]);
           
+          // For automation notifications, we use a special visual treatment
+          const variant = notification.notificationType === 'automation' ? 'default' : 'default';
+          
           toast({
             title: payload.new.title,
             description: payload.new.message,
+            variant
           });
         }
       )

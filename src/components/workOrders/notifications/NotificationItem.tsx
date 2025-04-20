@@ -3,7 +3,7 @@ import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { WorkOrderNotification } from '@/types/notification';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Info, Clock } from 'lucide-react';
+import { Bell, Info, Clock, Zap } from 'lucide-react';
 
 interface NotificationItemProps {
   notification: WorkOrderNotification;
@@ -27,13 +27,15 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         return <Info className="h-4 w-4" />;
       case 'assignment':
         return <Bell className="h-4 w-4" />;
+      case 'automation':
+        return <Zap className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
   };
 
   return (
-    <div className="flex items-start gap-3 p-3 border-b last:border-b-0">
+    <div className="flex items-start gap-3 p-3 border-b last:border-b-0 hover:bg-gray-50">
       <div className="shrink-0 mt-1">
         {getIcon()}
       </div>
