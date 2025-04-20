@@ -7,14 +7,14 @@ import { CalendarDayView } from "./CalendarDayView";
 import { CalendarEventDialog } from "./CalendarEventDialog";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { ChatRoom } from "@/types/chat";
-import { CalendarEvent } from "@/types/calendar/events"; // Import from the specific file
+import { CalendarEvent, ShiftChat } from "@/types/calendar/events"; // Import from the specific file
 
 interface CalendarViewProps {
   events: CalendarEvent[];
   currentDate: Date;
   view: CalendarViewType;
   loading?: boolean;
-  shiftChats?: ChatRoom[];
+  shiftChats?: ShiftChat[];
 }
 
 export function CalendarView({ 
@@ -27,6 +27,25 @@ export function CalendarView({
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDialog, setShowEventDialog] = useState<boolean>(false);
   const [now, setNow] = useState(new Date());
+
+  // Convert ShiftChats to ChatRooms format for compatibility
+  const convertedShiftChats: ChatRoom[] = shiftChats.map(shift => ({
+    id: shift.chat_room_id,
+    name: shift.shift_name,
+    type: 'group' as const,
+    created_at: shift.created_at,
+    updated_at: shift.updated_at,
+    metadata: {
+      is_shift_chat: true,
+      shift_date: shift.shift_date,
+      shift_name: shift.shift_name,
+      shift_time: {
+        start: shift.start_time,
+        end: shift.end_time
+      },
+      shift_participants: shift.technician_ids || []
+    }
+  }));
 
   // Update current time every minute
   useEffect(() => {
@@ -69,7 +88,7 @@ export function CalendarView({
           events={events} 
           onEventClick={handleEventClick}
           currentTime={now}
-          shiftChats={shiftChats}
+          shiftChats={convertedShiftChats}
         />
       )}
       
@@ -80,7 +99,7 @@ export function CalendarView({
             events={events} 
             onEventClick={handleEventClick}
             currentTime={now}
-            shiftChats={shiftChats}
+            shiftChats={convertedShiftChats}
           />
           <CurrentTimeIndicator currentTime={now} view="week" />
         </>
@@ -93,7 +112,7 @@ export function CalendarView({
             events={events} 
             onEventClick={handleEventClick}
             currentTime={now}
-            shiftChats={shiftChats}
+            shiftChats={convertedShiftChats}
           />
           <CurrentTimeIndicator currentTime={now} view="day" />
         </>

@@ -9,13 +9,16 @@ import { format } from "date-fns";
 
 interface WorkOrderCalendarEventProps {
   event: CalendarEvent;
+  onClick?: () => void;
 }
 
-export function WorkOrderCalendarEvent({ event }: WorkOrderCalendarEventProps) {
+export function WorkOrderCalendarEvent({ event, onClick }: WorkOrderCalendarEventProps) {
   const navigate = useNavigate();
   
   const handleClick = () => {
-    if (event.work_order_id) {
+    if (onClick) {
+      onClick();
+    } else if (event.work_order_id) {
       navigate(`/work-orders/${event.work_order_id}`);
     }
   };

@@ -1,5 +1,6 @@
 
 import { WorkOrderInventoryItem } from "./workOrder";
+import { ChatRoom } from "./chat";
 
 export type CalendarViewType = "month" | "week" | "day";
 
@@ -32,6 +33,9 @@ export interface CalendarDayProps {
   events: CalendarEvent[];
   isCurrentMonth?: boolean;
   isToday?: boolean;
+  onEventClick?: (event: CalendarEvent) => void;
+  currentTime?: Date;
+  shiftChats?: ChatRoom[];
 }
 
 export interface CalendarWeekProps {

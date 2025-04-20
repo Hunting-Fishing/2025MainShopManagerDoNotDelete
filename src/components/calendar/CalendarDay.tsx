@@ -5,7 +5,15 @@ import { CalendarDayProps } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { WorkOrderCalendarEvent } from './WorkOrderCalendarEvent';
 
-export function CalendarDay({ date, isCurrentMonth = true, isToday = false, events }: CalendarDayProps) {
+export function CalendarDay({ 
+  date, 
+  isCurrentMonth = true, 
+  isToday = false, 
+  events, 
+  onEventClick,
+  currentTime,
+  shiftChats 
+}: CalendarDayProps) {
   const dayNumber = format(date, 'd');
   const workOrderEvents = events.filter(event => event.type === 'work-order' || event.work_order_id);
   const otherEvents = events.filter(event => event.type !== 'work-order' && !event.work_order_id);
@@ -40,7 +48,11 @@ export function CalendarDay({ date, isCurrentMonth = true, isToday = false, even
       <div className="space-y-1 mt-1 max-h-[calc(100%-2rem)] overflow-y-auto">
         {/* Render work order events first with special styling */}
         {sortedWorkOrderEvents.map((event) => (
-          <WorkOrderCalendarEvent key={event.id} event={event} />
+          <WorkOrderCalendarEvent 
+            key={event.id} 
+            event={event} 
+            onClick={onEventClick ? () => onEventClick(event) : undefined}
+          />
         ))}
         
         {/* Render other events with normal styling */}
@@ -48,6 +60,7 @@ export function CalendarDay({ date, isCurrentMonth = true, isToday = false, even
           <div 
             key={event.id}
             className="bg-gray-100 text-xs p-1 rounded truncate border border-gray-200 cursor-pointer"
+            onClick={onEventClick ? () => onEventClick(event) : undefined}
           >
             {event.title}
           </div>
