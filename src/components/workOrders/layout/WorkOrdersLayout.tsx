@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { WorkOrder } from "@/types/workOrder";
-import { WorkOrdersPageHeader } from '../sections/WorkOrdersPageHeader';
-import { WorkOrderStatusCards } from '../sections/WorkOrderStatusCards';
-import { WorkOrdersFilterSection } from '../sections/WorkOrdersFilterSection';
-import { WorkOrderBatchActions } from '../sections/WorkOrderBatchActions';
-import { WorkOrdersViewToggle } from '../sections/WorkOrdersViewToggle';
-import { WorkOrderTable } from '../views/WorkOrderTable';
-import { WorkOrderCardView } from '../views/WorkOrderCardView';
+import { WorkOrdersPageHeader } from '@/components/workOrders/WorkOrdersPageHeader';
+import { WorkOrderStatusCards } from '@/components/workOrders/WorkOrderStatusCards';
+import { WorkOrdersFilterSection } from '@/components/workOrders/WorkOrdersFilterSection';
+import { WorkOrderBatchActions } from '@/components/workOrders/WorkOrderBatchActions';
+import { WorkOrdersViewToggle } from '@/components/workOrders/sections/WorkOrdersViewToggle';
+import { WorkOrderTable } from '@/components/workOrders/WorkOrderTable';
+import { WorkOrderCardView } from '@/components/workOrders/WorkOrderCardView';
 import { Button } from '@/components/ui/button';
 
 interface WorkOrdersLayoutProps {
