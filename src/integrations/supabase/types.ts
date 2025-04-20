@@ -5231,6 +5231,7 @@ export type Database = {
           id: string
           job_title: string | null
           last_name: string | null
+          notification_preferences: Json | null
           phone: string | null
           shop_id: string | null
           updated_at: string
@@ -5244,6 +5245,7 @@ export type Database = {
           id: string
           job_title?: string | null
           last_name?: string | null
+          notification_preferences?: Json | null
           phone?: string | null
           shop_id?: string | null
           updated_at?: string
@@ -5257,6 +5259,7 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string | null
+          notification_preferences?: Json | null
           phone?: string | null
           shop_id?: string | null
           updated_at?: string
