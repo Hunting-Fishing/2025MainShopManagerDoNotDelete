@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { CalendarEvent } from '@/types/calendar';
@@ -12,7 +11,7 @@ interface DbCalendarEvent {
   description?: string;
   start_time: string;
   end_time: string;
-  all_day: boolean; // all_day is required
+  all_day: boolean; // Explicitly required
   location?: string;
   customer_id?: string;
   work_order_id?: string;
@@ -28,7 +27,6 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     id: dbEvent.id,
     title: dbEvent.title,
     description: dbEvent.description,
-    // Convert to strings to match CalendarEvent type
     start: dbEvent.start_time,
     end: dbEvent.end_time,
     all_day: dbEvent.all_day,
@@ -36,7 +34,7 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     customer_id: dbEvent.customer_id,
     work_order_id: dbEvent.work_order_id,
     technician_id: dbEvent.technician_id,
-    type: dbEvent.event_type, // Map event_type to type in CalendarEvent
+    type: dbEvent.event_type,
     status: dbEvent.status,
     priority: dbEvent.priority
   };
