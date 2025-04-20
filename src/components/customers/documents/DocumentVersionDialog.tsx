@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,7 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!file) {
       toast({
         title: "No file selected",
@@ -47,22 +48,23 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
       });
       return;
     }
-    
+
     setIsUploading(true);
-    
+
     try {
-      const result = await uploadDocumentVersion(
+      // Here we cast the awaited result explicitly to UploadVersionResult
+      const result = (await uploadDocumentVersion(
         document.id,
         file,
         versionNotes || undefined
-      ) as UploadVersionResult;
-      
+      )) as UploadVersionResult;
+
       if (result) {
         toast({
           title: "New version uploaded",
           description: `Version ${result.version_number} was uploaded successfully`,
         });
-        
+
         onVersionUploaded();
         resetForm();
         onOpenChange(false);
@@ -95,7 +97,7 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
             Upload a new version of "{document.title}"
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="file">Select File</Label>
@@ -111,7 +113,7 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
               </p>
             )}
           </div>
-          
+
           <div>
             <Label htmlFor="versionNotes">Version Notes</Label>
             <Textarea
@@ -122,7 +124,7 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
               placeholder="Describe what's changed in this version"
             />
           </div>
-          
+
           <DialogFooter>
             <Button 
               type="button" 
@@ -141,3 +143,4 @@ export const DocumentVersionDialog: React.FC<DocumentVersionDialogProps> = ({
     </Dialog>
   );
 };
+
