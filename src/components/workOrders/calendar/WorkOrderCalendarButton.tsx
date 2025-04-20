@@ -2,27 +2,17 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, CheckCircle, Clock } from "lucide-react";
-import { useWorkOrderCalendarSync } from "@/hooks/useWorkOrderCalendarSync";
 import { WorkOrder } from "@/types/workOrder";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useWorkOrderCalendarIntegration } from "@/hooks/useWorkOrderCalendarIntegration";
 
 interface WorkOrderCalendarButtonProps {
   workOrder: WorkOrder;
 }
 
 export function WorkOrderCalendarButton({ workOrder }: WorkOrderCalendarButtonProps) {
-  const navigate = useNavigate();
-  const { syncWithCalendar, isLoading, hasCalendarEvent, calendarEvent } = useWorkOrderCalendarSync(workOrder);
-  
-  const navigateToCalendar = () => {
-    if (workOrder.startTime) {
-      navigate(`/calendar?date=${format(new Date(workOrder.startTime), 'yyyy-MM-dd')}&workOrderId=${workOrder.id}`);
-    } else {
-      navigate('/calendar');
-    }
-  };
+  const { loading, hasCalendarEvent, handleSync, viewInCalendar } = useWorkOrderCalendarIntegration(workOrder);
   
   return (
     <Popover>
@@ -31,16 +21,15 @@ export function WorkOrderCalendarButton({ workOrder }: WorkOrderCalendarButtonPr
           variant={hasCalendarEvent ? "outline" : "default"}
           className="flex items-center gap-2"
           onClick={(e) => {
-            // Stop propagation to prevent the popover from opening when clicking to sync
             if (!hasCalendarEvent) {
               e.stopPropagation();
               e.preventDefault();
-              syncWithCalendar();
+              handleSync();
             }
           }}
-          disabled={isLoading}
+          disabled={loading}
         >
-          {isLoading ? (
+          {loading ? (
             <>
               <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               <span>Syncing...</span>
@@ -80,7 +69,7 @@ export function WorkOrderCalendarButton({ workOrder }: WorkOrderCalendarButtonPr
             
             <Button 
               className="w-full"
-              onClick={navigateToCalendar}
+              onClick={viewInCalendar}
             >
               View in Calendar
             </Button>

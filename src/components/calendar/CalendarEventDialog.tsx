@@ -1,109 +1,71 @@
 
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from 'react';
+import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CalendarEvent, CalendarEventDialogProps } from "@/types/calendar/events";
-import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
-import { statusMap } from "@/utils/workOrders"; 
-import { formatDate } from "@/utils/date";
+import { useNavigate } from 'react-router-dom';
+import { CalendarEvent } from '@/types/calendar/events';
+import { Badge } from '@/components/ui/badge';
+
+interface CalendarEventDialogProps {
+  event: CalendarEvent | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
   const navigate = useNavigate();
-  
+
   if (!event) return null;
 
-  const startTime = new Date(event.start).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-  
-  const endTime = new Date(event.end).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-  
-  const eventDate = formatDate(event.start);
-
-  const isWorkOrder = event.type === 'work-order';
-  
-  // Handle view work order click with both direct navigation and Link component support
   const handleViewWorkOrder = () => {
-    if (event.id) {
-      navigate(`/work-orders/${event.id}`);
+    if (event.work_order_id) {
+      navigate(`/work-orders/${event.work_order_id}`);
       onClose();
     }
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-xl">{event.title}</DialogTitle>
+          <DialogTitle>{event.title}</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="flex items-center justify-between">
-            <Badge variant={event.type === 'work-order' ? 'default' : 'secondary'}>
-              {event.type === 'work-order' ? 'Work Order' : 'Appointment'}
-            </Badge>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Time:</span>
+              <span>
+                {format(new Date(event.start), "PPP 'at' p")} - {format(new Date(event.end), 'p')}
+              </span>
+            </div>
             
-            {isWorkOrder && event.status && (
-              <Badge 
-                variant="outline" 
-                className={`
-                  ${event.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
-                  ${event.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : ''}
-                  ${event.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''}
-                  ${event.status === 'cancelled' ? 'bg-gray-100 text-gray-800' : ''}
-                `}
-              >
-                {statusMap[event.status] || event.status}
-              </Badge>
+            {event.location && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Location:</span>
+                <span>{event.location}</span>
+              </div>
+            )}
+            
+            {event.description && (
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-gray-500">Description:</span>
+                <p className="text-sm">{event.description}</p>
+              </div>
+            )}
+            
+            {event.status && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Status:</span>
+                <Badge variant="outline">
+                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                </Badge>
+              </div>
             )}
           </div>
           
-          <div className="flex items-center gap-2 text-sm">
-            <CalendarIcon className="h-4 w-4 text-gray-500" />
-            <span>{eventDate}</span>
-            <span className="text-gray-500">•</span>
-            <Clock className="h-4 w-4 text-gray-500" />
-            <span>{startTime} - {endTime}</span>
-          </div>
-          
-          {event.location && (
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              <span>{event.location}</span>
-            </div>
-          )}
-          
-          {event.technician && (
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-gray-500" />
-              <span>Assigned to {event.technician}</span>
-            </div>
-          )}
-          
-          {event.description && (
-            <div className="pt-2">
-              <div className="flex items-center gap-2 text-sm mb-1">
-                <FileText className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">Description</span>
-              </div>
-              <p className="text-sm text-gray-600 pl-6">{event.description}</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-          
-          {isWorkOrder && event.id && (
-            <Button onClick={handleViewWorkOrder}>
+          {event.work_order_id && (
+            <Button onClick={handleViewWorkOrder} className="w-full">
               View Work Order
             </Button>
           )}
