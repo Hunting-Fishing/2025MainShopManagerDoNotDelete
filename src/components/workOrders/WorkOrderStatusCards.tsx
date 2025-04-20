@@ -17,42 +17,51 @@ export function WorkOrderStatusCards({ workOrders, loading }: WorkOrderStatusCar
   if (loading) {
     return (
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full rounded-xl" />
+        <Skeleton className="h-28 w-full rounded-xl" />
+        <Skeleton className="h-28 w-full rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-      <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-3 transition-all duration-300 ease-in-out">
+      <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 transform hover:shadow-md transition-all duration-200 hover:-translate-y-1">
         <CardHeader className="pb-2">
-          <CardTitle className="text-yellow-800 text-lg">Pending</CardTitle>
+          <CardTitle className="text-yellow-800 text-lg flex items-center">
+            <span className="h-3 w-3 rounded-full bg-yellow-500 mr-2"></span>
+            Pending
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-yellow-700">{pendingCount}</div>
-          <p className="text-yellow-600 text-sm">Work orders awaiting action</p>
+          <p className="text-yellow-600 text-sm mt-1">Work orders awaiting action</p>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 transform hover:shadow-md transition-all duration-200 hover:-translate-y-1">
         <CardHeader className="pb-2">
-          <CardTitle className="text-blue-800 text-lg">In Progress</CardTitle>
+          <CardTitle className="text-blue-800 text-lg flex items-center">
+            <span className="h-3 w-3 rounded-full bg-blue-500 mr-2"></span>
+            In Progress
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-blue-700">{inProgressCount}</div>
-          <p className="text-blue-600 text-sm">Work orders being processed</p>
+          <p className="text-blue-600 text-sm mt-1">Work orders being processed</p>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 transform hover:shadow-md transition-all duration-200 hover:-translate-y-1">
         <CardHeader className="pb-2">
-          <CardTitle className="text-green-800 text-lg">Completed</CardTitle>
+          <CardTitle className="text-green-800 text-lg flex items-center">
+            <span className="h-3 w-3 rounded-full bg-green-500 mr-2"></span>
+            Completed
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-green-700">{completedCount}</div>
-          <p className="text-green-600 text-sm">Work orders finalized</p>
+          <p className="text-green-600 text-sm mt-1">Work orders finalized</p>
         </CardContent>
       </Card>
     </div>

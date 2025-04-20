@@ -69,14 +69,17 @@ export function WorkOrdersContainer() {
     fetchTechnicians();
   }, [setLoadingTechnicians, setTechnicians]);
 
+  // Separate the initial load from other search operations
   useEffect(() => {
     const loadInitialData = async () => {
       await searchOrders({});
       setIsInitialLoad(false);
     };
     
-    loadInitialData();
-  }, [searchOrders]);
+    if (isInitialLoad) {
+      loadInitialData();
+    }
+  }, [isInitialLoad, searchOrders]);
 
   useEffect(() => {
     const channel = supabase

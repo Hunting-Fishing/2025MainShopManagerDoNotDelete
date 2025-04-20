@@ -63,7 +63,7 @@ export function WorkOrdersPageContent({
   }, [workOrders]);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6 animate-fadeIn">
       <WorkOrdersPageHeader 
         total={total} 
         currentCount={workOrders.length}
@@ -91,9 +91,11 @@ export function WorkOrdersPageContent({
       />
 
       {selectedWorkOrders.length > 0 && (
-        <WorkOrderBatchActions 
-          selectedCount={selectedWorkOrders.length}
-        />
+        <div className="animate-fadeIn">
+          <WorkOrderBatchActions 
+            selectedCount={selectedWorkOrders.length}
+          />
+        </div>
       )}
 
       <div className="transition-all duration-200 ease-in-out">
@@ -103,7 +105,7 @@ export function WorkOrdersPageContent({
         />
 
         {viewMode === 'table' ? (
-          <div className="transition-opacity duration-200 ease-in-out">
+          <div className="opacity-100 transition-opacity duration-300 ease-in-out">
             <WorkOrderTable 
               workOrders={workOrders} 
               loading={loading}
@@ -116,7 +118,7 @@ export function WorkOrdersPageContent({
             />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 transition-opacity duration-200 ease-in-out">
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 opacity-100 transition-opacity duration-300 ease-in-out">
             <WorkOrderCardView workOrders={workOrders} />
           </div>
         )}

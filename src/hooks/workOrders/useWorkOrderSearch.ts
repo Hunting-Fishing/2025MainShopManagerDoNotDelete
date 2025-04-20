@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { WorkOrder, WorkOrderSearchParams } from "@/types/workOrder";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 export function useWorkOrderSearch() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
