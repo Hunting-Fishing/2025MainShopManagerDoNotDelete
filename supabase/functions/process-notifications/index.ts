@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { Resend } from "npm:resend@2.0.0"
-import { supabase } from "@supabase/supabase-js"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"))
 const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
@@ -13,13 +13,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
 async function sendEmail(recipientEmail: string, subject: string, message: string) {
   try {
     const { data, error } = await resend.emails.send({
       from: 'notifications@yourdomain.com',
       to: recipientEmail,
       subject: subject,
-      html: message,
+      html: `<p>${message}</p>`,
     })
 
     if (error) throw error
@@ -57,15 +60,17 @@ async function sendSMS(phoneNumber: string, message: string) {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const { notification_ids } = await req.json()
 
     for (const notificationId of notification_ids) {
-      // Get notification details
+      // Get notification details with recipient profile
       const { data: notification, error: notificationError } = await supabase
         .from('work_order_notifications')
         .select('*, profiles!recipient_id(*)')
@@ -77,7 +82,7 @@ serve(async (req) => {
       const recipientProfile = notification.profiles
       if (!recipientProfile) continue
 
-      // Check notification preferences
+      // Determine notification channels based on preferences
       const preferences = recipientProfile.notification_preferences || {
         email: true,
         sms: false,
@@ -104,7 +109,10 @@ serve(async (req) => {
       // Update notification status
       await supabase
         .from('work_order_notifications')
-        .update({ status: 'sent', sent_at: new Date().toISOString() })
+        .update({ 
+          status: 'sent', 
+          sent_at: new Date().toISOString() 
+        })
         .eq('id', notificationId)
     }
 
