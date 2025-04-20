@@ -8,20 +8,23 @@ const mockWorkOrder: WorkOrder = {
   id: '123',
   status: 'pending',
   description: 'Test work order',
+  customer_id: 'customer-123',
   customer: 'Test Customer',
+  location: 'Test Location',
   priority: 'medium',
   dueDate: '2023-12-31',
+  technician_id: 'tech-123',
   technician: 'Test Tech',
   date: '2023-01-01',
-  location: 'Test Location',
   notes: '',
   inventoryItems: [],
   timeEntries: [],
-  createdAt: '2023-01-01',
   lastUpdatedAt: '2023-01-01',
   lastUpdatedBy: 'user-123',
-  total_cost: 0,
-  serviceType: 'Repair'
+  totalBillableTime: 0,
+  serviceType: 'Repair',
+  startTime: undefined,
+  endTime: undefined
 };
 
 const mockUserId = 'user-123';
