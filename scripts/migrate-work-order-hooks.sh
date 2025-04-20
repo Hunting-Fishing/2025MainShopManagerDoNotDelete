@@ -18,7 +18,8 @@ if [ -d "src/hooks/work-orders" ]; then
         echo "Moving $filename to workOrders directory"
         mv "$file" "src/hooks/workOrders/$filename"
       else
-        echo "File $filename already exists in workOrders, skipping"
+        echo "File $filename already exists in workOrders, removing duplicate from work-orders"
+        rm "$file"
       fi
     fi
   done
@@ -35,3 +36,4 @@ else
 fi
 
 echo "Migration complete!"
+
