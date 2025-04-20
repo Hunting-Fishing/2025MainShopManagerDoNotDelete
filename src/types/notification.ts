@@ -38,6 +38,7 @@ export interface Notification {
   priority?: 'low' | 'medium' | 'high';
   sender?: string;
   recipient?: string;
+  expiresAt?: string;  // Added the missing expiresAt property
 }
 
 export interface NotificationSubscription {
@@ -49,7 +50,7 @@ export interface NotificationPreferences {
   email: boolean;
   push: boolean;
   inApp: boolean;
-  sound?: 'default' | 'none' | 'soft' | 'loud';
+  sound?: 'default' | 'none' | 'soft' | 'loud' | 'bell' | 'chime' | 'alert'; // Added additional sound options
   frequencies?: {
     [key: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
   };

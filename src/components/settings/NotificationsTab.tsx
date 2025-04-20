@@ -68,9 +68,12 @@ export function NotificationsTab() {
 
   // Handle changing notification sound
   const handleSoundChange = (soundName: string) => {
+    // Ensure the sound value is one of the allowed types
+    const validSound = soundName as "default" | "none" | "soft" | "loud" | "bell" | "chime" | "alert";
+    
     setLocalPrefs(prev => ({
       ...prev,
-      sound: soundName
+      sound: validSound
     }));
   };
 
