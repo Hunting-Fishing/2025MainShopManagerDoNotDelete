@@ -29,16 +29,19 @@ export function StatusBadge({
   return (
     <span 
       className={cn(
-        'inline-flex items-center font-medium rounded-full transition-all',
-        'shadow-sm hover:shadow-md',
+        'inline-flex items-center font-medium rounded-full',
+        'shadow-sm transition-all duration-200',
+        'hover:shadow-md hover:scale-102 active:scale-98',
+        'focus:outline-none focus:ring-2 focus:ring-offset-2',
         config.color,
         sizeClasses[size],
         className
       )}
+      role="status"
     >
       {showIcon && (
         <StatusIcon className={cn(
-          'mr-1.5',
+          'mr-1.5 transition-transform',
           size === 'sm' ? 'h-3 w-3' : 
           size === 'md' ? 'h-4 w-4' : 
           'h-5 w-5'

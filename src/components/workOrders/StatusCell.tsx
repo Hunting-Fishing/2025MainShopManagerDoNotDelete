@@ -39,7 +39,10 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
           className={cn(
             'w-[130px] justify-center',
             statusColor,
-            'border-2 shadow-sm hover:shadow transition-all',
+            'border-2 relative',
+            'shadow-sm transition-all duration-200',
+            'hover:shadow-md hover:scale-102 active:scale-98',
+            'focus:outline-none focus:ring-2 focus:ring-offset-2',
             'font-medium'
           )}
           disabled={isUpdating}
@@ -51,7 +54,7 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-white border border-gray-100 shadow-md rounded-xl p-1">
+      <DropdownMenuContent className="bg-white border border-gray-100 shadow-lg rounded-xl p-1">
         {Object.keys(statusConfig).map((status) => {
           const statusKey = status as WorkOrder["status"];
           const isValid = isStatusTransitionAllowed(currentStatus, statusKey);
@@ -64,7 +67,9 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
               onClick={() => handleStatusChange(statusKey)}
               className={cn(
                 isValid && status !== currentStatus ? config.color : '',
-                'my-1 rounded-lg cursor-pointer transition-all duration-200',
+                'my-1 rounded-lg cursor-pointer',
+                'transition-all duration-200',
+                'hover:scale-102 active:scale-98',
                 !isValid || status === currentStatus ? 'opacity-50' : 'hover:shadow-sm'
               )}
             >

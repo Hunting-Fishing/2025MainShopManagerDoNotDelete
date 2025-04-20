@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkOrder } from '@/types/workOrder';
@@ -50,8 +49,10 @@ export function StatusUpdateButton({
       disabled={isUpdating || workOrder.status === newStatus || automating}
       className={cn(
         config.color,
-        'border-2 relative shadow-sm hover:shadow-md transition-all duration-300',
-        'hover:scale-102 active:scale-98'
+        'border-2 relative',
+        'shadow-sm transition-all duration-300',
+        'hover:shadow-md hover:scale-102 active:scale-98',
+        'focus:outline-none focus:ring-2 focus:ring-offset-2'
       )}
     >
       {isUpdating || automating ? (
@@ -63,7 +64,7 @@ export function StatusUpdateButton({
         ) : (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            {config.label}
+            <span>{config.label}</span>
           </>
         )
       ) : (

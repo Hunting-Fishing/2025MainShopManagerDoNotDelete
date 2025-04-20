@@ -1,4 +1,3 @@
-
 import { WorkOrder } from "@/types/workOrder";
 import { CheckCircle, Clock, Play, XCircle } from "lucide-react";
 
@@ -12,7 +11,7 @@ type NextStep = {
 export const statusConfig = {
   "pending": {
     label: "Pending",
-    color: "bg-amber-100 text-amber-800 border-amber-300",
+    color: "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200 focus:ring-amber-500",
     icon: Clock,
     description: "Work order has been created but work hasn't started",
     allowedTransitions: ["in-progress", "cancelled"] as WorkOrder["status"][],
@@ -23,7 +22,7 @@ export const statusConfig = {
   },
   "in-progress": {
     label: "In Progress", 
-    color: "bg-blue-100 text-blue-800 border-blue-300",
+    color: "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 focus:ring-blue-500",
     icon: Play,
     description: "Work is currently being performed",
     allowedTransitions: ["completed", "cancelled", "pending"] as WorkOrder["status"][],
@@ -35,7 +34,7 @@ export const statusConfig = {
   },
   "completed": {
     label: "Completed",
-    color: "bg-green-100 text-green-800 border-green-300",
+    color: "bg-green-100 text-green-800 border-green-300 hover:bg-green-200 focus:ring-green-500",
     icon: CheckCircle,
     description: "All work has been completed",
     allowedTransitions: ["in-progress"] as WorkOrder["status"][],
@@ -45,7 +44,7 @@ export const statusConfig = {
   },
   "cancelled": {
     label: "Cancelled",
-    color: "bg-red-100 text-red-800 border-red-300",
+    color: "bg-red-100 text-red-800 border-red-300 hover:bg-red-200 focus:ring-red-500",
     icon: XCircle,
     description: "Work order has been cancelled",
     allowedTransitions: ["pending", "in-progress"] as WorkOrder["status"][],
