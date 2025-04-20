@@ -1,4 +1,6 @@
 
+import { ReactNode } from 'react';
+
 // Define the inventory item interface for work orders
 export interface WorkOrderInventoryItem {
   id: string;
@@ -7,7 +9,7 @@ export interface WorkOrderInventoryItem {
   category: string;
   quantity: number;
   unitPrice: number;
-  totalPrice?: number; // Added totalPrice property
+  totalPrice?: number;
   itemStatus?: 'in-stock' | 'ordered' | 'special-order' | 'used-part' | 'misc';
   estimatedArrivalDate?: string;
   supplierName?: string;
@@ -108,6 +110,40 @@ export interface WorkOrder {
   invoiced_at?: string;
 }
 
+// For form handling
+export interface WorkOrderFormFieldValues {
+  customer: string;
+  location: string;
+  description: string;
+  status: "pending" | "in-progress" | "completed" | "cancelled";
+  priority: "high" | "medium" | "low";
+  technician: string;
+  dueDate: Date | string;
+  notes?: string;
+  inventoryItems?: WorkOrderInventoryItem[];
+  timeEntries?: TimeEntry[];
+  [key: string]: any;
+}
+
+export interface WorkOrderFormValues {
+  id: string;
+  customer: string;
+  customer_id?: string;
+  description: string;
+  status: "pending" | "in-progress" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high";
+  technician: string;
+  technician_id?: string;
+  date?: string;
+  dueDate: string;
+  location: string;
+  notes?: string;
+  vehicle_id?: string;
+  serviceCategory?: string;
+  inventoryItems?: WorkOrderInventoryItem[];
+  timeEntries?: TimeEntry[];
+}
+
 // Define status map type
 export type WorkOrderStatusType = "pending" | "in-progress" | "completed" | "cancelled";
 
@@ -125,4 +161,42 @@ export interface WorkOrderSearchParams {
   page?: number;
   pageSize?: number;
   service_category_id?: string; // Added this field to support service category filtering
+}
+
+// Customer interfaces related to work orders
+export interface Customer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  company: string;
+  notes: string;
+  created_at: string;
+  is_fleet: boolean;
+  last_name_first: string;
+}
+
+export interface CustomerTableRowData {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    company: string;
+    is_fleet: boolean;
+    actions: ReactNode;
+}
+
+export interface Activity {
+  id: string;
+  workOrderId: string;
+  userId: string;
+  userName: string;
+  timestamp: string;
+  action: string;
 }
