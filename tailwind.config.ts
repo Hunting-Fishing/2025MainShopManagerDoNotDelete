@@ -67,7 +67,6 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         },
-        // Custom colors for our app
         esm: {
           "blue": {
             "50": "#eef5ff",
@@ -75,7 +74,7 @@ export default {
             "200": "#bcd4ff",
             "300": "#8eb9ff",
             "400": "#5b93ff",
-            "500": "#3a6dfc", // Primary blue
+            "500": "#3a6dfc",
             "600": "#1F45FC", 
             "700": "#1938e4",
             "800": "#1930b9",
