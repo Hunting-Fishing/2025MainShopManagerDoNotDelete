@@ -11,8 +11,8 @@ export const statusConfig = {
     description: "Work order has been created but work hasn't started",
     allowedTransitions: ["in-progress", "cancelled"],
     nextSteps: [
-      { status: "in-progress", label: "Start Work" },
-      { status: "cancelled", label: "Cancel Order" }
+      { status: "in-progress" as WorkOrder["status"], label: "Start Work" },
+      { status: "cancelled" as WorkOrder["status"], label: "Cancel Order" }
     ]
   },
   "in-progress": {
@@ -22,9 +22,9 @@ export const statusConfig = {
     description: "Work is currently being performed",
     allowedTransitions: ["completed", "cancelled", "pending"],
     nextSteps: [
-      { status: "completed", label: "Complete Work" },
-      { status: "cancelled", label: "Cancel Work" },
-      { status: "pending", label: "Pause Work" }
+      { status: "completed" as WorkOrder["status"], label: "Complete Work" },
+      { status: "cancelled" as WorkOrder["status"], label: "Cancel Work" },
+      { status: "pending" as WorkOrder["status"], label: "Pause Work" }
     ]
   },
   "completed": {
@@ -34,7 +34,7 @@ export const statusConfig = {
     description: "All work has been completed",
     allowedTransitions: ["in-progress"],
     nextSteps: [
-      { status: "in-progress", label: "Reopen Work" }
+      { status: "in-progress" as WorkOrder["status"], label: "Reopen Work" }
     ]
   },
   "cancelled": {
@@ -44,9 +44,25 @@ export const statusConfig = {
     description: "Work order has been cancelled",
     allowedTransitions: ["pending", "in-progress"],
     nextSteps: [
-      { status: "pending", label: "Reactivate Order" },
-      { status: "in-progress", label: "Resume Work" }
+      { status: "pending" as WorkOrder["status"], label: "Reactivate Order" },
+      { status: "in-progress" as WorkOrder["status"], label: "Resume Work" }
     ]
+  }
+};
+
+// Get the appropriate icon component for a status
+export const getStatusIcon = (status: WorkOrder["status"]) => {
+  switch (status) {
+    case "pending":
+      return Clock;
+    case "in-progress":
+      return Play;
+    case "completed":
+      return CheckCircle;
+    case "cancelled":
+      return XCircle;
+    default:
+      return Clock;
   }
 };
 
@@ -60,6 +76,9 @@ export const validateStatusTransition = (
   const allowedTransitions = statusConfig[currentStatus]?.allowedTransitions || [];
   return allowedTransitions.includes(newStatus);
 };
+
+// Alias for validateStatusTransition to match component imports
+export const isStatusTransitionAllowed = validateStatusTransition;
 
 // Comprehensive status change handler
 export const handleStatusTransition = (
@@ -104,9 +123,16 @@ export const generateStatusChangeDescription = (
   return `Work order status changed from ${oldStatusLabel} to ${newStatusLabel} by ${userName}`;
 };
 
+// Alias for generateStatusChangeDescription to match component imports
+export const generateStatusChangeMessage = generateStatusChangeDescription;
+
+// Get next possible statuses based on current status
 export const getNextPossibleStatuses = (
   currentStatus: WorkOrder["status"]
 ): Array<{ status: WorkOrder["status"], label: string }> => {
   return statusConfig[currentStatus]?.nextSteps || [];
 };
+
+// Alias for getNextPossibleStatuses to match component imports
+export const getNextStatusOptions = getNextPossibleStatuses;
 
