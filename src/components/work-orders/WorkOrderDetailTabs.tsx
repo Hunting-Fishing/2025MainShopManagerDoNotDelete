@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkOrder } from "@/types/workOrder";
@@ -9,7 +10,7 @@ import { WorkOrderActions } from "./actions/WorkOrderActions";
 import { CreateInvoiceButton } from "./actions/CreateInvoiceButton";
 import { WorkOrderInvoiceStatus } from "./details/WorkOrderInvoiceStatus";
 import { WorkOrderStatusHistory } from "./details/WorkOrderStatusHistory";
-import { useWorkOrderStatusManager } from "@/hooks/workOrders/useWorkOrderStatusManager";
+import { useWorkOrderStatusManager } from "@/hooks/workOrders";
 import { toast } from "@/hooks/use-toast";
 
 interface WorkOrderDetailTabsProps {

@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { WorkOrder } from "@/types/workOrder";
 import { Check, X, RefreshCcw, Play } from "lucide-react";
-import { useWorkOrderStatusManager } from "@/hooks/workOrders/useWorkOrderStatusManager";
+import { useWorkOrderStatusManager } from "@/hooks/workOrders";
 
 interface StatusUpdateButtonProps {
   workOrder: WorkOrder;

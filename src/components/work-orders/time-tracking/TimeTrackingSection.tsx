@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { TimeEntry } from "@/types/workOrder";
 import { Clock, Play, Pause } from "lucide-react";
 import { formatRelativeTime } from "@/utils/dateUtils";
 import { TimeTrackingMetrics } from "./TimeTrackingMetrics";
-import { useWorkOrderTimeManagement } from "@/hooks/workOrders/useWorkOrderTimeManagement";
+import { useWorkOrderTimeManagement } from "@/hooks/workOrders";
 import { format } from "date-fns";
 
 interface TimeTrackingSectionProps {

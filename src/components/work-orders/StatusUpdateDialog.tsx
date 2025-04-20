@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { WorkOrder } from "@/types/workOrder";
 import { statusConfig, getStatusIcon, getNextStatusOptions } from "@/utils/workOrders/statusManagement";
-import { useWorkOrderStatusManager } from "@/hooks/workOrders/useWorkOrderStatusManager";
+import { useWorkOrderStatusManager } from "@/hooks/workOrders";
 import { Loader2 } from "lucide-react";
 
 interface StatusUpdateDialogProps {

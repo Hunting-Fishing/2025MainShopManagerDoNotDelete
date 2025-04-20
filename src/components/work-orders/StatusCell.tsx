@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { statusConfig, isStatusTransitionAllowed } from "@/utils/workOrders/statusManagement";
-import { useWorkOrderStatusManager } from "@/hooks/workOrders/useWorkOrderStatusManager";
+import { useWorkOrderStatusManager } from "@/hooks/workOrders";
 import { Loader2 } from "lucide-react";
 
 interface StatusCellProps {

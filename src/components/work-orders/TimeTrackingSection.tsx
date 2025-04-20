@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { TimeEntry } from "@/types/workOrder";
 import { Clock, Play, Pause } from "lucide-react";
 import { formatRelativeTime } from "@/utils/dateUtils";
-import { useWorkOrderTimeTracking } from "@/hooks/workOrders/useWorkOrderTimeTracking";
+import { useWorkOrderTimeTracking } from "@/hooks/workOrders";
 
 interface TimeTrackingSectionProps {
   workOrderId: string;
@@ -34,7 +34,6 @@ export function TimeTrackingSection({
     loadTimeEntries();
   }, [workOrderId, fetchTimeEntries, onUpdateTimeEntries]);
 
-  // Current user info would come from auth context in a real app
   const currentUser = {
     id: "current-user",
     name: "Current User"
