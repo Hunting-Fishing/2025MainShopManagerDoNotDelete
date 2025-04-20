@@ -7685,6 +7685,23 @@ export type Database = {
           work_order_id: string
         }[]
       }
+      get_work_order_notifications: {
+        Args: { work_order_id_param: string }
+        Returns: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          notification_type: string
+          recipient_id: string
+          recipient_type: string
+          sent_at: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          work_order_id: string
+        }[]
+      }
       get_work_order_time_entries: {
         Args: { work_order_id: string }
         Returns: {
