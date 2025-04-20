@@ -5,7 +5,8 @@ import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { findWorkOrderById, deleteWorkOrder } from "@/utils/workOrders";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { WorkOrderDetailTabs } from "@/components/work-orders/WorkOrderDetailTabs";
+import { WorkOrderDetailTabs } from "@/components/workOrders/WorkOrderDetailTabs";
+import { WorkOrderCalendarButton } from "@/components/workOrders/calendar/WorkOrderCalendarButton";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -140,6 +141,9 @@ export default function WorkOrderDetail() {
         </div>
 
         <div className="flex gap-2">
+          {/* Integrate Calendar Button Here */}
+          <WorkOrderCalendarButton workOrder={workOrder} />
+          
           <Button
             variant="outline"
             onClick={() => navigate(`/work-orders/${workOrder.id}/edit`)}

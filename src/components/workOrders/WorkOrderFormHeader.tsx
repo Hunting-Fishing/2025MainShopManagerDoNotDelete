@@ -11,9 +11,9 @@ export const WorkOrderFormHeader: React.FC<WorkOrderFormHeaderProps> = ({
   description,
 }) => {
   return (
-    <div>
-      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-      <p className="text-muted-foreground">{description}</p>
+    <div className="mb-6">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+      <p className="text-muted-foreground mt-1">{description}</p>
     </div>
   );
 };
