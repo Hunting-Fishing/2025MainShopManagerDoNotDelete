@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
-import { format, startOfDay, startOfWeek, startOfMonth, isWithinInterval, endOfDay, endOfWeek, endOfMonth } from 'date-fns';
+import { format, startOfDay, startOfWeek, startOfMonth, isWithinInterval, endOfDay, endOfWeek, endOfMonth, isAfter, isBefore } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface WorkOrderStatusCardsProps {
@@ -41,7 +42,7 @@ export function WorkOrderStatusCards({ workOrders, loading }: WorkOrderStatusCar
     }
 
     return workOrders.filter(wo => {
-      const woDate = new Date(wo.createdAt);
+      const woDate = new Date(wo.createdAt || wo.date);
       return isWithinInterval(woDate, { start, end });
     });
   };
@@ -50,6 +51,23 @@ export function WorkOrderStatusCards({ workOrders, loading }: WorkOrderStatusCar
   const pendingCount = filteredOrders.filter(wo => wo.status === 'pending').length;
   const inProgressCount = filteredOrders.filter(wo => wo.status === 'in-progress').length;
   const completedCount = filteredOrders.filter(wo => wo.status === 'completed').length;
+  
+  // Calculate overdue work orders (due date is before today and status is not completed)
+  const overdueCount = filteredOrders.filter(wo => {
+    const dueDate = new Date(wo.dueDate);
+    const today = new Date();
+    return isAfter(today, dueDate) && wo.status !== 'completed';
+  }).length;
+  
+  // Calculate work orders due today
+  const dueTodayCount = filteredOrders.filter(wo => {
+    const dueDate = new Date(wo.dueDate);
+    const today = new Date();
+    return (
+      isBefore(dueDate, endOfDay(today)) && 
+      isAfter(dueDate, startOfDay(today))
+    );
+  }).length;
 
   const getRangeDisplay = () => {
     const now = new Date();
