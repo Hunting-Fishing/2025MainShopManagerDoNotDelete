@@ -7150,9 +7150,73 @@ export type Database = {
           },
         ]
       }
+      work_order_document_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      work_order_document_versions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          document_id: string | null
+          file_url: string
+          id: string
+          notes: string | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          document_id?: string | null
+          file_url: string
+          id?: string
+          notes?: string | null
+          version_number: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          document_id?: string | null
+          file_url?: string
+          id?: string
+          notes?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_documents: {
         Row: {
           category: string | null
+          category_id: string | null
+          created_by: string | null
           description: string | null
           file_name: string
           file_type: string
@@ -7161,10 +7225,13 @@ export type Database = {
           metadata: Json | null
           uploaded_at: string | null
           uploaded_by: string | null
+          version_count: number | null
           work_order_id: string | null
         }
         Insert: {
           category?: string | null
+          category_id?: string | null
+          created_by?: string | null
           description?: string | null
           file_name: string
           file_type: string
@@ -7173,10 +7240,13 @@ export type Database = {
           metadata?: Json | null
           uploaded_at?: string | null
           uploaded_by?: string | null
+          version_count?: number | null
           work_order_id?: string | null
         }
         Update: {
           category?: string | null
+          category_id?: string | null
+          created_by?: string | null
           description?: string | null
           file_name?: string
           file_type?: string
@@ -7185,9 +7255,17 @@ export type Database = {
           metadata?: Json | null
           uploaded_at?: string | null
           uploaded_by?: string | null
+          version_count?: number | null
           work_order_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "work_order_documents_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_document_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_order_documents_work_order_id_fkey"
             columns: ["work_order_id"]
