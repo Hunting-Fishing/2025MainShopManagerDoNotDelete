@@ -21,10 +21,12 @@ import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
 import CreateRepairPlan from '@/pages/CreateRepairPlan';
 import Inventory from '@/pages/Inventory';
 import Maintenance from '@/pages/Maintenance';
+import MaintenanceDashboard from '@/pages/MaintenanceDashboard';
 import Forms from '@/pages/Forms';
 import Shopping from '@/pages/Shopping';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
+import ServiceReminders from '@/pages/ServiceReminders';
 
 const AppRoutes = () => {
   return (
@@ -66,6 +68,9 @@ const AppRoutes = () => {
         {/* Marketing */}
         <Route path="/email-templates" element={<EmailTemplates />} />
         <Route path="/email-sequences/:id" element={<EmailSequenceDetails />} />
+        <Route path="/email-sequences" element={<EmailTemplates />} />
+        <Route path="/email-campaigns" element={<EmailTemplates />} />
+        <Route path="/sms-templates" element={<EmailTemplates />} />
         <Route path="/marketing" element={<EmailTemplates />} />
         
         {/* Inventory */}
@@ -75,8 +80,14 @@ const AppRoutes = () => {
         <Route path="/equipment" element={<Dashboard />} />
         <Route path="/equipment/repair-plans/create" element={<CreateRepairPlan />} />
         
-        {/* Additional Pages */}
+        {/* Maintenance */}
         <Route path="/maintenance" element={<Maintenance />} />
+        <Route path="/maintenance/dashboard" element={<MaintenanceDashboard />} />
+        
+        {/* Reminders */}
+        <Route path="/reminders" element={<ServiceReminders />} />
+        
+        {/* Additional Pages */}
         <Route path="/forms" element={<Forms />} />
         <Route path="/shopping" element={<Shopping />} />
         <Route path="/settings" element={<Settings />} />
