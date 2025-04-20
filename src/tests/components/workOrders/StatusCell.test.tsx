@@ -19,7 +19,7 @@ const mockWorkOrder: WorkOrder = {
   serviceType: 'Repair',
   timeEntries: [],
   inventoryItems: [],
-  date: '2023-01-01', // Adding the required date property
+  date: '2023-01-01',
   notes: '',
   total_cost: 0
 };
