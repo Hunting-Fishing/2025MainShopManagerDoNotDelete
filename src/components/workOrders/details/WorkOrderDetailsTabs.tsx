@@ -21,7 +21,7 @@ import { WorkOrderActivitiesSection } from "@/components/workOrders/WorkOrderAct
 import { StatusUpdateButton } from '@/components/workOrders/StatusUpdateButton';
 import { Button } from '@/components/ui/button';
 import { WorkOrderScheduleView } from '@/components/workOrders/calendar/WorkOrderScheduleView';
-import { WorkOrderNotifications } from '@/components/workOrders/WorkOrderNotifications';
+import { WorkOrderNotifications } from '@/components/workOrders/notifications/WorkOrderNotifications';
 
 interface WorkOrderDetailsTabsProps {
   workOrder: WorkOrder;

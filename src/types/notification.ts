@@ -24,3 +24,34 @@ export interface WorkflowRule {
   actions: Record<string, any>;
   isActive: boolean;
 }
+
+// General notification interface
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: string;
+  read: boolean;
+  link?: string;
+  category?: string;
+  priority?: 'low' | 'medium' | 'high';
+  sender?: string;
+  recipient?: string;
+}
+
+export interface NotificationSubscription {
+  category: string;
+  enabled: boolean;
+}
+
+export interface NotificationPreferences {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  sound?: 'default' | 'none' | 'soft' | 'loud';
+  frequencies?: {
+    [key: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
+  };
+  subscriptions: NotificationSubscription[];
+}
