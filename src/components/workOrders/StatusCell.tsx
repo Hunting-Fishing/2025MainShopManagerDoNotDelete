@@ -35,28 +35,31 @@ export const StatusCell = ({ workOrder, onStatusUpdate, userId, userName }: Stat
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className={`w-[120px] justify-center ${statusColor} border`}
+          className={`w-[130px] justify-center ${statusColor} border-2 shadow-sm hover:shadow transition-all`}
           disabled={isUpdating}
         >
           {isUpdating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (
-            statusConfig[currentStatus]?.label || currentStatus
+            <span className="font-medium">{statusConfig[currentStatus]?.label || currentStatus}</span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent className="bg-white border border-gray-100 shadow-md rounded-xl p-1">
         {Object.keys(statusConfig).map((status) => {
           const statusKey = status as WorkOrder["status"];
           const isValid = isStatusTransitionAllowed(currentStatus, statusKey);
+          const config = statusConfig[statusKey];
+          
           return (
             <DropdownMenuItem
               key={status}
               disabled={!isValid || status === currentStatus}
               onClick={() => handleStatusChange(statusKey)}
+              className={`${isValid && status !== currentStatus ? config.color : ''} my-1 rounded-lg cursor-pointer ${!isValid || status === currentStatus ? 'opacity-50' : 'hover:shadow-sm'}`}
             >
-              <div className={`h-2 w-2 rounded-full mr-2 ${statusConfig[statusKey]?.color || ""}`} />
-              {statusConfig[statusKey]?.label || status}
+              <div className={`h-2 w-2 rounded-full mr-2 bg-current`} />
+              {config?.label || status}
             </DropdownMenuItem>
           );
         })}

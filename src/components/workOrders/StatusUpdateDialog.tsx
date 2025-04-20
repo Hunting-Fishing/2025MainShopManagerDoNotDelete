@@ -86,7 +86,7 @@ export function StatusUpdateDialog({
                   <Button
                     key={option.status}
                     variant="outline"
-                    className={`${statusStyle} justify-start`}
+                    className={`${statusStyle} border-2 hover:bg-opacity-80 justify-start shadow-sm hover:shadow transition-all`}
                     onClick={() => handleStatusChange(option.status)}
                     disabled={isUpdating || automationPending}
                   >

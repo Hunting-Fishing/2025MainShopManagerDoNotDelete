@@ -49,7 +49,7 @@ export function StatusUpdateButton({
       size={size}
       onClick={handleClick}
       disabled={isUpdating || workOrder.status === newStatus || automating}
-      className={`${config.color} border-2 relative`}
+      className={`${config.color} border-2 relative shadow-sm hover:shadow-md transition-all`}
     >
       {isUpdating || automating ? (
         automating ? (
@@ -66,7 +66,7 @@ export function StatusUpdateButton({
       ) : (
         <>
           <StatusIcon className="h-4 w-4 mr-2" />
-          {config.label}
+          <span className="font-medium">{config.label}</span>
         </>
       )}
     </Button>
