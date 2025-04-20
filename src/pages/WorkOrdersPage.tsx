@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { WorkOrdersPageHeader } from "@/components/workOrders/WorkOrdersPageHeader";
 import { WorkOrdersFilterSection } from "@/components/workOrders/WorkOrdersFilterSection";
@@ -12,7 +11,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorkOrderBatchActions } from '@/components/workOrders/WorkOrderBatchActions';
 import { WorkOrder } from '@/types/workOrder';
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 
 export default function WorkOrdersPage() {
@@ -41,11 +40,9 @@ export default function WorkOrdersPage() {
     handleTechnicianFilter
   } = useWorkOrderFilters();
 
-  // State for selected work orders (batch actions)
   const [selectedWorkOrders, setSelectedWorkOrders] = useState<WorkOrder[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
-  // Calculate status counts
   const statusCounts = useMemo(() => {
     return workOrders.reduce(
       (counts, wo) => {
@@ -58,7 +55,6 @@ export default function WorkOrdersPage() {
     );
   }, [workOrders]);
 
-  // Fetch technicians
   useEffect(() => {
     const fetchTechnicians = async () => {
       setLoadingTechnicians(true);
@@ -90,12 +86,10 @@ export default function WorkOrdersPage() {
     fetchTechnicians();
   }, [setLoadingTechnicians, setTechnicians]);
 
-  // Initial data load
   useEffect(() => {
     searchOrders({});
   }, [searchOrders]);
 
-  // Set up real-time updates
   useEffect(() => {
     const channel = supabase
       .channel('work-order-changes')
@@ -169,14 +163,16 @@ export default function WorkOrdersPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <h3 className="text-lg font-medium">Work Orders</h3>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info size={16} className="text-muted-foreground cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>View and manage all work orders</p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info size={16} className="text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View and manage all work orders</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <Tabs 
           value={viewMode} 
@@ -203,12 +199,7 @@ export default function WorkOrdersPage() {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {workOrders.map((workOrder) => (
-            <WorkOrderCardView 
-              key={workOrder.id} 
-              workOrders={[workOrder]} 
-            />
-          ))}
+          <WorkOrderCardView workOrders={workOrders} />
         </div>
       )}
     </div>
