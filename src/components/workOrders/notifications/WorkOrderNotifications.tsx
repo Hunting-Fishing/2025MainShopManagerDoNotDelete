@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { NotificationsList } from './NotificationsList';
 
 export function WorkOrderNotifications({ workOrderId }: { workOrderId: string }) {
   const { notifications, loading } = useWorkOrderNotifications(workOrderId);
@@ -19,27 +19,23 @@ export function WorkOrderNotifications({ workOrderId }: { workOrderId: string })
       try {
         const response = await supabase.functions.invoke('process-notifications', {
           body: { notification_ids: pendingNotifications.map(n => n.id) }
-        })
+        });
 
         if (!response.data?.success) {
-          throw new Error('Failed to process notifications')
+          throw new Error('Failed to process notifications');
         }
       } catch (error) {
-        console.error('Notification processing error:', error)
+        console.error('Notification processing error:', error);
         toast({
           title: 'Notification Error',
           description: 'Failed to send notifications',
           variant: 'destructive'
-        })
+        });
       }
-    }
+    };
 
-    processPendingNotifications()
+    processPendingNotifications();
   }, [notifications]);
-
-  if (loading) {
-    return <div>Loading notifications...</div>;
-  }
 
   return (
     <Card>
@@ -50,18 +46,7 @@ export function WorkOrderNotifications({ workOrderId }: { workOrderId: string })
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px]">
-          {notifications.length === 0 ? (
-            <div>No notifications</div>
-          ) : (
-            notifications.map(notification => (
-              <div key={notification.id} className="border-b py-2">
-                <div className="font-semibold">{notification.title}</div>
-                <div className="text-sm text-muted-foreground">{notification.message}</div>
-              </div>
-            ))
-          )}
-        </ScrollArea>
+        <NotificationsList notifications={notifications} loading={loading} />
       </CardContent>
     </Card>
   );
