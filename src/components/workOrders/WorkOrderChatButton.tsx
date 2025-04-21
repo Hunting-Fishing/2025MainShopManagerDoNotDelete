@@ -5,7 +5,7 @@ import { MessageCircle, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getWorkOrderChatRoom, createChatRoom } from '@/services/chat';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import {
   Tooltip,
   TooltipContent,

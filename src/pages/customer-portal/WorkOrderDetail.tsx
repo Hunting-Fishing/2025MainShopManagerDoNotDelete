@@ -1,13 +1,15 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { WorkOrder, TimeEntry } from "@/types/workOrder";
 import { findWorkOrderById, deleteWorkOrder } from "@/utils/workOrders";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle } from "lucide-react";
 import { WorkOrderDetailsTabs } from "@/components/workOrders/WorkOrderDetailsTabs";
 import { WorkOrderCalendarButton } from "@/components/workOrders/calendar/WorkOrderCalendarButton";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { WorkOrderChat } from "@/components/customer-portal/WorkOrderChat";
 
 export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +38,7 @@ export default function WorkOrderDetail() {
             description: "Work order not found",
             variant: "destructive"
           });
-          navigate('/work-orders');
+          navigate('/customer-portal/work-orders');
         }
       } catch (error) {
         console.error("Error loading work order:", error);
@@ -78,7 +80,7 @@ export default function WorkOrderDetail() {
           title: "Deleted",
           description: "Work order has been deleted",
         });
-        navigate('/work-orders');
+        navigate('/customer-portal/work-orders');
       }
     } catch (error) {
       console.error("Error deleting work order:", error);
@@ -112,7 +114,7 @@ export default function WorkOrderDetail() {
           <p className="text-slate-500 mb-4">
             The requested work order could not be found or may have been deleted.
           </p>
-          <Button onClick={() => navigate('/work-orders')} className="mt-2">
+          <Button onClick={() => navigate('/customer-portal/work-orders')} className="mt-2">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
           </Button>
         </div>
@@ -128,7 +130,7 @@ export default function WorkOrderDetail() {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/work-orders')}
+              onClick={() => navigate('/customer-portal/work-orders')}
               className="flex items-center gap-1"
             >
               <ArrowLeft className="h-4 w-4" /> Back
@@ -141,29 +143,28 @@ export default function WorkOrderDetail() {
 
         <div className="flex gap-2">
           <WorkOrderCalendarButton workOrder={workOrder} />
-          
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/work-orders/${workOrder.id}/edit`)}
-          >
-            Edit Work Order
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            Delete
-          </Button>
         </div>
       </div>
 
-      <WorkOrderDetailsTabs 
-        workOrder={workOrder}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
-        userId={currentUser.id}
-        userName={currentUser.name}
-        onStatusUpdate={handleStatusUpdate}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <WorkOrderDetailsTabs 
+            workOrder={workOrder}
+            onUpdateTimeEntries={handleUpdateTimeEntries}
+            userId={currentUser.id}
+            userName={currentUser.name}
+            onStatusUpdate={handleStatusUpdate}
+          />
+        </div>
+        
+        <div className="lg:col-span-1">
+          <WorkOrderChat 
+            workOrderId={workOrder.id} 
+            customerName={workOrder.customer || "Customer"} 
+            customerId={workOrder.customer_id || currentUser.id} 
+          />
+        </div>
+      </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
