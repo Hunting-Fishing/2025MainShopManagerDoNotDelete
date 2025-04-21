@@ -1,330 +1,197 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { format, formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, FileText, Play, CheckCircle } from 'lucide-react';
 
-import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { WorkOrder } from "@/types/workOrder";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Clock, MessageSquare, User, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { CustomerChatPanel } from "@/components/customer-portal/CustomerChatPanel";
-import { WorkOrderStatusBadge } from "@/components/workOrders/WorkOrderStatusBadge";
-
-export default function CustomerWorkOrderDetail() {
+export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
+  const [workOrder, setWorkOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
-    const fetchWorkOrderDetails = async () => {
-      if (!id) return;
-      
+    const fetchWorkOrder = async () => {
       setLoading(true);
       try {
         const { data, error } = await supabase
           .from('work_orders')
           .select(`
             *,
-            customers(first_name, last_name, email),
-            vehicles(make, model, year, color, vin)
+            customers (*),
+            vehicles (*)
           `)
           .eq('id', id)
           .single();
 
-        if (error) throw error;
-        
+        if (error) {
+          throw error;
+        }
+
         if (data) {
-          setWorkOrder(data as unknown as WorkOrder);
-          
-          // Set up real-time subscription for this work order
-          const workOrderChannel = supabase
-            .channel(`work-order-${id}`)
-            .on('postgres_changes', {
-              event: 'UPDATE',
-              schema: 'public',
-              table: 'work_orders',
-              filter: `id=eq.${id}`
-            }, (payload) => {
-              setWorkOrder(current => ({
-                ...(current as WorkOrder),
-                ...payload.new as Partial<WorkOrder>
-              }));
-
-              // Show toast notification for status changes
-              if (payload.new.status !== payload.old.status) {
-                toast({
-                  title: "Work Order Updated",
-                  description: `Status changed to ${payload.new.status}`,
-                  variant: "default"
-                });
-              }
-            })
-            .subscribe();
-
-          return () => {
-            supabase.removeChannel(workOrderChannel);
-          };
+          setWorkOrder(data);
         } else {
           toast({
             title: "Work Order Not Found",
-            description: "We couldn't find this work order in our records.",
-            variant: "destructive"
+            description: "Could not retrieve work order details.",
+            variant: "destructive",
           });
-          navigate('/customer-portal/work-orders');
+          navigate('/customer-portal');
         }
       } catch (error) {
         console.error("Error fetching work order:", error);
         toast({
           title: "Error",
-          description: "Failed to load work order details. Please try again.",
-          variant: "destructive"
+          description: "Failed to load work order details.",
+          variant: "destructive",
         });
+        navigate('/customer-portal');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWorkOrderDetails();
+    fetchWorkOrder();
   }, [id, navigate]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center h-40">
+        <p>Loading work order details...</p>
       </div>
     );
   }
 
   if (!workOrder) {
-    return (
-      <div className="text-center p-8">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Work Order Not Found</h2>
-        <p className="text-slate-600 mb-6">We couldn't find the work order you're looking for.</p>
-        <Button onClick={() => navigate('/customer-portal/work-orders')}>
-          <ChevronLeft className="mr-2 h-4 w-4" /> Back to Work Orders
-        </Button>
-      </div>
-    );
+    return null;
   }
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Not specified';
-    try {
-      return format(new Date(dateString), 'PPP');
-    } catch (e) {
-      return dateString;
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Button variant="ghost" onClick={() => navigate('/customer-portal/work-orders')}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to Work Orders
-        </Button>
-      </div>
+    <div className="container mx-auto py-8">
+      <Button onClick={() => navigate('/customer-portal')} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+      </Button>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <div>
-                  <span>Work Order #{workOrder.id.substring(0, 8)}</span>
-                </div>
-                <WorkOrderStatusBadge status={workOrder.status} />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-slate-500">Description</h3>
-                <p className="mt-1">{workOrder.description || "No description provided"}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-slate-500">Service Details</h3>
-                <div className="grid grid-cols-2 gap-4 mt-2">
-                  <div>
-                    <p className="text-sm text-slate-500">Service Type</p>
-                    <p>{workOrder.service_type || "General Service"}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Created Date</p>
-                    <p>{formatDate(workOrder.created_at)}</p>
-                  </div>
-                </div>
-              </div>
+      <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-4">Work Order Details</h2>
 
-              <div>
-                <h3 className="text-sm font-medium text-slate-500">Vehicle Information</h3>
-                {workOrder.vehicles ? (
-                  <div className="grid grid-cols-2 gap-4 mt-2">
-                    <div>
-                      <p className="text-sm text-slate-500">Make & Model</p>
-                      <p>{workOrder.vehicles.year} {workOrder.vehicles.make} {workOrder.vehicles.model}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-500">Color</p>
-                      <p>{workOrder.vehicles.color || "Not specified"}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm italic text-slate-500 mt-2">No vehicle information available</p>
-                )}
-              </div>
-
-              {workOrder.estimated_hours && (
-                <div>
-                  <h3 className="text-sm font-medium text-slate-500">Estimated Time</h3>
-                  <div className="flex items-center mt-1">
-                    <Clock className="h-4 w-4 text-slate-400 mr-2" />
-                    <p>{workOrder.estimated_hours} hours</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Progress Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <span>Work Order Progress</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative space-y-8 before:absolute before:inset-0 before:left-5 before:h-full before:w-0.5 before:-ml-px before:bg-gradient-to-b before:from-blue-500 before:via-blue-500 before:to-slate-200">
-                <div className="relative flex items-center">
-                  <div className="absolute left-0 rounded-full bg-blue-500 text-white flex items-center justify-center h-10 w-10">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <div className="ml-14">
-                    <div className="font-semibold">Work Order Created</div>
-                    <div className="text-sm text-slate-500">{formatDate(workOrder.created_at)}</div>
-                  </div>
-                </div>
-                
-                {workOrder.start_time && (
-                  <div className="relative flex items-center">
-                    <div className="absolute left-0 rounded-full bg-blue-500 text-white flex items-center justify-center h-10 w-10">
-                      <Clock className="h-5 w-5" />
-                    </div>
-                    <div className="ml-14">
-                      <div className="font-semibold">Work Started</div>
-                      <div className="text-sm text-slate-500">{formatDate(workOrder.start_time)}</div>
-                    </div>
-                  </div>
-                )}
-                
-                {workOrder.status === "completed" && workOrder.end_time && (
-                  <div className="relative flex items-center">
-                    <div className="absolute left-0 rounded-full bg-green-500 text-white flex items-center justify-center h-10 w-10">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
-                    <div className="ml-14">
-                      <div className="font-semibold">Work Completed</div>
-                      <div className="text-sm text-slate-500">{formatDate(workOrder.end_time)}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Chat Section */}
-          <Card>
-            <CardHeader className="cursor-pointer" onClick={() => setShowChat(!showChat)}>
-              <CardTitle className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <MessageSquare className="h-5 w-5 mr-2" />
-                  <span>Message Technician</span>
-                </div>
-                <Badge variant={showChat ? "default" : "outline"}>
-                  {showChat ? "Hide Chat" : "Open Chat"}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            {showChat && (
-              <CardContent>
-                <CustomerChatPanel workOrderId={workOrder.id} />
-              </CardContent>
-            )}
-          </Card>
+        {/* Customer Details */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Customer Information</h3>
+          <p>
+            <strong>Name:</strong> {workOrder.customers?.first_name} {workOrder.customers?.last_name}
+          </p>
+          <p>
+            <strong>Email:</strong> {workOrder.customers?.email}
+          </p>
+          <p>
+            <strong>Phone:</strong> {workOrder.customers?.phone}
+          </p>
         </div>
 
-        <div className="space-y-6">
-          {/* Work Order Technician */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
-                <span>Assigned Technician</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {workOrder.technician ? (
-                <div className="flex flex-col items-center">
-                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center mb-2">
-                    <User className="h-8 w-8 text-blue-500" />
-                  </div>
-                  <p className="font-medium">{workOrder.technician}</p>
-                  <Button 
-                    onClick={() => setShowChat(true)}
-                    variant="outline" 
-                    className="mt-3 w-full"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Message
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-center text-slate-500 py-2">No technician assigned yet</p>
+        {/* Work Order Details */}
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Work Order Information</h3>
+          <p>
+            <strong>ID:</strong> {workOrder.id}
+          </p>
+          <p>
+            <strong>Description:</strong> {workOrder.description}
+          </p>
+          <p>
+            <strong>Status:</strong> {workOrder.status}
+          </p>
+
+          {/* Creation date */}
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-slate-600">Created</h3>
+            <p className="text-sm text-slate-900">
+              {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMMM d, yyyy') : 
+               workOrder.created_at ? format(new Date(workOrder.created_at), 'MMMM d, yyyy') : 'N/A'}
+            </p>
+          </div>
+
+          {/* Vehicle information */}
+          {(workOrder.vehicleDetails || workOrder.vehicle_make) && (
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-slate-600">Vehicle</h3>
+              <p className="text-sm text-slate-900">
+                {workOrder.vehicleDetails ? 
+                  `${workOrder.vehicleDetails.year || ''} ${workOrder.vehicleDetails.make || ''} ${workOrder.vehicleDetails.model || ''}` :
+                  workOrder.vehicle_make && workOrder.vehicle_model ? 
+                    `${workOrder.vehicle_make} ${workOrder.vehicle_model}` : 
+                    'N/A'
+                }
+              </p>
+              {workOrder.vehicleDetails?.licensePlate && (
+                <p className="text-xs text-slate-500 mt-1">
+                  License: {workOrder.vehicleDetails.licensePlate}
+                </p>
               )}
-            </CardContent>
-          </Card>
-          
-          {/* Documents */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
-                <span>Documents</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="bg-slate-50 border rounded p-3 flex justify-between items-center">
-                <div>
-                  <p className="font-medium">Service Estimate</p>
-                  <p className="text-sm text-slate-500">PDF - 48KB</p>
+            </div>
+          )}
+
+          {/* Notes */}
+          {workOrder.notes && (
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-slate-600">Notes</h3>
+              <p className="text-sm text-slate-900">{workOrder.notes}</p>
+            </div>
+          )}
+
+          {/* Timeline section */}
+          <div className="mt-8">
+            <h3 className="text-lg font-medium">Service Timeline</h3>
+            <div className="mt-3 space-y-6">
+              {/* Creation */}
+              <div className="relative pl-8 pb-8 border-l-2 border-slate-200">
+                <div className="absolute -left-2 rounded-full w-5 h-5 bg-blue-500 flex items-center justify-center">
+                  <FileText className="text-white h-3 w-3" />
                 </div>
-                <Button size="sm" variant="outline">View</Button>
-              </div>
-              <div className="bg-slate-50 border rounded p-3 flex justify-between items-center">
                 <div>
-                  <p className="font-medium">Work Order Form</p>
-                  <p className="text-sm text-slate-500">PDF - 65KB</p>
+                  <p className="text-sm font-medium">Work Order Created</p>
+                  <p className="text-xs text-slate-500">
+                    {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMMM d, yyyy • h:mm a') :
+                     workOrder.created_at ? format(new Date(workOrder.created_at), 'MMMM d, yyyy • h:mm a') : 'N/A'}
+                  </p>
                 </div>
-                <Button size="sm" variant="outline">View</Button>
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* Latest Updates */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Latest Updates</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* This will be populated from notifications */}
-              <p className="text-sm text-slate-500">Real-time updates will appear here</p>
-            </CardContent>
-          </Card>
+
+              {/* Service Start */}
+              {(workOrder.startTime || workOrder.start_time) && (
+                <div className="relative pl-8 pb-8 border-l-2 border-slate-200">
+                  <div className="absolute -left-2 rounded-full w-5 h-5 bg-yellow-500 flex items-center justify-center">
+                    <Play className="text-white h-3 w-3" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Service Started</p>
+                    <p className="text-xs text-slate-500">
+                      {workOrder.startTime ? format(new Date(workOrder.startTime), 'MMMM d, yyyy • h:mm a') :
+                       workOrder.start_time ? format(new Date(workOrder.start_time), 'MMMM d, yyyy • h:mm a') : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Service Completion */}
+              {(workOrder.endTime || workOrder.end_time) && (
+                <div className="relative pl-8 border-l-2 border-slate-200">
+                  <div className="absolute -left-2 rounded-full w-5 h-5 bg-green-500 flex items-center justify-center">
+                    <CheckCircle className="text-white h-3 w-3" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Service Completed</p>
+                    <p className="text-xs text-slate-500">
+                      {workOrder.endTime ? format(new Date(workOrder.endTime), 'MMMM d, yyyy • h:mm a') :
+                       workOrder.end_time ? format(new Date(workOrder.end_time), 'MMMM d, yyyy • h:mm a') : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

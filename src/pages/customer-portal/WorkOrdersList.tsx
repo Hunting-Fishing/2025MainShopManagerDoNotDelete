@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -170,12 +169,15 @@ export default function WorkOrdersList() {
                       {workOrder.service_type || 'General Service'}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {workOrder.created_at ? format(new Date(workOrder.created_at), 'MMM d, yyyy') : 'N/A'}
+                      {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMM d, yyyy') : 
+                       workOrder.created_at ? format(new Date(workOrder.created_at), 'MMM d, yyyy') : 'N/A'}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {workOrder.vehicles ? 
-                        `${workOrder.vehicles.year} ${workOrder.vehicles.make} ${workOrder.vehicles.model}` : 
-                        'N/A'
+                      {workOrder.vehicleDetails ? 
+                        `${workOrder.vehicleDetails.year || ''} ${workOrder.vehicleDetails.make || ''} ${workOrder.vehicleDetails.model || ''}` :
+                        workOrder.vehicle_make && workOrder.vehicle_model ? 
+                          `${workOrder.vehicle_make} ${workOrder.vehicle_model}` : 
+                          'N/A'
                       }
                     </TableCell>
                     <TableCell>

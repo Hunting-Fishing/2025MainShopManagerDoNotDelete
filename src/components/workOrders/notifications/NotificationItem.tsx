@@ -22,7 +22,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   };
 
   const getIcon = () => {
-    switch (notification.notificationType) {
+    switch (notification.notification_type) {
       case 'status_update':
         return <Info className="h-4 w-4" />;
       case 'assignment':
@@ -48,7 +48,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         </div>
         <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          {notification.createdAt && formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+          {notification.created_at && formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
         </p>
       </div>
     </div>
