@@ -1,195 +1,256 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { WorkOrder } from "@/types/workOrder";
-import { findWorkOrderById } from "@/utils/workOrders";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Wrench } from "lucide-react";
+import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { WorkOrder } from '@/types/workOrder';
 import { 
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle,
-  CardDescription
+  CardTitle 
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { toast } from "@/hooks/use-toast";
+import { 
+  ArrowLeft, 
+  Calendar,
+  Clock, 
+  ClipboardList,
+  FileText,
+  MapPin,
+  User,
+  Wrench
+} from 'lucide-react';
+import { format } from 'date-fns';
 
-export default function WorkOrderDetail() {
+const WorkOrderDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  
+  const [vehicleDetails, setVehicleDetails] = useState<any | null>(null);
+
   useEffect(() => {
-    const loadWorkOrder = async () => {
+    const fetchWorkOrderDetails = async () => {
       if (!id) return;
       
-      setLoading(true);
       try {
-        // Fetch work order details
-        const { data, error: fetchError } = await supabase
+        setLoading(true);
+        
+        // Fetch work order data
+        const { data: orderData, error: orderError } = await supabase
           .from('work_orders')
           .select(`
             *,
-            vehicles (*),
-            work_order_time_entries (*)
+            customers (
+              id,
+              first_name,
+              last_name,
+              email,
+              phone
+            )
           `)
           .eq('id', id)
           .single();
-          
-        if (fetchError) {
-          throw fetchError;
+
+        if (orderError) {
+          throw orderError;
         }
         
-        if (data) {
-          setWorkOrder(data);
-          
-          // Fetch notifications
-          const { data: notificationsData, error: notificationsError } = await supabase
-            .from('work_order_notifications')
-            .select('*')
-            .eq('work_order_id', id)
-            .order('created_at', { ascending: false });
-            
-          if (notificationsError) {
-            console.error("Error loading notifications:", notificationsError);
-          } else {
-            setNotifications(notificationsData || []);
-          }
-        } else {
-          toast({
-            title: "Not Found",
-            description: "Work order not found",
-            variant: "destructive"
-          });
-          navigate('/customer-portal');
+        if (!orderData) {
+          throw new Error('Work order not found');
         }
-      } catch (error: any) {
-        console.error("Error loading work order:", error);
-        setError(error.message);
+        
+        // Format the work order data to match our type
+        const formattedWorkOrder: WorkOrder = {
+          id: orderData.id,
+          customer: orderData.customers ? `${orderData.customers.first_name} ${orderData.customers.last_name}` : 'Unknown Customer',
+          customer_id: orderData.customer_id,
+          description: orderData.description || '',
+          status: orderData.status || 'pending',
+          priority: orderData.priority || 'medium',
+          technician: orderData.technician || 'Not Assigned',
+          technician_id: orderData.technician_id,
+          date: orderData.created_at,
+          dueDate: orderData.due_date || '',
+          location: orderData.location || '',
+          notes: orderData.notes || '',
+          vehicleId: orderData.vehicle_id,
+          createdAt: orderData.created_at,
+          inventoryItems: [],
+          timeEntries: []
+        };
+        
+        setWorkOrder(formattedWorkOrder);
+        
+        // If there's a vehicle associated with this work order, fetch its details
+        if (orderData.vehicle_id) {
+          const { data: vehicleData, error: vehicleError } = await supabase
+            .from('vehicles')
+            .select('*')
+            .eq('id', orderData.vehicle_id)
+            .single();
+            
+          if (!vehicleError && vehicleData) {
+            setVehicleDetails(vehicleData);
+          }
+        }
+      } catch (err: any) {
+        console.error("Error fetching work order details:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
     
-    loadWorkOrder();
-  }, [id, navigate]);
+    fetchWorkOrderDetails();
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 flex items-center justify-center h-[50vh]">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-4" />
-          <p className="text-slate-500">Loading work order details...</p>
-        </div>
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-center items-center h-40">
+              <p>Loading work order details...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (error || !workOrder) {
+  if (error) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Work Order Not Found</h2>
-          <p className="text-slate-500 mb-4">
-            {error || "The requested work order could not be found or may have been deleted."}
-          </p>
-          <Button onClick={() => navigate('/customer-portal')} className="mt-2">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-          </Button>
-        </div>
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col justify-center items-center h-40">
+              <p className="text-red-500 mb-4">Error loading work order: {error}</p>
+              <Button asChild>
+                <Link to="/customer-portal">Back to Dashboard</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // Format date strings
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
+  if (!workOrder) {
+    return (
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col justify-center items-center h-40">
+              <p className="mb-4">Work order not found</p>
+              <Button asChild>
+                <Link to="/customer-portal">Back to Dashboard</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  // Get status badge class based on status
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800 border border-green-300';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800 border border-blue-300';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border border-red-300';
-      default:
-        return 'bg-slate-100 text-slate-800 border border-slate-300';
+  const formatDate = (dateStr: string) => {
+    try {
+      if (!dateStr) return "No date provided";
+      return format(new Date(dateStr), 'MMM dd, yyyy');
+    } catch (e) {
+      return "Invalid date";
     }
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="container mx-auto p-4">
       <div className="mb-4">
-        <Button variant="outline" onClick={() => navigate('/customer-portal/work-orders')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+        <Button variant="outline" asChild>
+          <Link to="/customer-portal/work-orders">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+          </Link>
         </Button>
       </div>
       
       <Card>
         <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle className="text-xl">
-                Work Order #{id?.substring(0, 8)}
-              </CardTitle>
-              <CardDescription>
-                {workOrder.description || "No description provided"}
-              </CardDescription>
-            </div>
-            <Badge className={getStatusBadgeClass(workOrder.status)}>
-              {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl">
+              Work Order #{workOrder.id.substring(0, 8)}
+            </CardTitle>
+            <Badge 
+              className={
+                workOrder.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-300' :
+                workOrder.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                workOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                'bg-red-100 text-red-800 border border-red-300'
+              }
+            >
+              {workOrder.status}
             </Badge>
           </div>
+          <p className="text-slate-500 mt-2">{workOrder.description}</p>
         </CardHeader>
-        <CardContent className="pt-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
-              <h3 className="text-lg font-semibold mb-3">Work Order Details</h3>
+              <h3 className="text-lg font-medium mb-3">Work Order Information</h3>
               <div className="space-y-3">
-                <div className="grid grid-cols-2">
-                  <span className="text-slate-500">Created:</span>
-                  <span>{formatDate(workOrder.created_at)}</span>
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 text-indigo-500 mr-3" />
+                  <div>
+                    <p className="text-sm text-slate-500">Date Created</p>
+                    <p>{workOrder.createdAt ? formatDate(workOrder.createdAt) : "Not specified"}</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2">
-                  <span className="text-slate-500">Status:</span>
-                  <span className={workOrder.status === 'completed' ? 'text-green-600' : 
-                                  workOrder.status === 'in-progress' ? 'text-blue-600' : 
-                                  workOrder.status === 'cancelled' ? 'text-red-600' : ''}>
-                    {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
-                  </span>
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 text-indigo-500 mr-3" />
+                  <div>
+                    <p className="text-sm text-slate-500">Due Date</p>
+                    <p>{workOrder.dueDate ? formatDate(workOrder.dueDate) : "Not specified"}</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2">
-                  <span className="text-slate-500">Type:</span>
-                  <span>{workOrder.service_type || 'N/A'}</span>
+                <div className="flex items-center">
+                  <User className="h-5 w-5 text-indigo-500 mr-3" />
+                  <div>
+                    <p className="text-sm text-slate-500">Technician</p>
+                    <p>{workOrder.technician}</p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 text-indigo-500 mr-3" />
+                  <div>
+                    <p className="text-sm text-slate-500">Location</p>
+                    <p>{workOrder.location || "Not specified"}</p>
+                  </div>
                 </div>
               </div>
             </div>
             
-            {workOrder.vehicles && (
+            {vehicleDetails && (
               <div>
-                <h3 className="text-lg font-semibold mb-3">Vehicle</h3>
-                <div className="border rounded-lg p-3 bg-slate-50">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-indigo-100 p-2 rounded-full">
-                      <Wrench className="h-5 w-5 text-indigo-600" />
-                    </div>
+                <h3 className="text-lg font-medium mb-3">Vehicle Information</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <Wrench className="h-5 w-5 text-indigo-500 mr-3" />
                     <div>
-                      <p className="font-medium">{workOrder.vehicles.year} {workOrder.vehicles.make} {workOrder.vehicles.model}</p>
-                      <p className="text-sm text-slate-500">{workOrder.vehicles.license_plate || workOrder.vehicles.vin}</p>
+                      <p className="text-sm text-slate-500">Vehicle</p>
+                      <p>
+                        {vehicleDetails.year} {vehicleDetails.make} {vehicleDetails.model} {vehicleDetails.trim || ''}
+                      </p>
                     </div>
                   </div>
+                  {vehicleDetails.vin && (
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 text-indigo-500 mr-3" />
+                      <div>
+                        <p className="text-sm text-slate-500">VIN</p>
+                        <p>{vehicleDetails.vin}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -197,55 +258,43 @@ export default function WorkOrderDetail() {
           
           <Tabs defaultValue="details">
             <TabsList>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="updates">Updates</TabsTrigger>
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              <TabsTrigger value="details">
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="history">
+                <Clock className="mr-2 h-4 w-4" />
+                History
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="details" className="space-y-4 pt-4">
-              <div className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Description</h3>
-                <p className="text-slate-600">{workOrder.description || "No description provided."}</p>
-              </div>
-              
-              {/* Work performed section could go here */}
-              <div className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Work Performed</h3>
-                <p className="text-slate-600">Details about the work performed will appear here.</p>
-              </div>
+            <TabsContent value="details" className="mt-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="font-medium mb-3">Work Order Notes</h3>
+                  {workOrder.notes ? (
+                    <p className="whitespace-pre-line">{workOrder.notes}</p>
+                  ) : (
+                    <p className="text-slate-500 italic">No notes available</p>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
             
-            <TabsContent value="updates" className="space-y-4 pt-4">
-              {notifications.length === 0 ? (
-                <div className="text-center py-10 border rounded-lg">
-                  <p className="text-slate-500">No status updates yet</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {notifications.map((notification) => (
-                    <div key={notification.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between">
-                        <h4 className="font-medium">{notification.title}</h4>
-                        <span className="text-sm text-slate-500">
-                          {new Date(notification.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-slate-600">{notification.message}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="timeline" className="space-y-4 pt-4">
-              <div className="text-center py-10 border rounded-lg">
-                <p className="text-slate-500">Timeline details will appear here</p>
-              </div>
+            <TabsContent value="history" className="mt-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-4 text-slate-500">
+                    <p>Work order status history will appear here</p>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
-          
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default WorkOrderDetail;
