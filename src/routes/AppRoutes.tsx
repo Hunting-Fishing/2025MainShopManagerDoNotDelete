@@ -28,44 +28,40 @@ import Settings from '@/pages/Settings';
 import ServiceReminders from '@/pages/ServiceReminders';
 import Equipment from '@/pages/Equipment';
 
+import { CustomerPortalLayout } from '@/components/customer-portal/CustomerPortalLayout';
+import CustomerPortal from '@/pages/customer-portal/CustomerPortal';
+import WorkOrdersList from '@/pages/customer-portal/WorkOrdersList';
+import CustomerWorkOrderDetail from '@/pages/customer-portal/WorkOrderDetail';
+
 const AppRoutes = () => {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* Dashboard */}
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         
-        {/* Work Orders */}
         <Route path="/work-orders" element={<WorkOrdersPage />} />
         <Route path="/work-orders/:id" element={<WorkOrderDetail />} />
         <Route path="/work-orders/new" element={<WorkOrderCreate />} />
         <Route path="/work-orders/:id/edit" element={<WorkOrderCreate />} />
         
-        {/* Customers */}
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/new" element={<CreateCustomer />} />
         <Route path="/customers/:customerId/edit" element={<EditCustomer />} />
         
-        {/* Invoices */}
         <Route path="/invoices" element={<Invoices />} />
         
-        {/* Team */}
         <Route path="/team" element={<Team />} />
         <Route path="/team/create" element={<CreateTeamMember />} />
         
-        {/* Calendar */}
         <Route path="/calendar" element={<Calendar />} />
         
-        {/* Chat */}
         <Route path="/chat" element={<Chat />} />
         <Route path="/chat/:roomId" element={<Chat />} />
         
-        {/* Reports & Analytics */}
         <Route path="/reports" element={<Reports />} />
         <Route path="/analytics" element={<Analytics />} />
         
-        {/* Marketing */}
         <Route path="/email-templates" element={<EmailTemplates />} />
         <Route path="/email-sequences/:id" element={<EmailSequenceDetails />} />
         <Route path="/email-sequences" element={<EmailTemplates />} />
@@ -73,27 +69,27 @@ const AppRoutes = () => {
         <Route path="/sms-templates" element={<EmailTemplates />} />
         <Route path="/marketing" element={<EmailTemplates />} />
         
-        {/* Inventory */}
         <Route path="/inventory" element={<Inventory />} />
         
-        {/* Equipment */}
         <Route path="/equipment" element={<Equipment />} />
         <Route path="/equipment/repair-plans/create" element={<CreateRepairPlan />} />
         
-        {/* Maintenance */}
         <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/maintenance/dashboard" element={<MaintenanceDashboard />} />
         
-        {/* Reminders */}
         <Route path="/reminders" element={<ServiceReminders />} />
         
-        {/* Additional Pages */}
         <Route path="/forms" element={<Forms />} />
         <Route path="/shopping" element={<Shopping />} />
         <Route path="/settings" element={<Settings />} />
         
-        {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />
+      </Route>
+
+      <Route element={<CustomerPortalLayout />}>
+        <Route path="/customer-portal" element={<CustomerPortal />} />
+        <Route path="/customer-portal/work-orders" element={<WorkOrdersList />} />
+        <Route path="/customer-portal/work-orders/:id" element={<CustomerWorkOrderDetail />} />
       </Route>
     </Routes>
   );
