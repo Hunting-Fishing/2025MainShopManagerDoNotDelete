@@ -35,6 +35,7 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       const fileInfo = await uploadChatFile(roomId, file);
       
       if (fileInfo) {
+        // Always call onFileUploaded to maintain compatibility
         onFileUploaded(`${fileInfo.type}:${fileInfo.url}`, fileInfo.type);
         
         // If the new prop is provided, also call it
