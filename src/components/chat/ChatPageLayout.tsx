@@ -103,4 +103,4 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
       </div>
     </div>
   );
-};
+}

@@ -14,7 +14,7 @@ export function useWorkOrderNotifications(workOrderId?: string) {
 
     // Subscribe to real-time notifications
     const channel = supabase
-      .channel(`work-order-notifications-${workOrderId}`)
+      .channel('work-order-notifications')
       .on(
         'postgres_changes',
         {
@@ -24,31 +24,11 @@ export function useWorkOrderNotifications(workOrderId?: string) {
           filter: `work_order_id=eq.${workOrderId}`
         },
         (payload) => {
-          // Convert snake_case database fields to camelCase for our frontend
-          const notification: WorkOrderNotification = {
-            id: payload.new.id,
-            workOrderId: payload.new.work_order_id,
-            notificationType: payload.new.notification_type,
-            title: payload.new.title,
-            message: payload.new.message,
-            recipientType: payload.new.recipient_type,
-            recipientId: payload.new.recipient_id,
-            status: payload.new.status,
-            sentAt: payload.new.sent_at,
-            errorMessage: payload.new.error_message,
-            createdAt: payload.new.created_at,
-            updatedAt: payload.new.updated_at
-          };
-          
-          setNotifications(current => [...current, notification]);
-          
-          // For automation notifications, we use a special visual treatment
-          const variant = notification.notificationType === 'automation' ? 'default' : 'default';
+          setNotifications(current => [...current, payload.new as WorkOrderNotification]);
           
           toast({
             title: payload.new.title,
             description: payload.new.message,
-            variant
           });
         }
       )
@@ -73,24 +53,7 @@ export function useWorkOrderNotifications(workOrderId?: string) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Convert snake_case database fields to camelCase for our frontend
-      const formattedNotifications: WorkOrderNotification[] = (data || []).map(item => ({
-        id: item.id,
-        workOrderId: item.work_order_id,
-        notificationType: item.notification_type,
-        title: item.title,
-        message: item.message,
-        recipientType: item.recipient_type,
-        recipientId: item.recipient_id,
-        status: item.status,
-        sentAt: item.sent_at,
-        errorMessage: item.error_message,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at
-      }));
-      
-      setNotifications(formattedNotifications);
+      setNotifications(data || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
