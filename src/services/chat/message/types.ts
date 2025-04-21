@@ -8,6 +8,7 @@ export interface MessageSendParams {
   content: string;
   messageType?: 'text' | 'audio' | 'image' | 'video' | 'file' | 'system';
   threadParentId?: string;
+  file_url?: string; // Added this property
 }
 
 export interface MessageEditParams {
