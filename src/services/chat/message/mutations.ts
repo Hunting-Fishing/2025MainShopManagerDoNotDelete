@@ -23,7 +23,7 @@ export const sendMessage = async (message: MessageSendParams): Promise<ChatMessa
         sender_name: message.sender_name,
         content: message.content,
         is_read: false,
-        message_type: getMessageType(message.content),
+        message_type: message.message_type || getMessageType(message.content),
         metadata: metadata
       } as Partial<DatabaseChatMessage>])
       .select()
@@ -148,6 +148,43 @@ export const editMessage = async ({ messageId, content, userId }: MessageEditPar
     return transformDatabaseMessage(data as DatabaseChatMessage);
   } catch (error) {
     console.error("Error editing message:", error);
+    throw error;
+  }
+};
+
+// Save message to a record (e.g., work order)
+export const saveMessageToRecord = async (messageId: string, recordType: string, recordId: string): Promise<void> => {
+  try {
+    // First get the message
+    const { data: message, error: fetchError } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('id', messageId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    // Update the message metadata to include saved_to information
+    const updatedMetadata = {
+      ...(message.metadata || {}),
+      saved_to: {
+        ...((message.metadata?.saved_to) || {}),
+        [recordType]: recordId,
+        saved_at: new Date().toISOString()
+      }
+    };
+    
+    // Update the message
+    const { error } = await supabase
+      .from('chat_messages')
+      .update({
+        metadata: updatedMetadata
+      })
+      .eq('id', messageId);
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error saving message to record:", error);
     throw error;
   }
 };

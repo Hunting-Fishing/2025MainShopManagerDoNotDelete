@@ -1,74 +1,79 @@
 
-import { ChatRoom } from "@/types/chat";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../supabaseClient";
 import { CreateRoomParams } from "./types";
+import { ChatRoom } from "@/types/chat";
+import { transformDatabaseRoom } from "./types";
 
 // Create a new chat room
 export const createChatRoom = async (params: CreateRoomParams): Promise<ChatRoom> => {
   try {
-    const roomData = {
-      name: params.name,
-      type: params.type,
-      work_order_id: params.workOrderId,
-      metadata: params.metadata || {}
+    // Extract the custom ID if provided
+    const { id, ...roomData } = params;
+    
+    // Prepare room data
+    const room = {
+      name: roomData.name,
+      type: roomData.type,
+      work_order_id: roomData.workOrderId,
+      metadata: roomData.metadata,
+      // If id is provided, use it (for shift chats)
+      ...(id ? { id } : {})
     };
     
     // Create the room
-    const { data: room, error: roomError } = await supabase
+    const { data, error } = await supabase
       .from('chat_rooms')
-      .insert([roomData])
+      .upsert([room])
       .select()
       .single();
-      
-    if (roomError) throw roomError;
     
-    // Add participants to the room
-    if (params.participants && params.participants.length > 0) {
-      const participantInserts = params.participants.map(userId => ({
-        room_id: room.id,
-        user_id: userId
-      }));
-      
-      const { error: participantError } = await supabase
-        .from('chat_participants')
-        .insert(participantInserts);
-        
-      if (participantError) throw participantError;
-    }
+    if (error) throw error;
     
-    return room;
+    // Add participants
+    const participantPromises = params.participants.map(userId =>
+      supabase.from('chat_participants').insert({
+        room_id: data.id,
+        user_id: userId,
+      })
+    );
+    
+    // Wait for all participants to be added
+    await Promise.all(participantPromises);
+    
+    // Return the created room
+    return transformDatabaseRoom(data);
   } catch (error) {
     console.error("Error creating chat room:", error);
     throw error;
   }
 };
 
-// Archive a chat room
-export const archiveChatRoom = async (roomId: string, isArchived: boolean): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('chat_rooms')
-      .update({ is_archived: isArchived })
-      .eq('id', roomId);
-      
-    if (error) throw error;
-  } catch (error) {
-    console.error("Error archiving chat room:", error);
-    throw error;
-  }
-};
-
-// Pin a chat room
+// Pin/unpin a chat room
 export const pinChatRoom = async (roomId: string, isPinned: boolean): Promise<void> => {
   try {
     const { error } = await supabase
       .from('chat_rooms')
       .update({ is_pinned: isPinned })
       .eq('id', roomId);
-      
+    
     if (error) throw error;
   } catch (error) {
-    console.error("Error pinning chat room:", error);
+    console.error("Error pinning/unpinning chat room:", error);
+    throw error;
+  }
+};
+
+// Archive/unarchive a chat room
+export const archiveChatRoom = async (roomId: string, isArchived: boolean): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('chat_rooms')
+      .update({ is_archived: isArchived })
+      .eq('id', roomId);
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error archiving/unarchiving chat room:", error);
     throw error;
   }
 };

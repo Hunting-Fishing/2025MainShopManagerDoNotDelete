@@ -1,5 +1,5 @@
 
-import { supabase, DatabaseChatRoom } from "../supabaseClient";
+import { supabase } from "../supabaseClient";
 import { ChatRoom } from "@/types/chat";
 import { transformDatabaseRoom } from "./types";
 
@@ -30,7 +30,7 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
     
     // Enhance rooms with last message and unread count
     const enhancedRooms: ChatRoom[] = await Promise.all(
-      (rooms || []).map(async (room: DatabaseChatRoom) => {
+      (rooms || []).map(async (room) => {
         // Get last message
         const { data: lastMessages, error: lastMessageError } = await supabase
           .from('chat_messages')

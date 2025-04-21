@@ -1,3 +1,4 @@
+
 import { ChatMessage } from '@/types/chat';
 
 export interface MessageSendParams {
@@ -6,6 +7,7 @@ export interface MessageSendParams {
   sender_name: string;
   content: string;
   metadata?: any;
+  message_type?: string; // Added to fix the error
 }
 
 export interface MessageEditParams {

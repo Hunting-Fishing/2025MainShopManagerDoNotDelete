@@ -1,4 +1,5 @@
 
+import { ChatMessage } from '@/types/chat';
 import { getMessageType, transformDatabaseMessage, MessageSendParams, MessageEditParams, MessageFlagParams } from './messageTypes';
 import { parseTaggedItems as parseTagsHelper } from './messageHelpers';
 
