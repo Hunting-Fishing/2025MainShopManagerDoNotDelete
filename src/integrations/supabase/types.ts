@@ -1280,6 +1280,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          auth_user_id: string | null
           auto_billing: boolean | null
           business_email: string | null
           business_industry: string | null
@@ -1320,6 +1321,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          auth_user_id?: string | null
           auto_billing?: boolean | null
           business_email?: string | null
           business_industry?: string | null
@@ -1360,6 +1362,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          auth_user_id?: string | null
           auto_billing?: boolean | null
           business_email?: string | null
           business_industry?: string | null
