@@ -1,14 +1,9 @@
-import { useState } from 'react';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { ChatNameInput } from './new-chat/ChatNameInput';
-import { SearchBar } from './new-chat/SearchBar';
-import { TeamMembersList } from './new-chat/TeamMembersList';
-import { ParticipantList } from './new-chat/ParticipantList';
-import { TeamMember } from '@/types/team';
+import { ParticipantSearch } from './new-chat/ParticipantSearch';
 import { ShiftChatSettings } from './new-chat/ShiftChatSettings';
 import { useChatDialogState } from './new-chat/hooks/useChatDialogState';
 import { supabase } from '@/lib/supabase';
@@ -40,7 +35,6 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
     searchQuery,
     setSearchQuery,
     selectedParticipants,
-    addParticipant,
     removeParticipant,
     toggleParticipant,
     isShiftChat,
@@ -56,7 +50,6 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
     resetState
   } = useChatDialogState();
 
-  // Fetch team members from Supabase
   const { data: teamMembers = [], isLoading } = useQuery({
     queryKey: ['teamMembers'],
     queryFn: async () => {
@@ -67,42 +60,30 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
 
       if (error) throw error;
 
-      return data.map(profile => {
-        // Extract role name safely with proper type checking
-        let roleName = 'No Role';
-        
-        if (profile.roles && 
-            Array.isArray(profile.roles) && 
-            profile.roles.length > 0 && 
-            profile.roles[0]?.role && 
-            typeof profile.roles[0].role === 'object' &&
-            profile.roles[0].role !== null &&
-            'name' in profile.roles[0].role &&
-            typeof profile.roles[0].role.name === 'string') {
-          roleName = profile.roles[0].role.name;
-        }
-        
-        return {
-          id: profile.id,
-          name: `${profile.first_name} ${profile.last_name}`,
-          email: profile.email,
-          phone: profile.phone || '',
-          jobTitle: profile.job_title || '',
-          department: profile.department || '',
-          role: roleName
-        };
-      }) as TeamMember[];
+      return data.map(profile => ({
+        id: profile.id,
+        name: `${profile.first_name} ${profile.last_name}`,
+        email: profile.email,
+        phone: profile.phone || '',
+        jobTitle: profile.job_title || '',
+        department: profile.department || '',
+        role: profile.roles?.[0]?.role?.name || 'No Role'
+      }));
     }
   });
 
-  // Filter team members based on search query
-  const filteredTeamMembers = teamMembers.filter(member => 
-    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getDefaultChatName = () => {
+    if (isShiftChat) {
+      return `${shiftName} - ${shiftDate ? new Date(shiftDate).toLocaleDateString() : 'Shift Chat'}`;
+    }
+    if (selectedParticipants.length === 1) {
+      const member = teamMembers.find(m => m.id === selectedParticipants[0]);
+      return member ? member.name : 'New Chat';
+    }
+    return selectedParticipants.length > 1 ? 'Group Chat' : 'New Chat';
+  };
 
   const handleSubmit = () => {
-    // Create the chat with the selected participants
     const shiftMetadata = isShiftChat ? {
       isShiftChat,
       shiftDate,
@@ -118,22 +99,7 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
       shiftMetadata
     );
     
-    // Reset the form
     resetState();
-  };
-
-  const getDefaultChatName = () => {
-    if (isShiftChat) {
-      return `${shiftName} - ${shiftDate ? new Date(shiftDate).toLocaleDateString() : 'Shift Chat'}`;
-    }
-
-    if (selectedParticipants.length === 1) {
-      const member = teamMembers.find(m => m.id === selectedParticipants[0]);
-      return member ? member.name : 'New Chat';
-    } else if (selectedParticipants.length > 1) {
-      return 'Group Chat';
-    }
-    return 'New Chat';
   };
 
   const handleClose = () => {
@@ -154,71 +120,48 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
             <TabsTrigger value="group" className="flex-1">Group Chat</TabsTrigger>
           </TabsList>
           
-          <div className="my-4">
+          <div className="space-y-4">
             <ChatNameInput 
               chatName={chatName}
               setChatName={setChatName}
               chatType={chatType}
               participants={selectedParticipants}
             />
-          </div>
-          
-          {chatType === "group" && (
-            <ShiftChatSettings
-              isShiftChat={isShiftChat}
-              setIsShiftChat={setIsShiftChat}
-              shiftDate={shiftDate}
-              setShiftDate={setShiftDate}
-              shiftName={shiftName}
-              setShiftName={setShiftName}
-              shiftTimeStart={shiftTimeStart}
-              setShiftTimeStart={setShiftTimeStart}
-              shiftTimeEnd={shiftTimeEnd}
-              setShiftTimeEnd={setShiftTimeEnd}
-            />
-          )}
-          
-          <div className="my-4">
-            <SearchBar 
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-            />
-          </div>
-          
-          <div className="my-4">
-            {selectedParticipants.length > 0 && (
-              <div className="mb-4">
-                <Label className="text-sm font-medium">Selected members</Label>
-                <ParticipantList 
-                  participants={selectedParticipants}
-                  teamMembers={teamMembers}
-                  onRemoveParticipant={removeParticipant}
-                />
-              </div>
-            )}
             
-            <Label className="text-sm font-medium">Team members</Label>
-            {isLoading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Loading team members...
-              </div>
-            ) : (
-              <TeamMembersList 
-                teamMembers={filteredTeamMembers}
-                selectedParticipants={selectedParticipants}
-                onToggleParticipant={toggleParticipant}
+            {chatType === "group" && (
+              <ShiftChatSettings
+                isShiftChat={isShiftChat}
+                setIsShiftChat={setIsShiftChat}
+                shiftDate={shiftDate}
+                setShiftDate={setShiftDate}
+                shiftName={shiftName}
+                setShiftName={setShiftName}
+                shiftTimeStart={shiftTimeStart}
+                setShiftTimeStart={setShiftTimeStart}
+                shiftTimeEnd={shiftTimeEnd}
+                setShiftTimeEnd={setShiftTimeEnd}
               />
             )}
-          </div>
-          
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={selectedParticipants.length === 0}
-            >
-              Create
-            </Button>
+            
+            <ParticipantSearch
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              selectedParticipants={selectedParticipants}
+              teamMembers={teamMembers}
+              onToggleParticipant={toggleParticipant}
+              onRemoveParticipant={removeParticipant}
+              isLoading={isLoading}
+            />
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button 
+                onClick={handleSubmit}
+                disabled={selectedParticipants.length === 0}
+              >
+                Create
+              </Button>
+            </div>
           </div>
         </Tabs>
       </DialogContent>
