@@ -1,17 +1,18 @@
 
 /**
- * Strip down exports:
- * - Export types, interfaces from './types' explicitly excluding the saveMessageToRecord function.
- * - Export mutations fully including saveMessageToRecord implementation.
- * - Export queries normally.
- * - Export saveMessageToRecord from types with alias to avoid conflict.
+ * Export all functionality from the message module
  */
 
-// Export types and interfaces explicitly (except saveMessageToRecord)
+// Export all query functions
 export * from './queries';
+
+// Export all mutation functions 
 export * from './mutations';
 
-// Explicitly export only types (interfaces and helper functions) from types file excluding saveMessageToRecord
+// Export all subscription functions
+export * from './subscriptions';
+
+// Export types from types.ts, but exclude saveMessageToRecord which we'll export from mutations
 export type {
   MessageSendParams,
   MessageEditParams,
@@ -20,11 +21,11 @@ export type {
   ThreadMessagesParams,
 } from './types';
 
+// Export helper functions from types
 export { 
   transformDatabaseMessage, 
   validateMessageType 
 } from './types';
 
-// REMOVE THE LINE BELOW TO FIX DUPLICATE EXPORT ERROR
-// export { saveMessageToRecord as saveMessageToRecordUtil } from './types';
-
+// Note: We removed the duplicate export of saveMessageToRecord
+// The implementation is now in mutations.ts only
