@@ -1,309 +1,247 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { WorkOrderStatusBadge } from "@/components/workOrders/WorkOrderStatusBadge";
-import { toast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Search, PlusCircle, FileText } from "lucide-react";
-import { WorkOrder } from "@/types/workOrder";
-import { format } from "date-fns";
+import { WorkOrder } from '@/types/workOrder';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Wrench } from 'lucide-react';
+
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: string;
+  license_plate: string;
+}
+
+interface Appointment {
+  id: string;
+  date: string;
+  time: string;
+  description: string;
+}
 
 export default function CustomerPortal() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [chatRooms, setChatRooms] = useState<any[]>([]);
-  const navigate = useNavigate();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loadingWorkOrders, setLoadingWorkOrders] = useState(true);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
 
   useEffect(() => {
-    fetchWorkOrders();
-    fetchChatRooms();
+    const fetchWorkOrders = async () => {
+      setLoadingWorkOrders(true);
+      try {
+        const { data, error } = await supabase
+          .from('work_orders')
+          .select(`
+            *,
+            vehicles (*)
+          `)
+          .limit(5);
 
-    // Set up real-time listener for work order updates
-    const workOrdersChannel = supabase
-      .channel('customer-work-orders')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'work_orders'
-      }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setWorkOrders(current => [payload.new as WorkOrder, ...current]);
-        } else if (payload.eventType === 'UPDATE') {
-          setWorkOrders(current =>
-            current.map(wo => wo.id === payload.new.id ?
-              { ...wo, ...payload.new as Partial<WorkOrder> } : wo
-            )
-          );
-        } else if (payload.eventType === 'DELETE') {
-          setWorkOrders(current => current.filter(wo => wo.id !== payload.old.id));
+        if (error) {
+          console.error("Error fetching work orders:", error);
         }
-      })
-      .subscribe();
 
-    return () => {
-      supabase.removeChannel(workOrdersChannel);
+        if (data) {
+          setWorkOrders(data);
+        }
+      } finally {
+        setLoadingWorkOrders(false);
+      }
     };
+
+    const fetchVehicles = async () => {
+      setLoadingVehicles(true);
+      try {
+        const { data, error } = await supabase
+          .from('vehicles')
+          .select('*')
+          .limit(3);
+
+        if (error) {
+          console.error("Error fetching vehicles:", error);
+        }
+
+        if (data) {
+          setVehicles(data);
+        }
+      } finally {
+        setLoadingVehicles(false);
+      }
+    };
+
+    const fetchAppointments = async () => {
+      setLoadingAppointments(true);
+      try {
+        const { data, error } = await supabase
+          .from('appointments')
+          .select('*')
+          .limit(3);
+
+        if (error) {
+          console.error("Error fetching appointments:", error);
+        }
+
+        if (data) {
+          setAppointments(data);
+        }
+      } finally {
+        setLoadingAppointments(false);
+      }
+    };
+
+    fetchWorkOrders();
+    fetchVehicles();
+    fetchAppointments();
   }, []);
 
-  const fetchWorkOrders = async () => {
-    setLoading(true);
-    try {
-      // Get current user's customer_id
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user?.id) {
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to view work orders.",
-          variant: "destructive"
-        });
-        navigate('/customer-portal');
-        return;
-      }
-
-      // Get customer profile
-      const { data: customerProfile, error: customerError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .single();
-
-      if (customerError || !customerProfile) {
-        toast({
-          title: "Profile Error",
-          description: "Could not load your customer profile.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Fetch work orders for this customer
-      const { data, error } = await supabase
-        .from('work_orders')
-        .select(`
-          *,
-          vehicles(make, model, year)
-        `)
-        .eq('customer_id', customerProfile.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setWorkOrders(data as unknown as WorkOrder[]);
-    } catch (error) {
-      console.error("Error fetching work orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load work orders. Please refresh the page.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
-
-  const fetchChatRooms = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user?.id) {
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to view chat rooms.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .eq('customer_id', session.user.id);
-
-      if (error) throw error;
-
-      // Fetch participant counts for each room
-      const roomsWithParticipants = await Promise.all(
-        data.map(async (room) => {
-          const participantCount = await getParticipantCount(room.id);
-          return { ...room, participantCount };
-        })
-      );
-
-      setChatRooms(roomsWithParticipants);
-    } catch (error) {
-      console.error("Error fetching chat rooms:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load chat rooms. Please refresh the page.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Update this part in the fetch function to properly await the promise
-  const getParticipantCount = async (roomId: string) => {
-    const { data, error } = await supabase
-      .from('chat_participants')
-      .select('*')
-      .eq('room_id', roomId);
-      
-    if (error) {
-      console.error('Error fetching chat participants:', error);
-      return 0;
-    }
-    
-    return data?.length || 0;
-  };
-
-  const filteredWorkOrders = workOrders.filter(wo => {
-    if (!searchQuery) return true;
-
-    const query = searchQuery.toLowerCase();
-    return (
-      wo.id.toLowerCase().includes(query) ||
-      (wo.description && wo.description.toLowerCase().includes(query)) ||
-      (wo.service_type && wo.service_type.toLowerCase().includes(query)) ||
-      (wo.status && wo.status.toLowerCase().includes(query))
-    );
-  });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Work Orders Card */}
-      <Card>
-        <CardHeader className="space-y-2">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-            <CardTitle className="text-2xl">My Work Orders</CardTitle>
-            <div className="flex gap-2">
-              <div className="relative flex-1 md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
-                <Input
-                  placeholder="Search work orders..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-            </div>
-          ) : filteredWorkOrders.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-slate-900">No Work Orders Found</h3>
-              <p className="text-slate-500 mt-1">
-                {searchQuery ? "No work orders match your search criteria." : "You don't have any work orders yet."}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead className="hidden sm:table-cell">Date</TableHead>
-                    <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredWorkOrders.map((workOrder) => (
-                    <TableRow key={workOrder.id}>
-                      <TableCell className="font-medium">
-                        {workOrder.id.substring(0, 8)}
-                      </TableCell>
-                      <TableCell>
-                        {workOrder.service_type || 'General Service'}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMM d, yyyy') :
-                             workOrder.created_at ? format(new Date(workOrder.created_at), 'MMM d, yyyy') : 'N/A'}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {workOrder.vehicleDetails ? 
-                          `${workOrder.vehicleDetails.year || ''} ${workOrder.vehicleDetails.make || ''} ${workOrder.vehicleDetails.model || ''}` :
-                          workOrder.vehicle_make && workOrder.vehicle_model ? 
-                            `${workOrder.vehicle_make} ${workOrder.vehicle_model}` : 
-                            'N/A'
-                        }
-                      </TableCell>
-                      <TableCell>
-                        <WorkOrderStatusBadge status={workOrder.status} />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                        >
-                          <Link to={`/customer-portal/work-orders/${workOrder.id}`}>View Details</Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Profile Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4">Your Profile</h2>
+          <p>Welcome to your customer portal! Here you can manage your vehicles, appointments, and view your service history.</p>
+        </div>
 
-      {/* Chat Rooms Card */}
-      <Card>
-        <CardHeader className="space-y-2">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-            <CardTitle className="text-2xl">Chat Rooms</CardTitle>
-            <Button asChild>
-              <Link to="/customer-portal/chat/new" className="flex items-center gap-2">
-                <PlusCircle className="h-4 w-4" />
-                New Chat
-              </Link>
+        {/* Vehicles Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Your Vehicles</h2>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/customer-portal/vehicles">View All</Link>
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          {chatRooms.length === 0 ? (
+          
+          {loadingVehicles ? (
             <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-slate-900">No Chat Rooms Yet</h3>
-              <p className="text-slate-500 mt-1">Start a new chat to communicate with our team.</p>
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
+              <p className="mt-2 text-gray-500">Loading vehicles...</p>
+            </div>
+          ) : vehicles.length === 0 ? (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <Car className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+              <h3 className="text-lg font-medium">No Vehicles Added</h3>
+              <p className="text-gray-500 mt-1">Add your vehicles to keep track of their service history.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {chatRooms.map(room => (
-                <Card key={room.id} className="bg-slate-50">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold">{room.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          Participants: {room.participantCount}
-                        </p>
-                      </div>
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/customer-portal/chat/${room.id}`}>
-                          View Chat
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="space-y-4">
+              {vehicles.slice(0, 2).map((vehicle) => (
+                <div key={vehicle.id} className="border rounded-lg p-4">
+                  <h3 className="font-medium">{vehicle.make} {vehicle.model}</h3>
+                  <p className="text-sm text-gray-500">{vehicle.year} - {vehicle.license_plate}</p>
+                </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        {/* Appointments Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Upcoming Appointments</h2>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/customer-portal/appointments">View All</Link>
+            </Button>
+          </div>
+
+          {loadingAppointments ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
+              <p className="mt-2 text-gray-500">Loading appointments...</p>
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+              <h3 className="text-lg font-medium">No Appointments Scheduled</h3>
+              <p className="text-gray-500 mt-1">Schedule an appointment to get your vehicle serviced.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {appointments.slice(0, 2).map((appointment) => (
+                <div key={appointment.id} className="border rounded-lg p-4">
+                  <h3 className="font-medium">{appointment.description}</h3>
+                  <p className="text-sm text-gray-500">{appointment.date} at {appointment.time}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Work Orders Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Recent Work Orders</h2>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/customer-portal/work-orders">View All</Link>
+            </Button>
+          </div>
+          
+          {loadingWorkOrders ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
+              <p className="mt-2 text-gray-500">Loading work orders...</p>
+            </div>
+          ) : workOrders.length === 0 ? (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <Wrench className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+              <h3 className="text-lg font-medium">No Work Orders Yet</h3>
+              <p className="text-gray-500 mt-1">You don't have any service history with us yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {workOrders.slice(0, 3).map((workOrder) => (
+                <Link
+                  key={workOrder.id}
+                  to={`/customer-portal/work-orders/${workOrder.id}`}
+                  className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">{workOrder.description || `Work Order #${workOrder.id.substring(0, 8)}`}</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMM dd, yyyy') : 
+                         workOrder.created_at ? format(new Date(workOrder.created_at), 'MMM dd, yyyy') : 'N/A'}
+                      </p>
+                      <p className="text-sm mt-1">
+                        {workOrder.vehicleDetails ? 
+                          `${workOrder.vehicleDetails.year || ''} ${workOrder.vehicleDetails.make || ''} ${workOrder.vehicleDetails.model || ''}` : 
+                         workOrder.vehicle_make && workOrder.vehicle_model ? 
+                          `${workOrder.vehicle_make} ${workOrder.vehicle_model}` : 
+                          'Unknown vehicle'}
+                      </p>
+                    </div>
+                    <Badge className={getStatusColor(workOrder.status)}>
+                      {workOrder.status}
+                    </Badge>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

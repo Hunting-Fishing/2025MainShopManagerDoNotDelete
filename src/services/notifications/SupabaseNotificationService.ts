@@ -246,7 +246,7 @@ export class SupabaseNotificationService implements INotificationService {
       priority: dbNotification.priority,
       sender: dbNotification.sender,
       recipient: dbNotification.recipient,
-      expiresAt: dbNotification.expires_at
+      expires_at: dbNotification.expires_at
     };
   }
 }
