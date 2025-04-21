@@ -7,11 +7,15 @@ import { cn } from '@/lib/utils';
 interface AudioRecorderProps {
   onAudioRecorded: (audioBlob: Blob) => void;
   isDisabled?: boolean;
+  onRecordingComplete?: (audioUrl: string) => void; // Added for compatibility
+  onCancel?: () => void; // Added for compatibility
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({ 
   onAudioRecorded,
-  isDisabled = false
+  isDisabled = false,
+  onRecordingComplete,
+  onCancel
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -83,12 +87,20 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     stopRecording();
     setAudioBlob(null);
     setRecordingDuration(0);
+    if (onCancel) onCancel();
   };
 
   // Send recorded audio
   const sendAudio = () => {
     if (audioBlob) {
       onAudioRecorded(audioBlob);
+      
+      // If we have the new prop, also call it with the audio URL
+      if (onRecordingComplete) {
+        const audioUrl = URL.createObjectURL(audioBlob);
+        onRecordingComplete(audioUrl);
+      }
+      
       setAudioBlob(null);
       setRecordingDuration(0);
     }

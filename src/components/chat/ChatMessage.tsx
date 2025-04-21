@@ -1,235 +1,254 @@
 
-// Let's just update the import to remove saveMessageToRecord since it doesn't fit in our current scope
 import React, { useState } from 'react';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
+import { MoreVertical, Flag, Reply, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  MoreVertical,
-  Flag,
-  Edit,
-  MessageSquare,
-  Check,
-  X
-} from 'lucide-react';
-import { format } from 'date-fns';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { TaggedItem } from './TaggedItem';
+import { formatDistanceToNow } from 'date-fns';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ChatFileMessage } from './file/ChatFileMessage';
+import { parseFileFromMessage } from '@/services/chat/fileService';
+import { parseTaggedItems } from '@/services/chat/message/messageHelpers';
+import { TaggedItem } from './TaggedItem';
+import { saveMessageToRecord } from '@/services/chat/message/mutations';
 
 interface ChatMessageProps {
   message: ChatMessageType;
   isCurrentUser: boolean;
-  onFlag?: (messageId: string, reason: string) => void;
-  onEdit?: (messageId: string, content: string) => void;
-  onOpenThread?: (messageId: string) => void;
-  userId: string;
   onFlagMessage?: (messageId: string, reason: string) => void;
   onReply?: (messageId: string) => void;
+  onEdit?: (messageId: string, content: string) => Promise<void>;
+  userId: string;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   isCurrentUser,
-  onFlag,
-  onEdit,
-  onOpenThread,
-  userId,
   onFlagMessage,
-  onReply
+  onReply,
+  onEdit,
+  userId
 }) => {
+  const [showFlagDialog, setShowFlagDialog] = useState(false);
+  const [flagReason, setFlagReason] = useState('inappropriate');
+  const [showEditInput, setShowEditInput] = useState(false);
+  const [editText, setEditText] = useState(message.content);
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(message.content);
+
+  // Format relative time (e.g., "2 hours ago")
+  const formattedTime = formatDistanceToNow(new Date(message.created_at), { addSuffix: true });
   
-  // Format time
-  const formattedTime = format(new Date(message.created_at), 'h:mm a');
-  
-  // Handle flagging a message
-  const handleFlagMessage = () => {
+  // Handle message flag submission
+  const handleFlagSubmit = () => {
     if (onFlagMessage) {
-      const reason = prompt("Please provide a reason for flagging this message:", "");
-      if (reason) {
-        onFlagMessage(message.id, reason);
-      }
-    } else if (onFlag) {
-      const reason = prompt("Please provide a reason for flagging this message:", "");
-      if (reason) {
-        onFlag(message.id, reason);
-      }
+      onFlagMessage(message.id, flagReason);
+      setShowFlagDialog(false);
     }
   };
   
-  // Handle editing a message
-  const handleEditClick = () => {
-    setEditContent(message.content);
+  // Handle message edit
+  const handleEditSubmit = async () => {
+    if (!editText.trim() || !onEdit) return;
+    
     setIsEditing(true);
-  };
-  
-  const handleSaveEdit = () => {
-    if (onEdit && editContent.trim()) {
-      onEdit(message.id, editContent);
-    }
-    setIsEditing(false);
-  };
-  
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-  };
-  
-  // Handle reply to message
-  const handleReply = () => {
-    if (onReply) {
-      onReply(message.id);
-    } else if (onOpenThread) {
-      onOpenThread(message.id);
+    try {
+      await onEdit(message.id, editText);
+      setShowEditInput(false);
+    } catch (error) {
+      console.error('Error editing message:', error);
+    } finally {
+      setIsEditing(false);
     }
   };
   
-  // Check if this message has tagged items
-  const hasTaggedItems = message.metadata?.taggedItems && (
-    message.metadata.taggedItems.workOrderIds?.length > 0 ||
-    message.metadata.taggedItems.partIds?.length > 0 ||
-    message.metadata.taggedItems.warrantyIds?.length > 0 ||
-    message.metadata.taggedItems.jobIds?.length > 0
-  );
+  // Parse any tagged items in message
+  const taggedItems = parseTaggedItems(message.content);
+
+  // Check if message is a file
+  const fileInfo = message.message_type === 'file' || 
+                  message.message_type === 'image' || 
+                  message.message_type === 'video' || 
+                  message.message_type === 'audio' 
+                    ? parseFileFromMessage(message.content) 
+                    : null;
   
-  // Detect if file message
-  const isFileMessage = message.message_type === 'file' || message.message_type === 'audio' || message.file_url;
+  // Save message to a record (work order, vehicle, etc.)
+  const handleSaveToRecord = async (recordType: 'work_order' | 'vehicle', recordId: string) => {
+    try {
+      await saveMessageToRecord(message.id, recordType, recordId);
+    } catch (error) {
+      console.error('Error saving message to record:', error);
+    }
+  };
   
   return (
-    <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[75%] ${isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-100'} rounded-lg p-3 shadow`}>
-        {/* Message header */}
-        <div className="flex justify-between items-start mb-1">
-          <div>
-            <span className="font-semibold text-sm">{message.sender_name}</span>
-            <span className={`text-xs ml-2 ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'}`}>
-              {formattedTime}
-            </span>
-          </div>
+    <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`max-w-[75%] flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+        {/* Message bubble */}
+        <div className={`rounded-lg p-3 ${
+          isCurrentUser 
+            ? 'bg-blue-500 dark:bg-blue-600 text-white' 
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
+        }`}>
+          {/* Sender name */}
+          {!isCurrentUser && (
+            <div className={`text-xs font-medium mb-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-600 dark:text-gray-400'}`}>
+              {message.sender_name}
+            </div>
+          )}
           
+          {/* Edit message input */}
+          {showEditInput ? (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="w-full p-1 border rounded-md text-black dark:text-white"
+              />
+              <div className="flex justify-end gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setShowEditInput(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleEditSubmit}
+                  disabled={isEditing}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* File message */}
+              {fileInfo ? (
+                <ChatFileMessage message={message} />
+              ) : (
+                /* Text message content */
+                <div>{message.content}</div>
+              )}
+            </>
+          )}
+          
+          {/* Show edit indicator */}
+          {message.is_edited && !showEditInput && (
+            <div className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
+              (edited)
+            </div>
+          )}
+        </div>
+        
+        {/* Tagged items */}
+        {(taggedItems.workOrderIds.length > 0 || 
+          taggedItems.partIds.length > 0 || 
+          taggedItems.warrantyIds.length > 0 ||
+          taggedItems.jobIds.length > 0) && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {taggedItems.workOrderIds.map(id => (
+              <TaggedItem key={`wo-${id}`} type="work-order" id={id} />
+            ))}
+            {taggedItems.partIds.map(id => (
+              <TaggedItem key={`part-${id}`} type="part" id={id} />
+            ))}
+            {taggedItems.warrantyIds.map(id => (
+              <TaggedItem key={`warranty-${id}`} type="warranty" id={id} />
+            ))}
+            {taggedItems.jobIds.map(id => (
+              <TaggedItem key={`job-${id}`} type="job" id={id} />
+            ))}
+          </div>
+        )}
+        
+        {/* Message info and actions */}
+        <div className="flex items-center text-xs text-gray-500 mt-1 gap-2">
+          <span>{formattedTime}</span>
+          
+          {/* Actions dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${isCurrentUser ? 'text-white' : 'text-gray-500'}`}>
-                <MoreVertical className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <MoreVertical className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {message.sender_id === userId && (
-                <>
-                  <DropdownMenuItem onClick={handleEditClick}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              
-              {(onOpenThread || onReply) && (
-                <DropdownMenuItem onClick={handleReply}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Reply in Thread
+            <DropdownMenuContent align={isCurrentUser ? "end" : "start"}>
+              {onReply && (
+                <DropdownMenuItem onClick={() => onReply(message.id)}>
+                  <Reply className="h-3 w-3 mr-2" />
+                  Reply
                 </DropdownMenuItem>
               )}
               
-              {(onFlag || onFlagMessage) && (
-                <DropdownMenuItem onClick={handleFlagMessage}>
-                  <Flag className="h-4 w-4 mr-2" />
+              {isCurrentUser && onEdit && (
+                <DropdownMenuItem onClick={() => setShowEditInput(true)}>
+                  <Pencil className="h-3 w-3 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              
+              {onFlagMessage && !isCurrentUser && (
+                <DropdownMenuItem onClick={() => setShowFlagDialog(true)}>
+                  <Flag className="h-3 w-3 mr-2" />
                   Flag Message
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
-        {/* Message content */}
-        {isEditing ? (
-          <div>
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="w-full p-2 border rounded text-black resize-none"
-              rows={3}
-            />
-            <div className="flex justify-end gap-2 mt-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancelEdit}
-                className="h-7 px-2"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveEdit}
-                className="h-7 px-2"
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Save
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            {isFileMessage ? (
-              <ChatFileMessage message={message} />
-            ) : (
-              <p className="whitespace-pre-wrap">{message.content}</p>
-            )}
+      </div>
+      
+      {/* Flag Dialog */}
+      <Dialog open={showFlagDialog} onOpenChange={setShowFlagDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Flag Inappropriate Content</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-gray-500">
+              Please select a reason for flagging this message:
+            </p>
+            <RadioGroup value={flagReason} onValueChange={setFlagReason}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="inappropriate" id="inappropriate" />
+                <Label htmlFor="inappropriate">Inappropriate content</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="harmful" id="harmful" />
+                <Label htmlFor="harmful">Harmful or abusive</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="spam" id="spam" />
+                <Label htmlFor="spam">Spam or misleading</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="other" id="other" />
+                <Label htmlFor="other">Other reason</Label>
+              </div>
+            </RadioGroup>
             
-            {/* Thread count */}
-            {message.thread_count && message.thread_count > 0 && (onOpenThread || onReply) && (
-              <div 
-                className={`mt-2 text-xs ${isCurrentUser ? 'text-blue-100' : 'text-blue-500'} cursor-pointer`}
-                onClick={handleReply}
-              >
-                <MessageSquare className="h-3 w-3 inline-block mr-1" />
-                {message.thread_count} {message.thread_count === 1 ? 'reply' : 'replies'}
+            {flagReason === 'other' && (
+              <div className="space-y-2">
+                <Label htmlFor="flag-details">Additional details</Label>
+                <Textarea
+                  id="flag-details"
+                  placeholder="Please provide more information..."
+                />
               </div>
             )}
           </div>
-        )}
-        
-        {/* Tagged items */}
-        {hasTaggedItems && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {message.metadata?.taggedItems?.workOrderIds?.map(id => (
-              <TaggedItem key={`wo-${id}`} type="work-order" id={id} />
-            ))}
-            {message.metadata?.taggedItems?.partIds?.map(id => (
-              <TaggedItem key={`part-${id}`} type="part" id={id} />
-            ))}
-            {message.metadata?.taggedItems?.warrantyIds?.map(id => (
-              <TaggedItem key={`warranty-${id}`} type="warranty" id={id} />
-            ))}
-            {message.metadata?.taggedItems?.jobIds?.map(id => (
-              <TaggedItem key={`job-${id}`} type="job" id={id} />
-            ))}
-          </div>
-        )}
-        
-        {/* Edited indicator */}
-        {message.is_edited && (
-          <div className={`mt-1 text-xs italic ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'}`}>
-            Edited
-          </div>
-        )}
-        
-        {/* Flag indicator */}
-        {message.is_flagged && (
-          <div className="flex items-center mt-1">
-            <Flag className="h-3 w-3 text-red-500 mr-1" />
-            <span className="text-xs text-red-500">Flagged: {message.flag_reason}</span>
-          </div>
-        )}
-      </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFlagDialog(false)}>Cancel</Button>
+            <Button onClick={handleFlagSubmit}>Submit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

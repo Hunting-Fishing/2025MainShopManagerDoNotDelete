@@ -1,16 +1,35 @@
 
-import { ChatMessage } from '@/types/chat';
-import { getMessageType, transformDatabaseMessage, MessageSendParams, MessageEditParams, MessageFlagParams } from './messageTypes';
-import { parseTaggedItems as parseTagsHelper } from './messageHelpers';
+export interface MessageSendParams {
+  room_id: string;
+  sender_id: string;
+  sender_name: string;
+  content: string;
+  message_type?: 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
+  reply_to_id?: string;
+  thread_parent_id?: string;
+  file_url?: string;
+  metadata?: Record<string, any>;
+}
 
-// Re-export functions
-export {
-  getMessageType,
-  transformDatabaseMessage
-};
+export interface MessageEditParams {
+  messageId: string;
+  content: string;
+  userId: string;
+}
 
-// Re-export types with proper syntax
-export type { MessageSendParams, MessageEditParams, MessageFlagParams };
+export interface MessageFlagParams {
+  messageId: string;
+  reason: string;
+}
 
-// Export parseTaggedItems from messageHelpers (not duplicating)
-export { parseTagsHelper as parseTaggedItems };
+export interface MessageQueryParams {
+  roomId: string;
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
+}
+
+export interface ThreadMessagesParams {
+  parentId: string;
+}

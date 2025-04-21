@@ -9,12 +9,14 @@ interface FileUploadButtonProps {
   roomId: string;
   onFileUploaded: (fileUrl: string, fileType: string, caption?: string) => void;
   isDisabled?: boolean;
+  onFileSelected?: (fileUrl: string) => Promise<void>; // Added for compatibility
 }
 
 export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
   roomId,
   onFileUploaded,
-  isDisabled = false
+  isDisabled = false,
+  onFileSelected
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -34,6 +36,12 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       
       if (fileInfo) {
         onFileUploaded(`${fileInfo.type}:${fileInfo.url}`, fileInfo.type);
+        
+        // If the new prop is provided, also call it
+        if (onFileSelected) {
+          await onFileSelected(`${fileInfo.type}:${fileInfo.url}`);
+        }
+        
         toast({
           title: "File uploaded",
           description: "Your file has been attached to the conversation"
