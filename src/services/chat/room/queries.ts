@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ChatRoom } from "@/types/chat";
+import { transformDatabaseRoom } from "./types";
 
 /**
  * Get a chat room by ID
@@ -14,7 +15,9 @@ export const getChatRoom = async (roomId: string): Promise<ChatRoom | null> => {
       .single();
       
     if (error) throw error;
-    return data;
+    
+    // Apply transformation to ensure proper types
+    return data ? transformDatabaseRoom(data) : null;
   } catch (error) {
     console.error("Error getting chat room:", error);
     throw error;
@@ -33,7 +36,9 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
       .maybeSingle();
       
     if (error) throw error;
-    return data;
+    
+    // Apply transformation to ensure proper types
+    return data ? transformDatabaseRoom(data) : null;
   } catch (error) {
     console.error("Error getting work order chat room:", error);
     throw error;
@@ -54,7 +59,9 @@ export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoo
         .maybeSingle();
         
       if (error) throw error;
-      return data;
+      
+      // Apply transformation to ensure proper types
+      return data ? transformDatabaseRoom(data) : null;
     } else {
       // If it's a date, convert to ISO string YYYY-MM-DD
       let dateStr: string;
@@ -74,7 +81,9 @@ export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoo
         .maybeSingle();
         
       if (error) throw error;
-      return data;
+      
+      // Apply transformation to ensure proper types
+      return data ? transformDatabaseRoom(data) : null;
     }
   } catch (error) {
     console.error("Error getting shift chat room:", error);

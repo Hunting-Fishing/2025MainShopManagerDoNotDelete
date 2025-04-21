@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ChatRoom } from "@/types/chat";
+import { transformDatabaseRoom } from "./types";
 
 /**
  * Get all chat rooms for a user
@@ -38,7 +39,7 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
     if (!rooms) return [];
     
     // Process the rooms to format last_message correctly and add unread count
-    const processedRooms = await Promise.all(rooms.map(async (room) => {
+    const processedRooms: ChatRoom[] = await Promise.all(rooms.map(async (room) => {
       // Get unread message count
       const { count, error: countError } = await supabase
         .from('chat_messages')
@@ -54,9 +55,13 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
         .eq('room_id', room.id)
         .order('created_at', { ascending: false })
         .limit(1);
-        
+      
+      // Transform the database room to match the ChatRoom type
+      const transformedRoom = transformDatabaseRoom(room);
+      
+      // Add the last message and unread count
       return {
-        ...room,
+        ...transformedRoom,
         last_message: lastMessages && lastMessages.length > 0 ? lastMessages[0] : null,
         unread_count: countError ? 0 : (count || 0)
       };

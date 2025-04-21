@@ -20,7 +20,6 @@ export interface MessageEditParams {
 export interface MessageFlagParams {
   messageId: string;
   reason: string;
-  userId?: string;
 }
 
 export interface MessageQueryParams {
@@ -40,13 +39,24 @@ export const transformDatabaseMessage = (dbMessage: any): any => {
   // Transform database message object to application model
   return {
     ...dbMessage,
+    // Ensure message_type is one of the allowed values
+    message_type: validateMessageType(dbMessage.message_type),
     // Add any specific transformations needed
     created_at: dbMessage.created_at || new Date().toISOString(),
     updated_at: dbMessage.updated_at || dbMessage.created_at || new Date().toISOString(),
     is_read: dbMessage.is_read != null ? dbMessage.is_read : false,
-    message_type: dbMessage.message_type || 'text',
   };
 };
+
+// Helper function to validate message type
+function validateMessageType(type: string | null | undefined): 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread' {
+  const validTypes = ['text', 'audio', 'image', 'video', 'file', 'system', 'work_order', 'thread'];
+  if (type && validTypes.includes(type)) {
+    return type as 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
+  }
+  // Default to 'text' if the type is not valid
+  return 'text';
+}
 
 // Helper function to save messages to other records
 export const saveMessageToRecord = async (
