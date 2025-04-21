@@ -1,5 +1,4 @@
-
-import { ChatMessage } from "@/types/chat";
+import { ChatMessage, ChatMessageMetadata } from "@/types/chat";
 
 export interface MessageSendParams {
   room_id: string;
@@ -43,6 +42,8 @@ export const transformDatabaseMessage = (dbMessage: any): ChatMessage => {
     ...dbMessage,
     // Ensure message_type is one of the allowed values
     message_type: validateMessageType(dbMessage.message_type),
+    // Convert metadata from JSON to proper type
+    metadata: dbMessage.metadata ? dbMessage.metadata as ChatMessageMetadata : undefined,
     // Add any specific transformations needed
     created_at: dbMessage.created_at || new Date().toISOString(),
     updated_at: dbMessage.updated_at || dbMessage.created_at || new Date().toISOString(),

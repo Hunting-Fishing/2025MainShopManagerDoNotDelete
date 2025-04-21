@@ -72,11 +72,11 @@ export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoo
         dateStr = dateOrId;
       }
       
-      // Find shift chat by metadata - using direct string comparison to avoid recursion
+      // Using a custom filter here to avoid the recursion issue
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
-        .eq('metadata->is_shift_chat', true)
+        .filter('metadata->is_shift_chat', 'eq', true)
         .filter('metadata->shift_date', 'like', `${dateStr}%`)
         .maybeSingle();
         

@@ -1,5 +1,4 @@
-
-import { ChatRoom } from "@/types/chat";
+import { ChatRoom, ChatMessageMetadata } from "@/types/chat";
 
 export interface CreateRoomParams {
   name: string;
@@ -24,11 +23,12 @@ export const transformDatabaseRoom = (dbRoom: any): ChatRoom => {
     ...dbRoom,
     // Ensure type is one of the allowed values
     type: validateRoomType(dbRoom.type),
-    // If there's a last_message, ensure its message_type is valid
+    // If there's a last_message, ensure its message_type is valid and metadata is properly typed
     ...(dbRoom.last_message && {
       last_message: {
         ...dbRoom.last_message,
-        message_type: validateMessageType(dbRoom.last_message.message_type)
+        message_type: validateMessageType(dbRoom.last_message.message_type),
+        metadata: dbRoom.last_message.metadata as ChatMessageMetadata
       }
     })
   };
