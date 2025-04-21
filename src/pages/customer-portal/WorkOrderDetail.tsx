@@ -1,121 +1,153 @@
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { WorkOrder } from '@/types/workOrder';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, ClipboardList, FileText, MessageSquare, Clock, History, Car } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { WorkOrderProgressIndicator } from './WorkOrderProgressIndicator';
+import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderChat } from '@/components/customer-portal/WorkOrderChat';
+
+// Mock activity data for rendering
+interface Activity {
+  id: string;
+  timestamp: string;
+  action: string;
+  userName: string;
+}
 
 export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [progress, setProgress] = useState(0);
-  const [estimatedCompletionDate, setEstimatedCompletionDate] = useState<string>('');
+  const [estimatedCompletionDate, setEstimatedCompletionDate] = useState<string | null>(null);
+  const [customerInfo, setCustomerInfo] = useState<{id: string, name: string}>({id: '', name: ''});
 
   useEffect(() => {
-    const mockFetchWorkOrder = async () => {
-      setLoading(true);
+    const fetchWorkOrderDetails = async () => {
+      if (!id) return;
+
       try {
-        // Mock data for demonstration
-        // In a real app, this would be fetched from an API
-        const mockWorkOrder = {
-          id: id || 'wo-001',
-          customer: 'John Doe',
-          description: 'Oil change and tire rotation',
-          status: 'in-progress',
-          priority: 'medium',
-          technician: 'Mike Smith',
-          date: '2025-04-15',
-          dueDate: '2025-04-18',
-          location: 'Bay 3',
-          vehicleModel: 'Honda Civic',
-          vehicleMake: 'Honda',
-          lastUpdatedAt: '2025-04-16T14:30:00Z',
-        } as WorkOrder;
+        setLoading(true);
         
-        // Calculate mock progress based on status
-        let calculatedProgress = 0;
-        switch(mockWorkOrder.status) {
-          case 'pending': calculatedProgress = 0; break;
-          case 'in-progress': calculatedProgress = 50; break;
-          case 'completed': calculatedProgress = 100; break;
-          default: calculatedProgress = 25;
-        }
-        setProgress(calculatedProgress);
+        // Fetch work order details
+        const { data, error } = await supabase
+          .from('work_orders')
+          .select(`
+            *,
+            customers!work_orders_customer_id_fkey(id, first_name, last_name)
+          `)
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
         
-        // Set mock estimated completion date
-        const estimatedDate = new Date();
-        estimatedDate.setDate(estimatedDate.getDate() + 2);
-        setEstimatedCompletionDate(estimatedDate.toISOString());
-        
-        // Mock activity history
-        const mockActivities = [
-          {
-            id: '1',
-            action: 'created',
-            user_name: 'Service Advisor',
-            timestamp: '2025-04-15T09:00:00Z'
-          },
-          {
-            id: '2',
-            action: 'status_changed_to_in-progress',
-            user_name: 'Mike Smith',
-            timestamp: '2025-04-15T10:30:00Z'
-          },
-          {
-            id: '3',
-            action: 'time_entry_added',
-            user_name: 'Mike Smith',
-            timestamp: '2025-04-16T14:30:00Z'
+        if (data) {
+          setWorkOrder(data);
+          
+          // Set customer info for chat
+          if (data.customers) {
+            setCustomerInfo({
+              id: data.customers.id,
+              name: `${data.customers.first_name} ${data.customers.last_name}`,
+            });
           }
-        ];
-        setActivities(mockActivities);
-        
-        setWorkOrder(mockWorkOrder);
+          
+          // Calculate progress based on status
+          let calculatedProgress = 0;
+          switch(data.status) {
+            case 'pending':
+              calculatedProgress = 0;
+              break;
+            case 'in-progress':
+              calculatedProgress = 50;
+              break;
+            case 'completed':
+              calculatedProgress = 100;
+              break;
+            default:
+              calculatedProgress = 25;
+          }
+          setProgress(calculatedProgress);
+          
+          // Set estimated completion date (7 days from creation for this example)
+          const creationDate = new Date(data.created_at);
+          const estimatedDate = new Date(creationDate);
+          estimatedDate.setDate(creationDate.getDate() + 7);
+          setEstimatedCompletionDate(estimatedDate.toLocaleDateString());
+          
+          // Fetch or generate mock activities
+          const mockActivities: Activity[] = [
+            {
+              id: '1',
+              timestamp: new Date(data.created_at).toISOString(),
+              action: 'Work order created',
+              userName: 'System',
+            },
+            {
+              id: '2',
+              timestamp: new Date(new Date(data.created_at).getTime() + 24*60*60*1000).toISOString(),
+              action: 'Diagnostic completed',
+              userName: 'Technician',
+            },
+          ];
+          
+          if (data.status === 'in-progress' || data.status === 'completed') {
+            mockActivities.push({
+              id: '3',
+              timestamp: new Date(new Date(data.created_at).getTime() + 2*24*60*60*1000).toISOString(),
+              action: 'Work started',
+              userName: 'Technician',
+            });
+          }
+          
+          if (data.status === 'completed') {
+            mockActivities.push({
+              id: '4',
+              timestamp: new Date(new Date(data.created_at).getTime() + 5*24*60*60*1000).toISOString(),
+              action: 'Work completed',
+              userName: 'Technician',
+            });
+          }
+          
+          setActivities(mockActivities);
+        }
       } catch (error) {
-        console.error("Error loading work order:", error);
+        console.error('Error fetching work order:', error);
         toast({
-          title: "Error",
-          description: "Failed to load work order details",
-          variant: "destructive"
+          title: 'Error',
+          description: 'Could not load work order details',
+          variant: 'destructive',
         });
       } finally {
         setLoading(false);
       }
     };
-    
-    mockFetchWorkOrder();
+
+    fetchWorkOrderDetails();
   }, [id]);
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300">Pending</Badge>;
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'in-progress':
-        return <Badge className="bg-blue-100 text-blue-800 border border-blue-300">In Progress</Badge>;
+        return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800 border border-green-300">Completed</Badge>;
+        return 'bg-green-100 text-green-800 border-green-300';
       case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800 border border-red-300">Cancelled</Badge>;
+        return 'bg-red-100 text-red-800 border-red-300';
       default:
-        return <Badge>{status}</Badge>;
+        return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-500">Loading work order details...</p>
-        </div>
+      <div className="p-6 flex justify-center items-center h-64">
+        <p>Loading work order details...</p>
       </div>
     );
   }
@@ -123,186 +155,92 @@ export default function WorkOrderDetail() {
   if (!workOrder) {
     return (
       <div className="p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Work Order Not Found</h2>
-          <p className="text-gray-500 mb-4">
-            The requested work order could not be found.
-          </p>
-          <Button onClick={() => navigate('/customer-portal/work-orders')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
-          </Button>
-        </div>
+        <p>Work order not found or you do not have permission to view it.</p>
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/customer-portal/work-orders')}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
-        </Button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <div>
-          {getStatusBadge(workOrder.status)}
+          <h1 className="text-2xl font-bold">Work Order Details</h1>
+          <p className="text-gray-600">#{id?.substring(0, 8)}</p>
+        </div>
+        <div>
+          <Badge className={`px-3 py-1 text-sm font-medium border ${getStatusColor(workOrder.status)}`}>
+            {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
+          </Badge>
         </div>
       </div>
-      
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Work Order #{workOrder.id}</h1>
-        <p className="text-gray-500">{workOrder.description}</p>
-      </div>
-      
-      <Card>
-        <CardContent className="pt-6">
-          <WorkOrderProgressIndicator 
-            status={workOrder.status} 
-            progress={progress} 
-            estimatedCompletion={estimatedCompletionDate}
-          />
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <h2 className="text-xl font-semibold">Work Order Details</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-medium text-gray-500">Vehicle</h3>
-              <p>{workOrder.vehicleMake} {workOrder.vehicleModel}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-500">Service Location</h3>
-              <p>{workOrder.location}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-500">Technician</h3>
-              <p>{workOrder.technician}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-500">Due Date</h3>
-              <p>{new Date(workOrder.dueDate).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-500">Status</h3>
-              <p>{workOrder.status}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-500">Priority</h3>
-              <p>{workOrder.priority}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Tabs defaultValue="parts">
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="parts">
-            <ClipboardList className="h-4 w-4 mr-2" />
-            Parts
-          </TabsTrigger>
-          <TabsTrigger value="labor">
-            <Clock className="h-4 w-4 mr-2" />
-            Labor
-          </TabsTrigger>
-          <TabsTrigger value="notes">
-            <FileText className="h-4 w-4 mr-2" />
-            Notes
-          </TabsTrigger>
-          <TabsTrigger value="history">
-            <History className="h-4 w-4 mr-2" />
-            History
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="parts">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-center text-gray-500 py-4">No parts have been added to this work order yet.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="labor">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-gray-500 py-4">No labor entries have been recorded yet.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="notes">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-gray-500">{workOrder.notes || 'No notes available for this work order.'}</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="history">
-          <Card>
-            <CardContent className="pt-6">
-              {activities && activities.length > 0 ? (
-                <div className="space-y-4">
-                  {activities.map((activity) => (
-                    <div key={activity.id} className="flex gap-4 pb-4 border-b">
-                      <div className="min-w-[100px] text-sm text-muted-foreground">
-                        {new Date(activity.timestamp).toLocaleDateString()}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span>{formatActivityAction(activity.action)}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground mt-1">by {activity.user_name}</div>
-                      </div>
-                    </div>
-                  ))}
+              <h2 className="text-lg font-semibold mb-4">Work Order Information</h2>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Description:</span>
+                  <span>{workOrder.description}</span>
                 </div>
-              ) : (
-                <p className="text-center text-gray-500 py-4">No activity history available.</p>
-              )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Created On:</span>
+                  <span>{new Date(workOrder.created_at || '').toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status:</span>
+                  <span>{workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Estimated Completion:</span>
+                  <span>{estimatedCompletionDate || 'Not available'}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-      
-      <div className="mt-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center">
-              <MessageSquare className="h-5 w-5 mr-2 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Message Technician</h2>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-center text-gray-500 py-4">
-              This feature is coming soon. You will be able to communicate directly with your technician.
-            </p>
-          </CardContent>
-        </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-lg font-semibold mb-4">Progress</h2>
+              <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+                <div className="bg-blue-600 h-4 rounded-full" style={{ width: `${progress}%` }}></div>
+              </div>
+              <p className="text-sm text-gray-600 text-center">{progress}% Complete</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-lg font-semibold mb-4">Activity Log</h2>
+              <div className="space-y-4">
+                {activities && activities.length > 0 ? (
+                  activities.map((activity) => (
+                    <div key={activity.id} className="border-l-2 border-blue-500 pl-4 pb-4">
+                      <p className="text-sm text-gray-600">{new Date(activity.timestamp).toLocaleString()}</p>
+                      <p className="font-medium">{activity.action}</p>
+                      <p className="text-sm text-gray-500">By: {activity.userName}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No activity logged yet.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          {/* Chat Component */}
+          {workOrder && customerInfo.id && (
+            <WorkOrderChat 
+              workOrderId={workOrder.id} 
+              customerName={customerInfo.name}
+              customerId={customerInfo.id}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-const formatActivityAction = (action: string): string => {
-  if (action.startsWith('status_changed_to_')) {
-    const status = action.replace('status_changed_to_', '');
-    return `Status changed to ${status}`;
-  }
-  
-  if (action === 'created') {
-    return 'Work order created';
-  }
-  
-  if (action === 'updated') {
-    return 'Work order details updated';
-  }
-  
-  if (action === 'time_entry_added') {
-    return 'Labor time recorded';
-  }
-  
-  return action.replace(/_/g, ' ');
-};
