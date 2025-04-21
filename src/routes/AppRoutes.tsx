@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import NotFound from '@/pages/NotFound';
@@ -33,8 +33,37 @@ import { CustomerPortalLayout } from '@/components/customer-portal/CustomerPorta
 import CustomerPortal from '@/pages/customer-portal/CustomerPortal';
 import WorkOrdersList from '@/pages/customer-portal/WorkOrdersList';
 import CustomerWorkOrderDetail from '@/pages/customer-portal/WorkOrderDetail';
+import { supabase } from '@/lib/supabase';
 
 const AppRoutes = () => {
+  const [currentCustomerId, setCurrentCustomerId] = useState<string>("");
+
+  // Fetch the current customer ID when the component mounts
+  useEffect(() => {
+    const fetchCustomerId = async () => {
+      try {
+        // Get the current authenticated user
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user) {
+          // Get customer data associated with this user
+          const { data: customerData } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('auth_user_id', authData.user.id)
+            .single();
+
+          if (customerData?.id) {
+            setCurrentCustomerId(customerData.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching customer ID:", error);
+      }
+    };
+
+    fetchCustomerId();
+  }, []);
+
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -89,7 +118,7 @@ const AppRoutes = () => {
 
       <Route element={<CustomerPortalLayout />}>
         <Route path="/customer-portal" element={<CustomerPortal />} />
-        <Route path="/customer-portal/work-orders" element={<WorkOrdersList />} />
+        <Route path="/customer-portal/work-orders" element={<WorkOrdersList customerId={currentCustomerId} />} />
         <Route path="/customer-portal/work-orders/:id" element={<CustomerWorkOrderDetail />} />
       </Route>
     </Routes>
