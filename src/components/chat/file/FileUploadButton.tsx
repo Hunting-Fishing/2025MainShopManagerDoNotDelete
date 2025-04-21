@@ -9,7 +9,7 @@ interface FileUploadButtonProps {
   roomId: string;
   onFileUploaded: (fileUrl: string, fileType: string, caption?: string) => void;
   isDisabled?: boolean;
-  onFileSelected?: (fileUrl: string) => Promise<void>; // Added for compatibility
+  onFileSelected?: (fileUrl: string, threadParentId?: string) => Promise<void>;
 }
 
 export const FileUploadButton: React.FC<FileUploadButtonProps> = ({

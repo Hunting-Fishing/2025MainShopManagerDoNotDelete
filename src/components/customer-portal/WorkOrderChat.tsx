@@ -1,265 +1,214 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { Send, Paperclip } from 'lucide-react';
 import { ChatMessage } from '@/types/chat';
+import { v4 as uuidv4 } from 'uuid';
 
 interface WorkOrderChatProps {
   workOrderId: string;
-  customerId: string;
-  customerName: string;
-  shopName: string;
+  shopName?: string;
 }
 
-export default function WorkOrderChat({ 
-  workOrderId, 
-  customerId, 
-  customerName, 
-  shopName 
-}: WorkOrderChatProps) {
-  const [chatRoom, setChatRoom] = useState<{ id: string } | null>(null);
+export const WorkOrderChat: React.FC<WorkOrderChatProps> = ({ workOrderId, shopName = "Service Shop" }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [messageText, setMessageText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Find or create a chat room for this work order
+  
+  // On component mount, load mock message history
   useEffect(() => {
-    const findOrCreateChatRoom = async () => {
-      try {
-        setLoading(true);
-        
-        // First check if a chat room already exists for this work order
-        const { data: existingRooms, error: searchError } = await supabase
-          .from('chat_rooms')
-          .select('id, name, type')
-          .eq('work_order_id', workOrderId)
-          .single();
-
-        if (searchError && searchError.code !== 'PGSQL_NO_ROWS_RETURNED') {
-          throw searchError;
-        }
-
-        if (existingRooms) {
-          setChatRoom(existingRooms);
-          return;
-        }
-
-        // If no room exists, create one
-        const { data: newRoom, error: createError } = await supabase
-          .from('chat_rooms')
-          .insert({
-            name: `Work Order #${workOrderId.substring(0, 8)}`,
-            type: 'work_order',
-            work_order_id: workOrderId,
-            metadata: {
-              customer_id: customerId,
-              customer_name: customerName,
-              shop_name: shopName
-            }
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        
-        // Add the customer as a participant
-        if (newRoom) {
-          await supabase
-            .from('chat_participants')
-            .insert({
-              room_id: newRoom.id,
-              user_id: customerId
-            });
-            
-          // Also add a system message
-          await supabase
-            .from('chat_messages')
-            .insert({
-              room_id: newRoom.id,
-              sender_id: 'system',
-              sender_name: 'System',
-              content: `Chat created for work order #${workOrderId.substring(0, 8)}`,
-              message_type: 'system' as 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread'
-            });
-
-          setChatRoom(newRoom);
-        }
-      } catch (error) {
-        console.error('Error setting up chat room:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Chat Error',
-          description: 'Failed to set up communication channel.'
-        });
-      } finally {
-        setLoading(false);
+    // Simulate loading messages from API
+    setIsLoading(true);
+    
+    // Create some mock messages
+    const mockMessages: ChatMessage[] = [
+      {
+        id: uuidv4(),
+        room_id: workOrderId,
+        sender_id: 'shop',
+        sender_name: shopName,
+        content: `Welcome! Your work order #${workOrderId.substring(0, 8)} has been created. We'll keep you updated on progress here.`,
+        created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        is_read: true,
+        message_type: 'text'
+      },
+      {
+        id: uuidv4(),
+        room_id: workOrderId,
+        sender_id: 'shop',
+        sender_name: 'John (Technician)',
+        content: "I've started the diagnostic on your vehicle. I'll update you once I have more information.",
+        created_at: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
+        is_read: true,
+        message_type: 'text'
+      },
+      {
+        id: uuidv4(),
+        room_id: workOrderId,
+        sender_id: 'customer',
+        sender_name: 'You',
+        content: "Thanks for the update. Can you let me know approximately when it will be ready?",
+        created_at: new Date(Date.now() - 21600000).toISOString(), // 6 hours ago
+        is_read: true,
+        message_type: 'text'
       }
-    };
-
-    if (workOrderId && customerId) {
-      findOrCreateChatRoom();
-    }
-  }, [workOrderId, customerId, customerName, shopName]);
-
-  // Load and subscribe to messages
-  useEffect(() => {
-    if (!chatRoom) return;
-
-    // Load existing messages
-    const loadMessages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .eq('room_id', chatRoom.id)
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-        
-        // Convert string message_type to the appropriate union type
-        const typedMessages = data.map(msg => ({
-          ...msg,
-          message_type: (msg.message_type || 'text') as ChatMessage['message_type']
-        }));
-
-        setMessages(typedMessages);
-        scrollToBottom();
-      } catch (error) {
-        console.error('Error loading messages:', error);
-      }
-    };
-
-    loadMessages();
-
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`room-${chatRoom.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'chat_messages',
-        filter: `room_id=eq.${chatRoom.id}`
-      }, (payload) => {
-        // Ensure the new message has the correct type for message_type
-        const newMessage = {
-          ...payload.new,
-          message_type: (payload.new.message_type || 'text') as ChatMessage['message_type']
-        };
-        setMessages(prev => [...prev, newMessage]);
-        scrollToBottom();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [chatRoom]);
-
-  const scrollToBottom = () => {
+    ];
+    
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+      setMessages(mockMessages);
+      setIsLoading(false);
+    }, 800);
+  }, [workOrderId, shopName]);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = () => {
+    if (!messageText.trim()) return;
+    
+    const newMessage: ChatMessage = {
+      id: uuidv4(),
+      room_id: workOrderId,
+      sender_id: 'customer',
+      sender_name: 'You',
+      content: messageText,
+      created_at: new Date().toISOString(),
+      is_read: true,
+      message_type: 'text',
+      is_edited: false,
+      edited_at: undefined,
+      file_url: undefined,
+      flag_reason: undefined,
+      is_flagged: false,
+      metadata: undefined,
+      reply_to_id: undefined,
+      reply_to_message: undefined,
+      thread_count: 0,
+      thread_parent_id: undefined
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    setMessageText('');
+    
+    // Simulate a response after a short delay
+    setTimeout(() => {
+      const response: ChatMessage = {
+        id: uuidv4(),
+        room_id: workOrderId,
+        sender_id: 'shop',
+        sender_name: 'John (Technician)',
+        content: "Thanks for your message. We're currently working on your vehicle and expect it to be ready by end of day. I'll send you another update once we're closer to completion.",
+        created_at: new Date().toISOString(),
+        is_read: true,
+        message_type: 'text',
+        is_edited: false,
+        edited_at: undefined,
+        file_url: undefined,
+        flag_reason: undefined,
+        is_flagged: false,
+        metadata: undefined,
+        reply_to_id: undefined,
+        reply_to_message: undefined,
+        thread_count: 0,
+        thread_parent_id: undefined
+      };
+      
+      setMessages(prev => [...prev, response]);
+    }, 2000);
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !chatRoom) return;
-
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          room_id: chatRoom.id,
-          sender_id: customerId,
-          sender_name: customerName,
-          content: newMessage,
-          message_type: 'text' as 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread'
-        });
-
-      if (error) throw error;
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Message Error',
-        description: 'Failed to send message. Please try again.'
-      });
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-2 text-sm text-slate-600">Setting up your communication channel...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="bg-blue-600 text-white p-3">
-        <h2 className="text-lg font-semibold">Work Order Communication</h2>
-        <p className="text-sm opacity-90">Chat with our service team about your work order</p>
+    <div className="flex flex-col h-[calc(100vh-200px)] bg-white rounded-lg shadow overflow-hidden">
+      <div className="p-4 bg-blue-600 text-white font-medium">
+        <h2>Chat with {shopName}</h2>
+        <p className="text-xs text-blue-100">Work Order #{workOrderId.substring(0, 8)}</p>
       </div>
-
-      <div className="h-80 overflow-y-auto p-4 space-y-4 bg-slate-50">
-        {messages.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-slate-500">No messages yet. Start the conversation!</p>
+      
+      <div className="flex-1 overflow-y-auto p-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-pulse text-slate-400">Loading messages...</div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-slate-400">
+            <p>No messages yet</p>
+            <p className="text-sm">Start the conversation by sending a message</p>
           </div>
         ) : (
-          messages.map(msg => (
-            <div 
-              key={msg.id} 
-              className={`max-w-3/4 ${
-                msg.sender_id === customerId 
-                  ? 'ml-auto bg-blue-600 text-white rounded-tl-lg rounded-br-lg rounded-bl-lg' 
-                  : msg.sender_id === 'system'
-                    ? 'mx-auto bg-slate-200 text-slate-700 italic text-sm rounded-lg'
-                    : 'mr-auto bg-slate-200 text-slate-700 rounded-tr-lg rounded-br-lg rounded-bl-lg'
-              } p-3`}
-            >
-              <p className="text-xs font-medium mb-1">
-                {msg.sender_id === customerId ? 'You' : msg.sender_name}
-              </p>
-              <p>{msg.content}</p>
-              <p className="text-xs opacity-75 text-right mt-1">
-                {new Date(msg.created_at).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </p>
-            </div>
-          ))
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div 
+                key={message.id}
+                className={`flex ${message.sender_id === 'customer' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div 
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.sender_id === 'customer' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-slate-100'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-xs font-medium">{message.sender_name}</span>
+                    <span className="text-xs opacity-70 ml-2">
+                      {new Date(message.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
-
-      <form onSubmit={handleSendMessage} className="border-t p-3 flex gap-2">
-        <Input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message here..."
-          className="flex-1"
-          disabled={!chatRoom}
-        />
-        <Button 
-          type="submit" 
-          disabled={!newMessage.trim() || !chatRoom}
-          size="sm"
-        >
-          <Send className="h-4 w-4 mr-1" />
-          Send
-        </Button>
-      </form>
+      
+      <div className="p-3 border-t">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost"
+            size="icon"
+            className="rounded-full flex-shrink-0"
+            disabled={isLoading}
+          >
+            <Paperclip className="h-5 w-5" />
+            <span className="sr-only">Attach file</span>
+          </Button>
+          
+          <Input 
+            type="text"
+            placeholder="Type your message..."
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={handleKeyPress}
+            disabled={isLoading}
+            className="flex-1"
+          />
+          
+          <Button 
+            onClick={handleSendMessage}
+            disabled={!messageText.trim() || isLoading}
+            className="rounded-full flex-shrink-0"
+          >
+            <Send className="h-5 w-5" />
+            <span className="sr-only">Send message</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
-}
+};
