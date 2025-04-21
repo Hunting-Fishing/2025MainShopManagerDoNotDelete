@@ -1,22 +1,18 @@
 
-import { ChatMessage, ChatMessageMetadata } from "@/types/chat";
+import { ChatMessage } from '@/types/chat';
 
 export interface MessageSendParams {
-  room_id: string;
-  sender_id: string;
-  sender_name: string;
+  roomId: string;
+  senderId: string;
+  senderName: string;
   content: string;
-  message_type?: 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
-  reply_to_id?: string;
-  thread_parent_id?: string;
-  file_url?: string;
-  metadata?: Record<string, any>;
+  messageType?: 'text' | 'audio' | 'image' | 'video' | 'file' | 'system';
+  threadParentId?: string;
 }
 
 export interface MessageEditParams {
   messageId: string;
   content: string;
-  userId: string;
 }
 
 export interface MessageFlagParams {
@@ -28,47 +24,38 @@ export interface MessageQueryParams {
   roomId: string;
   limit?: number;
   offset?: number;
-  orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
 }
 
 export interface ThreadMessagesParams {
-  parentId: string;
+  parentMessageId: string;
 }
 
-// Transform database message object to application model
-export const transformDatabaseMessage = (dbMessage: any): ChatMessage => {
-  // Transform database message object to application model
-  return {
-    ...dbMessage,
-    // Ensure message_type is one of the allowed values
-    message_type: validateMessageType(dbMessage.message_type),
-    // Convert metadata from JSON to proper type
-    metadata: dbMessage.metadata ? dbMessage.metadata as ChatMessageMetadata : undefined,
-    // Add any specific transformations needed
-    created_at: dbMessage.created_at || new Date().toISOString(),
-    updated_at: dbMessage.updated_at || dbMessage.created_at || new Date().toISOString(),
-    is_read: dbMessage.is_read != null ? dbMessage.is_read : false,
-  };
-};
-
-// Helper function to validate message type
-export function validateMessageType(type: string | null | undefined): 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread' {
-  const validTypes = ['text', 'audio', 'image', 'video', 'file', 'system', 'work_order', 'thread'];
-  if (type && validTypes.includes(type)) {
-    return type as 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
+export function validateMessageType(type: string): void {
+  const validTypes = ['text', 'audio', 'image', 'video', 'file', 'system'];
+  if (!validTypes.includes(type)) {
+    throw new Error(`Invalid message type: ${type}. Must be one of: ${validTypes.join(', ')}`);
   }
-  // Default to 'text' if the type is not valid
-  return 'text';
 }
 
-// Helper function to save messages to other records
-export const saveMessageToRecord = async (
-  messageId: string, 
-  recordType: 'work_order' | 'vehicle', 
-  recordId: string
-): Promise<void> => {
-  // Implementation of saving message to a record
-  console.log(`Saving message ${messageId} to ${recordType} ${recordId}`);
-  return Promise.resolve();
-};
+export function transformDatabaseMessage(dbMessage: any): ChatMessage {
+  return {
+    id: dbMessage.id,
+    room_id: dbMessage.room_id,
+    sender_id: dbMessage.sender_id,
+    sender_name: dbMessage.sender_name,
+    content: dbMessage.content,
+    created_at: dbMessage.created_at,
+    is_read: dbMessage.is_read || false,
+    message_type: dbMessage.message_type || 'text',
+    file_url: dbMessage.file_url,
+    reply_to_id: dbMessage.reply_to_id,
+    is_flagged: dbMessage.is_flagged || false,
+    flag_reason: dbMessage.flag_reason,
+    is_edited: dbMessage.is_edited || false,
+    edited_at: dbMessage.edited_at,
+    original_content: dbMessage.original_content,
+    thread_parent_id: dbMessage.thread_parent_id,
+    thread_count: dbMessage.thread_count || 0,
+    metadata: dbMessage.metadata
+  };
+}

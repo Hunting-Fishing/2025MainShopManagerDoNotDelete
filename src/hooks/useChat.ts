@@ -40,7 +40,7 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     activeThreadId,
     handleThreadOpen,
     handleThreadClose,
-    fetchThreadReplies
+    getThreadReplies
   } = useChatMessages({ 
     userId, 
     userName, 
@@ -89,7 +89,7 @@ export const useChat = ({ userId, userName }: UseChatProps) => {
     activeThreadId,
     handleThreadOpen,
     handleThreadClose,
-    fetchThreadReplies,
+    getThreadReplies,
     refreshRooms
   };
 };
