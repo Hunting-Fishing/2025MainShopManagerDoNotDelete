@@ -24,7 +24,13 @@ export const transformDatabaseRoom = (dbRoom: any): ChatRoom => {
     ...dbRoom,
     // Ensure type is one of the allowed values
     type: validateRoomType(dbRoom.type),
-    // Add any other specific transformations needed
+    // If there's a last_message, ensure its message_type is valid
+    ...(dbRoom.last_message && {
+      last_message: {
+        ...dbRoom.last_message,
+        message_type: validateMessageType(dbRoom.last_message.message_type)
+      }
+    })
   };
 };
 
@@ -36,4 +42,14 @@ function validateRoomType(type: string): 'direct' | 'group' | 'work_order' {
   // Default to 'group' if the type is not valid
   console.warn(`Invalid room type: ${type}. Defaulting to 'group'`);
   return 'group';
+}
+
+// Helper function to validate message type
+function validateMessageType(type: string | null): 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread' {
+  const validTypes = ['text', 'audio', 'image', 'video', 'file', 'system', 'work_order', 'thread'];
+  if (type && validTypes.includes(type)) {
+    return type as 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
+  }
+  // Default to 'text' if the type is not valid
+  return 'text';
 }

@@ -72,7 +72,7 @@ export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoo
         dateStr = dateOrId;
       }
       
-      // Find shift chat by metadata
+      // Find shift chat by metadata - using direct string comparison to avoid recursion
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')

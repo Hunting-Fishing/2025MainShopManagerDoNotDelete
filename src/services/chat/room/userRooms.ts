@@ -57,12 +57,18 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
         .limit(1);
       
       // Transform the database room to match the ChatRoom type
-      const transformedRoom = transformDatabaseRoom(room);
+      // This will handle type validation for room.type and last_message.message_type
+      let transformedRoom = transformDatabaseRoom(room);
       
       // Add the last message and unread count
       return {
         ...transformedRoom,
-        last_message: lastMessages && lastMessages.length > 0 ? lastMessages[0] : null,
+        last_message: lastMessages && lastMessages.length > 0 
+          ? { 
+              ...lastMessages[0],
+              message_type: transformedRoom.last_message?.message_type || 'text' 
+            }
+          : null,
         unread_count: countError ? 0 : (count || 0)
       };
     }));

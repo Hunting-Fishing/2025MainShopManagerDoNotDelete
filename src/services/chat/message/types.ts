@@ -1,4 +1,6 @@
 
+import { ChatMessage } from "@/types/chat";
+
 export interface MessageSendParams {
   room_id: string;
   sender_id: string;
@@ -34,8 +36,8 @@ export interface ThreadMessagesParams {
   parentId: string;
 }
 
-// Add a transform function for database messages
-export const transformDatabaseMessage = (dbMessage: any): any => {
+// Transform database message object to application model
+export const transformDatabaseMessage = (dbMessage: any): ChatMessage => {
   // Transform database message object to application model
   return {
     ...dbMessage,
@@ -49,7 +51,7 @@ export const transformDatabaseMessage = (dbMessage: any): any => {
 };
 
 // Helper function to validate message type
-function validateMessageType(type: string | null | undefined): 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread' {
+export function validateMessageType(type: string | null | undefined): 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread' {
   const validTypes = ['text', 'audio', 'image', 'video', 'file', 'system', 'work_order', 'thread'];
   if (type && validTypes.includes(type)) {
     return type as 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
@@ -66,16 +68,5 @@ export const saveMessageToRecord = async (
 ): Promise<void> => {
   // Implementation of saving message to a record
   console.log(`Saving message ${messageId} to ${recordType} ${recordId}`);
-  // Actual implementation would call an API or update database
-  return Promise.resolve();
-};
-
-// Create a function to clear typing indicator
-export const clearTypingIndicator = (
-  roomId: string,
-  userId: string
-): Promise<void> => {
-  console.log(`Clearing typing indicator for user ${userId} in room ${roomId}`);
-  // Implementation would involve real-time updates
   return Promise.resolve();
 };
