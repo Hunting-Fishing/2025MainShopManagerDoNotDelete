@@ -8,17 +8,20 @@ export interface MessageSendParams {
   content: string;
   messageType?: 'text' | 'audio' | 'image' | 'video' | 'file' | 'system';
   threadParentId?: string;
-  file_url?: string; // Added this property
+  file_url?: string;
+  metadata?: any; // Added metadata support
 }
 
 export interface MessageEditParams {
   messageId: string;
   content: string;
+  userId?: string; // Made optional for backward compatibility
 }
 
 export interface MessageFlagParams {
   messageId: string;
   reason: string;
+  userId?: string; // Made optional for backward compatibility
 }
 
 export interface MessageQueryParams {
