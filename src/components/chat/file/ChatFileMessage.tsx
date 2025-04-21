@@ -4,14 +4,46 @@ import { ChatMessage } from '@/types/chat';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, FileIcon, Image as ImageIcon, Film, FileAudio, FileText } from 'lucide-react';
-import { ChatFileInfo } from '@/services/chat/fileService';
-import { parseFileFromMessage } from '@/services/chat/fileService';
 
 interface ChatFileMessageProps {
   message: ChatMessage;
 }
 
 export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ message }) => {
+  // Parse file URL from message content
+  const parseFileFromMessage = (content: string) => {
+    try {
+      if (content.includes(':')) {
+        const [type, url] = content.split(':');
+        
+        return {
+          fileInfo: {
+            type: type,
+            url: url,
+            name: url.split('/').pop() || 'file',
+            contentType: getContentType(type),
+            size: 0 // Size information might not be available in the message
+          }
+        };
+      }
+      
+      return { fileInfo: null };
+    } catch (error) {
+      console.error('Failed to parse file message:', error);
+      return { fileInfo: null };
+    }
+  };
+  
+  const getContentType = (type: string) => {
+    switch (type) {
+      case 'image': return 'image/jpeg';
+      case 'video': return 'video/mp4';
+      case 'audio': return 'audio/mpeg';
+      case 'document': return 'application/pdf';
+      default: return 'application/octet-stream';
+    }
+  };
+  
   // Extract file info from the message
   const { fileInfo } = parseFileFromMessage(message.content);
   
@@ -71,37 +103,12 @@ export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ message }) => 
           </div>
         );
         
-      case 'document':
-        let icon = <FileText className="h-10 w-10 text-blue-500" />;
-        if (fileInfo.contentType === 'application/pdf') {
-          icon = <FileIcon className="h-10 w-10 text-red-500" />;
-        }
-        
-        return (
-          <div className="flex items-center space-x-3 p-2 bg-slate-50 rounded-md">
-            {icon}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">{fileInfo.name}</p>
-              <p className="text-xs text-slate-500">{formatFileSize(fileInfo.size)}</p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleDownload}
-              className="flex-shrink-0"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-        
       default:
         return (
           <div className="flex items-center space-x-3 p-2 bg-slate-50 rounded-md">
             <FileIcon className="h-10 w-10 text-slate-500" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-900 truncate">{fileInfo.name}</p>
-              <p className="text-xs text-slate-500">{formatFileSize(fileInfo.size)}</p>
             </div>
             <Button 
               variant="outline" 
@@ -119,18 +126,6 @@ export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ message }) => 
   return (
     <Card className="p-2 bg-transparent border-none shadow-none">
       {renderFileContent()}
-      {message.content && <p className="mt-1 text-sm text-slate-600">{message.content}</p>}
     </Card>
   );
-};
-
-// Helper function to format file size
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };

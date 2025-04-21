@@ -40,7 +40,11 @@ export const transformDatabaseMessage = (dbMessage: any): any => {
   // Transform database message object to application model
   return {
     ...dbMessage,
-    // Add any transformations needed
+    // Add any specific transformations needed
+    created_at: dbMessage.created_at || new Date().toISOString(),
+    updated_at: dbMessage.updated_at || dbMessage.created_at || new Date().toISOString(),
+    is_read: dbMessage.is_read != null ? dbMessage.is_read : false,
+    message_type: dbMessage.message_type || 'text',
   };
 };
 
@@ -53,5 +57,15 @@ export const saveMessageToRecord = async (
   // Implementation of saving message to a record
   console.log(`Saving message ${messageId} to ${recordType} ${recordId}`);
   // Actual implementation would call an API or update database
+  return Promise.resolve();
+};
+
+// Create a function to clear typing indicator
+export const clearTypingIndicator = (
+  roomId: string,
+  userId: string
+): Promise<void> => {
+  console.log(`Clearing typing indicator for user ${userId} in room ${roomId}`);
+  // Implementation would involve real-time updates
   return Promise.resolve();
 };

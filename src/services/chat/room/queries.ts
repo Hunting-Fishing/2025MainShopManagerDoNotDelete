@@ -1,9 +1,10 @@
 
-import { supabase } from "../supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { ChatRoom } from "@/types/chat";
-import { transformDatabaseRoom } from "./types";
 
-// Get a chat room by ID
+/**
+ * Get a chat room by ID
+ */
 export const getChatRoom = async (roomId: string): Promise<ChatRoom | null> => {
   try {
     const { data, error } = await supabase
@@ -11,77 +12,72 @@ export const getChatRoom = async (roomId: string): Promise<ChatRoom | null> => {
       .select('*')
       .eq('id', roomId)
       .single();
-    
+      
     if (error) throw error;
-    if (!data) return null;
-    
-    return transformDatabaseRoom(data);
+    return data;
   } catch (error) {
-    console.error("Error fetching chat room:", error);
+    console.error("Error getting chat room:", error);
     throw error;
   }
 };
 
-// Get chat room for a specific work order
+/**
+ * Get a work order chat room
+ */
 export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoom | null> => {
   try {
     const { data, error } = await supabase
       .from('chat_rooms')
       .select('*')
       .eq('work_order_id', workOrderId)
-      .eq('type', 'work_order')
-      .single();
-    
-    if (error) {
-      // If not found, return null
-      if (error.code === 'PGRST116') {
-        return null;
-      }
-      throw error;
-    }
-    
-    if (!data) return null;
-    
-    return transformDatabaseRoom(data);
+      .maybeSingle();
+      
+    if (error) throw error;
+    return data;
   } catch (error) {
-    console.error("Error fetching work order chat room:", error);
+    console.error("Error getting work order chat room:", error);
     throw error;
   }
 };
 
-// Get chat room for a shift by ID or date
+/**
+ * Get shift chat room for a specific date or ID
+ */
 export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoom | null> => {
   try {
-    let roomId: string;
-    
-    // If it's a Date object, convert to shift-chat-YYYY-MM-DD format
-    if (dateOrId instanceof Date) {
-      const dateStr = dateOrId.toISOString().split('T')[0]; // YYYY-MM-DD
-      roomId = `shift-chat-${dateStr}`;
+    if (typeof dateOrId === 'string' && dateOrId.startsWith('shift-chat-')) {
+      // If it's a shift chat ID
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', dateOrId)
+        .maybeSingle();
+        
+      if (error) throw error;
+      return data;
     } else {
-      // If it's already an ID string, use it directly
-      roomId = dateOrId;
-    }
-    
-    // Fetch the room by ID
-    const { data, error } = await supabase
-      .from('chat_rooms')
-      .select('*')
-      .eq('id', roomId)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') { // Not found
-        return null;
+      // If it's a date, convert to ISO string YYYY-MM-DD
+      let dateStr: string;
+      
+      if (dateOrId instanceof Date) {
+        dateStr = dateOrId.toISOString().split('T')[0];
+      } else {
+        dateStr = dateOrId;
       }
-      throw error;
+      
+      // Find shift chat by metadata
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('metadata->is_shift_chat', true)
+        .filter('metadata->shift_date', 'like', `${dateStr}%`)
+        .maybeSingle();
+        
+      if (error) throw error;
+      return data;
     }
-    
-    if (!data) return null;
-    
-    return transformDatabaseRoom(data);
   } catch (error) {
-    console.error("Error fetching shift chat room:", error);
+    console.error("Error getting shift chat room:", error);
     throw error;
   }
 };

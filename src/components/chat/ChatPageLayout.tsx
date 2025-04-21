@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
@@ -89,7 +90,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
             onPinRoom={onPinRoom}
             onArchiveRoom={onArchiveRoom}
             onFlagMessage={onFlagMessage}
-            onEditMessage={onEditMessage}
+            onEditMessage={onEditMessage || (async () => {})}
             isTyping={isTyping}
             typingUsers={typingUsers}
             threadMessages={threadMessages}

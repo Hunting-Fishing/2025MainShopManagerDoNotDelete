@@ -3,3 +3,7 @@
 export * from './queries';
 export * from './mutations';
 export * from './types';
+
+// Handle ambiguous exports by explicitly exporting them
+import { saveMessageToRecord as saveMsgToRecord } from './mutations';
+export { saveMsgToRecord };

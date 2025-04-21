@@ -104,4 +104,4 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
       </div>
     </div>
   );
-}
+};
