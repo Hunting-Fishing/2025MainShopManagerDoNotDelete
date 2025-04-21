@@ -116,6 +116,19 @@ export default function Chat() {
     return <ChatLoading />;
   }
 
+  // Create wrapper functions that adapt the return type
+  const wrappedSendMessage = async (threadParentId?: string): Promise<void> => {
+    await handleSendMessage(threadParentId);
+  };
+  
+  const wrappedSendVoiceMessage = async (audioUrl: string, threadParentId?: string): Promise<void> => {
+    await handleSendVoiceMessage(audioUrl, threadParentId);
+  };
+  
+  const wrappedSendFileMessage = async (fileUrl: string, threadParentId?: string): Promise<void> => {
+    await handleSendFileMessage(fileUrl, threadParentId);
+  };
+
   return (
     <>
       <ChatPageLayout
@@ -127,9 +140,9 @@ export default function Chat() {
         newMessageText={newMessageText}
         setNewMessageText={setNewMessageText}
         onSelectRoom={selectRoom}
-        onSendMessage={handleSendMessage}
-        onSendVoiceMessage={handleSendVoiceMessage}
-        onSendFileMessage={handleSendFileMessage}
+        onSendMessage={wrappedSendMessage}
+        onSendVoiceMessage={wrappedSendVoiceMessage}
+        onSendFileMessage={wrappedSendFileMessage}
         onPinRoom={handlePinRoom}
         onArchiveRoom={handleArchiveRoom}
         onFlagMessage={flagMessage}
