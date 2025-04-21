@@ -129,6 +129,12 @@ export default function Chat() {
     await handleSendFileMessage(fileUrl, threadParentId);
   };
 
+  // Transform typing users to the format expected by ChatPageLayout
+  const formattedTypingUsers = typingUsers?.map(user => ({
+    id: user.user_id,
+    name: user.user_name
+  })) || [];
+
   return (
     <>
       <ChatPageLayout
@@ -148,7 +154,7 @@ export default function Chat() {
         onFlagMessage={flagMessage}
         onEditMessage={handleEditMessage}
         isTyping={isTyping}
-        typingUsers={typingUsers}
+        typingUsers={formattedTypingUsers}
         threadMessages={threadMessages}
         activeThreadId={activeThreadId}
         onOpenThread={handleThreadOpen}
