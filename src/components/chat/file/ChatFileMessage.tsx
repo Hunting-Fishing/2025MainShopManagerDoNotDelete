@@ -1,78 +1,94 @@
 
 import React from 'react';
 import { ChatMessage } from '@/types/chat';
-import { FileIcon, FileText, Image, Music, Video } from 'lucide-react';
 
 interface ChatFileMessageProps {
   message: ChatMessage;
 }
 
 export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ message }) => {
-  const { message_type, content, file_url } = message;
-  
-  // Extract file info
-  const url = file_url || (content && content.includes(':') ? content.split(':')[1] : '');
-  const fileType = message_type || (content && content.includes(':') ? content.split(':')[0] : 'file');
-  
-  // If no valid URL is available, show a generic message
-  if (!url) {
-    return <p>File attachment unavailable</p>;
+  if (!message.file_url) return null;
+
+  let fileUrl = '';
+  let fileType = 'file';
+
+  // Parse the file URL which is typically in the format "type:url"
+  if (message.file_url.includes(':')) {
+    const parts = message.file_url.split(':');
+    fileType = parts[0];
+    fileUrl = parts.slice(1).join(':'); // Handle URLs that might contain colons
+  } else {
+    fileUrl = message.file_url;
   }
 
-  // Show different preview based on file type
   switch (fileType) {
     case 'image':
       return (
-        <div className="max-w-xs overflow-hidden">
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            <img 
-              src={url} 
-              alt="Image attachment" 
-              className="max-w-full rounded-lg border border-gray-200 hover:opacity-90 transition-opacity" 
-            />
-          </a>
+        <div className="mb-2">
+          <img 
+            src={fileUrl} 
+            alt="Shared image" 
+            className="max-w-full rounded-md object-cover max-h-[300px]" 
+          />
+          {message.content && message.content !== `Shared a ${fileType} file` && (
+            <p className="mt-2 whitespace-pre-wrap break-words">{message.content}</p>
+          )}
         </div>
       );
-      
-    case 'audio':
-      return (
-        <div className="flex items-center gap-2">
-          <Music className="h-5 w-5" />
-          <audio controls className="max-w-full">
-            <source src={url} />
-            Your browser does not support the audio element.
-          </audio>
-        </div>
-      );
-      
+
     case 'video':
       return (
-        <div className="max-w-xs">
-          <Video className="h-5 w-5 mb-1" />
-          <video controls className="max-w-full rounded">
-            <source src={url} />
-            Your browser does not support the video element.
-          </video>
+        <div className="mb-2">
+          <video 
+            src={fileUrl} 
+            controls 
+            className="max-w-full rounded-md max-h-[300px]"
+          />
+          {message.content && message.content !== `Shared a ${fileType} file` && (
+            <p className="mt-2 whitespace-pre-wrap break-words">{message.content}</p>
+          )}
         </div>
       );
-      
-    default:
-      // For documents and other files
-      const fileName = url.split('/').pop() || 'file';
+
+    case 'audio':
       return (
-        <a 
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        >
-          {fileType === 'document' ? (
-            <FileText className="h-5 w-5" />
-          ) : (
-            <FileIcon className="h-5 w-5" />
+        <div className="mb-2">
+          <audio 
+            src={fileUrl} 
+            controls 
+            className="w-full"
+          />
+          {message.content && message.content !== `Shared a ${fileType} file` && (
+            <p className="mt-2 whitespace-pre-wrap break-words">{message.content}</p>
           )}
-          <span className="text-sm truncate max-w-[200px]">{fileName}</span>
-        </a>
+        </div>
+      );
+
+    case 'document':
+    case 'file':
+    default:
+      return (
+        <div className="mb-2">
+          <div className="flex items-center p-2 bg-slate-100 dark:bg-slate-700 rounded-md">
+            <span className="mr-2">📄</span>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm">
+                {message.file_url.split('/').pop() || 'File attachment'}
+              </p>
+            </div>
+            <a 
+              href={fileUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="ml-2 text-blue-600 dark:text-blue-400 text-sm hover:underline"
+            >
+              View
+            </a>
+          </div>
+          {message.content && message.content !== `Shared a ${fileType} file` && (
+            <p className="mt-2 whitespace-pre-wrap break-words">{message.content}</p>
+          )}
+        </div>
       );
   }
 };

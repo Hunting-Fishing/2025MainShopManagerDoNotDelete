@@ -10,13 +10,15 @@ interface FileUploadButtonProps {
   onFileUploaded: (fileUrl: string, fileType: string, caption?: string) => void;
   isDisabled?: boolean;
   onFileSelected?: (fileUrl: string, threadParentId?: string) => Promise<void>;
+  threadParentId?: string;
 }
 
 export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
   roomId,
   onFileUploaded,
   isDisabled = false,
-  onFileSelected
+  onFileSelected,
+  threadParentId
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,14 +40,15 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
         // Always call onFileUploaded to maintain compatibility
         onFileUploaded(`${fileInfo.type}:${fileInfo.url}`, fileInfo.type);
         
-        // If the new prop is provided, also call it
+        // If the new prop is provided, also call it with thread parent ID if available
         if (onFileSelected) {
-          await onFileSelected(`${fileInfo.type}:${fileInfo.url}`);
+          await onFileSelected(`${fileInfo.type}:${fileInfo.url}`, threadParentId);
         }
         
         toast({
           title: "File uploaded",
-          description: "Your file has been attached to the conversation"
+          description: "Your file has been attached to the conversation",
+          variant: "success"
         });
       }
       
