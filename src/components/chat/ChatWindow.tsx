@@ -1,34 +1,43 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatRoom, ChatMessage as ChatMessageType } from '@/types/chat';
-import { Input } from '@/components/ui/input';
+import { ChatRoom, ChatMessage } from '@/types/chat';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Send, FileUp, Mic, PinIcon, ArchiveIcon, Info } from 'lucide-react';
-import { ChatMessage } from './ChatMessage';
+import { Input } from '@/components/ui/input';
+import { 
+  Pin, 
+  Archive, 
+  SendHorizonal as Send, 
+  Info, 
+  X,
+  MessageSquare
+} from 'lucide-react';
+import { AudioRecorder } from './AudioRecorder';
 import { ChatThread } from './ChatThread';
 import { FileUploadButton } from './file/FileUploadButton';
-import { AudioRecorder } from './AudioRecorder';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ChatWindowProps {
   room: ChatRoom | null;
-  messages: ChatMessageType[];
+  messages: ChatMessage[];
   userId: string;
   userName: string;
   messageText: string;
   setMessageText: (text: string) => void;
   onSendMessage: (threadParentId?: string) => Promise<void>;
-  onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => void;
+  onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => Promise<void>;
   onSendFileMessage?: (fileUrl: string, threadParentId?: string) => Promise<void>;
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
   onFlagMessage?: (messageId: string, reason: string) => void;
-  onEditMessage?: (messageId: string, content: string) => Promise<void>;
+  onEditMessage: (messageId: string, content: string) => Promise<void>;
   isTyping?: boolean;
-  typingUsers?: { id: string, name: string }[];
-  threadMessages?: { [key: string]: ChatMessageType[] };
+  typingUsers?: {id: string, name: string}[];
+  threadMessages?: {[key: string]: ChatMessage[]};
   activeThreadId?: string | null;
   onOpenThread?: (messageId: string) => void;
   onCloseThread?: () => void;
@@ -51,24 +60,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onEditMessage,
   isTyping,
   typingUsers,
-  threadMessages,
-  activeThreadId,
+  threadMessages = {},
+  activeThreadId = null,
   onOpenThread,
   onCloseThread,
   onViewInfo
 }) => {
-  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageInputRef = useRef<HTMLInputElement>(null);
-
+  const [isThreadViewActive, setIsThreadViewActive] = useState(false);
+  
+  // Scroll to bottom when messages change
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, activeThreadId]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+  
+  // Set thread view active state based on activeThreadId
+  useEffect(() => {
+    setIsThreadViewActive(!!activeThreadId);
+  }, [activeThreadId]);
+  
+  const handleSendMessage = async () => {
+    if (onSendMessage) {
+      await onSendMessage();
+    }
   };
-
+  
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -76,217 +94,219 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const handleSendMessage = async () => {
-    if (messageText.trim()) {
-      await onSendMessage(activeThreadId || undefined);
-      if (messageInputRef.current) {
-        messageInputRef.current.focus();
-      }
-    }
-  };
-
-  const handleVoiceMessage = (audioUrl: string) => {
+  const handleSendVoiceMessage = async (audioUrl: string) => {
     if (onSendVoiceMessage) {
-      onSendVoiceMessage(audioUrl, activeThreadId || undefined);
-      setShowVoiceRecorder(false);
+      await onSendVoiceMessage(audioUrl);
     }
   };
-
-  const handleFileMessage = async (fileUrl: string) => {
+  
+  const handleSendFileMessage = async (fileUrl: string) => {
     if (onSendFileMessage) {
-      await onSendFileMessage(fileUrl, activeThreadId || undefined);
+      await onSendFileMessage(fileUrl);
     }
   };
-
+  
   if (!room) {
     return (
-      <Card className="h-full flex items-center justify-center">
-        <CardContent className="text-center text-muted-foreground p-8">
-          <h3 className="text-lg font-medium mb-2">No conversation selected</h3>
-          <p>Select a conversation from the sidebar or start a new chat</p>
-        </CardContent>
-      </Card>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <MessageSquare className="h-12 w-12 mx-auto text-slate-300" />
+          <h3 className="mt-4 text-lg font-medium">No Conversation Selected</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Choose a conversation from the list or create a new one.
+          </p>
+        </div>
+      </div>
     );
   }
 
-  // Determine if this is a work order chat
-  const isWorkOrderChat = room.type === 'work_order' && room.work_order_id;
-  const workOrderInfo = room.metadata?.work_order;
+  // Get parent message for thread if we have an active thread
+  const parentMessage = activeThreadId 
+    ? messages.find(msg => msg.id === activeThreadId)
+    : undefined;
+  
+  // Filter out thread messages from main view if they are being shown in thread view
+  const filteredMessages = messages.filter(msg => 
+    !msg.thread_parent_id || !activeThreadId || msg.thread_parent_id !== activeThreadId
+  );
+  
+  // Get thread messages for current active thread
+  const currentThreadMessages = activeThreadId ? threadMessages[activeThreadId] || [] : [];
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="py-3 border-b flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <CardTitle className="text-lg">{room.name}</CardTitle>
-            {isWorkOrderChat && workOrderInfo && (
-              <Badge variant="outline" className="ml-2 bg-indigo-50 text-indigo-800 border-indigo-200">
-                Work Order
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center space-x-1">
-            {isWorkOrderChat && onViewInfo && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onViewInfo}
-                      className="h-8 w-8"
-                    >
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>View Work Order Details</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {onPinRoom && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onPinRoom}
-                      className={`h-8 w-8 ${room.is_pinned ? "text-blue-600" : ""}`}
-                    >
-                      <PinIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{room.is_pinned ? "Unpin Conversation" : "Pin Conversation"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {onArchiveRoom && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onArchiveRoom}
-                      className="h-8 w-8"
-                    >
-                      <ArchiveIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{room.is_archived ? "Restore Conversation" : "Archive Conversation"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-        </div>
-        {isWorkOrderChat && workOrderInfo && (
-          <div className="mt-1 text-sm text-muted-foreground">
-            Status: <span className="font-medium">{workOrderInfo.status}</span> • 
-            Customer: <span className="font-medium">{workOrderInfo.customer_name}</span>
-            {workOrderInfo.vehicle && (
-              <> • Vehicle: <span className="font-medium">{workOrderInfo.vehicle}</span></>
-            )}
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="flex-grow overflow-auto p-0">
-        {activeThreadId ? (
-          <ChatThread
-            threadId={activeThreadId}
-            messages={threadMessages?.[activeThreadId] || []}
-            userId={userId}
-            userName={userName}
-            messageText={messageText}
-            setMessageText={setMessageText}
-            onSendMessage={() => onSendMessage(activeThreadId)}
-            onCloseThread={onCloseThread}
-            onEditMessage={onEditMessage}
-            onSendVoiceMessage={onSendVoiceMessage ? 
-              (audioUrl: string) => onSendVoiceMessage(audioUrl, activeThreadId) : undefined}
-            onSendFileMessage={onSendFileMessage ?
-              (fileUrl: string) => onSendFileMessage(fileUrl, activeThreadId) : undefined}
-          />
-        ) : (
-          <div className="p-4 space-y-4">
-            <div className="space-y-4">
-              {messages.map(message => (
-                <ChatMessage
-                  key={message.id}
-                  message={message}
-                  isCurrentUser={message.sender_id === userId}
-                  userId={userId}
-                  onEdit={onEditMessage || (async () => {})}
-                  onFlag={onFlagMessage}
-                  onReply={onOpenThread}
-                />
-              ))}
-              <div ref={messagesEndRef} />
+    <div className="h-full flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      {/* Chat Header */}
+      <div className="flex items-center justify-between border-b px-4 py-2">
+        <div>
+          <h3 className="font-medium">{room.name}</h3>
+          {room.type === 'work_order' && room.metadata?.work_order && (
+            <div className="flex items-center mt-1">
+              <span className={`
+                inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                ${room.metadata.work_order.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' : 
+                  room.metadata.work_order.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                  room.metadata.work_order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                  'bg-slate-100 text-slate-800 border-slate-300'}
+                border
+              `}>
+                {room.metadata.work_order.status}
+              </span>
+              <span className="text-sm text-slate-500 ml-2">{room.metadata.work_order.customer_name}</span>
             </div>
-            {isTyping && typingUsers && typingUsers.length > 0 && (
-              <div className="text-sm text-slate-500 italic">
-                {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-      <div className="p-4 border-t flex flex-col">
-        {showVoiceRecorder ? (
-          <div className="mb-2">
-            <AudioRecorder onRecord={handleVoiceMessage} onCancel={() => setShowVoiceRecorder(false)} />
-          </div>
-        ) : (
-          <div className="flex items-center space-x-2">
-            <Input
-              ref={messageInputRef}
-              placeholder="Type a message"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={handleKeyPress}
-              className="flex-grow"
-            />
+          )}
+        </div>
+        <div className="flex items-center space-x-2">
+          {room.type === 'work_order' && onViewInfo && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => setShowVoiceRecorder(true)}>
-                    <Mic className="h-5 w-5" />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={onViewInfo}
+                  >
+                    <Info className="h-5 w-5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Record Voice Message</p>
-                </TooltipContent>
+                <TooltipContent>View work order details</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
-            {onSendFileMessage && (
-              <FileUploadButton onFileUpload={handleFileMessage}>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <FileUp className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Upload File</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </FileUploadButton>
-            )}
-            
-            <Button size="icon" onClick={handleSendMessage}>
-              <Send className="h-5 w-5" />
-            </Button>
+          )}
+          {onPinRoom && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={onPinRoom}
+                    className={room.is_pinned ? "text-blue-500" : ""}
+                  >
+                    <Pin className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{room.is_pinned ? 'Unpin' : 'Pin'} conversation</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {onArchiveRoom && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={onArchiveRoom}
+                  >
+                    <Archive className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Archive conversation</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      </div>
+      
+      {/* Chat Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Main Messages */}
+        <div className={`flex-1 overflow-y-auto p-4 ${isThreadViewActive ? 'hidden md:block' : ''}`}>
+          {filteredMessages.map((message) => (
+            <div 
+              key={message.id} 
+              className="mb-4"
+              onClick={() => message.thread_count && message.thread_count > 0 && onOpenThread && onOpenThread(message.id)}
+            >
+              {/* Use the ChatMessage component here to render each message */}
+              {/* For simplicity, we're using a placeholder implementation */}
+              <div className={`flex ${message.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-lg p-3 ${
+                  message.sender_id === userId 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-slate-100'
+                }`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium">
+                      {message.sender_id === userId ? 'You' : message.sender_name}
+                    </span>
+                    {message.thread_count && message.thread_count > 0 && (
+                      <div className="flex items-center gap-1 text-xs cursor-pointer">
+                        <MessageSquare className="h-3 w-3" />
+                        <span>{message.thread_count}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p>{message.content}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+          
+          {/* Typing indicator */}
+          {isTyping && typingUsers && typingUsers.length > 0 && (
+            <div className="text-sm text-slate-500 italic mb-2">
+              {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+            </div>
+          )}
+        </div>
+        
+        {/* Thread View */}
+        {isThreadViewActive && activeThreadId && onCloseThread && (
+          <div className={`${isThreadViewActive ? 'flex-1 md:w-1/2 md:flex-none' : 'hidden'} border-l`}>
+            <ChatThread
+              threadId={activeThreadId}
+              messages={currentThreadMessages}
+              onClose={onCloseThread}
+              onSendReply={(content, threadId) => {
+                setMessageText(content);
+                return onSendMessage(threadId);
+              }}
+              userId={userId}
+              parentMessage={parentMessage}
+              onEditMessage={onEditMessage}
+              onFlagMessage={onFlagMessage}
+            />
           </div>
         )}
       </div>
-    </Card>
+      
+      {/* Message Input */}
+      <div className="border-t p-3">
+        <div className="flex items-center space-x-2">
+          <div className="flex-1 relative">
+            <Input
+              placeholder="Type your message..."
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={handleKeyPress}
+              className="pr-20"
+            />
+            <div className="absolute right-2 top-2 flex space-x-1">
+              {onSendVoiceMessage && (
+                <AudioRecorder
+                  onAudioRecorded={handleSendVoiceMessage}
+                  isDisabled={!room}
+                />
+              )}
+              {onSendFileMessage && (
+                <FileUploadButton
+                  roomId={room.id}
+                  onFileUploaded={handleSendFileMessage}
+                  isDisabled={!room}
+                />
+              )}
+            </div>
+          </div>
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={!messageText.trim() || !room}
+          >
+            <Send className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
