@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { ChatMessage } from '@/types/chat';
 import { 
@@ -187,146 +186,164 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
 
   // Send a chat message
   const handleSendMessage = useCallback(async (threadParentId?: string) => {
-    if (!currentRoomId || !userId || !newMessageText.trim()) return;
-    
+    if (!currentRoomId || !newMessageText.trim()) return;
+
     try {
-      // Get thread parent from message id if provided
-      const messageParams = {
+      const message: MessageSendParams = {
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
-        content: newMessageText.trim(),
-        message_type: 'text',
-        thread_parent_id: threadParentId
+        content: newMessageText,
+        message_type: threadParentId ? 'thread' : 'text',
+        ...(threadParentId && { thread_parent_id: threadParentId })
       };
-      
-      await sendChatMessage(messageParams);
-      
-      // Clear input after sending
+
+      await sendChatMessage(message);
       setNewMessageText('');
-    } catch (err) {
-      console.error('Failed to send message:', err);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      
+      // If this is a thread message, refresh thread replies
+      if (threadParentId) {
+        fetchThreadReplies(threadParentId);
+      }
+      
+      // Clear typing indicator when sending a message
+      clearTypingIndicator();
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
-  }, [currentRoomId, userId, userName, newMessageText]);
+  }, [currentRoomId, newMessageText, userId, userName, fetchThreadReplies, clearTypingIndicator]);
 
   // Send a voice message
   const handleSendVoiceMessage = useCallback(async (audioUrl: string, threadParentId?: string) => {
-    if (!currentRoomId || !userId || !audioUrl) return;
-    
+    if (!currentRoomId) return;
+
     try {
-      // Format voice message content (this will be parsed by the ChatFileMessage component)
-      const content = `audio:${audioUrl}|Voice Message|0|audio/wav`;
-      
-      const messageParams = {
+      const message: MessageSendParams = {
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
-        content,
-        message_type: 'audio',
-        thread_parent_id: threadParentId
+        content: audioUrl,
+        message_type: 'audio' as const,
+        file_url: audioUrl,
+        ...(threadParentId && { thread_parent_id: threadParentId })
       };
+
+      await sendChatMessage(message);
       
-      await sendChatMessage(messageParams);
-      
-      toast({
-        title: "Voice message sent",
-        description: "Your voice message has been sent.",
-      });
-    } catch (err) {
-      console.error('Failed to send voice message:', err);
-      toast({
-        title: "Error",
-        description: "Failed to send voice message. Please try again.",
-        variant: "destructive",
-      });
+      // If this is a thread message, refresh thread replies
+      if (threadParentId) {
+        fetchThreadReplies(threadParentId);
+      }
+    } catch (error) {
+      console.error('Error sending voice message:', error);
     }
-  }, [currentRoomId, userId, userName]);
+  }, [currentRoomId, userId, userName, fetchThreadReplies]);
 
   // Send a file message
   const handleSendFileMessage = useCallback(async (fileUrl: string, threadParentId?: string) => {
-    if (!currentRoomId || !userId || !fileUrl) return;
-    
+    if (!currentRoomId) return;
+
     try {
-      // The fileUrl is expected to already be formatted by FileUploadButton component
-      const messageParams = {
+      const [fileType, url] = fileUrl.split(':');
+      
+      const message: MessageSendParams = {
         room_id: currentRoomId,
         sender_id: userId,
         sender_name: userName,
-        content: fileUrl,
-        message_type: 'file',
-        thread_parent_id: threadParentId
+        content: url || fileUrl,
+        message_type: (fileType as 'image' | 'video' | 'file'),
+        file_url: url || fileUrl,
+        ...(threadParentId && { thread_parent_id: threadParentId })
       };
+
+      await sendChatMessage(message);
       
-      await sendChatMessage(messageParams);
-      
-      toast({
-        title: "File sent",
-        description: "Your file has been sent.",
-      });
-    } catch (err) {
-      console.error('Failed to send file:', err);
-      toast({
-        title: "Error",
-        description: "Failed to send file. Please try again.",
-        variant: "destructive",
-      });
+      // If this is a thread message, refresh thread replies
+      if (threadParentId) {
+        fetchThreadReplies(threadParentId);
+      }
+    } catch (error) {
+      console.error('Error sending file message:', error);
     }
-  }, [currentRoomId, userId, userName]);
+  }, [currentRoomId, userId, userName, fetchThreadReplies]);
 
   // Flag a message
   const flagMessage = useCallback(async (messageId: string, reason: string) => {
-    if (!userId || !messageId) return;
-    
     try {
       await flagChatMessage({
         messageId,
-        userId,
-        reason
+        reason,
+        userId
       });
       
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, is_flagged: true, flag_reason: reason } 
+            : msg
+        )
+      );
+      
       toast({
-        title: "Message flagged",
-        description: "The message has been flagged for review.",
+        title: "Message Flagged",
+        description: "The message has been flagged for review."
       });
-    } catch (err) {
-      console.error('Failed to flag message:', err);
+    } catch (error) {
+      console.error('Error flagging message:', error);
       toast({
         title: "Error",
-        description: "Failed to flag message. Please try again.",
-        variant: "destructive",
+        description: "Failed to flag message",
+        variant: "destructive"
       });
     }
-  }, [userId]);
+  }, [toast]);
 
   // Edit a message
-  const handleEditMessage = useCallback(async (messageId: string, content: string) => {
-    if (!userId || !messageId || !content.trim()) return;
-    
+  const handleEditMessage = useCallback(async (messageId: string, content: string): Promise<void> => {
     try {
       await editChatMessage({
         messageId,
-        userId,
-        content: content.trim()
+        content,
+        userId
       });
       
+      setMessages(prevMessages =>
+        prevMessages.map(msg =>
+          msg.id === messageId
+            ? { ...msg, content, is_edited: true, edited_at: new Date().toISOString() }
+            : msg
+        )
+      );
+      
+      if (Object.keys(threadMessages).length > 0) {
+        Object.keys(threadMessages).forEach(parentId => {
+          setThreadMessages(prev => ({
+            ...prev,
+            [parentId]: prev[parentId]?.map(msg =>
+              msg.id === messageId
+                ? { ...msg, content, is_edited: true, edited_at: new Date().toISOString() }
+                : msg
+            ) || []
+          }));
+        });
+      }
+      
       toast({
-        title: "Message updated",
-        description: "Your message has been updated.",
+        title: "Message Updated",
+        description: "Your message has been edited successfully."
       });
-    } catch (err) {
-      console.error('Failed to edit message:', err);
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error editing message:', error);
       toast({
         title: "Error",
-        description: "Failed to edit message. Please try again.",
-        variant: "destructive",
+        description: "Failed to edit message",
+        variant: "destructive"
       });
+      return Promise.reject(error);
     }
-  }, [userId]);
+  }, [userId, toast]);
 
   // Handle typing event
   const handleTyping = useCallback(() => {

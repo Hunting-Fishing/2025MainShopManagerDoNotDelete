@@ -20,6 +20,7 @@ export interface MessageEditParams {
 export interface MessageFlagParams {
   messageId: string;
   reason: string;
+  userId?: string;
 }
 
 export interface MessageQueryParams {
@@ -33,3 +34,24 @@ export interface MessageQueryParams {
 export interface ThreadMessagesParams {
   parentId: string;
 }
+
+// Add a transform function for database messages
+export const transformDatabaseMessage = (dbMessage: any): any => {
+  // Transform database message object to application model
+  return {
+    ...dbMessage,
+    // Add any transformations needed
+  };
+};
+
+// Helper function to save messages to other records
+export const saveMessageToRecord = async (
+  messageId: string, 
+  recordType: 'work_order' | 'vehicle', 
+  recordId: string
+): Promise<void> => {
+  // Implementation of saving message to a record
+  console.log(`Saving message ${messageId} to ${recordType} ${recordId}`);
+  // Actual implementation would call an API or update database
+  return Promise.resolve();
+};

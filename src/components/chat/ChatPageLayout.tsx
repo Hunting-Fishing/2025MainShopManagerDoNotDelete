@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
@@ -19,7 +18,7 @@ interface ChatPageLayoutProps {
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
   onFlagMessage?: (messageId: string, reason: string) => void;
-  onEditMessage?: (messageId: string, content: string) => void;
+  onEditMessage?: (messageId: string, content: string) => Promise<void>;
   isTyping?: boolean;
   typingUsers?: {id: string, name: string}[];
   threadMessages?: {[key: string]: ChatMessage[]};

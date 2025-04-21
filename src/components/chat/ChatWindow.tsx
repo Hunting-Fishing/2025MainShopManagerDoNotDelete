@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,19 +57,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [showTypingIndicator, setShowTypingIndicator] = useState(false);
   
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  // Focus input on room change
   useEffect(() => {
     if (room) {
       inputRef.current?.focus();
     }
   }, [room]);
   
-  // Show typing indicator when someone is typing
   useEffect(() => {
     if (isTyping && typingUsers && typingUsers.length > 0) {
       setShowTypingIndicator(true);
@@ -82,7 +78,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [isTyping, typingUsers]);
   
-  // Format typing indicator text
   const getTypingText = () => {
     if (!typingUsers || typingUsers.length === 0) return '';
     
@@ -94,7 +89,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return 'Several people are typing...';
   };
   
-  // Handle send message on Enter press
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -102,34 +96,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  // Handle file upload
   const handleFileUpload = async (fileUrl: string) => {
     if (onSendFileMessage) {
       onSendFileMessage(fileUrl);
     }
   };
 
-  // Handle voice message
   const handleVoiceMessage = (audioUrl: string) => {
     if (onSendVoiceMessage) {
       onSendVoiceMessage(audioUrl);
     }
   };
 
-  // Handle edit message
   const handleEditMessage = async (messageId: string, content: string) => {
     if (onEditMessage) {
       await onEditMessage(messageId, content);
     }
   };
 
-  // Text for empty state
   const getEmptyStateText = () => {
     if (!room) return 'Select a conversation to start chatting';
     return 'No messages yet. Start the conversation!';
   };
   
-  // Handle thread messages
   const renderThread = () => {
     if (!activeThreadId || !threadMessages || !threadMessages[activeThreadId]) {
       return null;
@@ -153,7 +142,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   };
 
-  // If no room is selected or loading
   if (!room) {
     return (
       <Card className="h-full flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-900">
@@ -168,7 +156,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   return (
     <Card className="flex flex-col h-full overflow-hidden border-slate-200">
-      {/* Chat header */}
       <div className="p-4 border-b flex justify-between items-center bg-white dark:bg-slate-950">
         <div>
           <h3 className="font-medium">{room.name || 'Chat'}</h3>
@@ -191,7 +178,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       </div>
       
-      {/* Chat messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
@@ -199,35 +185,52 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         ) : (
           <>
-            {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                isCurrentUser={message.sender_id === userId}
-                onFlagMessage={onFlagMessage}
-                onReply={onOpenThread}
-                onEdit={handleEditMessage}
-                userId={userId}
-              />
-            ))}
+            {messages.map((message) => {
+              const isCurrentUser = message.sender_id === userId;
+              
+              if (message.message_type === 'thread' || message.thread_parent_id) {
+                return null;
+              }
+              
+              if (message.message_type === 'file' || message.message_type === 'image' || 
+                  message.message_type === 'audio' || message.message_type === 'video') {
+                return (
+                  <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                    <ChatFileMessage message={message} />
+                  </div>
+                );
+              }
+              
+              return (
+                <div 
+                  key={message.id} 
+                  className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                >
+                  <ChatMessage
+                    message={message}
+                    isCurrentUser={isCurrentUser}
+                    onEdit={onEditMessage}
+                    onFlag={onFlagMessage}
+                    onReply={onOpenThread}
+                    userId={userId}
+                  />
+                </div>
+              );
+            })}
             
-            {/* Typing indicator */}
             {showTypingIndicator && (
               <div className="text-sm text-slate-500 italic">
                 {getTypingText()}
               </div>
             )}
             
-            {/* Scroll anchor */}
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
       
-      {/* Thread view */}
       {renderThread()}
       
-      {/* Message input */}
       <div className="p-4 border-t bg-white dark:bg-slate-950">
         <div className="flex items-center gap-2">
           <AudioRecorder 

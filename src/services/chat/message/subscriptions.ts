@@ -1,6 +1,6 @@
 
 import { ChatMessage } from "@/types/chat";
-import { supabase, DatabaseChatMessage } from "../supabaseClient";
+import { supabase } from "../supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { transformDatabaseMessage } from "./types";
 
@@ -14,7 +14,7 @@ export const subscribeToMessages = (roomId: string, callback: (message: ChatMess
       table: 'chat_messages',
       filter: `room_id=eq.${roomId}`
     }, (payload) => {
-      const newMessage = transformDatabaseMessage(payload.new as DatabaseChatMessage);
+      const newMessage = transformDatabaseMessage(payload.new);
       callback(newMessage);
     })
     .subscribe();
@@ -35,7 +35,7 @@ export const subscribeToMessageUpdates = (roomId: string, callback: (message: Ch
       table: 'chat_messages',
       filter: `room_id=eq.${roomId}`
     }, (payload) => {
-      const updatedMessage = transformDatabaseMessage(payload.new as DatabaseChatMessage);
+      const updatedMessage = transformDatabaseMessage(payload.new);
       callback(updatedMessage);
     })
     .subscribe();
