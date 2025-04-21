@@ -15,8 +15,10 @@ import {
 import { 
   Badge 
 } from '@/components/ui/badge';
-import { CalendarIcon, Clock, Wrench } from 'lucide-react';
+import { CalendarIcon, Clock, MessageCircle, Wrench } from 'lucide-react';
 import { format } from 'date-fns';
+import { WorkOrderChatButton } from '@/components/workOrders/WorkOrderChatButton';
+import { Button } from '@/components/ui/button';
 
 const WorkOrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -94,17 +96,23 @@ const WorkOrderDetail: React.FC = () => {
               </div>
             </CardDescription>
           </div>
-          <Badge 
-            className={`
-              ${workOrder.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
-                workOrder.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                workOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
-                'bg-red-100 text-red-800 border-red-300'}
-              border px-3 py-1
-            `}
-          >
-            {workOrder.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <WorkOrderChatButton 
+              workOrderId={workOrder.id} 
+              workOrderName={workOrder.description || `Work Order #${workOrder.id.substring(0, 8)}`} 
+            />
+            <Badge 
+              className={`
+                ${workOrder.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
+                  workOrder.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                  workOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                  'bg-red-100 text-red-800 border-red-300'}
+                border px-3 py-1
+              `}
+            >
+              {workOrder.status}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-6">
