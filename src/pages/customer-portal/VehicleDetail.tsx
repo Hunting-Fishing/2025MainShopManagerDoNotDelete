@@ -1,5 +1,5 @@
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Wrench } from 'lucide-react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { 
@@ -18,7 +18,7 @@ import {
   ClipboardList, 
   FileText, 
   Clock,
-  Tool
+  Wrench
 } from 'lucide-react';
 
 const VehicleDetail = () => {
@@ -203,7 +203,7 @@ const VehicleDetail = () => {
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <Tool className="h-5 w-5 text-indigo-500 mr-3" />
+                  <Wrench className="h-5 w-5 text-indigo-500 mr-3" />
                   <div>
                     <p className="text-sm text-slate-500">Work Orders</p>
                     <p>{workOrders.length} order{workOrders.length !== 1 ? 's' : ''}</p>

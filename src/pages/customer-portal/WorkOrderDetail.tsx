@@ -1,251 +1,194 @@
-
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Wrench, 
-  Calendar, 
-  Clock, 
-  Tool, 
-  CreditCard, 
-  MessageSquare, 
-  FileText,
-  ArrowLeft
-} from 'lucide-react';
-import { WorkOrderProgressIndicator } from '@/pages/customer-portal/WorkOrderProgressIndicator';
-import { WorkOrderNotifications } from '@/components/customer-portal/WorkOrderNotifications';
-import { Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
+import { findWorkOrderById, deleteWorkOrder } from "@/utils/workOrders";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2, Wrench } from "lucide-react"; // Fixed import here
+import { WorkOrderDetailsTabs } from "@/components/workOrders/WorkOrderDetailsTabs";
+import { WorkOrderCalendarButton } from "@/components/workOrders/calendar/WorkOrderCalendarButton";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 
-const CustomerWorkOrderDetail = () => {
+export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
-  const [workOrder, setWorkOrder] = useState<any | null>(null);
+  const navigate = useNavigate();
+  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  const currentUser = {
+    id: "current-user",
+    name: "Current User"
+  };
 
   useEffect(() => {
-    const fetchWorkOrderDetails = async () => {
+    const loadWorkOrder = async () => {
       if (!id) return;
       
+      setLoading(true);
       try {
-        setLoading(true);
-        
-        const { data, error } = await supabase
-          .from('work_orders')
-          .select(`
-            *,
-            customers(first_name, last_name, email, phone),
-            vehicles(year, make, model, vin, color)
-          `)
-          .eq('id', id)
-          .single();
-          
-        if (error) {
-          throw error;
-        }
-        
+        const data = await findWorkOrderById(id);
         if (data) {
           setWorkOrder(data);
+        } else {
+          toast({
+            title: "Not Found",
+            description: "Work order not found",
+            variant: "destructive"
+          });
+          navigate('/work-orders');
         }
-      } catch (err: any) {
-        console.error("Error fetching work order:", err);
-        setError(err.message);
+      } catch (error) {
+        console.error("Error loading work order:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load work order details",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
     
-    fetchWorkOrderDetails();
-  }, [id]);
+    loadWorkOrder();
+  }, [id, navigate]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800 border border-blue-300';
-      case 'completed':
-        return 'bg-green-100 text-green-800 border border-green-300';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border border-red-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border border-gray-300';
+  const handleUpdateTimeEntries = (timeEntries: TimeEntry[]) => {
+    if (workOrder) {
+      setWorkOrder({
+        ...workOrder,
+        timeEntries
+      });
+    }
+  };
+
+  const handleStatusUpdate = (updatedWorkOrder: WorkOrder) => {
+    setWorkOrder(updatedWorkOrder);
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    try {
+      const success = await deleteWorkOrder(id);
+      
+      if (success) {
+        toast({
+          title: "Deleted",
+          description: "Work order has been deleted",
+        });
+        navigate('/work-orders');
+      }
+    } catch (error) {
+      console.error("Error deleting work order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete work order",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteDialog(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto p-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-center items-center h-40">
-              <p>Loading work order details...</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col justify-center items-center h-40">
-              <p className="text-red-500 mb-4">Error loading work order: {error}</p>
-              <Button asChild>
-                <Link to="/customer-portal/work-orders">Back to Work Orders</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto py-8 flex items-center justify-center h-[50vh]">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-4" />
+          <p className="text-slate-500">Loading work order details...</p>
+        </div>
       </div>
     );
   }
 
   if (!workOrder) {
     return (
-      <div className="container mx-auto p-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col justify-center items-center h-40">
-              <p className="mb-4">Work order not found</p>
-              <Button asChild>
-                <Link to="/customer-portal/work-orders">Back to Work Orders</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Work Order Not Found</h2>
+          <p className="text-slate-500 mb-4">
+            The requested work order could not be found or may have been deleted.
+          </p>
+          <Button onClick={() => navigate('/work-orders')} className="mt-2">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-4">
-        <Button variant="outline" asChild>
-          <Link to="/customer-portal/work-orders">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
-          </Link>
-        </Button>
-      </div>
-      
-      <div className="space-y-6">
-        <Card>
-          <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-xl">Work Order #{workOrder.id.slice(0, 8)}</CardTitle>
-                <CardDescription>
-                  {workOrder.description}
-                </CardDescription>
-              </div>
-              <Badge className={getStatusColor(workOrder.status)}>
-                {workOrder.status}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            {/* Progress Indicator */}
-            <div className="mb-8">
-              <WorkOrderProgressIndicator 
-                status={workOrder.status} 
-                progress={
-                  workOrder.status === 'pending' ? 10 :
-                  workOrder.status === 'in-progress' ? 50 :
-                  workOrder.status === 'completed' ? 100 : 0
-                }
-                estimatedCompletion={
-                  workOrder.end_time || 
-                  (new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)).toISOString()
-                }
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-medium mb-3">Service Details</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Wrench className="h-5 w-5 text-indigo-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-slate-500">Service Type</p>
-                      <p>{workOrder.service_type || "General Service"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 text-indigo-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-slate-500">Date Created</p>
-                      <p>{workOrder.created_at && new Date(workOrder.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-indigo-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-slate-500">Estimated Completion</p>
-                      <p>
-                        {workOrder.end_time 
-                          ? new Date(workOrder.end_time).toLocaleDateString() 
-                          : "To be determined"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Tool className="h-5 w-5 text-indigo-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-slate-500">Technician</p>
-                      <p>{workOrder.technician || "Assigned Technician"}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {workOrder.vehicles && (
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Vehicle Information</h3>
-                  <div className="border rounded-lg p-4">
-                    <p className="font-medium">{workOrder.vehicles.year} {workOrder.vehicles.make} {workOrder.vehicles.model}</p>
-                    <p className="text-sm text-slate-500 mt-1">Color: {workOrder.vehicles.color || "N/A"}</p>
-                    {workOrder.vehicles.vin && (
-                      <p className="text-sm text-slate-500">VIN: {workOrder.vehicles.vin}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/work-orders')}
+              className="flex items-center gap-1"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+          </div>
+          <h1 className="text-2xl font-bold">Work Order: {workOrder.id.substring(0, 8)}</h1>
+          <p className="text-slate-500">{workOrder.description}</p>
+        </div>
 
-            <Separator className="my-6" />
-            
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-4">
-              <Button className="bg-indigo-600" asChild>
-                <Link to="/customer-portal/messages">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Message Staff
-                </Link>
-              </Button>
-              <Button variant="outline" disabled>
-                <FileText className="mr-2 h-4 w-4" />
-                View Invoice
-              </Button>
-              <Button variant="outline" disabled>
-                <CreditCard className="mr-2 h-4 w-4" />
-                Make Payment
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Notifications Feed */}
-        <WorkOrderNotifications customerId={workOrder.customer_id} />
+        <div className="flex gap-2">
+          <WorkOrderCalendarButton workOrder={workOrder} />
+          
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/work-orders/${workOrder.id}/edit`)}
+          >
+            Edit Work Order
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            Delete
+          </Button>
+        </div>
       </div>
+
+      <WorkOrderDetailsTabs 
+        workOrder={workOrder}
+        onUpdateTimeEntries={handleUpdateTimeEntries}
+        userId={currentUser.id}
+        userName={currentUser.name}
+        onStatusUpdate={handleStatusUpdate}
+      />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this work order? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-};
-
-export default CustomerWorkOrderDetail;
+}
