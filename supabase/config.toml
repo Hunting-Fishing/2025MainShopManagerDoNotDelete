@@ -14,18 +14,18 @@ enabled = true
 port = 54323
 api_url = "http://localhost"
 
-[storage]
+[inbucket]
 enabled = true
 port = 54324
 
+[storage]
+enabled = true
+
 [auth]
 enabled = true
-port = 54325
 
 [realtime]
 enabled = true
-port = 54326
-module = "supabase-js-v2"
 
-[functions.process-notifications]
+[functions.handle-work-order-status-change]
 verify_jwt = true
