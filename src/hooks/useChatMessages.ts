@@ -1,15 +1,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { ChatMessage } from '@/types/chat';
 import { 
   getChatMessages, 
   sendChatMessage, 
+  subscribeToMessages, 
+  subscribeToMessageUpdates,
+  getThreadMessages,
+  setTypingIndicator, 
+  clearTypingIndicator,
+  subscribeToTypingIndicators,
+  TypingIndicator,
   editChatMessage,
-  flagChatMessage, 
-  getThreadMessages
+  flagChatMessage
 } from '@/services/chat';
-import { toast } from '@/hooks/use-toast';
 
 interface UseChatMessagesProps {
   userId: string;
@@ -17,124 +21,135 @@ interface UseChatMessagesProps {
   currentRoomId: string | null;
 }
 
-export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMessagesProps) => {
+export const useChatMessages = ({
+  userId,
+  userName,
+  currentRoomId
+}: UseChatMessagesProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [newMessageText, setNewMessageText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingUsers, setTypingUsers] = useState<{id: string, name: string}[]>([]);
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [typingChannel, setTypingChannel] = useState<any>(null);
   const [threadMessages, setThreadMessages] = useState<{[key: string]: ChatMessage[]}>({});
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [newMessageText, setNewMessageText] = useState<string>('');
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [typingUsers, setTypingUsers] = useState<{ id: string; name: string }[]>([]);
+  const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch messages when room changes
   useEffect(() => {
-    if (!currentRoomId) {
-      setMessages([]);
-      return;
-    }
-
     const fetchMessages = async () => {
+      if (!currentRoomId) return;
+      
       try {
         setLoading(true);
+        setError(null);
+        
         const fetchedMessages = await getChatMessages(currentRoomId);
         setMessages(fetchedMessages);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to load chat messages:', err);
-        setError('Failed to load messages. Please try again.');
-        toast({
-          title: "Error",
-          description: "Could not load chat messages.",
-          variant: "destructive",
-        });
+      } catch (err: any) {
+        console.error('Error fetching messages:', err);
+        setError(err.message || 'Failed to load messages');
       } finally {
         setLoading(false);
       }
     };
 
     fetchMessages();
+    
+    // Reset state when room changes
+    setNewMessageText('');
+    setActiveThreadId(null);
+    setThreadMessages({});
+    
   }, [currentRoomId]);
 
-  // Subscribe to new messages
+  // Subscribe to new messages and updates
   useEffect(() => {
     if (!currentRoomId) return;
 
-    const channel = supabase
-      .channel(`chat-room:${currentRoomId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'chat_messages',
-        filter: `room_id=eq.${currentRoomId}`
-      }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          const newMessage = payload.new as ChatMessage;
-          // Don't add if it's a thread message and we're not in that thread
-          if (newMessage.thread_parent_id && newMessage.thread_parent_id !== activeThreadId) {
-            // Update the thread count on the parent message instead
-            setMessages(prevMessages => 
-              prevMessages.map(msg => 
-                msg.id === newMessage.thread_parent_id 
-                  ? { ...msg, thread_count: (msg.thread_count || 0) + 1 } 
-                  : msg
-              )
-            );
-            return;
-          }
-
-          // Add to messages if it's not a thread reply or it's in our active thread
-          if (!newMessage.thread_parent_id || newMessage.thread_parent_id === activeThreadId) {
-            setMessages(prevMessages => [...prevMessages, newMessage]);
-          }
-        } 
-        else if (payload.eventType === 'UPDATE') {
-          const updatedMessage = payload.new as ChatMessage;
-          setMessages(prevMessages => 
-            prevMessages.map(msg => 
-              msg.id === updatedMessage.id ? updatedMessage : msg
+    // Subscribe to new messages
+    const unsubscribeNewMessages = subscribeToMessages(
+      currentRoomId, 
+      (newMessage) => {
+        setMessages(prev => [...prev, newMessage]);
+      }
+    );
+    
+    // Subscribe to message updates
+    const unsubscribeMessageUpdates = subscribeToMessageUpdates(
+      currentRoomId,
+      (updatedMessage) => {
+        setMessages(prev => 
+          prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
+        );
+        
+        // Also update in thread messages if present
+        if (updatedMessage.thread_parent_id && threadMessages[updatedMessage.thread_parent_id]) {
+          setThreadMessages(prev => ({
+            ...prev,
+            [updatedMessage.thread_parent_id!]: prev[updatedMessage.thread_parent_id!].map(
+              msg => msg.id === updatedMessage.id ? updatedMessage : msg
             )
-          );
-          
-          // Also update in thread messages if applicable
-          if (threadMessages[updatedMessage.thread_parent_id || '']) {
-            setThreadMessages(prev => ({
-              ...prev,
-              [updatedMessage.thread_parent_id || '']: prev[updatedMessage.thread_parent_id || ''].map(
-                msg => msg.id === updatedMessage.id ? updatedMessage : msg
-              )
-            }));
-          }
+          }));
         }
-      })
-      .subscribe();
+      }
+    );
 
-    // Set up typing indicators channel
-    const typingIndicatorChannel = supabase
-      .channel(`typing:${currentRoomId}`)
-      .on('presence', { event: 'sync' }, () => {
-        const state = typingIndicatorChannel.presenceState();
-        const typingUsersList = Object.values(state).flat() as { user_id: string, user_name: string }[];
+    // Subscribe to typing indicators
+    const unsubscribeTypingIndicators = subscribeToTypingIndicators(
+      currentRoomId,
+      (indicators: TypingIndicator[]) => {
+        // Filter out the current user and transform to the format we need
+        const otherUsers = indicators
+          .filter(indicator => indicator.user_id !== userId)
+          .map(indicator => ({
+            id: indicator.user_id,
+            name: indicator.user_name
+          }));
         
-        // Transform the data to match the expected format
-        const formattedTypingUsers = typingUsersList.map(user => ({
-          id: user.user_id,
-          name: user.user_name
-        }));
-        
-        setTypingUsers(formattedTypingUsers.filter(user => user.id !== userId));
-      })
-      .subscribe();
-
-    setTypingChannel(typingIndicatorChannel);
-
+        setTypingUsers(otherUsers);
+      }
+    );
+    
     return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(typingIndicatorChannel);
+      unsubscribeNewMessages();
+      unsubscribeMessageUpdates();
+      unsubscribeTypingIndicators();
     };
-  }, [currentRoomId, activeThreadId, userId, threadMessages]);
+  }, [currentRoomId, userId, threadMessages]);
+
+  // Handle typing indicator
+  const handleTyping = useCallback(() => {
+    if (!userId || !currentRoomId || !userName) return;
+    
+    setIsTyping(true);
+    
+    // Clear previous timeout if exists
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+    
+    // Set typing indicator on the server
+    setTypingIndicator(currentRoomId, userId, userName);
+    
+    // Set timeout to clear typing indicator
+    const timeout = setTimeout(() => {
+      setIsTyping(false);
+      clearTypingIndicator(currentRoomId, userId);
+    }, 3000);
+    
+    setTypingTimeout(timeout as unknown as ReturnType<typeof setTimeout>);
+  }, [currentRoomId, userId, userName, typingTimeout]);
+
+  // Clean up typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+    };
+  }, [typingTimeout]);
 
   // Send message function
   const handleSendMessage = useCallback(async (threadParentId?: string) => {
@@ -146,21 +161,27 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         senderId: userId,
         senderName: userName,
         content: newMessageText,
-        threadParentId: threadParentId
+        threadParentId
       });
       
       setNewMessageText('');
-    } catch (err) {
-      console.error('Failed to send message:', err);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      
+      // If sending a thread message, refresh the thread
+      if (threadParentId) {
+        const threadReplies = await getThreadMessages(threadParentId);
+        setThreadMessages(prev => ({
+          ...prev,
+          [threadParentId]: threadReplies
+        }));
+      }
+      
+    } catch (err: any) {
+      console.error('Error sending message:', err);
+      setError(err.message || 'Failed to send message');
     }
-  }, [currentRoomId, userId, userName, newMessageText]);
+  }, [currentRoomId, newMessageText, userId, userName]);
 
-  // Send voice message
+  // Send voice message function
   const handleSendVoiceMessage = useCallback(async (audioUrl: string, threadParentId?: string) => {
     if (!currentRoomId) return;
     
@@ -169,152 +190,109 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
         roomId: currentRoomId,
         senderId: userId,
         senderName: userName,
-        content: `Shared an audio recording`,
+        content: "Audio message",
         messageType: 'audio',
         threadParentId,
         file_url: audioUrl
       });
-    } catch (err) {
-      console.error('Failed to send voice message:', err);
-      toast({
-        title: "Error",
-        description: "Failed to send voice message. Please try again.",
-        variant: "destructive",
-      });
+      
+      // If sending a thread message, refresh the thread
+      if (threadParentId) {
+        const threadReplies = await getThreadMessages(threadParentId);
+        setThreadMessages(prev => ({
+          ...prev,
+          [threadParentId]: threadReplies
+        }));
+      }
+      
+    } catch (err: any) {
+      console.error('Error sending voice message:', err);
+      setError(err.message || 'Failed to send voice message');
     }
   }, [currentRoomId, userId, userName]);
 
-  // Send file message
+  // Send file message function
   const handleSendFileMessage = useCallback(async (fileUrl: string, threadParentId?: string) => {
     if (!currentRoomId) return;
-    
-    const fileType = fileUrl.split(':')[0];
     
     try {
       await sendChatMessage({
         roomId: currentRoomId,
         senderId: userId,
         senderName: userName,
-        content: `Shared a ${fileType} file`,
-        messageType: fileType as 'image' | 'video' | 'audio' | 'file' | 'system',
+        content: "File attachment",
+        messageType: 'file',
         threadParentId,
         file_url: fileUrl
       });
-    } catch (err) {
-      console.error('Failed to send file message:', err);
-      toast({
-        title: "Error",
-        description: "Failed to send file. Please try again.",
-        variant: "destructive",
-      });
+      
+      // If sending a thread message, refresh the thread
+      if (threadParentId) {
+        const threadReplies = await getThreadMessages(threadParentId);
+        setThreadMessages(prev => ({
+          ...prev,
+          [threadParentId]: threadReplies
+        }));
+      }
+      
+    } catch (err: any) {
+      console.error('Error sending file message:', err);
+      setError(err.message || 'Failed to send file');
     }
   }, [currentRoomId, userId, userName]);
 
-  // Flag a message
-  const handleFlagMessage = useCallback(async (messageId: string, reason: string) => {
+  // Handle flag message
+  const flagMessage = useCallback(async (messageId: string, reason: string) => {
     try {
       await flagChatMessage(messageId, reason);
-      toast({
-        title: "Message flagged",
-        description: "The message has been flagged for review.",
-      });
-    } catch (err) {
-      console.error('Failed to flag message:', err);
-      toast({
-        title: "Error",
-        description: "Failed to flag message. Please try again.",
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      console.error('Error flagging message:', err);
+      setError(err.message || 'Failed to flag message');
     }
   }, []);
 
-  // Edit a message
-  const handleEditMessage = useCallback(async (messageId: string, newContent: string) => {
+  // Handle edit message
+  const handleEditMessage = useCallback(async (messageId: string, content: string) => {
     try {
-      await editChatMessage(messageId, newContent);
-      toast({
-        title: "Message edited",
-        description: "Your message has been updated.",
-      });
-    } catch (err) {
-      console.error('Failed to edit message:', err);
-      toast({
-        title: "Error",
-        description: "Failed to edit message. Please try again.",
-        variant: "destructive",
-      });
+      await editChatMessage(messageId, content);
+    } catch (err: any) {
+      console.error('Error editing message:', err);
+      setError(err.message || 'Failed to edit message');
     }
   }, []);
 
-  // Handle typing indicator
-  const handleTyping = useCallback(() => {
-    if (!typingChannel || !currentRoomId) return;
-    
-    setIsTyping(true);
-    
-    // Send typing status to the channel
-    typingChannel.track({
-      user_id: userId,
-      user_name: userName
-    });
-    
-    // Clear existing timeout if any
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-    }
-    
-    // Set a new timeout to clear the typing status
-    const timeout = setTimeout(() => {
-      setIsTyping(false);
-    }, 2000);
-    
-    setTypingTimeout(timeout);
-  }, [currentRoomId, typingChannel, userId, userName, typingTimeout]);
-
-  // Handle thread opening
+  // Open thread
   const handleThreadOpen = useCallback(async (messageId: string) => {
     setActiveThreadId(messageId);
     
-    // Fetch thread messages if not already loaded
-    if (!threadMessages[messageId]) {
-      try {
-        const replies = await getThreadMessages(messageId);
+    try {
+      // Check if we already have thread messages loaded
+      if (!threadMessages[messageId]) {
+        const threadReplies = await getThreadMessages(messageId);
         setThreadMessages(prev => ({
           ...prev,
-          [messageId]: replies
+          [messageId]: threadReplies
         }));
-      } catch (err) {
-        console.error('Failed to fetch thread replies:', err);
-        toast({
-          title: "Error",
-          description: "Failed to load thread messages. Please try again.",
-          variant: "destructive",
-        });
       }
+    } catch (err: any) {
+      console.error('Error loading thread:', err);
+      setError(err.message || 'Failed to load thread');
     }
   }, [threadMessages]);
 
-  // Handle thread closing
+  // Close thread
   const handleThreadClose = useCallback(() => {
     setActiveThreadId(null);
   }, []);
 
-  // Fetch thread replies on demand
+  // Get thread replies
   const getThreadReplies = useCallback(async (messageId: string) => {
     try {
-      const replies = await getThreadMessages(messageId);
-      setThreadMessages(prev => ({
-        ...prev,
-        [messageId]: replies
-      }));
-      return replies;
-    } catch (err) {
-      console.error('Failed to fetch thread replies:', err);
-      toast({
-        title: "Error",
-        description: "Failed to load thread replies. Please try again.",
-        variant: "destructive",
-      });
+      const threadReplies = await getThreadMessages(messageId);
+      return threadReplies;
+    } catch (err: any) {
+      console.error('Error getting thread replies:', err);
+      setError(err.message || 'Failed to get thread replies');
       return [];
     }
   }, []);
@@ -328,7 +306,7 @@ export const useChatMessages = ({ userId, userName, currentRoomId }: UseChatMess
     handleSendMessage,
     handleSendVoiceMessage,
     handleSendFileMessage,
-    flagMessage: handleFlagMessage,
+    flagMessage,
     handleEditMessage,
     isTyping,
     typingUsers,
