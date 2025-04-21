@@ -1,247 +1,228 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { WorkOrder } from '@/types/workOrder';
+import { formatDistanceToNow, format } from 'date-fns';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Wrench } from 'lucide-react';
+import { 
+  Wrench, 
+  Clock, 
+  ChevronRight, 
+  MessageSquare, 
+  Bell, 
+  CarIcon, 
+  CalendarIcon
+} from 'lucide-react';
+import { WorkOrder } from '@/types/workOrder';
 
-interface Vehicle {
+interface Profile {
   id: string;
-  make: string;
-  model: string;
-  year: string;
-  license_plate: string;
+  first_name: string;
+  last_name: string;
+  email: string;
 }
 
-interface Appointment {
-  id: string;
-  date: string;
-  time: string;
-  description: string;
-}
-
-export default function CustomerPortal() {
+const CustomerPortal = () => {
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loadingWorkOrders, setLoadingWorkOrders] = useState(true);
-  const [loadingVehicles, setLoadingVehicles] = useState(true);
-  const [loadingAppointments, setLoadingAppointments] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchWorkOrders = async () => {
-      setLoadingWorkOrders(true);
+    const fetchProfile = async () => {
+      setLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+
+        if (userError) {
+          console.error("Error fetching user:", userError);
+          return;
+        }
+
+        if (!userData?.user) {
+          console.log("No user found, redirecting to signin");
+          navigate('/sign-in');
+          return;
+        }
+
+        const userId = userData.user.id;
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          return;
+        }
+
+        setProfile(profileData);
+
+        const { data: workOrderData, error: workOrderError } = await supabase
           .from('work_orders')
           .select(`
             *,
-            vehicles (*)
+            vehicles (
+              make,
+              model,
+              year
+            )
           `)
-          .limit(5);
+          .eq('customer_id', userId)
+          .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error("Error fetching work orders:", error);
+        if (workOrderError) {
+          console.error("Error fetching work orders:", workOrderError);
+          return;
         }
 
-        if (data) {
-          setWorkOrders(data);
-        }
+        // Map the work order data to include vehicle details
+        const workOrdersWithVehicleDetails = workOrderData.map(workOrder => ({
+          ...workOrder,
+          vehicleDetails: workOrder.vehicles ? {
+            make: workOrder.vehicles.make,
+            model: workOrder.vehicles.model,
+            year: workOrder.vehicles.year
+          } : null,
+        }));
+
+        setWorkOrders(workOrdersWithVehicleDetails);
+      } catch (error) {
+        console.error("Unexpected error:", error);
       } finally {
-        setLoadingWorkOrders(false);
+        setLoading(false);
       }
     };
 
-    const fetchVehicles = async () => {
-      setLoadingVehicles(true);
-      try {
-        const { data, error } = await supabase
-          .from('vehicles')
-          .select('*')
-          .limit(3);
+    fetchProfile();
+  }, [navigate]);
 
-        if (error) {
-          console.error("Error fetching vehicles:", error);
-        }
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
-        if (data) {
-          setVehicles(data);
-        }
-      } finally {
-        setLoadingVehicles(false);
-      }
-    };
+  if (!profile) {
+    return <div className="flex justify-center items-center h-screen">Profile not found.</div>;
+  }
 
-    const fetchAppointments = async () => {
-      setLoadingAppointments(true);
-      try {
-        const { data, error } = await supabase
-          .from('appointments')
-          .select('*')
-          .limit(3);
-
-        if (error) {
-          console.error("Error fetching appointments:", error);
-        }
-
-        if (data) {
-          setAppointments(data);
-        }
-      } finally {
-        setLoadingAppointments(false);
-      }
-    };
-
-    fetchWorkOrders();
-    fetchVehicles();
-    fetchAppointments();
-  }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  // Fix the icon usage from Car to CarIcon
+  const renderWorkOrderRow = (workOrder: WorkOrder) => {
+    return (
+      <div 
+        key={workOrder.id} 
+        className="border-b py-4 last:border-0 hover:bg-gray-50 cursor-pointer"
+        onClick={() => navigate(`/customer-portal/work-orders/${workOrder.id}`)}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-4">
+            <div className="p-2 bg-blue-50 rounded-full">
+              <Wrench className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="font-medium">{workOrder.description}</p>
+              <div className="flex items-center mt-1 text-sm text-muted-foreground">
+                <CarIcon className="h-3.5 w-3.5 mr-1" />
+                <span>
+                  {workOrder.vehicleDetails ? 
+                    `${workOrder.vehicleDetails.year || ''} ${workOrder.vehicleDetails.make || ''} ${workOrder.vehicleDetails.model || ''}` : 
+                    workOrder.vehicle_make && workOrder.vehicle_model ? 
+                      `${workOrder.vehicle_make} ${workOrder.vehicle_model}` : 
+                      'No vehicle'
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-end">
+            <Badge 
+              className={
+                workOrder.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
+                workOrder.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                'bg-yellow-100 text-yellow-800 border-yellow-300'
+              }
+            >
+              {workOrder.status === 'in-progress' ? 'In Progress' : 
+                workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
+            </Badge>
+            <div className="text-xs text-muted-foreground mt-1 flex items-center">
+              <CalendarIcon className="h-3 w-3 mr-1" />
+              {workOrder.createdAt ? 
+                format(new Date(workOrder.createdAt), 'MMM d, yyyy') : 
+                workOrder.created_at ? 
+                  format(new Date(workOrder.created_at), 'MMM d, yyyy') : 
+                  'Unknown date'}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Profile Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">Your Profile</h2>
-          <p>Welcome to your customer portal! Here you can manage your vehicles, appointments, and view your service history.</p>
-        </div>
-
-        {/* Vehicles Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Your Vehicles</h2>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/customer-portal/vehicles">View All</Link>
-            </Button>
-          </div>
-          
-          {loadingVehicles ? (
-            <div className="text-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
-              <p className="mt-2 text-gray-500">Loading vehicles...</p>
-            </div>
-          ) : vehicles.length === 0 ? (
-            <div className="text-center py-8 border rounded-lg bg-gray-50">
-              <Car className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-              <h3 className="text-lg font-medium">No Vehicles Added</h3>
-              <p className="text-gray-500 mt-1">Add your vehicles to keep track of their service history.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {vehicles.slice(0, 2).map((vehicle) => (
-                <div key={vehicle.id} className="border rounded-lg p-4">
-                  <h3 className="font-medium">{vehicle.make} {vehicle.model}</h3>
-                  <p className="text-sm text-gray-500">{vehicle.year} - {vehicle.license_plate}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        {/* Appointments Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Upcoming Appointments</h2>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/customer-portal/appointments">View All</Link>
-            </Button>
-          </div>
-
-          {loadingAppointments ? (
-            <div className="text-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
-              <p className="mt-2 text-gray-500">Loading appointments...</p>
-            </div>
-          ) : appointments.length === 0 ? (
-            <div className="text-center py-8 border rounded-lg bg-gray-50">
-              <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-              <h3 className="text-lg font-medium">No Appointments Scheduled</h3>
-              <p className="text-gray-500 mt-1">Schedule an appointment to get your vehicle serviced.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {appointments.slice(0, 2).map((appointment) => (
-                <div key={appointment.id} className="border rounded-lg p-4">
-                  <h3 className="font-medium">{appointment.description}</h3>
-                  <p className="text-sm text-gray-500">{appointment.date} at {appointment.time}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Work Orders Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Recent Work Orders</h2>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/customer-portal/work-orders">View All</Link>
-            </Button>
-          </div>
-          
-          {loadingWorkOrders ? (
-            <div className="text-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
-              <p className="mt-2 text-gray-500">Loading work orders...</p>
-            </div>
-          ) : workOrders.length === 0 ? (
-            <div className="text-center py-8 border rounded-lg bg-gray-50">
-              <Wrench className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-              <h3 className="text-lg font-medium">No Work Orders Yet</h3>
-              <p className="text-gray-500 mt-1">You don't have any service history with us yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {workOrders.slice(0, 3).map((workOrder) => (
-                <Link
-                  key={workOrder.id}
-                  to={`/customer-portal/work-orders/${workOrder.id}`}
-                  className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{workOrder.description || `Work Order #${workOrder.id.substring(0, 8)}`}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMM dd, yyyy') : 
-                         workOrder.created_at ? format(new Date(workOrder.created_at), 'MMM dd, yyyy') : 'N/A'}
-                      </p>
-                      <p className="text-sm mt-1">
-                        {workOrder.vehicleDetails ? 
-                          `${workOrder.vehicleDetails.year || ''} ${workOrder.vehicleDetails.make || ''} ${workOrder.vehicleDetails.model || ''}` : 
-                         workOrder.vehicle_make && workOrder.vehicle_model ? 
-                          `${workOrder.vehicle_make} ${workOrder.vehicle_model}` : 
-                          'Unknown vehicle'}
-                      </p>
-                    </div>
-                    <Badge className={getStatusColor(workOrder.status)}>
-                      {workOrder.status}
-                    </Badge>
+    <div className="container mx-auto py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Welcome, {profile.first_name}!</CardTitle>
+          <CardDescription>Here's a summary of your account.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Tabs defaultValue="work-orders" className="w-full">
+            <TabsList>
+              <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
+              <TabsTrigger value="account">Account</TabsTrigger>
+            </TabsList>
+            <TabsContent value="work-orders" className="space-y-4">
+              <div className="grid gap-4">
+                {workOrders.length > 0 ? (
+                  workOrders.map(renderWorkOrderRow)
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-lg text-muted-foreground">No work orders found.</p>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="account">
+              <div className="space-y-2">
+                <p className="text-lg font-semibold">Account Details</p>
+                <p><strong>First Name:</strong> {profile.first_name}</p>
+                <p><strong>Last Name:</strong> {profile.last_name}</p>
+                <p><strong>Email:</strong> {profile.email}</p>
+                <Button onClick={() => navigate('/customer-portal/profile')}>
+                  Update Profile <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">
+            Last updated: {formatDistanceToNow(new Date(), { addSuffix: true })}
+          </p>
+          <Link to="/contact" className="text-sm text-blue-500 hover:underline">
+            <MessageSquare className="inline-block h-4 w-4 mr-1 align-middle" /> Contact Support
+          </Link>
+        </CardFooter>
+      </Card>
     </div>
   );
-}
+};
+
+export default CustomerPortal;

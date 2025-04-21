@@ -222,7 +222,7 @@ export class SupabaseNotificationService implements INotificationService {
         priority: notification.priority,
         sender: notification.sender,
         recipient: notification.recipient,
-        expires_at: notification.expiresAt
+        expires_at: notification.expires_at
       };
 
       await supabase
