@@ -1,246 +1,188 @@
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderChat } from '@/components/customer-portal/WorkOrderChat';
-
-// Mock activity data for rendering
-interface Activity {
-  id: string;
-  timestamp: string;
-  action: string;
-  userName: string;
-}
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { WorkOrder, TimeEntry } from "@/types/workOrder";
+import { findWorkOrderById, deleteWorkOrder } from "@/utils/workOrders";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { WorkOrderDetailsTabs } from "@/components/workOrders/WorkOrderDetailsTabs";
+import { WorkOrderCalendarButton } from "@/components/workOrders/calendar/WorkOrderCalendarButton";
+import { toast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [progress, setProgress] = useState(0);
-  const [estimatedCompletionDate, setEstimatedCompletionDate] = useState<string | null>(null);
-  const [customerInfo, setCustomerInfo] = useState<{id: string, name: string}>({id: '', name: ''});
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  const currentUser = {
+    id: "current-user",
+    name: "Current User"
+  };
 
   useEffect(() => {
-    const fetchWorkOrderDetails = async () => {
+    const loadWorkOrder = async () => {
       if (!id) return;
-
+      
+      setLoading(true);
       try {
-        setLoading(true);
-        
-        // Fetch work order details
-        const { data, error } = await supabase
-          .from('work_orders')
-          .select(`
-            *,
-            customers!work_orders_customer_id_fkey(id, first_name, last_name)
-          `)
-          .eq('id', id)
-          .single();
-
-        if (error) throw error;
-        
+        const data = await findWorkOrderById(id);
         if (data) {
           setWorkOrder(data);
-          
-          // Set customer info for chat
-          if (data.customers) {
-            setCustomerInfo({
-              id: data.customers.id,
-              name: `${data.customers.first_name} ${data.customers.last_name}`,
-            });
-          }
-          
-          // Calculate progress based on status
-          let calculatedProgress = 0;
-          switch(data.status) {
-            case 'pending':
-              calculatedProgress = 0;
-              break;
-            case 'in-progress':
-              calculatedProgress = 50;
-              break;
-            case 'completed':
-              calculatedProgress = 100;
-              break;
-            default:
-              calculatedProgress = 25;
-          }
-          setProgress(calculatedProgress);
-          
-          // Set estimated completion date (7 days from creation for this example)
-          const creationDate = new Date(data.created_at);
-          const estimatedDate = new Date(creationDate);
-          estimatedDate.setDate(creationDate.getDate() + 7);
-          setEstimatedCompletionDate(estimatedDate.toLocaleDateString());
-          
-          // Fetch or generate mock activities
-          const mockActivities: Activity[] = [
-            {
-              id: '1',
-              timestamp: new Date(data.created_at).toISOString(),
-              action: 'Work order created',
-              userName: 'System',
-            },
-            {
-              id: '2',
-              timestamp: new Date(new Date(data.created_at).getTime() + 24*60*60*1000).toISOString(),
-              action: 'Diagnostic completed',
-              userName: 'Technician',
-            },
-          ];
-          
-          if (data.status === 'in-progress' || data.status === 'completed') {
-            mockActivities.push({
-              id: '3',
-              timestamp: new Date(new Date(data.created_at).getTime() + 2*24*60*60*1000).toISOString(),
-              action: 'Work started',
-              userName: 'Technician',
-            });
-          }
-          
-          if (data.status === 'completed') {
-            mockActivities.push({
-              id: '4',
-              timestamp: new Date(new Date(data.created_at).getTime() + 5*24*60*60*1000).toISOString(),
-              action: 'Work completed',
-              userName: 'Technician',
-            });
-          }
-          
-          setActivities(mockActivities);
+        } else {
+          toast({
+            title: "Not Found",
+            description: "Work order not found",
+            variant: "destructive"
+          });
+          navigate('/work-orders');
         }
       } catch (error) {
-        console.error('Error fetching work order:', error);
+        console.error("Error loading work order:", error);
         toast({
-          title: 'Error',
-          description: 'Could not load work order details',
-          variant: 'destructive',
+          title: "Error",
+          description: "Failed to load work order details",
+          variant: "destructive"
         });
       } finally {
         setLoading(false);
       }
     };
+    
+    loadWorkOrder();
+  }, [id, navigate]);
 
-    fetchWorkOrderDetails();
-  }, [id]);
+  const handleUpdateTimeEntries = (timeEntries: TimeEntry[]) => {
+    if (workOrder) {
+      setWorkOrder({
+        ...workOrder,
+        timeEntries
+      });
+    }
+  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+  const handleStatusUpdate = (updatedWorkOrder: WorkOrder) => {
+    setWorkOrder(updatedWorkOrder);
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    try {
+      const success = await deleteWorkOrder(id);
+      
+      if (success) {
+        toast({
+          title: "Deleted",
+          description: "Work order has been deleted",
+        });
+        navigate('/work-orders');
+      }
+    } catch (error) {
+      console.error("Error deleting work order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete work order",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteDialog(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="p-6 flex justify-center items-center h-64">
-        <p>Loading work order details...</p>
+      <div className="container mx-auto py-8 flex items-center justify-center h-[50vh]">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-4" />
+          <p className="text-slate-500">Loading work order details...</p>
+        </div>
       </div>
     );
   }
 
   if (!workOrder) {
     return (
-      <div className="p-6">
-        <p>Work order not found or you do not have permission to view it.</p>
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Work Order Not Found</h2>
+          <p className="text-slate-500 mb-4">
+            The requested work order could not be found or may have been deleted.
+          </p>
+          <Button onClick={() => navigate('/work-orders')} className="mt-2">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">Work Order Details</h1>
-          <p className="text-gray-600">#{id?.substring(0, 8)}</p>
-        </div>
-        <div>
-          <Badge className={`px-3 py-1 text-sm font-medium border ${getStatusColor(workOrder.status)}`}>
-            {workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
-          </Badge>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-semibold mb-4">Work Order Information</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Description:</span>
-                  <span>{workOrder.description}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Created On:</span>
-                  <span>{new Date(workOrder.created_at || '').toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <span>{workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Estimated Completion:</span>
-                  <span>{estimatedCompletionDate || 'Not available'}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-semibold mb-4">Progress</h2>
-              <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
-                <div className="bg-blue-600 h-4 rounded-full" style={{ width: `${progress}%` }}></div>
-              </div>
-              <p className="text-sm text-gray-600 text-center">{progress}% Complete</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-semibold mb-4">Activity Log</h2>
-              <div className="space-y-4">
-                {activities && activities.length > 0 ? (
-                  activities.map((activity) => (
-                    <div key={activity.id} className="border-l-2 border-blue-500 pl-4 pb-4">
-                      <p className="text-sm text-gray-600">{new Date(activity.timestamp).toLocaleString()}</p>
-                      <p className="font-medium">{activity.action}</p>
-                      <p className="text-sm text-gray-500">By: {activity.userName}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No activity logged yet.</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/work-orders')}
+              className="flex items-center gap-1"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+          </div>
+          <h1 className="text-2xl font-bold">Work Order: {workOrder.id.substring(0, 8)}</h1>
+          <p className="text-slate-500">{workOrder.createdAt ? new Date(workOrder.createdAt).toLocaleDateString() : ''}</p>
+          <p className="text-slate-500">{workOrder.description}</p>
         </div>
 
-        <div className="space-y-6">
-          {/* Chat Component */}
-          {workOrder && customerInfo.id && (
-            <WorkOrderChat 
-              workOrderId={workOrder.id} 
-              customerName={customerInfo.name}
-              customerId={customerInfo.id}
-            />
-          )}
+        <div className="flex gap-2">
+          <WorkOrderCalendarButton workOrder={workOrder} />
+          
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/work-orders/${workOrder.id}/edit`)}
+          >
+            Edit Work Order
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            Delete
+          </Button>
         </div>
       </div>
+
+      <WorkOrderDetailsTabs 
+        workOrder={workOrder}
+        onUpdateTimeEntries={handleUpdateTimeEntries}
+        userId={currentUser.id}
+        userName={currentUser.name}
+        onStatusUpdate={handleStatusUpdate}
+      />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this work order? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
