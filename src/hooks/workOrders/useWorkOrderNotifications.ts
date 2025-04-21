@@ -26,9 +26,11 @@ export function useWorkOrderNotifications(workOrderId?: string) {
         (payload) => {
           setNotifications(current => [...current, payload.new as WorkOrderNotification]);
           
+          // Show toast notification
           toast({
             title: payload.new.title,
             description: payload.new.message,
+            variant: getNotificationVariant(payload.new.notification_type)
           });
         }
       )
@@ -41,6 +43,17 @@ export function useWorkOrderNotifications(workOrderId?: string) {
       supabase.removeChannel(channel);
     };
   }, [workOrderId]);
+
+  const getNotificationVariant = (type: string): 'default' | 'destructive' => {
+    switch (type) {
+      case 'completion':
+        return 'default';
+      case 'cancellation':
+        return 'destructive';
+      default:
+        return 'default';
+    }
+  };
 
   const fetchNotifications = async () => {
     if (!workOrderId) return;
@@ -57,7 +70,7 @@ export function useWorkOrderNotifications(workOrderId?: string) {
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
-        title: 'Error',
+        title: "Error",
         description: 'Failed to load notifications',
         variant: 'destructive'
       });

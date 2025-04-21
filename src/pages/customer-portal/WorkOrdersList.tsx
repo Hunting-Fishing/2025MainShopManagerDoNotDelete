@@ -1,255 +1,202 @@
 
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ClipboardList, SearchIcon, MessageCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
-
-interface WorkOrder {
-  id: string;
-  description: string;
-  status: string;
-  created_at: string;
-  service_type: string;
-  total_cost: number | null;
-  vehicle_id: string | null;
-  vehicle_make?: string;
-  vehicle_model?: string;
-  technician_name?: string;
-  unread_messages?: number;
-}
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { WorkOrderStatusBadge } from "@/components/workOrders/WorkOrderStatusBadge";
+import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Search, PlusCircle, FileText } from "lucide-react";
+import { WorkOrder } from "@/types/workOrder";
+import { format } from "date-fns";
 
 export default function WorkOrdersList() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const fetchWorkOrders = async () => {
-      try {
-        setLoading(true);
-        
-        // Get the current user
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user) {
-          throw new Error('Not authenticated');
-        }
-        
-        // Get the customer record for this user
-        const { data: customerData, error: customerError } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('email', userData.user.email)
-          .single();
-        
-        if (customerError || !customerData) {
-          throw new Error('Customer record not found');
-        }
-        
-        // Fetch work orders for this customer with related data
-        const { data: ordersData, error: ordersError } = await supabase
-          .from('work_orders')
-          .select(`
-            *,
-            technicians:technician_id(first_name, last_name),
-            vehicles:vehicle_id(make, model)
-          `)
-          .eq('customer_id', customerData.id)
-          .order('created_at', { ascending: false });
-        
-        if (ordersError) throw ordersError;
-        
-        // For each work order, check if there are unread messages
-        const ordersWithMessageCounts = await Promise.all(ordersData.map(async (order) => {
-          // Find the chat room for this work order
-          const { data: roomData } = await supabase
-            .from('chat_rooms')
-            .select('id')
-            .eq('work_order_id', order.id)
-            .limit(1);
-          
-          let unreadCount = 0;
-          
-          if (roomData && roomData.length > 0) {
-            // Count unread messages
-            const { count } = await supabase
-              .from('chat_messages')
-              .select('id', { count: 'exact', head: true })
-              .eq('room_id', roomData[0].id)
-              .eq('is_read', false)
-              .neq('sender_id', customerData.id);
-            
-            unreadCount = count || 0;
-          }
-          
-          return {
-            ...order,
-            technician_name: order.technicians ? 
-              `${order.technicians.first_name} ${order.technicians.last_name}` : 
-              'Unassigned',
-            vehicle_make: order.vehicles?.make,
-            vehicle_model: order.vehicles?.model,
-            unread_messages: unreadCount
-          };
-        }));
-        
-        setWorkOrders(ordersWithMessageCounts);
-      } catch (error) {
-        console.error('Error loading work orders:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load your work orders',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchWorkOrders();
+    
+    // Set up real-time listener for work order updates
+    const workOrdersChannel = supabase
+      .channel('customer-work-orders')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'work_orders'
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setWorkOrders(current => [payload.new as WorkOrder, ...current]);
+        } else if (payload.eventType === 'UPDATE') {
+          setWorkOrders(current => 
+            current.map(wo => wo.id === payload.new.id ? 
+              { ...wo, ...payload.new as Partial<WorkOrder> } : wo
+            )
+          );
+        } else if (payload.eventType === 'DELETE') {
+          setWorkOrders(current => current.filter(wo => wo.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(workOrdersChannel);
+    };
   }, []);
-  
-  const formatDate = (dateStr: string) => {
+
+  const fetchWorkOrders = async () => {
+    setLoading(true);
     try {
-      return format(new Date(dateStr), 'MMM d, yyyy');
-    } catch {
-      return 'Invalid date';
+      // Get current user's customer_id
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user?.id) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to view work orders.",
+          variant: "destructive"
+        });
+        navigate('/customer-portal');
+        return;
+      }
+
+      // Get customer profile
+      const { data: customerProfile, error: customerError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (customerError || !customerProfile) {
+        toast({
+          title: "Profile Error",
+          description: "Could not load your customer profile.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Fetch work orders for this customer
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select(`
+          *,
+          vehicles(make, model, year)
+        `)
+        .eq('customer_id', customerProfile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setWorkOrders(data as unknown as WorkOrder[]);
+    } catch (error) {
+      console.error("Error fetching work orders:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load work orders. Please refresh the page.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">Pending</Badge>;
-      case 'in-progress':
-      case 'in_progress':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">In Progress</Badge>;
-      case 'completed':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Completed</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-  
-  const filteredWorkOrders = workOrders.filter(order => {
-    const searchValue = searchTerm.toLowerCase();
+
+  const filteredWorkOrders = workOrders.filter(wo => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
     return (
-      order.description?.toLowerCase().includes(searchValue) ||
-      order.service_type?.toLowerCase().includes(searchValue) ||
-      order.technician_name?.toLowerCase().includes(searchValue) ||
-      `${order.vehicle_make} ${order.vehicle_model}`.toLowerCase().includes(searchValue) ||
-      order.id.toLowerCase().includes(searchValue)
+      wo.id.toLowerCase().includes(query) ||
+      (wo.description && wo.description.toLowerCase().includes(query)) ||
+      (wo.service_type && wo.service_type.toLowerCase().includes(query)) ||
+      (wo.status && wo.status.toLowerCase().includes(query))
     );
   });
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>My Work Orders</CardTitle>
-              <CardDescription>View and manage your service history</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <div className="relative">
-              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+    <Card>
+      <CardHeader className="space-y-2">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <CardTitle className="text-2xl">My Work Orders</CardTitle>
+          <div className="flex gap-2">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
               <Input
-                type="search"
                 placeholder="Search work orders..."
                 className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
-
-          {loading ? (
-            <div className="animate-pulse space-y-4">
-              <div className="h-10 bg-gray-200 rounded"></div>
-              <div className="h-10 bg-gray-200 rounded"></div>
-              <div className="h-10 bg-gray-200 rounded"></div>
-            </div>
-          ) : workOrders.length === 0 ? (
-            <div className="text-center py-12">
-              <ClipboardList className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium">No Work Orders Found</h3>
-              <p className="mt-2 text-gray-500">You don't have any work orders yet.</p>
-            </div>
-          ) : (
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Work Order #</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+          </div>
+        ) : filteredWorkOrders.length === 0 ? (
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <h3 className="text-lg font-medium text-slate-900">No Work Orders Found</h3>
+            <p className="text-slate-500 mt-1">
+              {searchQuery ? "No work orders match your search criteria." : "You don't have any work orders yet."}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead className="hidden sm:table-cell">Date</TableHead>
+                  <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredWorkOrders.map((workOrder) => (
+                  <TableRow key={workOrder.id}>
+                    <TableCell className="font-medium">
+                      {workOrder.id.substring(0, 8)}
+                    </TableCell>
+                    <TableCell>
+                      {workOrder.service_type || 'General Service'}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {workOrder.created_at ? format(new Date(workOrder.created_at), 'MMM d, yyyy') : 'N/A'}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {workOrder.vehicles ? 
+                        `${workOrder.vehicles.year} ${workOrder.vehicles.make} ${workOrder.vehicles.model}` : 
+                        'N/A'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <WorkOrderStatusBadge status={workOrder.status} />
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        asChild
+                      >
+                        <Link to={`/customer-portal/work-orders/${workOrder.id}`}>View Details</Link>
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredWorkOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">#{order.id.substring(0, 8)}</TableCell>
-                      <TableCell>{formatDate(order.created_at)}</TableCell>
-                      <TableCell>{order.service_type || 'General Service'}</TableCell>
-                      <TableCell>
-                        {order.vehicle_make && order.vehicle_model
-                          ? `${order.vehicle_make} ${order.vehicle_model}`
-                          : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          {getStatusBadge(order.status)}
-                          {(order.unread_messages || 0) > 0 && (
-                            <Badge className="ml-2 bg-red-500 text-white">{order.unread_messages}</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild variant="ghost" size="sm">
-                          <Link to={`/customer-portal/work-orders/${order.id}`} className="flex items-center">
-                            <span>View Details</span>
-                            {(order.unread_messages || 0) > 0 && (
-                              <MessageCircle className="ml-2 h-4 w-4 text-red-500" />
-                            )}
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

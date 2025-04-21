@@ -1,304 +1,332 @@
 
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WorkOrder } from '@/types/workOrder';
-import { WorkOrderChat } from '@/components/customer-portal/WorkOrderChat';
-import { format } from 'date-fns';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { WorkOrder } from "@/types/workOrder";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, Clock, MessageSquare, User, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { CustomerChatPanel } from "@/components/customer-portal/CustomerChatPanel";
+import { WorkOrderStatusBadge } from "@/components/workOrders/WorkOrderStatusBadge";
 
-// Mock data for the customer portal work order detail
-const mockWorkOrder: WorkOrder = {
-  id: "wo-12345-abcde",
-  customer: "John Doe",
-  description: "Oil change and tire rotation",
-  status: "in-progress",
-  priority: "medium",
-  technician: "Mike Smith",
-  date: new Date().toISOString(),
-  dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(),
-  location: "Main Shop",
-  notes: "Customer requested synthetic oil",
-  inventoryItems: [
-    {
-      id: "item1",
-      name: "Synthetic Oil",
-      sku: "SYN-5W30",
-      category: "Fluids",
-      quantity: 5,
-      unitPrice: 9.99
-    },
-    {
-      id: "item2",
-      name: "Oil Filter",
-      sku: "OF-1234",
-      category: "Filters",
-      quantity: 1,
-      unitPrice: 12.99
-    }
-  ],
-  timeEntries: [
-    {
-      id: "te1",
-      employeeId: "emp1",
-      employeeName: "Mike Smith",
-      startTime: new Date(new Date().setHours(new Date().getHours() - 2)).toISOString(),
-      endTime: null,
-      duration: 120,
-      billable: true
-    }
-  ],
-  totalBillableTime: 2,
-  createdAt: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-  lastUpdatedAt: new Date().toISOString(),
-  startTime: new Date(new Date().setHours(9, 0, 0, 0)).toISOString(),
-  endTime: new Date(new Date().setHours(17, 0, 0, 0)).toISOString(),
-  vehicleId: "v-12345",
-  vehicle_make: "Toyota",
-  vehicle_model: "Camry",
-  total_cost: 89.99,
-  vehicleDetails: {
-    make: "Toyota",
-    model: "Camry",
-    year: "2019",
-    odometer: "45,000 miles",
-    licensePlate: "ABC123"
-  }
-};
-
-// Status mapping for UI colors
-const statusColors: Record<string, string> = {
-  "pending": "bg-yellow-100 text-yellow-800 border-yellow-300",
-  "in-progress": "bg-blue-100 text-blue-800 border-blue-300",
-  "completed": "bg-green-100 text-green-800 border-green-300",
-  "cancelled": "bg-red-100 text-red-800 border-red-300"
-};
-
-export default function WorkOrderDetail() {
+export default function CustomerWorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("details");
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
-    // Simulate API fetch with a small delay
-    const fetchData = async () => {
+    const fetchWorkOrderDetails = async () => {
+      if (!id) return;
+      
       setLoading(true);
       try {
-        // In a real app, fetch from API using the ID
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setWorkOrder(mockWorkOrder);
+        const { data, error } = await supabase
+          .from('work_orders')
+          .select(`
+            *,
+            customers(first_name, last_name, email),
+            vehicles(make, model, year, color, vin)
+          `)
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        
+        if (data) {
+          setWorkOrder(data as unknown as WorkOrder);
+          
+          // Set up real-time subscription for this work order
+          const workOrderChannel = supabase
+            .channel(`work-order-${id}`)
+            .on('postgres_changes', {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'work_orders',
+              filter: `id=eq.${id}`
+            }, (payload) => {
+              setWorkOrder(current => ({
+                ...(current as WorkOrder),
+                ...payload.new as Partial<WorkOrder>
+              }));
+
+              // Show toast notification for status changes
+              if (payload.new.status !== payload.old.status) {
+                toast({
+                  title: "Work Order Updated",
+                  description: `Status changed to ${payload.new.status}`,
+                  variant: "default"
+                });
+              }
+            })
+            .subscribe();
+
+          return () => {
+            supabase.removeChannel(workOrderChannel);
+          };
+        } else {
+          toast({
+            title: "Work Order Not Found",
+            description: "We couldn't find this work order in our records.",
+            variant: "destructive"
+          });
+          navigate('/customer-portal/work-orders');
+        }
       } catch (error) {
         console.error("Error fetching work order:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load work order details. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [id]);
+    fetchWorkOrderDetails();
+  }, [id, navigate]);
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse text-gray-500">Loading work order details...</div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (!workOrder) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Work Order Not Found</h2>
-          <p className="text-gray-600 mb-6">We couldn't find the work order you're looking for.</p>
-          <Button asChild>
-            <Link to="/customer-portal/work-orders">Return to All Work Orders</Link>
-          </Button>
-        </div>
+      <div className="text-center p-8">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-semibold mb-2">Work Order Not Found</h2>
+        <p className="text-slate-600 mb-6">We couldn't find the work order you're looking for.</p>
+        <Button onClick={() => navigate('/customer-portal/work-orders')}>
+          <ChevronLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+        </Button>
       </div>
     );
   }
 
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Not specified';
+    try {
+      return format(new Date(dateString), 'PPP');
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <Link to="/customer-portal/work-orders" className="text-blue-600 hover:underline mb-2 inline-block">
-          ← Back to All Work Orders
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Work Order #{id?.substring(0, 8)}</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" onClick={() => navigate('/customer-portal/work-orders')}>
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to Work Orders
+        </Button>
       </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="updates">Progress</TabsTrigger>
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="details" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Work Order Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <span className={`inline-block px-3 py-1 rounded-full text-sm border ${statusColors[workOrder.status]}`}>
-                    {workOrder.status === 'in-progress' ? 'In Progress' : 
-                     workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Description</h3>
-                    <p className="text-gray-900">{workOrder.description}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Priority</h3>
-                    <p className="text-gray-900">{workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Created Date</h3>
-                    <p className="text-gray-900">{format(new Date(workOrder.date), 'MMM d, yyyy')}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Expected Completion</h3>
-                    <p className="text-gray-900">{format(new Date(workOrder.dueDate), 'MMM d, yyyy')}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Assigned Technician</h3>
-                    <p className="text-gray-900">{workOrder.technician}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Location</h3>
-                    <p className="text-gray-900">{workOrder.location}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Vehicle Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Vehicle</h3>
-                  <p className="text-gray-900">
-                    {workOrder.vehicleDetails?.year} {workOrder.vehicleDetails?.make} {workOrder.vehicleDetails?.model}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">License Plate</h3>
-                  <p className="text-gray-900">{workOrder.vehicleDetails?.licensePlate}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Odometer</h3>
-                  <p className="text-gray-900">{workOrder.vehicleDetails?.odometer}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="md:col-span-3">
-              <CardHeader>
-                <CardTitle>Parts and Services</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full table-auto">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="px-4 py-2 text-left">Item</th>
-                        <th className="px-4 py-2 text-left">SKU</th>
-                        <th className="px-4 py-2 text-left">Category</th>
-                        <th className="px-4 py-2 text-right">Quantity</th>
-                        <th className="px-4 py-2 text-right">Price</th>
-                        <th className="px-4 py-2 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {workOrder.inventoryItems?.map(item => (
-                        <tr key={item.id} className="border-b">
-                          <td className="px-4 py-2">{item.name}</td>
-                          <td className="px-4 py-2">{item.sku}</td>
-                          <td className="px-4 py-2">{item.category}</td>
-                          <td className="px-4 py-2 text-right">{item.quantity}</td>
-                          <td className="px-4 py-2 text-right">${item.unitPrice.toFixed(2)}</td>
-                          <td className="px-4 py-2 text-right">${(item.quantity * item.unitPrice).toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <div className="text-right">
-                  <div className="text-sm text-gray-500">Total Cost</div>
-                  <div className="text-xl font-bold">${workOrder.total_cost?.toFixed(2)}</div>
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="updates" className="mt-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Work Order Progress</CardTitle>
-              <CardDescription>Track the status of your service</CardDescription>
+              <CardTitle className="flex justify-between items-center">
+                <div>
+                  <span>Work Order #{workOrder.id.substring(0, 8)}</span>
+                </div>
+                <WorkOrderStatusBadge status={workOrder.status} />
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">✓</div>
-                  <div className="ml-4">
-                    <h3 className="font-medium">Order Created</h3>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(workOrder.createdAt || ''), 'MMM d, yyyy h:mm a')}
-                    </p>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-slate-500">Description</h3>
+                <p className="mt-1">{workOrder.description || "No description provided"}</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-slate-500">Service Details</h3>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <p className="text-sm text-slate-500">Service Type</p>
+                    <p>{workOrder.service_type || "General Service"}</p>
                   </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">⋯</div>
-                  <div className="ml-4">
-                    <h3 className="font-medium">Work Started</h3>
-                    <p className="text-sm text-gray-500">
-                      {workOrder.startTime ? format(new Date(workOrder.startTime), 'MMM d, yyyy h:mm a') : 'Not started yet'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center opacity-50">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white">⋯</div>
-                  <div className="ml-4">
-                    <h3 className="font-medium">Work Completed</h3>
-                    <p className="text-sm text-gray-500">
-                      {workOrder.endTime ? format(new Date(workOrder.endTime), 'MMM d, yyyy h:mm a') : 'Pending completion'}
-                    </p>
+                  <div>
+                    <p className="text-sm text-slate-500">Created Date</p>
+                    <p>{formatDate(workOrder.created_at)}</p>
                   </div>
                 </div>
               </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-slate-500">Vehicle Information</h3>
+                {workOrder.vehicles ? (
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <p className="text-sm text-slate-500">Make & Model</p>
+                      <p>{workOrder.vehicles.year} {workOrder.vehicles.make} {workOrder.vehicles.model}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Color</p>
+                      <p>{workOrder.vehicles.color || "Not specified"}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm italic text-slate-500 mt-2">No vehicle information available</p>
+                )}
+              </div>
+
+              {workOrder.estimated_hours && (
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500">Estimated Time</h3>
+                  <div className="flex items-center mt-1">
+                    <Clock className="h-4 w-4 text-slate-400 mr-2" />
+                    <p>{workOrder.estimated_hours} hours</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="chat" className="mt-4">
-          <WorkOrderChat workOrderId={workOrder.id} />
-        </TabsContent>
-      </Tabs>
+
+          {/* Progress Timeline */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <span>Work Order Progress</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative space-y-8 before:absolute before:inset-0 before:left-5 before:h-full before:w-0.5 before:-ml-px before:bg-gradient-to-b before:from-blue-500 before:via-blue-500 before:to-slate-200">
+                <div className="relative flex items-center">
+                  <div className="absolute left-0 rounded-full bg-blue-500 text-white flex items-center justify-center h-10 w-10">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div className="ml-14">
+                    <div className="font-semibold">Work Order Created</div>
+                    <div className="text-sm text-slate-500">{formatDate(workOrder.created_at)}</div>
+                  </div>
+                </div>
+                
+                {workOrder.start_time && (
+                  <div className="relative flex items-center">
+                    <div className="absolute left-0 rounded-full bg-blue-500 text-white flex items-center justify-center h-10 w-10">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div className="ml-14">
+                      <div className="font-semibold">Work Started</div>
+                      <div className="text-sm text-slate-500">{formatDate(workOrder.start_time)}</div>
+                    </div>
+                  </div>
+                )}
+                
+                {workOrder.status === "completed" && workOrder.end_time && (
+                  <div className="relative flex items-center">
+                    <div className="absolute left-0 rounded-full bg-green-500 text-white flex items-center justify-center h-10 w-10">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div className="ml-14">
+                      <div className="font-semibold">Work Completed</div>
+                      <div className="text-sm text-slate-500">{formatDate(workOrder.end_time)}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Chat Section */}
+          <Card>
+            <CardHeader className="cursor-pointer" onClick={() => setShowChat(!showChat)}>
+              <CardTitle className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  <span>Message Technician</span>
+                </div>
+                <Badge variant={showChat ? "default" : "outline"}>
+                  {showChat ? "Hide Chat" : "Open Chat"}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            {showChat && (
+              <CardContent>
+                <CustomerChatPanel workOrderId={workOrder.id} />
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          {/* Work Order Technician */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <User className="h-5 w-5 mr-2" />
+                <span>Assigned Technician</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {workOrder.technician ? (
+                <div className="flex flex-col items-center">
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                    <User className="h-8 w-8 text-blue-500" />
+                  </div>
+                  <p className="font-medium">{workOrder.technician}</p>
+                  <Button 
+                    onClick={() => setShowChat(true)}
+                    variant="outline" 
+                    className="mt-3 w-full"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Message
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-center text-slate-500 py-2">No technician assigned yet</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Documents */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                <span>Documents</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="bg-slate-50 border rounded p-3 flex justify-between items-center">
+                <div>
+                  <p className="font-medium">Service Estimate</p>
+                  <p className="text-sm text-slate-500">PDF - 48KB</p>
+                </div>
+                <Button size="sm" variant="outline">View</Button>
+              </div>
+              <div className="bg-slate-50 border rounded p-3 flex justify-between items-center">
+                <div>
+                  <p className="font-medium">Work Order Form</p>
+                  <p className="text-sm text-slate-500">PDF - 65KB</p>
+                </div>
+                <Button size="sm" variant="outline">View</Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Latest Updates */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Latest Updates</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* This will be populated from notifications */}
+              <p className="text-sm text-slate-500">Real-time updates will appear here</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
