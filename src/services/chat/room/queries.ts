@@ -1,4 +1,5 @@
-import { supabase, DatabaseChatRoom } from "../supabaseClient";
+
+import { supabase } from "../supabaseClient";
 import { ChatRoom } from "@/types/chat";
 import { transformDatabaseRoom } from "./types";
 
@@ -7,23 +8,21 @@ export const getChatRoom = async (roomId: string): Promise<ChatRoom | null> => {
   try {
     const { data, error } = await supabase
       .from('chat_rooms')
-      .select('*, chat_participants(*)')
+      .select('*')
       .eq('id', roomId)
       .single();
     
     if (error) throw error;
     if (!data) return null;
     
-    // Transform and return as ChatRoom
-    const room = transformDatabaseRoom(data);
-    return room;
+    return transformDatabaseRoom(data);
   } catch (error) {
     console.error("Error fetching chat room:", error);
-    return null;
+    throw error;
   }
 };
 
-// Get a work order chat room
+// Get chat room for a specific work order
 export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoom | null> => {
   try {
     const { data, error } = await supabase
@@ -34,38 +33,37 @@ export const getWorkOrderChatRoom = async (workOrderId: string): Promise<ChatRoo
       .single();
     
     if (error) {
+      // If not found, return null
       if (error.code === 'PGRST116') {
-        return null; // No room found
+        return null;
       }
       throw error;
     }
     
     if (!data) return null;
     
-    // Transform and return as ChatRoom
-    const room = transformDatabaseRoom(data);
-    return room;
+    return transformDatabaseRoom(data);
   } catch (error) {
     console.error("Error fetching work order chat room:", error);
-    return null;
+    throw error;
   }
 };
 
-// Get a shift chat room by date or ID
+// Get chat room for a shift by ID or date
 export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoom | null> => {
   try {
     let roomId: string;
     
-    // If we got a Date object, convert it to the expected ID format
+    // If it's a Date object, convert to shift-chat-YYYY-MM-DD format
     if (dateOrId instanceof Date) {
       const dateStr = dateOrId.toISOString().split('T')[0]; // YYYY-MM-DD
       roomId = `shift-chat-${dateStr}`;
     } else {
-      // Otherwise, assume we've been given the ID directly
+      // If it's already an ID string, use it directly
       roomId = dateOrId;
     }
     
-    // Now get the room by ID
+    // Fetch the room by ID
     const { data, error } = await supabase
       .from('chat_rooms')
       .select('*')
@@ -73,19 +71,17 @@ export const getShiftChatRoom = async (dateOrId: Date | string): Promise<ChatRoo
       .single();
     
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // No room found
+      if (error.code === 'PGRST116') { // Not found
+        return null;
       }
       throw error;
     }
     
     if (!data) return null;
     
-    // Transform and return as ChatRoom
-    const room = transformDatabaseRoom(data);
-    return room;
+    return transformDatabaseRoom(data);
   } catch (error) {
     console.error("Error fetching shift chat room:", error);
-    return null;
+    throw error;
   }
 };

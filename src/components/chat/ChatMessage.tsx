@@ -29,6 +29,8 @@ interface ChatMessageProps {
   onEdit?: (messageId: string, content: string) => void;
   onOpenThread?: (messageId: string) => void;
   userId: string;
+  onFlagMessage?: (messageId: string, reason: string) => void;
+  onReply?: (messageId: string) => void;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -37,7 +39,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onFlag,
   onEdit,
   onOpenThread,
-  userId
+  userId,
+  onFlagMessage,
+  onReply
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
@@ -47,7 +51,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   
   // Handle flagging a message
   const handleFlagMessage = () => {
-    if (onFlag) {
+    if (onFlagMessage) {
+      const reason = prompt("Please provide a reason for flagging this message:", "");
+      if (reason) {
+        onFlagMessage(message.id, reason);
+      }
+    } else if (onFlag) {
       const reason = prompt("Please provide a reason for flagging this message:", "");
       if (reason) {
         onFlag(message.id, reason);
@@ -70,6 +79,15 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   
   const handleCancelEdit = () => {
     setIsEditing(false);
+  };
+  
+  // Handle reply to message
+  const handleReply = () => {
+    if (onReply) {
+      onReply(message.id);
+    } else if (onOpenThread) {
+      onOpenThread(message.id);
+    }
   };
   
   // Check if this message has tagged items
@@ -112,14 +130,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 </>
               )}
               
-              {onOpenThread && (
-                <DropdownMenuItem onClick={() => onOpenThread(message.id)}>
+              {(onOpenThread || onReply) && (
+                <DropdownMenuItem onClick={handleReply}>
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Reply in Thread
                 </DropdownMenuItem>
               )}
               
-              {onFlag && (
+              {(onFlag || onFlagMessage) && (
                 <DropdownMenuItem onClick={handleFlagMessage}>
                   <Flag className="h-4 w-4 mr-2" />
                   Flag Message
@@ -167,10 +185,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             )}
             
             {/* Thread count */}
-            {message.thread_count && message.thread_count > 0 && onOpenThread && (
+            {message.thread_count && message.thread_count > 0 && (onOpenThread || onReply) && (
               <div 
                 className={`mt-2 text-xs ${isCurrentUser ? 'text-blue-100' : 'text-blue-500'} cursor-pointer`}
-                onClick={() => onOpenThread(message.id)}
+                onClick={handleReply}
               >
                 <MessageSquare className="h-3 w-3 inline-block mr-1" />
                 {message.thread_count} {message.thread_count === 1 ? 'reply' : 'replies'}

@@ -1,7 +1,6 @@
 
 import { supabase } from "../supabaseClient";
 import { ChatRoom } from "@/types/chat";
-import { transformDatabaseRoom } from "./types";
 
 // Get all chat rooms for a user
 export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
@@ -66,7 +65,7 @@ export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
         }
         
         return {
-          ...transformDatabaseRoom(room),
+          ...room,
           name: roomName,
           last_message: lastMessage,
           unread_count: unreadCount

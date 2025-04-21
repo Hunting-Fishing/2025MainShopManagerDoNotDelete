@@ -1,16 +1,24 @@
 
 import React from 'react';
-import { ChatFileInfo } from '@/services/chat/fileService';
+import { ChatMessage } from '@/types/chat';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, FileIcon, Image as ImageIcon, Film, FileAudio, FileText } from 'lucide-react';
+import { ChatFileInfo } from '@/services/chat/fileService';
+import { parseFileFromMessage } from '@/services/chat/fileService';
 
 interface ChatFileMessageProps {
-  fileInfo: ChatFileInfo;
-  caption?: string;
+  message: ChatMessage;
 }
 
-export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ fileInfo, caption }) => {
+export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ message }) => {
+  // Extract file info from the message
+  const { fileInfo } = parseFileFromMessage(message.content);
+  
+  if (!fileInfo) {
+    return <p className="text-red-500">Invalid file message</p>;
+  }
+  
   const handleDownload = () => {
     window.open(fileInfo.url, '_blank');
   };
@@ -23,7 +31,7 @@ export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ fileInfo, capt
           <div className="relative group">
             <img 
               src={fileInfo.url} 
-              alt={caption || 'Image'} 
+              alt={message.content || 'Image'} 
               className="rounded-md max-h-64 max-w-full object-contain"
             />
             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -111,7 +119,7 @@ export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ fileInfo, capt
   return (
     <Card className="p-2 bg-transparent border-none shadow-none">
       {renderFileContent()}
-      {caption && <p className="mt-1 text-sm text-slate-600">{caption}</p>}
+      {message.content && <p className="mt-1 text-sm text-slate-600">{message.content}</p>}
     </Card>
   );
 };
