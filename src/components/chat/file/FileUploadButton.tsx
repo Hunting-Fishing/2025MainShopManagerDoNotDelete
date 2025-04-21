@@ -11,6 +11,7 @@ interface FileUploadButtonProps {
   isDisabled?: boolean;
   onFileSelected?: (fileUrl: string, threadParentId?: string) => Promise<void>;
   threadParentId?: string;
+  // Removing the children prop since it's not expected by the component
 }
 
 export const FileUploadButton: React.FC<FileUploadButtonProps> = ({

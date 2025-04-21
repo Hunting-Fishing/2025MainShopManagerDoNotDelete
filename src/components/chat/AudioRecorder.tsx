@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 interface AudioRecorderProps {
   onAudioRecorded: (audioBlob: Blob) => void;
   isDisabled?: boolean;
-  onRecordingComplete?: (audioUrl: string) => void; // Added for compatibility
-  onCancel?: () => void; // Added for compatibility
+  onRecordingComplete?: (audioUrl: string) => Promise<void>; // Updated to make this return a Promise
+  onCancel?: () => void;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({ 
@@ -91,14 +91,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   };
 
   // Send recorded audio
-  const sendAudio = () => {
+  const sendAudio = async () => {
     if (audioBlob) {
       onAudioRecorded(audioBlob);
       
       // If we have the new prop, also call it with the audio URL
       if (onRecordingComplete) {
         const audioUrl = URL.createObjectURL(audioBlob);
-        onRecordingComplete(audioUrl);
+        await onRecordingComplete(audioUrl);
       }
       
       setAudioBlob(null);
