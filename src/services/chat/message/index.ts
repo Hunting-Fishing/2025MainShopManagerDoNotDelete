@@ -25,6 +25,6 @@ export {
   validateMessageType 
 } from './types';
 
-// Export saveMessageToRecord util under alias to avoid conflict with mutation export
-export { saveMessageToRecord as saveMessageToRecordUtil } from './types';
+// REMOVE THE LINE BELOW TO FIX DUPLICATE EXPORT ERROR
+// export { saveMessageToRecord as saveMessageToRecordUtil } from './types';
 
