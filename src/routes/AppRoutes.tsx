@@ -33,15 +33,18 @@ import { CustomerPortalLayout } from '@/components/customer-portal/CustomerPorta
 import CustomerPortal from '@/pages/customer-portal/CustomerPortal';
 import WorkOrdersList from '@/pages/customer-portal/WorkOrdersList';
 import CustomerWorkOrderDetail from '@/pages/customer-portal/WorkOrderDetail';
+import VehicleDetail from '@/pages/customer-portal/VehicleDetail';
 import { supabase } from '@/lib/supabase';
 
 const AppRoutes = () => {
   const [currentCustomerId, setCurrentCustomerId] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
   // Fetch the current customer ID when the component mounts
   useEffect(() => {
     const fetchCustomerId = async () => {
       try {
+        setLoading(true);
         // Get the current authenticated user
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
@@ -58,6 +61,8 @@ const AppRoutes = () => {
         }
       } catch (error) {
         console.error("Error fetching customer ID:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -118,8 +123,20 @@ const AppRoutes = () => {
 
       <Route element={<CustomerPortalLayout />}>
         <Route path="/customer-portal" element={<CustomerPortal />} />
-        <Route path="/customer-portal/work-orders" element={<WorkOrdersList customerId={currentCustomerId} />} />
+        <Route 
+          path="/customer-portal/work-orders" 
+          element={
+            loading ? (
+              <div className="flex items-center justify-center h-40">
+                <p>Loading work orders...</p>
+              </div>
+            ) : (
+              <WorkOrdersList customerId={currentCustomerId} />
+            )
+          } 
+        />
         <Route path="/customer-portal/work-orders/:id" element={<CustomerWorkOrderDetail />} />
+        <Route path="/customer-portal/vehicles/:id" element={<VehicleDetail />} />
       </Route>
     </Routes>
   );

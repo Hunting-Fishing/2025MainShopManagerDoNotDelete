@@ -1,305 +1,379 @@
-
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { formatDistanceToNow, format } from 'date-fns';
-import { Car, Calendar, FileText, MessageSquare, Settings, User } from 'lucide-react';
-import { WorkOrder } from '@/types/workOrder';
-import { toast } from '@/hooks/use-toast';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClipboardList, Calendar, MessageSquare, Car, FileText, CreditCard, Bell } from 'lucide-react';
+import { WorkOrder } from '@/types/workOrder';
+import { WorkOrderNotifications } from '@/components/customer-portal/WorkOrderNotifications';
 
-export default function CustomerPortal() {
+const CustomerPortal: React.FC = () => {
   const navigate = useNavigate();
+  const { userId } = useAuthUser();
   const [loading, setLoading] = useState(true);
-  const [customer, setCustomer] = useState<any | null>(null);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [chatRooms, setChatRooms] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [customerInfo, setCustomerInfo] = useState<any>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCustomerPortalData = async () => {
-      setLoading(true);
-      try {
-        // Get the current authenticated user
-        const { data: authData } = await supabase.auth.getUser();
-        if (!authData?.user) {
-          toast({
-            title: "Not Authenticated",
-            description: "Please log in to access the customer portal.",
-            variant: "destructive",
-          });
-          navigate('/login');
-          return;
-        }
+    const fetchCustomerId = async () => {
+      if (!userId) return;
 
-        // Get customer data associated with this user
-        const { data: customerData, error: customerError } = await supabase
+      try {
+        const { data, error } = await supabase
           .from('customers')
-          .select('*')
-          .eq('auth_user_id', authData.user.id)
+          .select('id')
+          .eq('auth_user_id', userId)
           .single();
 
-        if (customerError || !customerData) {
-          console.error("Error fetching customer data:", customerError);
-          toast({
-            title: "Error",
-            description: "Could not find your customer record.",
-            variant: "destructive",
-          });
+        if (error) {
+          console.error('Error fetching customer ID:', error);
           return;
         }
 
-        setCustomer(customerData);
-
-        // Fetch customer's work orders
-        const { data: workOrdersData, error: workOrdersError } = await supabase
-          .from('work_orders')
-          .select('*')
-          .eq('customer_id', customerData.id)
-          .order('created_at', { ascending: false });
-
-        if (workOrdersError) {
-          console.error("Error fetching work orders:", workOrdersError);
-        } else {
-          setWorkOrders(workOrdersData || []);
-        }
-
-        // Fetch customer's chat rooms
-        const chatRoomsQuery = await supabase
-          .from('chat_participants')
-          .select('room_id')
-          .eq('participant_id', customerData.id)
-          .eq('participant_type', 'customer');
-
-        if (chatRoomsQuery.error) {
-          console.error("Error fetching chat rooms:", chatRoomsQuery.error);
-        } else if (chatRoomsQuery.data && chatRoomsQuery.data.length > 0) {
-          const roomIds = chatRoomsQuery.data.map(room => room.room_id);
-          
-          const { data: roomsData, error: roomsError } = await supabase
-            .from('chat_rooms')
-            .select('*')
-            .in('id', roomIds);
-
-          if (roomsError) {
-            console.error("Error fetching room details:", roomsError);
-          } else {
-            setChatRooms(roomsData || []);
-          }
+        if (data?.id) {
+          setCustomerId(data.id);
         }
       } catch (error) {
-        console.error("Error in customer portal data fetch:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load your customer portal data.",
-          variant: "destructive",
-        });
+        console.error('Error in fetchCustomerId:', error);
+      }
+    };
+
+    fetchCustomerId();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!customerId) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch customer info
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('id', customerId)
+          .single();
+
+        if (customerData) {
+          setCustomerInfo(customerData);
+        }
+
+        // Fetch work orders
+        const { data: workOrdersData } = await supabase
+          .from('work_orders')
+          .select('*')
+          .eq('customer_id', customerId)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (workOrdersData) {
+          setWorkOrders(workOrdersData);
+        }
+
+        // Fetch vehicles
+        const { data: vehiclesData } = await supabase
+          .from('vehicles')
+          .select('*')
+          .eq('customer_id', customerId);
+
+        if (vehiclesData) {
+          setVehicles(vehiclesData);
+        }
+
+        // Fetch appointments
+        const { data: appointmentsData } = await supabase
+          .from('appointments')
+          .select('*')
+          .eq('customer_id', customerId)
+          .order('date', { ascending: true })
+          .limit(3);
+
+        if (appointmentsData) {
+          setAppointments(appointmentsData);
+        }
+
+        // Fetch notifications
+        const { data: notificationsData } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('recipient', customerId)
+          .order('timestamp', { ascending: false })
+          .limit(5);
+
+        if (notificationsData) {
+          setNotifications(notificationsData);
+        }
+      } catch (error) {
+        console.error('Error fetching customer data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCustomerPortalData();
-  }, [navigate]);
+    fetchData();
+  }, [customerId]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-40">
-        <p>Loading your portal...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading dashboard...</p>
       </div>
     );
   }
-
-  if (!customer) {
-    return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Customer Portal</CardTitle>
-            <CardDescription>
-              No customer account found. Please contact support.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  const formatWorkOrderDate = (workOrder: any) => {
-    if (workOrder.createdAt) {
-      return format(new Date(workOrder.createdAt), 'MMM d, yyyy');
-    } else if (workOrder.created_at) {
-      return format(new Date(workOrder.created_at), 'MMM d, yyyy');
-    }
-    return 'Unknown date';
-  };
 
   return (
-    <div className="container mx-auto py-6">
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Welcome, {customer.first_name}!</CardTitle>
-          <CardDescription>
-            Here's an overview of your recent activity
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center">
-                  <Car className="h-5 w-5 text-blue-600 mr-2" />
-                  <CardTitle className="text-lg">Your Vehicles</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {customer.vehicles?.length || 0} vehicles registered
-                </p>
-                <Button variant="outline" className="mt-4 w-full" onClick={() => navigate('/customer-portal/vehicles')}>
-                  View Vehicles
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-green-600 mr-2" />
-                  <CardTitle className="text-lg">Appointments</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {customer.appointments?.length || 0} upcoming appointments
-                </p>
-                <Button variant="outline" className="mt-4 w-full" onClick={() => navigate('/customer-portal/appointments')}>
-                  View Appointments
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center">
-                  <FileText className="h-5 w-5 text-purple-600 mr-2" />
-                  <CardTitle className="text-lg">Invoices</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {customer.invoices?.length || 0} invoices available
-                </p>
-                <Button variant="outline" className="mt-4 w-full" onClick={() => navigate('/customer-portal/invoices')}>
-                  View Invoices
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="container mx-auto py-8">
+      {/* Welcome Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">
+          Welcome, {customerInfo?.first_name || 'Customer'}
+        </h1>
+        <p className="text-slate-600">
+          View and manage your service information
+        </p>
+      </div>
 
-      {/* Work Orders Section */}
-      <Card className="mb-8">
-        <CardHeader className="flex justify-between items-center">
-          <div>
-            <CardTitle>Recent Work Orders</CardTitle>
-            <CardDescription>
-              Here are your recent service requests
-            </CardDescription>
-          </div>
-          <Button onClick={() => navigate('/customer-portal/work-orders')}>
-            View All
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="divide-y divide-border">
-            {workOrders.length === 0 ? (
-              <p className="text-center py-4 text-muted-foreground">No work orders found</p>
-            ) : (
-              workOrders.slice(0, 3).map((workOrder) => (
-                <div
-                  key={workOrder.id}
-                  className="py-4 cursor-pointer hover:bg-secondary"
-                  onClick={() =>
-                    navigate(`/customer-portal/work-orders/${workOrder.id}`)
-                  }
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{workOrder.description}</p>
-                      <div className="text-sm text-muted-foreground">
-                        Status: {workOrder.status}
+      {/* Dashboard Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-indigo-100 data-[state=active]:text-indigo-800 border border-indigo-200">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="vehicles" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800 border border-blue-200">
+            Vehicles
+          </TabsTrigger>
+          <TabsTrigger value="appointments" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 border border-emerald-200">
+            Appointments
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800 border border-purple-200">
+            Notifications
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Work Orders and Notifications Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Work Orders Summary - Takes 2/3 width on large screens */}
+            <Card className="lg:col-span-2">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ClipboardList className="h-5 w-5 text-indigo-600" />
+                      Recent Work Orders
+                    </CardTitle>
+                    <CardDescription>Your recent service history</CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/customer-portal/work-orders')}
+                    className="border-indigo-300 hover:bg-indigo-50"
+                  >
+                    View All
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {workOrders.length === 0 ? (
+                  <p className="text-slate-500 italic">No recent work orders found</p>
+                ) : (
+                  <div className="space-y-4">
+                    {workOrders.map((order) => (
+                      <div 
+                        key={order.id} 
+                        className="p-4 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 cursor-pointer"
+                        onClick={() => navigate(`/customer-portal/work-orders/${order.id}`)}
+                      >
+                        <div className="flex justify-between">
+                          <p className="font-semibold">{order.description}</p>
+                          <Badge 
+                            className={`
+                              ${order.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
+                                order.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                                'bg-red-100 text-red-800 border-red-300'}
+                              border
+                            `}
+                          >
+                            {order.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-slate-500 mt-1">
+                          {order.created_at ? format(new Date(order.created_at), 'MMM d, yyyy') : 'Unknown date'}
+                        </p>
                       </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatWorkOrderDate(workOrder)}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notifications - Takes 1/3 width on large screens */}
+            <div className="lg:col-span-1">
+              {customerId && <WorkOrderNotifications customerId={customerId} />}
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Car className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-slate-500">Your Vehicles</div>
+                    <div className="text-2xl font-bold">{vehicles.length}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-100 rounded-full">
+                    <Calendar className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-slate-500">Upcoming Appointments</div>
+                    <div className="text-2xl font-bold">{appointments.length}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-purple-100 rounded-full">
+                    <Bell className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-slate-500">New Notifications</div>
+                    <div className="text-2xl font-bold">
+                      {notifications.filter(n => !n.read).length}
                     </div>
                   </div>
                 </div>
-              ))
-            )}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Messages Section */}
-      <Card>
-        <CardHeader className="flex justify-between items-center">
-          <div>
-            <CardTitle>Recent Messages</CardTitle>
-            <CardDescription>
-              Stay in touch with our service team
-            </CardDescription>
-          </div>
-          <Button onClick={() => navigate('/customer-portal/messages')}>
-            View All
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="divide-y divide-border">
-            {chatRooms.length === 0 ? (
-              <p className="text-center py-4 text-muted-foreground">No messages found</p>
-            ) : (
-              chatRooms.map((room) => (
-                <div
-                  key={room.id}
-                  className="py-4 cursor-pointer hover:bg-secondary"
-                  onClick={() =>
-                    navigate(`/customer-portal/messages/${room.id}`)
-                  }
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{room.name || 'Chat'}</p>
-                      <div className="text-sm text-muted-foreground">
-                        <MessageSquare className="h-3 w-3 inline-block mr-1" />
-                        {room.last_message || 'No messages yet'}
+        {/* Vehicles Tab */}
+        <TabsContent value="vehicles" className="space-y-6">
+          <Card>
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-sky-50">
+              <CardTitle className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-blue-600" />
+                Your Vehicles
+              </CardTitle>
+              <CardDescription>Manage your registered vehicles</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {vehicles.length === 0 ? (
+                <p className="text-slate-500 italic">No vehicles found</p>
+              ) : (
+                <div className="space-y-4">
+                  {vehicles.map((vehicle) => (
+                    <div 
+                      key={vehicle.id} 
+                      className="p-4 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-slate-50"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-semibold">{vehicle.year} {vehicle.make} {vehicle.model}</p>
+                          <p className="text-sm text-slate-500 mt-1">
+                            {vehicle.license_plate && `License Plate: ${vehicle.license_plate}`}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate('/customer-portal/vehicles/' + vehicle.id)}
+                          className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                        >
+                          View Details
+                        </Button>
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {room.updated_at
-                        ? formatDistanceToNow(new Date(room.updated_at), {
-                            addSuffix: true,
-                          })
-                        : ''}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))
-            )}
-            {chatRooms.length === 0 && (
-              <Button 
-                className="w-full mt-2" 
-                variant="outline"
-                onClick={() => navigate('/customer-portal/messages/new')}
-              >
-                Start New Conversation
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Appointments Tab */}
+        <TabsContent value="appointments" className="space-y-6">
+          <Card>
+            <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-emerald-600" />
+                    Your Appointments
+                  </CardTitle>
+                  <CardDescription>Upcoming scheduled services</CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/customer-portal/appointments')}
+                  className="border-emerald-300 hover:bg-emerald-50"
+                >
+                  Schedule New
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {appointments.length === 0 ? (
+                <p className="text-slate-500 italic">No upcoming appointments</p>
+              ) : (
+                <div className="space-y-4">
+                  {appointments.map((appointment) => (
+                    <div 
+                      key={appointment.id} 
+                      className="p-4 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-slate-50"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-semibold">
+                            {appointment.date && format(new Date(appointment.date), 'EEEE, MMM d, yyyy')}
+                          </p>
+                          <p className="text-sm text-slate-500 mt-1">
+                            {appointment.date && format(new Date(appointment.date), 'h:mm a')} • {appointment.status}
+                          </p>
+                        </div>
+                        <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          {appointment.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications" className="space-y-6">
+          {customerId && <WorkOrderNotifications customerId={customerId} />}
+        </TabsContent>
+      </Tabs>
     </div>
   );
-}
+};
+
+export default CustomerPortal;

@@ -222,7 +222,7 @@ export class SupabaseNotificationService implements INotificationService {
         priority: notification.priority,
         sender: notification.sender,
         recipient: notification.recipient,
-        expires_at: notification.expires_at
+        expires_at: notification.expires_at // Using expires_at to match schema
       };
 
       await supabase
@@ -246,7 +246,7 @@ export class SupabaseNotificationService implements INotificationService {
       priority: dbNotification.priority,
       sender: dbNotification.sender,
       recipient: dbNotification.recipient,
-      expires_at: dbNotification.expires_at
+      expires_at: dbNotification.expires_at // Using expires_at to match schema
     };
   }
 }
