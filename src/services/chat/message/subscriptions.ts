@@ -46,7 +46,7 @@ export const subscribeToMessageUpdates = (roomId: string, callback: (message: Ch
   };
 };
 
-// Export typing indicator functions from typingIndicator.ts
+// Typing indicator interface
 export interface TypingIndicator {
   id: string;
   room_id: string;
