@@ -1,6 +1,7 @@
 
 import { supabase } from "../supabaseClient";
 import { MessageSendParams, MessageEditParams, MessageFlagParams } from "./types";
+import { transformDatabaseMessage } from "./types";
 
 // Send a new chat message
 export const sendChatMessage = async (params: MessageSendParams): Promise<void> => {
@@ -12,6 +13,35 @@ export const sendChatMessage = async (params: MessageSendParams): Promise<void> 
     if (error) throw error;
   } catch (error) {
     console.error("Error sending chat message:", error);
+    throw error;
+  }
+};
+
+// Send a thread reply
+export const sendThreadReply = async (params: MessageSendParams): Promise<void> => {
+  try {
+    // Insert the message
+    const { error } = await supabase
+      .from('chat_messages')
+      .insert([params]);
+    
+    if (error) throw error;
+    
+    // Increment thread_count on parent message
+    if (params.thread_parent_id) {
+      const { error: updateError } = await supabase
+        .from('chat_messages')
+        .update({
+          thread_count: supabase.rpc('increment_thread_count', { message_id: params.thread_parent_id })
+        })
+        .eq('id', params.thread_parent_id);
+      
+      if (updateError) {
+        console.error("Error updating thread count:", updateError);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending thread reply:", error);
     throw error;
   }
 };
