@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, ChangeEvent, KeyboardEvent } from 'react';
 import { ChatMessage as ChatMessageType, ChatRoom } from '@/types/chat';
 import { Button } from '@/components/ui/button';
@@ -175,14 +174,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-slate-400">
-              <MessageSquareIcon className="h-12 w-12 mb-2" />
+              <MessageSquare className="h-12 w-12 mb-2" />
               <p className="text-center">No messages yet</p>
               <p className="text-center text-sm">Start the conversation!</p>
             </div>
           )
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
-            <ClipboardIcon className="h-12 w-12 mb-2" />
+            <Clipboard className="h-12 w-12 mb-2" />
             <p className="text-center">Select a conversation</p>
             <p className="text-center text-sm">or start a new one</p>
           </div>
