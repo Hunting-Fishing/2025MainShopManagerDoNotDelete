@@ -10,10 +10,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary", // Removed /90 opacity
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive", // Removed /90 opacity
-        outline: "border border-input bg-white hover:bg-accent hover:text-accent-foreground", 
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary", // Removed /80 opacity
+        default: "bg-primary text-primary-foreground hover:bg-primary", // Solid background
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive", // Solid background
+        outline: "border border-input bg-white hover:bg-accent hover:text-accent-foreground", // Explicit white background
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary", // Solid background
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
