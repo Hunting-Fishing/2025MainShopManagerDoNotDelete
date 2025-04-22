@@ -1,14 +1,14 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ChatNameInput } from './new-chat/ChatNameInput';
 import { ParticipantSearch } from './new-chat/ParticipantSearch';
 import { ShiftChatSettings } from './new-chat/ShiftChatSettings';
 import { useChatDialogState } from './new-chat/hooks/useChatDialogState';
-import { supabase } from '@/lib/supabase';
+import { ChatTypeSelector } from './dialog/ChatTypeSelector';
+import { DialogActions } from './dialog/DialogActions';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { TeamMember } from '@/types/team';
 
 interface NewChatDialogProps {
@@ -84,7 +84,6 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
       return `${shiftName} - ${shiftDate ? new Date(shiftDate).toLocaleDateString() : 'Shift Chat'}`;
     }
     if (selectedParticipants.length === 1) {
-      // Safely find the member and access name
       const member = teamMembers.find(m => m.id === selectedParticipants[0]);
       return member?.name || 'New Chat';
     }
@@ -123,10 +122,7 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
         </DialogHeader>
         
         <Tabs defaultValue="direct" onValueChange={(value) => setChatType(value as "direct" | "group")}>
-          <TabsList className="w-full">
-            <TabsTrigger value="direct" className="flex-1">Direct Message</TabsTrigger>
-            <TabsTrigger value="group" className="flex-1">Group Chat</TabsTrigger>
-          </TabsList>
+          <ChatTypeSelector onValueChange={setChatType} />
           
           <div className="space-y-4">
             <ChatNameInput 
@@ -161,15 +157,11 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
               isLoading={isLoading}
             />
             
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handleClose}>Cancel</Button>
-              <Button 
-                onClick={handleSubmit}
-                disabled={selectedParticipants.length === 0}
-              >
-                Create
-              </Button>
-            </div>
+            <DialogActions 
+              onClose={handleClose}
+              onSubmit={handleSubmit}
+              disabled={selectedParticipants.length === 0}
+            />
           </div>
         </Tabs>
       </DialogContent>
