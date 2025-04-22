@@ -73,7 +73,10 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
         role: profile.roles && 
               Array.isArray(profile.roles) && 
               profile.roles.length > 0 && 
-              profile.roles[0]?.role?.name || 'No Role',
+              profile.roles[0]?.role && 
+              typeof profile.roles[0].role === 'object' && 
+              'name' in profile.roles[0].role ? 
+              profile.roles[0].role.name : 'No Role',
         status: 'Active' as const,
         workOrders: {
           assigned: 0,

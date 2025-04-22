@@ -37,7 +37,12 @@ export const useChatPresence = (userId: string, roomId?: string) => {
           }
         }
         
+        // Update online users
         setOnlineUsers(typedPresentUsers);
+        
+        // Update typing users
+        const currentlyTypingUsers = typedPresentUsers.filter(user => user.typing);
+        setTypingUsers(currentlyTypingUsers);
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
         // Safely cast and extract data from new presences
@@ -53,11 +58,18 @@ export const useChatPresence = (userId: string, roomId?: string) => {
         }
         
         setOnlineUsers(prev => [...prev, ...typedNewUsers]);
+        
+        // Update typing users if any of the new users are typing
+        const newTypingUsers = typedNewUsers.filter(user => user.typing);
+        if (newTypingUsers.length > 0) {
+          setTypingUsers(prev => [...prev, ...newTypingUsers]);
+        }
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
         // Extract user IDs from leaving presences
         const leftUserIds = (leftPresences as any[]).map(p => p.user_id).filter(Boolean);
         setOnlineUsers(prev => prev.filter(p => !leftUserIds.includes(p.user_id)));
+        setTypingUsers(prev => prev.filter(p => !leftUserIds.includes(p.user_id)));
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -73,6 +85,7 @@ export const useChatPresence = (userId: string, roomId?: string) => {
     };
   }, [roomId, userId]);
 
+  // Enhanced setTyping function with debounce logic
   const setTyping = async (isTyping: boolean) => {
     if (!roomId) return;
     
@@ -88,5 +101,6 @@ export const useChatPresence = (userId: string, roomId?: string) => {
     onlineUsers,
     typingUsers,
     setTyping,
+    isUserOnline: (checkUserId: string) => onlineUsers.some(user => user.user_id === checkUserId),
   };
 };
