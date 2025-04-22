@@ -1,9 +1,9 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PaperclipIcon, Loader2 } from 'lucide-react';
 import { uploadChatFile } from '@/services/chat/file';
 import { toast } from '@/hooks/use-toast';
+import { FilePreview } from './FilePreview';
 
 interface FileUploadButtonProps {
   roomId: string;
@@ -22,6 +22,7 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState<ChatFileInfo | null>(null);
   
   const handleFileButtonClick = () => {
     fileInputRef.current?.click();
@@ -37,6 +38,7 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       const fileInfo = await uploadChatFile(roomId, file);
       
       if (fileInfo) {
+        setPreviewFile(fileInfo);
         onFileUploaded(`${fileInfo.type}:${fileInfo.url}`, fileInfo.type);
         
         if (onFileSelected) {
@@ -74,20 +76,23 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
         onChange={handleFileUpload}
         accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       />
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleFileButtonClick}
-        disabled={isDisabled || isUploading}
-        className="rounded-full"
-      >
-        {isUploading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
-        ) : (
-          <PaperclipIcon className="h-5 w-5" />
-        )}
-        <span className="sr-only">Attach file</span>
-      </Button>
+      <div className="flex flex-col gap-2">
+        {previewFile && <FilePreview fileInfo={previewFile} />}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleFileButtonClick}
+          disabled={isDisabled || isUploading}
+          className="rounded-full"
+        >
+          {isUploading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+          ) : (
+            <PaperclipIcon className="h-5 w-5" />
+          )}
+          <span className="sr-only">Attach file</span>
+        </Button>
+      </div>
     </>
   );
 };
