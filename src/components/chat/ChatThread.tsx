@@ -11,10 +11,10 @@ interface ChatThreadProps {
   messages: ChatMessageType[];
   onClose: () => void;
   onSendReply: (content: string, threadParentId: string) => Promise<void>;
-  userId: string;
+  userId: string; // Changed from currentUserId to userId to match usage
   parentMessage?: ChatMessageType;
-  onEditMessage: (messageId: string, content: string) => Promise<void>;
-  onFlagMessage?: (messageId: string, reason: string) => void;
+  onEditMessage: (messageId: string, content: string) => Promise<void>; // Updated signature
+  onFlagMessage?: (messageId: string, reason: string) => void; // Updated signature
 }
 
 export const ChatThread: React.FC<ChatThreadProps> = ({
@@ -43,6 +43,17 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
     }
   };
   
+  // Create wrapper functions that adapt the signatures
+  const handleEditMessage = (newContent: string, messageId: string) => {
+    onEditMessage(messageId, newContent);
+  };
+  
+  const handleFlagMessage = (isFlagged: boolean, messageId: string) => {
+    if (onFlagMessage && isFlagged) {
+      onFlagMessage(messageId, "Flagged by user");
+    }
+  };
+  
   return (
     <div className="flex flex-col border rounded-lg bg-white h-full">
       <div className="p-2 border-b flex justify-between items-center bg-slate-50">
@@ -58,8 +69,8 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
             message={parentMessage}
             isCurrentUser={parentMessage.sender_id === userId}
             userId={userId}
-            onEdit={onEditMessage}
-            onFlag={onFlagMessage}
+            onEdit={(newContent) => handleEditMessage(newContent, parentMessage.id)}
+            onFlag={(isFlagged) => handleFlagMessage(isFlagged, parentMessage.id)}
           />
         )}
       </div>
@@ -76,8 +87,8 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
                 key={message.id}
                 message={message}
                 isCurrentUser={message.sender_id === userId}
-                onEdit={onEditMessage}
-                onFlag={onFlagMessage}
+                onEdit={(newContent) => handleEditMessage(newContent, message.id)}
+                onFlag={(isFlagged) => handleFlagMessage(isFlagged, message.id)}
                 userId={userId}
               />
             ))}
