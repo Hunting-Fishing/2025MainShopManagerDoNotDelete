@@ -1,13 +1,5 @@
 
-import { uploadChatFile } from './file/fileService';
-import { formatFileMessage, parseFileMessage } from './file';
+// This file exists for backward compatibility
+// All functionality has been moved to the file/ directory
 
-// Re-export functions
-export { 
-  uploadChatFile, 
-  formatFileMessage, 
-  parseFileMessage
-};
-
-// Re-export types using the correct syntax
-export type { ChatFileInfo } from './file';
+export * from './file';

@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PaperclipIcon } from 'lucide-react';
-import { uploadChatFile } from '@/services/chat/FileService';
+import { uploadChatFile } from '@/services/chat/file';
 import { toast } from '@/hooks/use-toast';
 
 interface FileUploadButtonProps {
