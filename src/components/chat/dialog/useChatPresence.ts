@@ -20,30 +20,43 @@ export const useChatPresence = (userId: string, roomId?: string) => {
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
         const presentUsers = Object.values(presenceState).flat();
-        // Cast presence data to match our UserPresence interface
-        const typedPresentUsers = presentUsers.map(p => ({
-          user_id: p.user_id || '',
-          online_at: p.online_at || new Date().toISOString(),
-          typing: p.typing || false,
-          user_name: p.user_name
-        })) as UserPresence[];
+        
+        // Safely extract and map presence data to our UserPresence interface
+        const typedPresentUsers: UserPresence[] = [];
+        
+        for (const presence of presentUsers) {
+          const presenceData = presence as Record<string, any>;
+          // Only add if we have the minimum required fields
+          if (presenceData) {
+            typedPresentUsers.push({
+              user_id: presenceData.user_id || '',
+              online_at: presenceData.online_at || new Date().toISOString(),
+              typing: Boolean(presenceData.typing),
+              user_name: presenceData.user_name
+            });
+          }
+        }
         
         setOnlineUsers(typedPresentUsers);
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        // Cast incoming presences to match our UserPresence interface
-        const typedNewUsers = (newPresences as any[]).map(p => ({
-          user_id: p.user_id || '',
-          online_at: p.online_at || new Date().toISOString(),
-          typing: p.typing || false,
-          user_name: p.user_name
-        })) as UserPresence[];
+        // Safely cast and extract data from new presences
+        const typedNewUsers: UserPresence[] = [];
+        
+        for (const presence of (newPresences as any[])) {
+          typedNewUsers.push({
+            user_id: presence.user_id || '',
+            online_at: presence.online_at || new Date().toISOString(),
+            typing: Boolean(presence.typing),
+            user_name: presence.user_name
+          });
+        }
         
         setOnlineUsers(prev => [...prev, ...typedNewUsers]);
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        // Cast leaving presences to match our UserPresence interface
-        const leftUserIds = (leftPresences as any[]).map(p => p.user_id);
+        // Extract user IDs from leaving presences
+        const leftUserIds = (leftPresences as any[]).map(p => p.user_id).filter(Boolean);
         setOnlineUsers(prev => prev.filter(p => !leftUserIds.includes(p.user_id)));
       })
       .subscribe(async (status) => {
