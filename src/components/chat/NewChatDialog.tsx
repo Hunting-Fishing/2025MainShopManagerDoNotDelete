@@ -86,7 +86,7 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
     if (selectedParticipants.length === 1) {
       // Safely find the member and access name
       const member = teamMembers.find(m => m.id === selectedParticipants[0]);
-      return member && member.name ? member.name : 'New Chat';
+      return member?.name || 'New Chat';
     }
     return selectedParticipants.length > 1 ? 'Group Chat' : 'New Chat';
   };
