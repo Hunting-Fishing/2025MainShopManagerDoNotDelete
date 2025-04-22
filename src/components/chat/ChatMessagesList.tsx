@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from "react";
 import { ChatMessage as ChatMessageType } from "@/types/chat";
 import { ChatMessage } from "./ChatMessage";
@@ -49,11 +50,19 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
   }, [messages]);
 
   if (!room) {
-    return <EmptyStateMessage type="no-room" />;
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+        <EmptyStateMessage type="no-room" />
+      </div>
+    );
   }
   
   if (messages.length === 0) {
-    return <EmptyStateMessage type="no-messages" />;
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+        <EmptyStateMessage type="no-messages" />
+      </div>
+    );
   }
 
   const handleOpenThread = (messageId: string) => {
@@ -61,12 +70,12 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4" ref={contentRef}>
-      <>
+    <div className="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900" ref={contentRef}>
+      <div className="space-y-4">
         {messages.map((message) => {
           const isCurrentUser = message.sender_id === userId;
           return (
-            <div id={`message-${message.id}`} key={message.id}>
+            <div id={`message-${message.id}`} key={message.id} className="mb-4">
               <ChatMessage
                 message={message}
                 isCurrentUser={isCurrentUser}
@@ -85,7 +94,7 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
           </div>
         )}
         <div ref={messagesEndRef} />
-      </>
+      </div>
     </div>
   );
 };

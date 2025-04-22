@@ -54,7 +54,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   children,
 }) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {room && (
         <ChatHeader
           room={room}
