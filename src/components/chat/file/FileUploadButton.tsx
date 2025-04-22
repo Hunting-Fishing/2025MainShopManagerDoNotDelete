@@ -1,6 +1,7 @@
+
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PaperclipIcon, Loader2 } from 'lucide-react';
+import { PaperclipIcon, Loader2, XIcon } from 'lucide-react';
 import { uploadChatFile } from '@/services/chat/file';
 import { toast } from '@/hooks/use-toast';
 import { FilePreview } from './FilePreview';
@@ -27,6 +28,13 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
   
   const handleFileButtonClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleClearFile = () => {
+    setPreviewFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,18 +86,31 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
         accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       />
       <div className="flex flex-col gap-2">
-        {previewFile && <FilePreview fileInfo={previewFile} />}
+        {previewFile && (
+          <div className="relative">
+            <FilePreview fileInfo={previewFile} className="pr-8" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-0 right-0 h-7 w-7 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"
+              onClick={handleClearFile}
+            >
+              <XIcon className="h-4 w-4" />
+              <span className="sr-only">Remove file</span>
+            </Button>
+          </div>
+        )}
         <Button
           variant="ghost"
           size="icon"
           onClick={handleFileButtonClick}
           disabled={isDisabled || isUploading}
-          className="rounded-full"
+          className="rounded-full hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
         >
           {isUploading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+            <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
           ) : (
-            <PaperclipIcon className="h-5 w-5" />
+            <PaperclipIcon className="h-5 w-5 text-slate-500 hover:text-blue-600 transition-colors" />
           )}
           <span className="sr-only">Attach file</span>
         </Button>

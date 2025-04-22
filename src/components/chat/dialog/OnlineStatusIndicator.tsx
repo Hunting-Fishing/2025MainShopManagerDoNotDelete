@@ -6,12 +6,14 @@ interface OnlineStatusIndicatorProps {
   status: 'online' | 'away' | 'do_not_disturb' | 'offline';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  withPing?: boolean;
 }
 
 export const OnlineStatusIndicator: React.FC<OnlineStatusIndicatorProps> = ({ 
   status, 
   size = 'md',
-  className 
+  className,
+  withPing = false
 }) => {
   const sizeClass = {
     sm: 'h-2 w-2',
@@ -27,13 +29,24 @@ export const OnlineStatusIndicator: React.FC<OnlineStatusIndicatorProps> = ({
   };
 
   return (
-    <div 
-      className={cn(
-        'rounded-full', 
-        sizeClass[size], 
-        statusClass[status],
-        className
+    <div className="relative">
+      <div 
+        className={cn(
+          'rounded-full', 
+          sizeClass[size], 
+          statusClass[status],
+          withPing && status === 'online' ? 'animate-pulse' : '',
+          className
+        )}
+      />
+      {withPing && status === 'online' && (
+        <div 
+          className={cn(
+            'absolute inset-0 rounded-full bg-green-400 opacity-75 animate-ping',
+            sizeClass[size]
+          )}
+        />
       )}
-    />
+    </div>
   );
 };

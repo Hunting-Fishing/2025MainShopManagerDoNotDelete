@@ -16,10 +16,10 @@ export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ message }) => 
   if (!fileInfo) return null;
 
   return (
-    <div>
+    <div className="animate-in fade-in-0 zoom-in-95 duration-200">
       <FilePreview fileInfo={fileInfo} />
       {text && (
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 pl-1">
           {text}
         </p>
       )}
