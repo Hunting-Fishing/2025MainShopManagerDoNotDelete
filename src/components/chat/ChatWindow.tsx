@@ -1,9 +1,10 @@
+
 import React, { useState, useRef, useEffect, ChangeEvent, KeyboardEvent } from 'react';
 import { ChatMessage as ChatMessageType, ChatRoom } from '@/types/chat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Pin, Archive, FileDown } from 'lucide-react';
+import { Search, Pin, Archive, FileDown, MessageSquare, Clipboard } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { TypingIndicator } from './dialog/TypingIndicator';
 import { prepareHighlightedText } from '@/services/chat/search';

@@ -8,7 +8,9 @@ export const formatFileMessage = (fileInfo: ChatFileInfo, caption?: string): str
   const fileData = {
     type: fileInfo.type,
     url: fileInfo.url,
-    name: fileInfo.name
+    name: fileInfo.name,
+    size: fileInfo.size,
+    contentType: fileInfo.contentType
   };
   
   const content: FileMessageContent = {
