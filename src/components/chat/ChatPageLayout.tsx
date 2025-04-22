@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
@@ -65,26 +64,20 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   const [showSearch, setShowSearch] = useState(false);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
-  // Get the room status (online, away, etc.)
   const getRoomStatus = (room: ChatRoom) => {
-    // This is a simplified implementation
     if (room.type === 'direct') {
-      // For direct messages, could check if the other user is online
       return 'online';
     }
     return 'offline';
   };
 
-  // Find a parent message for an active thread if it exists
   const findParentMessage = () => {
     if (!activeThreadId) return null;
     return messages.find(message => message.id === activeThreadId) || null;
   };
 
-  // Get the parent message for the current thread
   const parentMessage = findParentMessage();
 
-  // Initialize chat search
   const {
     isSearching,
     searchResults,
@@ -98,7 +91,6 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
     roomId: currentRoom?.id || null
   });
 
-  // Scroll to selected message after search
   useEffect(() => {
     if (selectedMessageId) {
       const selectedMessageElement = document.getElementById(`message-${selectedMessageId}`);
@@ -112,7 +104,6 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
     }
   }, [selectedMessageId]);
 
-  // Toggle search panel
   const toggleSearch = () => {
     if (showSearch) {
       clearSearch();
@@ -168,8 +159,10 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
             >
               <div className="flex items-center gap-2">
                 <FileUploadButton
+                  roomId={currentRoom?.id || ''}
+                  onFileUploaded={(fileUrl) => {}}
                   onFileSelected={(fileUrl) => onSendFileMessage(fileUrl)}
-                  disabled={!currentRoom}
+                  isDisabled={!currentRoom}
                 />
                 <AudioRecorder
                   onAudioRecorded={() => {}}

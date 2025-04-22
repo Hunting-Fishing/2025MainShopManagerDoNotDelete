@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
@@ -54,25 +53,20 @@ export default function Chat() {
     handleViewWorkOrderDetails
   } = useChatRoomActions(userId, selectRoom, refreshRooms);
 
-  // Check for shift chat request from calendar page
   useEffect(() => {
     const state = location.state as any;
     if (state?.createShiftChat) {
       setShowNewChatDialog(true);
       
-      // Reset location state to prevent reopening on navigation
       navigate(location.pathname, { replace: true });
     }
   }, [location, navigate, setShowNewChatDialog]);
 
-  // Use chat notifications hook
   useChatNotifications({ userId: userId || '' });
 
-  // Load specified room if roomId is provided in URL
   useEffect(() => {
     if (!userId || !roomId) return;
 
-    // First check if it's a regular room in our loaded rooms
     const findRoomInLoaded = () => {
       if (chatRooms.length > 0) {
         const room = chatRooms.find(r => r.id === roomId);
@@ -85,21 +79,18 @@ export default function Chat() {
     };
 
     if (findRoomInLoaded()) {
-      return; // Room found in loaded rooms
+      return;
     }
 
-    // If room wasn't found in loaded rooms and is a shift chat format, try to load it specifically
     if (roomId.startsWith('shift-chat-')) {
       toast({
         title: "Loading shift chat",
         description: "Please wait while we find the shift chat room."
       });
       
-      // Load the shift chat
       getShiftChat(roomId)
         .then(room => {
           if (!room && !findRoomInLoaded()) {
-            // If still not found, navigate to main chat
             navigate('/chat', { replace: true });
           }
         })
@@ -107,7 +98,6 @@ export default function Chat() {
           navigate('/chat', { replace: true });
         });
     } else {
-      // If not found and not a shift chat format, navigate to main chat
       navigate('/chat', { replace: true });
     }
   }, [roomId, userId, chatRooms, selectRoom, navigate, getShiftChat]);
@@ -116,7 +106,6 @@ export default function Chat() {
     return <ChatLoading />;
   }
 
-  // Create wrapper functions that adapt the return type
   const wrappedSendMessage = async (threadParentId?: string): Promise<void> => {
     await handleSendMessage(threadParentId);
     return Promise.resolve();
@@ -132,7 +121,13 @@ export default function Chat() {
     return Promise.resolve();
   };
 
-  // Transform typing users to the format expected by ChatPageLayout
+  const wrappedFlagMessage = (messageId: string, reason: string): void => {
+    const isFlagged = Boolean(reason && reason.trim());
+    flagMessage(messageId, isFlagged);
+  };
+
+  const safeThreadMessages = Array.isArray(threadMessages) ? threadMessages : [];
+
   const formattedTypingUsers = typingUsers?.map(user => ({
     id: user.user_id,
     name: user.user_name
@@ -154,11 +149,11 @@ export default function Chat() {
         onSendFileMessage={wrappedSendFileMessage}
         onPinRoom={handlePinRoom}
         onArchiveRoom={handleArchiveRoom}
-        onFlagMessage={flagMessage}
+        onFlagMessage={wrappedFlagMessage}
         onEditMessage={handleEditMessage}
         isTyping={isTyping}
         typingUsers={formattedTypingUsers}
-        threadMessages={threadMessages}
+        threadMessages={safeThreadMessages}
         activeThreadId={activeThreadId}
         onOpenThread={handleThreadOpen}
         onCloseThread={handleThreadClose}

@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { ChatMessage, ChatSearchQuery } from '@/types/chat';
 
 export const searchChatMessages = async (
@@ -54,23 +54,25 @@ export const searchChatMessages = async (
   }
 };
 
-/**
- * Prepares text segments for highlighting search terms
- * Returns an array of objects that can be used to render highlighted text
- */
-export const prepareHighlightedText = (text: string, searchTerm: string): Array<{text: string; highlight: boolean}> => {
-  if (!searchTerm || !text) return [{text, highlight: false}];
+interface TextSegment {
+  text: string;
+  highlight: boolean;
+}
+
+export const prepareHighlightedText = (text: string, searchTerm: string): TextSegment[] => {
+  if (!searchTerm || !text) return [{ text, highlight: false }];
   
   try {
-    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedSearchTerm})`, 'gi');
     const parts = text.split(regex);
     
     return parts.map(part => ({
       text: part,
-      highlight: regex.test(part)
+      highlight: part.toLowerCase() === searchTerm.toLowerCase()
     }));
   } catch (error) {
-    console.error('Error highlighting text:', error);
-    return [{text, highlight: false}];
+    console.error('Error preparing highlighted text:', error);
+    return [{ text, highlight: false }];
   }
 };
