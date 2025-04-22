@@ -11,3 +11,8 @@ export {
   formatFileMessage, 
   parseFileMessage 
 } from './messageFormatter';
+
+export {
+  formatFileMessage as formatFileForMessage,
+  parseFileFromMessage
+} from './fileMessageFormatter';

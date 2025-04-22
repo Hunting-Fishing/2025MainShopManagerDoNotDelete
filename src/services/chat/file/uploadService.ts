@@ -45,7 +45,7 @@ export const uploadChatFile = async (
     
   } catch (error) {
     console.error('Error uploading file:', error);
-    throw new Error(validation.error || 'File upload failed');
+    throw new Error(error instanceof Error ? error.message : 'File upload failed');
   }
 };
 

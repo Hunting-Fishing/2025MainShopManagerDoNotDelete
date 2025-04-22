@@ -1,5 +1,5 @@
 
-import { ChatFileInfo } from './uploadService';
+import { ChatFileInfo } from './types';
 
 // Function to format file message strings for sending
 export const formatFileMessage = (fileInfo: ChatFileInfo): string => {
