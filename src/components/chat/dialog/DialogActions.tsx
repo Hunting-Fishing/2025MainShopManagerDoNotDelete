@@ -11,16 +11,15 @@ export const DialogActions = ({ onClose, onSubmit, disabled }: DialogActionsProp
   return (
     <div className="flex justify-end gap-2">
       <Button 
-        variant="outline" 
-        onClick={onClose} 
-        className="!bg-white hover:!bg-gray-50 text-gray-800 border border-gray-300"
+        variant="outline"
+        onClick={onClose}
       >
         Cancel
       </Button>
       <Button 
-        onClick={onSubmit} 
+        variant="esm"
+        onClick={onSubmit}
         disabled={disabled}
-        className="!bg-esm-blue-600 hover:!bg-esm-blue-700 text-white"
       >
         Create
       </Button>
