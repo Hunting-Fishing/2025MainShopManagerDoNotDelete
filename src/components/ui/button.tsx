@@ -10,10 +10,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary", // Solid background
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive", // Solid background
-        outline: "border border-input bg-white hover:bg-accent hover:text-accent-foreground", // Explicit white background
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary", // Solid background
+        default: "bg-primary text-primary-foreground hover:bg-primary shadow-sm", // Added shadow for depth
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive shadow-sm", // Added shadow for depth
+        outline: "border border-input bg-white hover:bg-accent hover:text-accent-foreground shadow-sm", // Added explicit bg-white and shadow
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary shadow-sm", // Added shadow for depth
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
