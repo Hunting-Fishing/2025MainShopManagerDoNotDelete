@@ -84,9 +84,9 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
       return `${shiftName} - ${shiftDate ? new Date(shiftDate).toLocaleDateString() : 'Shift Chat'}`;
     }
     if (selectedParticipants.length === 1) {
-      // Use optional chaining and nullish coalescing to safely access name
+      // Safely find the member and access name
       const member = teamMembers.find(m => m.id === selectedParticipants[0]);
-      return member?.name ?? 'New Chat';
+      return member && member.name ? member.name : 'New Chat';
     }
     return selectedParticipants.length > 1 ? 'Group Chat' : 'New Chat';
   };
