@@ -1,171 +1,231 @@
 
 import React, { useState } from 'react';
-import { ChatMessage as ChatMessageType } from '@/types/chat';
+import { MoreHorizontal, Flag, Reply, Edit, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  MoreHorizontal, 
-  Edit2, 
-  Flag, 
-  Reply, 
-  Check, 
-  X, 
-  MessageSquare 
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ChatFileMessage } from './file/ChatFileMessage';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
+import { ChatMessage as ChatMessageType } from '@/types/chat';
+import { ChatFileMessage } from './ChatFileMessage';
+import { StatusBadge } from './dialog/StatusBadge';
+import { format } from 'date-fns';
 
 interface ChatMessageProps {
   message: ChatMessageType;
   isCurrentUser: boolean;
-  userId: string;
-  onEdit: (messageId: string, content: string) => Promise<void>;
-  onFlag?: (messageId: string, reason: string) => void;
-  onReply?: (messageId: string) => void;
+  onReply?: () => void;
+  onFlag?: (isFlagged: boolean) => void;
+  onEdit?: (newContent: string) => void;
+  replyCount?: number;
+  showThread?: boolean;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   isCurrentUser,
-  userId,
-  onEdit,
+  onReply,
   onFlag,
-  onReply
+  onEdit,
+  replyCount = 0,
+  showThread = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
-  
+
   const handleEdit = () => {
     setIsEditing(true);
     setEditedContent(message.content);
   };
-  
-  const handleSaveEdit = async () => {
-    if (editedContent.trim() !== message.content) {
-      await onEdit(message.id, editedContent);
+
+  const handleSaveEdit = () => {
+    if (onEdit && editedContent.trim()) {
+      onEdit(editedContent);
+      setIsEditing(false);
     }
-    setIsEditing(false);
   };
-  
+
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditedContent(message.content);
   };
 
-  const handleFlag = () => {
-    if (onFlag) {
-      onFlag(message.id, "Inappropriate content");
+  const renderMessageTime = () => {
+    const messageDate = new Date(message.created_at);
+    const today = new Date();
+    
+    if (messageDate.toDateString() === today.toDateString()) {
+      return format(messageDate, 'p'); // "1:30 PM"
+    } else {
+      return format(messageDate, 'MMM d, p'); // "Jan 1, 1:30 PM"
     }
   };
-  
-  const handleReply = () => {
-    if (onReply) {
-      onReply(message.id);
+
+  const renderMessageContent = () => {
+    if (message.file_url) {
+      return <ChatFileMessage message={message} />;
     }
-  };
-  
-  const isFile = message.message_type && ['image', 'audio', 'video', 'file'].includes(message.message_type);
-  
-  // Format timestamp
-  const timestamp = formatDistanceToNow(new Date(message.created_at), { addSuffix: true });
-  
-  return (
-    <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[80%] rounded-lg p-3 ${
-        isCurrentUser 
-          ? 'bg-blue-600 text-white' 
-          : 'bg-slate-100 dark:bg-slate-700 dark:text-slate-200'
-      }`}>
-        <div className="flex justify-between items-start mb-1">
-          <span className="text-xs font-medium">
-            {isCurrentUser ? 'You' : message.sender_name}
-          </span>
-          <div className="flex items-center gap-2">
-            {message.is_edited && (
-              <span className="text-xs opacity-70">(edited)</span>
-            )}
-            {message.thread_count && message.thread_count > 0 && (
-              <div 
-                className="flex items-center gap-1 text-xs cursor-pointer" 
-                onClick={handleReply}
-              >
-                <MessageSquare className="h-3 w-3" />
-                <span>{message.thread_count}</span>
-              </div>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {isCurrentUser && (
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {onReply && (
-                  <DropdownMenuItem onClick={handleReply}>
-                    <Reply className="h-4 w-4 mr-2" />
-                    Reply
-                  </DropdownMenuItem>
-                )}
-                {!isCurrentUser && onFlag && (
-                  <DropdownMenuItem onClick={handleFlag}>
-                    <Flag className="h-4 w-4 mr-2" />
-                    Flag
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+    if (isEditing) {
+      return (
+        <div className="space-y-2">
+          <textarea
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+            className="w-full p-2 border rounded-md"
+            rows={3}
+            autoFocus
+          />
+          <div className="flex space-x-2 justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelEdit}
+              className="h-8 px-2"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              size="sm"
+              className="h-8 px-2 bg-blue-600 hover:bg-blue-700"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Save
+            </Button>
           </div>
         </div>
-          
-        {isEditing ? (
-          <div className="mt-2">
-            <Input
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              autoFocus
-              className="mb-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-            />
-            <div className="flex justify-end gap-2">
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={handleCancelEdit}
-                className="h-7"
-              >
-                <X className="h-4 w-4 mr-1" /> Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSaveEdit}
-                className="h-7"
-              >
-                <Check className="h-4 w-4 mr-1" /> Save
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            {isFile ? (
-              <ChatFileMessage message={message} />
-            ) : (
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
-            )}
-          </>
+      );
+    }
+
+    return (
+      <div className="whitespace-pre-wrap break-words">
+        {message.content}
+        {message.is_edited && (
+          <span className="ml-1 text-xs text-gray-500">(edited)</span>
         )}
+      </div>
+    );
+  };
+
+  const renderMessageStatusBadges = () => {
+    const badges = [];
+    
+    if (message.is_flagged) {
+      badges.push(
+        <StatusBadge key="flagged" status="error" text="Flagged" size="sm" />
+      );
+    }
+    
+    if (message.message_type === 'system') {
+      badges.push(
+        <StatusBadge key="system" status="info" text="System" size="sm" />
+      );
+    }
+    
+    if (message.message_type === 'work_order') {
+      badges.push(
+        <StatusBadge key="work-order" status="success" text="Work Order" size="sm" />
+      );
+    }
+    
+    return badges.length > 0 ? (
+      <div className="flex flex-wrap gap-2 mt-1">{badges}</div>
+    ) : null;
+  };
+
+  return (
+    <div
+      className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}
+    >
+      <div
+        className={`max-w-[75%] ${
+          isCurrentUser ? 'bg-blue-50 dark:bg-blue-900/20 order-1' : 'bg-white dark:bg-gray-800 order-2'
+        } rounded-lg shadow-sm p-3 border`}
+      >
+        {/* Message Header */}
+        <div className="flex justify-between items-center mb-1">
+          <div className="font-medium text-sm">
+            <span className={isCurrentUser ? 'text-blue-600 dark:text-blue-400' : ''}>
+              {isCurrentUser ? 'You' : message.sender_name}
+            </span>
+          </div>
+          <div className="text-xs text-gray-500">
+            {renderMessageTime()}
+          </div>
+        </div>
+
+        {/* Message Content */}
+        {renderMessageContent()}
         
-        <div className="text-xs opacity-70 mt-1">{timestamp}</div>
+        {/* Message Status Badges */}
+        {renderMessageStatusBadges()}
+
+        {/* Message Actions */}
+        <div className="flex justify-between items-center mt-2">
+          <div className="space-x-1">
+            {replyCount > 0 && !showThread && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onReply}
+                className="text-xs h-6 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center space-x-1">
+            {onReply && !isEditing && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onReply}
+                className="h-6 w-6 text-gray-500 hover:text-gray-700"
+              >
+                <Reply className="h-4 w-4" />
+                <span className="sr-only">Reply</span>
+              </Button>
+            )}
+            {isCurrentUser && !isEditing && onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleEdit}
+                className="h-6 w-6 text-gray-500 hover:text-gray-700"
+              >
+                <Edit className="h-4 w-4" />
+                <span className="sr-only">Edit</span>
+              </Button>
+            )}
+            {!isEditing && onFlag && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-gray-500 hover:text-gray-700"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">More actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => onFlag(!message.is_flagged)}
+                    className={message.is_flagged ? 'text-red-600' : ''}
+                  >
+                    <Flag className="h-4 w-4 mr-2" />
+                    {message.is_flagged ? 'Remove flag' : 'Flag message'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

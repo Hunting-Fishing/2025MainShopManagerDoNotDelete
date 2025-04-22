@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
@@ -118,14 +119,17 @@ export default function Chat() {
   // Create wrapper functions that adapt the return type
   const wrappedSendMessage = async (threadParentId?: string): Promise<void> => {
     await handleSendMessage(threadParentId);
+    return Promise.resolve();
   };
   
   const wrappedSendVoiceMessage = async (audioUrl: string, threadParentId?: string): Promise<void> => {
     await handleSendVoiceMessage(audioUrl, threadParentId);
+    return Promise.resolve();
   };
   
   const wrappedSendFileMessage = async (fileUrl: string, threadParentId?: string): Promise<void> => {
     await handleSendFileMessage(fileUrl, threadParentId);
+    return Promise.resolve();
   };
 
   // Transform typing users to the format expected by ChatPageLayout
