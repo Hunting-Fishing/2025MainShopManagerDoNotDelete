@@ -6,6 +6,7 @@ interface UserPresence {
   user_id: string;
   online_at: string;
   typing?: boolean;
+  user_name?: string;
 }
 
 export const useChatPresence = (userId: string, roomId?: string) => {
@@ -18,14 +19,31 @@ export const useChatPresence = (userId: string, roomId?: string) => {
     const channel = supabase.channel(`room:${roomId}`)
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
-        const presentUsers = Object.values(presenceState).flat() as UserPresence[];
-        setOnlineUsers(presentUsers);
+        const presentUsers = Object.values(presenceState).flat();
+        // Cast presence data to match our UserPresence interface
+        const typedPresentUsers = presentUsers.map(p => ({
+          user_id: p.user_id || '',
+          online_at: p.online_at || new Date().toISOString(),
+          typing: p.typing || false,
+          user_name: p.user_name
+        })) as UserPresence[];
+        
+        setOnlineUsers(typedPresentUsers);
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        setOnlineUsers(prev => [...prev, ...newPresences as UserPresence[]]);
+        // Cast incoming presences to match our UserPresence interface
+        const typedNewUsers = (newPresences as any[]).map(p => ({
+          user_id: p.user_id || '',
+          online_at: p.online_at || new Date().toISOString(),
+          typing: p.typing || false,
+          user_name: p.user_name
+        })) as UserPresence[];
+        
+        setOnlineUsers(prev => [...prev, ...typedNewUsers]);
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        const leftUserIds = (leftPresences as UserPresence[]).map(p => p.user_id);
+        // Cast leaving presences to match our UserPresence interface
+        const leftUserIds = (leftPresences as any[]).map(p => p.user_id);
         setOnlineUsers(prev => prev.filter(p => !leftUserIds.includes(p.user_id)));
       })
       .subscribe(async (status) => {

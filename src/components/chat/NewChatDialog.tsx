@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -69,7 +70,7 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
         phone: profile.phone || '',
         jobTitle: profile.job_title || '',
         department: profile.department || '',
-        role: profile.roles?.[0]?.role?.name || 'No Role',
+        role: profile.roles && profile.roles.length > 0 && profile.roles[0]?.role?.name || 'No Role',
         status: 'Active' as const,
         workOrders: {
           assigned: 0,
