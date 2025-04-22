@@ -140,8 +140,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     <div className="w-80 border-r bg-gray-50 dark:bg-gray-900 flex flex-col h-full">
       <div className="p-3 border-b">
         <div className="mb-3">
-          <Button className="w-full" onClick={onNewChat}>
-            <Plus className="h-4 w-4 mr-2" /> New Chat
+          <Button 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm flex items-center justify-center gap-2 py-2" 
+            onClick={onNewChat}
+          >
+            <Plus className="h-4 w-4" /> New Chat
           </Button>
         </div>
         <div className="relative">
