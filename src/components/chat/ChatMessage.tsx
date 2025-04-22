@@ -12,6 +12,7 @@ import { ChatMessage as ChatMessageType } from '@/types/chat';
 import { ChatFileMessage } from './ChatFileMessage';
 import { StatusBadge } from './dialog/StatusBadge';
 import { format } from 'date-fns';
+import { prepareHighlightedText } from '@/services/chat/search';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -21,6 +22,7 @@ interface ChatMessageProps {
   onEdit?: (newContent: string) => void;
   replyCount?: number;
   showThread?: boolean;
+  highlightTerm?: string; // Optional search term to highlight
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -31,6 +33,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onEdit,
   replyCount = 0,
   showThread = false,
+  highlightTerm = '',
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
@@ -63,6 +66,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     }
   };
 
+  // Function to render message content with optional highlighting
   const renderMessageContent = () => {
     if (message.file_url) {
       return <ChatFileMessage message={message} />;
@@ -101,6 +105,24 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       );
     }
 
+    // Handle highlighted text if search term is provided
+    if (highlightTerm) {
+      const segments = prepareHighlightedText(message.content, highlightTerm);
+      return (
+        <div className="whitespace-pre-wrap break-words">
+          {segments.map((segment, i) => 
+            segment.highlight ? 
+              <span key={i} className="bg-yellow-200 dark:bg-yellow-700">{segment.text}</span> : 
+              <span key={i}>{segment.text}</span>
+          )}
+          {message.is_edited && (
+            <span className="ml-1 text-xs text-gray-500">(edited)</span>
+          )}
+        </div>
+      );
+    }
+
+    // Regular message display
     return (
       <div className="whitespace-pre-wrap break-words">
         {message.content}

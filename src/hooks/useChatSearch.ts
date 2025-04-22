@@ -12,6 +12,7 @@ export const useChatSearch = ({ roomId }: UseChatSearchProps) => {
   const [searchResults, setSearchResults] = useState<ChatMessage[]>([]);
   const [searchActive, setSearchActive] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearch = useCallback(async (searchTerm: string) => {
     if (!roomId) return;
@@ -19,6 +20,7 @@ export const useChatSearch = ({ roomId }: UseChatSearchProps) => {
     try {
       setIsSearching(true);
       setSearchActive(true);
+      setSearchTerm(searchTerm);
       
       const query: ChatSearchQuery = {
         text: searchTerm
@@ -38,6 +40,7 @@ export const useChatSearch = ({ roomId }: UseChatSearchProps) => {
     setSearchResults([]);
     setSearchActive(false);
     setSelectedMessageId(null);
+    setSearchTerm('');
   }, []);
 
   const selectMessage = useCallback((messageId: string) => {
@@ -49,6 +52,7 @@ export const useChatSearch = ({ roomId }: UseChatSearchProps) => {
     searchResults,
     searchActive,
     selectedMessageId,
+    searchTerm,
     handleSearch,
     clearSearch,
     selectMessage

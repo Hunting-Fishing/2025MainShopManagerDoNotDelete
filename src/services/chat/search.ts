@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { supabase } from '@/lib/supabase';
 import { ChatMessage, ChatSearchQuery } from '@/types/chat';
 
@@ -55,13 +54,23 @@ export const searchChatMessages = async (
   }
 };
 
-export const highlightSearchTerm = (text: string, searchTerm: string): React.ReactNode => {
-  if (!searchTerm || !text) return text;
+/**
+ * Prepares text segments for highlighting search terms
+ * Returns an array of objects that can be used to render highlighted text
+ */
+export const prepareHighlightedText = (text: string, searchTerm: string): Array<{text: string; highlight: boolean}> => {
+  if (!searchTerm || !text) return [{text, highlight: false}];
   
-  const regex = new RegExp(`(${searchTerm})`, 'gi');
-  const parts = text.split(regex);
-  
-  return parts.map((part, i) => 
-    regex.test(part) ? <span key={i} className="bg-yellow-200 dark:bg-yellow-700">{part}</span> : part
-  );
+  try {
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map(part => ({
+      text: part,
+      highlight: regex.test(part)
+    }));
+  } catch (error) {
+    console.error('Error highlighting text:', error);
+    return [{text, highlight: false}];
+  }
 };

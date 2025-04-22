@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/types/chat';
 import { StatusBadge } from '@/components/chat/dialog/StatusBadge';
+import { prepareHighlightedText } from '@/services/chat/search';
 
 interface MessageSearchProps {
   onSearch: (searchTerm: string) => void;
@@ -38,6 +39,19 @@ export const MessageSearch: React.FC<MessageSearchProps> = ({
   const handleClear = () => {
     setSearchTerm('');
     onClearSearch();
+  };
+  
+  // Function to render highlighted message content
+  const renderHighlightedContent = (content: string) => {
+    if (!searchTerm.trim()) return content;
+    
+    const highlightSegments = prepareHighlightedText(content, searchTerm);
+    
+    return highlightSegments.map((segment, index) => (
+      segment.highlight ? 
+        <span key={index} className="bg-yellow-200 dark:bg-yellow-700">{segment.text}</span> : 
+        <span key={index}>{segment.text}</span>
+    ));
   };
   
   return (
@@ -83,7 +97,9 @@ export const MessageSearch: React.FC<MessageSearchProps> = ({
                         {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-sm truncate">{message.content}</p>
+                    <p className="text-sm truncate">
+                      {renderHighlightedContent(message.content)}
+                    </p>
                   </li>
                 ))}
               </ul>
