@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PaperclipIcon } from 'lucide-react';
+import { PaperclipIcon, Loader2 } from 'lucide-react';
 import { uploadChatFile } from '@/services/chat/file';
 import { toast } from '@/hooks/use-toast';
 
@@ -44,8 +44,8 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
         }
         
         toast({
-          title: "File uploaded",
-          description: "Your file has been attached to the conversation",
+          title: "File uploaded successfully",
+          description: `${fileInfo.name} has been attached to the conversation`,
           variant: "success"
         });
       }
@@ -54,7 +54,7 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       console.error("Error uploading file:", error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload file. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload file. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -81,7 +81,11 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
         disabled={isDisabled || isUploading}
         className="rounded-full"
       >
-        <PaperclipIcon className={`h-5 w-5 ${isUploading ? 'text-slate-400 animate-pulse' : ''}`} />
+        {isUploading ? (
+          <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+        ) : (
+          <PaperclipIcon className="h-5 w-5" />
+        )}
         <span className="sr-only">Attach file</span>
       </Button>
     </>

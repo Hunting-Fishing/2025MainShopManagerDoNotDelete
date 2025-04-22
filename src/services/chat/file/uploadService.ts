@@ -1,54 +1,62 @@
 
 import { supabase } from '@/lib/supabase';
+import { ChatFileInfo } from './types';
+import { validateFile } from './fileValidation';
 
-// Define the ChatFileInfo type
-export interface ChatFileInfo {
-  url: string;
-  type: 'image' | 'video' | 'audio' | 'file' | 'document';
-  name: string;
-  size: number;
-  contentType: string;
-}
-
-// Function to upload files to storage and return file info
-export const uploadChatFile = async (roomId: string, file: File): Promise<ChatFileInfo> => {
+export const uploadChatFile = async (
+  roomId: string,
+  file: File
+): Promise<ChatFileInfo> => {
   try {
-    // Create a unique file path using roomId and timestamp
-    const timestamp = new Date().getTime();
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${timestamp}-${file.name.replace(/\s+/g, '_')}`;
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    // Determine file type category
+    let fileType = getFileType(file.type);
+
+    // Create a unique file path with room organization
+    const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
     const filePath = `chat/${roomId}/${fileName}`;
     
-    // For this implementation, we'll create a temporary URL
-    // In a real app, you would upload the file to Supabase storage
-    const url = URL.createObjectURL(file);
+    // Upload file to Supabase storage
+    const { data, error } = await supabase.storage
+      .from('chat_files')
+      .upload(filePath, file, {
+        contentType: file.type,
+        cacheControl: '3600'
+      });
+      
+    if (error) throw error;
     
-    // Determine file type
-    let type: ChatFileInfo['type'] = 'file';
-    if (file.type.startsWith('image/')) {
-      type = 'image';
-    } else if (file.type.startsWith('video/')) {
-      type = 'video';
-    } else if (file.type.startsWith('audio/')) {
-      type = 'audio';
-    } else if (
-      file.type === 'application/pdf' || 
-      file.type === 'application/msword' ||
-      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ) {
-      type = 'document';
-    }
+    // Get public URL for the file
+    const { data: { publicUrl } } = supabase.storage
+      .from('chat_files')
+      .getPublicUrl(filePath);
     
-    // Return file info
     return {
-      url,
-      type,
+      url: publicUrl,
+      type: fileType,
       name: file.name,
       size: file.size,
       contentType: file.type
     };
+    
   } catch (error) {
     console.error('Error uploading file:', error);
-    throw new Error('File upload failed');
+    throw new Error(validation.error || 'File upload failed');
   }
+};
+
+const getFileType = (mimeType: string): ChatFileInfo['type'] => {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  if (
+    mimeType === 'application/pdf' || 
+    mimeType.includes('document') ||
+    mimeType.includes('msword')
+  ) return 'document';
+  return 'file';
 };
