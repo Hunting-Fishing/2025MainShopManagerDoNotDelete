@@ -8,6 +8,7 @@ import { ShiftChatSettings } from './new-chat/ShiftChatSettings';
 import { useChatDialogState } from './new-chat/hooks/useChatDialogState';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+import { TeamMember } from '@/types/team';
 
 interface NewChatDialogProps {
   open: boolean;
@@ -63,12 +64,17 @@ export const NewChatDialog = ({ open, onClose, onCreate }: NewChatDialogProps) =
       return data.map(profile => ({
         id: profile.id,
         name: `${profile.first_name} ${profile.last_name}`,
-        email: profile.email,
+        email: profile.email || '',
         phone: profile.phone || '',
         jobTitle: profile.job_title || '',
         department: profile.department || '',
-        role: profile.roles?.[0]?.role?.name || 'No Role'
-      }));
+        role: profile.roles?.[0]?.role?.name || 'No Role',
+        status: 'Active' as const,
+        workOrders: {
+          assigned: 0,
+          completed: 0
+        }
+      })) as TeamMember[];
     }
   });
 

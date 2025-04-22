@@ -1,12 +1,12 @@
 
-import { uploadChatFile } from './file/uploadService';
-import { formatFileMessage, parseFileFromMessage } from './file';
+import { uploadChatFile } from './file/fileService';
+import { formatFileMessage, parseFileMessage } from './file';
 
 // Re-export functions
 export { 
   uploadChatFile, 
   formatFileMessage, 
-  parseFileFromMessage 
+  parseFileMessage
 };
 
 // Re-export types using the correct syntax
