@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
@@ -122,15 +123,16 @@ export default function Chat() {
   };
 
   const wrappedFlagMessage = (messageId: string, reason: string): void => {
-    const isFlagged = Boolean(reason && reason.trim());
-    flagMessage(messageId, isFlagged);
+    // Fix: Convert boolean to string reason if needed
+    flagMessage(messageId, reason);
   };
 
   const safeThreadMessages = Array.isArray(threadMessages) ? threadMessages : [];
 
+  // Fix: Map the typing users to the expected format
   const formattedTypingUsers = typingUsers?.map(user => ({
-    id: user.user_id,
-    name: user.user_name
+    id: user.id, // Using id instead of user_id
+    name: user.name // Using name instead of user_name
   })) || [];
 
   return (
