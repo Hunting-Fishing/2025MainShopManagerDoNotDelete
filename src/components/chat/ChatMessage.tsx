@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Flag, MessageSquare, CheckCircle } from 'lucide-react';
 import { prepareHighlightedText } from '@/services/chat/search';
 import { ChatFileMessage } from './ChatFileMessage';
+import { MessageBubble } from './message/MessageBubble';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -91,14 +92,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         </span>
       </div>
       
-      <div className={`max-w-3/4 ${isCurrentUser ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-white dark:bg-gray-800'} p-3 rounded-lg shadow-sm`}>
+      <MessageBubble isCurrentUser={isCurrentUser}>
         {isEditing ? (
           <div className="space-y-2">
             <textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-esm-blue-500"
               autoFocus
             />
             <div className="flex justify-end gap-2">
@@ -160,7 +161,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
           </>
         )}
-      </div>
+      </MessageBubble>
     </div>
   );
 };

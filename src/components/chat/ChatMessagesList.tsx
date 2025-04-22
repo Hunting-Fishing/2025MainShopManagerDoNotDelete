@@ -3,7 +3,8 @@ import React, { useRef, useEffect } from "react";
 import { ChatMessage as ChatMessageType } from "@/types/chat";
 import { ChatMessage } from "./ChatMessage";
 import { TypingIndicator } from "./dialog/TypingIndicator";
-import { MessageSquare, Clipboard } from "lucide-react";
+import { EmptyStateMessage } from "./message/EmptyStateMessage";
+import { useChatMessageActions } from "@/hooks/useChatMessages";
 
 interface TypingUser {
   id: string;
@@ -36,6 +37,11 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
   contentRef,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { handleEditMessage, handleFlagMessage } = useChatMessageActions({
+    onEditMessage,
+    onFlagMessage
+  });
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -44,33 +50,12 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
   }, [messages]);
 
   if (!room) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-slate-400">
-        <Clipboard className="h-12 w-12 mb-2" />
-        <p className="text-center">Select a conversation</p>
-        <p className="text-center text-sm">or start a new one</p>
-      </div>
-    );
+    return <EmptyStateMessage type="no-room" />;
   }
+  
   if (messages.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-slate-400">
-        <MessageSquare className="h-12 w-12 mb-2" />
-        <p className="text-center">No messages yet</p>
-        <p className="text-center text-sm">Start the conversation!</p>
-      </div>
-    );
+    return <EmptyStateMessage type="no-messages" />;
   }
-
-  const handleEditWrapper = (newContent: string, messageId: string) => {
-    onEditMessage(messageId, newContent);
-  };
-
-  const handleFlagWrapper = (isFlagged: boolean, messageId: string) => {
-    if (isFlagged) {
-      onFlagMessage(messageId, "Flagged by user");
-    }
-  };
 
   const handleOpenThread = (messageId: string) => {
     if (onOpenThread) onOpenThread(messageId);
@@ -87,8 +72,8 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
                 message={message}
                 isCurrentUser={isCurrentUser}
                 userId={userId}
-                onEdit={(newContent) => handleEditWrapper(newContent, message.id)}
-                onFlag={(isFlagged) => handleFlagWrapper(isFlagged, message.id)}
+                onEdit={(newContent) => handleEditMessage(newContent, message.id)}
+                onFlag={(isFlagged) => handleFlagMessage(isFlagged, message.id)}
                 onOpenThread={() => handleOpenThread(message.id)}
                 searchTerm={searchTerm}
               />

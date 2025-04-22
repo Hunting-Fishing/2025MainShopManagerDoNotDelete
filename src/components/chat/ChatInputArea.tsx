@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -8,6 +8,7 @@ interface ChatInputAreaProps {
   setNewMessageText: (txt: string) => void;
   onSendMessage: () => Promise<void>;
   disabled: boolean;
+  isSending?: boolean; // Add as optional prop so parent can control this state
   children?: React.ReactNode;
 }
 
@@ -16,19 +17,32 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
   setNewMessageText,
   onSendMessage,
   disabled,
+  isSending: externalIsSending,
   children,
 }) => {
-  const [isSending, setIsSending] = React.useState(false);
+  // Only create internal state if not provided from parent
+  const [internalIsSending, setInternalIsSending] = useState(false);
+  
+  // Use the external state if provided, otherwise use internal state
+  const isSending = externalIsSending !== undefined ? externalIsSending : internalIsSending;
 
   const handleSendMessage = async () => {
     if (!newMessageText.trim() || isSending) return;
-    setIsSending(true);
+    
+    // Only set internal state if not controlled externally
+    if (externalIsSending === undefined) {
+      setInternalIsSending(true);
+    }
+    
     try {
       await onSendMessage();
     } catch (error) {
       // error boundary/log only
     } finally {
-      setIsSending(false);
+      // Only set internal state if not controlled externally
+      if (externalIsSending === undefined) {
+        setInternalIsSending(false);
+      }
     }
   };
 
@@ -47,12 +61,16 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
           value={newMessageText}
           onChange={(e) => setNewMessageText(e.target.value)}
           onKeyDown={handleKeyPress}
-          disabled={disabled}
+          disabled={disabled || isSending}
           className="flex-1 min-h-[40px] max-h-[120px]"
           rows={1}
         />
         {children}
-        <Button onClick={handleSendMessage} disabled={disabled || !newMessageText.trim()}>
+        <Button 
+          onClick={handleSendMessage} 
+          disabled={disabled || isSending || !newMessageText.trim()}
+          variant="esm"
+        >
           Send
         </Button>
       </div>

@@ -5,16 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
+import { useChatMessageActions } from '@/hooks/useChatMessages';
 
 interface ChatThreadProps {
   threadId: string;
   messages: ChatMessageType[];
   onClose: () => void;
   onSendReply: (content: string, threadParentId: string) => Promise<void>;
-  userId: string; // Changed from currentUserId to userId to match usage
+  userId: string;
   parentMessage?: ChatMessageType;
-  onEditMessage: (messageId: string, content: string) => Promise<void>; // Updated signature
-  onFlagMessage?: (messageId: string, reason: string) => void; // Updated signature
+  onEditMessage: (messageId: string, content: string) => Promise<void>;
+  onFlagMessage?: (messageId: string, reason: string) => void;
 }
 
 export const ChatThread: React.FC<ChatThreadProps> = ({
@@ -29,6 +30,11 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
 }) => {
   const [replyText, setReplyText] = useState('');
   
+  const { handleEditMessage, handleFlagMessage } = useChatMessageActions({
+    onEditMessage,
+    onFlagMessage: onFlagMessage || (() => {})
+  });
+  
   const handleSendReply = async () => {
     if (replyText.trim()) {
       await onSendReply(replyText, threadId);
@@ -40,17 +46,6 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendReply();
-    }
-  };
-  
-  // Create wrapper functions that adapt the signatures
-  const handleEditMessage = (newContent: string, messageId: string) => {
-    onEditMessage(messageId, newContent);
-  };
-  
-  const handleFlagMessage = (isFlagged: boolean, messageId: string) => {
-    if (onFlagMessage && isFlagged) {
-      onFlagMessage(messageId, "Flagged by user");
     }
   };
   
@@ -108,6 +103,7 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
           <Button 
             onClick={handleSendReply}
             disabled={!replyText.trim()}
+            variant="esm"
           >
             Reply
           </Button>
