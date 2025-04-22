@@ -1,25 +1,10 @@
-
 import React from "react";
-import {
-  LayoutDashboard,
-  ClipboardList,
-  Users,
-  FileText,
-  Wrench,
-  Package,
-  BarChart2,
-  CalendarDays,
-  Settings,
-  MessageCircle,
-  Megaphone,
-  MailOpen,
-  BellRing,
-  HardDrive,
-  UserCog,
-  ShoppingBag,
-  FilePen
-} from "lucide-react";
 import { SidebarNavItem, NavItem } from "./SidebarNavItem";
+import {
+  LayoutDashboard, ClipboardList, Users, FileText, Wrench, Package,
+  BarChart2, CalendarDays, Settings, MessageCircle, Megaphone, MailOpen,
+  BellRing, HardDrive, UserCog, ShoppingBag, FilePen
+} from "lucide-react";
 
 // Define all navigation items here
 const navigationItems: NavItem[] = [
