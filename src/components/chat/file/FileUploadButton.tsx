@@ -5,7 +5,8 @@ import { PaperclipIcon, Loader2, XIcon } from 'lucide-react';
 import { uploadChatFile } from '@/services/chat/file';
 import { toast } from '@/hooks/use-toast';
 import { FilePreview } from './FilePreview';
-import { ChatFileInfo } from '@/services/chat/file/types';
+// Fix: import the type directly
+import type { ChatFileInfo } from '@/services/chat/file/types';
 
 interface FileUploadButtonProps {
   roomId: string;
