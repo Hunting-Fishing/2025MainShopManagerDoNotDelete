@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { supabase } from '@/lib/supabase';
 import { ChatMessage, ChatSearchQuery } from '@/types/chat';
 
