@@ -1,10 +1,9 @@
-
 import React, { useRef, useEffect } from "react";
 import { ChatMessage as ChatMessageType } from "@/types/chat";
 import { ChatMessage } from "./ChatMessage";
 import { TypingIndicator } from "./dialog/TypingIndicator";
 import { EmptyStateMessage } from "./message/EmptyStateMessage";
-import { useChatMessageActions } from "@/hooks/useChatMessages";
+import { useChatMessageActions } from "@/hooks/useChatMessageActions";
 
 interface TypingUser {
   id: string;

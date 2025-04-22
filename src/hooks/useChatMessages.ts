@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { ChatMessage } from '@/types/chat';
 import { supabase } from '@/lib/supabase';
@@ -50,7 +49,7 @@ export const useChatMessages = ({
     }
   }, [currentRoomId]);
 
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(async (threadParentId?: string) => {
     if (!newMessageText.trim() || !currentRoomId) return;
 
     try {
@@ -61,6 +60,7 @@ export const useChatMessages = ({
           sender_id: userId,
           sender_name: userName,
           room_id: currentRoomId,
+          thread_parent_id: threadParentId || null,
           created_at: new Date().toISOString()
         })
         .select()
@@ -116,7 +116,7 @@ export const useChatMessages = ({
       const { error } = await supabase
         .from('chat_messages')
         .update({ 
-          flagged: true, 
+          is_flagged: Boolean(reason), 
           flag_reason: reason,
           flagged_by: userId 
         })
@@ -125,14 +125,14 @@ export const useChatMessages = ({
       if (error) throw error;
 
       toast({
-        title: "Message Flagged",
-        description: "The message has been flagged for review"
+        title: reason ? "Message Flagged" : "Flag Removed",
+        description: reason ? "The message has been flagged for review" : "The flag has been removed from this message"
       });
     } catch (err) {
       console.error('Error flagging message:', err);
       toast({
         title: "Error",
-        description: "Failed to flag message",
+        description: "Failed to update message flag",
         variant: "destructive"
       });
     }
@@ -192,20 +192,78 @@ export const useChatMessages = ({
     }
   }, []);
 
-  const handleSendVoiceMessage = async () => {
-    // Placeholder for voice message functionality
-    toast({
-      title: "Not Implemented",
-      description: "Voice message feature coming soon"
-    });
+  const handleSendVoiceMessage = async (audioUrl: string, threadParentId?: string) => {
+    if (!currentRoomId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          content: 'Voice message',
+          sender_id: userId,
+          sender_name: userName,
+          room_id: currentRoomId,
+          thread_parent_id: threadParentId || null,
+          created_at: new Date().toISOString(),
+          message_type: 'audio',
+          file_url: audioUrl
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMessages(prev => [...prev, data]);
+      
+      toast({
+        title: "Voice Message Sent",
+        description: "Your voice message has been sent successfully"
+      });
+    } catch (err) {
+      console.error('Error sending voice message:', err);
+      toast({
+        title: "Error",
+        description: "Failed to send voice message",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSendFileMessage = async () => {
-    // Placeholder for file message functionality
-    toast({
-      title: "Not Implemented",
-      description: "File message feature coming soon"
-    });
+  const handleSendFileMessage = async (fileUrl: string, threadParentId?: string) => {
+    if (!currentRoomId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          content: 'File attachment',
+          sender_id: userId,
+          sender_name: userName,
+          room_id: currentRoomId,
+          thread_parent_id: threadParentId || null,
+          created_at: new Date().toISOString(),
+          message_type: 'file',
+          file_url: fileUrl
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMessages(prev => [...prev, data]);
+      
+      toast({
+        title: "File Sent",
+        description: "Your file has been sent successfully"
+      });
+    } catch (err) {
+      console.error('Error sending file message:', err);
+      toast({
+        title: "Error",
+        description: "Failed to send file",
+        variant: "destructive"
+      });
+    }
   };
 
   return {

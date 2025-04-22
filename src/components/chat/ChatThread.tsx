@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
-import { useChatMessageActions } from '@/hooks/useChatMessages';
+import { useChatMessageActions } from '@/hooks/useChatMessageActions';
 
 interface ChatThreadProps {
   threadId: string;
