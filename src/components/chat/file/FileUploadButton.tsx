@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PaperclipIcon } from 'lucide-react';
-import { uploadChatFile } from '@/services/chat/fileService';
+import { uploadChatFile } from '@/services/chat/FileService';
 import { toast } from '@/hooks/use-toast';
 
 interface FileUploadButtonProps {
@@ -11,7 +11,6 @@ interface FileUploadButtonProps {
   isDisabled?: boolean;
   onFileSelected?: (fileUrl: string, threadParentId?: string) => Promise<void>;
   threadParentId?: string;
-  // Removing the children prop since it's not expected by the component
 }
 
 export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
@@ -38,10 +37,8 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       const fileInfo = await uploadChatFile(roomId, file);
       
       if (fileInfo) {
-        // Always call onFileUploaded to maintain compatibility
         onFileUploaded(`${fileInfo.type}:${fileInfo.url}`, fileInfo.type);
         
-        // If the new prop is provided, also call it with thread parent ID if available
         if (onFileSelected) {
           await onFileSelected(`${fileInfo.type}:${fileInfo.url}`, threadParentId);
         }
@@ -62,7 +59,6 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       });
     } finally {
       setIsUploading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }

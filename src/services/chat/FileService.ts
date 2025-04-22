@@ -2,131 +2,113 @@
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
-export enum FileType {
-  IMAGE = 'image',
-  AUDIO = 'audio',
-  DOCUMENT = 'document',
-  VIDEO = 'video',
-  OTHER = 'other'
-}
-
-export interface FileUploadResult {
+export interface ChatFileInfo {
   url: string;
-  fileType: FileType;
-  fileName: string;
-  fileSize: number;
+  type: 'image' | 'video' | 'audio' | 'file' | 'document';
+  name: string;
+  size: number;
   contentType: string;
 }
 
 export class FileService {
-  private static readonly BUCKET_NAME = 'chat-attachments';
-  
   /**
-   * Upload a file to storage
+   * Upload file to chat storage
    */
-  static async uploadFile(file: File, userId: string): Promise<FileUploadResult> {
+  static async uploadChatFile(roomId: string, file: File): Promise<ChatFileInfo> {
     try {
-      // Ensure bucket exists
-      await this.ensureBucketExists();
+      // Create a unique file path using roomId and timestamp
+      const timestamp = new Date().getTime();
+      const fileName = `${timestamp}-${file.name.replace(/\s+/g, '_')}`;
+      const filePath = `chat/${roomId}/${fileName}`;
       
-      // Determine file type
-      const fileType = this.determineFileType(file.type);
-      
-      // Create path for file
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/${fileType}/${uuidv4()}.${fileExt}`;
-      
-      // Upload file
-      const { error: uploadError, data } = await supabase.storage
-        .from(this.BUCKET_NAME)
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          contentType: file.type,
-          upsert: false
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('chat_files')
+        .upload(filePath, file, {
+          contentType: file.type
         });
       
-      if (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        throw new Error(`Failed to upload file: ${uploadError.message}`);
-      }
+      if (error) throw error;
       
       // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(this.BUCKET_NAME)
-        .getPublicUrl(fileName);
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat_files')
+        .getPublicUrl(filePath);
+      
+      // Determine file type
+      let type: ChatFileInfo['type'] = 'file';
+      if (file.type.startsWith('image/')) {
+        type = 'image';
+      } else if (file.type.startsWith('video/')) {
+        type = 'video';
+      } else if (file.type.startsWith('audio/')) {
+        type = 'audio';
+      } else if (
+        file.type === 'application/pdf' || 
+        file.type === 'application/msword' ||
+        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ) {
+        type = 'document';
+      }
       
       return {
-        url: urlData.publicUrl,
-        fileType,
-        fileName: file.name,
-        fileSize: file.size,
+        url: publicUrl,
+        type,
+        name: file.name,
+        size: file.size,
         contentType: file.type
       };
     } catch (error) {
-      console.error('File upload error:', error);
-      throw error;
+      console.error('Error uploading file:', error);
+      throw new Error('File upload failed');
     }
   }
-  
+
   /**
-   * Delete a file from storage
+   * Utility method to parse file message
    */
-  static async deleteFile(fileUrl: string): Promise<void> {
-    try {
-      // Extract path from URL
-      const url = new URL(fileUrl);
-      const pathParts = url.pathname.split('/');
-      const filePath = pathParts.slice(pathParts.indexOf(this.BUCKET_NAME) + 1).join('/');
-      
-      const { error } = await supabase.storage
-        .from(this.BUCKET_NAME)
-        .remove([filePath]);
-      
-      if (error) {
-        console.error('Error deleting file:', error);
-        throw new Error(`Failed to delete file: ${error.message}`);
-      }
-    } catch (error) {
-      console.error('File deletion error:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Ensure the storage bucket exists
-   */
-  private static async ensureBucketExists(): Promise<void> {
-    const { data: buckets } = await supabase.storage.listBuckets();
+  static parseFileMessage(content: string): { fileInfo: ChatFileInfo | null, text: string } {
+    const fileTypes = ['image:', 'video:', 'audio:', 'file:', 'document:'];
+    const fileTypeMatch = fileTypes.find(type => content.startsWith(type));
     
-    if (!buckets?.find(b => b.name === this.BUCKET_NAME)) {
-      const { error } = await supabase.storage.createBucket(this.BUCKET_NAME, {
-        public: true
-      });
-      
-      if (error) {
-        console.error('Error creating bucket:', error);
-        throw new Error(`Failed to create storage bucket: ${error.message}`);
-      }
+    if (!fileTypeMatch) {
+      return { fileInfo: null, text: content };
     }
+    
+    const type = fileTypeMatch.replace(':', '') as ChatFileInfo['type'];
+    const fileContent = content.substring(fileTypeMatch.length);
+    const parts = fileContent.split('|');
+    
+    if (parts.length === 0) {
+      return { fileInfo: null, text: content };
+    }
+    
+    const url = parts[0];
+    const name = parts.length > 1 ? parts[1] : 'file';
+    const size = parts.length > 2 ? parseInt(parts[2], 10) : 0;
+    const contentType = parts.length > 3 ? parts[3] : `${type}/*`;
+    
+    const caption = parts.length > 4 ? parts.slice(4).join('|') : '';
+    
+    const fileInfo: ChatFileInfo = {
+      url,
+      type,
+      name,
+      size,
+      contentType
+    };
+    
+    return { fileInfo, text: caption };
   }
-  
+
   /**
-   * Determine file type from MIME type
+   * Format file message for storage
    */
-  private static determineFileType(mimeType: string): FileType {
-    if (mimeType.startsWith('image/')) {
-      return FileType.IMAGE;
-    } else if (mimeType.startsWith('audio/')) {
-      return FileType.AUDIO;
-    } else if (mimeType.startsWith('video/')) {
-      return FileType.VIDEO;
-    } else if (
-      mimeType === 'application/pdf' ||
-      mimeType.includes('document') ||
-      mimeType.includes('text/')
-    ) {
-      return FileType.DOCUMENT;
-    }
-    return FileType.OTHER;
+  static formatFileMessage(fileInfo: ChatFileInfo): string {
+    const { type, url, name, size, contentType } = fileInfo;
+    return `${type}:${url}|${name}|${size}|${contentType}`;
   }
 }
+
+// Export for convenience
+export const { uploadChatFile, parseFileMessage, formatFileMessage } = FileService;
