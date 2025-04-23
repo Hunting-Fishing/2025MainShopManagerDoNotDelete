@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Repeat } from 'lucide-react';
+import { Repeat, Calendar, Paperclip, Loader2 } from 'lucide-react';
 import { CreateRecurringMessageDialog } from './recurring/CreateRecurringMessageDialog';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { CreateReminderDialog } from './reminders/CreateReminderDialog';
 
 interface ChatInputAreaProps {
   newMessageText: string;
@@ -25,6 +26,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRecurringDialog, setShowRecurringDialog] = useState(false);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
   const { userId, userName } = useAuthUser();
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,8 +73,22 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
                 size="icon"
                 onClick={() => setShowRecurringDialog(true)}
                 title="Create recurring message"
+                disabled={isSubmitting}
               >
                 <Repeat className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {roomId && !disabled && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowReminderDialog(true)}
+                title="Set reminder"
+                disabled={isSubmitting}
+              >
+                <Calendar className="h-4 w-4" />
               </Button>
             )}
             
@@ -83,6 +99,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
               disabled={!newMessageText.trim() || disabled || isSubmitting}
               variant="default"
             >
+              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Send
             </Button>
           </div>
@@ -90,13 +107,23 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
       </form>
       
       {roomId && userId && userName && (
-        <CreateRecurringMessageDialog
-          open={showRecurringDialog}
-          onClose={() => setShowRecurringDialog(false)}
-          roomId={roomId}
-          userId={userId}
-          userName={userName}
-        />
+        <>
+          <CreateRecurringMessageDialog
+            open={showRecurringDialog}
+            onClose={() => setShowRecurringDialog(false)}
+            roomId={roomId}
+            userId={userId}
+            userName={userName}
+          />
+          
+          <CreateReminderDialog 
+            open={showReminderDialog}
+            onClose={() => setShowReminderDialog(false)}
+            roomId={roomId}
+            userId={userId}
+            userName={userName}
+          />
+        </>
       )}
     </>
   );

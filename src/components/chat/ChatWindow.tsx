@@ -1,9 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { ChatRoom, ChatMessage as ChatMessageType } from "@/types/chat";
 import { ChatHeader } from "./ChatHeader";
 import { ChatMessagesList } from "./ChatMessagesList";
 import { ChatInputArea } from "./ChatInputArea";
+import { ChatCustomerPanel } from "./customer/ChatCustomerPanel";
+import { useChatCustomerData } from "@/hooks/useChatCustomerData";
 
 interface TypingUser {
   id: string;
@@ -58,6 +60,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     room?.metadata?.customer_id || 
     (room?.type === 'direct' && room?.metadata?.is_customer_chat) ? 
       room?.participants?.find(p => p.role === 'customer')?.user_id : null;
+  
+  // Use custom hook to fetch customer data
+  const { customer, vehicles, workOrders } = useChatCustomerData({ customerId });
+  
+  // State to control customer panel visibility
+  const [showCustomerPanel, setShowCustomerPanel] = useState(!!customerId);
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900">
@@ -69,26 +77,40 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           toggleSearch={toggleSearch}
           searchActive={searchActive}
           onViewWorkOrderDetails={onViewWorkOrderDetails}
+          showCustomerPanel={showCustomerPanel}
+          setShowCustomerPanel={setShowCustomerPanel}
+          hasCustomer={!!customerId}
         />
       )}
-      <ChatMessagesList
-        room={room}
-        messages={messages}
-        userId={userId}
-        isTyping={isTyping}
-        typingUsers={typingUsers}
-        searchTerm={searchTerm}
-        onEditMessage={onEditMessage}
-        onFlagMessage={onFlagMessage}
-        onOpenThread={onOpenThread}
-        contentRef={contentRef}
-        customerId={customerId}
-      />
+      <div className="flex-1 flex overflow-hidden">
+        <ChatMessagesList
+          room={room}
+          messages={messages}
+          userId={userId}
+          isTyping={isTyping}
+          typingUsers={typingUsers}
+          searchTerm={searchTerm}
+          onEditMessage={onEditMessage}
+          onFlagMessage={onFlagMessage}
+          onOpenThread={onOpenThread}
+          contentRef={contentRef}
+          customerId={customerId}
+        />
+        
+        {showCustomerPanel && customerId && (
+          <ChatCustomerPanel 
+            customer={customer} 
+            vehicles={vehicles}
+            workOrders={workOrders}
+          />
+        )}
+      </div>
       <ChatInputArea
         newMessageText={newMessageText}
         setNewMessageText={setNewMessageText}
         onSendMessage={onSendMessage}
         disabled={!room}
+        roomId={room?.id}
       >
         {children}
       </ChatInputArea>

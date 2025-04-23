@@ -1,8 +1,8 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Search, Pin, Archive } from "lucide-react";
 import { ChatRoom } from "@/types/chat";
+import { Button } from "@/components/ui/button";
+import { Pin, Archive, Search, FileText, User, X } from "lucide-react";
 
 interface ChatHeaderProps {
   room: ChatRoom;
@@ -11,6 +11,9 @@ interface ChatHeaderProps {
   toggleSearch?: () => void;
   searchActive?: boolean;
   onViewWorkOrderDetails?: () => void;
+  showCustomerPanel?: boolean;
+  setShowCustomerPanel?: (show: boolean) => void;
+  hasCustomer?: boolean;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -20,51 +23,77 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   toggleSearch,
   searchActive,
   onViewWorkOrderDetails,
-}) => (
-  <div className="p-3 border-b bg-white flex justify-between items-center">
-    <div>
-      <h1 className="font-medium text-lg">{room.name}</h1>
-      {room.type === "work_order" && (
-        <p className="text-xs text-slate-500">
-          Work Order #{room.work_order_id}
-          {onViewWorkOrderDetails && (
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 ml-1 h-auto text-xs"
-              onClick={onViewWorkOrderDetails}
-            >
-              View Details
-            </Button>
-          )}
-        </p>
-      )}
+  showCustomerPanel = false,
+  setShowCustomerPanel,
+  hasCustomer = false
+}) => {
+  const isWorkOrderChat = !!room.metadata?.work_order;
+  const isCustomerChat = !!room.metadata?.is_customer_chat;
+
+  return (
+    <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between bg-white dark:bg-gray-900">
+      <div className="flex items-center">
+        <h3 className="font-medium text-lg">{room.name}</h3>
+        {room.is_pinned && (
+          <Pin className="h-4 w-4 text-blue-500 ml-2 fill-blue-500" />
+        )}
+      </div>
+      <div className="flex items-center space-x-2">
+        {toggleSearch && (
+          <Button
+            variant={searchActive ? "secondary" : "ghost"}
+            size="icon"
+            onClick={toggleSearch}
+            title="Search messages"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        )}
+        
+        {hasCustomer && setShowCustomerPanel && (
+          <Button
+            variant={showCustomerPanel ? "secondary" : "ghost"}
+            size="icon"
+            onClick={() => setShowCustomerPanel(!showCustomerPanel)}
+            title={showCustomerPanel ? "Hide customer details" : "Show customer details"}
+          >
+            {showCustomerPanel ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <User className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+
+        {isWorkOrderChat && onViewWorkOrderDetails && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onViewWorkOrderDetails}
+            title="View work order details"
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onPinRoom}
+          title={room.is_pinned ? "Unpin chat" : "Pin chat"}
+        >
+          <Pin className={`h-4 w-4 ${room.is_pinned ? "fill-blue-500 text-blue-500" : ""}`} />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onArchiveRoom}
+          title="Archive chat"
+        >
+          <Archive className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
-    <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        size="icon"
-        className={searchActive ? "bg-slate-200" : ""}
-        onClick={toggleSearch}
-      >
-        <Search className="h-5 w-5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onPinRoom}
-        className={room.is_pinned ? "text-amber-500" : ""}
-      >
-        <Pin className="h-5 w-5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onArchiveRoom}
-        className={room.is_archived ? "text-red-500" : ""}
-      >
-        <Archive className="h-5 w-5" />
-      </Button>
-    </div>
-  </div>
-);
+  );
+};

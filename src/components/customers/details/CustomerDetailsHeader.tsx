@@ -1,99 +1,103 @@
-import React from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Edit, ClipboardList, MessageSquare, AlertTriangle } from "lucide-react";
-import { Customer, getCustomerFullName } from "@/types/customer";
-import { Alert } from "@/components/ui/alert";
 
-interface CustomerHeaderProps {
-  customer: Customer & { name?: string, status?: string };
+import React from "react";
+import { Customer } from "@/types/customer";
+import { Button } from "@/components/ui/button";
+import { NewCustomerChatButton } from "@/components/chat/customer/NewCustomerChatButton";
+import { MessageSquare, Phone, Mail, MessageCircle, CalendarClock, UserPlus, History } from "lucide-react";
+
+interface CustomerDetailsHeaderProps {
+  customer: Customer;
   setAddInteractionOpen: (open: boolean) => void;
 }
 
-export const CustomerDetailsHeader: React.FC<CustomerHeaderProps> = ({ 
-  customer, 
-  setAddInteractionOpen 
+export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({
+  customer,
+  setAddInteractionOpen,
 }) => {
-  const navigate = useNavigate();
-  
-  if (!customer || !customer.id) {
-    return (
-      <div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate("/customers")} 
-          className="mb-4"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to Customers
-        </Button>
-        
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <span>Invalid customer data</span>
-        </Alert>
-      </div>
-    );
-  }
-  
-  const customerName = customer.name || getCustomerFullName(customer);
-  const customerStatus = customer.status || 'active';
+  const fullName = `${customer.first_name} ${customer.last_name}`;
+  const isCompanyCustomer = !!customer.company;
 
   return (
-    <div>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => navigate("/customers")} 
-        className="mb-4 text-esm-blue-600 hover:text-esm-blue-700 hover:bg-esm-blue-50"
-      >
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        Back to Customers
-      </Button>
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{customerName}</h1>
-            <Badge 
-              variant={customerStatus === 'active' ? 'default' : 'secondary'}
-              className={customerStatus === 'active' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}
-            >
-              {customerStatus === 'active' ? 'Active' : 'Inactive'}
-            </Badge>
-          </div>
-          {customer.company && (
-            <p className="text-muted-foreground">{customer.company}</p>
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+      <div className="flex flex-col md:flex-row justify-between">
+        <div className="mb-4 md:mb-0">
+          <h1 className="text-2xl font-bold tracking-tight">{fullName}</h1>
+          {isCompanyCustomer && (
+            <p className="text-slate-500 dark:text-slate-400">{customer.company}</p>
           )}
+          
+          <div className="mt-2 space-y-1">
+            {customer.email && (
+              <div className="flex items-center">
+                <Mail className="w-4 h-4 mr-2 text-slate-400" />
+                <a
+                  href={`mailto:${customer.email}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {customer.email}
+                </a>
+              </div>
+            )}
+            
+            {customer.phone && (
+              <div className="flex items-center">
+                <Phone className="w-4 h-4 mr-2 text-slate-400" />
+                <a
+                  href={`tel:${customer.phone}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {customer.phone}
+                </a>
+              </div>
+            )}
+            
+            {customer.address && (
+              <p className="text-slate-600 dark:text-slate-400 mt-1">
+                {customer.address}
+                {customer.city ? `, ${customer.city}` : ""}
+                {customer.state ? `, ${customer.state}` : ""}
+                {customer.postal_code ? ` ${customer.postal_code}` : ""}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2 mt-4 md:mt-0">
-          <Button 
-            variant="outline"
-            onClick={() => setAddInteractionOpen(true)}
-            className="border-esm-blue-200 hover:bg-esm-blue-50"
-          >
-            <MessageSquare className="mr-2 h-4 w-4 text-esm-blue-500" /> Record Interaction
-          </Button>
-          <Button 
-            variant="outline"
-            asChild
-            className="border-esm-blue-200 hover:bg-esm-blue-50"
-          >
-            <Link to={`/work-orders/new?customerId=${customer.id}&customerName=${encodeURIComponent(customerName)}`}>
-              <ClipboardList className="mr-2 h-4 w-4 text-esm-blue-500" /> New Work Order
-            </Link>
-          </Button>
-          <Button 
-            variant="outline"
-            asChild
-            className="border-esm-blue-200 hover:bg-esm-blue-50"
-          >
-            <Link to={`/customers/${customer.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4 text-esm-blue-500" /> Edit Customer
-            </Link>
-          </Button>
+        
+        <div className="flex flex-wrap gap-2 md:flex-col md:items-end">
+          <div className="flex flex-wrap gap-2">
+            <NewCustomerChatButton customer={customer} />
+            
+            <Button variant="outline" size="sm" onClick={() => setAddInteractionOpen(true)}>
+              <History className="w-4 h-4 mr-2" />
+              Record Interaction
+            </Button>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mt-2">
+            {customer.email && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={`mailto:${customer.email}`}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Email
+                </a>
+              </Button>
+            )}
+            
+            {customer.phone && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={`tel:${customer.phone}`}>
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call
+                </a>
+              </Button>
+            )}
+            
+            {customer.phone && (
+              <Button variant="outline" size="sm">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Text
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
