@@ -9,7 +9,7 @@ export type CalendarViewType = "month" | "week" | "day";
 
 export interface CalendarDayProps {
   date: Date;
-  events: CalendarEvent; // This should come from the re-export
+  events: CalendarEvent[]; // Now this will use the imported type from events.ts
   isCurrentMonth?: boolean;
   isToday?: boolean;
   onEventClick?: (event: CalendarEvent) => void;
