@@ -12,19 +12,30 @@ export const getChatReminders = async (): Promise<ServiceReminder[]> => {
       .from('chat_messages')
       .select(`
         id,
-        metadata,
-        service_reminders:metadata->reminder_id(*)
+        metadata
       `)
       .not('metadata->reminder_id', 'is', null);
     
     if (error) throw error;
     
-    // Filter out messages without valid reminders
-    const validReminders = data
-      .filter(item => item.service_reminders)
-      .map(item => mapReminderFromDb(item.service_reminders));
+    // For messages with reminder IDs, fetch the actual reminders
+    if (!data || data.length === 0) return [];
     
-    return validReminders;
+    const reminderIds = data
+      .map(item => item.metadata?.reminder_id)
+      .filter(Boolean);
+    
+    if (reminderIds.length === 0) return [];
+    
+    const { data: reminderData, error: reminderError } = await supabase
+      .from('service_reminders')
+      .select('*')
+      .in('id', reminderIds);
+      
+    if (reminderError) throw reminderError;
+    
+    // Map the reminders to the expected format
+    return (reminderData || []).map(mapReminderFromDb);
   } catch (error) {
     console.error('Error getting chat reminders:', error);
     return [];
@@ -42,8 +53,7 @@ export const getPendingReminderMessages = async (): Promise<ServiceReminder[]> =
     const { data, error } = await supabase
       .from('service_reminders')
       .select(`
-        *,
-        categories:category_id(*)
+        *
       `)
       .eq('status', 'pending')
       .lte('due_date', today)

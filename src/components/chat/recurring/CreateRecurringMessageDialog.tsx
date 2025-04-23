@@ -1,309 +1,196 @@
 
 import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Repeat } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { format, addDays } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { createRecurringMessage } from '@/services/chat/recurring/recurringMessagesService';
 
 interface CreateRecurringMessageDialogProps {
   open: boolean;
   onClose: () => void;
   roomId: string;
-  userId: string;
-  userName: string;
+  onSuccess?: () => void;
 }
-
-const formSchema = z.object({
-  message: z.string().min(1, "Message is required"),
-  startDate: z.date().min(new Date(), "Start date must be in the future"),
-  endDate: z.date().optional(),
-  recurrencePattern: z.enum(['daily', 'weekly', 'monthly']),
-  recurrenceInterval: z.number().min(1, "Interval must be at least 1"),
-  daysOfWeek: z.array(z.number()).optional(),
-  hasEndDate: z.boolean().default(false)
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 export const CreateRecurringMessageDialog: React.FC<CreateRecurringMessageDialogProps> = ({
   open,
   onClose,
   roomId,
-  userId,
-  userName
+  onSuccess
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Form state
+  const [title, setTitle] = useState<string>('');
+  const [message, setMessage] = useState<string>('');
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [recurringType, setRecurringType] = useState<string>('daily');
+  const [isActive, setIsActive] = useState<boolean>(true);
+  const [interval, setInterval] = useState<number>(1);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      message: '',
-      startDate: addDays(new Date(), 1),
-      recurrencePattern: 'daily',
-      recurrenceInterval: 1,
-      daysOfWeek: [],
-      hasEndDate: false
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title || !message || !startDate || !recurringType) {
+      return;
     }
-  });
-  
-  const recurrencePattern = form.watch('recurrencePattern');
-  const hasEndDate = form.watch('hasEndDate');
-  
-  const daysOfWeek = [
-    { label: 'Sunday', value: 0 },
-    { label: 'Monday', value: 1 },
-    { label: 'Tuesday', value: 2 },
-    { label: 'Wednesday', value: 3 },
-    { label: 'Thursday', value: 4 },
-    { label: 'Friday', value: 5 },
-    { label: 'Saturday', value: 6 },
-  ];
-  
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
+    
+    setSubmitting(true);
+    
     try {
-      await createRecurringMessage(
+      // Create the recurring message with a single object parameter
+      await createRecurringMessage({
         roomId,
-        values.message,
-        userId,
-        userName,
-        values.startDate,
-        values.recurrencePattern,
-        values.recurrenceInterval,
-        values.recurrencePattern === 'weekly' ? values.daysOfWeek : undefined,
-        values.hasEndDate ? values.endDate : undefined
-      );
-      
-      toast({
-        title: "Success",
-        description: "Recurring message has been created",
+        title,
+        message,
+        startDate,
+        recurringType,
+        isActive,
+        interval,
       });
       
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Reset form and close
+      resetForm();
       onClose();
     } catch (error) {
       console.error("Error creating recurring message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create recurring message",
-        variant: "destructive"
-      });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
   
+  const resetForm = () => {
+    setTitle('');
+    setMessage('');
+    setStartDate(new Date());
+    setRecurringType('daily');
+    setIsActive(true);
+    setInterval(1);
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <Repeat className="mr-2 h-5 w-5" />
-            Create Recurring Message
-          </DialogTitle>
-          <DialogDescription>
-            Set up a message that will be automatically sent on a schedule
-          </DialogDescription>
+          <DialogTitle>Create Recurring Message</DialogTitle>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Message</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter your recurring message"
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="New recurring message"
+              required
             />
-            
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Start Date</FormLabel>
-                  <DatePicker
-                    date={field.value}
-                    setDate={field.onChange}
-                    className="w-full"
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Enter the message that will be sent repeatedly"
+              required
+              rows={3}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
                   />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="hasEndDate"
-                checked={hasEndDate}
-                onCheckedChange={(checked) => 
-                  form.setValue('hasEndDate', checked === true)
-                }
-              />
-              <label
-                htmlFor="hasEndDate"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Set an end date
-              </label>
+                </PopoverContent>
+              </Popover>
             </div>
             
-            {hasEndDate && (
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>End Date</FormLabel>
-                    <DatePicker
-                      date={field.value}
-                      setDate={field.onChange}
-                      className="w-full"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="recurringType">Frequency</Label>
+              <Select value={recurringType} onValueChange={setRecurringType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 items-center">
+            <div className="space-y-2">
+              <Label htmlFor="interval">Every</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="interval"
+                  type="number"
+                  min={1}
+                  value={interval}
+                  onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
+                  className="w-20"
+                />
+                <span>{recurringType === 'daily' ? 'days' : recurringType === 'weekly' ? 'weeks' : 'months'}</span>
+              </div>
+            </div>
             
-            <FormField
-              control={form.control}
-              name="recurrencePattern"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recurrence Pattern</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select how often to send" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="recurrenceInterval"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {recurrencePattern === 'daily' && 'Every X days'}
-                    {recurrencePattern === 'weekly' && 'Every X weeks'}
-                    {recurrencePattern === 'monthly' && 'Every X months'}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {recurrencePattern === 'weekly' && (
-              <FormField
-                control={form.control}
-                name="daysOfWeek"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>On these days of the week</FormLabel>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {daysOfWeek.map((day) => (
-                        <div key={day.value} className="flex items-center">
-                          <Checkbox
-                            id={`day-${day.value}`}
-                            checked={field.value?.includes(day.value)}
-                            onCheckedChange={(checked) => {
-                              const currentValues = [...(field.value || [])];
-                              if (checked) {
-                                field.onChange([...currentValues, day.value]);
-                              } else {
-                                field.onChange(
-                                  currentValues.filter((val) => val !== day.value)
-                                );
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor={`day-${day.value}`}
-                            className="ml-2 text-sm"
-                          >
-                            {day.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Recurring Message"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            <div className="space-y-2">
+              <Label htmlFor="isActive">Active</Label>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                />
+                <span>{isActive ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Creating...' : 'Create'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

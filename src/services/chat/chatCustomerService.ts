@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Customer } from "@/types/customer";
-import { Vehicle } from "@/types/vehicle"; // Changed import
+import { Vehicle } from "@/types/vehicle"; // Use correct import path
 import { WorkOrder } from "@/types/workOrder";
 
 interface CustomerChatData {
@@ -57,8 +57,8 @@ export const getCustomerDataForChat = async (customerId: string): Promise<Custom
       customer: customerData.first_name + " " + customerData.last_name,
       customer_id: wo.customer_id,
       description: wo.description || "",
-      status: wo.status || "pending",
-      priority: wo.priority || "medium",
+      status: (wo.status || "pending") as "pending" | "in-progress" | "completed" | "cancelled",
+      priority: wo.priority ? wo.priority as "high" | "medium" | "low" : "medium",
       technician: "Assigned Technician", // Placeholder
       technician_id: wo.technician_id,
       date: wo.created_at,
@@ -67,7 +67,9 @@ export const getCustomerDataForChat = async (customerId: string): Promise<Custom
       notes: "",
       vehicleId: wo.vehicle_id,
       invoice_id: wo.invoice_id,
-      service_type: wo.service_type
+      service_type: wo.service_type,
+      inventoryItems: [],  // Add empty arrays for required properties
+      timeEntries: []
     }));
     
     return {
