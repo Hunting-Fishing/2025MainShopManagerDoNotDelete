@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
 import { getCustomerById } from "@/services/customer";
@@ -40,9 +41,16 @@ export const useCustomerDetails = (id?: string) => {
         throw new Error("Invalid customer ID provided");
       }
       
+      // Add timeout handling for better UX
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), 15000)
+      );
+      
       // Fetch customer data with vehicles included
       console.log("Loading customer details for ID:", customerId);
-      const customerData = await getCustomerById(customerId);
+      const customerDataPromise = getCustomerById(customerId);
+      
+      const customerData = await Promise.race([customerDataPromise, timeoutPromise]) as Customer | null;
       console.log("Customer data loaded:", customerData);
       
       if (customerData) {
@@ -98,8 +106,18 @@ export const useCustomerDetails = (id?: string) => {
 
     } catch (error) {
       console.error("Error loading customer details:", error);
-      setError("Failed to load customer details");
-      handleApiError(error, "Failed to load customer details. Please try again.");
+      
+      if (error instanceof Error && error.message === "Request timed out") {
+        setError("Request timed out. Please try again.");
+        toast({
+          title: "Timeout",
+          description: "Request timed out. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        setError("Failed to load customer details");
+        handleApiError(error, "Failed to load customer details. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
