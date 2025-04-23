@@ -15,8 +15,16 @@ export function highlightText(text: string, searchTerm: string): React.ReactNode
   const parts = text.split(new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi'));
   
   return parts.map((part, index) => {
+    // Use includes instead of exact match to handle partial matches
     if (part.toLowerCase() === searchTerm.toLowerCase()) {
-      return <span key={index} className="bg-yellow-200 dark:bg-yellow-900">{part}</span>;
+      return (
+        <span 
+          key={`highlight-${index}`} 
+          className="bg-yellow-200 dark:bg-yellow-900"
+        >
+          {part}
+        </span>
+      );
     }
     return part;
   });
