@@ -17,19 +17,22 @@ export const useCustomers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectionOk, setConnectionOk] = useState<boolean | null>(null);
+  const [connectionChecked, setConnectionChecked] = useState(false);
   const { toast } = useToast();
   
   // Check database connection
   useEffect(() => {
     const checkConnection = async () => {
       try {
+        setLoading(true);
+        console.log("Checking database connection...");
         const isConnected = await checkSupabaseConnection();
         console.log("Supabase connection status:", isConnected);
         setConnectionOk(isConnected);
+        setConnectionChecked(true);
         
         if (!isConnected) {
-          setError("Unable to connect to the database. Please try again later.");
-          setLoading(false);
+          setError("Unable to connect to the database. Please check your internet connection and try again later.");
           toast({
             title: "Connection Error",
             description: "Could not connect to the database. Please check your connection and try again.",
@@ -39,7 +42,18 @@ export const useCustomers = () => {
       } catch (err) {
         console.error("Error checking connection:", err);
         setConnectionOk(false);
+        setConnectionChecked(true);
         setError("Connection check failed. Please try again later.");
+        toast({
+          title: "Connection Error",
+          description: "Failed to check database connection. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        // Even if connection check fails, we should stop the global loading state
+        if (!connectionOk) {
+          setLoading(false);
+        }
       }
     };
     
@@ -49,18 +63,45 @@ export const useCustomers = () => {
   // Fetch customers when connection is confirmed
   useEffect(() => {
     const fetchCustomers = async () => {
-      if (connectionOk !== true) return;
+      if (!connectionChecked) return;
+      
+      if (connectionOk !== true) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
         setError(null);
         console.log("Fetching all customers in useCustomers hook");
+        
+        // Set a timeout for the request
+        const timeout = setTimeout(() => {
+          setError("Request timed out. The server might be busy. Please try again later.");
+          setLoading(false);
+          toast({
+            title: "Request Timeout",
+            description: "Customer data request took too long. Please try again.",
+            variant: "destructive",
+          });
+        }, 30000); // 30 second timeout
+        
         const data = await getAllCustomers();
+        clearTimeout(timeout);
+        
         console.log(`Customer data received - count: ${data?.length || 0}`);
         
         if (data && Array.isArray(data)) {
           setCustomers(data);
           setFilteredCustomers(data);
+          
+          if (data.length === 0) {
+            toast({
+              title: "No Customers Found",
+              description: "No customer records were found in the database.",
+              variant: "default",
+            });
+          }
         } else {
           console.error("Received invalid customer data format:", data);
           setError("Received invalid data format from the server.");
@@ -72,10 +113,24 @@ export const useCustomers = () => {
         }
       } catch (error: any) {
         console.error("Error fetching customers:", error);
-        setError(error?.message || "Failed to load customer data. Please try again.");
+        let errorMessage = "Failed to load customer data.";
+        
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        if (errorMessage.includes("JWT")) {
+          errorMessage = "Authentication error. Please try logging in again.";
+        } else if (errorMessage.includes("network")) {
+          errorMessage = "Network error. Please check your internet connection.";
+        }
+        
+        setError(errorMessage);
         toast({
           title: "Error fetching customers",
-          description: error?.message || "Could not load customer data. Please try again.",
+          description: errorMessage + " Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -84,7 +139,7 @@ export const useCustomers = () => {
     };
 
     fetchCustomers();
-  }, [toast, connectionOk]);
+  }, [toast, connectionOk, connectionChecked]);
   
   // Apply filters whenever customers or filters change
   useEffect(() => {
@@ -103,7 +158,33 @@ export const useCustomers = () => {
   
   // Function to manually refresh customers
   const refreshCustomers = useCallback(async () => {
-    if (connectionOk !== true) {
+    if (!connectionChecked) {
+      // Check connection first if it hasn't been checked yet
+      setConnectionOk(null);
+      setConnectionChecked(false);
+      try {
+        const isConnected = await checkSupabaseConnection();
+        setConnectionOk(isConnected);
+        setConnectionChecked(true);
+        if (!isConnected) {
+          toast({
+            title: "Connection Error",
+            description: "Cannot refresh customers. Please check your internet connection.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (error) {
+        setConnectionOk(false);
+        setConnectionChecked(true);
+        toast({
+          title: "Connection Error",
+          description: "Failed to check database connection. Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else if (connectionOk !== true) {
       toast({
         title: "Connection Error",
         description: "Cannot refresh customers. Please check your internet connection.",
@@ -141,7 +222,7 @@ export const useCustomers = () => {
     } finally {
       setLoading(false);
     }
-  }, [connectionOk, filters, toast]);
+  }, [connectionOk, filters, toast, connectionChecked]);
 
   return {
     customers,
@@ -149,6 +230,8 @@ export const useCustomers = () => {
     filters,
     loading,
     error,
+    connectionOk,
+    connectionChecked,
     handleFilterChange,
     refreshCustomers
   };
