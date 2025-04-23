@@ -2,8 +2,10 @@
 import { useState, useEffect } from "react";
 import { getCustomerDataForChat } from "@/services/chat/chatCustomerService";
 import { Customer } from "@/types/customer";
-import { Vehicle } from "@/types/customer/vehicle";
 import { WorkOrder } from "@/types/workOrder";
+
+// Import Vehicle directly from types/vehicle.ts instead of types/customer/vehicle
+import { Vehicle } from "@/types/vehicle";
 
 interface UseChatCustomerDataProps {
   customerId?: string | null;

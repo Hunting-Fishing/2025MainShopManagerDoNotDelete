@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Customer } from "@/types/customer";
-import { Vehicle } from "@/types/customer/vehicle";
+import { Vehicle } from "@/types/vehicle"; // Changed import
 import { WorkOrder } from "@/types/workOrder";
 import { ChevronRight, Car, Clipboard, FileText, Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -125,7 +125,7 @@ export const ChatCustomerPanel: React.FC<ChatCustomerPanelProps> = ({
                     {workOrder.status}
                   </span>
                   <span className="text-xs text-slate-500">
-                    {formatRelativeTime(workOrder.created_at || '')}
+                    {formatRelativeTime(workOrder.date || '')}
                   </span>
                 </div>
               </Link>

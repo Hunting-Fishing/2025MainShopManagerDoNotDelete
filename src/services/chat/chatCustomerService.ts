@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Customer } from "@/types/customer";
-import { Vehicle } from "@/types/customer/vehicle";
+import { Vehicle } from "@/types/vehicle"; // Changed import
 import { WorkOrder } from "@/types/workOrder";
 
 interface CustomerChatData {
@@ -51,10 +51,29 @@ export const getCustomerDataForChat = async (customerId: string): Promise<Custom
       console.error("Error fetching work orders:", workOrdersError);
     }
     
+    // Transform work orders to match expected WorkOrder type
+    const transformedWorkOrders: WorkOrder[] = (workOrdersData || []).map(wo => ({
+      id: wo.id,
+      customer: customerData.first_name + " " + customerData.last_name,
+      customer_id: wo.customer_id,
+      description: wo.description || "",
+      status: wo.status || "pending",
+      priority: wo.priority || "medium",
+      technician: "Assigned Technician", // Placeholder
+      technician_id: wo.technician_id,
+      date: wo.created_at,
+      dueDate: wo.end_time || "",
+      location: "", // Placeholder
+      notes: "",
+      vehicleId: wo.vehicle_id,
+      invoice_id: wo.invoice_id,
+      service_type: wo.service_type
+    }));
+    
     return {
       customer: customerData,
       vehicles: vehiclesData || [],
-      workOrders: workOrdersData || []
+      workOrders: transformedWorkOrders
     };
   } catch (error) {
     console.error("Failed to fetch customer chat data:", error);

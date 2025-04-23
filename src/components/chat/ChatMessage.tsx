@@ -46,7 +46,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   
   // Handle different message types
   if (message.message_type === 'file') {
-    return <ChatFileMessage message={message} isCurrentUser={isCurrentUser} />;
+    return (
+      <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} group relative`}>
+        <ChatFileMessage message={message} />
+      </div>
+    );
   }
 
   return (
@@ -58,9 +62,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     >
       <div className={`max-w-[80%] ${message.message_type === 'system' ? 'w-full text-center' : ''}`}>
         <MessageBubble
-          message={message}
+          content={message.content}
+          timestamp={message.created_at}
+          senderName={message.sender_name}
+          messageType={message.message_type || 'text'}
+          isEdited={message.is_edited || false}
+          isFlagged={message.is_flagged || false}
           isCurrentUser={isCurrentUser}
-          onEdit={onEdit}
+          onEdit={() => onEdit(message.content)}
           onFlag={onFlag}
           onOpenThread={onOpenThread}
           searchTerm={searchTerm}

@@ -71,7 +71,10 @@ export interface ChatRoomMetadata {
     status: string;
     customer_name: string;
     vehicle?: string;
+    customer_id?: string; // Added missing property
   };
+  customer_id?: string; // Added missing property
+  is_customer_chat?: boolean; // Added missing property
   team?: string;
   shop_id?: string;
   is_shift_chat?: boolean;
@@ -114,6 +117,11 @@ export interface ChatMessageMetadata {
     longitude: number;
     address?: string;
   };
+  // Add reminder metadata properties
+  reminder_id?: string;
+  reminder_due_date?: string;
+  reminder_type?: string;
+  reminder_priority?: string;
 }
 
 export interface ChatSearchQuery {
