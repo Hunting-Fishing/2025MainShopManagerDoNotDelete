@@ -127,10 +127,12 @@ export const WorkOrderFormLayout: React.FC<WorkOrderFormLayoutProps> = ({
           />
 
           <div className="flex justify-between items-center">
-            <SaveAsTemplateDialog 
-              formValues={form.getValues()} 
-              onSave={onSaveTemplate} 
-            />
+            <div>
+              <SaveAsTemplateDialog 
+                formValues={form.getValues()} 
+                onSave={onSaveTemplate} 
+              />
+            </div>
             <FormActions 
               isSubmitting={isSubmitting} 
               onCancel={onCancel} 
