@@ -9,15 +9,18 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomerCommunication, CustomerNote } from "@/types/customer";
-import { CustomerRedirect } from "@/components/routing/CustomerRedirect"; // Import for handling ID validation
+import { CustomerRedirect } from "@/components/routing/CustomerRedirect"; 
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
+  // Validate the ID format earlier - UUID format validation
+  const isValidUUID = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  
   // Early validation - use CustomerRedirect component for invalid IDs
-  if (!id || id === "undefined") {
+  if (!isValidUUID) {
     return <CustomerRedirect />;
   }
   
@@ -69,25 +72,30 @@ export default function CustomerDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-40">
-        <div className="text-lg text-slate-500">Loading customer details...</div>
+      <div className="flex flex-col items-center justify-center h-60 space-y-4">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-lg text-slate-600 font-medium">Loading customer details...</div>
       </div>
     );
   }
 
   if (error || !customer) {
     return (
-      <div className="space-y-6">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error Loading Customer</AlertTitle>
-          <AlertDescription>
-            {error || "Customer not found. The customer may have been deleted or you don't have permission to view it."}
+      <div className="space-y-6 p-4">
+        <Alert variant="destructive" className="border-red-500 bg-red-50">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle className="text-lg font-medium">Customer Not Found</AlertTitle>
+          <AlertDescription className="mt-2">
+            <p>{error || "The requested customer could not be found. The customer may have been deleted or you don't have permission to view it."}</p>
           </AlertDescription>
         </Alert>
         
-        <div className="flex justify-center mt-6">
-          <Button onClick={() => navigate('/customers')} variant="default">
+        <div className="flex justify-center mt-8">
+          <Button 
+            onClick={() => navigate('/customers')} 
+            variant="default"
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Return to Customers List
           </Button>

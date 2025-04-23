@@ -107,13 +107,26 @@ export const useCustomerDetails = (id?: string) => {
     } catch (error) {
       console.error("Error loading customer details:", error);
       
-      if (error instanceof Error && error.message === "Request timed out") {
-        setError("Request timed out. Please try again.");
-        toast({
-          title: "Timeout",
-          description: "Request timed out. Please try again.",
-          variant: "destructive",
-        });
+      // Check specifically for 404-like errors from Supabase
+      if (error instanceof Error) {
+        if (error.message.includes("No rows found") || error.message.includes("not found")) {
+          setError("Customer not found");
+          toast({
+            title: "Not Found",
+            description: "The customer doesn't exist or has been deleted.",
+            variant: "destructive",
+          });
+        } else if (error.message === "Request timed out") {
+          setError("Request timed out. Please try again.");
+          toast({
+            title: "Timeout",
+            description: "Request timed out. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          setError("Failed to load customer details");
+          handleApiError(error, "Failed to load customer details. Please try again.");
+        }
       } else {
         setError("Failed to load customer details");
         handleApiError(error, "Failed to load customer details. Please try again.");
