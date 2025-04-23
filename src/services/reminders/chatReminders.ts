@@ -22,7 +22,12 @@ export const getChatReminders = async (): Promise<ServiceReminder[]> => {
     if (!data || data.length === 0) return [];
     
     const reminderIds = data
-      .map(item => item.metadata?.reminder_id)
+      .map(item => {
+        if (item.metadata && typeof item.metadata === 'object') {
+          return (item.metadata as Record<string, any>).reminder_id;
+        }
+        return null;
+      })
       .filter(Boolean);
     
     if (reminderIds.length === 0) return [];

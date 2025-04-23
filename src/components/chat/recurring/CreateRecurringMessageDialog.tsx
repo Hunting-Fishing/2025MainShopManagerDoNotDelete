@@ -14,10 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { createRecurringMessage } from '@/services/chat/recurring/recurringMessagesService';
 
-interface CreateRecurringMessageDialogProps {
+export interface CreateRecurringMessageDialogProps {
   open: boolean;
   onClose: () => void;
   roomId: string;
+  userId: string; // Add this missing prop
+  userName: string; // Add this missing prop
   onSuccess?: () => void;
 }
 
@@ -25,6 +27,8 @@ export const CreateRecurringMessageDialog: React.FC<CreateRecurringMessageDialog
   open,
   onClose,
   roomId,
+  userId,
+  userName,
   onSuccess
 }) => {
   // Form state

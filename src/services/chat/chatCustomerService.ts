@@ -58,7 +58,8 @@ export const getCustomerDataForChat = async (customerId: string): Promise<Custom
       customer_id: wo.customer_id,
       description: wo.description || "",
       status: (wo.status || "pending") as "pending" | "in-progress" | "completed" | "cancelled",
-      priority: wo.priority ? wo.priority as "high" | "medium" | "low" : "medium",
+      // Use as const assertion to ensure this is a valid priority
+      priority: (wo.priority || "medium") as WorkOrder["priority"],
       technician: "Assigned Technician", // Placeholder
       technician_id: wo.technician_id,
       date: wo.created_at,
