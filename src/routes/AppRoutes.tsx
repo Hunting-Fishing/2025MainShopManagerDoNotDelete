@@ -20,6 +20,7 @@ import EmailTemplates from '@/pages/EmailTemplates';
 import EmailSequenceDetails from '@/pages/EmailSequenceDetails';
 import CreateRepairPlan from '@/pages/CreateRepairPlan';
 import Inventory from '@/pages/Inventory';
+import InventoryAdd from '@/pages/InventoryAdd';
 import Maintenance from '@/pages/Maintenance';
 import MaintenanceDashboard from '@/pages/MaintenanceDashboard';
 import Forms from '@/pages/Forms';
@@ -106,6 +107,7 @@ const AppRoutes = () => {
         <Route path="/marketing" element={<EmailTemplates />} />
         
         <Route path="/inventory" element={<Inventory />} />
+        <Route path="/inventory/add" element={<InventoryAdd />} />
         
         <Route path="/equipment" element={<Equipment />} />
         <Route path="/equipment/repair-plans/create" element={<CreateRepairPlan />} />
