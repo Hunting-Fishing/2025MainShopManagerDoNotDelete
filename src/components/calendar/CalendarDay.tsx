@@ -4,7 +4,7 @@ import { format, isPast, isToday, isSameDay } from 'date-fns';
 import { CalendarDayProps } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { WorkOrderCalendarEvent } from './WorkOrderCalendarEvent';
-import { AlertCircle, CalendarCheck } from 'lucide-react'; // Use allowed icons
+import { CalendarCheck } from 'lucide-react'; // Use allowed icons
 
 export function CalendarDay({ 
   date, 
