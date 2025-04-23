@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { format, isPast, isToday, isSameDay } from 'date-fns';
-import { CalendarDayProps } from '@/types/calendar';
+import { CalendarDayProps, CalendarEvent } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { WorkOrderCalendarEvent } from './WorkOrderCalendarEvent';
 import { CalendarCheck } from 'lucide-react'; // Use allowed icons
