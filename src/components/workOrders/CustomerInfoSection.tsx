@@ -4,7 +4,8 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Customer } from "@/types/customer";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CustomerInfoSectionProps {
   form: any;
@@ -59,46 +60,67 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({
           <FormItem>
             <FormLabel>Customer</FormLabel>
             <FormControl>
-              <Select
-                disabled={isLoading}
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  // Find customer name for the selected ID
-                  const customer = customers.find(c => c.id === value);
-                  if (customer) {
-                    setSelectedCustomerName(`${customer.first_name} ${customer.last_name}`);
-                    
-                    // Update address
-                    const addressParts = [];
-                    if (customer.address) addressParts.push(customer.address);
-                    if (customer.city) addressParts.push(customer.city);
-                    if (customer.state) addressParts.push(customer.state);
-                    if (customer.postal_code) addressParts.push(customer.postal_code);
-                    
-                    setCustomerAddress(addressParts.join(", "));
-                  }
-                }}
-                value={field.value || preSelectedCustomerId || ""}
-              >
-                <SelectTrigger>
-                  {isLoading ? (
-                    <div className="flex items-center">
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      <span>Loading customers...</span>
-                    </div>
-                  ) : (
-                    <SelectValue placeholder="Select a customer" />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.first_name} {customer.last_name}
-                      {customer.company ? ` (${customer.company})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isLoading ? (
+                <div className="flex items-center border rounded-md p-2">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <span className="text-sm">Loading customers...</span>
+                </div>
+              ) : customers.length === 0 ? (
+                <div>
+                  <Select disabled={true} value={field.value || ""}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="No customers available" />
+                    </SelectTrigger>
+                  </Select>
+                  <Alert variant="warning" className="mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      No customers found. There might be a connection issue or permissions problem.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              ) : (
+                <Select
+                  disabled={isLoading}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    // Find customer name for the selected ID
+                    const customer = customers.find(c => c.id === value);
+                    if (customer) {
+                      setSelectedCustomerName(`${customer.first_name} ${customer.last_name}`);
+                      
+                      // Update address
+                      const addressParts = [];
+                      if (customer.address) addressParts.push(customer.address);
+                      if (customer.city) addressParts.push(customer.city);
+                      if (customer.state) addressParts.push(customer.state);
+                      if (customer.postal_code) addressParts.push(customer.postal_code);
+                      
+                      setCustomerAddress(addressParts.join(", "));
+                    }
+                  }}
+                  value={field.value || preSelectedCustomerId || ""}
+                >
+                  <SelectTrigger>
+                    {isLoading ? (
+                      <div className="flex items-center">
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <span>Loading customers...</span>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder="Select a customer" />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.first_name} {customer.last_name}
+                        {customer.company ? ` (${customer.company})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </FormControl>
             <FormMessage />
           </FormItem>
