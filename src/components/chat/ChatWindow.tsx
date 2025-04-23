@@ -53,6 +53,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   contentRef,
   children,
 }) => {
+  // Get customerId from room metadata if available
+  const customerId = room?.metadata?.work_order?.customer_id || 
+    room?.metadata?.customer_id || 
+    (room?.type === 'direct' && room?.metadata?.is_customer_chat) ? 
+      room?.participants?.find(p => p.role === 'customer')?.user_id : null;
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {room && (
@@ -76,6 +82,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onFlagMessage={onFlagMessage}
         onOpenThread={onOpenThread}
         contentRef={contentRef}
+        customerId={customerId}
       />
       <ChatInputArea
         newMessageText={newMessageText}

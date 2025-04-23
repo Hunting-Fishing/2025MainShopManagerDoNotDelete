@@ -22,6 +22,7 @@ interface ChatMessagesListProps {
   onFlagMessage: (messageId: string, reason: string) => void;
   onOpenThread?: (messageId: string) => void;
   contentRef?: React.RefObject<HTMLDivElement>;
+  customerId?: string | null;
 }
 
 export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
@@ -35,6 +36,7 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
   onFlagMessage,
   onOpenThread,
   contentRef,
+  customerId,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -84,6 +86,7 @@ export const ChatMessagesList: React.FC<ChatMessagesListProps> = ({
                 onFlag={(isFlagged) => handleFlagMessage(isFlagged, message.id)}
                 onOpenThread={() => handleOpenThread(message.id)}
                 searchTerm={searchTerm}
+                customerId={customerId || undefined}
               />
             </div>
           );

@@ -1,79 +1,103 @@
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Repeat } from 'lucide-react';
+import { CreateRecurringMessageDialog } from './recurring/CreateRecurringMessageDialog';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface ChatInputAreaProps {
   newMessageText: string;
-  setNewMessageText: (txt: string) => void;
+  setNewMessageText: (text: string) => void;
   onSendMessage: () => Promise<void>;
-  disabled: boolean;
-  isSending?: boolean; // Add as optional prop so parent can control this state
+  disabled?: boolean;
   children?: React.ReactNode;
+  roomId?: string;
 }
 
 export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
   newMessageText,
   setNewMessageText,
   onSendMessage,
-  disabled,
-  isSending: externalIsSending,
+  disabled = false,
   children,
+  roomId
 }) => {
-  // Only create internal state if not provided from parent
-  const [internalIsSending, setInternalIsSending] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRecurringDialog, setShowRecurringDialog] = useState(false);
+  const { userId, userName } = useAuthUser();
   
-  // Use the external state if provided, otherwise use internal state
-  const isSending = externalIsSending !== undefined ? externalIsSending : internalIsSending;
-
-  const handleSendMessage = async () => {
-    if (!newMessageText.trim() || isSending) return;
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!newMessageText.trim() || disabled || isSubmitting) return;
     
-    // Only set internal state if not controlled externally
-    if (externalIsSending === undefined) {
-      setInternalIsSending(true);
-    }
-    
+    setIsSubmitting(true);
     try {
       await onSendMessage();
-    } catch (error) {
-      // error boundary/log only
     } finally {
-      // Only set internal state if not controlled externally
-      if (externalIsSending === undefined) {
-        setInternalIsSending(false);
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (newMessageText.trim() && !disabled && !isSubmitting) {
+        handleSubmit(e as any);
       }
     }
   };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
+  
   return (
-    <div className="p-4 border-t">
-      <div className="flex items-center space-x-2">
-        <Textarea
-          placeholder="Type a message..."
-          value={newMessageText}
-          onChange={(e) => setNewMessageText(e.target.value)}
-          onKeyDown={handleKeyPress}
-          disabled={disabled || isSending}
-          className="flex-1 min-h-[40px] max-h-[120px]"
-          rows={1}
+    <>
+      <form onSubmit={handleSubmit} className="border-t border-gray-200 dark:border-gray-800 p-4">
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <Input
+              value={newMessageText}
+              onChange={(e) => setNewMessageText(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder={disabled ? "Select a conversation to start messaging" : "Type your message..."}
+              className="bg-white dark:bg-gray-800"
+              disabled={disabled}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {roomId && !disabled && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowRecurringDialog(true)}
+                title="Create recurring message"
+              >
+                <Repeat className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {children}
+            
+            <Button
+              type="submit"
+              disabled={!newMessageText.trim() || disabled || isSubmitting}
+              variant="default"
+            >
+              Send
+            </Button>
+          </div>
+        </div>
+      </form>
+      
+      {roomId && userId && userName && (
+        <CreateRecurringMessageDialog
+          open={showRecurringDialog}
+          onClose={() => setShowRecurringDialog(false)}
+          roomId={roomId}
+          userId={userId}
+          userName={userName}
         />
-        {children}
-        <Button 
-          onClick={handleSendMessage} 
-          disabled={disabled || isSending || !newMessageText.trim()}
-          variant="esm"
-        >
-          Send
-        </Button>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
