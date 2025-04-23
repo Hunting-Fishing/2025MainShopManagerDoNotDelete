@@ -1,6 +1,7 @@
 
 import { WorkOrderInventoryItem } from "./workOrder";
 import { ChatRoom } from "./chat";
+import { CalendarEvent } from './calendar/events';
 
 // Re-export types from the new calendar/events.ts file
 export * from './calendar/events';
@@ -9,7 +10,7 @@ export type CalendarViewType = "month" | "week" | "day";
 
 export interface CalendarDayProps {
   date: Date;
-  events: CalendarEvent[]; // Now this will use the imported type from events.ts
+  events: CalendarEvent[]; 
   isCurrentMonth?: boolean;
   isToday?: boolean;
   onEventClick?: (event: CalendarEvent) => void;
