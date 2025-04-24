@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function Customers() {
   const {
@@ -20,13 +21,17 @@ export default function Customers() {
     refreshCustomers
   } = useCustomers();
 
-  console.log("Customers page rendering with:", { 
-    totalCustomers: customers?.length || 0, 
-    filteredCount: filteredCustomers?.length || 0,
-    isLoading: loading,
-    connectionStatus: connectionOk,
-    hasError: !!error
-  });
+  // Log data for debugging
+  useEffect(() => {
+    console.log("Customers page rendering with:", { 
+      totalCustomers: customers?.length || 0, 
+      filteredCount: filteredCustomers?.length || 0,
+      isLoading: loading,
+      connectionStatus: connectionOk,
+      hasError: !!error,
+      filters: filters || {} // Make sure filters is never undefined
+    });
+  }, [customers, filteredCustomers, loading, connectionOk, error, filters]);
 
   // Ensure arrays are never null
   const safeCustomers = customers || [];

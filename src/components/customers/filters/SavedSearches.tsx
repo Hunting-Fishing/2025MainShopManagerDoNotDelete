@@ -9,13 +9,15 @@ import { SavedSearch } from "@/types/document";
 import { deleteSavedSearch, getSavedSearches, saveSavedSearch } from "@/services/searchService";
 
 interface SavedSearchesProps {
-  currentFilters: Record<string, any>;
-  onApplySearch: (filters: Record<string, any>) => void;
+  currentFilters?: Record<string, any>;
+  onApplySearch?: (filters: Record<string, any>) => void;
+  disabled?: boolean;
 }
 
 export const SavedSearches: React.FC<SavedSearchesProps> = ({
-  currentFilters,
+  currentFilters = {},
   onApplySearch,
+  disabled = false,
 }) => {
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -25,8 +27,13 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
   // Load saved searches
   useEffect(() => {
     const loadSavedSearches = async () => {
-      const searches = await getSavedSearches();
-      setSavedSearches(searches);
+      try {
+        const searches = await getSavedSearches();
+        setSavedSearches(searches || []);
+      } catch (error) {
+        console.error("Failed to load saved searches:", error);
+        setSavedSearches([]);
+      }
     };
     
     loadSavedSearches();
@@ -42,52 +49,83 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
       return;
     }
 
-    const result = await saveSavedSearch(searchName, currentFilters);
-    
-    if (result) {
-      setSavedSearches(prev => [result, ...prev]);
-      setIsDialogOpen(false);
-      setSearchName("");
+    try {
+      const result = await saveSavedSearch(searchName, currentFilters || {});
+      
+      if (result) {
+        setSavedSearches(prev => [result, ...prev]);
+        setIsDialogOpen(false);
+        setSearchName("");
 
-      toast({
-        title: "Search saved",
-        description: "Your search filters have been saved",
-      });
-    } else {
+        toast({
+          title: "Search saved",
+          description: "Your search filters have been saved",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save search",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving search:", error);
       toast({
         title: "Error",
-        description: "Failed to save search",
+        description: "An error occurred while saving your search",
         variant: "destructive",
       });
     }
   };
 
   const handleApplySearch = (search: SavedSearch) => {
-    onApplySearch(search.search_query);
-    
-    toast({
-      title: "Search applied",
-      description: `Applied saved search: ${search.name}`,
-    });
+    if (onApplySearch && search.search_query) {
+      onApplySearch(search.search_query);
+      
+      toast({
+        title: "Search applied",
+        description: `Applied saved search: ${search.name}`,
+      });
+    }
   };
 
   const handleDeleteSearch = async (id: string) => {
-    const success = await deleteSavedSearch(id);
-    
-    if (success) {
-      setSavedSearches(prev => prev.filter(search => search.id !== id));
+    try {
+      const success = await deleteSavedSearch(id);
       
-      toast({
-        title: "Search deleted",
-        description: "The saved search has been removed",
-      });
-    } else {
+      if (success) {
+        setSavedSearches(prev => prev.filter(search => search.id !== id));
+        
+        toast({
+          title: "Search deleted",
+          description: "The saved search has been removed",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete saved search",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting search:", error);
       toast({
         title: "Error",
-        description: "Failed to delete saved search",
+        description: "An error occurred while deleting the search",
         variant: "destructive",
       });
     }
+  };
+
+  const hasActiveFilters = () => {
+    // Safely check if there are any active filters
+    if (!currentFilters) return false;
+    
+    return Object.keys(currentFilters).some(key => 
+      currentFilters[key] !== undefined && 
+      currentFilters[key] !== "" && 
+      (!Array.isArray(currentFilters[key]) || currentFilters[key].length > 0)
+    );
   };
 
   return (
@@ -98,11 +136,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
           variant="outline" 
           size="sm" 
           onClick={() => setIsDialogOpen(true)}
-          disabled={!Object.keys(currentFilters).some(key => 
-            currentFilters[key] !== undefined && 
-            currentFilters[key] !== "" && 
-            (!Array.isArray(currentFilters[key]) || currentFilters[key].length > 0)
-          )}
+          disabled={disabled || !hasActiveFilters()}
         >
           <Plus className="h-4 w-4 mr-1" /> Save Current
         </Button>
@@ -122,6 +156,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
               <button 
                 className="text-sm font-medium text-blue-600 hover:underline text-left flex-1"
                 onClick={() => handleApplySearch(search)}
+                disabled={disabled}
               >
                 {search.name}
               </button>
@@ -130,6 +165,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
                 size="sm"
                 onClick={() => handleDeleteSearch(search.id)}
                 className="h-8 w-8 p-0"
+                disabled={disabled}
               >
                 <Trash2 className="h-4 w-4 text-gray-500" />
               </Button>

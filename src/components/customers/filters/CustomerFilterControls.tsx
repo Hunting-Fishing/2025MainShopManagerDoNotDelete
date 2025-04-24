@@ -61,7 +61,11 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
           Search
         </Button>
       </form>
-      <SavedSearches disabled={disabled} />
+      <SavedSearches 
+        currentFilters={safeFilters} 
+        onApplySearch={onFilterChange}
+        disabled={disabled} 
+      />
     </div>
   );
 };

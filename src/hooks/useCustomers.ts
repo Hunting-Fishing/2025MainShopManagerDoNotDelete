@@ -13,17 +13,23 @@ export const useCustomers = () => {
   const [connectionOk, setConnectionOk] = useState<boolean | null>(null);
 
   const applyFilters = useCallback((customerList: Customer[], currentFilters: CustomerFilters) => {
-    // Ensure currentFilters is never null or undefined
+    // Ensure parameters are never null or undefined
+    const safeCustomerList = customerList || [];
     const safeFilters = currentFilters || {};
     
     // Start with all customers
-    let result = [...customerList];
+    let result = [...safeCustomerList];
 
     // Apply search filter
     if (safeFilters.search && safeFilters.search.trim() !== '') {
       const searchTerm = safeFilters.search.toLowerCase().trim();
       result = result.filter((customer) => {
-        const fullName = `${customer.first_name} ${customer.last_name}`.toLowerCase();
+        // Handle potentially undefined customer data safely
+        if (!customer) return false;
+        
+        const firstName = customer.first_name || '';
+        const lastName = customer.last_name || '';
+        const fullName = `${firstName} ${lastName}`.toLowerCase();
         const email = customer.email ? customer.email.toLowerCase() : '';
         const phone = customer.phone ? customer.phone.toLowerCase() : '';
         
@@ -38,27 +44,29 @@ export const useCustomers = () => {
     // Apply hasVehicles filter
     if (safeFilters.hasVehicles) {
       result = result.filter((customer) => 
-        customer.vehicles && customer.vehicles.length > 0
+        customer && customer.vehicles && customer.vehicles.length > 0
       );
     }
 
     // Apply noVehicles filter
     if (safeFilters.noVehicles) {
       result = result.filter((customer) => 
-        !customer.vehicles || customer.vehicles.length === 0
+        !customer || !customer.vehicles || customer.vehicles.length === 0
       );
     }
 
     // Apply status filter
     if (safeFilters.status) {
       result = result.filter((customer) => 
-        customer.status === safeFilters.status
+        customer && customer.status === safeFilters.status
       );
     }
 
     // Apply date range filters if provided
     if (safeFilters.dateFrom || safeFilters.dateTo) {
       result = result.filter((customer) => {
+        if (!customer || !customer.created_at) return false;
+        
         const customerDate = new Date(customer.created_at);
         
         // Check if date is after dateFrom
@@ -82,7 +90,7 @@ export const useCustomers = () => {
     // Apply tag filters if provided
     if (safeFilters.tags && safeFilters.tags.length > 0) {
       result = result.filter((customer) => {
-        if (!customer.tags) return false;
+        if (!customer || !customer.tags) return false;
         
         // Check if customer has at least one of the selected tags
         return safeFilters.tags!.some((tag) => 
@@ -94,7 +102,7 @@ export const useCustomers = () => {
     // Apply segment filter
     if (safeFilters.segment) {
       result = result.filter((customer) => {
-        if (!customer.segments) return false;
+        if (!customer || !customer.segments) return false;
         return customer.segments.includes(safeFilters.segment!);
       });
     }
@@ -102,22 +110,24 @@ export const useCustomers = () => {
     // Apply sorting if provided
     if (safeFilters.sortBy) {
       result.sort((a, b) => {
+        if (!a || !b) return 0;
+        
         let valueA: any;
         let valueB: any;
         
         // Handle different sort fields
         switch (safeFilters.sortBy) {
           case 'name':
-            valueA = `${a.last_name} ${a.first_name}`.toLowerCase();
-            valueB = `${b.last_name} ${b.first_name}`.toLowerCase();
+            valueA = `${a.last_name || ''} ${a.first_name || ''}`.toLowerCase();
+            valueB = `${b.last_name || ''} ${b.first_name || ''}`.toLowerCase();
             break;
           case 'email':
             valueA = (a.email || '').toLowerCase();
             valueB = (b.email || '').toLowerCase();
             break;
           case 'date':
-            valueA = new Date(a.created_at).getTime();
-            valueB = new Date(b.created_at).getTime();
+            valueA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            valueB = b.created_at ? new Date(b.created_at).getTime() : 0;
             break;
           default:
             valueA = a[safeFilters.sortBy as keyof Customer] || '';
@@ -143,13 +153,17 @@ export const useCustomers = () => {
       setError(null);
       
       const data = await getAllCustomers();
-      setCustomers(data);
-      setFilteredCustomers(applyFilters(data, filters));
+      const safeData = data || [];
+      
+      setCustomers(safeData);
+      setFilteredCustomers(applyFilters(safeData, filters));
       setConnectionOk(true);
     } catch (err: any) {
       console.error("Error loading customers:", err);
       setError(err.message || "Failed to load customers");
       setConnectionOk(false);
+      setCustomers([]);
+      setFilteredCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -165,7 +179,7 @@ export const useCustomers = () => {
   }, [filters, customers, applyFilters]);
 
   const handleFilterChange = (newFilters: CustomerFilters) => {
-    setFilters({...filters, ...newFilters});
+    setFilters(prev => ({...prev, ...newFilters}));
   };
 
   const refreshCustomers = () => {
