@@ -5,13 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, Settings, TruckIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
 interface AutoReorderStatusProps {
   items: any[];
-  autoReorderSettings: { enabled: boolean };
+  autoReorderSettings: { enabled: boolean; shopId?: string };
 }
 
 export function AutoReorderStatus({ items, autoReorderSettings }: AutoReorderStatusProps) {
@@ -26,11 +25,19 @@ export function AutoReorderStatus({ items, autoReorderSettings }: AutoReorderSta
   const toggleAutoReorder = async () => {
     setLoading(true);
     try {
+      // Make sure we have a shop_id value
+      if (!autoReorderSettings.shopId) {
+        throw new Error("Shop ID is required for inventory settings");
+      }
+
       // Update the auto_reorder_enabled setting in the database
       const { error } = await supabase
         .from('inventory_settings')
         .upsert(
-          { auto_reorder_enabled: !enabled },
+          { 
+            auto_reorder_enabled: !enabled,
+            shop_id: autoReorderSettings.shopId
+          },
           { onConflict: 'shop_id' }
         );
 

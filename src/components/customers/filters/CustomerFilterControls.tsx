@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { SavedSearches } from "./SavedSearches";
+import { DateRange } from "react-day-picker";
 
 export interface CustomerFilters {
   search?: string;
-  hasVehicles?: boolean;
+  hasVehicles?: boolean | string;
   noVehicles?: boolean;
   hasWorkOrders?: boolean;
   status?: string;
@@ -17,12 +18,13 @@ export interface CustomerFilters {
   tags?: string[];
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
+  vehicleType?: string;
 }
 
 export interface CustomerFilterControlsProps {
   filters: CustomerFilters;
   onFilterChange: (filters: CustomerFilters) => void;
-  disabled?: boolean; // Added disabled prop to the interface
+  disabled?: boolean;
 }
 
 export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({ 

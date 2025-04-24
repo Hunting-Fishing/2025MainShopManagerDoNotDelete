@@ -22,11 +22,14 @@ interface CustomerFilterPanelProps {
 export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
   filters,
   onTagsChange,
-  onVehicleTypeChange,
+  onVehicleTypeFilter,
   onDateRangeChange,
   onHasVehiclesChange,
   onApplySearch
 }) => {
+  // Ensure we have valid filters
+  const safeFilters = filters || {};
+  
   return (
     <Card className="p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -34,7 +37,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Customer Tags</h3>
             <CustomerFilterTags
-              tags={filters.tags || []}
+              tags={safeFilters.tags || []}
               onChange={onTagsChange}
             />
           </div>
@@ -44,8 +47,8 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Vehicle Type</h3>
             <CustomerVehicleTypeFilter
-              vehicleType={filters.vehicleType || ''}
-              onChange={onVehicleTypeChange}
+              vehicleType={safeFilters.vehicleType || ''}
+              onChange={onVehicleTypeFilter}
             />
           </div>
           
@@ -54,7 +57,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Has Vehicles</h3>
             <CustomerHasVehiclesFilter
-              hasVehicles={filters.hasVehicles || ''}
+              hasVehicles={String(safeFilters.hasVehicles || '')}
               onChange={onHasVehiclesChange}
             />
           </div>
@@ -64,7 +67,10 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Date Added</h3>
             <CustomerDateRangeFilter
-              dateRange={filters.dateRange}
+              dateRange={{
+                from: safeFilters.dateFrom || undefined,
+                to: safeFilters.dateTo || undefined
+              }}
               onDateRangeChange={onDateRangeChange}
             />
           </div>
@@ -72,7 +78,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <Separator className="my-4" />
           
           <SavedSearches
-            currentFilters={filters}
+            currentFilters={safeFilters}
             onApplySearch={onApplySearch}
           />
         </div>
