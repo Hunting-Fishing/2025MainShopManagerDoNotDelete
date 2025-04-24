@@ -85,8 +85,8 @@ export const sampleWorkOrderData: WorkOrder[] = [
     customer: "John Doe",
     customer_id: "cust1",
     description: "Regular maintenance and oil change",
-    status: "completed", // Using valid status from WorkOrder type
-    priority: "medium", // Using valid priority from WorkOrder type
+    status: "completed", 
+    priority: "medium", 
     technician: "Mike Johnson",
     date: "2023-04-10",
     dueDate: "2023-04-12",
@@ -122,8 +122,8 @@ export const sampleWorkOrderData: WorkOrder[] = [
     customer: "Jane Smith",
     customer_id: "cust2",
     description: "Brake system inspection and repair",
-    status: "in-progress", // Using valid status from WorkOrder type
-    priority: "high", // Using valid priority from WorkOrder type
+    status: "in-progress",
+    priority: "high",
     technician: "Sarah Williams",
     date: "2023-04-14",
     dueDate: "2023-04-16",

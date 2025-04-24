@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
@@ -21,10 +20,27 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { FileText, FilePlus, Search, MoreVertical, FileEdit, Printer, Copy, Trash2 } from "lucide-react";
 import { FormTemplate } from "@/types/form";
-import { formTemplates } from "@/data/formTemplatesData";
+import { formTemplateData } from "@/data/formTemplatesData";
 
 export const FormTemplatesList = () => {
-  const [templates, setTemplates] = useState<FormTemplate[]>(formTemplates);
+  const initialTemplates = formTemplateData.map(template => {
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description || '',
+      category: template.category,
+      content: {
+        sections: template.sections || []
+      },
+      created_at: template.created_at,
+      updated_at: template.created_at,
+      version: template.version,
+      is_published: template.is_published,
+      tags: []
+    };
+  });
+
+  const [templates, setTemplates] = useState<FormTemplate[]>(initialTemplates);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 

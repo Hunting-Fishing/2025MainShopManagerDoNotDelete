@@ -1,8 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { WorkOrderInventoryItem } from '@/types/workOrder';
 import { useToast } from '@/hooks/use-toast';
-import { mapToWorkOrderInventoryItem } from '@/utils/inventoryAdapters';
+import { mapToWorkOrderInventoryItem, mapWorkOrderInventoryItemToDb } from '@/utils/inventoryAdapters';
 
 export const useWorkOrderInventoryManager = (workOrderId: string) => {
   const [loading, setLoading] = useState(false);
@@ -39,25 +40,33 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
   const addInventoryItem = async (item: Omit<WorkOrderInventoryItem, 'id'>) => {
     setLoading(true);
     try {
+      // Convert from our frontend format to the database format
+      const dbItem = mapWorkOrderInventoryItemToDb({
+        ...item,
+        id: 'temp-id' // this will be ignored by Supabase and replaced with a proper UUID
+      });
+      
       const { data, error } = await supabase
         .from('work_order_inventory_items')
         .insert([{
           work_order_id: workOrderId,
-          ...item
+          ...dbItem
         }])
         .select()
         .single();
 
       if (error) throw error;
-
-      setItems(prevItems => [...prevItems, data]);
+      
+      // Convert the returned DB item back to our frontend format
+      const newItem = mapToWorkOrderInventoryItem([data])[0];
+      setItems(prevItems => [...prevItems, newItem]);
       
       toast({
         title: "Item Added",
         description: `${item.name} has been added to the work order`,
       });
 
-      return data;
+      return newItem;
     } catch (error) {
       console.error('Error adding inventory item:', error);
       toast({
@@ -105,18 +114,26 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
   const updateInventoryItem = async (itemId: string, updates: Partial<WorkOrderInventoryItem>) => {
     setLoading(true);
     try {
+      // Convert from our frontend format to the database format
+      const dbUpdates = mapWorkOrderInventoryItemToDb({
+        ...updates,
+        id: itemId
+      });
+      
       const { data, error } = await supabase
         .from('work_order_inventory_items')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', itemId)
         .select()
         .single();
 
       if (error) throw error;
 
+      // Convert the returned DB item back to our frontend format
+      const updatedItem = mapToWorkOrderInventoryItem([data])[0];
       setItems(prevItems => 
         prevItems.map(item => 
-          item.id === itemId ? { ...item, ...updates } : item
+          item.id === itemId ? updatedItem : item
         )
       );
       
@@ -125,7 +142,7 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
         description: "Inventory item has been updated",
       });
 
-      return data;
+      return updatedItem;
     } catch (error) {
       console.error('Error updating inventory item:', error);
       toast({
