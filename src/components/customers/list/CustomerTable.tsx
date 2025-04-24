@@ -1,11 +1,10 @@
 
-import { Link } from "react-router-dom";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { UserRound, Loader2, AlertCircle, Wifi, WifiOff, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Customer, getCustomerFullName } from "@/types/customer";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import React from 'react';
+import { TableRow, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { CustomerRow } from './CustomerRow';
+import { Customer } from '@/types/customer';
+import { RefreshCw } from 'lucide-react';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -15,193 +14,74 @@ interface CustomerTableProps {
   onRefresh?: () => void;
 }
 
-export const CustomerTable = ({ customers, loading, error, connectionOk, onRefresh }: CustomerTableProps) => {
-  if (connectionOk === false) {
-    return (
-      <TableRow>
-        <TableCell colSpan={5} className="text-center py-12">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="bg-red-100 p-3 rounded-full">
-              <WifiOff className="h-8 w-8 text-red-600" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium text-lg">Database Connection Error</p>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto mt-1">
-                Unable to connect to the database. This could be due to network issues or server unavailability.
-              </p>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={onRefresh}
-              className="flex items-center"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  }
-  
+export const CustomerTable: React.FC<CustomerTableProps> = ({
+  customers = [],
+  loading = false,
+  error = null,
+  connectionOk = true,
+  onRefresh
+}) => {
+  // Display loading state
   if (loading) {
     return (
       <TableRow>
-        <TableCell colSpan={5} className="text-center py-12">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading customers...</p>
+        <TableCell colSpan={5} className="h-64 text-center">
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-lg text-slate-600 font-medium">Loading customers...</p>
           </div>
         </TableCell>
       </TableRow>
     );
   }
-  
-  if (error) {
+
+  // Display error state
+  if (error || connectionOk === false) {
     return (
       <TableRow>
-        <TableCell colSpan={5} className="text-center py-12">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="bg-red-100 p-3 rounded-full">
-              <AlertCircle className="h-8 w-8 text-red-600" />
-            </div>
-            <div>
-              <p className="font-medium">Error loading customers</p>
-              <p className="text-sm text-muted-foreground mt-1">{error}</p>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={onRefresh}
-              className="flex items-center"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  }
-  
-  if (!customers || customers.length === 0) {
-    return (
-      <TableRow>
-        <TableCell colSpan={5} className="text-center py-12">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <UserRound className="h-8 w-8 text-blue-600" />
-            </div>
-            <div>
-              <p className="font-medium">No customers found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {connectionOk ? 
-                  "There are no customers in the database yet." : 
-                  "No customers available. Connection status unknown."}
-              </p>
-            </div>
-            {connectionOk && 
-              <Button asChild variant="outline">
-                <Link to="/customers/create">Add Your First Customer</Link>
+        <TableCell colSpan={5} className="h-64 text-center">
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="text-red-500 text-xl mb-4">❌</div>
+            <p className="text-lg text-red-600 font-medium mb-4">
+              {error || "Failed to connect to the database"}
+            </p>
+            {onRefresh && (
+              <Button 
+                onClick={onRefresh} 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Try Again
               </Button>
-            }
+            )}
           </div>
         </TableCell>
       </TableRow>
     );
   }
-  
+
+  // Display empty state
+  if (customers.length === 0) {
+    return (
+      <TableRow>
+        <TableCell colSpan={5} className="h-64 text-center">
+          <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-lg text-slate-600 font-medium mb-2">No customers found</p>
+            <p className="text-muted-foreground">
+              Try adjusting your filters or add a new customer.
+            </p>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  // Display customers table
   return (
     <>
       {customers.map((customer) => (
-        <TableRow key={customer.id} className="bg-gradient-to-r from-white to-gray-50 hover:from-blue-50 hover:to-indigo-50 transition-all duration-200">
-          <TableCell>
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <UserRound className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <Link 
-                  to={`/customers/${customer.id}`}
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  {getCustomerFullName(customer)}
-                </Link>
-                {customer.company && (
-                  <p className="text-xs text-slate-500">{customer.company}</p>
-                )}
-              </div>
-            </div>
-          </TableCell>
-          <TableCell>
-            <div className="text-sm">
-              {customer.email && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="truncate max-w-[150px]">{customer.email}</p>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{customer.email}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {customer.phone && <p className="text-slate-500">{customer.phone}</p>}
-            </div>
-          </TableCell>
-          <TableCell>
-            {customer.address ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <p className="text-sm truncate max-w-[150px]">{customer.address}</p>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {customer.address}
-                      {customer.city && `, ${customer.city}`}
-                      {customer.state && `, ${customer.state}`}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <span className="text-sm text-slate-400">No address</span>
-            )}
-          </TableCell>
-          <TableCell>
-            {customer.tags && customer.tags.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {customer.tags.slice(0, 3).map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-300">
-                    {tag}
-                  </Badge>
-                ))}
-                {customer.tags.length > 3 && (
-                  <Badge variant="outline" className="text-xs bg-gray-100">
-                    +{customer.tags.length - 3}
-                  </Badge>
-                )}
-              </div>
-            ) : (
-              <span className="text-sm text-slate-400">No tags</span>
-            )}
-          </TableCell>
-          <TableCell className="text-right">
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="border-blue-200 hover:border-blue-300 text-blue-600 hover:bg-blue-50"
-                asChild
-              >
-                <Link to={`/customers/${customer.id}`}>
-                  View Details
-                </Link>
-              </Button>
-            </div>
-          </TableCell>
-        </TableRow>
+        <CustomerRow key={customer.id} customer={customer} />
       ))}
     </>
   );

@@ -43,7 +43,7 @@ export const routeDefinitions = [
         element: <CreateCustomer />,
       },
       {
-        path: "customers/:id",
+        path: "customers/:customerId",
         element: (
           <CustomerDataProviderWrapper>
             <CustomerDetails />
@@ -105,3 +105,5 @@ export const routeDefinitions = [
     ],
   },
 ];
+
+export const router = createBrowserRouter(routeDefinitions);
