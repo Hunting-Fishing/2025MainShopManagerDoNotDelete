@@ -10,12 +10,12 @@ import { Link } from "react-router-dom";
 
 export default function Customers() {
   const {
-    customers,
-    filteredCustomers,
-    filters,
-    loading,
-    error,
-    connectionOk,
+    customers = [],
+    filteredCustomers = [],
+    filters = {},
+    loading = false,
+    error = null,
+    connectionOk = null,
     handleFilterChange,
     refreshCustomers
   } = useCustomers();
@@ -28,11 +28,15 @@ export default function Customers() {
     hasError: !!error
   });
 
+  // Ensure arrays are never null
+  const safeCustomers = customers || [];
+  const safeFilteredCustomers = filteredCustomers || [];
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
         <div className="md:col-span-1">
-          <CustomerCount loading={loading} error={!!error} count={customers?.length || 0} />
+          <CustomerCount loading={loading} error={!!error} count={safeCustomers.length || 0} />
         </div>
         <div className="md:col-span-3">
           <CustomersHeader />
@@ -55,9 +59,9 @@ export default function Customers() {
       )}
       
       <CustomersList
-        customers={customers}
-        filteredCustomers={filteredCustomers}
-        filters={filters}
+        customers={safeCustomers}
+        filteredCustomers={safeFilteredCustomers}
+        filters={filters || {}}
         loading={loading}
         error={error}
         connectionOk={connectionOk}
@@ -65,7 +69,7 @@ export default function Customers() {
         onRefresh={refreshCustomers}
       />
       
-      {!loading && !error && customers.length === 0 && connectionOk && (
+      {!loading && !error && safeCustomers.length === 0 && connectionOk && (
         <div className="mt-8 text-center">
           <Button asChild>
             <Link to="/customers/create">Add Your First Customer</Link>

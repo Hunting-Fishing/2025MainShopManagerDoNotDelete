@@ -19,15 +19,19 @@ interface CustomersListProps {
 }
 
 export const CustomersList = ({ 
-  customers,
-  filteredCustomers,
-  filters,
-  loading,
-  error,
-  connectionOk,
+  customers = [],
+  filteredCustomers = [],
+  filters = {},
+  loading = false,
+  error = null,
+  connectionOk = true,
   onFilterChange,
   onRefresh 
 }: CustomersListProps) => {
+  // Ensure arrays are never null
+  const safeCustomers = customers || [];
+  const safeFilteredCustomers = filteredCustomers || [];
+
   return (
     <Card className="border border-gray-200">
       <div className="p-6 space-y-4">
@@ -65,7 +69,7 @@ export const CustomersList = ({
             </TableHeader>
             <TableBody>
               <CustomerTable 
-                customers={filteredCustomers}
+                customers={safeFilteredCustomers}
                 loading={loading}
                 error={error}
                 connectionOk={connectionOk}
@@ -75,9 +79,9 @@ export const CustomersList = ({
           </Table>
         </div>
         
-        {filteredCustomers.length > 0 && customers.length !== filteredCustomers.length && (
+        {safeFilteredCustomers.length > 0 && safeCustomers.length !== safeFilteredCustomers.length && (
           <p className="text-sm text-gray-500 text-center pt-2">
-            Showing {filteredCustomers.length} of {customers.length} customers
+            Showing {safeFilteredCustomers.length} of {safeCustomers.length} customers
           </p>
         )}
       </div>

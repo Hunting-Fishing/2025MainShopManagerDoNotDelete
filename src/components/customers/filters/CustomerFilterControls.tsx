@@ -30,7 +30,10 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
   onFilterChange,
   disabled = false 
 }) => {
-  const [searchInput, setSearchInput] = useState(filters.search || "");
+  // Ensure filters is never null or undefined
+  const safeFilters = filters || {};
+  
+  const [searchInput, setSearchInput] = useState(safeFilters.search || "");
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
@@ -38,7 +41,7 @@ export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
   
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onFilterChange({ ...filters, search: searchInput });
+    onFilterChange({ ...safeFilters, search: searchInput });
   };
 
   return (

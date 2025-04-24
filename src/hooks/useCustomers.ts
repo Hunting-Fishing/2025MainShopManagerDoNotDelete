@@ -1,228 +1,176 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { Customer } from "@/types/customer";
-import { getAllCustomers } from "@/services/customer/customerQueryService";
-import { useToast } from "@/hooks/use-toast";
-import { checkSupabaseConnection } from "@/lib/supabase";
-import { filterCustomers } from "@/utils/search/customerSearch";
-import { CustomerFilters } from "@/components/customers/filters/CustomerFilterControls";
+import { useState, useEffect, useCallback } from 'react';
+import { Customer } from '@/types/customer';
+import { CustomerFilters } from '@/components/customers/filters/CustomerFilterControls';
+import { getAllCustomers } from '@/services/customers/customerCrudService';
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
-  const [filters, setFilters] = useState<CustomerFilters>({
-    searchQuery: "",
-    tags: [],
-  });
-  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<CustomerFilters>({});
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [connectionOk, setConnectionOk] = useState<boolean | null>(null);
-  const [connectionChecked, setConnectionChecked] = useState(false);
-  const { toast } = useToast();
-  
-  // Check database connection
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        setLoading(true);
-        console.log("Checking database connection...");
-        const isConnected = await checkSupabaseConnection();
-        console.log("Supabase connection status:", isConnected);
-        setConnectionOk(isConnected);
-        setConnectionChecked(true);
-        
-        if (!isConnected) {
-          setError("Unable to connect to the database. Please check your internet connection and try again later.");
-          toast({
-            title: "Connection Error",
-            description: "Could not connect to the database. Please check your connection and try again.",
-            variant: "destructive",
-          });
-        }
-      } catch (err) {
-        console.error("Error checking connection:", err);
-        setConnectionOk(false);
-        setConnectionChecked(true);
-        setError("Connection check failed. Please try again later.");
-        toast({
-          title: "Connection Error",
-          description: "Failed to check database connection. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        // Even if connection check fails, we should stop the global loading state
-        if (!connectionOk) {
-          setLoading(false);
-        }
-      }
-    };
+
+  const applyFilters = useCallback((customerList: Customer[], currentFilters: CustomerFilters) => {
+    // Ensure currentFilters is never null or undefined
+    const safeFilters = currentFilters || {};
     
-    checkConnection();
-  }, [toast]);
-  
-  // Fetch customers when connection is confirmed
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      if (!connectionChecked) return;
-      
-      if (connectionOk !== true) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("Fetching all customers in useCustomers hook");
-        
-        // Set a timeout for the request
-        const timeout = setTimeout(() => {
-          setError("Request timed out. The server might be busy. Please try again later.");
-          setLoading(false);
-          toast({
-            title: "Request Timeout",
-            description: "Customer data request took too long. Please try again.",
-            variant: "destructive",
-          });
-        }, 30000); // 30 second timeout
-        
-        const data = await getAllCustomers();
-        clearTimeout(timeout);
-        
-        console.log(`Customer data received - count: ${data?.length || 0}`);
-        
-        if (data && Array.isArray(data)) {
-          setCustomers(data);
-          setFilteredCustomers(data);
-          
-          if (data.length === 0) {
-            toast({
-              title: "No Customers Found",
-              description: "No customer records were found in the database.",
-              variant: "default",
-            });
-          }
-        } else {
-          console.error("Received invalid customer data format:", data);
-          setError("Received invalid data format from the server.");
-          toast({
-            title: "Error loading data",
-            description: "The customer data format was invalid. Please try again.",
-            variant: "destructive",
-          });
-        }
-      } catch (error: any) {
-        console.error("Error fetching customers:", error);
-        let errorMessage = "Failed to load customer data.";
-        
-        if (error?.message) {
-          errorMessage = error.message;
-        } else if (error?.error?.message) {
-          errorMessage = error.error.message;
-        }
-        
-        if (errorMessage.includes("JWT")) {
-          errorMessage = "Authentication error. Please try logging in again.";
-        } else if (errorMessage.includes("network")) {
-          errorMessage = "Network error. Please check your internet connection.";
-        }
-        
-        setError(errorMessage);
-        toast({
-          title: "Error fetching customers",
-          description: errorMessage + " Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Start with all customers
+    let result = [...customerList];
 
-    fetchCustomers();
-  }, [toast, connectionOk, connectionChecked]);
-  
-  // Apply filters whenever customers or filters change
-  useEffect(() => {
-    if (customers && customers.length > 0) {
-      console.log("Filtering customers with filters:", filters);
-      const filtered = filterCustomers(customers, filters);
-      console.log(`Filtered customers: ${filtered.length} of ${customers.length}`);
-      setFilteredCustomers(filtered);
-    }
-  }, [customers, filters]);
-
-  const handleFilterChange = useCallback((newFilters: CustomerFilters) => {
-    console.log("Filter changed:", newFilters);
-    setFilters(newFilters);
-  }, []);
-  
-  // Function to manually refresh customers
-  const refreshCustomers = useCallback(async () => {
-    if (!connectionChecked) {
-      // Check connection first if it hasn't been checked yet
-      setConnectionOk(null);
-      setConnectionChecked(false);
-      try {
-        const isConnected = await checkSupabaseConnection();
-        setConnectionOk(isConnected);
-        setConnectionChecked(true);
-        if (!isConnected) {
-          toast({
-            title: "Connection Error",
-            description: "Cannot refresh customers. Please check your internet connection.",
-            variant: "destructive",
-          });
-          return;
-        }
-      } catch (error) {
-        setConnectionOk(false);
-        setConnectionChecked(true);
-        toast({
-          title: "Connection Error",
-          description: "Failed to check database connection. Please try again later.",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else if (connectionOk !== true) {
-      toast({
-        title: "Connection Error",
-        description: "Cannot refresh customers. Please check your internet connection.",
-        variant: "destructive",
+    // Apply search filter
+    if (safeFilters.search && safeFilters.search.trim() !== '') {
+      const searchTerm = safeFilters.search.toLowerCase().trim();
+      result = result.filter((customer) => {
+        const fullName = `${customer.first_name} ${customer.last_name}`.toLowerCase();
+        const email = customer.email ? customer.email.toLowerCase() : '';
+        const phone = customer.phone ? customer.phone.toLowerCase() : '';
+        
+        return (
+          fullName.includes(searchTerm) || 
+          email.includes(searchTerm) || 
+          phone.includes(searchTerm)
+        );
       });
-      return;
     }
-    
+
+    // Apply hasVehicles filter
+    if (safeFilters.hasVehicles) {
+      result = result.filter((customer) => 
+        customer.vehicles && customer.vehicles.length > 0
+      );
+    }
+
+    // Apply noVehicles filter
+    if (safeFilters.noVehicles) {
+      result = result.filter((customer) => 
+        !customer.vehicles || customer.vehicles.length === 0
+      );
+    }
+
+    // Apply status filter
+    if (safeFilters.status) {
+      result = result.filter((customer) => 
+        customer.status === safeFilters.status
+      );
+    }
+
+    // Apply date range filters if provided
+    if (safeFilters.dateFrom || safeFilters.dateTo) {
+      result = result.filter((customer) => {
+        const customerDate = new Date(customer.created_at);
+        
+        // Check if date is after dateFrom
+        if (safeFilters.dateFrom && customerDate < safeFilters.dateFrom) {
+          return false;
+        }
+        
+        // Check if date is before dateTo
+        if (safeFilters.dateTo) {
+          const endDate = new Date(safeFilters.dateTo);
+          endDate.setHours(23, 59, 59, 999); // End of day
+          if (customerDate > endDate) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+    }
+
+    // Apply tag filters if provided
+    if (safeFilters.tags && safeFilters.tags.length > 0) {
+      result = result.filter((customer) => {
+        if (!customer.tags) return false;
+        
+        // Check if customer has at least one of the selected tags
+        return safeFilters.tags!.some((tag) => 
+          customer.tags!.includes(tag)
+        );
+      });
+    }
+
+    // Apply segment filter
+    if (safeFilters.segment) {
+      result = result.filter((customer) => {
+        if (!customer.segments) return false;
+        return customer.segments.includes(safeFilters.segment!);
+      });
+    }
+
+    // Apply sorting if provided
+    if (safeFilters.sortBy) {
+      result.sort((a, b) => {
+        let valueA: any;
+        let valueB: any;
+        
+        // Handle different sort fields
+        switch (safeFilters.sortBy) {
+          case 'name':
+            valueA = `${a.last_name} ${a.first_name}`.toLowerCase();
+            valueB = `${b.last_name} ${b.first_name}`.toLowerCase();
+            break;
+          case 'email':
+            valueA = (a.email || '').toLowerCase();
+            valueB = (b.email || '').toLowerCase();
+            break;
+          case 'date':
+            valueA = new Date(a.created_at).getTime();
+            valueB = new Date(b.created_at).getTime();
+            break;
+          default:
+            valueA = a[safeFilters.sortBy as keyof Customer] || '';
+            valueB = b[safeFilters.sortBy as keyof Customer] || '';
+        }
+        
+        // Handle sorting direction
+        const direction = safeFilters.sortDirection === 'desc' ? -1 : 1;
+        
+        if (valueA < valueB) return -1 * direction;
+        if (valueA > valueB) return 1 * direction;
+        return 0;
+      });
+    }
+
+    return result;
+  }, []);
+
+  // Load customers
+  const loadCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Manually refreshing customers");
-      const data = await getAllCustomers();
-      console.log(`Customer refresh complete - count: ${data?.length || 0}`);
       
-      if (data && Array.isArray(data)) {
-        setCustomers(data);
-        setFilteredCustomers(filterCustomers(data, filters));
-        toast({
-          title: "Data Refreshed",
-          description: "Customer data has been refreshed successfully.",
-          variant: "default",
-        });
-      } else {
-        throw new Error("Invalid data format received");
-      }
-    } catch (error: any) {
-      console.error("Error refreshing customers:", error);
-      setError(error?.message || "Failed to refresh customer data.");
-      toast({
-        title: "Refresh Failed",
-        description: error?.message || "Could not refresh customer data.",
-        variant: "destructive",
-      });
+      const data = await getAllCustomers();
+      setCustomers(data);
+      setFilteredCustomers(applyFilters(data, filters));
+      setConnectionOk(true);
+    } catch (err: any) {
+      console.error("Error loading customers:", err);
+      setError(err.message || "Failed to load customers");
+      setConnectionOk(false);
     } finally {
       setLoading(false);
     }
-  }, [connectionOk, filters, toast, connectionChecked]);
+  }, [filters, applyFilters]);
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
+
+  // Update filtered customers when filters change
+  useEffect(() => {
+    setFilteredCustomers(applyFilters(customers, filters));
+  }, [filters, customers, applyFilters]);
+
+  const handleFilterChange = (newFilters: CustomerFilters) => {
+    setFilters({...filters, ...newFilters});
+  };
+
+  const refreshCustomers = () => {
+    loadCustomers();
+  };
 
   return {
     customers,
@@ -231,7 +179,6 @@ export const useCustomers = () => {
     loading,
     error,
     connectionOk,
-    connectionChecked,
     handleFilterChange,
     refreshCustomers
   };
