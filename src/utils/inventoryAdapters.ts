@@ -1,8 +1,12 @@
 
-import { InventoryItem, InventoryItemExtended, WorkOrderInventoryItem } from "@/types/inventory";
+import { InventoryItem, InventoryItemExtended } from '@/types/inventory';
+import { WorkOrderInventoryItem } from '@/types/workOrder';
 
-// Adapter to convert database inventory items to InventoryItemExtended
-export function mapToInventoryItemExtended(dbItems: any[]): InventoryItemExtended[] {
+/**
+ * Maps database inventory items to InventoryItemExtended format
+ * @param dbItems Inventory items from the database
+ */
+export const mapToInventoryItemExtended = (dbItems: any[]): InventoryItemExtended[] => {
   return dbItems.map(item => ({
     id: item.id,
     name: item.name,
@@ -13,35 +17,57 @@ export function mapToInventoryItemExtended(dbItems: any[]): InventoryItemExtende
     reorderPoint: item.reorder_point || 0,
     unitPrice: item.unit_price || 0,
     location: item.location || '',
-    status: item.status || 'active',
+    status: item.status || 'In Stock',
     description: item.description || ''
   }));
-}
+};
 
-// Adapter to convert database inventory items to InventoryItem
-export function mapToInventoryItem(dbItems: any[]): InventoryItem[] {
+/**
+ * Maps database inventory items to InventoryItem format
+ * @param dbItems Inventory items from the database
+ */
+export const mapToInventoryItem = (dbItems: any[]): InventoryItem[] => {
   return dbItems.map(item => ({
     id: item.id,
     name: item.name,
     sku: item.sku,
     category: item.category,
-    price: item.unit_price || 0, // Map unit_price to price
+    price: item.unit_price,
     description: item.description,
     quantity: item.quantity,
     supplier: item.supplier,
     status: item.status
   }));
-}
+};
 
-// Adapter to convert database work order inventory items to WorkOrderInventoryItem
-export function mapToWorkOrderInventoryItem(dbItems: any[]): WorkOrderInventoryItem[] {
+/**
+ * Maps database work order inventory items to WorkOrderInventoryItem format
+ * @param dbItems Work order inventory items from the database
+ */
+export const mapToWorkOrderInventoryItem = (dbItems: any[]): WorkOrderInventoryItem[] => {
   return dbItems.map(item => ({
     id: item.id,
     name: item.name,
     sku: item.sku || '',
     category: item.category || '',
     quantity: item.quantity || 0,
-    unitPrice: item.unit_price || 0, // Map unit_price to unitPrice
-    workOrderId: item.work_order_id
+    unitPrice: item.unit_price || 0,
+    totalPrice: (item.quantity || 0) * (item.unit_price || 0),
+    itemStatus: item.item_status || 'in-stock'
   }));
-}
+};
+
+/**
+ * Maps WorkOrderInventoryItem to database format
+ * @param item Work order inventory item
+ */
+export const mapWorkOrderInventoryItemToDb = (item: WorkOrderInventoryItem): any => {
+  return {
+    name: item.name,
+    sku: item.sku,
+    category: item.category,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    item_status: item.itemStatus
+  };
+};

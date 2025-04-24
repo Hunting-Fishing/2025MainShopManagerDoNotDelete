@@ -1,305 +1,240 @@
-// Define form template data
+
+// Sample form template data for demonstration purposes
 export const formTemplateData = [
   {
     id: '1',
-    name: 'Vehicle Inspection',
-    description: 'Standard vehicle inspection form',
-    category: 'Vehicle Inspection',
-    content: {
-      sections: [
-        {
-          id: 'section-1',
-          title: 'Basic Information',
-          description: 'Vehicle and customer information',
-          fields: [
-            {
-              id: 'field-1',
-              label: 'Customer Name',
-              type: 'text',
-              required: true,
-              placeholder: 'Enter customer name'
-            },
-            {
-              id: 'field-2',
-              label: 'Vehicle Make',
-              type: 'text',
-              required: true,
-              placeholder: 'Enter vehicle make'
-            },
-            {
-              id: 'field-3',
-              label: 'Vehicle Model',
-              type: 'text',
-              required: true,
-              placeholder: 'Enter vehicle model'
-            },
-            {
-              id: 'field-4',
-              label: 'Vehicle Year',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter vehicle year'
-            },
-            {
-              id: 'field-5',
-              label: 'VIN',
-              type: 'text',
-              required: true,
-              placeholder: 'Enter VIN'
-            },
-            {
-              id: 'field-6',
-              label: 'Mileage',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter current mileage'
-            }
-          ]
-        },
-        {
-          id: 'section-2',
-          title: 'Visual Inspection',
-          description: 'Exterior and interior visual inspection',
-          fields: [
-            {
-              id: 'field-7',
-              label: 'Exterior Condition',
-              type: 'select',
-              required: true,
-              options: ['Excellent', 'Good', 'Fair', 'Poor']
-            },
-            {
-              id: 'field-8',
-              label: 'Interior Condition',
-              type: 'select',
-              required: true,
-              options: ['Excellent', 'Good', 'Fair', 'Poor']
-            },
-            {
-              id: 'field-9',
-              label: 'Notes',
-              type: 'textarea',
-              required: false,
-              placeholder: 'Enter any additional notes'
-            }
-          ]
-        }
-      ]
-    },
-    created_by: 'Admin',
-    created_at: '2023-01-15T00:00:00Z',
-    updated_at: '2023-02-01T00:00:00Z',
+    name: 'Vehicle Inspection Form',
+    description: 'A comprehensive vehicle inspection checklist',
     version: 1,
+    category: 'inspection',
     is_published: true,
-    tags: ['inspection', 'vehicle', 'routine']
+    created_at: '2023-01-15T10:30:00Z',
+    sections: [
+      {
+        id: 's1',
+        title: 'Vehicle Information',
+        description: 'Basic vehicle details',
+        displayOrder: 1,
+        fields: [
+          {
+            id: 'f1',
+            label: 'VIN',
+            fieldType: 'text',
+            required: true,
+            placeholder: 'Enter vehicle identification number',
+            displayOrder: 1,
+            validationRules: {
+              minLength: 17,
+              maxLength: 17
+            }
+          },
+          {
+            id: 'f2',
+            label: 'Make',
+            fieldType: 'text',
+            required: true,
+            placeholder: 'Vehicle manufacturer',
+            displayOrder: 2
+          },
+          {
+            id: 'f3',
+            label: 'Model',
+            fieldType: 'text',
+            required: true,
+            placeholder: 'Vehicle model',
+            displayOrder: 3
+          },
+          {
+            id: 'f4',
+            label: 'Year',
+            fieldType: 'number',
+            required: true,
+            placeholder: 'Vehicle year',
+            displayOrder: 4,
+            validationRules: {
+              min: 1900,
+              max: 2030
+            }
+          },
+          {
+            id: 'f5',
+            label: 'Mileage',
+            fieldType: 'number',
+            required: true,
+            placeholder: 'Current vehicle mileage',
+            displayOrder: 5
+          }
+        ]
+      },
+      {
+        id: 's2',
+        title: 'Exterior Inspection',
+        description: 'Inspection of vehicle exterior components',
+        displayOrder: 2,
+        fields: [
+          {
+            id: 'f6',
+            label: 'Body Condition',
+            fieldType: 'select',
+            required: true,
+            displayOrder: 1,
+            options: [
+              { label: 'Excellent', value: 'excellent' },
+              { label: 'Good', value: 'good' },
+              { label: 'Fair', value: 'fair' },
+              { label: 'Poor', value: 'poor' }
+            ]
+          },
+          {
+            id: 'f7',
+            label: 'Paint Condition',
+            fieldType: 'select',
+            required: true,
+            displayOrder: 2,
+            options: [
+              { label: 'Excellent', value: 'excellent' },
+              { label: 'Good', value: 'good' },
+              { label: 'Fair', value: 'fair' },
+              { label: 'Poor', value: 'poor' }
+            ]
+          },
+          {
+            id: 'f8',
+            label: 'Windshield',
+            fieldType: 'checkbox',
+            required: true,
+            displayOrder: 3,
+            helpText: 'Check if windshield is intact with no cracks'
+          },
+          {
+            id: 'f9',
+            label: 'Lights Functional',
+            fieldType: 'checkbox',
+            required: true,
+            displayOrder: 4,
+            helpText: 'Check if all exterior lights are working'
+          }
+        ]
+      }
+    ]
   },
   {
     id: '2',
-    name: 'Oil Change Service',
-    description: 'Standard oil change service form',
-    category: 'Maintenance',
-    content: {
-      sections: [
-        {
-          id: 'section-1',
-          title: 'Service Details',
-          description: 'Oil change service details',
-          fields: [
-            {
-              id: 'field-1',
-              label: 'Oil Type',
-              type: 'select',
-              required: true,
-              options: ['Conventional', 'Synthetic Blend', 'Full Synthetic', 'High Mileage']
-            },
-            {
-              id: 'field-2',
-              label: 'Oil Viscosity',
-              type: 'select',
-              required: true,
-              options: ['0W-20', '5W-20', '5W-30', '10W-30', '10W-40', '15W-40', '20W-50']
-            },
-            {
-              id: 'field-3',
-              label: 'Oil Filter Brand',
-              type: 'text',
-              required: true,
-              placeholder: 'Enter oil filter brand'
-            },
-            {
-              id: 'field-4',
-              label: 'Oil Filter Part Number',
-              type: 'text',
-              required: false,
-              placeholder: 'Enter oil filter part number'
-            },
-            {
-              id: 'field-5',
-              label: 'Oil Quantity (Quarts)',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter oil quantity in quarts'
-            }
-          ]
-        }
-      ]
-    },
-    created_by: 'Admin',
-    created_at: '2023-01-20T00:00:00Z',
-    updated_at: '2023-01-25T00:00:00Z',
-    version: 1,
+    name: 'Customer Satisfaction Survey',
+    description: 'Post-service customer feedback form',
+    version: 2,
+    category: 'feedback',
     is_published: true,
-    tags: ['oil-change', 'maintenance', 'service']
+    created_at: '2023-02-20T14:45:00Z',
+    sections: [
+      {
+        id: 's3',
+        title: 'Service Quality',
+        description: 'Rate your satisfaction with our service',
+        displayOrder: 1,
+        fields: [
+          {
+            id: 'f10',
+            label: 'Overall Satisfaction',
+            fieldType: 'rating',
+            required: true,
+            displayOrder: 1,
+            helpText: 'Rate your overall satisfaction with our service'
+          },
+          {
+            id: 'f11',
+            label: 'Technician Professionalism',
+            fieldType: 'rating',
+            required: true,
+            displayOrder: 2
+          },
+          {
+            id: 'f12',
+            label: 'Service Timeliness',
+            fieldType: 'rating',
+            required: true,
+            displayOrder: 3
+          }
+        ]
+      },
+      {
+        id: 's4',
+        title: 'Additional Feedback',
+        description: 'Please provide any additional comments',
+        displayOrder: 2,
+        fields: [
+          {
+            id: 'f13',
+            label: 'Comments',
+            fieldType: 'textarea',
+            required: false,
+            displayOrder: 1,
+            placeholder: 'Share your thoughts about our service'
+          },
+          {
+            id: 'f14',
+            label: 'Would you recommend us?',
+            fieldType: 'radio',
+            required: true,
+            displayOrder: 2,
+            options: [
+              { label: 'Yes', value: 'yes' },
+              { label: 'No', value: 'no' },
+              { label: 'Maybe', value: 'maybe' }
+            ]
+          }
+        ]
+      }
+    ]
   },
   {
     id: '3',
-    name: 'Brake Service',
-    description: 'Comprehensive brake inspection and service form',
-    category: 'Repairs',
-    content: {
-      sections: [
-        {
-          id: 'section-1',
-          title: 'Brake Inspection',
-          description: 'Brake system inspection details',
-          fields: [
-            {
-              id: 'field-1',
-              label: 'Front Brake Pad Thickness (mm)',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter thickness in mm'
-            },
-            {
-              id: 'field-2',
-              label: 'Rear Brake Pad Thickness (mm)',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter thickness in mm'
-            },
-            {
-              id: 'field-3',
-              label: 'Front Rotor Condition',
-              type: 'select',
-              required: true,
-              options: ['Good', 'Warped', 'Scored', 'Needs Replacement']
-            },
-            {
-              id: 'field-4',
-              label: 'Rear Rotor Condition',
-              type: 'select',
-              required: true,
-              options: ['Good', 'Warped', 'Scored', 'Needs Replacement']
-            },
-            {
-              id: 'field-5',
-              label: 'Brake Fluid Condition',
-              type: 'select',
-              required: true,
-              options: ['Good', 'Needs Flush', 'Low', 'Contaminated']
-            }
-          ]
-        }
-      ]
-    },
-    created_by: 'Admin',
-    created_at: '2023-01-25T00:00:00Z',
-    updated_at: '2023-02-05T00:00:00Z',
+    name: 'Maintenance Checklist',
+    description: 'Standard maintenance checklist form',
     version: 1,
+    category: 'maintenance',
     is_published: true,
-    tags: ['brakes', 'service', 'safety']
-  },
-  {
-    id: '4',
-    name: 'Tire Service',
-    description: 'Tire inspection and service form',
-    category: 'Maintenance',
-    content: {
-      sections: [
-        {
-          id: 'section-1',
-          title: 'Tire Inspection',
-          description: 'Tire condition and pressure details',
-          fields: [
-            {
-              id: 'field-1',
-              label: 'Front Left Tire Pressure (PSI)',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter pressure in PSI'
-            },
-            {
-              id: 'field-2',
-              label: 'Front Right Tire Pressure (PSI)',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter pressure in PSI'
-            },
-            {
-              id: 'field-3',
-              label: 'Rear Left Tire Pressure (PSI)',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter pressure in PSI'
-            },
-            {
-              id: 'field-4',
-              label: 'Rear Right Tire Pressure (PSI)',
-              type: 'number',
-              required: true,
-              placeholder: 'Enter pressure in PSI'
-            },
-            {
-              id: 'field-5',
-              label: 'Tire Rotation Performed',
-              type: 'checkbox',
-              required: false
-            }
-          ]
-        }
-      ]
-    },
-    created_by: 'Admin',
-    created_at: '2023-02-01T00:00:00Z',
-    updated_at: '2023-02-10T00:00:00Z',
-    version: 1,
-    is_published: true,
-    tags: ['tires', 'rotation', 'maintenance']
+    created_at: '2023-03-10T09:15:00Z',
+    sections: [
+      {
+        id: 's5',
+        title: 'Fluids Check',
+        description: 'Verification of all vehicle fluids',
+        displayOrder: 1,
+        fields: [
+          {
+            id: 'f15',
+            label: 'Engine Oil',
+            fieldType: 'checkbox',
+            required: true,
+            displayOrder: 1
+          },
+          {
+            id: 'f16',
+            label: 'Transmission Fluid',
+            fieldType: 'checkbox',
+            required: true,
+            displayOrder: 2
+          },
+          {
+            id: 'f17',
+            label: 'Brake Fluid',
+            fieldType: 'checkbox',
+            required: true,
+            displayOrder: 3
+          },
+          {
+            id: 'f18',
+            label: 'Coolant',
+            fieldType: 'checkbox',
+            required: true,
+            displayOrder: 4
+          }
+        ]
+      }
+    ]
   }
 ];
 
-// Export form categories
-export const formCategories = [
-  {
-    id: '1',
-    name: 'Vehicle Inspection',
-    description: 'Forms for vehicle inspections',
-    count: 1,
-    created_at: '2023-01-01T00:00:00Z',
-    updated_at: '2023-01-01T00:00:00Z'
-  },
-  {
-    id: '2',
-    name: 'Maintenance',
-    description: 'Forms for routine maintenance services',
-    count: 2,
-    created_at: '2023-01-01T00:00:00Z',
-    updated_at: '2023-01-01T00:00:00Z'
-  },
-  {
-    id: '3',
-    name: 'Repairs',
-    description: 'Forms for repair services',
-    count: 1,
-    created_at: '2023-01-01T00:00:00Z',
-    updated_at: '2023-01-01T00:00:00Z'
-  },
-  {
-    id: '4',
-    name: 'Customer Intake',
-    description: 'Forms for new customer information',
-    count: 0,
-    created_at: '2023-01-01T00:00:00Z',
-    updated_at: '2023-01-01T00:00:00Z'
-  }
-];
+// Export for backwards compatibility
+export const formTemplates = formTemplateData;
