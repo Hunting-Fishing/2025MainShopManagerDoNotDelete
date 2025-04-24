@@ -48,7 +48,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   if (message.message_type === 'file') {
     return (
       <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} group relative`}>
-        <ChatFileMessage message={message} />
+        <ChatFileMessage message={message} isCurrentUser={isCurrentUser} />
       </div>
     );
   }

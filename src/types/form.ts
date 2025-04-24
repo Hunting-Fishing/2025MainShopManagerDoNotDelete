@@ -43,14 +43,16 @@ export interface FormTemplate {
   tags?: string[];
 }
 
+// Modified to match the exact structure we're using in FormUploads.tsx
 export interface FormUpload {
   id: string;
   filename: string;
   filetype: string;
-  filesize: string;
+  filesize: number;
   file_url: string;
   uploaded_by?: string;
   uploaded_at: string;
+  form_id?: string;
 }
 
 // Additional fix for the formCategoryService error with type casting

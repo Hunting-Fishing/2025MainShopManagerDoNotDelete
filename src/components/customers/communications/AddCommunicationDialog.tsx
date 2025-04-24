@@ -50,16 +50,17 @@ export const AddCommunicationDialog: React.FC<AddCommunicationDialogProps> = ({
       const staffMemberId = "current-user"; // In a real app, get this from auth context
       const staffMemberName = "Current User"; // In a real app, get this from auth context
       
-      const newCommunication: Partial<CustomerCommunication> = {
+      // Create a fully defined communication object rather than a partial
+      const newCommunication = {
         customer_id: customer.id,
         type: type as "email" | "phone" | "text" | "in-person",
         direction: direction as "incoming" | "outgoing",
         subject: subject || null,
-        content,
+        content, // This is now always defined
         date: new Date().toISOString(),
         staff_member_id: staffMemberId,
         staff_member_name: staffMemberName,
-        status: "completed"
+        status: "completed" as const
       };
       
       const { data, error } = await supabase

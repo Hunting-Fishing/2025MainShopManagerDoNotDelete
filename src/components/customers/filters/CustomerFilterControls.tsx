@@ -1,100 +1,64 @@
 
 import React, { useState } from "react";
-import { DateRange } from "react-day-picker";
-import { CustomerFilterHeader } from "./components/CustomerFilterHeader";
-import { CustomerFilterPanel } from "./components/CustomerFilterPanel";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { SavedSearches } from "./SavedSearches";
 
 export interface CustomerFilters {
-  searchQuery: string;
+  search?: string;
+  hasVehicles?: boolean;
+  noVehicles?: boolean;
+  hasWorkOrders?: boolean;
+  status?: string;
+  dateFrom?: Date | null;
+  dateTo?: Date | null;
+  segment?: string;
   tags?: string[];
-  vehicleType?: string;
-  dateRange?: DateRange;
-  hasVehicles?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 }
 
-interface CustomerFilterControlsProps {
+export interface CustomerFilterControlsProps {
   filters: CustomerFilters;
   onFilterChange: (filters: CustomerFilters) => void;
+  disabled?: boolean; // Added disabled prop to the interface
 }
 
-export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({
-  filters,
+export const CustomerFilterControls: React.FC<CustomerFilterControlsProps> = ({ 
+  filters, 
   onFilterChange,
+  disabled = false 
 }) => {
-  const [expanded, setExpanded] = useState(false);
-
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+  
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({
-      ...filters,
-      searchQuery: e.target.value,
-    });
+    setSearchInput(e.target.value);
   };
-
-  const handleTagsChange = (newTags: string[]) => {
-    onFilterChange({
-      ...filters,
-      tags: newTags,
-    });
+  
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onFilterChange({ ...filters, search: searchInput });
   };
-
-  const handleVehicleTypeChange = (value: string) => {
-    onFilterChange({
-      ...filters,
-      vehicleType: value || undefined,
-    });
-  };
-
-  const handleHasVehiclesChange = (value: string) => {
-    onFilterChange({
-      ...filters,
-      hasVehicles: value,
-    });
-  };
-
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    onFilterChange({
-      ...filters,
-      dateRange: range,
-    });
-  };
-
-  const resetFilters = () => {
-    onFilterChange({
-      searchQuery: "",
-      tags: [],
-      vehicleType: undefined,
-      dateRange: undefined,
-      hasVehicles: undefined,
-    });
-  };
-
-  const activeFiltersCount = 
-    (filters.tags && filters.tags.length > 0 ? 1 : 0) +
-    (filters.vehicleType ? 1 : 0) +
-    (filters.dateRange && (filters.dateRange.from || filters.dateRange.to) ? 1 : 0) +
-    (filters.hasVehicles ? 1 : 0);
 
   return (
-    <div className="space-y-4">
-      <CustomerFilterHeader
-        searchQuery={filters.searchQuery}
-        onSearchChange={handleSearchChange}
-        expanded={expanded}
-        setExpanded={setExpanded}
-        activeFiltersCount={activeFiltersCount}
-        onResetFilters={resetFilters}
-      />
-
-      {expanded && (
-        <CustomerFilterPanel
-          filters={filters}
-          onTagsChange={handleTagsChange}
-          onVehicleTypeChange={handleVehicleTypeChange}
-          onDateRangeChange={handleDateRangeChange}
-          onHasVehiclesChange={handleHasVehiclesChange}
-          onApplySearch={onFilterChange}
-        />
-      )}
+    <div className="flex flex-col gap-2 md:flex-row md:items-center">
+      <form onSubmit={handleSearchSubmit} className="flex flex-1 space-x-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search customers..."
+            className="pl-8"
+            value={searchInput}
+            onChange={handleSearchChange}
+            disabled={disabled}
+          />
+        </div>
+        <Button type="submit" variant="default" disabled={disabled}>
+          Search
+        </Button>
+      </form>
+      <SavedSearches disabled={disabled} />
     </div>
   );
 };

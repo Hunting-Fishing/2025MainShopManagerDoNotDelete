@@ -6,12 +6,12 @@ import { FilePreview } from './FilePreview';
 
 interface ChatFileMessageProps {
   message: ChatMessage;
-  isCurrentUser?: boolean; // Added this prop
+  isCurrentUser: boolean; // Making isCurrentUser required
 }
 
 export const ChatFileMessage: React.FC<ChatFileMessageProps> = ({ 
   message, 
-  isCurrentUser = false 
+  isCurrentUser 
 }) => {
   if (!message.file_url) return null;
 
