@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ChatMessage } from '@/types/chat';
@@ -20,11 +19,9 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
   const [roomId, setRoomId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Find or create chat room for this customer
   useEffect(() => {
     const fetchOrCreateChatRoom = async () => {
       try {
-        // First try to find an existing room for this customer
         const { data: existingRooms } = await supabase
           .from('chat_rooms')
           .select('*')
@@ -36,7 +33,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
           return;
         }
         
-        // If no room exists, create one
         const { data: newRoom, error } = await supabase
           .from('chat_rooms')
           .insert({
@@ -52,7 +48,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
         
         if (error) throw error;
         
-        // Add the customer as a participant
         await supabase
           .from('chat_participants')
           .insert({
@@ -61,7 +56,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
             role: 'customer'
           });
         
-        // Add the system as a participant (representing staff)
         await supabase
           .from('chat_participants')
           .insert({
@@ -71,7 +65,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
           });
         
         setRoomId(newRoom.id);
-        
       } catch (err) {
         console.error('Error setting up chat room:', err);
         toast({
@@ -87,7 +80,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
     }
   }, [customerId, customerName, toast]);
   
-  // Fetch messages for the room
   useEffect(() => {
     if (!roomId) return;
     
@@ -103,7 +95,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
         if (error) throw error;
         
         if (data) {
-          // Convert the message_type string to the expected union type
           const typedMessages = data.map(msg => ({
             ...msg,
             message_type: (msg.message_type || 'text') as "audio" | "video" | "image" | "text" | "file" | "system" | "work_order" | "thread"
@@ -120,7 +111,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
     
     fetchMessages();
     
-    // Set up real-time subscription for new messages
     const subscription = supabase
       .channel('chat_messages')
       .on('postgres_changes', {
@@ -131,7 +121,6 @@ export const CustomerChatPanel: React.FC<CustomerChatPanelProps> = ({ customerId
       }, payload => {
         const newMessage = payload.new as any;
         
-        // Convert message_type to the expected union type
         const typedMessage = {
           ...newMessage,
           message_type: (newMessage.message_type || 'text') as "audio" | "video" | "image" | "text" | "file" | "system" | "work_order" | "thread"

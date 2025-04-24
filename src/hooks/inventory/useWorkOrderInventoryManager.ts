@@ -1,12 +1,13 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { WorkOrderInventoryItem } from '@/types/workOrder';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { mapToWorkOrderInventoryItem } from '@/utils/inventoryAdapters';
 
 export const useWorkOrderInventoryManager = (workOrderId: string) => {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<WorkOrderInventoryItem[]>([]);
+  const { toast } = useToast();
 
   const fetchInventoryItems = useCallback(async () => {
     setLoading(true);
@@ -19,8 +20,9 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
 
       if (error) throw error;
       
-      setItems(data || []);
-      return data;
+      const mappedItems = mapToWorkOrderInventoryItem(data || []);
+      setItems(mappedItems);
+      return mappedItems;
     } catch (error) {
       console.error('Error fetching inventory items:', error);
       toast({
@@ -32,7 +34,7 @@ export const useWorkOrderInventoryManager = (workOrderId: string) => {
     } finally {
       setLoading(false);
     }
-  }, [workOrderId]);
+  }, [workOrderId, toast]);
 
   const addInventoryItem = async (item: Omit<WorkOrderInventoryItem, 'id'>) => {
     setLoading(true);

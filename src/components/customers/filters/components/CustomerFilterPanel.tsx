@@ -22,13 +22,19 @@ interface CustomerFilterPanelProps {
 export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
   filters,
   onTagsChange,
-  onVehicleTypeFilter,
+  onVehicleTypeChange,
   onDateRangeChange,
   onHasVehiclesChange,
   onApplySearch
 }) => {
   // Ensure we have valid filters
   const safeFilters = filters || {};
+  
+  // Prepare the dateRange object from filters
+  const dateRange = {
+    from: safeFilters.dateFrom || undefined,
+    to: safeFilters.dateTo || undefined
+  };
   
   return (
     <Card className="p-4">
@@ -48,7 +54,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
             <h3 className="text-sm font-medium mb-2">Vehicle Type</h3>
             <CustomerVehicleTypeFilter
               vehicleType={safeFilters.vehicleType || ''}
-              onChange={onVehicleTypeFilter}
+              onChange={onVehicleTypeChange}
             />
           </div>
           
@@ -67,10 +73,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Date Added</h3>
             <CustomerDateRangeFilter
-              dateRange={{
-                from: safeFilters.dateFrom || undefined,
-                to: safeFilters.dateTo || undefined
-              }}
+              dateRange={dateRange}
               onDateRangeChange={onDateRangeChange}
             />
           </div>

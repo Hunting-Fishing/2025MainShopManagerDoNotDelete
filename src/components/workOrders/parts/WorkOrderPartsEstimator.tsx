@@ -1,294 +1,169 @@
-
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Package, Plus, Search, X } from "lucide-react";
-import { WorkOrderInventoryItem } from "@/types/workOrder";
-import { v4 as uuidv4 } from 'uuid';
+import { useEffect, useState } from "react";
+import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
+import { InventoryItem } from "@/types/inventory";
+import { mapToInventoryItem } from "@/utils/inventoryAdapters";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { supabase } from '@/lib/supabase';
-import { InventoryItem } from '@/types/inventory';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Search } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/lib/supabase";
 
 interface WorkOrderPartsEstimatorProps {
-  initialItems: WorkOrderInventoryItem[];
-  onItemsChange: (items: WorkOrderInventoryItem[]) => void;
-  readOnly?: boolean;
+  onAdd: (item: InventoryItem, quantity: number) => void;
+  onCancel: () => void;
 }
 
-export function WorkOrderPartsEstimator({
-  initialItems = [],
-  onItemsChange,
-  readOnly = false
-}: WorkOrderPartsEstimatorProps) {
-  const [items, setItems] = useState<WorkOrderInventoryItem[]>(initialItems);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<InventoryItem[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+export function WorkOrderPartsEstimator({ onAdd, onCancel }: WorkOrderPartsEstimatorProps) {
+  const [open, setOpen] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
+  const { loading: inventoryLoading, items: fetchedItems } = useInventoryManager();
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+
+  // Fetch inventory items
   useEffect(() => {
-    setItems(initialItems);
-  }, [initialItems]);
+    const fetchInventory = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('inventory_items')
+          .select('*')
+          .order('name', { ascending: true });
+        
+        if (error) {
+          throw error;
+        }
 
-  const calculateItemTotal = (item: WorkOrderInventoryItem): number => {
-    return item.totalPrice !== undefined ? item.totalPrice : (item.quantity * item.unitPrice);
-  };
-
-  const estimateTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
-
-  const handleAddItem = async (inventoryItem: InventoryItem) => {
-    const newItem: WorkOrderInventoryItem = {
-      id: uuidv4(),
-      name: inventoryItem.name,
-      sku: inventoryItem.sku || '',
-      category: inventoryItem.category || 'General',
-      quantity: 1,
-      unitPrice: inventoryItem.price,
-      totalPrice: inventoryItem.price,
-      itemStatus: 'in-stock',
-      supplierName: inventoryItem.supplier || ''
+        if (data) {
+          // Convert the Supabase response to InventoryItem type
+          const mappedItems = mapToInventoryItem(data);
+          setInventoryItems(mappedItems);
+        }
+      } catch (err) {
+        console.error('Error fetching inventory:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to load inventory items',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const updatedItems = [...items, newItem];
-    setItems(updatedItems);
-    onItemsChange(updatedItems);
-    setIsAddDialogOpen(false);
-  };
+    fetchInventory();
+  }, [toast]);
 
-  const handleQuantityChange = (id: string, quantity: number) => {
-    if (quantity < 1) quantity = 1;
-    
-    const updatedItems = items.map(item => {
-      if (item.id === id) {
-        const newQuantity = quantity;
-        const total = newQuantity * item.unitPrice;
-        return { 
-          ...item, 
-          quantity: newQuantity,
-          totalPrice: total
-        };
-      }
-      return item;
-    });
-    
-    setItems(updatedItems);
-    onItemsChange(updatedItems);
-  };
+  const filteredItems = inventoryItems.filter((item) =>
+    item.name.toLowerCase().includes(search.toLowerCase()) ||
+    (item.sku && item.sku.toLowerCase().includes(search.toLowerCase())) ||
+    (item.category && item.category.toLowerCase().includes(search.toLowerCase()))
+  );
 
-  const handleRemoveItem = (id: string) => {
-    const updatedItems = items.filter(item => item.id !== id);
-    setItems(updatedItems);
-    onItemsChange(updatedItems);
-  };
-
-  const searchInventory = async () => {
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .or(`name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`)
-        .limit(10);
-
-      if (error) throw error;
-      
-      setSearchResults(data || []);
-    } catch (error) {
-      console.error('Error searching inventory:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
+  const handleAddItem = () => {
+    if (selectedItem) {
+      onAdd(selectedItem, quantity);
+      setOpen(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      {!readOnly && (
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Parts & Materials</h3>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-1">
-                <Plus className="h-4 w-4" /> Add Part
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add Part from Inventory</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Search by name or SKU..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={searchInventory} className="flex items-center gap-1">
-                    <Search className="h-4 w-4" /> Search
-                  </Button>
-                </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[625px]">
+        <DialogHeader>
+          <DialogTitle>Add Parts & Inventory</DialogTitle>
+          <DialogDescription>
+            Search for parts and inventory items to add to this work order.
+          </DialogDescription>
+        </DialogHeader>
 
-                <ScrollArea className="h-[300px] border rounded-md">
-                  {isSearching ? (
-                    <div className="flex justify-center items-center h-full">
-                      <p>Searching...</p>
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>SKU</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {searchResults.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>{item.name}</TableCell>
-                            <TableCell>{item.sku}</TableCell>
-                            <TableCell>${item.price.toFixed(2)}</TableCell>
-                            <TableCell>
-                              <Button
-                                size="sm"
-                                onClick={() => handleAddItem(item)}
-                              >
-                                Add
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="text-center p-4">
-                      {searchTerm ? "No results found" : "Search for parts"}
-                    </div>
-                  )}
-                </ScrollArea>
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search parts..."
+            className="pl-8"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-      )}
 
-      {items.length > 0 ? (
-        <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Part</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Unit Price</TableHead>
-                {!readOnly && <TableHead>Quantity</TableHead>}
-                <TableHead className="text-right">Total</TableHead>
-                {!readOnly && <TableHead></TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.sku}</TableCell>
-                  <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
-                  {!readOnly && (
-                    <TableCell>
-                      <div className="flex items-center w-20">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 rounded-r-none"
-                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                        >
-                          -
-                        </Button>
-                        <Input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
-                          className="h-8 text-center rounded-none w-10"
-                          min={1}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 rounded-l-none"
-                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                  <TableCell className="text-right">${calculateItemTotal(item).toFixed(2)}</TableCell>
-                  {!readOnly && (
-                    <TableCell>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="text-red-500 h-8 w-8"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-              <TableRow>
-                <TableCell 
-                  colSpan={readOnly ? 3 : 4} 
-                  className="text-right font-semibold"
+        <Separator className="my-4" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="max-h-[300px] overflow-y-auto">
+            {loading ? (
+              <p>Loading inventory items...</p>
+            ) : filteredItems.length === 0 ? (
+              <p>No items found.</p>
+            ) : (
+              filteredItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant="outline"
+                  className={`w-full justify-start ${selectedItem?.id === item.id ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' : ''}`}
+                  onClick={() => setSelectedItem(item)}
                 >
-                  Total:
-                </TableCell>
-                <TableCell className="text-right font-bold">
-                  ${estimateTotal.toFixed(2)}
-                </TableCell>
-                {!readOnly && <TableCell></TableCell>}
-              </TableRow>
-            </TableBody>
-          </Table>
-        </>
-      ) : (
-        <div className="border border-dashed rounded-md p-8 text-center">
-          <Package className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-          <h3 className="text-lg font-medium mb-1">No Parts Added</h3>
-          <p className="text-slate-500 mb-4">
-            Add parts and materials to estimate costs for this work order.
-          </p>
-          {!readOnly && (
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Add First Part
-            </Button>
-          )}
+                  {item.name}
+                </Button>
+              ))
+            )}
+          </div>
+
+          <div>
+            {selectedItem ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">{selectedItem.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {selectedItem.description}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>SKU</Label>
+                    <Input type="text" value={selectedItem.sku || 'N/A'} disabled />
+                  </div>
+                  <div>
+                    <Label>Category</Label>
+                    <Input type="text" value={selectedItem.category || 'N/A'} disabled />
+                  </div>
+                </div>
+                <div>
+                  <Label>Quantity</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+            ) : (
+              <p>Select an item to add.</p>
+            )}
+          </div>
         </div>
-      )}
-    </div>
+
+        <div className="flex justify-end space-x-2 mt-4">
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleAddItem} disabled={!selectedItem}>
+            Add Item
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
