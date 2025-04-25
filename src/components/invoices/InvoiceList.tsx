@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
@@ -48,9 +47,15 @@ export function InvoiceList() {
     });
   };
 
+  const statusFilter = (invoice: Invoice) => {
+    if (!filters.status) return true;
+    if (filters.status === 'all') return true;
+    return invoice.status === filters.status;
+  };
+
   const filteredInvoices = invoices?.filter((invoice) => {
     // Filter by status
-    if (filters.status !== "all" && invoice.status !== filters.status) {
+    if (!statusFilter(invoice)) {
       return false;
     }
 

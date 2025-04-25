@@ -1,48 +1,52 @@
 
-import { getInventoryItemById } from "@/services/inventoryService";
-import { useNotifications } from "@/context/notifications";
-import { toast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { getInventoryItemById, updateInventoryQuantity } from '@/services/inventoryService';
+import { toast } from '@/components/ui/use-toast';
 
 export function useManualReorder() {
-  const { addNotification } = useNotifications();
+  const [isReordering, setIsReordering] = useState(false);
 
-  // Function to manually reorder an item
   const reorderItem = async (itemId: string, quantity: number) => {
+    if (!itemId || quantity <= 0) {
+      toast({
+        title: "Invalid reorder",
+        description: "Item ID and quantity must be provided",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsReordering(true);
+    
     try {
-      const item = await getInventoryItemById(itemId);
-      if (!item) {
-        toast({
-          title: "Error",
-          description: "Item not found",
-          variant: "destructive",
-        });
-        return;
+      // First, get the current item to get its existing quantity
+      const currentItem = await getInventoryItemById(itemId);
+      
+      if (!currentItem) {
+        throw new Error("Item not found");
       }
       
-      // In a real app, this would connect to a purchasing API
-      // For now, we'll just show a toast notification
-      toast({
-        title: "Order Placed",
-        description: `Manually ordered ${quantity} units of ${item.name}`,
-      });
+      // Calculate new quantity (adding to existing)
+      const newQuantity = (currentItem.quantity || 0) + quantity;
       
-      addNotification({
-        title: "Order Placed",
-        message: `Manually ordered ${quantity} units of ${item.name}`,
-        type: "success",
-        link: "/inventory"
+      // Update the item with new quantity
+      await updateInventoryQuantity(itemId, newQuantity);
+      
+      toast({
+        title: "Reorder successful",
+        description: `Added ${quantity} units of ${currentItem.name} to inventory`
       });
     } catch (error) {
-      console.error("Error placing manual order:", error);
+      console.error("Error reordering item:", error);
       toast({
-        title: "Error",
-        description: "Failed to place order",
-        variant: "destructive",
+        title: "Reorder failed",
+        description: "There was a problem processing the reorder",
+        variant: "destructive"
       });
+    } finally {
+      setIsReordering(false);
     }
   };
-
-  return {
-    reorderItem
-  };
+  
+  return { reorderItem, isReordering };
 }
