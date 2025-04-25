@@ -50,3 +50,6 @@ export function getInventoryStatus(quantity: number, reorderPoint: number): stri
     return "In Stock";
   }
 }
+
+// Add the missing function that's being imported in crudService.ts
+export const mapDbItemToInventoryItem = mapDbToInventoryItem;
