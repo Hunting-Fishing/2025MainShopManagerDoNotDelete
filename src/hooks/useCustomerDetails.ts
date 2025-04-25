@@ -24,6 +24,8 @@ export const useCustomerDetails = (customerId?: string) => {
     setError(null);
     
     try {
+      console.log("Fetching customer details for ID:", customerId);
+      
       // Fetch customer details
       const customerData = await getCustomerById(customerId);
       

@@ -116,6 +116,7 @@ export const useCustomerEdit = (customerId?: string) => {
         setIsLoading(true);
         
         // Load customer data with vehicles included
+        console.log("Loading customer data for ID:", customerId);
         const customerData = await getCustomerById(customerId);
         if (!customerData) {
           setError("Customer not found");

@@ -1,30 +1,33 @@
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export function CustomerRedirect() {
+export const CustomerRedirect: React.FC = () => {
   const navigate = useNavigate();
-
+  
   useEffect(() => {
-    // Auto redirect after 3 seconds
-    const timer = setTimeout(() => {
-      navigate('/customers');
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    // Log the redirect for debugging purposes
+    console.log('CustomerRedirect: Invalid customer ID detected, redirecting to customers list');
+  }, []);
 
   return (
-    <div className="space-y-6 p-4">
-      <Alert variant="destructive" className="border-red-500 bg-red-50">
+    <div className="space-y-6">
+      <Alert variant="destructive">
         <AlertTriangle className="h-5 w-5" />
-        <AlertTitle className="text-lg font-medium">Invalid Customer ID</AlertTitle>
-        <AlertDescription className="mt-2">
-          <p>The customer ID provided is invalid or not properly formatted. You will be redirected to the customers list.</p>
+        <AlertTitle>Customer not found</AlertTitle>
+        <AlertDescription>
+          The customer you're looking for doesn't exist or the ID is invalid.
         </AlertDescription>
       </Alert>
+      
+      <div className="flex justify-center">
+        <Button onClick={() => navigate('/customers')} variant="default">
+          Return to Customers List
+        </Button>
+      </div>
     </div>
   );
-}
+};

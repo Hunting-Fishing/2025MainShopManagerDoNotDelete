@@ -61,6 +61,11 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
   try {
     console.log("Fetching customer by ID:", id);
     
+    if (!id) {
+      console.error("Invalid customer ID provided:", id);
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from("customers")
       .select("*")
