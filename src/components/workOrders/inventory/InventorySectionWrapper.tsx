@@ -1,36 +1,31 @@
-
-import React, { useEffect } from "react";
-import { FormField, FormItem, FormLabel } from "@/components/ui/form";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package } from "lucide-react";
+import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
 import { UseFormReturn } from "react-hook-form";
 import { WorkOrderFormSchemaValues } from "@/schemas/workOrderSchema";
-import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { toast } from "@/hooks/use-toast";
+import { useInventoryStatus } from "@/hooks/inventory/useInventoryStatus";
 
 interface InventorySectionWrapperProps {
   form: UseFormReturn<WorkOrderFormSchemaValues>;
+  readOnly?: boolean;
 }
 
-export const InventorySectionWrapper: React.FC<InventorySectionWrapperProps> = ({
-  form
-}) => {
-  // Use the inventory manager hook to access inventory management features
-  const { checkInventoryAlerts, lowStockItems, outOfStockItems } = useInventoryManager();
+export function InventorySectionWrapper({ form, readOnly = false }: InventorySectionWrapperProps) {
+  // Update useInventoryStatus call to pass an empty object
+  const inventoryStatus = useInventoryStatus({});
   
-  // Check for inventory alerts when this component mounts
-  useEffect(() => {
-    // This ensures inventory is checked when items are being added to work orders
-    checkInventoryAlerts();
-    
-    // Display a notification if there are inventory alerts
-    if (lowStockItems.length > 0 || outOfStockItems.length > 0) {
-      toast({
-        title: "Inventory Alerts",
-        description: `${lowStockItems.length} items low on stock, ${outOfStockItems.length} items out of stock.`,
-        variant: "warning"
-      });
-    }
-  }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);
-  
-  return <WorkOrderInventoryField form={form as any} />;
-};
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <Package className="h-5 w-5 text-muted-foreground" />
+          Parts & Materials
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <WorkOrderInventoryField form={form} readOnly={readOnly} />
+      </CardContent>
+    </Card>
+  );
+}

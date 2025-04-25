@@ -21,6 +21,17 @@ export function LowStockAlerts() {
     return <NoInventoryAlerts />;
   }
 
+  // Type-safe wrapper functions to match the expected return types
+  const handleReorderItem = async (itemId: string, quantity: number) => {
+    await reorderItem(itemId, quantity);
+    return true; // Return boolean as expected by the component
+  };
+
+  const handleEnableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
+    await enableAutoReorder(itemId, threshold, quantity);
+    return true; // Return boolean as expected by the component
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -47,8 +58,8 @@ export function LowStockAlerts() {
                 key={item.id}
                 item={item}
                 autoReorderSettings={autoReorderSettings}
-                reorderItem={reorderItem}
-                enableAutoReorder={enableAutoReorder}
+                reorderItem={handleReorderItem}
+                enableAutoReorder={handleEnableAutoReorder}
               />
             ))}
           </TableBody>

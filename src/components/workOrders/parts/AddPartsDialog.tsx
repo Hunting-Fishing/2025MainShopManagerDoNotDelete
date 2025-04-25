@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,6 @@ export function AddPartsDialog({ open, onOpenChange, onAddItems }: AddPartsDialo
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedItems, setSelectedItems] = useState<WorkOrderInventoryItem[]>([]);
 
-  // Reset selections when dialog opens
   useEffect(() => {
     if (open) {
       setSelectedItems([]);
@@ -32,7 +30,6 @@ export function AddPartsDialog({ open, onOpenChange, onAddItems }: AddPartsDialo
     }
   }, [open]);
 
-  // Filter items based on search and category
   const filteredItems = inventoryItems.filter(item => {
     const matchesSearch = searchTerm === '' || 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,11 +41,9 @@ export function AddPartsDialog({ open, onOpenChange, onAddItems }: AddPartsDialo
     return matchesSearch && matchesCategory;
   });
 
-  // Get unique categories for the filter dropdown
   const categories = Array.from(new Set(inventoryItems.map(item => item.category))).sort();
 
   const handleAddItem = (item: any) => {
-    // Convert inventory item to work order inventory item
     const newItem: WorkOrderInventoryItem = {
       id: item.id,
       name: item.name,
@@ -81,7 +76,6 @@ export function AddPartsDialog({ open, onOpenChange, onAddItems }: AddPartsDialo
     onOpenChange(false);
   };
 
-  // Check if an item has already been selected
   const isItemSelected = (id: string) => {
     return selectedItems.some(item => item.id === id);
   };
@@ -93,7 +87,6 @@ export function AddPartsDialog({ open, onOpenChange, onAddItems }: AddPartsDialo
           <DialogTitle>Add Parts & Materials</DialogTitle>
         </DialogHeader>
         
-        {/* Search and filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -122,7 +115,6 @@ export function AddPartsDialog({ open, onOpenChange, onAddItems }: AddPartsDialo
           </div>
         </div>
 
-        {/* Selected items */}
         {selectedItems.length > 0 && (
           <div className="mb-4 border rounded-md overflow-hidden">
             <div className="bg-muted p-2 font-medium">Selected Items</div>
@@ -181,7 +173,6 @@ export function AddPartsDialog({ open, onOpenChange, onAddItems }: AddPartsDialo
           </div>
         )}
 
-        {/* Available items */}
         <div className="border rounded-md overflow-hidden">
           <div className="bg-muted p-2 font-medium">Inventory Items</div>
           <div className="max-h-[400px] overflow-y-auto">

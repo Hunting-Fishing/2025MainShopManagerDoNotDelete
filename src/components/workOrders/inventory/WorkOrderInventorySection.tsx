@@ -1,33 +1,49 @@
-
-import React, { useEffect } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "../WorkOrderFormFields";
-import { WorkOrderInventoryField } from "./WorkOrderInventoryField";
-import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
-import { toast } from "@/hooks/use-toast";
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Package } from 'lucide-react';
+import { WorkOrderInventoryField } from './WorkOrderInventoryField';
+import { useForm } from 'react-hook-form';
+import { useInventoryStatus } from '@/hooks/inventory/useInventoryStatus';
+import { WorkOrderInventoryItem } from '@/types/workOrder';
 
 interface WorkOrderInventorySectionProps {
-  form: UseFormReturn<WorkOrderFormFieldValues>;
+  items: WorkOrderInventoryItem[];
+  onItemsChange: (items: WorkOrderInventoryItem[]) => void;
+  readOnly?: boolean;
 }
 
-export const WorkOrderInventorySection: React.FC<WorkOrderInventorySectionProps> = ({ form }) => {
-  // Use the inventory manager hook to access inventory management features
-  const { checkInventoryAlerts, lowStockItems, outOfStockItems } = useInventoryManager();
-  
-  // Check for inventory alerts when this component mounts
-  useEffect(() => {
-    // This ensures inventory is checked when items are being added to work orders
-    checkInventoryAlerts();
-    
-    // Display a notification if there are inventory alerts
-    if (lowStockItems.length > 0 || outOfStockItems.length > 0) {
-      toast({
-        title: "Inventory Alerts",
-        description: `${lowStockItems.length} items low on stock, ${outOfStockItems.length} items out of stock.`,
-        variant: "warning"
-      });
+export function WorkOrderInventorySection({
+  items,
+  onItemsChange,
+  readOnly = false
+}: WorkOrderInventorySectionProps) {
+  const form = useForm({
+    defaultValues: {
+      inventoryItems: items || []
     }
-  }, [checkInventoryAlerts, lowStockItems, outOfStockItems]);
+  });
   
-  return <WorkOrderInventoryField form={form} />;
-};
+  // Update useInventoryStatus call to pass an empty object
+  const inventoryStatus = useInventoryStatus({});
+  
+  const handleInventoryChange = (updatedItems: WorkOrderInventoryItem[]) => {
+    onItemsChange(updatedItems);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <Package className="h-5 w-5 text-muted-foreground" />
+          Parts & Materials
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <WorkOrderInventoryField
+          form={form}
+          readOnly={readOnly}
+        />
+      </CardContent>
+    </Card>
+  );
+}
