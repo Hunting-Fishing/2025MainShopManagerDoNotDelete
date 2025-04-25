@@ -13,10 +13,8 @@ export type RelationshipType = {
 };
 
 // For backwards compatibility with any code that imports directly from this file
+// These are empty placeholders, the real data is now in CustomerFormSchema.ts
 export const shops: { id: string, name: string }[] = [];
 export const relationshipTypes: RelationshipType[] = [];
-
-// Customer segments and tags now come from the database tables
-// Renamed predefinedTags for backwards compatibility, but it will be empty
 export const predefinedTags = [];
 export const predefinedSegments = [];
