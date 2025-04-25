@@ -43,7 +43,7 @@ export const routeDefinitions = [
         element: <CreateCustomer />,
       },
       {
-        path: "customers/:customerId",
+        path: "customers/:id",
         element: (
           <CustomerDataProviderWrapper>
             <CustomerDetails />
@@ -51,7 +51,7 @@ export const routeDefinitions = [
         ),
       },
       {
-        path: "customers/:customerId/edit",
+        path: "customers/:id/edit",
         element: <EditCustomer />,
       },
       {

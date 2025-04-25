@@ -64,7 +64,7 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({
             variant="outline"
             asChild
           >
-            {/* Update the link to use the correct pattern */}
+            {/* Update the link to use the correct parameter name */}
             <Link to={`/customers/${customer.id}/edit`}>
               <Edit className="mr-2 h-4 w-4" /> Edit Customer
             </Link>

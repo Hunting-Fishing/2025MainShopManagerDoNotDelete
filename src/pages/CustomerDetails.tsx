@@ -12,13 +12,13 @@ import { CustomerCommunication, CustomerNote } from "@/types/customer";
 import { CustomerRedirect } from "@/components/routing/CustomerRedirect"; 
 
 export default function CustomerDetails() {
-  // Change from 'id' to 'customerId' to match the route parameter name used in routes.tsx
-  const { customerId } = useParams<{ customerId: string }>();
+  // Change from 'customerId' to 'id' to match the route parameter name used in routes.tsx
+  const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
   // Validate the ID format earlier - UUID format validation
-  const isValidUUID = customerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customerId);
+  const isValidUUID = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   
   // Early validation - use CustomerRedirect component for invalid IDs
   if (!isValidUUID) {
@@ -41,7 +41,7 @@ export default function CustomerDetails() {
     handleInteractionAdded,
     handleCommunicationAdded,
     handleNoteAdded
-  } = useCustomerDetails(customerId);
+  } = useCustomerDetails(id);
   
   // Check if the URL has a tab parameter to set the active tab
   useEffect(() => {
@@ -53,10 +53,10 @@ export default function CustomerDetails() {
   
   // Refresh customer data when arriving at this page
   useEffect(() => {
-    if (customerId && customerId !== "undefined") {
+    if (id && id !== "undefined") {
       refreshCustomerData();
     }
-  }, [customerId, refreshCustomerData]);
+  }, [id, refreshCustomerData]);
 
   // Create wrapper functions for onCommunicationAdded and onNoteAdded
   const onCommunicationAddedWrapper = () => {
