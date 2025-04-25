@@ -9,7 +9,7 @@ import {
 } from '@/services/calendar/calendarEventService';
 import { toast } from '@/hooks/use-toast';
 
-// Define type for DbCalendarEvent with all_day as a required property
+// Define type for DbCalendarEvent with all_day as a required property and event_type as a union type
 interface DbCalendarEvent {
   id?: string;
   title: string;
@@ -43,6 +43,12 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     status: dbEvent.status,
     priority: dbEvent.priority
   };
+};
+
+// Helper function to ensure event_type is a valid type
+const ensureValidEventType = (type: string): "appointment" | "work-order" | "reminder" | "event" | "other" => {
+  const validTypes = ["appointment", "work-order", "reminder", "event"];
+  return validTypes.includes(type) ? type as any : "other";
 };
 
 /**
@@ -129,7 +135,12 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         const existingEvent = await getCalendarEventByWorkOrderId(workOrder.id);
         
         if (existingEvent) {
-          setCalendarEvent(convertToCalendarEvent(existingEvent));
+          // Ensure event_type is a valid type before converting
+          const eventWithValidType: DbCalendarEvent = {
+            ...existingEvent,
+            event_type: ensureValidEventType(existingEvent.event_type)
+          };
+          setCalendarEvent(convertToCalendarEvent(eventWithValidType));
         }
       } catch (err) {
         console.error("Error fetching calendar event:", err);

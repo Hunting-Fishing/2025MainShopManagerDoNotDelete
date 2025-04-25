@@ -1,8 +1,9 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { WorkOrderInventoryItem } from '@/types/workOrder';
 
-export function useWorkOrderInventoryEffects(workOrderId: string, items: any[]) {
+export function useWorkOrderInventoryEffects(workOrderId: string, items: WorkOrderInventoryItem[]) {
   const updateWorkOrderInventory = async (wOrderId: string) => {
     try {
       const { error } = await supabase

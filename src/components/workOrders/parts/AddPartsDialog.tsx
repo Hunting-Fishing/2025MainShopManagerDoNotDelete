@@ -34,7 +34,8 @@ export function AddPartsDialog({ open, onOpenChange, onItemSelect, onAddItems }:
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   
   // Get inventory items from the inventory manager
-  const { inventoryItems } = useInventoryManager();
+  const inventoryManager = useInventoryManager();
+  const inventoryItems = inventoryManager.inventoryItems;
   
   const handleQuantityChange = (itemId: string, value: string) => {
     const quantity = parseInt(value, 10);

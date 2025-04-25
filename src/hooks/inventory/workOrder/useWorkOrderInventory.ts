@@ -1,7 +1,7 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues, WorkOrderInventoryItem } from "@/types/workOrder.d"; // Import both from .d.ts file
+import { WorkOrderFormFieldValues, WorkOrderInventoryItem } from "@/types/workOrder";
 import { InventoryItemExtended } from "@/types/inventory";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { useInventoryStatusEffects } from "./useInventoryStatusEffects";
@@ -16,8 +16,13 @@ export const useWorkOrderInventory = (form: UseFormReturn<WorkOrderFormFieldValu
     consumeWorkOrderInventory 
   } = useInventoryManager();
   
-  // Use the inventory status effects hook
-  useInventoryStatusEffects(form, consumeWorkOrderInventory, reserveInventory);
+  // Wrapper for consumeWorkOrderInventory to match expected type
+  const handleConsumeInventory = async (items: WorkOrderInventoryItem[]): Promise<void> => {
+    await consumeWorkOrderInventory(items);
+  };
+  
+  // Use the inventory status effects hook with the wrapper function
+  useInventoryStatusEffects(form, handleConsumeInventory, reserveInventory);
   
   // Use the inventory item operations hook
   const {
