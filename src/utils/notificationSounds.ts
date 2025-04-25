@@ -1,83 +1,56 @@
 
-// This is a utility file for playing notification sounds
-
-// Audio cache to prevent reloading the same sound
+// Cache for preloaded sounds
 const audioCache: Record<string, HTMLAudioElement> = {};
 
+// List of available notification sounds
+const NOTIFICATION_SOUNDS = {
+  default: '/sounds/notification-default.mp3',
+  chime: '/sounds/notification-chime.mp3',
+  bell: '/sounds/notification-bell.mp3',
+  soft: '/sounds/notification-soft.mp3'
+};
+
 /**
- * Play a notification sound
- * @param sound The sound identifier
- * @returns Promise that resolves when the sound is played
+ * Preload notification sounds for better performance
  */
-export const playNotificationSound = (sound: string): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (sound === 'none') {
-      resolve();
-      return;
-    }
-
+export const preloadNotificationSounds = (): void => {
+  Object.entries(NOTIFICATION_SOUNDS).forEach(([name, path]) => {
     try {
-      // In a real implementation, these paths would point to actual sound files
-      const soundMap: Record<string, string> = {
-        'default': '/sounds/notification-default.mp3',
-        'bell': '/sounds/notification-bell.mp3',
-        'chime': '/sounds/notification-chime.mp3',
-        'alert': '/sounds/notification-alert.mp3',
-      };
-
-      const soundPath = soundMap[sound] || soundMap.default;
-
-      // Check if we have a cached audio instance
-      if (!audioCache[sound]) {
-        audioCache[sound] = new Audio(soundPath);
-      }
-
-      const audio = audioCache[sound];
-      
-      // Reset the audio to the beginning if it's already played
-      audio.currentTime = 0;
-      
-      // Play the sound
-      audio.play()
-        .then(() => resolve())
-        .catch(err => {
-          console.warn('Unable to play notification sound:', err);
-          resolve(); // Resolve anyway to not block the notification flow
-        });
-
-      // Cleanup listeners
-      audio.onended = () => resolve();
-      audio.onerror = () => {
-        console.warn('Error playing notification sound');
-        resolve();  // Resolve anyway to not block the notification flow
-      };
-    } catch (error) {
-      console.warn('Error initializing notification sound:', error);
-      resolve();  // Resolve anyway to not block the notification flow
+      const audio = new Audio(path);
+      audio.preload = 'auto';
+      audioCache[name] = audio;
+    } catch (err) {
+      console.error(`Failed to preload sound: ${name}`, err);
     }
   });
 };
 
 /**
- * Preload sounds for faster playback
+ * Play a notification sound by name
+ * @param sound The name of the sound to play
  */
-export const preloadNotificationSounds = (): void => {
-  const sounds = ['default', 'bell', 'chime', 'alert'];
+export const playNotificationSound = async (sound: string = 'default'): Promise<void> => {
+  if (sound === 'none') return;
   
-  sounds.forEach(sound => {
-    try {
-      const soundMap: Record<string, string> = {
-        'default': '/sounds/notification-default.mp3',
-        'bell': '/sounds/notification-bell.mp3',
-        'chime': '/sounds/notification-chime.mp3',
-        'alert': '/sounds/notification-alert.mp3',
-      };
-
-      const audio = new Audio(soundMap[sound]);
-      audio.preload = 'auto';
-      audioCache[sound] = audio;
-    } catch (error) {
-      console.warn(`Failed to preload sound: ${sound}`, error);
+  try {
+    // Use the cached audio if available
+    const soundName = NOTIFICATION_SOUNDS[sound as keyof typeof NOTIFICATION_SOUNDS] 
+      ? sound 
+      : 'default';
+    
+    let audio = audioCache[soundName];
+    
+    // Create a new audio instance if not cached
+    if (!audio) {
+      const soundPath = NOTIFICATION_SOUNDS[soundName as keyof typeof NOTIFICATION_SOUNDS];
+      audio = new Audio(soundPath);
+      audioCache[soundName] = audio;
     }
-  });
+    
+    // Reset and play
+    audio.currentTime = 0;
+    await audio.play();
+  } catch (err) {
+    console.error('Error playing notification sound:', err);
+  }
 };

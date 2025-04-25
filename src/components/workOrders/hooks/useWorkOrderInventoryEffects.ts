@@ -1,27 +1,12 @@
 
 import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderInventoryItem } from '@/types/workOrder';
+import { updateWorkOrderInventoryItems } from '@/services/workOrderService';
 
 export function useWorkOrderInventoryEffects(workOrderId: string, items: WorkOrderInventoryItem[]) {
-  const updateWorkOrderInventory = async (wOrderId: string) => {
-    try {
-      const { error } = await supabase
-        .from('work_orders')
-        .update({ inventory_items: items })
-        .eq('id', wOrderId);
-
-      if (error) {
-        console.error("Error updating work order inventory:", error);
-      }
-    } catch (error) {
-      console.error("Error updating work order inventory:", error);
-    }
-  };
-
   useEffect(() => {
     const updateInventory = async () => {
-      await updateWorkOrderInventory(workOrderId);
+      await updateWorkOrderInventoryItems(workOrderId, items);
     };
     
     updateInventory();

@@ -1,34 +1,14 @@
 
-import { ReactNode } from 'react';
-
-export interface WorkOrderNotification {
-  id: string;
-  work_order_id: string;
-  notification_type: string;
-  title: string;
-  message: string;
-  recipient_type: string;
-  recipient_id: string;
-  status: string;
-  sent_at?: string;
-  error_message?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: string;
+  type?: 'info' | 'success' | 'warning' | 'error';
   read: boolean;
+  timestamp: string;
   link?: string;
   category?: string;
   priority?: 'low' | 'medium' | 'high';
-  sender?: string;
-  recipient?: string;
-  expires_at?: string;
 }
 
 export interface NotificationSubscription {
@@ -37,15 +17,50 @@ export interface NotificationSubscription {
 }
 
 export interface NotificationPreferences {
-  emailEnabled?: boolean;
-  smsEnabled?: boolean;
-  pushEnabled?: boolean;
-  email?: boolean;
-  push?: boolean;
-  inApp?: boolean;
-  sound?: 'default' | 'none' | 'subtle' | 'loud';
-  frequencies?: {
-    [category: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
-  };
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  sound?: 'default' | 'chime' | 'bell' | 'soft' | 'none';
   subscriptions: NotificationSubscription[];
+  frequencies: Record<string, 'realtime' | 'hourly' | 'daily' | 'weekly'>;
 }
+
+export interface NotificationContextType {
+  notifications: Notification[];
+  unreadCount: number;
+  connectionStatus: boolean;
+  preferences: NotificationPreferences;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  clearNotification: (id: string) => void;
+  clearAllNotifications: () => void;
+  updatePreferences: (preferences: Partial<NotificationPreferences>) => void;
+  updateSubscription: (category: string, enabled: boolean) => void;
+  triggerTestNotification: () => void;
+}
+
+export const defaultPreferences: NotificationPreferences = {
+  email: true,
+  push: true,
+  inApp: true,
+  sound: 'default',
+  subscriptions: [
+    { category: 'workOrder', enabled: true },
+    { category: 'inventory', enabled: true },
+    { category: 'invoice', enabled: true },
+    { category: 'customer', enabled: true },
+    { category: 'team', enabled: true },
+    { category: 'system', enabled: true },
+    { category: 'chat', enabled: true }
+  ],
+  frequencies: {
+    workOrder: 'realtime',
+    inventory: 'realtime',
+    invoice: 'realtime',
+    customer: 'realtime',
+    team: 'realtime',
+    system: 'realtime',
+    chat: 'realtime'
+  }
+};

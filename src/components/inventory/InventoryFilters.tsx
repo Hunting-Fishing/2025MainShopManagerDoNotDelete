@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getAllInventoryItems } from "@/services/inventoryService";
+import { getInventoryItems } from "@/services/inventoryService";
 import { getInventoryCategories } from "@/services/inventory/categoryService";
 
 interface InventoryFiltersProps {
@@ -58,13 +58,18 @@ export function InventoryFilters({
     const loadFilters = async () => {
       try {
         // Load inventory items for suppliers and statuses
-        const items = await getAllInventoryItems();
-        setSuppliers(Array.from(new Set(items.map(item => item.supplier))).sort());
-        setStatuses(Array.from(new Set(items.map(item => item.status))).sort());
+        const items = await getInventoryItems();
+        
+        // Extract and deduplicate suppliers and statuses
+        const uniqueSuppliers = Array.from(new Set(items.map(item => item.supplier))).filter(Boolean) as string[];
+        const uniqueStatuses = Array.from(new Set(items.map(item => item.status))).filter(Boolean) as string[];
+        
+        setSuppliers(uniqueSuppliers.sort());
+        setStatuses(uniqueStatuses.sort());
         
         // Load categories from the service
-        const categories = await getInventoryCategories();
-        setCategories(categories);
+        const categoryList = await getInventoryCategories();
+        setCategories(categoryList);
       } catch (error) {
         console.error("Error loading filters:", error);
       }

@@ -5,14 +5,13 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { NoInventoryAlerts } from "./alerts/NoInventoryAlerts";
 import { AlertItemRow } from "./alerts/AlertItemRow";
+import { reorderItem, enableAutoReorder } from "@/services/inventoryService";
 
 export function LowStockAlerts() {
   const { 
     lowStockItems, 
     outOfStockItems, 
     autoReorderSettings,
-    reorderItem,
-    enableAutoReorder
   } = useInventoryManager();
   
   const allAlertItems = [...lowStockItems, ...outOfStockItems];
@@ -23,13 +22,11 @@ export function LowStockAlerts() {
 
   // Type-safe wrapper functions to match the expected return types
   const handleReorderItem = async (itemId: string, quantity: number) => {
-    await reorderItem(itemId, quantity);
-    return true; // Return boolean as expected by the component
+    return await reorderItem(itemId, quantity);
   };
 
   const handleEnableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
-    await enableAutoReorder(itemId, threshold, quantity);
-    return true; // Return boolean as expected by the component
+    return await enableAutoReorder(itemId, threshold, quantity);
   };
 
   return (

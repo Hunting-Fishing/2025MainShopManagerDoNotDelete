@@ -1,7 +1,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
-import { getAllInventoryItems } from "@/services/inventoryService";
+import { getInventoryItems } from "@/services/inventoryService";
 import { useToast } from "@/hooks/use-toast";
 
 export function useInventoryFilters() {
@@ -20,7 +20,7 @@ export function useInventoryFilters() {
       setLoading(true);
       setError(null);
       try {
-        const items = await getAllInventoryItems();
+        const items = await getInventoryItems();
         setInventoryItems(items);
       } catch (error) {
         console.error("Error fetching inventory:", error);

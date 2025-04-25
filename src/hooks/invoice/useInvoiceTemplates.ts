@@ -1,54 +1,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { InvoiceTemplate as AppInvoiceTemplate, Invoice } from '@/types/invoice';
 import { toast } from '@/hooks/use-toast';
+import { Invoice, InvoiceTemplate, InvoiceTemplateItem } from '@/types/invoice';
 
-// Database model for invoice template
-export interface InvoiceTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  default_tax_rate?: number;
-  default_due_date_days?: number;
-  default_notes?: string;
-  usage_count: number;
-  last_used?: string;
-  created_at: string;
-}
-
-// Database model for invoice template item
-export interface InvoiceTemplateItem {
-  id: string;
-  template_id: string;
-  name: string;
-  description?: string;
-  quantity: number;
-  price: number;
-  total?: number;
-  hours: boolean;
-  sku?: string;
-  category?: string;
-  created_at: string;
-}
-
-// Map database template to application model
-const mapToAppTemplate = (dbTemplate: InvoiceTemplate): AppInvoiceTemplate => {
-  return {
-    id: dbTemplate.id,
-    name: dbTemplate.name,
-    description: dbTemplate.description || '',
-    defaultTaxRate: dbTemplate.default_tax_rate || 0,
-    defaultDueDateDays: dbTemplate.default_due_date_days || 30,
-    defaultNotes: dbTemplate.default_notes || '',
-    createdAt: dbTemplate.created_at,
-    usageCount: dbTemplate.usage_count || 0,
-    lastUsed: dbTemplate.last_used || null,
-  };
-};
-
-export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAction<Invoice>>) => {
-  const [templates, setTemplates] = useState<AppInvoiceTemplate[]>([]);
+export const useInvoiceTemplates = () => {
+  const [templates, setTemplates] = useState<InvoiceTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,7 +21,21 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
       
       if (error) throw error;
       
-      setTemplates(data ? data.map(mapToAppTemplate) : []);
+      // Map database response to expected InvoiceTemplate type
+      const templateData: InvoiceTemplate[] = (data || []).map(template => ({
+        id: template.id,
+        name: template.name,
+        description: template.description || '',
+        defaultTaxRate: template.default_tax_rate || 0,
+        defaultDueDateDays: template.default_due_date_days || 30,
+        defaultNotes: template.default_notes || '',
+        createdAt: template.created_at,
+        usageCount: template.usage_count || 0,
+        lastUsed: template.last_used || '',
+        defaultItems: [] // Will be populated later on demand
+      }));
+      
+      setTemplates(templateData);
     } catch (err) {
       console.error('Error fetching invoice templates:', err);
       setError('Failed to load invoice templates');
@@ -83,7 +54,20 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
       
       if (error) throw error;
       
-      return data || [];
+      // Map database response to expected InvoiceTemplateItem type
+      return (data || []).map(item => ({
+        id: item.id,
+        templateId: item.template_id,
+        name: item.name,
+        description: item.description || '',
+        quantity: item.quantity || 1,
+        price: item.price,
+        total: item.total || item.quantity * item.price,
+        hours: item.hours || false,
+        sku: item.sku || '',
+        category: item.category || '',
+        createdAt: item.created_at
+      }));
     } catch (err) {
       console.error('Error fetching template items:', err);
       toast({
@@ -95,7 +79,7 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
     }
   }, []);
 
-  const createTemplate = useCallback(async (template: Omit<AppInvoiceTemplate, 'id' | 'usageCount' | 'createdAt'>) => {
+  const createTemplate = useCallback(async (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount' | 'lastUsed' | 'defaultItems'>) => {
     try {
       const { data, error } = await supabase
         .from('invoice_templates')
@@ -104,8 +88,7 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
           description: template.description,
           default_tax_rate: template.defaultTaxRate,
           default_due_date_days: template.defaultDueDateDays,
-          default_notes: template.defaultNotes,
-          usage_count: 0
+          default_notes: template.defaultNotes
         }])
         .select();
       
@@ -113,7 +96,21 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
       
       const newTemplate = data?.[0];
       if (newTemplate) {
-        setTemplates(prev => [...prev, mapToAppTemplate(newTemplate)]);
+        // Convert to our application's template format
+        const mappedTemplate: InvoiceTemplate = {
+          id: newTemplate.id,
+          name: newTemplate.name,
+          description: newTemplate.description || '',
+          defaultTaxRate: newTemplate.default_tax_rate || 0,
+          defaultDueDateDays: newTemplate.default_due_date_days || 30,
+          defaultNotes: newTemplate.default_notes || '',
+          createdAt: newTemplate.created_at,
+          usageCount: 0,
+          lastUsed: '',
+          defaultItems: []
+        };
+        
+        setTemplates(prev => [...prev, mappedTemplate]);
         
         toast({
           title: 'Success',
@@ -121,7 +118,7 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
         });
       }
       
-      return mapToAppTemplate(newTemplate);
+      return newTemplate;
     } catch (err) {
       console.error('Error creating invoice template:', err);
       toast({
@@ -133,9 +130,10 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
     }
   }, []);
 
-  const updateTemplate = useCallback(async (id: string, updates: Partial<AppInvoiceTemplate>) => {
+  const updateTemplate = useCallback(async (id: string, updates: Partial<InvoiceTemplate>) => {
     try {
-      const dbUpdates: Partial<InvoiceTemplate> = {};
+      // Convert from our app format to database format
+      const dbUpdates: any = {};
       if (updates.name) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
       if (updates.defaultTaxRate !== undefined) dbUpdates.default_tax_rate = updates.defaultTaxRate;
@@ -152,8 +150,25 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
       
       const updatedTemplate = data?.[0];
       if (updatedTemplate) {
+        // Convert to our application's template format
+        const mappedTemplate: InvoiceTemplate = {
+          id: updatedTemplate.id,
+          name: updatedTemplate.name,
+          description: updatedTemplate.description || '',
+          defaultTaxRate: updatedTemplate.default_tax_rate || 0,
+          defaultDueDateDays: updatedTemplate.default_due_date_days || 30,
+          defaultNotes: updatedTemplate.default_notes || '',
+          createdAt: updatedTemplate.created_at,
+          usageCount: updatedTemplate.usage_count || 0,
+          lastUsed: updatedTemplate.last_used || '',
+          defaultItems: [] // Maintain existing items
+        };
+        
         setTemplates(prev => 
-          prev.map(template => template.id === id ? mapToAppTemplate(updatedTemplate) : template)
+          prev.map(template => template.id === id ? 
+            { ...template, ...mappedTemplate } : 
+            template
+          )
         );
         
         toast({
@@ -162,7 +177,7 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
         });
       }
       
-      return updatedTemplate ? mapToAppTemplate(updatedTemplate) : null;
+      return updatedTemplate;
     } catch (err) {
       console.error('Error updating invoice template:', err);
       toast({
@@ -177,13 +192,13 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
   const deleteTemplate = useCallback(async (id: string) => {
     try {
       // First check usage count
-      const { data } = await supabase
+      const { data: templateData } = await supabase
         .from('invoice_templates')
         .select('usage_count')
         .eq('id', id)
         .single();
       
-      const usageCount = data?.usage_count || 0;
+      const usageCount = templateData?.usage_count || 0;
       
       // Get confirmation for templates that have been used
       if (usageCount > 0) {
@@ -228,7 +243,7 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
 
   const incrementUsageCount = useCallback(async (templateId: string) => {
     try {
-      // Call the RPC function
+      // Use RPC function to increment usage count
       const { error } = await supabase.rpc('increment_template_usage', {
         template_id: templateId
       });
@@ -240,7 +255,7 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
         if (template.id === templateId) {
           return {
             ...template,
-            usageCount: (template.usageCount || 0) + 1,
+            usageCount: template.usageCount + 1,
             lastUsed: new Date().toISOString(),
           };
         }
@@ -254,28 +269,78 @@ export const useInvoiceTemplates = (setInvoice?: React.Dispatch<React.SetStateAc
     }
   }, []);
 
-  // Apply template to an invoice
-  const handleApplyTemplate = useCallback((template: AppInvoiceTemplate) => {
-    if (setInvoice) {
-      setInvoice((prev) => ({
-        ...prev,
-        taxRate: template.defaultTaxRate || prev.taxRate,
-        dueDate: (() => {
-          const date = new Date();
-          date.setDate(date.getDate() + (template.defaultDueDateDays || 30));
-          return date.toISOString().split('T')[0];
-        })(),
-        notes: template.defaultNotes || prev.notes,
-      }));
-
-      // Update template usage count
-      incrementUsageCount(template.id);
+  // Apply a template to an invoice
+  const handleApplyTemplate = useCallback(async (template: InvoiceTemplate) => {
+    try {
+      // Get template items
+      const items = await fetchTemplateItems(template.id);
+      template.defaultItems = items;
+      
+      // Increment usage count
+      await incrementUsageCount(template.id);
+      
+      return template;
+    } catch (error) {
+      console.error('Error applying template:', error);
+      return null;
     }
-  }, [setInvoice, incrementUsageCount]);
+  }, [fetchTemplateItems, incrementUsageCount]);
 
-  // Save current invoice as template
-  const handleSaveTemplate = useCallback((template: Omit<AppInvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => {
-    return createTemplate(template);
+  // Save an invoice as a template
+  const handleSaveTemplate = useCallback(async (invoice: Invoice, taxRate: number) => {
+    try {
+      // Create template
+      const templateData = {
+        name: `Template from Invoice ${invoice.id.substring(0, 6)}`,
+        description: `Created from Invoice ${invoice.id}`,
+        defaultTaxRate: taxRate,
+        defaultDueDateDays: 30,
+        defaultNotes: invoice.notes || ''
+      };
+      
+      const newTemplate = await createTemplate(templateData);
+      
+      if (!newTemplate) {
+        throw new Error('Failed to create template');
+      }
+      
+      // Save invoice items as template items
+      const templateItems = invoice.items.map(item => ({
+        template_id: newTemplate.id,
+        name: item.name,
+        description: item.description || '',
+        quantity: item.quantity,
+        price: item.price,
+        hours: item.hours || false,
+        sku: item.sku || '',
+        category: item.category || ''
+      }));
+      
+      if (templateItems.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('invoice_template_items')
+          .insert(templateItems);
+        
+        if (itemsError) {
+          throw itemsError;
+        }
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Invoice saved as template successfully',
+      });
+      
+      return true;
+    } catch (err) {
+      console.error('Error saving invoice as template:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to save invoice as template',
+        variant: 'destructive',
+      });
+      return false;
+    }
   }, [createTemplate]);
 
   useEffect(() => {
