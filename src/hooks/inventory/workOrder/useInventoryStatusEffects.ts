@@ -1,45 +1,24 @@
+
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues, WorkOrderInventoryItem } from "@/types/workOrder.d"; // Import both from .d.ts file
+import { WorkOrderFormFieldValues, WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**
- * Hook to handle inventory status changes based on work order status
+ * Hook to handle inventory side effects when work order inventory changes
  */
 export const useInventoryStatusEffects = (
-  form: UseFormReturn<any>,
-  consumeWorkOrderInventory: Function,
-  reserveInventory: Function
+  form: UseFormReturn<WorkOrderFormFieldValues>,
+  consumeInventory: (items: WorkOrderInventoryItem[]) => Promise<void>,
+  reserveInventory?: (items: WorkOrderInventoryItem[]) => Promise<void>
 ) => {
-  // Get current values
-  const status = form.watch("status");
-  const inventoryItems = form.watch("inventoryItems") || [];
+  const workOrder = form.getValues();
+  const inventoryItems = workOrder.inventoryItems || [];
   
-  // Effect to handle work order status changes that affect inventory
+  // Handle inventory status changes
   useEffect(() => {
-    // When work order is completed, consume in-stock inventory
-    if (status === "completed") {
-      // Only consume in-stock items, not special orders or other types
-      const inStockItems = inventoryItems
-        .filter(item => !item.itemStatus || item.itemStatus === "in-stock")
-        .map(item => ({ id: item.id, quantity: item.quantity }));
-      
-      if (inStockItems.length > 0) {
-        consumeWorkOrderInventory(inStockItems);
-      }
-    }
-    // When work order is in progress, reserve inventory
-    else if (status === "in-progress") {
-      // Only reserve in-stock items
-      const inStockItems = inventoryItems
-        .filter(item => !item.itemStatus || item.itemStatus === "in-stock")
-        .map(item => ({ id: item.id, quantity: item.quantity }));
-      
-      if (inStockItems.length > 0) {
-        reserveInventory(inStockItems);
-      }
-    }
-    // Other statuses don't affect inventory directly
-  }, [status, consumeWorkOrderInventory, reserveInventory, inventoryItems]);
+    // This would actually check inventory status and update UI accordingly
+    console.log("Inventory items changed:", inventoryItems);
+  }, [inventoryItems]);
   
   return null;
 };

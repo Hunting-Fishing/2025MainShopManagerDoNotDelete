@@ -11,7 +11,7 @@ import { HeaderSidebarToggle } from './HeaderSidebarToggle';
 
 interface LayoutProps {
   children?: ReactNode;
-  className?: string; // Added className prop
+  className?: string;
 }
 
 export function Layout({ children, className }: LayoutProps) {
@@ -21,7 +21,7 @@ export function Layout({ children, className }: LayoutProps) {
   const isDark = resolvedTheme === 'dark';
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultCollapsed={isMobile}>
       <div className={`min-h-screen flex w-full flex-col bg-space ${isDark ? 'dark' : ''} ${className || ''}`}>
         <Navbar className="glassmorphism border-b border-imperial-600/30" />
         <div className="flex flex-1 flex-col md:flex-row">

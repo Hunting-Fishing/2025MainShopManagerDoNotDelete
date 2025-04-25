@@ -2,10 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package } from 'lucide-react';
-import { useInventoryStatus } from '@/hooks/inventory/useInventoryStatus'; // Ensure this is imported
+import { useInventoryStatus } from '@/hooks/inventory/useInventoryStatus';
 
 export function InventoryStatusCard() {
-  // Make sure to pass required argument if useInventoryStatus requires one
+  // Pass an empty object to fix the error
   const { totalItems, lowStockItems, outOfStockItems, isLoading } = useInventoryStatus({});
   
   return (

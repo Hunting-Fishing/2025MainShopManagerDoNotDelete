@@ -1,14 +1,35 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useCompanySettings } from "@/hooks/company-settings/useCompanySettings";
-import { useBusinessConstants } from "@/hooks/useBusinessConstants";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export function BusinessInfoSection() {
-  const { businessTypeOptions, industryOptions, loading } = useCompanySettings();
+interface BusinessInfoSectionProps {
+  companyInfo: any;
+  businessTypes: any[];
+  businessIndustries: any[];
+  isLoadingConstants: boolean;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectChange: (name: string, value: string) => void;
+}
+
+export function BusinessInfoSection({
+  companyInfo,
+  businessTypes,
+  businessIndustries,
+  isLoadingConstants,
+  onInputChange,
+  onSelectChange
+}: BusinessInfoSectionProps) {
   
   const formSchema = z.object({
     companyName: z.string().min(2, {
@@ -41,15 +62,15 @@ export function BusinessInfoSection() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      companyName: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      phone: "",
-      email: "",
-      website: "",
-      taxId: "",
+      companyName: companyInfo?.companyName || "",
+      address: companyInfo?.address || "",
+      city: companyInfo?.city || "",
+      state: companyInfo?.state || "",
+      zipCode: companyInfo?.zipCode || "",
+      phone: companyInfo?.phone || "",
+      email: companyInfo?.email || "",
+      website: companyInfo?.website || "",
+      taxId: companyInfo?.taxId || "",
     },
   });
 
@@ -71,7 +92,14 @@ export function BusinessInfoSection() {
                 <FormItem>
                   <FormLabel>Company Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter company name" {...field} />
+                    <Input 
+                      placeholder="Enter company name" 
+                      {...field} 
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onInputChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -84,7 +112,14 @@ export function BusinessInfoSection() {
                 <FormItem>
                   <FormLabel>Tax ID / EIN</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter tax ID" {...field} />
+                    <Input 
+                      placeholder="Enter tax ID" 
+                      {...field} 
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onInputChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -92,23 +127,30 @@ export function BusinessInfoSection() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="col-span-1 md:col-span-2">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter address" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          onInputChange(e);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <FormField
               control={form.control}
               name="city"
@@ -116,38 +158,63 @@ export function BusinessInfoSection() {
                 <FormItem>
                   <FormLabel>City</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter city" {...field} />
+                    <Input 
+                      placeholder="Enter city" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onInputChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>State</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter state" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="zipCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Zip Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter zip code" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter state" 
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          onInputChange(e);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="zipCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Zip Code</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter zip code" 
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          onInputChange(e);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -158,7 +225,14 @@ export function BusinessInfoSection() {
                 <FormItem>
                   <FormLabel>Phone</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter phone number" {...field} />
+                    <Input 
+                      placeholder="Enter phone number" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onInputChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -171,7 +245,14 @@ export function BusinessInfoSection() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter email address" {...field} />
+                    <Input 
+                      placeholder="Enter email address" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onInputChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,12 +268,59 @@ export function BusinessInfoSection() {
                 <FormItem>
                   <FormLabel>Website</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter website URL" {...field} />
+                    <Input 
+                      placeholder="Enter website URL" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onInputChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormItem>
+              <FormLabel>Business Type</FormLabel>
+              <Select 
+                defaultValue={companyInfo?.businessType || ""}
+                onValueChange={(value) => onSelectChange("businessType", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select business type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {businessTypes.map((type: any) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+            
+            <FormItem>
+              <FormLabel>Industry</FormLabel>
+              <Select 
+                defaultValue={companyInfo?.industry || ""}
+                onValueChange={(value) => onSelectChange("industry", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  {businessIndustries.map((industry: any) => (
+                    <SelectItem key={industry.value} value={industry.value}>
+                      {industry.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
           </div>
 
           <div className="flex justify-end">
