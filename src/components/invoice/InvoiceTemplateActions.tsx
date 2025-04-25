@@ -1,14 +1,14 @@
 
 import { InvoiceTemplateDialog } from "../invoices/InvoiceTemplateDialog";
 import { SaveTemplateDialog } from "../invoices/SaveTemplateDialog";
-import { Invoice, InvoiceTemplate } from "@/types/invoice";
-import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
+import { Invoice } from "@/types/invoice";
+import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 
 interface InvoiceTemplateActionsProps {
   invoice: Invoice;
   taxRate: number;
-  onSelectTemplate?: (template: InvoiceTemplate) => void;
-  onSaveTemplate?: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+  onSelectTemplate?: (template: any) => void;
+  onSaveTemplate?: (template: any) => void;
 }
 
 export function InvoiceTemplateActions({
@@ -17,7 +17,11 @@ export function InvoiceTemplateActions({
   onSelectTemplate,
   onSaveTemplate
 }: InvoiceTemplateActionsProps) {
-  const { templates, handleApplyTemplate, handleSaveTemplate } = useInvoiceTemplates();
+  const { 
+    templates, 
+    handleApplyTemplate, 
+    handleSaveTemplate 
+  } = useInvoiceTemplates();
   
   // Use the provided handlers or the default ones from the hook
   const handleTemplateSelect = onSelectTemplate || handleApplyTemplate;

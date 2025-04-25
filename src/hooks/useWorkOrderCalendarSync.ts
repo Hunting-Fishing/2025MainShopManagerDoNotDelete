@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { CalendarEvent } from '@/types/calendar';
 import { 
@@ -94,7 +94,11 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         // Update existing event
         const updated = await updateCalendarEvent(calendarEvent.id, eventData);
         if (updated) {
-          setCalendarEvent(convertToCalendarEvent(updated));
+          const typeCorrectedEvent = { 
+            ...updated, 
+            event_type: ensureValidEventType(updated.event_type)
+          };
+          setCalendarEvent(convertToCalendarEvent(typeCorrectedEvent));
           toast({
             title: "Calendar Updated",
             description: "Work order has been updated in the calendar",
@@ -104,7 +108,11 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         // Create new event
         const created = await createCalendarEvent(eventData);
         if (created) {
-          setCalendarEvent(convertToCalendarEvent(created));
+          const typeCorrectedEvent = { 
+            ...created, 
+            event_type: ensureValidEventType(created.event_type)
+          };
+          setCalendarEvent(convertToCalendarEvent(typeCorrectedEvent));
           toast({
             title: "Calendar Updated",
             description: "Work order has been added to the calendar",

@@ -8,7 +8,7 @@ export function useWorkOrderInventoryEffects(workOrderId: string, items: WorkOrd
     try {
       const { error } = await supabase
         .from('work_orders')
-        .update({ inventoryItems: items })
+        .update({ inventory_items: items })
         .eq('id', wOrderId);
 
       if (error) {

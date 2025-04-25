@@ -1,22 +1,22 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { InventoryItemExtended, AutoReorderSettings } from '@/types/inventory';
-import { mapDbToInventoryItem } from '@/services/inventory/utils';
-import { WorkOrderInventoryItem } from '@/types/workOrder';
+import { supabase } from '@/lib/supabase';
+import { InventoryItemExtended, ReorderSettings } from '@/types/inventory';
 import { toast } from '@/hooks/use-toast';
+import { WorkOrderInventoryItem } from '@/types/workOrder';
+import { useManualReorder } from './useManualReorder';
 
 export function useInventoryManager() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
   const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
+  const [loading, setLoading] = useState(false);
+  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, ReorderSettings>>({});
+  const { reorderItem: manualReorderItem } = useManualReorder();
 
   const fetchInventoryItems = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
       const { data, error } = await supabase
         .from('inventory_items')
         .select('*');
@@ -25,130 +25,128 @@ export function useInventoryManager() {
         throw error;
       }
 
-      if (data) {
-        // Map DB items to our frontend model with proper type conversion
-        const mappedItems: InventoryItemExtended[] = data.map(item => mapDbToInventoryItem(item));
-        setInventoryItems(mappedItems);
+      // Convert snake_case to camelCase for consistent property names
+      const itemsWithCamelCase = data.map(item => ({
+        ...item,
+        reorderPoint: item.reorder_point,
+        unitPrice: item.unit_price
+      })) as InventoryItemExtended[];
 
-        // Filter for low stock and out of stock
-        const lowStock = mappedItems.filter(item => 
-          item.quantity > 0 && item.quantity <= item.reorderPoint
-        );
-        setLowStockItems(lowStock);
+      setInventoryItems(itemsWithCamelCase);
 
-        const outOfStock = mappedItems.filter(item => item.quantity <= 0);
-        setOutOfStockItems(outOfStock);
-      }
+      // Filter out low stock items (quantity below reorder point but greater than 0)
+      setLowStockItems(itemsWithCamelCase.filter(item => 
+        item.quantity > 0 && item.quantity <= item.reorderPoint
+      ));
 
-      // Fetch auto-reorder settings
-      const { data: reorderData, error: reorderError } = await supabase
-        .from('inventory_auto_reorder')
-        .select('*');
+      // Filter out out-of-stock items (quantity = 0)
+      setOutOfStockItems(itemsWithCamelCase.filter(item => 
+        item.quantity === 0
+      ));
 
-      if (reorderError) {
-        throw reorderError;
-      }
-
-      if (reorderData) {
-        const settingsMap: Record<string, AutoReorderSettings> = {};
-        reorderData.forEach(setting => {
-          settingsMap[setting.item_id as string] = {
-            enabled: setting.enabled,
-            threshold: setting.threshold,
-            quantity: setting.quantity
-          };
-        });
-        setAutoReorderSettings(settingsMap);
-      }
-
+      // Also fetch auto-reorder settings for these items
+      await fetchAutoReorderSettings();
     } catch (error) {
       console.error('Error fetching inventory:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load inventory data',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Filter inventory by low stock status
-  const filterByLowStock = useCallback(() => {
-    return inventoryItems.filter(item => 
-      item.quantity > 0 && item.quantity <= item.reorderPoint
-    );
-  }, [inventoryItems]);
-
-  // Filter inventory by out of stock status
-  const filterByOutOfStock = useCallback(() => {
-    return inventoryItems.filter(item => item.quantity <= 0);
-  }, [inventoryItems]);
-
-  // Check if a specific item is available in the requested quantity
-  const checkItemAvailability = useCallback(async (itemId: string, requestedQuantity: number): Promise<boolean> => {
+  const fetchAutoReorderSettings = async () => {
     try {
-      const { data, error } = await supabase.rpc('check_inventory_availability', {
-        item_id: itemId,
-        requested_quantity: requestedQuantity
-      });
+      const { data, error } = await supabase
+        .from('inventory_auto_reorder')
+        .select('*');
 
       if (error) {
         throw error;
       }
 
-      return !!data;
+      if (data) {
+        const settings: Record<string, ReorderSettings> = {};
+        data.forEach(setting => {
+          settings[setting.item_id as string] = {
+            itemId: setting.item_id as string,
+            enabled: setting.enabled as boolean,
+            threshold: setting.threshold as number,
+            quantity: setting.quantity as number
+          };
+        });
+        setAutoReorderSettings(settings);
+      }
     } catch (error) {
-      console.error('Error checking inventory availability:', error);
-      return false;
+      console.error('Error fetching auto-reorder settings:', error);
     }
-  }, []);
+  };
 
-  // Enable auto-reorder for an item
-  const enableAutoReorder = useCallback(async (
-    itemId: string, 
-    threshold: number, 
-    quantity: number
-  ): Promise<boolean> => {
+  // Function to check if an item is in low stock
+  const isLowStock = (item: InventoryItemExtended): boolean => {
+    return item.quantity > 0 && item.quantity <= item.reorderPoint;
+  };
+
+  // Function to check if an item is out of stock
+  const isOutOfStock = (item: InventoryItemExtended): boolean => {
+    return item.quantity === 0;
+  };
+
+  // Function to enable auto-reorder for an item
+  const enableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
     try {
       const { data, error } = await supabase
         .from('inventory_auto_reorder')
         .upsert({
           item_id: itemId,
           enabled: true,
-          threshold: threshold,
-          quantity: quantity
-        })
+          threshold,
+          quantity
+        }, { onConflict: 'item_id' })
         .select();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       // Update local state
       setAutoReorderSettings(prev => ({
         ...prev,
         [itemId]: {
+          itemId,
           enabled: true,
           threshold,
           quantity
         }
       }));
 
+      toast({
+        title: 'Auto-reorder Enabled',
+        description: `Auto-reorder has been enabled for this item`,
+      });
+
       return true;
     } catch (error) {
       console.error('Error enabling auto-reorder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to enable auto-reorder',
+        variant: 'destructive',
+      });
       return false;
     }
-  }, []);
+  };
 
-  // Disable auto-reorder for an item
-  const disableAutoReorder = useCallback(async (itemId: string): Promise<boolean> => {
+  // Function to disable auto-reorder for an item
+  const disableAutoReorder = async (itemId: string) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('inventory_auto_reorder')
         .update({ enabled: false })
-        .eq('item_id', itemId)
-        .select();
+        .eq('item_id', itemId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       // Update local state
       setAutoReorderSettings(prev => ({
@@ -159,95 +157,121 @@ export function useInventoryManager() {
         }
       }));
 
+      toast({
+        title: 'Auto-reorder Disabled',
+        description: `Auto-reorder has been disabled for this item`,
+      });
+
       return true;
     } catch (error) {
       console.error('Error disabling auto-reorder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to disable auto-reorder',
+        variant: 'destructive',
+      });
       return false;
     }
-  }, []);
+  };
 
-  // Load data on component mount
-  useEffect(() => {
-    fetchInventoryItems();
-  }, [fetchInventoryItems]);
-
-  // Consume inventory for work orders
-  const consumeWorkOrderInventory = useCallback(async (items: WorkOrderInventoryItem[]): Promise<void> => {
+  // Function to update inventory quantity
+  const updateItemQuantity = async (itemId: string, newQuantity: number) => {
     try {
-      for (const item of items) {
-        const { error } = await supabase.rpc('check_inventory_availability', {
-          item_id: item.id,
-          requested_quantity: item.quantity
-        });
+      const { error } = await supabase
+        .from('inventory_items')
+        .update({ quantity: newQuantity })
+        .eq('id', itemId);
 
-        if (error) {
-          toast({
-            title: "Inventory Error",
-            description: `Not enough stock for ${item.name}`,
-            variant: "destructive"
-          });
-          return;
+      if (error) throw error;
+
+      // Update local state
+      setInventoryItems(prev => 
+        prev.map(item => 
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        )
+      );
+
+      // Recategorize items
+      const updatedItems = [...inventoryItems];
+      const updatedItem = updatedItems.find(item => item.id === itemId);
+      if (updatedItem) {
+        updatedItem.quantity = newQuantity;
+        
+        // Update low stock items
+        if (isLowStock(updatedItem)) {
+          if (!lowStockItems.some(item => item.id === itemId)) {
+            setLowStockItems([...lowStockItems, updatedItem]);
+          }
+        } else {
+          setLowStockItems(lowStockItems.filter(item => item.id !== itemId));
+        }
+        
+        // Update out of stock items
+        if (isOutOfStock(updatedItem)) {
+          if (!outOfStockItems.some(item => item.id === itemId)) {
+            setOutOfStockItems([...outOfStockItems, updatedItem]);
+          }
+        } else {
+          setOutOfStockItems(outOfStockItems.filter(item => item.id !== itemId));
         }
       }
 
-      // If all items are available, consume them
-      for (const item of items) {
-        await supabase
-          .from('inventory_adjustments')
-          .insert({
-            inventory_item_id: item.id,
-            quantity: item.quantity,
-            adjustment_type: 'consume',
-            notes: 'Work order inventory consumption'
-          });
-      }
-
       toast({
-        title: "Success",
-        description: "Inventory updated successfully",
+        title: 'Inventory Updated',
+        description: `Item quantity updated to ${newQuantity}`,
       });
+
+      return true;
     } catch (error) {
-      console.error('Error consuming inventory:', error);
+      console.error('Error updating inventory:', error);
       toast({
-        title: "Error",
-        description: "Failed to update inventory",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update inventory',
+        variant: 'destructive',
       });
+      return false;
     }
-  }, []);
+  };
 
-  // Reserve inventory for work orders (without actual consumption)
-  const reserveInventory = useCallback(async (items: WorkOrderInventoryItem[]): Promise<void> => {
+  // Function to reserve inventory items for a work order
+  const reserveInventory = async (items: WorkOrderInventoryItem[]) => {
     try {
+      // Check if we have enough of each item
       for (const item of items) {
-        const { error } = await supabase.rpc('check_inventory_availability', {
-          item_id: item.id,
-          requested_quantity: item.quantity
-        });
-
-        if (error) {
-          toast({
-            title: "Inventory Error",
-            description: `Not enough stock for ${item.name}`,
-            variant: "destructive"
-          });
-          return;
+        const inventoryItem = inventoryItems.find(i => i.id === item.id);
+        if (!inventoryItem || inventoryItem.quantity < item.quantity) {
+          throw new Error(`Not enough inventory for item: ${item.name}`);
         }
       }
 
-      toast({
-        title: "Success",
-        description: "Inventory items reserved successfully",
-      });
+      // If we have enough, update quantities
+      for (const item of items) {
+        const inventoryItem = inventoryItems.find(i => i.id === item.id);
+        if (inventoryItem) {
+          await updateItemQuantity(item.id, inventoryItem.quantity - item.quantity);
+        }
+      }
+
+      return true;
     } catch (error) {
       console.error('Error reserving inventory:', error);
       toast({
-        title: "Error",
-        description: "Failed to reserve inventory items",
-        variant: "destructive"
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reserve inventory',
+        variant: 'destructive',
       });
+      return false;
     }
-  }, []);
+  };
+
+  // Call the reorderItem function from useManualReorder
+  const reorderItem = async (itemId: string, quantity: number) => {
+    return manualReorderItem(itemId, quantity);
+  };
+
+  useEffect(() => {
+    fetchInventoryItems();
+  }, [fetchInventoryItems]);
 
   return {
     inventoryItems,
@@ -256,12 +280,10 @@ export function useInventoryManager() {
     loading,
     autoReorderSettings,
     fetchInventoryItems,
-    filterByLowStock,
-    filterByOutOfStock,
-    checkItemAvailability,
+    updateItemQuantity,
     enableAutoReorder,
     disableAutoReorder,
-    consumeWorkOrderInventory,
+    reorderItem,
     reserveInventory
   };
 }
