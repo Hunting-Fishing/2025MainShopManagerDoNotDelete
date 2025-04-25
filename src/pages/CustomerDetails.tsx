@@ -10,12 +10,13 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomerCommunication, CustomerNote } from "@/types/customer";
 import { CustomerRedirect } from "@/components/routing/CustomerRedirect"; 
+import { useToast } from "@/hooks/use-toast";
 
 export default function CustomerDetails() {
-  // Change from 'customerId' to 'id' to match the route parameter name used in routes.tsx
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Validate the ID format earlier - UUID format validation
   const isValidUUID = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -54,6 +55,7 @@ export default function CustomerDetails() {
   // Refresh customer data when arriving at this page
   useEffect(() => {
     if (id && id !== "undefined") {
+      console.log("Initial customer data load for ID:", id);
       refreshCustomerData();
     }
   }, [id, refreshCustomerData]);
@@ -70,6 +72,17 @@ export default function CustomerDetails() {
       handleNoteAdded({} as CustomerNote);
     }
   };
+
+  // Show toast when there's an error
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error Loading Customer",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
 
   if (loading) {
     return (

@@ -61,7 +61,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
   try {
     console.log("Fetching customer by ID:", id);
     
-    if (!id) {
+    if (!id || id === "undefined") {
       console.error("Invalid customer ID provided:", id);
       return null;
     }
@@ -70,7 +70,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
       .from("customers")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching customer:", error);

@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { getCustomerById, getCustomer } from '@/services/customer';
+import { getCustomerById } from '@/services/customer';
 import { Customer, CustomerCommunication, CustomerNote } from '@/types/customer';
 import { WorkOrder } from '@/types/workOrder';
 import { CustomerInteraction } from '@/types/interaction';
@@ -18,7 +18,11 @@ export const useCustomerDetails = (customerId?: string) => {
 
   // Function to refresh customer data
   const refreshCustomerData = useCallback(async () => {
-    if (!customerId) return;
+    if (!customerId) {
+      setError("No customer ID provided");
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -36,6 +40,7 @@ export const useCustomerDetails = (customerId?: string) => {
       }
       
       setCustomer(customerData);
+      console.log("Customer data retrieved:", customerData);
       
       // Fetch work orders for this customer
       // This is a placeholder - in a real app, you'd fetch this data from your API
@@ -61,7 +66,12 @@ export const useCustomerDetails = (customerId?: string) => {
   // Load customer data when component mounts or ID changes
   useEffect(() => {
     if (customerId) {
+      console.log("Customer ID changed, refreshing data for:", customerId);
       refreshCustomerData();
+    } else {
+      console.log("No customer ID provided to useCustomerDetails");
+      setError("No customer ID provided");
+      setLoading(false);
     }
   }, [customerId, refreshCustomerData]);
 
