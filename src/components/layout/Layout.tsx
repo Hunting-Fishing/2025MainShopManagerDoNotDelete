@@ -21,13 +21,13 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className={`min-h-screen flex w-full flex-col ${isDark ? 'dark' : ''}`}>
-        <Navbar />
+      <div className={`min-h-screen flex w-full flex-col bg-space ${isDark ? 'dark' : ''}`}>
+        <Navbar className="glassmorphism border-b border-imperial-600/30" />
         <div className="flex flex-1 flex-col md:flex-row">
           <AppSidebar />
           <div className="flex flex-col flex-1">
             <Header />
-            <main className="flex-1 p-4 md:p-6 bg-slate-50 dark:bg-slate-900 overflow-auto">
+            <main className="flex-1 p-4 md:p-6 bg-space-gradient overflow-auto">
               {children || <Outlet />}
             </main>
           </div>

@@ -1,4 +1,3 @@
-/* ./src/App.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -263,3 +262,5 @@
 .settings-card-description {
   @apply text-sm text-muted-foreground;
 }
+
+@import './styles/space-theme.css';

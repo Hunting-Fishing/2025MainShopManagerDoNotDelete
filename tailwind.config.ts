@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -13,18 +12,43 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: '2rem',
+      padding: "2rem",
       screens: {
-        '2xl': '1400px'
-      }
+        "2xl": "1400px",
+      },
     },
     extend: {
-      fontFamily: {
-        heading: ['Inter', 'system-ui', 'sans-serif'],
-        sans: ['Inter var', 'Inter', 'system-ui', 'sans-serif'],
-        body: ['Inter', 'system-ui', 'sans-serif'],
-      },
       colors: {
+        space: {
+          DEFAULT: "#1a1b2e",
+          lighter: "#2a2b4e",
+          darker: "#0a0b1e",
+        },
+        cosmic: {
+          DEFAULT: "#9b87f5",
+          light: "#b4a4f8",
+          dark: "#7E69AB",
+        },
+        imperial: {
+          50: "#F1F0FB",
+          100: "#E6E5F0",
+          200: "#C8C8C9",
+          300: "#9F9EA1",
+          400: "#8E9196",
+          500: "#6E6F74",
+          600: "#4D4E53",
+          700: "#2D2E33",
+          800: "#1D1E23",
+          900: "#0D0E13",
+        },
+        rebel: {
+          DEFAULT: "#F97316",
+          hover: "#EA580C",
+        },
+        sith: {
+          DEFAULT: "#ea384c",
+          hover: "#dc2626",
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -89,6 +113,18 @@ export default {
             "cancelled": "#F44336"
           }
         },
+      },
+      backgroundImage: {
+        'space-gradient': 'linear-gradient(to bottom right, rgb(17, 24, 39), rgb(88, 28, 135))',
+      },
+      fontFamily: {
+        heading: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      boxShadow: {
+        'neon': '0 0 5px theme(colors.cosmic.light / 20%), 0 0 20px theme(colors.cosmic.light / 15%)',
+        'neon-hover': '0 0 10px theme(colors.cosmic.light / 30%), 0 0 40px theme(colors.cosmic.light / 20%)',
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -1,0 +1,37 @@
+
+@layer base {
+  body {
+    @apply bg-space text-imperial-100;
+    background-image: radial-gradient(circle at 50% 50%, rgb(17, 24, 39) 0%, rgb(88, 28, 135) 100%);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-imperial-50;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-space-lighter/30 backdrop-blur-lg border border-imperial-600/20 rounded-xl shadow-neon transition-all duration-300;
+  }
+  
+  .card:hover {
+    @apply shadow-neon-hover border-imperial-500/30;
+  }
+  
+  .glassmorphism {
+    @apply bg-space-lighter/40 backdrop-blur-md border border-imperial-600/30 rounded-xl;
+  }
+  
+  .button-primary {
+    @apply bg-cosmic hover:bg-cosmic-dark text-imperial-50 transition-all;
+  }
+  
+  .button-rebel {
+    @apply bg-rebel hover:bg-rebel-hover text-imperial-50;
+  }
+  
+  .button-sith {
+    @apply bg-sith hover:bg-sith-hover text-imperial-50;
+  }
+}
