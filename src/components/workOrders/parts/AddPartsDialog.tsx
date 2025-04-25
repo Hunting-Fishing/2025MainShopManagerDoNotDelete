@@ -20,19 +20,21 @@ import {
 import { Search, Plus } from 'lucide-react';
 import { InventoryItemExtended } from '@/types/inventory';
 import { useInventoryManager } from '@/hooks/inventory/useInventoryManager';
+import { WorkOrderInventoryItem } from '@/types/workOrder';
 
 interface AddPartsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onItemSelect: (item: InventoryItemExtended, quantity: number) => void;
+  onAddItems?: (newItems: WorkOrderInventoryItem[]) => void;
 }
 
-export function AddPartsDialog({ open, onOpenChange, onItemSelect }: AddPartsDialogProps) {
+export function AddPartsDialog({ open, onOpenChange, onItemSelect, onAddItems }: AddPartsDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   
   // Get inventory items from the inventory manager
-  const { inventoryItems } = useInventoryManager(); // Changed from items to inventoryItems
+  const { inventoryItems } = useInventoryManager();
   
   const handleQuantityChange = (itemId: string, value: string) => {
     const quantity = parseInt(value, 10);
@@ -44,6 +46,21 @@ export function AddPartsDialog({ open, onOpenChange, onItemSelect }: AddPartsDia
   const handleAddItem = (item: InventoryItemExtended) => {
     const quantity = quantities[item.id] || 1;
     onItemSelect(item, quantity);
+    
+    // If onAddItems is provided, call it with the new items
+    if (onAddItems) {
+      const newItem: WorkOrderInventoryItem = {
+        id: item.id,
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        quantity: quantity,
+        unitPrice: item.unitPrice,
+        itemStatus: 'in-stock',
+      };
+      onAddItems([newItem]);
+    }
+    
     setQuantities(prev => {
       const newQuantities = { ...prev };
       delete newQuantities[item.id];
@@ -53,10 +70,10 @@ export function AddPartsDialog({ open, onOpenChange, onItemSelect }: AddPartsDia
   
   // Filter items based on search query
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return inventoryItems;
+    if (!searchQuery.trim()) return inventoryItems || [];
     
     const lowerQuery = searchQuery.toLowerCase();
-    return inventoryItems.filter(item => 
+    return (inventoryItems || []).filter(item => 
       item.name.toLowerCase().includes(lowerQuery) ||
       item.sku.toLowerCase().includes(lowerQuery) ||
       item.category.toLowerCase().includes(lowerQuery)

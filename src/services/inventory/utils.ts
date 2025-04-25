@@ -6,7 +6,7 @@
 import { InventoryItemExtended, AutoReorderSettings } from "@/types/inventory";
 
 // Convert DB format to frontend format
-export function mapDbItemToInventoryItem(item: any): InventoryItemExtended {
+export function mapDbToInventoryItem(item: any): InventoryItemExtended {
   return {
     id: item.id,
     name: item.name,

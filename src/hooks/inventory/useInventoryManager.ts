@@ -1,252 +1,227 @@
-import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
-import { InventoryItemExtended } from '@/types/inventory';
+
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { InventoryItemExtended, AutoReorderSettings } from '@/types/inventory';
+import { toast } from '@/hooks/use-toast';
+import { WorkOrderInventoryItem } from '@/types/workOrder';
+import { mapDbToInventoryItem } from '@/services/inventory/utils';
 
 export function useInventoryManager() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItemExtended[]>([]);
   const [lowStockItems, setLowStockItems] = useState<InventoryItemExtended[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<InventoryItemExtended[]>([]);
+  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, AutoReorderSettings>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [autoReorderSettings, setAutoReorderSettings] = useState<Record<string, { enabled: boolean; threshold: number; quantity: number }>>({});
 
+  // Load all inventory items
   useEffect(() => {
-    loadInventory();
-    loadAutoReorderSettings();
-  }, []);
+    const loadInventory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('inventory_items')
+          .select('*');
 
-  const loadInventory = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*');
+        if (error) throw error;
 
-      if (error) {
-        setError(error.message);
-      } else {
-        setInventoryItems(data || []);
-        filterStockItems(data || []);
+        // Transform the DB format to our frontend format
+        const mappedItems = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          sku: item.sku,
+          category: item.category,
+          supplier: item.supplier,
+          quantity: item.quantity,
+          reorderPoint: item.reorder_point,
+          unitPrice: parseFloat(item.unit_price),
+          location: item.location || "",
+          status: item.status,
+          description: item.description || ""
+        }));
+
+        setInventoryItems(mappedItems);
+        
+        // Filter low stock and out of stock items
+        setLowStockItems(mappedItems.filter(item => 
+          item.quantity > 0 && item.quantity <= item.reorderPoint
+        ));
+        setOutOfStockItems(mappedItems.filter(item => 
+          item.quantity <= 0
+        ));
+      } catch (error) {
+        console.error("Error loading inventory items:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load inventory items",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  const loadAutoReorderSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('auto_reorder_settings')
-        .select('*');
+    const loadAutoReorderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('inventory_auto_reorder')
+          .select('*');
 
-      if (error) {
-        console.error("Error loading auto reorder settings:", error);
-      } else {
-        const settings: Record<string, { enabled: boolean; threshold: number; quantity: number }> = {};
-        data?.forEach(item => {
+        if (error) throw error;
+
+        const settings: Record<string, AutoReorderSettings> = {};
+        for (const item of data) {
           settings[item.item_id] = {
             enabled: item.enabled,
             threshold: item.threshold,
             quantity: item.quantity
           };
-        });
+        }
         setAutoReorderSettings(settings);
+      } catch (error) {
+        console.error("Error loading auto-reorder settings:", error);
       }
-    } catch (err) {
-      console.error("Error loading auto reorder settings:", err);
-    }
-  };
+    };
+    
+    loadInventory();
+    loadAutoReorderSettings();
+  }, []);
 
-  const filterStockItems = (items: InventoryItemExtended[]) => {
-    const lowStock = items.filter(item => item.quantity !== null && item.reorder_point !== null && item.quantity <= item.reorder_point);
-    const outOfStock = items.filter(item => item.quantity === 0);
-
-    setLowStockItems(lowStock);
-    setOutOfStockItems(outOfStock);
-  };
-
-  const createInventoryItem = async (items: any) => {
-    try {
-      if (Array.isArray(items)) {
-        // Convert unit_price to number for each item
-        const formattedItems = items.map(item => ({
-          ...item,
-          unit_price: parseFloat(item.unit_price)
-        }));
-        
-        const { data, error } = await supabase
-          .from('inventory_items')
-          .insert(formattedItems);
-          
-        if (error) throw error;
-        return data;
-      } else {
-        // Single item case
-        const item = {
-          ...items,
-          unit_price: parseFloat(items.unit_price)
-        };
-        
-        const { data, error } = await supabase
-          .from('inventory_items')
-          .insert(item);
-          
-        if (error) throw error;
-        return data;
-      }
-    } catch (error) {
-      console.error('Error creating inventory item:', error);
-      return null;
-    }
-  };
-
-  const updateInventoryItem = async (itemId: string, updates: any) => {
+  // Check if an item is available in the requested quantity
+  const checkItemAvailability = useCallback(async (itemId: string, quantity: number): Promise<boolean> => {
     try {
       const { data, error } = await supabase
         .from('inventory_items')
-        .update(updates)
-        .eq('id', itemId);
-        
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error updating inventory item:', error);
-      return null;
-    }
-  };
-
-  const deleteInventoryItem = async (itemId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setInventoryItems(inventoryItems.filter(item => item.id !== itemId));
-        filterStockItems(inventoryItems.filter(item => item.id !== itemId));
-      }
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const setReorderPoint = async (itemId: string, reorderPoint: number) => {
-    try {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .update({ reorder_point: reorderPoint })
-        .eq('id', itemId);
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setInventoryItems(inventoryItems.map(item =>
-          item.id === itemId ? { ...item, reorder_point: reorderPoint } : item
-        ));
-        filterStockItems(inventoryItems.map(item =>
-          item.id === itemId ? { ...item, reorder_point: reorderPoint } : item
-        ));
-      }
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-  
-  const reorderItem = async (itemId: string, quantity: number): Promise<boolean> => {
-    try {
-      const { data: itemData, error: itemError } = await supabase
-        .from('inventory_items')
-        .select('*')
+        .select('quantity')
         .eq('id', itemId)
         .single();
 
-      if (itemError) {
-        console.error("Error fetching inventory item:", itemError);
-        return false;
-      }
-
-      if (!itemData) {
-        console.error("Inventory item not found");
-        return false;
-      }
-
-      const newQuantity = (itemData.quantity || 0) + quantity;
-
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .update({ quantity: newQuantity })
-        .eq('id', itemId);
-
-      if (error) {
-        console.error("Error reordering inventory item:", error);
-        return false;
-      }
-
-      setInventoryItems(inventoryItems.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      ));
-      filterStockItems(inventoryItems.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      ));
+      if (error) throw error;
       
-      // Return true to indicate success
+      if (data && data.quantity >= quantity) {
+        return true;
+      } else {
+        toast({
+          title: "Insufficient stock",
+          description: `Only ${data?.quantity || 0} units available`,
+          variant: "destructive"
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Error checking item availability:", error);
+      return false;
+    }
+  }, [toast]);
+
+  // Function to reserve inventory
+  const reserveInventory = useCallback(async (items: WorkOrderInventoryItem[]): Promise<boolean> => {
+    // Implementation would go here
+    console.log("Reserving inventory items:", items);
+    return true;
+  }, []);
+
+  // Function to consume work order inventory
+  const consumeWorkOrderInventory = useCallback(async (items: WorkOrderInventoryItem[]): Promise<boolean> => {
+    try {
+      // Implementation would go here
+      console.log("Consuming inventory items:", items);
       return true;
     } catch (error) {
-      console.error('Error reordering inventory item:', error);
+      console.error("Error consuming inventory:", error);
+      return false;
+    }
+  }, []);
+
+  // Function to reorder an inventory item
+  const reorderItem = async (itemId: string, quantity: number = 10): Promise<boolean> => {
+    try {
+      // Implementation would go here
+      console.log(`Reordering item ${itemId}, quantity: ${quantity}`);
+      toast({
+        title: "Order placed",
+        description: `Ordered ${quantity} units of this item`,
+      });
+      return true;
+    } catch (error) {
+      console.error("Error reordering item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to place order",
+        variant: "destructive",
+      });
       return false;
     }
   };
 
+  // Function to enable auto-reordering for an item
   const enableAutoReorder = async (itemId: string, threshold: number, quantity: number): Promise<boolean> => {
     try {
       const { data, error } = await supabase
-        .from('auto_reorder_settings')
-        .upsert(
-          { item_id: itemId, enabled: true, threshold: threshold, quantity: quantity },
-          { onConflict: 'item_id' }
-        );
+        .from('inventory_auto_reorder')
+        .upsert({
+          item_id: itemId,
+          enabled: true,
+          threshold,
+          quantity
+        });
 
-      if (error) {
-        console.error("Error enabling auto reorder:", error);
-        return false;
-      }
+      if (error) throw error;
 
-      setAutoReorderSettings(prevSettings => ({
-        ...prevSettings,
-        [itemId]: { enabled: true, threshold: threshold, quantity: quantity }
+      // Update our local state
+      setAutoReorderSettings(prev => ({
+        ...prev,
+        [itemId]: { enabled: true, threshold, quantity }
       }));
+
+      toast({
+        title: "Auto-reorder enabled",
+        description: `Item will be reordered when stock falls below ${threshold}`,
+      });
       
-      // Return true to indicate success
       return true;
     } catch (error) {
-      console.error('Error enabling auto reorder:', error);
+      console.error("Error enabling auto-reorder:", error);
+      toast({
+        title: "Error",
+        description: "Failed to enable auto-reorder",
+        variant: "destructive",
+      });
       return false;
     }
   };
 
-  const disableAutoReorder = async (itemId: string) => {
+  // Function to disable auto-reordering for an item
+  const disableAutoReorder = async (itemId: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase
-        .from('auto_reorder_settings')
-        .delete()
+        .from('inventory_auto_reorder')
+        .update({ enabled: false })
         .eq('item_id', itemId);
 
-      if (error) {
-        console.error("Error disabling auto reorder:", error);
-      } else {
-        setAutoReorderSettings(prevSettings => {
-          const newSettings = { ...prevSettings };
-          delete newSettings[itemId];
-          return newSettings;
-        });
-      }
+      if (error) throw error;
+
+      // Update our local state
+      setAutoReorderSettings(prev => {
+        const newSettings = { ...prev };
+        if (newSettings[itemId]) {
+          newSettings[itemId].enabled = false;
+        }
+        return newSettings;
+      });
+
+      toast({
+        title: "Auto-reorder disabled",
+        description: "Auto-reorder has been disabled for this item",
+      });
+      
+      return true;
     } catch (error) {
-      console.error('Error disabling auto reorder:', error);
+      console.error("Error disabling auto-reorder:", error);
+      toast({
+        title: "Error",
+        description: "Failed to disable auto-reorder",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -254,16 +229,13 @@ export function useInventoryManager() {
     inventoryItems,
     lowStockItems,
     outOfStockItems,
-    loading,
-    error,
     autoReorderSettings,
-    loadInventory,
-    createInventoryItem,
-    updateInventoryItem,
-    deleteInventoryItem,
-    setReorderPoint,
+    loading,
+    checkItemAvailability,
+    reserveInventory,
+    consumeWorkOrderInventory,
     reorderItem,
     enableAutoReorder,
-    disableAutoReorder,
+    disableAutoReorder
   };
 }

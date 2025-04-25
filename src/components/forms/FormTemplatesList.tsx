@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { 
   Table, 
   TableBody, 
@@ -15,11 +16,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, FileText, Edit, Trash } from 'lucide-react';
-// Rename the imported type to avoid conflict
-import { FormTemplate as FormTemplateType } from '@/types/forms';
+// Import FormTemplate type from our local types
+import { FormTemplate } from '@/types/forms';
 
 interface FormTemplatesListProps {
-  templates: FormTemplateType[];
+  templates: FormTemplate[];
   onViewTemplate: (id: string) => void;
   onEditTemplate: (id: string) => void;
   onDeleteTemplate: (id: string) => void;

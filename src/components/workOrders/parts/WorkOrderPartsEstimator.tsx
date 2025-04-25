@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkOrderInventoryItem } from '@/types/workOrder';
 import { PlusCircle } from 'lucide-react';
 import { PartsTable } from './PartsTable';
 import { AddPartsDialog } from './AddPartsDialog';
+import { InventoryItemExtended } from '@/types/inventory';
 
 export interface WorkOrderPartsEstimatorProps {
-  items?: WorkOrderInventoryItem[];  // Changed from initialItems to items
+  items?: WorkOrderInventoryItem[];
   onItemsChange: (items: WorkOrderInventoryItem[]) => void;
   readOnly?: boolean;
 }
@@ -62,6 +64,20 @@ export function WorkOrderPartsEstimator({
     onItemsChange(updatedItems);
   };
 
+  const handleItemSelect = (item: InventoryItemExtended, quantity: number) => {
+    const newItem: WorkOrderInventoryItem = {
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      quantity: quantity,
+      unitPrice: item.unitPrice,
+      itemStatus: 'in-stock'
+    };
+    
+    handleAddItems([newItem]);
+  };
+
   return (
     <div className="space-y-4">
       <PartsTable 
@@ -84,6 +100,7 @@ export function WorkOrderPartsEstimator({
           <AddPartsDialog
             open={showAddPartsDialog}
             onOpenChange={setShowAddPartsDialog}
+            onItemSelect={handleItemSelect}
             onAddItems={handleAddItems}
           />
         </>

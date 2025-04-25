@@ -21,9 +21,9 @@ export function Layout({ children, className }: LayoutProps) {
   const isDark = resolvedTheme === 'dark';
 
   return (
-    <SidebarProvider defaultCollapsed={isMobile}>
+    <SidebarProvider>
       <div className={`min-h-screen flex w-full flex-col bg-space ${isDark ? 'dark' : ''} ${className || ''}`}>
-        <Navbar className="glassmorphism border-b border-imperial-600/30" />
+        <Navbar />
         <div className="flex flex-1 flex-col md:flex-row">
           <AppSidebar />
           <div className="flex flex-col flex-1">
