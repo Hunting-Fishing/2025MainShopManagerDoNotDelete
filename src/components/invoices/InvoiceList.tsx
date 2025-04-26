@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Invoice } from "@/types/invoice";
 
 export function InvoiceList() {
   const [activeTab, setActiveTab] = useState<string>("all");

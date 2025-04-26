@@ -58,4 +58,5 @@ export interface WorkOrderNotification extends Notification {
 export interface NotificationsListProps {
   notifications: WorkOrderNotification[];
   loading?: boolean;
+  emptyMessage?: string;
 }

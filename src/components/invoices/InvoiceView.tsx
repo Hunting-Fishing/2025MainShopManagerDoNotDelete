@@ -37,7 +37,7 @@ export default function InvoiceView({ invoice }: InvoiceViewProps) {
             </div>
             <div className="flex justify-between">
               <h3 className="text-sm font-medium text-muted-foreground">Due Date</h3>
-              <p className="text-sm">{invoice.dueDate}</p>
+              <p className="text-sm">{invoice.due_date}</p>
             </div>
             <div className="flex justify-between">
               <h3 className="text-sm font-medium text-muted-foreground">Payment Method</h3>

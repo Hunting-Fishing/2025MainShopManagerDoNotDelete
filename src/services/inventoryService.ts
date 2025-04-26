@@ -5,6 +5,9 @@ export * from './inventory/filterService';
 export * from './inventory/utils';
 export * from './inventory/autoReorderService';
 
+// Alias export for inventory service for backwards compatibility
+export { getAllInventoryItems as getInventoryItems } from './inventory/crudService';
+
 // Add missing reorder functions
 export async function reorderItem(itemId: string, quantity: number): Promise<boolean> {
   try {

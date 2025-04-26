@@ -1,3 +1,4 @@
+
 export interface InvoiceFiltersProps {
   filters: {
     status: string;
@@ -28,25 +29,44 @@ export interface InventoryItem {
   category?: string;
 }
 
-export type createInvoiceUpdater = (
-  field: keyof Invoice,
-  value: any
-) => void;
+export interface InvoiceItem {
+  id: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  price: number;
+  total: number;
+  sku?: string;
+  category?: string;
+  hours?: boolean;
+}
+
+export function createInvoiceUpdater(updates: Partial<Invoice>) {
+  return (prev: Invoice) => ({
+    ...prev,
+    ...updates
+  });
+}
 
 export interface Invoice {
   id: string;
   customer: string;
   customer_id?: string;
+  customerEmail: string;
+  customerAddress: string;
   date: string;
   due_date: string;
-  status: "draft" | "sent" | "paid" | "overdue" | "void";
+  status: "draft" | "sent" | "paid" | "overdue" | "void" | "pending" | "cancelled";
   notes?: string;
-  subtotal?: number;
-  tax?: number;
-  total?: number;
+  subtotal: number;
+  tax: number;
+  total: number;
   workOrderId?: string;
   description?: string;
-  assignedStaff?: StaffMember[];
+  assignedStaff: StaffMember[];
+  createdBy: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
   paymentMethod?: string;
   items: InvoiceItem[];
 }
@@ -67,4 +87,13 @@ export interface InvoiceTemplate {
   usageCount?: number;
   lastUsed?: Date | null;
   defaultItems: InvoiceTemplateItem[];
+}
+
+// Function to convert invoice items to template items
+export function convertToTemplateItems(items: InvoiceItem[]): InvoiceTemplateItem[] {
+  return items.map(item => ({
+    ...item,
+    templateId: 'pending-id',
+    createdAt: new Date().toISOString()
+  }));
 }

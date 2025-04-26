@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { InvoiceItem, Invoice, InvoiceTemplate } from "@/types/invoice";
+import { InvoiceItem, Invoice, InvoiceTemplate, convertToTemplateItems } from "@/types/invoice";
 import { Save } from "lucide-react";
 
 const formSchema = z.object({
@@ -33,10 +33,22 @@ interface SaveTemplateDialogProps {
   currentInvoice: Invoice;
   taxRate: number;
   onSaveTemplate: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function SaveTemplateDialog({ currentInvoice, taxRate, onSaveTemplate }: SaveTemplateDialogProps) {
-  const [open, setOpen] = useState(false);
+export function SaveTemplateDialog({ 
+  currentInvoice, 
+  taxRate, 
+  onSaveTemplate,
+  open: externalOpen,
+  onOpenChange
+}: SaveTemplateDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const isControlled = externalOpen !== undefined && onOpenChange !== undefined;
+  const isOpen = isControlled ? externalOpen : internalOpen;
+  const setOpen = isControlled ? onOpenChange : setInternalOpen;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -51,9 +63,7 @@ export function SaveTemplateDialog({ currentInvoice, taxRate, onSaveTemplate }: 
 
   const onSubmit = (values: FormValues) => {
     // Convert the items to template format
-    const templateItems: InvoiceItem[] = currentInvoice.items.map(item => ({
-      ...item,
-    }));
+    const templateItems = convertToTemplateItems(currentInvoice.items);
 
     const template = {
       name: values.name,
@@ -72,15 +82,17 @@ export function SaveTemplateDialog({ currentInvoice, taxRate, onSaveTemplate }: 
 
   return (
     <>
-      <Button
-        variant="outline"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2"
-      >
-        <Save size={16} />
-        Save as Template
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      {!isControlled && (
+        <Button
+          variant="outline"
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <Save size={16} />
+          Save as Template
+        </Button>
+      )}
+      <Dialog open={isOpen} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Save as Template</DialogTitle>
