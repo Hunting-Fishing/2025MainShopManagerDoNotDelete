@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { getInventoryItems } from '@/services/inventoryService';
-import { InventoryItem } from '@/types/inventory';
+import { InventoryItem, InventoryItemExtended } from '@/types/inventory';
+import { formatInventoryItem } from '@/services/inventory/utils';
 
 export function useInventory() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -13,8 +14,10 @@ export function useInventory() {
     const fetchInventory = async () => {
       try {
         setLoading(true);
-        const data = await getInventoryItems();
-        setItems(data);
+        const extendedData = await getInventoryItems();
+        // Convert InventoryItemExtended to InventoryItem
+        const formattedItems = extendedData.map(item => formatInventoryItem(item));
+        setItems(formattedItems);
         setError(null);
         setConnectionOk(true);
       } catch (err) {
@@ -32,8 +35,10 @@ export function useInventory() {
   const refreshInventory = async () => {
     try {
       setLoading(true);
-      const data = await getInventoryItems();
-      setItems(data);
+      const extendedData = await getInventoryItems();
+      // Convert InventoryItemExtended to InventoryItem
+      const formattedItems = extendedData.map(item => formatInventoryItem(item));
+      setItems(formattedItems);
       setError(null);
       setConnectionOk(true);
     } catch (err) {

@@ -1,88 +1,86 @@
-// Re-export all inventory services from subdirectories
-export * from './inventory/crudService';
-export * from './inventory/filterService';
-export * from './inventory/utils';
-export * from './inventory/autoReorderService';
 
-// Alias export for inventory service for backwards compatibility
-export { getAllInventoryItems as getInventoryItems } from './inventory/crudService';
+import { supabase } from "@/lib/supabase";
+import { Inventory, InventoryItem, InventoryItemExtended } from "@/types/inventory";
+import { mapDbItemToInventoryItem, formatInventoryItem } from "./inventory/utils";
 
-// Add missing reorder functions
-export async function reorderItem(itemId: string, quantity: number): Promise<boolean> {
+// Get all inventory items
+export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
   try {
-    const { getInventoryItemById, updateInventoryQuantity } = await import('./inventory/crudService');
-    
-    // First, get the current item to get its existing quantity
-    const currentItem = await getInventoryItemById(itemId);
-    
-    if (!currentItem) {
-      throw new Error("Item not found");
-    }
-    
-    // Calculate new quantity (adding to existing)
-    const newQuantity = (currentItem.quantity || 0) + quantity;
-    
-    // Update the item with new quantity
-    await updateInventoryQuantity(itemId, newQuantity);
-    
-    return true;
-  } catch (error) {
-    console.error("Error reordering item:", error);
-    return false;
-  }
-}
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('*');
 
-export async function enableAutoReorder(itemId: string, threshold: number, quantity: number): Promise<boolean> {
-  try {
-    const { supabase } = await import('@/lib/supabase');
-    
-    const { error } = await supabase
-      .from('inventory_auto_reorder')
-      .upsert({
-        item_id: itemId,
-        threshold,
-        quantity,
-        enabled: true,
-        updated_at: new Date().toISOString()
-      });
-    
     if (error) throw error;
-    return true;
+
+    return data.map(mapDbItemToInventoryItem);
   } catch (error) {
-    console.error("Error enabling auto-reorder:", error);
-    return false;
+    console.error("Error fetching inventory items:", error);
+    throw error;
   }
 }
 
-// Add missing inventory functions for work orders
-export async function updateWorkOrderInventoryItems(workOrderId: string, items: any[]): Promise<boolean> {
-  try {
-    // Implementation would connect to backend service/API
-    console.log(`Updating inventory items for work order ${workOrderId}`, items);
-    return true;
-  } catch (error) {
-    console.error("Error updating work order inventory items:", error);
-    return false;
-  }
-}
-
+// Check if an item is available in sufficient quantity
 export async function checkItemAvailability(itemId: string, quantity: number): Promise<boolean> {
   try {
-    const { getInventoryItemById } = await import('./inventory/crudService');
-    const item = await getInventoryItemById(itemId);
-    
-    if (!item) return false;
-    return (item.quantity || 0) >= quantity;
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('quantity')
+      .eq('id', itemId)
+      .single();
+
+    if (error) throw error;
+    return data.quantity >= quantity;
   } catch (error) {
-    console.error("Error checking item availability:", error);
+    console.error(`Error checking inventory availability for item ${itemId}:`, error);
     return false;
   }
 }
 
-export async function consumeWorkOrderInventory(workOrderId: string, items: any[]): Promise<boolean> {
+// Reserve items for a work order (decrease available quantity)
+export async function reserveInventoryItems(workOrderId: string, items: {id: string, quantity: number}[]): Promise<boolean> {
   try {
-    // Implementation would connect to backend service/API
-    console.log(`Consuming inventory for work order ${workOrderId}`, items);
+    for (const item of items) {
+      // Check availability first
+      const isAvailable = await checkItemAvailability(item.id, item.quantity);
+      
+      if (!isAvailable) {
+        console.error(`Item ${item.id} not available in sufficient quantity`);
+        return false;
+      }
+      
+      // Decrease quantity
+      const { error } = await supabase.rpc('reserve_inventory_item', {
+        item_id: item.id,
+        qty: item.quantity
+      });
+      
+      if (error) throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error reserving inventory items:", error);
+    return false;
+  }
+}
+
+// Consume items for a work order (finalize the usage)
+export async function consumeWorkOrderInventory(workOrderId: string, items: {id: string, quantity: number}[]): Promise<boolean> {
+  try {
+    // Create adjustment records
+    for (const item of items) {
+      const { error } = await supabase
+        .from('inventory_adjustments')
+        .insert({
+          work_order_id: workOrderId,
+          inventory_item_id: item.id,
+          quantity: -item.quantity, // negative for consumption
+          adjustment_type: 'work_order'
+        });
+      
+      if (error) throw error;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error consuming work order inventory:", error);
@@ -90,13 +88,38 @@ export async function consumeWorkOrderInventory(workOrderId: string, items: any[
   }
 }
 
-export async function reserveInventoryItems(workOrderId: string, items: any[]): Promise<boolean> {
+// Update work order inventory items
+export async function updateWorkOrderInventoryItems(workOrderId: string, items: any[]): Promise<boolean> {
   try {
-    // Implementation would reserve inventory items for a work order
-    console.log(`Reserving inventory items for work order ${workOrderId}`, items);
+    // First, delete existing items
+    const { error: deleteError } = await supabase
+      .from('work_order_inventory_items')
+      .delete()
+      .eq('work_order_id', workOrderId);
+    
+    if (deleteError) throw deleteError;
+    
+    // Then insert new items
+    if (items.length > 0) {
+      const formattedItems = items.map(item => ({
+        work_order_id: workOrderId,
+        name: item.name,
+        sku: item.sku || '',
+        category: item.category || '',
+        quantity: item.quantity,
+        unit_price: item.price || item.unitPrice || 0
+      }));
+      
+      const { error: insertError } = await supabase
+        .from('work_order_inventory_items')
+        .insert(formattedItems);
+      
+      if (insertError) throw insertError;
+    }
+    
     return true;
   } catch (error) {
-    console.error("Error reserving inventory items:", error);
+    console.error("Error updating work order inventory items:", error);
     return false;
   }
 }

@@ -3,7 +3,7 @@ import { InvoiceTemplateDialog } from "../invoices/InvoiceTemplateDialog";
 import { SaveTemplateDialog } from "../invoices/SaveTemplateDialog";
 import { Invoice } from "@/types/invoice";
 import { InvoiceTemplate } from "@/types/invoice";
-import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
+import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
 
 interface InvoiceTemplateActionsProps {
   invoice: Invoice;
@@ -21,7 +21,7 @@ export function InvoiceTemplateActions({
   const { 
     templates,
     createTemplate,
-    updateTemplate
+    updateTemplate 
   } = useInvoiceTemplates();
   
   // Create handler functions
@@ -34,7 +34,7 @@ export function InvoiceTemplateActions({
   const handleSaveTemplate = (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount' | 'lastUsed'>) => {
     if (onSaveTemplate) {
       onSaveTemplate(template);
-    } else {
+    } else if (createTemplate) {
       createTemplate(template);
     }
   };

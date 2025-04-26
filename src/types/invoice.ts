@@ -93,8 +93,8 @@ export interface InvoiceTemplate {
   defaultDueDateDays?: number;
   defaultTaxRate?: number;
   createdAt: string;
-  usageCount?: number;
-  lastUsed?: string | null;
+  usageCount: number;
+  lastUsed: string | null;
   defaultItems: InvoiceTemplateItem[];
 }
 

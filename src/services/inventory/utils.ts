@@ -1,3 +1,4 @@
+
 import { Inventory, InventoryItemExtended } from "@/types/inventory";
 
 // Convert database item to inventory item
@@ -53,12 +54,12 @@ export function formatInventoryItem(item: InventoryItemExtended): Inventory {
     sku: item.sku,
     description: item.description,
     quantity: item.quantity,
-    price: item.unit_price,
+    price: item.unit_price, // Map unit_price to price
     category: item.category,
     supplier: item.supplier,
     status: item.status,
     minStockLevel: item.min_stock_level,
-    reorderQuantity: item.reorder_quantity,
+    reorderQuantity: item.reorder_quantity || 0,
     location: item.location,
     lastOrdered: item.last_ordered,
     lastReceived: item.last_received,
@@ -73,15 +74,15 @@ export function mapInventoryItemToDbFormat(item: Partial<InventoryItemExtended>)
     sku: item.sku,
     description: item.description,
     quantity: item.quantity,
-    unit_price: item.unitPrice,
+    unit_price: item.unit_price,
     category: item.category,
     supplier: item.supplier,
-    min_stock_level: item.reorderPoint,
-    reorder_quantity: item.reorderQuantity,
+    min_stock_level: item.min_stock_level,
+    reorder_quantity: item.reorder_quantity,
     location: item.location,
-    last_ordered: item.lastOrdered,
-    last_received: item.lastReceived,
+    last_ordered: item.last_ordered,
+    last_received: item.last_received,
     status: item.status,
-    auto_reorder: item.autoReorder
+    auto_reorder: item.auto_reorder
   };
 }
