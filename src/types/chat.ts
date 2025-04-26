@@ -1,4 +1,3 @@
-
 export interface ChatRoom {
   id: string;
   name: string;
@@ -71,7 +70,10 @@ export interface ChatRoomMetadata {
     status: string;
     customer_name: string;
     vehicle?: string;
+    customer_id?: string;
   };
+  customer_id?: string;
+  is_customer_chat?: boolean;
   team?: string;
   shop_id?: string;
   is_shift_chat?: boolean;
@@ -84,6 +86,7 @@ export interface ChatRoomMetadata {
   shift_participants?: string[];
   purpose?: string;
   tags?: string[];
+  is_reminder_room?: boolean;
 }
 
 export interface ChatMessageMetadata {
@@ -114,6 +117,11 @@ export interface ChatMessageMetadata {
     longitude: number;
     address?: string;
   };
+  // Add reminder metadata properties
+  reminder_id?: string;
+  reminder_due_date?: string;
+  reminder_type?: string;
+  reminder_priority?: string;
 }
 
 export interface ChatSearchQuery {
@@ -132,4 +140,18 @@ export interface MentionData {
   type: MentionType;
   id: string;
   name: string;
+}
+
+export interface RecurringChatMessage {
+  id: string;
+  roomId: string;
+  title: string;
+  message: string;
+  startDate: string;
+  recurringType: 'daily' | 'weekly' | 'monthly';
+  interval: number;
+  isActive: boolean;
+  lastSentAt?: string;
+  createdAt: string;
+  createdBy?: string;
 }

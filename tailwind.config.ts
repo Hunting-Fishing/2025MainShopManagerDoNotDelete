@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -87,7 +88,7 @@ export default {
             "completed": "#4CAF50",
             "cancelled": "#F44336"
           }
-        }
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -115,6 +116,11 @@ export default {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out'
+      },
+      opacity: {
+        '10': '0.1',
+        '20': '0.2',
+        '90': '0.9'
       }
     }
   },

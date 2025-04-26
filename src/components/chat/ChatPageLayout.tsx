@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
@@ -112,7 +113,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-white dark:bg-gray-950">
       <ChatSidebar 
         rooms={chatRooms}
         currentRoom={currentRoom}
@@ -122,11 +123,11 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
         getRoomStatus={getRoomStatus}
       />
       
-      <div className="flex flex-col flex-1 h-full">
-        <div className="flex flex-1 relative">
-          <div className={`flex flex-col flex-1 overflow-hidden ${activeThreadId ? 'md:mr-72' : ''}`}>
+      <div className="flex flex-col flex-1 h-full overflow-hidden border-l border-gray-200 dark:border-gray-800">
+        <div className="flex flex-1 relative bg-white dark:bg-gray-900">
+          <div className={`flex flex-col flex-1 overflow-hidden ${activeThreadId ? 'md:mr-72' : ''} bg-white dark:bg-gray-900`}>
             {showSearch && currentRoom && (
-              <div className="p-3 border-b">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
                 <MessageSearch
                   onSearch={handleSearch}
                   searchResults={searchResults}
@@ -174,7 +175,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
           </div>
           
           {activeThreadId && parentMessage && (
-            <div className="hidden md:block absolute right-0 top-0 bottom-0 w-72 border-l">
+            <div className="hidden md:block absolute right-0 top-0 bottom-0 w-72 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <ChatThread
                 threadId={activeThreadId}
                 messages={threadMessages}
