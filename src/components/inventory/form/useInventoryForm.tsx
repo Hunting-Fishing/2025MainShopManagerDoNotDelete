@@ -1,13 +1,30 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { InventoryItemExtended } from "@/types/inventory";
-import { getInventoryStatus } from "@/services/inventory/utils";
-import { getInventoryCategories } from "@/services/inventory/categoryService";
-import { getInventorySuppliers } from "@/services/inventory/supplierService";
-import { useInventoryFormValidation } from "@/hooks/inventory/useInventoryFormValidation";
+import { createInventoryItem, updateInventoryItem } from "@/services/inventory/crudService";
+import { toast } from "@/components/ui/use-toast";
 
-export function useInventoryForm() {
-  const [formData, setFormData] = useState<Omit<InventoryItemExtended, "id">>({
+// Form schema
+const inventoryFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  sku: z.string().optional(),
+  category: z.string().optional(),
+  supplier: z.string().optional(),
+  quantity: z.number().int().min(0, "Quantity must be a positive number"),
+  min_stock_level: z.number().int().min(0, "Minimum stock level must be a positive number"),
+  unit_price: z.number().min(0, "Price must be a positive number"),
+  location: z.string().optional(),
+  status: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export type InventoryFormValues = z.infer<typeof inventoryFormSchema>;
+
+const getDefaultValues = (): Omit<InventoryItemExtended, "id"> => {
+  return {
     name: "",
     sku: "",
     category: "",
@@ -18,119 +35,95 @@ export function useInventoryForm() {
     location: "",
     status: "In Stock",
     description: "",
-    // Remove updated_at and created_at as they shouldn't be in the form
-    // Only use properties defined in the InventoryItemExtended type
-    reorderPoint: 5, // This is used as an alias for min_stock_level
-    unitPrice: 0  // This is used as an alias for unit_price
+    // These are for display compatibility with the form
+    reorderPoint: 5,
+    unitPrice: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+};
+
+interface UseInventoryFormProps {
+  item?: InventoryItemExtended;
+  onSuccess?: () => void;
+}
+
+export function useInventoryForm({ item, onSuccess }: UseInventoryFormProps = {}) {
+  const [loading, setLoading] = useState(false);
+
+  // Initialize form with default values or provided item
+  const form = useForm<InventoryFormValues>({
+    resolver: zodResolver(inventoryFormSchema),
+    defaultValues: item ? {
+      name: item.name,
+      sku: item.sku,
+      category: item.category,
+      supplier: item.supplier,
+      quantity: item.quantity,
+      min_stock_level: item.min_stock_level || item.reorderPoint || 5,
+      unit_price: item.unit_price || item.unitPrice || 0,
+      location: item.location || "",
+      status: item.status || "In Stock",
+      description: item.description || ""
+    } : getDefaultValues()
   });
-  
-  const [categories, setCategories] = useState<string[]>([]);
-  const [suppliers, setSuppliers] = useState<string[]>([]);
-  const { formErrors, validateForm, clearError } = useInventoryFormValidation();
 
-  // Load categories and suppliers on component mount
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Load categories from the service
-        const categories = await getInventoryCategories();
-        setCategories(categories);
-        
-        // Load suppliers from the service
-        const suppliers = await getInventorySuppliers();
-        setSuppliers(suppliers);
-      } catch (error) {
-        console.error("Error loading form data:", error);
-      }
-    };
-    
-    loadData();
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    // Handle numeric fields differently
-    if (name === "quantity" || name === "min_stock_level" || name === "reorderPoint" || name === "unit_price" || name === "unitPrice") {
-      const numValue = value === "" ? 0 : Number(value);
-      
-      // Update status if quantity or min_stock_level changes
-      if (name === "quantity" || name === "min_stock_level" || name === "reorderPoint") {
-        const newQuantity = name === "quantity" ? numValue : formData.quantity;
-        const newReorderPoint = name === "min_stock_level" ? numValue : 
-          (name === "reorderPoint" ? numValue : formData.min_stock_level);
-        
-        // Create a new object for state update
-        const newFormData = { ...formData };
-        
-        // Update the primary field
-        if (name === "quantity") {
-          newFormData.quantity = numValue;
-        } else if (name === "min_stock_level") {
-          newFormData.min_stock_level = numValue;
-          newFormData.reorderPoint = numValue; // Keep in sync
-        } else if (name === "reorderPoint") {
-          newFormData.reorderPoint = numValue;
-          newFormData.min_stock_level = numValue; // Keep in sync
-        } else if (name === "unit_price") {
-          newFormData.unit_price = numValue;
-          newFormData.unitPrice = numValue; // Keep in sync
-        } else if (name === "unitPrice") {
-          newFormData.unitPrice = numValue;
-          newFormData.unit_price = numValue; // Keep in sync
-        }
-        
-        // Update status
-        newFormData.status = getInventoryStatus(newQuantity, newReorderPoint);
-        
-        setFormData(newFormData);
+  // Form submission handler
+  async function onSubmit(data: InventoryFormValues) {
+    setLoading(true);
+    try {
+      // Map form values to inventory item format
+      if (item) {
+        // Update existing item
+        await updateInventoryItem(item.id, {
+          ...data,
+          // For backward compatibility
+          reorderPoint: data.min_stock_level,
+          unitPrice: data.unit_price,
+        });
+        toast({
+          title: "Inventory item updated",
+          description: `${data.name} has been updated successfully.`
+        });
       } else {
-        // For other numeric fields, just update the value
-        setFormData(prev => {
-          const updated = { ...prev } as any;
-          if (name === "unit_price") {
-            updated.unit_price = numValue;
-            updated.unitPrice = numValue; // Update both properties
-          } else if (name === "unitPrice") {
-            updated.unitPrice = numValue;
-            updated.unit_price = numValue; // Update both properties
-          } else {
-            updated[name] = numValue;
-          }
-          return updated;
+        // Create new item
+        await createInventoryItem({
+          ...data,
+          // For backward compatibility
+          reorderPoint: data.min_stock_level,
+          unitPrice: data.unit_price,
+        });
+        toast({
+          title: "Inventory item created",
+          description: `${data.name} has been added to inventory.`
         });
       }
-    } else {
-      // For non-numeric fields
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Reset form if creating new item
+      if (!item) {
+        form.reset(getDefaultValues());
+      }
+    } catch (error) {
+      console.error("Error saving inventory item:", error);
+      toast({
+        title: "Error",
+        description: `Failed to ${item ? "update" : "create"} inventory item.`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    // Clear error for this field if it exists
-    clearError(name);
-  };
-  
-  // Handle select change for dropdown fields
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error for this field if it exists
-    clearError(name);
-  };
+  }
 
   return {
-    formData,
-    setFormData,
-    categories,
-    suppliers,
-    formErrors,
-    validateForm,
-    handleChange,
-    handleSelectChange,
+    form,
+    loading,
+    onSubmit: form.handleSubmit(onSubmit),
+    isEditing: !!item
   };
 }

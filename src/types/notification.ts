@@ -20,7 +20,7 @@ export interface NotificationPreferences {
   categories: {
     [key: string]: boolean;
   };
-  subscriptions: Array<{ category: string; enabled: boolean }>;
+  subscriptions: Array<NotificationSubscription>;
   frequencies: {
     [category: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
   };
@@ -38,6 +38,7 @@ export interface NotificationContextType {
   updatePreferences: (newPreferences: Partial<NotificationPreferences>) => void;
   triggerTestNotification: () => void;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  updateSubscription: (category: string, enabled: boolean) => void;
 }
 
 export interface NotificationSubscription {
@@ -53,4 +54,5 @@ export interface WorkOrderNotification extends Notification {
 export interface NotificationsListProps {
   notifications: WorkOrderNotification[];
   onMarkAsRead?: (id: string) => void;
+  loading?: boolean;
 }

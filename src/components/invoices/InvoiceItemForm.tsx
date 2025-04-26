@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InvoiceItem } from '@/types/invoice';
+import { InventoryItem } from '@/types/inventory';
 
 export interface InvoiceItemFormProps {
   onAddItem: (item: InvoiceItem) => void;
-  inventoryItems?: InventoryItem[];
 }
 
 export function InvoiceItemForm({ onAddItem }: InvoiceItemFormProps) {

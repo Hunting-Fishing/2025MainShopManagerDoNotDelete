@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,130 +12,103 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { InvoiceItem, InvoiceTemplate } from "@/types/invoice";
-import { useToast } from "@/hooks/use-toast";
-import { adaptInvoiceItemsToTemplateItems } from "./helpers";
+import { InvoiceItem, Invoice, InvoiceTemplate } from '@/types/invoice';
 
 interface SaveTemplateDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  invoiceItems: InvoiceItem[];
-  defaultNotes?: string;
-  defaultDueDateDays?: number;
-  defaultTaxRate?: number;
-  onSaveSuccess?: (template: InvoiceTemplate) => void;
+  onClose: () => void;
+  currentInvoice: Invoice;
+  taxRate: number;
+  onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
 }
 
 export function SaveTemplateDialog({
   open,
-  onOpenChange,
-  invoiceItems,
-  defaultNotes = "",
-  defaultDueDateDays = 30,
-  defaultTaxRate = 0.08,
-  onSaveSuccess
+  onClose,
+  currentInvoice,
+  taxRate,
+  onSaveTemplate,
 }: SaveTemplateDialogProps) {
-  const { toast } = useToast();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
-    if (!name.trim()) {
-      toast({
-        title: "Template name required",
-        description: "Please provide a name for your template",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSaving(true);
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name) return;
+    
+    setSaving(true);
     try {
-      // Convert the invoice items to template items
-      const templateItems = adaptInvoiceItemsToTemplateItems(invoiceItems, "pending-id");
-
-      // Mock saving template - in a real app this would call an API
-      const template: InvoiceTemplate = {
-        id: crypto.randomUUID(),
+      // Create the template data
+      const templateData = {
         name,
         description,
-        default_notes: defaultNotes || "",
-        default_due_date_days: defaultDueDateDays,
-        default_tax_rate: defaultTaxRate,
-        last_used: null,
-        createdAt: new Date().toISOString(),
+        default_notes: currentInvoice.notes || "",
+        default_due_date_days: 30, // Default value
+        default_tax_rate: taxRate,
         usage_count: 0,
-        defaultItems: templateItems
+        last_used: null,
+        defaultItems: currentInvoice.items || []
       };
-
-      toast({
-        title: "Template saved",
-        description: `Invoice template "${name}" has been saved successfully`,
-      });
-
-      if (onSaveSuccess) {
-        onSaveSuccess(template);
-      }
-
-      onOpenChange(false);
+      
+      onSaveTemplate(templateData);
+      onClose();
       setName("");
       setDescription("");
     } catch (error) {
       console.error("Error saving template:", error);
-      toast({
-        title: "Failed to save template",
-        description: "There was an error saving your invoice template",
-        variant: "destructive",
-      });
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Save as Template</DialogTitle>
           <DialogDescription>
-            Save current invoice as a reusable template
+            This will save the current invoice as a reusable template.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="template-name">Template Name</Label>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="templateName">Template Name</Label>
             <Input
-              id="template-name"
-              placeholder="e.g., Oil Change Service"
+              id="templateName"
+              placeholder="e.g., Standard Service Invoice"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              required
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="template-description">Description (optional)</Label>
+          
+          <div className="space-y-2">
+            <Label htmlFor="templateDescription">Description (optional)</Label>
             <Textarea
-              id="template-description"
+              id="templateDescription"
               placeholder="Describe what this template is used for"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="resize-none"
-              rows={3}
             />
           </div>
-          <div className="text-sm text-muted-foreground">
-            This template will include {invoiceItems.length} item(s), notes, and tax settings.
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Template"}
-          </Button>
-        </DialogFooter>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!name || saving}>
+              {saving ? "Saving..." : "Save Template"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

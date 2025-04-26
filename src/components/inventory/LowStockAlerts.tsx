@@ -5,7 +5,8 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { NoInventoryAlerts } from "./alerts/NoInventoryAlerts";
 import { AlertItemRow } from "./alerts/AlertItemRow";
-import { reorderItem, enableAutoReorder } from "@/services/inventoryService";
+import { reorderItem } from "@/services/inventoryService";
+import { enableAutoReorder } from "@/services/inventoryService";
 
 export function LowStockAlerts() {
   const { 

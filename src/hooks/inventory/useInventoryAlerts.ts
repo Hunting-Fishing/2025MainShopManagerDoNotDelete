@@ -33,7 +33,7 @@ export function useInventoryAlerts() {
 
   // Function to check inventory and create alerts
   const checkInventoryAlerts = async (
-    placeAutomaticOrder: (itemId: string) => void, 
+    placeAutomaticOrder: (itemId: string) => Promise<boolean>, 
     autoReorderSettings: Record<string, { enabled: boolean; threshold: number; quantity: number }>
   ) => {
     try {
@@ -52,7 +52,9 @@ export function useInventoryAlerts() {
           title: "Low Stock Alert",
           message: `${item.name} is running low (${item.quantity} remaining)`,
           type: "warning",
-          link: "/inventory"
+          link: "/inventory",
+          category: "inventory",
+          priority: "medium"
         });
         
         // Check if auto-reorder is enabled and threshold is met
@@ -71,7 +73,9 @@ export function useInventoryAlerts() {
           title: "Out of Stock Alert",
           message: `${item.name} is out of stock and needs to be reordered`,
           type: "error",
-          link: "/inventory"
+          link: "/inventory",
+          category: "inventory",
+          priority: "high"
         });
         
         // Auto-reorder if enabled

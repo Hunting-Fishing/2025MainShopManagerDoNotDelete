@@ -4,12 +4,13 @@ import { SaveTemplateDialog } from "../invoices/SaveTemplateDialog";
 import { Invoice } from "@/types/invoice";
 import { InvoiceTemplate } from "@/types/invoice";
 import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
+import { useState } from "react";
 
 interface InvoiceTemplateActionsProps {
   invoice: Invoice;
   taxRate: number;
   onSelectTemplate?: (template: InvoiceTemplate) => void;
-  onSaveTemplate?: (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount' | 'lastUsed'>) => void;
+  onSaveTemplate?: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usage_count" | "last_used">) => void;
 }
 
 export function InvoiceTemplateActions({
@@ -24,6 +25,9 @@ export function InvoiceTemplateActions({
     updateTemplate
   } = useInvoiceTemplates();
   
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  
   // Create handler functions
   const handleApplyTemplate = (template: InvoiceTemplate) => {
     if (onSelectTemplate) {
@@ -31,7 +35,7 @@ export function InvoiceTemplateActions({
     }
   };
 
-  const handleSaveTemplate = (template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount' | 'lastUsed'>) => {
+  const handleSaveTemplate = (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usage_count" | "last_used">) => {
     if (onSaveTemplate) {
       onSaveTemplate(template);
     } else if (createTemplate) {
@@ -52,18 +56,21 @@ export function InvoiceTemplateActions({
     default_due_date_days: template.default_due_date_days,
     default_notes: template.default_notes,
     usage_count: template.usage_count,
-    createdAt: template.created_at,
-    lastUsed: template.last_used,
+    last_used: template.last_used,
     defaultItems: []
   }));
 
   return (
     <div className="flex gap-2">
       <InvoiceTemplateDialog 
+        open={templateDialogOpen}
+        onClose={() => setTemplateDialogOpen(false)}
         templates={mappedTemplates} 
         onSelectTemplate={handleTemplateSelect} 
       />
       <SaveTemplateDialog 
+        open={saveDialogOpen}
+        onClose={() => setSaveDialogOpen(false)}
         currentInvoice={invoice} 
         taxRate={taxRate}
         onSaveTemplate={handleTemplateSave} 

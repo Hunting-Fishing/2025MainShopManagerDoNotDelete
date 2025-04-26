@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { WorkOrder } from "@/types/workOrder";
-import { formatDate } from "@/utils/formatters";
 
 interface WorkOrderDialogProps {
   open: boolean;
@@ -24,52 +25,93 @@ export function WorkOrderDialog({
   workOrders,
   onSelectWorkOrder,
 }: WorkOrderDialogProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<string | null>(null);
+
+  const handleSelect = () => {
+    const workOrder = workOrders.find(wo => wo.id === selectedWorkOrder);
+    if (workOrder) {
+      onSelectWorkOrder(workOrder);
+      onClose();
+    }
+  };
+
+  // Filter work orders by search term
+  const filteredWorkOrders = searchTerm
+    ? workOrders.filter(
+        (wo) =>
+          wo.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (wo.description && wo.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : workOrders;
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy');
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Select Work Order</DialogTitle>
         </DialogHeader>
-        
-        <ScrollArea className="h-[400px] mt-4">
-          <div className="space-y-4">
-            {workOrders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No work orders found
-              </div>
-            ) : (
-              workOrders.map((workOrder) => (
-                <div
+
+        <input
+          type="text"
+          placeholder="Search work orders..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
+
+        <ScrollArea className="h-96">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12"></TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredWorkOrders.map((workOrder) => (
+                <TableRow
                   key={workOrder.id}
-                  className="p-4 border rounded-lg hover:bg-muted transition-colors cursor-pointer"
-                  onClick={() => onSelectWorkOrder(workOrder)}
+                  className={selectedWorkOrder === workOrder.id ? "bg-muted" : ""}
+                  onClick={() => setSelectedWorkOrder(workOrder.id)}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium">
-                      {workOrder.customer || "Unknown Customer"}
-                    </h3>
-                    <div className="text-sm bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                      {workOrder.status}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                    {workOrder.description || "No description"}
-                  </p>
-                  <div className="flex text-xs text-muted-foreground">
-                    <div>Created: {formatDate(workOrder.created_at || "")}</div>
-                    <div className="ml-4">
-                      Due: {formatDate(workOrder.due_date || "")}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                  <TableCell className="p-2">
+                    <input
+                      type="radio"
+                      name="workOrderSelect"
+                      checked={selectedWorkOrder === workOrder.id}
+                      onChange={() => setSelectedWorkOrder(workOrder.id)}
+                    />
+                  </TableCell>
+                  <TableCell>{workOrder.id}</TableCell>
+                  <TableCell>{workOrder.description}</TableCell>
+                  <TableCell>{formatDate(workOrder.createdAt)}</TableCell>
+                  <TableCell>{workOrder.dueDate ? formatDate(workOrder.dueDate) : '-'}</TableCell>
+                  <TableCell>{workOrder.status}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </ScrollArea>
-        
-        <div className="flex justify-end">
+
+        <div className="flex justify-end space-x-2 mt-4">
           <Button variant="outline" onClick={onClose}>
             Cancel
+          </Button>
+          <Button onClick={handleSelect} disabled={!selectedWorkOrder}>
+            Select
           </Button>
         </div>
       </DialogContent>

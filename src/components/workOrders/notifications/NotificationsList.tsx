@@ -4,7 +4,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { NotificationItem } from './NotificationItem';
 import { WorkOrderNotification, NotificationsListProps } from '@/types/notification';
 
-export function NotificationsList({ notifications, onMarkAsRead }: NotificationsListProps) {
+export function NotificationsList({ notifications, onMarkAsRead, loading }: NotificationsListProps) {
+  if (loading) {
+    return (
+      <div className="p-4 text-center text-slate-500">
+        Loading notifications...
+      </div>
+    );
+  }
+  
   if (notifications.length === 0) {
     return (
       <div className="p-4 text-center text-slate-500">

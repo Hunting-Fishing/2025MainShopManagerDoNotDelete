@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { 
-  getAutoReorderSettings, 
-  enableAutoReorder as enableAutoReorderService,
-  disableAutoReorder as disableAutoReorderService
+  getAutoReorderSettings as getAutoReorderSettingsService, 
+  enableAutoReorder as enableAutoReorderService
 } from "@/services/inventory/autoReorderService";
 import { getInventoryItemById } from "@/services/inventory/crudService";
 import { useNotifications } from "@/context/NotificationsContext";
@@ -24,8 +23,18 @@ export function useAutoReorder() {
   useEffect(() => {
     async function loadSettings() {
       try {
-        const settings = await getAutoReorderSettings();
-        setAutoReorderSettings(settings);
+        const settings = await getAutoReorderSettingsService(null);
+        if (settings) {
+          const formattedSettings: Record<string, AutoReorderSettings> = {};
+          settings.forEach(setting => {
+            formattedSettings[setting.itemId] = {
+              enabled: setting.enabled,
+              threshold: setting.threshold,
+              quantity: setting.quantity
+            };
+          });
+          setAutoReorderSettings(formattedSettings);
+        }
       } catch (error) {
         console.error("Error loading auto-reorder settings:", error);
       } finally {
@@ -39,18 +48,30 @@ export function useAutoReorder() {
   // Function to enable auto-reordering for an item
   const enableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
     try {
-      await enableAutoReorderService(itemId, threshold, quantity);
+      const success = await enableAutoReorderService(itemId, threshold, quantity);
       
-      // Update local state
-      setAutoReorderSettings(prev => ({
-        ...prev,
-        [itemId]: { enabled: true, threshold, quantity }
-      }));
-      
-      toast({
-        title: "Auto-reorder enabled",
-        description: `Auto-reorder has been enabled for this item when stock falls below ${threshold}`,
-      });
+      if (success) {
+        // Update local state
+        setAutoReorderSettings(prev => ({
+          ...prev,
+          [itemId]: { enabled: true, threshold, quantity }
+        }));
+        
+        toast({
+          title: "Auto-reorder enabled",
+          description: `Auto-reorder has been enabled for this item when stock falls below ${threshold}`,
+        });
+
+        return true;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to enable auto-reorder",
+          variant: "destructive",
+        });
+        
+        return false;
+      }
     } catch (error) {
       console.error("Error enabling auto-reorder:", error);
       toast({
@@ -58,13 +79,20 @@ export function useAutoReorder() {
         description: "Failed to enable auto-reorder",
         variant: "destructive",
       });
+      
+      return false;
     }
   };
 
   // Function to disable auto-reordering for an item
   const disableAutoReorder = async (itemId: string) => {
     try {
-      await disableAutoReorderService(itemId);
+      // Call to service function to disable auto-reorder
+      const { error } = await fetch(`/api/inventory/auto-reorder/${itemId}`, {
+        method: 'DELETE',
+      }).then(res => res.json());
+      
+      if (error) throw new Error(error);
       
       // Update local state
       setAutoReorderSettings(prev => {
@@ -79,6 +107,8 @@ export function useAutoReorder() {
         title: "Auto-reorder disabled",
         description: "Auto-reorder has been disabled for this item",
       });
+      
+      return true;
     } catch (error) {
       console.error("Error disabling auto-reorder:", error);
       toast({
@@ -86,6 +116,8 @@ export function useAutoReorder() {
         description: "Failed to disable auto-reorder",
         variant: "destructive",
       });
+      
+      return false;
     }
   };
 
@@ -110,8 +142,11 @@ export function useAutoReorder() {
         type: "info",
         link: "/inventory"
       });
+
+      return true;
     } catch (error) {
       console.error("Error placing automatic order:", error);
+      return false;
     }
   };
 

@@ -1,38 +1,10 @@
 
-import React, { createContext, useState, useEffect, useCallback } from "react";
-import { Notification, NotificationContextType, NotificationPreferences } from "@/types/notification";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { Notification, NotificationContextType, NotificationPreferences, NotificationSubscription } from "@/types/notification";
+import { defaultNotificationPreferences } from "./notifications/defaultData";
 import { playNotificationSound } from "@/utils/notificationSounds";
 
-// Default notification preferences
-const defaultNotificationPreferences: NotificationPreferences = {
-  email: true,
-  push: true,
-  inApp: true,
-  sound: "chime",
-  categories: {
-    workOrders: true,
-    inventory: true,
-    invoices: true,
-    customers: true,
-    system: true
-  },
-  subscriptions: [
-    { category: "workOrders", enabled: true },
-    { category: "inventory", enabled: true },
-    { category: "invoices", enabled: true },
-    { category: "customers", enabled: true },
-    { category: "system", enabled: true }
-  ],
-  frequencies: {
-    workOrders: "realtime",
-    inventory: "realtime",
-    invoices: "daily",
-    customers: "hourly",
-    system: "realtime"
-  }
-};
-
-export const NotificationsContext = createContext<NotificationContextType>({
+const NotificationsContext = createContext<NotificationContextType>({
   notifications: [],
   unreadCount: 0,
   connectionStatus: 'disconnected',
@@ -43,8 +15,11 @@ export const NotificationsContext = createContext<NotificationContextType>({
   markAllAsRead: () => {},
   updatePreferences: () => {},
   triggerTestNotification: () => {},
-  addNotification: () => {}
+  addNotification: () => {},
+  updateSubscription: () => {}
 });
+
+export const useNotifications = () => useContext(NotificationsContext);
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -81,6 +56,26 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setPreferences(prev => ({ ...prev, ...newPreferences }));
   }, []);
 
+  // Update subscription status for a category
+  const updateSubscription = useCallback((category: string, enabled: boolean) => {
+    setPreferences(prev => {
+      // Make a copy of the current subscriptions array
+      const updatedSubscriptions = [...prev.subscriptions];
+      
+      // Find index of the subscription with matching category
+      const index = updatedSubscriptions.findIndex(sub => sub.category === category);
+      
+      // Update or add the subscription
+      if (index !== -1) {
+        updatedSubscriptions[index] = { ...updatedSubscriptions[index], enabled };
+      } else {
+        updatedSubscriptions.push({ category, enabled });
+      }
+      
+      return { ...prev, subscriptions: updatedSubscriptions };
+    });
+  }, []);
+
   // Add a notification
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: Notification = {
@@ -94,12 +89,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     
     // Play sound if enabled
     if (preferences.sound) {
-      const soundToPlay = typeof preferences.sound === 'string' ? preferences.sound : 'chime';
-      try {
-        playNotificationSound(soundToPlay);
-      } catch (error) {
-        console.error('Error playing notification sound:', error);
-      }
+      playNotificationSound(typeof preferences.sound === 'string' ? preferences.sound : 'chime');
     }
   }, [preferences.sound]);
 
@@ -116,11 +106,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     };
     
     setNotifications(prev => [testNotification, ...prev]);
-    try {
-      playNotificationSound('chime');
-    } catch (error) {
-      console.error('Error playing notification sound:', error);
-    }
+    playNotificationSound('chime');
   }, []);
 
   // Connect to notification service on mount
@@ -171,7 +157,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     markAllAsRead,
     updatePreferences,
     triggerTestNotification,
-    addNotification
+    addNotification,
+    updateSubscription
   };
 
   return (

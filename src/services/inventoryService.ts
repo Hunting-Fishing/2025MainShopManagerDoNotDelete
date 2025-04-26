@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { InventoryItem, InventoryItemExtended } from "@/types/inventory";
 import { getInventoryStatus } from "@/services/inventory/utils";
@@ -172,16 +171,48 @@ export const clearAllInventoryItems = async (): Promise<void> => {
 export const reorderItem = async (
   itemId: string, 
   quantity: number
-): Promise<void> => {
-  // Implementation depends on your business logic
-  // This could create a purchase order or just record the reorder
-  const { error } = await supabase.rpc('record_inventory_reorder', {
-    p_item_id: itemId,
-    p_quantity: quantity
-  });
-  
-  if (error) {
-    throw new Error(`Error reordering inventory item: ${error.message}`);
+): Promise<boolean> => {
+  try {
+    // Implementation depends on your business logic
+    // This could create a purchase order or just record the reorder
+    const { error } = await supabase.rpc('record_inventory_reorder', {
+      p_item_id: itemId,
+      p_quantity: quantity
+    });
+    
+    if (error) {
+      throw new Error(`Error reordering inventory item: ${error.message}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in reorderItem:", error);
+    return false;
   }
 };
 
+export const enableAutoReorder = async (
+  itemId: string, 
+  threshold: number, 
+  quantity: number
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('inventory_auto_reorder')
+      .upsert({
+        item_id: itemId,
+        enabled: true,
+        threshold,
+        quantity
+      });
+
+    if (error) {
+      throw new Error(`Error enabling auto-reorder: ${error.message}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in enableAutoReorder:", error);
+    return false;
+  }
+};
