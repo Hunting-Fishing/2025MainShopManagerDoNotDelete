@@ -1,138 +1,92 @@
 
-import React from 'react';
-import { InvoiceItem } from '@/types/invoice';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { InvoiceItem } from '@/types/invoice';
+import { InventoryItem } from '@/types/inventory';
 
-interface InvoiceItemFormProps {
-  item?: InvoiceItem;
-  onSave: (item: InvoiceItem) => void;
-  onCancel: () => void;
+export interface InvoiceItemFormProps {
+  onAddItem: (item: InvoiceItem) => void;
+  inventoryItems?: InventoryItem[];
 }
 
-export function InvoiceItemForm({ item, onSave, onCancel }: InvoiceItemFormProps) {
-  const [formData, setFormData] = React.useState<Partial<InvoiceItem>>(
-    item || {
-      id: `item-${Date.now()}`,
-      name: '',
-      description: '',
-      quantity: 1,
-      price: 0,
-      total: 0,
-      hours: false,
-    }
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    let newValue: string | number = value;
-    if (name === 'quantity' || name === 'price') {
-      newValue = value === '' ? 0 : Number(value);
-    }
-    
-    setFormData(prev => {
-      const updated = { ...prev, [name]: newValue };
-      
-      // Recalculate total when quantity or price changes
-      if (name === 'quantity' || name === 'price') {
-        updated.total = (updated.quantity || 0) * (updated.price || 0);
-      }
-      
-      return updated;
-    });
-  };
-
-  const handleHoursToggle = (checked: boolean) => {
-    setFormData(prev => ({ ...prev, hours: checked }));
-  };
+export function InvoiceItemForm({ onAddItem, inventoryItems = [] }: InvoiceItemFormProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [price, setPrice] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as InvoiceItem);
+    
+    // Create the new item
+    const newItem: InvoiceItem = {
+      id: crypto.randomUUID(),
+      name,
+      description,
+      quantity,
+      price,
+      total: quantity * price
+    };
+    
+    // Add the item
+    onAddItem(newItem);
+    
+    // Reset the form
+    setName('');
+    setDescription('');
+    setQuantity(1);
+    setPrice(0);
   };
 
   return (
-    <Card>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Item/Service Name</Label>
-            <Input 
-              id="name"
-              name="name" 
-              value={formData.name || ''} 
-              onChange={handleChange}
-              placeholder="Item or service name"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description || ''}
-              onChange={handleChange}
-              placeholder="Description"
-              rows={3}
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                name="quantity"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.quantity || ''}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="price">Unit Price</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.price || ''}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="hours"
-              checked={formData.hours || false}
-              onCheckedChange={handleHoursToggle}
-            />
-            <Label htmlFor="hours">Track as Hours</Label>
-          </div>
-        </CardContent>
-        
-        <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">
-            {item ? 'Update Item' : 'Add Item'}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+    <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <div className="grid grid-cols-4 gap-4">
+        <div className="col-span-2">
+          <Label htmlFor="name">Item Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="quantity">Quantity</Label>
+          <Input
+            id="quantity"
+            type="number"
+            min="1"
+            value={quantity}
+            onChange={(e) => setQuantity(Number(e.target.value))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="price">Price</Label>
+          <Input
+            id="price"
+            type="number"
+            min="0"
+            step="0.01"
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            required
+          />
+        </div>
+        <div className="col-span-4">
+          <Label htmlFor="description">Description</Label>
+          <Input
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit">Add Item</Button>
+      </div>
+    </form>
   );
 }

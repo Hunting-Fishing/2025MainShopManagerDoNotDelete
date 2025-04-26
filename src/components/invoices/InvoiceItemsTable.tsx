@@ -1,57 +1,62 @@
 
-import React from "react";
-import { InvoiceItemRow } from "./InvoiceItemRow";
-import { InvoiceItem } from "@/types/invoice";
+import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatCurrency } from '@/utils/formatters';
+import { InvoiceItem } from '@/types/invoice';
+import { InvoiceItemRow } from './InvoiceItemRow';
 
-interface InvoiceItemsTableProps {
+export interface InvoiceItemsTableProps {
   items: InvoiceItem[];
   onRemoveItem: (id: string) => void;
-  onUpdateItemQuantity: (id: string, quantity: number) => void;
-  onUpdateItemDescription: (id: string, description: string) => void;
-  onUpdateItemPrice: (id: string, price: number) => void;
+  onUpdateItem?: (item: InvoiceItem) => void;
+  readOnly?: boolean;
 }
 
-export function InvoiceItemsTable({
-  items,
-  onRemoveItem,
-  onUpdateItemQuantity,
-  onUpdateItemDescription,
-  onUpdateItemPrice,
+export function InvoiceItemsTable({ 
+  items, 
+  onRemoveItem, 
+  onUpdateItem = () => {}, 
+  readOnly = false 
 }: InvoiceItemsTableProps) {
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
-      <div className="p-6 border border-dashed rounded-md text-center text-slate-500">
-        No items added yet. Use the buttons above to add items from inventory or add labor.
+      <div className="text-center py-4 text-slate-500">
+        No items added to this invoice
       </div>
     );
   }
 
   return (
-    <div className="mt-4 border rounded-md">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead>
-          <tr className="bg-slate-50">
-            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Item</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Description</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Qty</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Price</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Total</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200">
-          {items.map((item) => (
-            <InvoiceItemRow
-              key={item.id}
-              item={item}
-              onRemoveItem={onRemoveItem}
-              onUpdateItemQuantity={onUpdateItemQuantity}
-              onUpdateItemDescription={onUpdateItemDescription}
-              onUpdateItemPrice={onUpdateItemPrice}
-            />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Item</TableHead>
+          <TableHead className="text-right w-20">Qty</TableHead>
+          <TableHead className="text-right w-32">Price</TableHead>
+          <TableHead className="text-right w-32">Total</TableHead>
+          <TableHead className="w-10"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <InvoiceItemRow 
+            key={item.id} 
+            item={item} 
+            onRemove={onRemoveItem} 
+            onUpdate={onUpdateItem}
+            readOnly={readOnly}
+          />
+        ))}
+        <TableRow>
+          <TableCell colSpan={3} className="text-right font-medium">
+            Subtotal
+          </TableCell>
+          <TableCell className="text-right font-medium">
+            {formatCurrency(items.reduce((sum, item) => sum + item.total, 0))}
+          </TableCell>
+          <TableCell />
+        </TableRow>
+      </TableBody>
+    </Table>
   );
 }

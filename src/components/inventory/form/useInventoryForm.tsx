@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
 import { getInventoryStatus } from "@/services/inventory/utils";
@@ -17,10 +18,10 @@ export function useInventoryForm() {
     location: "",
     status: "In Stock",
     description: "",
+    updated_at: new Date().toISOString(),
+    // Add any other required fields
     reorderPoint: 5,
-    unitPrice: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    unitPrice: 0
   });
   
   const [categories, setCategories] = useState<string[]>([]);
@@ -60,7 +61,7 @@ export function useInventoryForm() {
           (name === "reorderPoint" ? numValue : formData.min_stock_level);
         
         // Create a new object for state update
-        const newFormData = { ...formData } as any;
+        const newFormData = { ...formData };
         
         // Update the primary field
         if (name === "quantity") {

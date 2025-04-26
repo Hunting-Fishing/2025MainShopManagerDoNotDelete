@@ -1,28 +1,11 @@
 
-// Simple notification sound player
-export function playNotificationSound(soundType: string | boolean) {
-  if (!soundType || soundType === false) return;
-  
+export function playNotificationSound(sound: string) {
   try {
-    // Define sound file paths based on type
-    const soundMap: Record<string, string> = {
-      chime: '/sounds/chime.mp3',
-      bell: '/sounds/bell.mp3',
-      alert: '/sounds/alert.mp3',
-      default: '/sounds/notification.mp3'
-    };
-    
-    // Get sound path or use default
-    const soundPath = typeof soundType === 'string' && soundMap[soundType] 
-      ? soundMap[soundType] 
-      : soundMap.default;
-    
-    // Create and play audio
-    const audio = new Audio(soundPath);
+    const audio = new Audio(`/sounds/${sound}.mp3`);
     audio.play().catch(err => {
-      console.log("Could not play notification sound:", err);
+      console.error("Error playing notification sound:", err);
     });
-  } catch (error) {
-    console.error("Error playing notification sound:", error);
+  } catch (e) {
+    console.error("Error creating Audio object:", e);
   }
 }

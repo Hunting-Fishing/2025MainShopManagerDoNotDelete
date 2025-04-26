@@ -15,15 +15,15 @@ export interface Notification {
 export interface NotificationPreferences {
   email: boolean;
   push: boolean;
-  inApp: boolean; // Added this
+  inApp: boolean;
   sound: boolean | string;
   categories: {
     [key: string]: boolean;
   };
-  subscriptions: Array<{ category: string; enabled: boolean }>; // Added this
+  subscriptions: Array<{ category: string; enabled: boolean }>;
   frequencies: {
     [category: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
-  }; // Added this
+  };
 }
 
 export interface NotificationContextType {

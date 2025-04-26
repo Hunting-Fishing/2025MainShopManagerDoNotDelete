@@ -1,5 +1,11 @@
 
-import { InvoiceItem, InvoiceTemplateItem } from "@/types/invoice";
+import { InvoiceItem } from "@/types/invoice";
+
+// Define InvoiceTemplateItem directly in this file if it doesn't exist in types
+interface InvoiceTemplateItem extends InvoiceItem {
+  templateId: string;
+  createdAt: string;
+}
 
 /**
  * Convert regular invoice items to template items

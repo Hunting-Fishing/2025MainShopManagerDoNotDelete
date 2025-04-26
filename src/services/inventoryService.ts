@@ -1,100 +1,212 @@
 
-// Re-export all the inventory services from their respective files
+import { supabase } from "@/lib/supabase";
+import { InventoryItem, InventoryItemExtended } from "@/types/inventory";
 
-// From crudService.ts
-export {
-  getAllInventoryItems,
-  getInventoryItemById,
-  createInventoryItem,
-  updateInventoryItem,
-  deleteInventoryItem,
-  updateInventoryQuantity,
-  clearAllInventoryItems
-} from './inventory/crudService';
+// Get all inventory items
+export const getAllInventoryItems = async (): Promise<InventoryItem[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('*')
+      .order('name');
 
-// From autoReorderService.ts
-export {
-  enableAutoReorder,
-  reorderItem,
-  getAutoReorderSettings
-} from './inventory/autoReorderService';
+    if (error) {
+      throw error;
+    }
 
-// From utils.ts
-export {
-  mapDbItemToInventoryItem,
-  mapDbToInventoryItem,
-  determineInventoryStatus,
-  getInventoryStatus,
-  formatInventoryItem,
-  mapInventoryItemToDbFormat
-} from './inventory/utils';
+    // Convert data to InventoryItem interface
+    return data.map(item => ({
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      description: item.description || "",
+      price: Number(item.unit_price),
+      category: item.category,
+      supplier: item.supplier,
+      status: item.status,
+      quantity: Number(item.quantity),
+      reorderPoint: item.reorder_point || item.min_stock_level
+    }));
+  } catch (error) {
+    console.error('Error fetching inventory items:', error);
+    return [];
+  }
+};
 
-// Added alias for component compatibility
+// For backward compatibility
 export const getInventoryItems = getAllInventoryItems;
 
-// Add functions for work order inventory
-export const checkItemAvailability = async (itemId: string, quantity: number): Promise<boolean> => {
+// Add a new inventory item
+export const addInventoryItem = async (item: Omit<InventoryItemExtended, "id">): Promise<InventoryItemExtended | null> => {
   try {
-    const { getAllInventoryItems } = await import('./inventory/crudService');
-    const items = await getAllInventoryItems();
-    const item = items.find(i => i.id === itemId);
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .insert([{
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        supplier: item.supplier,
+        quantity: item.quantity,
+        min_stock_level: item.min_stock_level || item.reorderPoint,
+        unit_price: item.unit_price || item.unitPrice,
+        location: item.location,
+        status: item.status,
+        description: item.description
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      ...data,
+      reorderPoint: data.min_stock_level,
+      unitPrice: data.unit_price
+    };
+  } catch (error) {
+    console.error('Error adding inventory item:', error);
+    return null;
+  }
+};
+
+// Update an existing inventory item
+export const updateInventoryItem = async (id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended | null> => {
+  try {
+    // Prepare updates with correct field names
+    const dbUpdates: any = { ...updates };
     
-    if (!item) return false;
-    return item.quantity >= quantity;
+    // Map from camelCase to snake_case fields
+    if (updates.unitPrice !== undefined) dbUpdates.unit_price = updates.unitPrice;
+    if (updates.reorderPoint !== undefined) dbUpdates.min_stock_level = updates.reorderPoint;
+    
+    // Remove mapped fields to prevent duplicate updates
+    delete dbUpdates.unitPrice;
+    delete dbUpdates.reorderPoint;
+
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      ...data,
+      reorderPoint: data.min_stock_level,
+      unitPrice: data.unit_price
+    };
   } catch (error) {
-    console.error("Error checking item availability:", error);
+    console.error('Error updating inventory item:', error);
+    return null;
+  }
+};
+
+// Delete an inventory item
+export const deleteInventoryItem = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('inventory_items')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting inventory item:', error);
     return false;
   }
 };
 
-export const reserveInventoryItems = async (
-  workOrderId: string, 
-  items: {id: string, quantity: number}[]
-): Promise<boolean> => {
+// Clear all inventory items
+export const clearAllInventoryItems = async (): Promise<boolean> => {
   try {
-    const { data, error } = await import('@/lib/supabase').then(m => m.supabase)
-      .from('inventory_transactions')
-      .insert(
-        items.map(item => ({
-          inventory_item_id: item.id,
-          quantity: -item.quantity, // Negative for reservation
-          transaction_type: 'reserve',
-          reference_id: workOrderId,
-          reference_type: 'work_order',
-          notes: `Reserved for Work Order ${workOrderId}`
-        }))
-      );
-      
-    if (error) throw error;
+    // This should be used with caution - typically you'd have safeguards
+    const { error } = await supabase
+      .from('inventory_items')
+      .delete()
+      .not('id', 'eq', 'dummy'); // This will delete all records
+
+    if (error) {
+      throw error;
+    }
+
     return true;
   } catch (error) {
-    console.error("Error reserving inventory items:", error);
+    console.error('Error clearing inventory items:', error);
     return false;
   }
 };
 
-export const consumeWorkOrderInventory = async (
-  workOrderId: string, 
-  items: {id: string, quantity: number}[]
+// Reorder functionality
+export const reorderItem = async (
+  itemId: string, 
+  quantity: number
 ): Promise<boolean> => {
   try {
-    const { data, error } = await import('@/lib/supabase').then(m => m.supabase)
+    // First get the current item details
+    const { data: item, error: getError } = await supabase
+      .from('inventory_items')
+      .select('quantity')
+      .eq('id', itemId)
+      .single();
+    
+    if (getError) throw getError;
+    
+    // Update the quantity
+    const newQuantity = (item.quantity || 0) + quantity;
+    const { error: updateError } = await supabase
+      .from('inventory_items')
+      .update({ quantity: newQuantity })
+      .eq('id', itemId);
+    
+    if (updateError) throw updateError;
+    
+    // Log the reorder transaction
+    await supabase
       .from('inventory_transactions')
-      .insert(
-        items.map(item => ({
-          inventory_item_id: item.id,
-          quantity: -item.quantity, // Negative for consumption
-          transaction_type: 'consume',
-          reference_id: workOrderId,
-          reference_type: 'work_order',
-          notes: `Consumed by Work Order ${workOrderId}`
-        }))
-      );
-      
+      .insert({
+        inventory_item_id: itemId,
+        quantity,
+        transaction_type: 'reorder'
+      });
+
+    return true;
+  } catch (error) {
+    console.error('Error reordering inventory item:', error);
+    return false;
+  }
+};
+
+// Auto-reorder settings
+export const enableAutoReorder = async (
+  itemId: string,
+  threshold: number,
+  reorderQuantity: number
+): Promise<boolean> => {
+  try {
+    // Update auto-reorder settings
+    const { error } = await supabase
+      .from('inventory_auto_reorder')
+      .upsert({
+        item_id: itemId,
+        enabled: true,
+        threshold,
+        quantity: reorderQuantity
+      });
+
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error("Error consuming inventory items:", error);
+    console.error('Error setting auto-reorder:', error);
     return false;
   }
 };

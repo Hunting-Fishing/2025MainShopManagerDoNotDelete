@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -60,12 +61,12 @@ export function SaveTemplateDialog({
         id: crypto.randomUUID(),
         name,
         description,
-        defaultNotes: defaultNotes || "",
-        defaultDueDateDays,
-        defaultTaxRate,
-        lastUsed: null,
+        default_notes: defaultNotes || "",
+        default_due_date_days: defaultDueDateDays,
+        default_tax_rate: defaultTaxRate,
+        last_used: null,
         createdAt: new Date().toISOString(),
-        usageCount: 0,
+        usage_count: 0,
         defaultItems: templateItems
       };
 
