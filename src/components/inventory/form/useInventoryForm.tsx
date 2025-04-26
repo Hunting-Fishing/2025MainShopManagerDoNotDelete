@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
 import { getInventoryStatus } from "@/services/inventory/utils";
@@ -18,9 +17,10 @@ export function useInventoryForm() {
     location: "",
     status: "In Stock",
     description: "",
-    // Add compatible properties
     reorderPoint: 5,
-    unitPrice: 0
+    unitPrice: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
   
   const [categories, setCategories] = useState<string[]>([]);
@@ -60,7 +60,7 @@ export function useInventoryForm() {
           (name === "reorderPoint" ? numValue : formData.min_stock_level);
         
         // Create a new object for state update
-        const newFormData = { ...formData };
+        const newFormData = { ...formData } as any;
         
         // Update the primary field
         if (name === "quantity") {
@@ -86,7 +86,7 @@ export function useInventoryForm() {
       } else {
         // For other numeric fields, just update the value
         setFormData(prev => {
-          const updated = { ...prev };
+          const updated = { ...prev } as any;
           if (name === "unit_price") {
             updated.unit_price = numValue;
             updated.unitPrice = numValue; // Update both properties
@@ -94,7 +94,7 @@ export function useInventoryForm() {
             updated.unitPrice = numValue;
             updated.unit_price = numValue; // Update both properties
           } else {
-            updated[name as keyof typeof updated] = numValue;
+            updated[name] = numValue;
           }
           return updated;
         });

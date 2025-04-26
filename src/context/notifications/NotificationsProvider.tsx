@@ -10,6 +10,7 @@ export const NotificationsContext = createContext<NotificationContextType>({
   connectionStatus: 'disconnected',
   preferences: defaultNotificationPreferences,
   clearNotification: () => {},
+  clearAllNotifications: () => {},
   markAsRead: () => {},
   markAllAsRead: () => {},
   updatePreferences: () => {},
@@ -28,6 +29,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   // Handle clearing a notification
   const clearNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
+  }, []);
+
+  // Clear all notifications
+  const clearAllNotifications = useCallback(() => {
+    setNotifications([]);
   }, []);
 
   // Mark a notification as read
@@ -60,7 +66,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     
     // Play sound if enabled
     if (preferences.sound) {
-      playNotificationSound(preferences.sound);
+      playNotificationSound(typeof preferences.sound === 'string' ? preferences.sound : 'chime');
     }
   }, [preferences.sound]);
 
@@ -123,6 +129,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     connectionStatus,
     preferences,
     clearNotification,
+    clearAllNotifications,
     markAsRead,
     markAllAsRead,
     updatePreferences,

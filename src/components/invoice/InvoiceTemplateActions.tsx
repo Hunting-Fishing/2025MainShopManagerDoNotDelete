@@ -1,5 +1,5 @@
 
-import { InvoiceTemplateDialog } from "../invoices/InvoiceTemplateDialog";
+import { InvoiceTemplateDialog } from "../invoices/templates/InvoiceTemplateDialog";
 import { SaveTemplateDialog } from "../invoices/SaveTemplateDialog";
 import { Invoice } from "@/types/invoice";
 import { InvoiceTemplate } from "@/types/invoice";
@@ -21,7 +21,7 @@ export function InvoiceTemplateActions({
   const { 
     templates,
     createTemplate,
-    updateTemplate 
+    updateTemplate
   } = useInvoiceTemplates();
   
   // Create handler functions
@@ -43,10 +43,24 @@ export function InvoiceTemplateActions({
   const handleTemplateSelect = onSelectTemplate || handleApplyTemplate;
   const handleTemplateSave = onSaveTemplate || handleSaveTemplate;
 
+  // Map the templates from useInvoiceTemplates to the expected format
+  const mappedTemplates = templates.map(template => ({
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    default_tax_rate: template.default_tax_rate,
+    default_due_date_days: template.default_due_date_days,
+    default_notes: template.default_notes,
+    usage_count: template.usage_count,
+    createdAt: template.created_at,
+    lastUsed: template.last_used,
+    defaultItems: []
+  }));
+
   return (
     <div className="flex gap-2">
       <InvoiceTemplateDialog 
-        templates={templates} 
+        templates={mappedTemplates} 
         onSelectTemplate={handleTemplateSelect} 
       />
       <SaveTemplateDialog 

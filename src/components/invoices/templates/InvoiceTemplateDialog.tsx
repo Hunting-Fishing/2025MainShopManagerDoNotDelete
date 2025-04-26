@@ -1,12 +1,10 @@
 
-import React, { useState } from "react";
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText } from "lucide-react"; // Changed from FileTemplate to FileText
-import { InvoiceTemplate } from "@/types/invoice";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { InvoiceTemplate } from '@/types/invoice';
+import { Files } from 'lucide-react'; // Using Files instead of FileTemplate
 
 interface InvoiceTemplateDialogProps {
   templates: InvoiceTemplate[];
@@ -15,17 +13,17 @@ interface InvoiceTemplateDialogProps {
 
 export function InvoiceTemplateDialog({ templates, onSelectTemplate }: InvoiceTemplateDialogProps) {
   const [open, setOpen] = useState(false);
-  
+
   const handleSelectTemplate = (template: InvoiceTemplate) => {
     onSelectTemplate(template);
     setOpen(false);
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <FileText className="mr-2 h-4 w-4" />
+        <Button variant="outline" className="flex items-center gap-2">
+          <Files className="h-4 w-4" />
           Load Template
         </Button>
       </DialogTrigger>
@@ -33,13 +31,17 @@ export function InvoiceTemplateDialog({ templates, onSelectTemplate }: InvoiceTe
         <DialogHeader>
           <DialogTitle>Select Invoice Template</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="mt-4 max-h-72">
-          <div className="space-y-2">
-            {templates && templates.length > 0 ? (
-              templates.map((template) => (
+        <ScrollArea className="max-h-[50vh]">
+          {templates.length === 0 ? (
+            <div className="py-6 text-center text-muted-foreground">
+              No templates found. Create one by saving an invoice as a template.
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              {templates.map((template) => (
                 <div
                   key={template.id}
-                  className="flex items-center justify-between p-3 cursor-pointer rounded-md hover:bg-muted"
+                  className="flex justify-between items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
                   onClick={() => handleSelectTemplate(template)}
                 >
                   <div>
@@ -48,17 +50,13 @@ export function InvoiceTemplateDialog({ templates, onSelectTemplate }: InvoiceTe
                       <p className="text-sm text-muted-foreground">{template.description}</p>
                     )}
                   </div>
-                  <Button size="sm" variant="ghost">
+                  <Button variant="ghost" size="sm">
                     Select
                   </Button>
                 </div>
-              ))
-            ) : (
-              <p className="text-center p-4 text-muted-foreground">
-                No templates available. Save an invoice as a template first.
-              </p>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </ScrollArea>
       </DialogContent>
     </Dialog>

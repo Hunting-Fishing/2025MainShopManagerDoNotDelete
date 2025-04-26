@@ -29,6 +29,9 @@ export {
   mapInventoryItemToDbFormat
 } from './inventory/utils';
 
+// Added alias for component compatibility
+export const getInventoryItems = getAllInventoryItems;
+
 // Add functions for work order inventory
 export const checkItemAvailability = async (itemId: string, quantity: number): Promise<boolean> => {
   try {
