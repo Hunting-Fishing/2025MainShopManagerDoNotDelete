@@ -44,3 +44,26 @@ export const truncateText = (text: string, maxLength: number): string => {
   
   return text.slice(0, maxLength) + '...';
 };
+
+/**
+ * Format phone number to standard format
+ * @param phone - Phone number string
+ * @returns Formatted phone number (XXX-XXX-XXXX)
+ */
+export const formatPhoneNumber = (phone: string): string => {
+  if (!phone) return '';
+  
+  // Remove all non-numeric characters
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Check if the input is of correct length
+  if (cleaned.length === 10) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  } else if (cleaned.length > 10) {
+    // Handle country code
+    return `+${cleaned.slice(0, cleaned.length - 10)}-${cleaned.slice(-10, -7)}-${cleaned.slice(-7, -4)}-${cleaned.slice(-4)}`;
+  }
+  
+  // If the input is not a valid phone number, return it as is
+  return phone;
+};

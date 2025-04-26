@@ -10,10 +10,14 @@ export interface Notification {
   link?: string;
   actionText?: string;
   actionLink?: string;
+  priority?: 'high' | 'medium' | 'low';
+  status?: string;
+  source?: string;
 }
 
 export interface WorkOrderNotification extends Notification {
   workOrderId: string;
+  status?: string;
 }
 
 export interface NotificationPreferences {
@@ -22,7 +26,10 @@ export interface NotificationPreferences {
   push: boolean;
   desktop: boolean;
   browser: boolean;
+  inApp: boolean;
+  categories: Record<string, boolean>;
   subscriptions: NotificationSubscription[];
+  frequencies: Record<string, 'realtime' | 'hourly' | 'daily' | 'weekly'>;
 }
 
 export interface NotificationSubscription {

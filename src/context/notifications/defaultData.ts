@@ -5,6 +5,8 @@ export const defaultNotificationPreferences: NotificationPreferences = {
   email: true,
   push: true,
   inApp: true,
+  desktop: true,
+  browser: true,
   sound: 'chime',
   categories: {
     workOrders: true,

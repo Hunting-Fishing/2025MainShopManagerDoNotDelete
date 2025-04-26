@@ -1,60 +1,39 @@
 
 import React from "react";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface InventoryFormStatusProps {
-  status: string;
+  value: string;
+  onValueChange: (value: string) => void;
 }
 
-export function InventoryFormStatus({ status }: InventoryFormStatusProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "In Stock":
-        return "text-green-600";
-      case "Low Stock":
-        return "text-amber-600";
-      case "Out of Stock":
-        return "text-red-600";
-      case "Special Order":
-        return "text-purple-600";
-      case "On Order":
-        return "text-blue-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
-  const getStatusBackground = (status: string) => {
-    switch (status) {
-      case "In Stock":
-        return "bg-green-50";
-      case "Low Stock":
-        return "bg-amber-50";
-      case "Out of Stock":
-        return "bg-red-50";
-      case "Special Order":
-        return "bg-purple-50";
-      case "On Order":
-        return "bg-blue-50";
-      default:
-        return "bg-gray-50";
-    }
-  };
-
+export function InventoryFormStatus({ value, onValueChange }: InventoryFormStatusProps) {
   return (
-    <div className={`mt-4 px-4 py-3 ${getStatusBackground(status)} border border-gray-200 rounded-md`}>
-      <div className="text-sm font-medium text-gray-700">
-        Item Status:{" "}
-        <span className={`font-semibold ${getStatusColor(status)}`}>
-          {status}
-        </span>
-      </div>
-      <p className="text-xs text-gray-500 mt-1">
-        {status === "Special Order" 
-          ? "This item is specially ordered for a specific job and not kept in inventory" 
-          : status === "On Order" 
-            ? "This item has been ordered and is awaiting delivery" 
-            : "Status is automatically calculated based on quantity and reorder point"}
-      </p>
+    <div className="space-y-2">
+      <Label>Status</Label>
+      <RadioGroup
+        value={value}
+        onValueChange={onValueChange}
+        className="flex flex-wrap gap-4"
+      >
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="In Stock" id="in-stock" />
+          <Label htmlFor="in-stock" className="cursor-pointer">In Stock</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="Low Stock" id="low-stock" />
+          <Label htmlFor="low-stock" className="cursor-pointer">Low Stock</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="Out of Stock" id="out-of-stock" />
+          <Label htmlFor="out-of-stock" className="cursor-pointer">Out of Stock</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="Discontinued" id="discontinued" />
+          <Label htmlFor="discontinued" className="cursor-pointer">Discontinued</Label>
+        </div>
+      </RadioGroup>
     </div>
   );
 }

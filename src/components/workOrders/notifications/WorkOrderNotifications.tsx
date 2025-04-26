@@ -1,53 +1,73 @@
 
-import React, { useEffect } from 'react';
-import { useWorkOrderNotifications } from '@/hooks/workOrders/useWorkOrderNotifications';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { NotificationsList } from './NotificationsList';
+import { WorkOrderNotification } from '@/types/notification';
 
-export function WorkOrderNotifications({ workOrderId }: { workOrderId: string }) {
-  const { notifications, loading } = useWorkOrderNotifications(workOrderId);
+interface WorkOrderNotificationsProps {
+  workOrderId: string;
+}
+
+export const WorkOrderNotifications: React.FC<WorkOrderNotificationsProps> = ({ workOrderId }) => {
+  const [notifications, setNotifications] = useState<WorkOrderNotification[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const processPendingNotifications = async () => {
-      const pendingNotifications = notifications.filter(n => n.status === 'pending')
-      
-      if (pendingNotifications.length === 0) return
-
+    const fetchNotifications = async () => {
       try {
-        const response = await supabase.functions.invoke('process-notifications', {
-          body: { notification_ids: pendingNotifications.map(n => n.id) }
-        });
-
-        if (!response.data?.success) {
-          throw new Error('Failed to process notifications');
-        }
+        // In a real app, this would be an API call
+        // For now, we'll simulate a successful response with mock data
+        setTimeout(() => {
+          const mockNotifications: WorkOrderNotification[] = [
+            {
+              id: '1',
+              workOrderId,
+              title: 'Work Order Created',
+              message: 'Work order has been created successfully',
+              read: false,
+              timestamp: new Date(Date.now() - 3600000).toISOString(),
+              category: 'workOrders',
+              type: 'success',
+              status: 'created'
+            },
+            {
+              id: '2',
+              workOrderId,
+              title: 'Technician Assigned',
+              message: 'John Doe has been assigned to this work order',
+              read: true,
+              timestamp: new Date(Date.now() - 7200000).toISOString(),
+              category: 'workOrders',
+              type: 'info',
+              status: 'assigned'
+            }
+          ];
+          
+          setNotifications(mockNotifications);
+          setLoading(false);
+        }, 1000);
       } catch (error) {
-        console.error('Notification processing error:', error);
-        toast({
-          title: 'Notification Error',
-          description: 'Failed to send notifications',
-          variant: 'destructive'
-        });
+        console.error('Error fetching work order notifications:', error);
+        setLoading(false);
       }
     };
+    
+    fetchNotifications();
+  }, [workOrderId]);
 
-    processPendingNotifications();
-  }, [notifications]);
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notification => notification.id === id ? { ...notification, read: true } : notification)
+    );
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          Notifications
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <NotificationsList notifications={notifications} loading={loading} />
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Notifications</h3>
+      <NotificationsList 
+        notifications={notifications} 
+        loading={loading}
+        onMarkAsRead={handleMarkAsRead}
+      />
+    </div>
   );
-}
+};

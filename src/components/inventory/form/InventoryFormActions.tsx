@@ -5,30 +5,25 @@ import { Button } from "@/components/ui/button";
 interface InventoryFormActionsProps {
   loading: boolean;
   onCancel: () => void;
-  submitLabel?: string;
-  showSpecialOrderButton?: boolean;
-  onSpecialOrder?: () => void;
+  isEditing: boolean;
 }
 
-export function InventoryFormActions({
-  loading,
-  onCancel,
-  submitLabel = "Add Item",
-  showSpecialOrderButton = false,
-  onSpecialOrder
-}: InventoryFormActionsProps) {
+export function InventoryFormActions({ loading, onCancel, isEditing }: InventoryFormActionsProps) {
   return (
-    <div className="flex justify-end space-x-4">
-      <Button type="button" variant="outline" onClick={onCancel}>
+    <div className="flex justify-end gap-4">
+      <Button 
+        type="button" 
+        variant="outline"
+        onClick={onCancel}
+        disabled={loading}
+      >
         Cancel
       </Button>
-      {showSpecialOrderButton && onSpecialOrder && (
-        <Button type="button" variant="outline" onClick={onSpecialOrder}>
-          Create Special Order
-        </Button>
-      )}
-      <Button type="submit" disabled={loading}>
-        {loading ? "Adding..." : submitLabel}
+      <Button 
+        type="submit" 
+        disabled={loading}
+      >
+        {loading ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
       </Button>
     </div>
   );

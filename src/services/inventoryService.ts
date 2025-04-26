@@ -45,3 +45,59 @@ export async function updateWorkOrderInventoryItems(workOrderId: string, items: 
   console.log(`Updating inventory for work order ${workOrderId}:`, items);
   // No return value needed as this is a void function
 }
+
+// Reorder an inventory item
+export async function reorderItem(itemId: string, quantity: number): Promise<boolean> {
+  // This would be an API call in a real application
+  console.log(`Reordering ${quantity} units of item ${itemId}`);
+  return true;
+}
+
+// Get all inventory items
+export async function getInventoryItems(): Promise<InventoryItemExtended[]> {
+  // This would be an API call in a real application
+  // For now, we'll return mock data
+  return [
+    {
+      id: 'inv-1',
+      name: 'Oil Filter',
+      sku: 'OIL-F-103',
+      category: 'Filters',
+      supplier: 'AutoParts Inc',
+      quantity: 15,
+      min_stock_level: 10,
+      reorderPoint: 10,
+      unit_price: 8.99,
+      unitPrice: 8.99,
+      location: 'Shelf A3',
+      status: 'In Stock',
+      description: 'Standard oil filter for most vehicles',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'inv-2',
+      name: 'Brake Pad Set',
+      sku: 'BRK-P-254',
+      category: 'Brakes',
+      supplier: 'BrakeMasters',
+      quantity: 5,
+      min_stock_level: 8,
+      reorderPoint: 8,
+      unit_price: 45.99,
+      unitPrice: 45.99,
+      location: 'Shelf B2',
+      status: 'Low Stock',
+      description: 'Front brake pad set for sedans',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  ];
+}
+
+// Clear all inventory items (for demo/reset purposes)
+export async function clearAllInventoryItems(): Promise<boolean> {
+  // This would be an API call in a real application
+  console.log('Clearing all inventory items');
+  return true;
+}

@@ -5,8 +5,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { NoInventoryAlerts } from "./alerts/NoInventoryAlerts";
 import { AlertItemRow } from "./alerts/AlertItemRow";
-import { reorderItem } from "@/services/inventoryService";
-import { enableAutoReorder } from "@/services/inventoryService";
+import { reorderItem, enableAutoReorder } from "@/services/inventoryService";
 
 export function LowStockAlerts() {
   const { 
@@ -26,8 +25,8 @@ export function LowStockAlerts() {
     return await reorderItem(itemId, quantity);
   };
 
-  const handleEnableAutoReorder = async (itemId: string, threshold: number, quantity: number) => {
-    return await enableAutoReorder(itemId, threshold, quantity);
+  const handleEnableAutoReorder = async (itemId: string, settings: { threshold: number, quantity: number }) => {
+    return await enableAutoReorder(itemId, settings);
   };
 
   return (

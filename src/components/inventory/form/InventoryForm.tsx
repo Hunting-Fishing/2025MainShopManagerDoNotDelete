@@ -178,7 +178,10 @@ export function InventoryForm({ onSubmit, loading, onCancel, item }: InventoryFo
         name="status"
         control={form.control}
         render={({ field }) => (
-          <InventoryFormStatus status={field.value} onChange={field.onChange} />
+          <InventoryFormStatus 
+            value={field.value} 
+            onValueChange={field.onChange} 
+          />
         )}
       />
       
