@@ -1,257 +1,166 @@
+import { supabase } from '@/lib/supabase';
+import { InventoryItemExtended } from '@/types/inventory';
 
-import { supabase } from "@/lib/supabase";
-import { InventoryItemExtended } from "@/types/inventory";
-import { mapDbItemToInventoryItem, mapInventoryItemToDbFormat, getInventoryStatus } from "./utils";
-import { handleApiError } from "@/utils/errorHandling";
-import { createInventoryTransaction } from "./transactionService";
-
-// Fetch all inventory items
-export async function getAllInventoryItems(): Promise<InventoryItemExtended[]> {
+/**
+ * Get inventory item by ID
+ */
+export const getInventoryItemById = async (itemId: string): Promise<InventoryItemExtended | null> => {
   try {
     const { data, error } = await supabase
-      .from("inventory_items")
-      .select("*")
-      .order("name");
-
-    if (error) throw error;
-
-    // Map the database fields to our InventoryItemExtended type
-    return (data || []).map(mapDbItemToInventoryItem);
-  } catch (error) {
-    handleApiError(error, "Failed to fetch inventory items");
-    throw error;
-  }
-}
-
-// Fetch a single inventory item
-export async function getInventoryItemById(id: string): Promise<InventoryItemExtended | null> {
-  try {
-    const { data, error } = await supabase
-      .from("inventory_items")
-      .select("*")
-      .eq("id", id)
+      .from('inventory_items')
+      .select('*')
+      .eq('id', itemId)
       .single();
 
     if (error) throw error;
-
+    
     if (!data) return null;
 
-    return mapDbItemToInventoryItem(data);
+    return {
+      id: data.id,
+      name: data.name,
+      sku: data.sku || '',
+      category: data.category || '',
+      supplier: data.supplier || '',
+      quantity: data.quantity || 0,
+      reorderPoint: data.reorder_point || 0,
+      unitPrice: data.unit_price || 0,
+      location: data.location || '',
+      status: data.quantity <= 0 ? 'Out of Stock' : 
+             data.quantity <= data.reorder_point ? 'Low Stock' : 'In Stock',
+      description: data.description || ''
+    };
   } catch (error) {
-    handleApiError(error, `Failed to fetch inventory item ${id}`);
-    throw error;
+    console.error('Error fetching inventory item:', error);
+    return null;
   }
-}
+};
 
-// Create a new inventory item
-export async function createInventoryItem(item: Omit<InventoryItemExtended, "id">): Promise<InventoryItemExtended> {
+/**
+ * Get all inventory items
+ */
+export const getAllInventoryItems = async (): Promise<InventoryItemExtended[]> => {
   try {
-    // Determine the status based on quantity and reorder point
-    const status = getInventoryStatus(item.quantity, item.reorderPoint);
-    
-    // Convert to database format
-    const dbItem = mapInventoryItemToDbFormat({
-      ...item,
-      status
-    });
-
-    // Ensure required fields are present
-    if (!dbItem.name || !dbItem.sku || !dbItem.category || !dbItem.supplier || dbItem.unit_price === undefined) {
-      throw new Error("Missing required inventory item fields");
-    }
-
     const { data, error } = await supabase
-      .from("inventory_items")
-      .insert({
-        name: dbItem.name,
-        sku: dbItem.sku,
-        category: dbItem.category,
-        supplier: dbItem.supplier,
-        unit_price: dbItem.unit_price,
-        quantity: dbItem.quantity,
-        reorder_point: dbItem.reorder_point,
-        location: dbItem.location,
-        status: dbItem.status,
-        description: dbItem.description
-      })
-      .select()
-      .single();
+      .from('inventory_items')
+      .select('*')
+      .order('name');
 
     if (error) throw error;
 
-    const createdItem = mapDbItemToInventoryItem(data);
-    
-    // Create an initial inventory transaction for the item
-    if (item.quantity > 0) {
-      await createInventoryTransaction({
-        inventory_item_id: createdItem.id,
-        transaction_type: "adjustment",
-        quantity: item.quantity,
-        notes: "Initial inventory setup"
-      });
-    }
-
-    return createdItem;
+    // Map the data to InventoryItemExtended format
+    return data.map(item => ({
+      id: item.id,
+      name: item.name,
+      sku: item.sku || '',
+      category: item.category || '',
+      supplier: item.supplier || '',
+      quantity: item.quantity || 0,
+      reorderPoint: item.reorder_point || 0,
+      unitPrice: item.unit_price || 0,
+      location: item.location || '',
+      status: item.quantity <= 0 ? 'Out of Stock' : 
+             item.quantity <= item.reorder_point ? 'Low Stock' : 'In Stock'
+    }));
   } catch (error) {
-    handleApiError(error, "Failed to create inventory item");
+    console.error('Error fetching inventory items:', error);
     throw error;
   }
-}
+};
 
-// Update an inventory item
-export async function updateInventoryItem(id: string, updates: Partial<InventoryItemExtended>): Promise<InventoryItemExtended> {
+/**
+ * Create a new inventory item
+ */
+export const createInventoryItem = async (item: Omit<InventoryItemExtended, 'id'>): Promise<string | null> => {
   try {
-    // Validate required fields if they're being updated
-    if (updates.name === "") throw new Error("Name cannot be empty");
-    if (updates.sku === "") throw new Error("SKU cannot be empty");
-    if (updates.category === "") throw new Error("Category cannot be empty");
-    if (updates.supplier === "") throw new Error("Supplier cannot be empty");
-    if (updates.unitPrice !== undefined && updates.unitPrice < 0) throw new Error("Unit price cannot be negative");
-    
-    // If quantity is updated, we need to recalculate the status
-    if (updates.quantity !== undefined) {
-      // Get the reorder point, either from the updates or from the current item
-      let reorderPoint = updates.reorderPoint;
-      if (reorderPoint === undefined) {
-        // Get the current item to check against its reorder point
-        const currentItem = await getInventoryItemById(id);
-        if (currentItem) {
-          reorderPoint = currentItem.reorderPoint;
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .insert([
+        { 
+          name: item.name,
+          sku: item.sku,
+          category: item.category,
+          supplier: item.supplier,
+          quantity: item.quantity,
+          reorder_point: item.reorderPoint,
+          unit_price: item.unitPrice,
+          location: item.location,
+          status: item.status,
+          description: item.description
         }
-      }
-      
-      if (reorderPoint !== undefined) {
-        updates.status = getInventoryStatus(updates.quantity, reorderPoint);
-      }
-    }
-    
-    // Convert to database format
-    const dbUpdates = mapInventoryItemToDbFormat(updates);
-
-    const { data, error } = await supabase
-      .from("inventory_items")
-      .update(dbUpdates)
-      .eq("id", id)
-      .select()
+      ])
+      .select('id')
       .single();
 
     if (error) throw error;
-
-    return mapDbItemToInventoryItem(data);
+    return data.id;
   } catch (error) {
-    handleApiError(error, `Failed to update inventory item ${id}`);
-    throw error;
+    console.error('Error creating inventory item:', error);
+    return null;
   }
-}
+};
 
-// Delete an inventory item
-export async function deleteInventoryItem(id: string): Promise<void> {
+/**
+ * Update an existing inventory item
+ */
+export const updateInventoryItem = async (id: string, item: Partial<InventoryItemExtended>): Promise<boolean> => {
   try {
-    // Check if there are any transactions for this item
-    const { data: transactions, error: transError } = await supabase
-      .from("inventory_transactions")
-      .select("id")
-      .eq("inventory_item_id", id)
-      .limit(1);
-      
-    if (transError) throw transError;
-    
-    if (transactions && transactions.length > 0) {
-      throw new Error("Cannot delete item with existing transactions");
-    }
-    
-    // Check if this item is used in any purchase orders
-    const { data: poItems, error: poError } = await supabase
-      .from("inventory_purchase_order_items")
-      .select("id")
-      .eq("inventory_item_id", id)
-      .limit(1);
-      
-    if (poError) throw poError;
-    
-    if (poItems && poItems.length > 0) {
-      throw new Error("Cannot delete item that is used in purchase orders");
-    }
-    
-    // Proceed with deletion if no dependencies
     const { error } = await supabase
-      .from("inventory_items")
-      .delete()
-      .eq("id", id);
+      .from('inventory_items')
+      .update({
+        name: item.name,
+        sku: item.sku,
+        category: item.category,
+        supplier: item.supplier,
+        quantity: item.quantity,
+        reorder_point: item.reorderPoint,
+        unit_price: item.unitPrice,
+        location: item.location,
+        status: item.status,
+        description: item.description
+      })
+      .eq('id', id);
 
     if (error) throw error;
+    return true;
   } catch (error) {
-    handleApiError(error, `Failed to delete inventory item ${id}`);
-    throw error;
+    console.error('Error updating inventory item:', error);
+    return false;
   }
-}
+};
 
-// Update inventory quantity when items are consumed by work orders
-export async function updateInventoryQuantity(itemId: string, quantityChange: number): Promise<void> {
+/**
+ * Delete an inventory item
+ */
+export const deleteInventoryItem = async (id: string): Promise<boolean> => {
   try {
-    // First get the current item to check quantities
-    const currentItem = await getInventoryItemById(itemId);
-    if (!currentItem) {
-      throw new Error(`Inventory item with ID ${itemId} not found`);
-    }
-    
-    // Calculate new quantity
-    const newQuantity = currentItem.quantity + quantityChange;
-    
-    // Don't allow negative inventory (unless specifically configured to allow backorders)
-    if (newQuantity < 0) {
-      throw new Error(`Cannot reduce quantity below zero for item ${currentItem.name}`);
-    }
-    
-    // Update the item with new quantity and recalculated status
-    await updateInventoryItem(itemId, { 
-      quantity: newQuantity 
-      // Status will be automatically calculated in updateInventoryItem
-    });
-  } catch (error) {
-    handleApiError(error, `Failed to update inventory quantity for item ${itemId}`);
-    throw error;
-  }
-}
-
-// Clear all inventory items
-export async function clearAllInventoryItems(): Promise<void> {
-  try {
-    // First check if there are any dependencies
-    const { data: transactions, error: transError } = await supabase
-      .from("inventory_transactions")
-      .select("id")
-      .limit(1);
-      
-    if (transError) throw transError;
-    
-    if (transactions && transactions.length > 0) {
-      throw new Error("Cannot clear inventory with existing transactions");
-    }
-    
-    // Check for purchase order items
-    const { data: poItems, error: poError } = await supabase
-      .from("inventory_purchase_order_items")
-      .select("id")
-      .limit(1);
-      
-    if (poError) throw poError;
-    
-    if (poItems && poItems.length > 0) {
-      throw new Error("Cannot clear inventory with existing purchase orders");
-    }
-    
-    // Proceed with deletion if no dependencies
     const { error } = await supabase
-      .from("inventory_items")
+      .from('inventory_items')
       .delete()
-      .neq("id", "00000000-0000-0000-0000-000000000000"); // This is a safe way to delete all rows
+      .eq('id', id);
 
     if (error) throw error;
-    
-    console.log("All inventory items have been removed");
+    return true;
   } catch (error) {
-    handleApiError(error, "Failed to clear inventory items");
-    throw error;
+    console.error('Error deleting inventory item:', error);
+    return false;
   }
-}
+};
+
+/**
+ * Clear all inventory items (primarily for demo/testing)
+ */
+export const clearAllInventoryItems = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('inventory_items')
+      .delete()
+      .neq('id', ''); // Delete all rows
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error clearing inventory items:', error);
+    return false;
+  }
+};

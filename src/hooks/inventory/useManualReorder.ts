@@ -1,5 +1,5 @@
 
-import { getInventoryItemById } from "@/services/inventoryService";
+import { getInventoryItemById, reorderItem as reorderItemService } from "@/services/inventoryService";
 import { useNotifications } from "@/context/notifications";
 import { toast } from "@/hooks/use-toast";
 
@@ -19,8 +19,9 @@ export function useManualReorder() {
         return;
       }
       
-      // In a real app, this would connect to a purchasing API
-      // For now, we'll just show a toast notification
+      // Call the reorderItem service function
+      await reorderItemService(itemId, quantity);
+      
       toast({
         title: "Order Placed",
         description: `Manually ordered ${quantity} units of ${item.name}`,
