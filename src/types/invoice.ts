@@ -69,6 +69,15 @@ export interface Invoice {
   lastUpdatedAt?: string;
   paymentMethod?: string;
   items: InvoiceItem[];
+  
+  // For backwards compatibility and easier code updates
+  get dueDate(): string {
+    return this.due_date;
+  }
+  
+  set dueDate(value: string) {
+    this.due_date = value;
+  }
 }
 
 export interface InvoiceTemplateItem extends InvoiceItem {
@@ -85,7 +94,7 @@ export interface InvoiceTemplate {
   defaultTaxRate?: number;
   createdAt: string;
   usageCount?: number;
-  lastUsed?: Date | null;
+  lastUsed?: string | null;
   defaultItems: InvoiceTemplateItem[];
 }
 

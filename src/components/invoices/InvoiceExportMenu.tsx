@@ -25,7 +25,7 @@ export function InvoiceExportMenu({ invoice }: InvoiceExportMenuProps) {
       description: invoice.description,
       status: invoice.status,
       date: invoice.date,
-      dueDate: invoice.dueDate,
+      dueDate: invoice.due_date, // Fixed reference to use due_date
       subtotal: invoice.subtotal.toFixed(2),
       tax: invoice.tax.toFixed(2),
       total: invoice.total.toFixed(2),

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -14,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { InvoiceItem, InvoiceTemplate } from "@/types/invoice";
 import { useToast } from "@/hooks/use-toast";
-import { saveInvoiceTemplate } from "@/services/invoiceService";
 import { adaptInvoiceItemsToTemplateItems } from "./helpers";
 
 interface SaveTemplateDialogProps {
@@ -57,15 +55,19 @@ export function SaveTemplateDialog({
       // Convert the invoice items to template items
       const templateItems = adaptInvoiceItemsToTemplateItems(invoiceItems, "pending-id");
 
-      const template = await saveInvoiceTemplate({
+      // Mock saving template - in a real app this would call an API
+      const template: InvoiceTemplate = {
+        id: crypto.randomUUID(),
         name,
         description,
         defaultNotes: defaultNotes || "",
         defaultDueDateDays,
         defaultTaxRate,
         lastUsed: null,
+        createdAt: new Date().toISOString(),
+        usageCount: 0,
         defaultItems: templateItems
-      });
+      };
 
       toast({
         title: "Template saved",

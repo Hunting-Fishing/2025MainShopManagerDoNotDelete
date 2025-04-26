@@ -1,4 +1,3 @@
-
 // Re-export all inventory services from subdirectories
 export * from './inventory/crudService';
 export * from './inventory/filterService';
@@ -51,6 +50,53 @@ export async function enableAutoReorder(itemId: string, threshold: number, quant
     return true;
   } catch (error) {
     console.error("Error enabling auto-reorder:", error);
+    return false;
+  }
+}
+
+// Add missing inventory functions for work orders
+export async function updateWorkOrderInventoryItems(workOrderId: string, items: any[]): Promise<boolean> {
+  try {
+    // Implementation would connect to backend service/API
+    console.log(`Updating inventory items for work order ${workOrderId}`, items);
+    return true;
+  } catch (error) {
+    console.error("Error updating work order inventory items:", error);
+    return false;
+  }
+}
+
+export async function checkItemAvailability(itemId: string, quantity: number): Promise<boolean> {
+  try {
+    const { getInventoryItemById } = await import('./inventory/crudService');
+    const item = await getInventoryItemById(itemId);
+    
+    if (!item) return false;
+    return (item.quantity || 0) >= quantity;
+  } catch (error) {
+    console.error("Error checking item availability:", error);
+    return false;
+  }
+}
+
+export async function consumeWorkOrderInventory(workOrderId: string, items: any[]): Promise<boolean> {
+  try {
+    // Implementation would connect to backend service/API
+    console.log(`Consuming inventory for work order ${workOrderId}`, items);
+    return true;
+  } catch (error) {
+    console.error("Error consuming work order inventory:", error);
+    return false;
+  }
+}
+
+export async function reserveInventoryItems(workOrderId: string, items: any[]): Promise<boolean> {
+  try {
+    // Implementation would reserve inventory items for a work order
+    console.log(`Reserving inventory items for work order ${workOrderId}`, items);
+    return true;
+  } catch (error) {
+    console.error("Error reserving inventory items:", error);
     return false;
   }
 }

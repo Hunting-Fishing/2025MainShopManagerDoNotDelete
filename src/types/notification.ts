@@ -45,6 +45,7 @@ export interface NotificationContextType {
   markAllAsRead: () => void;
   updatePreferences: (preferences: Partial<NotificationPreferences>) => void;
   triggerTestNotification: () => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
 }
 
 export interface WorkOrderNotification extends Notification {
@@ -54,7 +55,6 @@ export interface WorkOrderNotification extends Notification {
   status?: string;
 }
 
-// Add missing NotificationsListProps for WorkOrderNotifications component
 export interface NotificationsListProps {
   notifications: WorkOrderNotification[];
   loading?: boolean;

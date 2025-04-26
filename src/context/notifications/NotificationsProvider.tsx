@@ -13,7 +13,8 @@ export const NotificationsContext = createContext<NotificationContextType>({
   markAsRead: () => {},
   markAllAsRead: () => {},
   updatePreferences: () => {},
-  triggerTestNotification: () => {}
+  triggerTestNotification: () => {},
+  addNotification: () => {}
 });
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
@@ -45,6 +46,23 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const updatePreferences = useCallback((newPreferences: Partial<NotificationPreferences>) => {
     setPreferences(prev => ({ ...prev, ...newPreferences }));
   }, []);
+
+  // Add a notification
+  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: `notification-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+    
+    // Play sound if enabled
+    if (preferences.sound) {
+      playNotificationSound(preferences.sound);
+    }
+  }, [preferences.sound]);
 
   // Add a demo/test notification
   const triggerTestNotification = useCallback(() => {
@@ -108,7 +126,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     markAsRead,
     markAllAsRead,
     updatePreferences,
-    triggerTestNotification
+    triggerTestNotification,
+    addNotification
   };
 
   return (

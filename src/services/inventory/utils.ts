@@ -1,4 +1,3 @@
-
 import { Inventory, InventoryItemExtended } from "@/types/inventory";
 
 // Convert database item to inventory item
@@ -36,6 +35,13 @@ export function determineInventoryStatus(item: any): string {
   
   if (quantity <= 0) return 'Out of Stock';
   if (quantity <= minStock) return 'Low Stock';
+  return 'In Stock';
+}
+
+// Add this function to fix the useInventoryForm error
+export function getInventoryStatus(quantity: number, reorderPoint: number): string {
+  if (quantity <= 0) return 'Out of Stock';
+  if (quantity <= reorderPoint) return 'Low Stock';
   return 'In Stock';
 }
 

@@ -1,4 +1,3 @@
-
 import { useInvoiceFormState } from "@/hooks/invoice/useInvoiceFormState";
 import { useInvoiceTemplates } from "@/hooks/invoice/useInvoiceTemplates";
 import { useInvoiceSave } from "@/hooks/invoice/useInvoiceSave";
@@ -34,7 +33,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
     handleAddLaborItem,
     handleAddStaffMember,
     handleRemoveStaffMember,
-  } = useInvoiceFormState(props);
+  } = useInvoiceFormState({});
 
   // Use invoice templates hook
   const { 
@@ -86,14 +85,7 @@ export function useInvoiceForm(initialWorkOrderId?: string) {
         workOrderId: workOrderUpdates.workOrderId,
         customer: workOrderUpdates.customer,
         description: workOrderUpdates.description,
-        assignedStaff: Array.isArray(workOrderUpdates.assignedStaff) 
-          ? workOrderUpdates.assignedStaff.map((staff: any) => {
-              if (typeof staff === 'string') {
-                return { id: crypto.randomUUID(), name: staff, role: '' };
-              }
-              return staff as StaffMember;
-            })
-          : prev.assignedStaff
+        assignedStaff: workOrderUpdates.assignedStaff ? workOrderUpdates.assignedStaff : prev.assignedStaff
       };
     });
     
