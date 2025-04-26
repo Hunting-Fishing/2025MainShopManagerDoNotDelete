@@ -1,57 +1,49 @@
 
-import { useState } from 'react';
-import { InventoryItemExtended } from '@/types/inventory';
+import { useState } from "react";
+import { InventoryItemExtended } from "@/types/inventory";
+import { toast } from "@/hooks/use-toast";
 
 export function useInventoryFormValidation() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const clearError = (fieldName: string) => {
-    setFormErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors[fieldName];
-      return newErrors;
-    });
-  };
-
-  const validateForm = (data: Omit<InventoryItemExtended, "id">) => {
+  const validateForm = (formData: Omit<InventoryItemExtended, "id">): boolean => {
     const errors: Record<string, string> = {};
-
-    // Required fields
-    if (!data.name || data.name.trim() === '') {
-      errors.name = 'Name is required';
-    }
-
-    if (!data.sku || data.sku.trim() === '') {
-      errors.sku = 'SKU is required';
-    }
-
-    if (!data.category || data.category.trim() === '') {
-      errors.category = 'Category is required';
-    }
-
-    if (!data.supplier || data.supplier.trim() === '') {
-      errors.supplier = 'Supplier is required';
-    }
-
-    if (data.quantity < 0) {
-      errors.quantity = 'Quantity cannot be negative';
-    }
-
-    // Use either min_stock_level or reorderPoint
-    if ((data.min_stock_level || data.reorderPoint) < 0) {
-      errors.min_stock_level = 'Reorder point cannot be negative';
-      errors.reorderPoint = 'Reorder point cannot be negative';
-    }
-
-    // Use either unit_price or unitPrice
-    if ((data.unit_price || data.unitPrice) < 0) {
-      errors.unit_price = 'Price cannot be negative';
-      errors.unitPrice = 'Price cannot be negative';
-    }
-
+    
+    if (!formData.name.trim()) errors.name = "Name is required";
+    if (!formData.sku.trim()) errors.sku = "SKU is required";
+    if (!formData.category.trim()) errors.category = "Category is required";
+    if (!formData.supplier.trim()) errors.supplier = "Supplier is required";
+    
+    if (formData.unitPrice < 0) errors.unitPrice = "Price cannot be negative";
+    if (formData.quantity < 0) errors.quantity = "Quantity cannot be negative";
+    if (formData.reorderPoint < 0) errors.reorderPoint = "Reorder point cannot be negative";
+    
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    
+    if (Object.keys(errors).length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please check the form for errors"
+      });
+      return false;
+    }
+    
+    return true;
   };
 
-  return { formErrors, validateForm, clearError };
+  const clearError = (fieldName: string) => {
+    if (formErrors[fieldName]) {
+      setFormErrors({
+        ...formErrors,
+        [fieldName]: ""
+      });
+    }
+  };
+
+  return {
+    formErrors,
+    validateForm,
+    clearError
+  };
 }

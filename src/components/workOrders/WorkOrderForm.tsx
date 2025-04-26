@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 import { WorkOrderTemplate, WorkOrderInventoryItem } from "@/types/workOrder";
@@ -29,7 +29,6 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [isFleetCustomer, setIsFleetCustomer] = useState<boolean>(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const customerId = searchParams.get('customerId');
   const vehicleId = searchParams.get('vehicleId');
@@ -46,40 +45,28 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     vehicleInfo
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchCustomers = async () => {
       setLoadingCustomers(true);
-      setFetchError(null);
-      
       try {
-        console.log("Starting customer fetch...");
-        const { data, error, status } = await supabase
+        const { data, error } = await supabase
           .from('customers')
           .select('*')
           .order('last_name', { ascending: true });
         
-        if (error) {
-          console.error("Supabase error fetching customers:", error);
-          setFetchError(`Error code: ${error.code}, message: ${error.message}`);
-          throw error;
-        }
+        if (error) throw error;
         
         if (data) {
-          console.log("Fetched customers successfully:", data.length);
+          console.log("Fetched customers:", data.length);
           const adaptedCustomers = data.map(customer => adaptCustomerForUI(customer));
           setCustomers(adaptedCustomers);
 
           if (customerId) {
             const selectedCustomer = adaptedCustomers.find(c => c.id === customerId);
             if (selectedCustomer) {
-              console.log("Found selected customer:", selectedCustomer.id);
               setIsFleetCustomer(selectedCustomer.is_fleet === true);
-            } else {
-              console.log("Selected customer not found in results, ID:", customerId);
             }
           }
-        } else {
-          console.log("No customer data returned, status:", status);
         }
       } catch (err) {
         console.error("Error fetching customers:", err);
@@ -130,35 +117,25 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   };
 
   return (
-    <>
-      {fetchError && (
-        <div className="bg-red-50 p-4 mb-4 rounded-md border border-red-200 text-red-800">
-          <h4 className="font-semibold mb-2">Connection Error</h4>
-          <p className="text-sm">{fetchError}</p>
-          <p className="text-sm mt-2">Please check your Supabase connection and permissions.</p>
-        </div>
-      )}
-      
-      <WorkOrderFormLayout
-        form={form}
-        error={error}
-        isSubmitting={isSubmitting}
-        onSubmit={onSubmit}
-        onCancel={() => navigate("/work-orders")}
-        customers={customers}
-        loadingCustomers={loadingCustomers}
-        technicians={technicians}
-        loadingTechnicians={loadingTechnicians}
-        selectedVehicleId={selectedVehicleId}
-        customerId={customerId}
-        vehicleId={vehicleId}
-        vehicleInfo={vehicleInfo}
-        isFleetCustomer={isFleetCustomer}
-        timeEntries={timeEntries}
-        onUpdateTimeEntries={handleUpdateTimeEntries}
-        onSaveTemplate={handleSaveTemplate}
-        onServiceChecked={handleServiceChecked}
-      />
-    </>
+    <WorkOrderFormLayout
+      form={form}
+      error={error}
+      isSubmitting={isSubmitting}
+      onSubmit={onSubmit}
+      onCancel={() => navigate("/work-orders")}
+      customers={customers}
+      loadingCustomers={loadingCustomers}
+      technicians={technicians}
+      loadingTechnicians={loadingTechnicians}
+      selectedVehicleId={selectedVehicleId}
+      customerId={customerId}
+      vehicleId={vehicleId}
+      vehicleInfo={vehicleInfo}
+      isFleetCustomer={isFleetCustomer}
+      timeEntries={timeEntries}
+      onUpdateTimeEntries={handleUpdateTimeEntries}
+      onSaveTemplate={handleSaveTemplate}
+      onServiceChecked={handleServiceChecked}
+    />
   );
 };

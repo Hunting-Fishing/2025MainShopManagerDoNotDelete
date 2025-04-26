@@ -1,87 +1,121 @@
 
-import React from 'react';
-import { TableRow, TableCell } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { CustomerRow } from './CustomerRow';
-import { Customer } from '@/types/customer';
-import { RefreshCw } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { UserRound, Loader2, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Customer, getCustomerFullName } from "@/types/customer";
 
 interface CustomerTableProps {
   customers: Customer[];
   loading: boolean;
   error: string | null;
-  connectionOk?: boolean | null;
-  onRefresh?: () => void;
 }
 
-export const CustomerTable: React.FC<CustomerTableProps> = ({
-  customers = [],
-  loading = false,
-  error = null,
-  connectionOk = true,
-  onRefresh
-}) => {
-  // Display loading state
+export const CustomerTable = ({ customers, loading, error }: CustomerTableProps) => {
   if (loading) {
     return (
       <TableRow>
-        <TableCell colSpan={5} className="h-64 text-center">
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-lg text-slate-600 font-medium">Loading customers...</p>
+        <TableCell colSpan={5} className="text-center py-8">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading customers...</p>
           </div>
         </TableCell>
       </TableRow>
     );
   }
-
-  // Display error state
-  if (error || connectionOk === false) {
+  
+  if (error) {
     return (
       <TableRow>
-        <TableCell colSpan={5} className="h-64 text-center">
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="text-red-500 text-xl mb-4">❌</div>
-            <p className="text-lg text-red-600 font-medium mb-4">
-              {error || "Failed to connect to the database"}
-            </p>
-            {onRefresh && (
-              <Button 
-                onClick={onRefresh} 
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Try Again
-              </Button>
-            )}
+        <TableCell colSpan={5} className="text-center py-8">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+            <div>
+              <p className="font-medium">Error loading customers</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
           </div>
         </TableCell>
       </TableRow>
     );
   }
-
-  // Display empty state
-  if (customers.length === 0) {
+  
+  if (!customers || customers.length === 0) {
     return (
       <TableRow>
-        <TableCell colSpan={5} className="h-64 text-center">
-          <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-lg text-slate-600 font-medium mb-2">No customers found</p>
-            <p className="text-muted-foreground">
-              Try adjusting your filters or add a new customer.
-            </p>
-          </div>
+        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+          No customers found.
         </TableCell>
       </TableRow>
     );
   }
-
-  // Display customers table
+  
   return (
     <>
       {customers.map((customer) => (
-        <CustomerRow key={customer.id} customer={customer} />
+        <TableRow key={customer.id}>
+          <TableCell>
+            <div className="flex items-center gap-2">
+              <div className="bg-slate-100 p-2 rounded-full">
+                <UserRound className="h-4 w-4 text-slate-500" />
+              </div>
+              <div>
+                <Link 
+                  to={`/customers/${customer.id}`}
+                  className="font-medium text-blue-600 hover:underline"
+                >
+                  {getCustomerFullName(customer)}
+                </Link>
+                {customer.company && (
+                  <p className="text-xs text-slate-500">{customer.company}</p>
+                )}
+              </div>
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="text-sm">
+              <p>{customer.email}</p>
+              <p className="text-slate-500">{customer.phone}</p>
+            </div>
+          </TableCell>
+          <TableCell>
+            <p className="text-sm">{customer.address}</p>
+          </TableCell>
+          <TableCell>
+            {customer.tags && customer.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {customer.tags.map((tag, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <span className="text-sm text-slate-400">No tags</span>
+            )}
+          </TableCell>
+          <TableCell className="text-right">
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                asChild
+              >
+                <Link to={`/customers/${customer.id}`}>
+                  View Details
+                </Link>
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
       ))}
     </>
   );

@@ -1,198 +1,208 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
-import { 
-  Invoice, 
-  InvoiceTemplate as InvoiceTemplateType, 
-  InvoiceTemplateItem 
-} from "@/types/invoice";
-import { supabase } from "@/lib/supabase";
+import { Invoice, InvoiceTemplate, InvoiceUpdater } from "@/types/invoice";
 import { v4 as uuidv4 } from "uuid";
-import { adaptInvoiceItemsToTemplateItems } from "@/components/invoices/templates/helpers";
+import { supabase } from '@/lib/supabase';
 
-// Fixed InvoiceTemplate interface to match our usage
-interface InvoiceTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  defaultNotes?: string;
-  defaultDueDateDays?: number;
-  defaultTaxRate?: number;
-  createdAt: string;
-  usageCount: number;
-  lastUsed: string | null;
-  defaultItems: InvoiceTemplateItem[];
-}
-
-export function useInvoiceTemplates(
-  setInvoice: React.Dispatch<React.SetStateAction<Invoice>>
-) {
+export function useInvoiceTemplates(updateInvoice?: (updater: InvoiceUpdater) => void) {
   const [templates, setTemplates] = useState<InvoiceTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load templates on mount
   useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        setLoading(true);
-        // In a real application, this would fetch from your backend
-        const mockTemplates: InvoiceTemplate[] = [
-          {
-            id: "template-1",
-            name: "Basic Service",
-            description: "Standard service template",
-            defaultTaxRate: 0.08,
-            defaultDueDateDays: 30,
-            defaultNotes: "Thank you for your business!",
-            createdAt: new Date().toISOString(),
-            usageCount: 5,
-            lastUsed: new Date().toISOString(),
-            defaultItems: [
-              {
-                id: "item-1",
-                name: "Oil Change",
-                description: "Full synthetic oil change",
-                price: 49.99,
-                quantity: 1,
-                total: 49.99,
-                templateId: "template-1",
-                createdAt: new Date().toISOString()
-              },
-              {
-                id: "item-2",
-                name: "Oil Filter",
-                description: "Premium oil filter",
-                price: 12.99,
-                quantity: 1,
-                total: 12.99,
-                templateId: "template-1",
-                createdAt: new Date().toISOString()
-              }
-            ]
-          }
-        ];
-        
-        setTemplates(mockTemplates);
-      } catch (error) {
-        console.error("Error loading templates:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load invoice templates",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTemplates();
-  }, [toast]);
+  }, []);
 
-  // Function to apply a template to the current invoice
-  const handleApplyTemplate = (templateId: string) => {
-    const template = templates.find((t) => t.id === templateId);
-    
-    if (!template) {
+  const fetchTemplates = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch templates from the database
+      const { data, error } = await supabase
+        .from('invoice_templates')
+        .select(`
+          *,
+          default_items:invoice_template_items(*)
+        `);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const formattedTemplates = data.map(template => {
+          return {
+            id: template.id,
+            name: template.name,
+            description: template.description || "",
+            createdAt: template.created_at,
+            lastUsed: template.last_used || null,
+            usageCount: template.usage_count || 0,
+            defaultTaxRate: template.default_tax_rate || 0.08,
+            defaultDueDateDays: template.default_due_date_days || 30,
+            defaultNotes: template.default_notes || "",
+            defaultItems: Array.isArray(template.default_items) 
+              ? template.default_items.map(item => ({
+                  id: item.id,
+                  name: item.name,
+                  description: item.description || "",
+                  quantity: item.quantity,
+                  price: item.price,
+                  total: item.total || item.price * item.quantity,
+                  hours: item.hours || false,
+                  sku: item.sku || "",
+                  category: item.category || ""
+                }))
+              : []
+          };
+        });
+        
+        setTemplates(formattedTemplates);
+      } else {
+        setTemplates([]);
+      }
+    } catch (err) {
+      console.error('Error fetching invoice templates:', err);
       toast({
-        title: "Template not found",
-        description: "The selected template could not be found",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to load invoice templates.",
+        variant: "destructive"
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Update template usage stats
-    const updatedTemplate = {
-      ...template,
-      usageCount: (template.usageCount || 0) + 1,
-      lastUsed: new Date().toISOString()
-    };
-
-    // Update templates list
-    setTemplates(prev => 
-      prev.map(t => t.id === templateId ? updatedTemplate : t)
-    );
-
-    // Convert template items to invoice items (removing template-specific fields)
-    const invoiceItems = template.defaultItems.map(item => ({
-      id: uuidv4(),
-      name: item.name,
-      description: item.description || "",
-      quantity: item.quantity,
-      price: item.price,
-      total: item.total,
-      hours: item.hours,
-      sku: item.sku,
-      category: item.category
+  // Handle applying a template
+  const handleApplyTemplate = (template: InvoiceTemplate) => {
+    if (!updateInvoice) return;
+    
+    const currentDate = new Date();
+    const dueDate = new Date(currentDate);
+    dueDate.setDate(dueDate.getDate() + template.defaultDueDateDays);
+    
+    // Generate new IDs for each item to ensure uniqueness
+    const itemsWithNewIds = template.defaultItems.map(item => ({
+      ...item,
+      id: uuidv4()
     }));
-
-    // Get current date and due date based on template settings
-    const today = new Date();
-    const dueDate = new Date();
-    dueDate.setDate(today.getDate() + (template.defaultDueDateDays || 30));
-
-    // Update invoice with template data
-    setInvoice(prev => ({
+    
+    updateInvoice((prev) => ({
       ...prev,
-      items: invoiceItems,
-      notes: template.defaultNotes || prev.notes || "",
-      date: today.toISOString().split('T')[0],
-      due_date: dueDate.toISOString().split('T')[0]
+      notes: template.defaultNotes || prev.notes,
+      dueDate: dueDate.toISOString().split('T')[0],
+      items: itemsWithNewIds
     }));
-
+    
+    // Update the template usage in the database
+    updateTemplateUsage(template.id);
+    
     toast({
       title: "Template Applied",
-      description: `Applied "${template.name}" template to invoice`,
+      description: `Applied "${template.name}" template to your invoice.`
     });
   };
 
-  // Function to save current invoice as a new template
-  const handleSaveTemplate = async (templateData: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => {
+  // Update template usage
+  const updateTemplateUsage = async (templateId: string) => {
     try {
-      // Generate a new template ID
+      // Update the database
+      const { error } = await supabase
+        .from('invoice_templates')
+        .update({
+          last_used: new Date().toISOString(),
+          usage_count: supabase.rpc('increment_template_usage', { template_id: templateId })
+        })
+        .eq('id', templateId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setTemplates(prev => 
+        prev.map(t => 
+          t.id === templateId 
+            ? { ...t, lastUsed: new Date().toISOString(), usageCount: t.usageCount + 1 }
+            : t
+        )
+      );
+    } catch (err) {
+      console.error('Error updating template usage:', err);
+    }
+  };
+
+  // Handle saving a new template
+  const handleSaveTemplate = async (newTemplate: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>) => {
+    try {
       const templateId = uuidv4();
       
-      // Create the new template object
-      const newTemplate: InvoiceTemplate = {
+      // Insert new template into the database
+      const { error: templateError } = await supabase
+        .from('invoice_templates')
+        .insert({
+          id: templateId,
+          name: newTemplate.name,
+          description: newTemplate.description,
+          default_tax_rate: newTemplate.defaultTaxRate,
+          default_due_date_days: newTemplate.defaultDueDateDays,
+          default_notes: newTemplate.defaultNotes,
+          created_at: new Date().toISOString(),
+          usage_count: 0
+        });
+      
+      if (templateError) throw templateError;
+      
+      // Insert template items if they exist
+      if (newTemplate.defaultItems && newTemplate.defaultItems.length > 0) {
+        const templateItems = newTemplate.defaultItems.map(item => ({
+          template_id: templateId,
+          name: item.name,
+          description: item.description,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total,
+          hours: item.hours || false,
+          sku: item.sku || "",
+          category: item.category || ""
+        }));
+        
+        const { error: itemsError } = await supabase
+          .from('invoice_template_items')
+          .insert(templateItems);
+        
+        if (itemsError) throw itemsError;
+      }
+      
+      // Create full template object for state
+      const template: InvoiceTemplate = {
+        ...newTemplate,
         id: templateId,
-        name: templateData.name,
-        description: templateData.description,
-        defaultNotes: templateData.defaultNotes,
-        defaultDueDateDays: templateData.defaultDueDateDays,
-        defaultTaxRate: templateData.defaultTaxRate,
         createdAt: new Date().toISOString(),
         usageCount: 0,
-        lastUsed: null,
-        defaultItems: templateData.defaultItems.map(item => ({
-          ...item,
-          templateId
-        }))
+        lastUsed: null
       };
-
-      // Update templates state
-      setTemplates(prev => [...prev, newTemplate]);
-
+      
+      // Add to templates list in state
+      setTemplates([...templates, template]);
+      
       toast({
         title: "Template Saved",
-        description: `Template "${templateData.name}" has been saved`,
+        description: `"${template.name}" template has been saved for future use.`
       });
-
-      return newTemplate;
-    } catch (error) {
-      console.error("Error saving template:", error);
+      
+      return template;
+    } catch (err) {
+      console.error('Error saving template:', err);
       toast({
         title: "Error",
-        description: "Failed to save template",
-        variant: "destructive",
+        description: "Failed to save template.",
+        variant: "destructive"
       });
-      throw error;
+      throw err;
     }
   };
 
   return {
     templates,
-    loading,
+    isLoading,
     handleApplyTemplate,
     handleSaveTemplate,
+    fetchTemplates
   };
 }

@@ -13,33 +13,26 @@ interface CustomersListProps {
   filters: CustomerFilters;
   loading: boolean;
   error: string | null;
-  connectionOk?: boolean | null;
   onFilterChange: (filters: CustomerFilters) => void;
   onRefresh?: () => void;
 }
 
 export const CustomersList = ({ 
-  customers = [],
-  filteredCustomers = [],
-  filters = {},
-  loading = false,
-  error = null,
-  connectionOk = true,
+  customers,
+  filteredCustomers,
+  filters,
+  loading,
+  error,
   onFilterChange,
   onRefresh 
 }: CustomersListProps) => {
-  // Ensure arrays are never null
-  const safeCustomers = customers || [];
-  const safeFilteredCustomers = filteredCustomers || [];
-
   return (
-    <Card className="border border-gray-200">
+    <Card>
       <div className="p-6 space-y-4">
-        <div className="flex justify-between items-center flex-wrap gap-3">
+        <div className="flex justify-between items-center">
           <CustomerFilterControls 
             filters={filters}
             onFilterChange={onFilterChange}
-            disabled={loading || !connectionOk}
           />
           
           {onRefresh && (
@@ -48,15 +41,15 @@ export const CustomersList = ({
               size="sm" 
               onClick={onRefresh}
               disabled={loading}
-              className="ml-2 flex items-center gap-2 bg-white"
+              className="ml-2"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Refreshing...' : 'Refresh'}
             </Button>
           )}
         </div>
 
-        <div className="rounded-md border border-gray-200">
+        <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -69,21 +62,13 @@ export const CustomersList = ({
             </TableHeader>
             <TableBody>
               <CustomerTable 
-                customers={safeFilteredCustomers}
+                customers={filteredCustomers}
                 loading={loading}
                 error={error}
-                connectionOk={connectionOk}
-                onRefresh={onRefresh}
               />
             </TableBody>
           </Table>
         </div>
-        
-        {safeFilteredCustomers.length > 0 && safeCustomers.length !== safeFilteredCustomers.length && (
-          <p className="text-sm text-gray-500 text-center pt-2">
-            Showing {safeFilteredCustomers.length} of {safeCustomers.length} customers
-          </p>
-        )}
       </div>
     </Card>
   );

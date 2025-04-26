@@ -29,7 +29,7 @@ export function InvoiceListExportMenu({ invoices }: InvoiceListExportMenuProps) 
       description: invoice.description,
       total: invoice.total ? `$${invoice.total.toFixed(2)}` : "$0.00",
       status: invoice.status,
-      dueDate: invoice.due_date,
+      dueDate: invoice.dueDate,
       createdBy: invoice.createdBy,
     }));
 

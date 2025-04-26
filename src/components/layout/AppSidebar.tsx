@@ -23,13 +23,10 @@ export function AppSidebar() {
     <>
       {isMobile ? (
         <Sheet open={collapsed} onOpenChange={toggleCollapsed}>
-          <SheetContent 
-            side="left" 
-            className="w-3/4 sm:w-2/3 md:w-1/2 overflow-y-auto bg-background/90 backdrop-blur-xl border-r border-border/50"
-          >
+          <SheetContent side="left" className="w-3/4 sm:w-2/3 md:w-1/2 overflow-y-auto bg-gradient-to-b from-indigo-700 to-purple-800 border-r border-indigo-600/20">
             <SheetHeader>
-              <SheetTitle className="text-foreground">Menu</SheetTitle>
-              <SheetDescription className="text-muted-foreground">
+              <SheetTitle className="text-white">Menu</SheetTitle>
+              <SheetDescription className="text-indigo-200">
                 Navigate your dashboard
               </SheetDescription>
             </SheetHeader>
@@ -39,7 +36,7 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
       ) : (
-        <aside className="hidden md:flex md:w-64 flex-col bg-background/95 backdrop-blur-xl border-r border-border/50 text-foreground overflow-y-auto">
+        <aside className="hidden md:flex md:w-64 flex-col bg-gradient-to-b from-indigo-700 to-purple-800 text-white border-r border-indigo-600/20 overflow-y-auto">
           <SidebarContent />
         </aside>
       )}

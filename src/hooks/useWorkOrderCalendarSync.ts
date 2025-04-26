@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import { CalendarEvent } from '@/types/calendar';
 import { 
@@ -9,7 +9,7 @@ import {
 } from '@/services/calendar/calendarEventService';
 import { toast } from '@/hooks/use-toast';
 
-// Define type for DbCalendarEvent with all_day as a required property and event_type as a union type
+// Define type for DbCalendarEvent with all_day as a required property
 interface DbCalendarEvent {
   id?: string;
   title: string;
@@ -43,12 +43,6 @@ const convertToCalendarEvent = (dbEvent: DbCalendarEvent): CalendarEvent => {
     status: dbEvent.status,
     priority: dbEvent.priority
   };
-};
-
-// Helper function to ensure event_type is a valid type
-const ensureValidEventType = (type: string): "appointment" | "work-order" | "reminder" | "event" | "other" => {
-  const validTypes = ["appointment", "work-order", "reminder", "event"];
-  return validTypes.includes(type) ? type as any : "other";
 };
 
 /**
@@ -94,11 +88,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         // Update existing event
         const updated = await updateCalendarEvent(calendarEvent.id, eventData);
         if (updated) {
-          const typeCorrectedEvent = { 
-            ...updated, 
-            event_type: ensureValidEventType(updated.event_type)
-          };
-          setCalendarEvent(convertToCalendarEvent(typeCorrectedEvent));
+          setCalendarEvent(convertToCalendarEvent(updated));
           toast({
             title: "Calendar Updated",
             description: "Work order has been updated in the calendar",
@@ -108,11 +98,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         // Create new event
         const created = await createCalendarEvent(eventData);
         if (created) {
-          const typeCorrectedEvent = { 
-            ...created, 
-            event_type: ensureValidEventType(created.event_type)
-          };
-          setCalendarEvent(convertToCalendarEvent(typeCorrectedEvent));
+          setCalendarEvent(convertToCalendarEvent(created));
           toast({
             title: "Calendar Updated",
             description: "Work order has been added to the calendar",
@@ -143,12 +129,7 @@ export function useWorkOrderCalendarSync(workOrder: WorkOrder | null) {
         const existingEvent = await getCalendarEventByWorkOrderId(workOrder.id);
         
         if (existingEvent) {
-          // Ensure event_type is a valid type before converting
-          const eventWithValidType: DbCalendarEvent = {
-            ...existingEvent,
-            event_type: ensureValidEventType(existingEvent.event_type)
-          };
-          setCalendarEvent(convertToCalendarEvent(eventWithValidType));
+          setCalendarEvent(convertToCalendarEvent(existingEvent));
         }
       } catch (err) {
         console.error("Error fetching calendar event:", err);

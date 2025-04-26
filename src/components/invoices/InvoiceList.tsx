@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Invoice } from "@/types/invoice";
 
 export function InvoiceList() {
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -49,15 +48,9 @@ export function InvoiceList() {
     });
   };
 
-  const statusFilter = (invoice: Invoice) => {
-    if (!filters.status) return true;
-    if (filters.status === 'all') return true;
-    return invoice.status === filters.status;
-  };
-
   const filteredInvoices = invoices?.filter((invoice) => {
     // Filter by status
-    if (!statusFilter(invoice)) {
+    if (filters.status !== "all" && invoice.status !== filters.status) {
       return false;
     }
 

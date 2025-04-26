@@ -1,4 +1,3 @@
-
 import { Notification, NotificationPreferences } from '@/types/notification';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
@@ -21,13 +20,10 @@ export const createAddNotificationHandler = (
     setNotifications(prev => [newNotification, ...prev]);
     
     // Play notification sound based on preferences
-    if (preferences.sound) {
-      try {
-        const soundToPlay = typeof preferences.sound === 'string' ? preferences.sound : 'chime';
-        playNotificationSound(soundToPlay);
-      } catch (err) {
+    if (preferences.sound && preferences.sound !== 'none') {
+      playNotificationSound(preferences.sound).catch(err => {
         console.error('Error playing notification sound:', err);
-      }
+      });
     }
     
     // Show a toast when a new notification arrives
@@ -102,13 +98,10 @@ export const createHandleNewNotificationHandler = (
     // Only show toast and play sound for realtime notifications
     if (frequency === 'realtime') {
       // Play notification sound based on preferences
-      if (preferences.sound) {
-        try {
-          const soundToPlay = typeof preferences.sound === 'string' ? preferences.sound : 'chime';
-          playNotificationSound(soundToPlay);
-        } catch (err) {
+      if (preferences.sound && preferences.sound !== 'none') {
+        playNotificationSound(preferences.sound).catch(err => {
           console.error('Error playing notification sound:', err);
-        }
+        });
       }
       
       // Show toast for high priority notifications or based on frequency

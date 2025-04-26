@@ -1,128 +1,88 @@
 
-import React, { useState } from 'react';
-import { TableCell, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trash2 } from 'lucide-react';
-import { formatCurrency } from '@/utils/formatters';
-import { InvoiceItem } from '@/types/invoice';
+import React from "react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { InvoiceItem } from "@/types/invoice";
 
-export interface InvoiceItemRowProps {
+interface InvoiceItemRowProps {
   item: InvoiceItem;
-  readOnly?: boolean;
-  onRemove: (id: string) => void;
-  onUpdate: (item: InvoiceItem) => void;
+  onRemoveItem: (id: string) => void;
+  onUpdateItemQuantity: (id: string, quantity: number) => void;
+  onUpdateItemDescription: (id: string, description: string) => void;
+  onUpdateItemPrice: (id: string, price: number) => void;
 }
 
-export function InvoiceItemRow({ item, onRemove, onUpdate, readOnly = false }: InvoiceItemRowProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedItem, setEditedItem] = useState<InvoiceItem>(item);
-
-  const handleEdit = () => {
-    if (readOnly) return;
-    setIsEditing(true);
-  };
-
-  const handleSave = () => {
-    setIsEditing(false);
-    onUpdate(editedItem);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditedItem(item);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    let updatedItem: InvoiceItem;
-
-    if (name === 'quantity' || name === 'price') {
-      const numValue = Number(value);
-      updatedItem = {
-        ...editedItem,
-        [name]: numValue,
-        total: name === 'quantity' ? numValue * editedItem.price : editedItem.quantity * numValue
-      };
-    } else {
-      updatedItem = { ...editedItem, [name]: value };
-    }
-
-    setEditedItem(updatedItem);
-  };
-
+export function InvoiceItemRow({
+  item,
+  onRemoveItem,
+  onUpdateItemQuantity,
+  onUpdateItemDescription,
+  onUpdateItemPrice,
+}: InvoiceItemRowProps) {
   return (
-    <TableRow className="hover:bg-slate-50">
-      {isEditing ? (
-        <>
-          <TableCell>
-            <Input 
-              name="name"
-              value={editedItem.name} 
-              onChange={handleChange}
-              className="w-full"
-            />
-          </TableCell>
-          <TableCell className="text-right">
-            <Input 
-              name="quantity"
-              type="number" 
-              min="1"
-              value={editedItem.quantity} 
-              onChange={handleChange}
-              className="w-20 text-right"
-            />
-          </TableCell>
-          <TableCell className="text-right">
-            <Input 
-              name="price"
-              type="number" 
-              min="0"
-              step="0.01"
-              value={editedItem.price} 
-              onChange={handleChange}
-              className="w-32 text-right"
-            />
-          </TableCell>
-          <TableCell className="text-right font-medium">
-            {formatCurrency(editedItem.total)}
-          </TableCell>
-          <TableCell>
-            <div className="flex space-x-1">
-              <Button size="sm" variant="ghost" onClick={handleSave}>Save</Button>
-              <Button size="sm" variant="ghost" onClick={handleCancel}>Cancel</Button>
-            </div>
-          </TableCell>
-        </>
-      ) : (
-        <>
-          <TableCell onClick={handleEdit} className={readOnly ? '' : 'cursor-pointer'}>
-            <div className="font-medium">{item.name}</div>
-            {item.description && <div className="text-sm text-slate-500">{item.description}</div>}
-          </TableCell>
-          <TableCell onClick={handleEdit} className={`text-right ${readOnly ? '' : 'cursor-pointer'}`}>
-            {item.quantity}
-          </TableCell>
-          <TableCell onClick={handleEdit} className={`text-right ${readOnly ? '' : 'cursor-pointer'}`}>
-            {formatCurrency(item.price)}
-          </TableCell>
-          <TableCell onClick={handleEdit} className={`text-right font-medium ${readOnly ? '' : 'cursor-pointer'}`}>
-            {formatCurrency(item.total)}
-          </TableCell>
-          <TableCell className="text-right">
-            {!readOnly && (
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={() => onRemove(item.id)}
-                className="h-8 w-8 p-0"
-              >
-                <Trash2 className="h-4 w-4 text-slate-400 hover:text-slate-600" />
-              </Button>
-            )}
-          </TableCell>
-        </>
-      )}
-    </TableRow>
+    <tr key={item.id}>
+      <td className="px-4 py-3 text-sm font-medium">{item.name}</td>
+      <td className="px-4 py-3 text-sm text-slate-500">
+        <Input 
+          value={item.description} 
+          onChange={(e) => onUpdateItemDescription(item.id, e.target.value)}
+          className="h-8 text-sm"
+        />
+      </td>
+      <td className="px-4 py-3 text-sm text-center">
+        <div className="flex items-center justify-center">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-7 w-7"
+            onClick={() => onUpdateItemQuantity(item.id, item.quantity - 1)}
+          >
+            -
+          </Button>
+          <Input 
+            type="number" 
+            value={item.quantity}
+            onChange={(e) => onUpdateItemQuantity(item.id, parseInt(e.target.value) || 0)}
+            className="h-7 w-16 mx-1 text-center"
+            min={1}
+          />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-7 w-7"
+            onClick={() => onUpdateItemQuantity(item.id, item.quantity + 1)}
+          >
+            +
+          </Button>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-sm text-right">
+        <div className="flex items-center justify-end">
+          <span className="mr-1">$</span>
+          <Input 
+            type="number" 
+            value={item.price}
+            onChange={(e) => onUpdateItemPrice(item.id, parseFloat(e.target.value) || 0)}
+            className="h-7 w-24 text-right"
+            step="0.01"
+            min="0"
+          />
+        </div>
+      </td>
+      <td className="px-4 py-3 text-sm font-medium text-right">
+        ${item.total.toFixed(2)}
+      </td>
+      <td className="px-4 py-3 text-sm text-center">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7 text-red-500"
+          onClick={() => onRemoveItem(item.id)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </td>
+    </tr>
   );
 }

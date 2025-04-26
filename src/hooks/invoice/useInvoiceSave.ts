@@ -56,7 +56,7 @@ export function useInvoiceSave() {
             total,
             status,
             date: invoice.date,
-            due_date: invoice.due_date,
+            due_date: invoice.dueDate,
             created_by: userId || null,
             created_at: new Date().toISOString()
           }

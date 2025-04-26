@@ -1,112 +1,239 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
-import { formatCurrency } from "@/utils/formatters";
+import { InventoryItemCard } from "./InventoryItemCard";
 import { InventoryItemExtended } from "@/types/inventory";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Input } from "@/components/ui/input";
+import { Search, FilterIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
 
 interface InventorySelectionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelect: (item: InventoryItemExtended) => void;
-  inventoryItems: InventoryItemExtended[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAddItem: (item: InventoryItemExtended) => void;
 }
 
-export function InventorySelectionDialog({
-  isOpen,
-  onClose,
-  onSelect,
-  inventoryItems,
-}: InventorySelectionDialogProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredItems, setFilteredItems] = useState<InventoryItemExtended[]>([]);
+export const InventorySelectionDialog: React.FC<InventorySelectionDialogProps> = ({
+  open,
+  onOpenChange,
+  onAddItem,
+}) => {
+  const [items, setItems] = useState<InventoryItemExtended[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
 
-  // Filter items when search term or inventory items change
+  // Fetch inventory items when dialog opens
   useEffect(() => {
-    if (!searchTerm) {
-      setFilteredItems(inventoryItems);
-      return;
+    if (open) {
+      fetchInventoryItems();
     }
+  }, [open]);
 
-    const term = searchTerm.toLowerCase();
-    const filtered = inventoryItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(term) ||
-        item.sku?.toLowerCase().includes(term) ||
-        item.category?.toLowerCase().includes(term)
-    );
-    setFilteredItems(filtered);
-  }, [searchTerm, inventoryItems]);
+  // Fetch inventory items from Supabase
+  const fetchInventoryItems = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*');
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+      if (error) throw error;
+
+      // Format the data to match InventoryItemExtended
+      const formattedItems = data.map(item => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku || '',
+        category: item.category || '',
+        supplier: item.supplier || '',
+        quantity: item.quantity || 0,
+        reorderPoint: item.reorder_point || 0,
+        unitPrice: item.unit_price || 0,
+        location: item.location || '',
+        status: item.quantity <= 0 ? 'Out of Stock' : 
+               item.quantity <= item.reorder_point ? 'Low Stock' : 'In Stock'
+      }));
+
+      setItems(formattedItems);
+
+      // Extract unique categories
+      const uniqueCategories = [...new Set(formattedItems.map(item => item.category))].filter(Boolean);
+      setCategories(uniqueCategories);
+    } catch (error) {
+      console.error("Error loading inventory items:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load inventory items",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSelect = (item: InventoryItemExtended) => {
-    onSelect(item);
-    onClose();
+  // Filter items based on search query, categories, and stock status
+  const filteredItems = items.filter(item => {
+    const matchesSearch = 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = 
+      selectedCategories.length === 0 || 
+      selectedCategories.includes(item.category);
+    
+    const matchesStock = 
+      showOutOfStock || item.quantity > 0;
+    
+    return matchesSearch && matchesCategory && matchesStock;
+  });
+
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedCategories([]);
+    setShowOutOfStock(false);
+    setSearchQuery("");
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Select Inventory Item</DialogTitle>
+          <DialogDescription>
+            Choose items from inventory to add to the work order
+          </DialogDescription>
         </DialogHeader>
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search items..."
-            className="pl-9"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+        
+        <div className="flex items-center gap-2 my-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters ? 'bg-accent' : ''}
+          >
+            <FilterIcon className="h-4 w-4" />
+          </Button>
         </div>
-        <div className="space-y-1 max-h-[400px] overflow-auto pr-2">
-          {filteredItems.length === 0 ? (
-            <div className="text-center p-4 text-muted-foreground">
-              No inventory items found
+
+        {showFilters && (
+          <div className="bg-muted p-3 rounded-md mb-2">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-medium">Filters</h4>
+              <Button variant="ghost" size="sm" onClick={clearFilters}>Clear</Button>
             </div>
-          ) : (
-            filteredItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 hover:bg-muted rounded-md transition-colors cursor-pointer"
-                onClick={() => handleSelect(item)}
-              >
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-xs text-muted-foreground flex gap-2">
-                    <span>SKU: {item.sku || 'N/A'}</span>
-                    <span>•</span>
-                    <span>Category: {item.category || 'None'}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">
-                    {formatCurrency(item.unit_price)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {item.quantity} in stock
-                  </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h5 className="text-sm font-medium mb-1">Categories</h5>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {categories.map(category => (
+                    <div key={category} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`category-${category}`}
+                        checked={selectedCategories.includes(category)}
+                        onCheckedChange={() => handleCategoryToggle(category)}
+                      />
+                      <Label htmlFor={`category-${category}`}>{category}</Label>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))
+              
+              <div>
+                <h5 className="text-sm font-medium mb-1">Stock Status</h5>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="show-out-of-stock"
+                    checked={showOutOfStock}
+                    onCheckedChange={(checked) => setShowOutOfStock(!!checked)}
+                  />
+                  <Label htmlFor="show-out-of-stock">Show out of stock items</Label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedCategories.length > 0 && (
+          <div className="flex flex-wrap gap-1 my-1">
+            {selectedCategories.map(cat => (
+              <Badge key={cat} variant="outline" className="flex items-center gap-1">
+                {cat}
+                <button 
+                  className="ml-1 hover:text-destructive" 
+                  onClick={() => handleCategoryToggle(cat)}
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <Separator className="my-2" />
+        
+        <div className="flex-1 overflow-y-auto py-2">
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : filteredItems.length > 0 ? (
+            <div className="space-y-3">
+              {filteredItems.map((item) => (
+                <InventoryItemCard 
+                  key={item.id} 
+                  item={item} 
+                  onAddItem={onAddItem} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchQuery || selectedCategories.length > 0 
+                ? "No items match your search criteria." 
+                : "No inventory items available."}
+            </div>
           )}
         </div>
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+
+        <div className="mt-2 text-sm text-muted-foreground">
+          Showing {filteredItems.length} of {items.length} items
         </div>
       </DialogContent>
     </Dialog>
   );
-}
+};

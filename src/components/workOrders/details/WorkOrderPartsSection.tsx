@@ -34,6 +34,7 @@ export function WorkOrderPartsSection({
       <CardContent>
         <PartsSelector
           workOrderId={workOrder.id}
+          initialParts={workOrder.inventoryItems}
           onPartsChange={handlePartsChange}
           readOnly={readOnly}
         />

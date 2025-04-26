@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Form } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
@@ -39,7 +40,7 @@ interface WorkOrderFormLayoutProps {
   onServiceChecked: (services: string[]) => void;
 }
 
-export function WorkOrderFormLayout({ 
+export const WorkOrderFormLayout: React.FC<WorkOrderFormLayoutProps> = ({
   form,
   error,
   isSubmitting,
@@ -58,7 +59,7 @@ export function WorkOrderFormLayout({
   onUpdateTimeEntries,
   onSaveTemplate,
   onServiceChecked,
-}) {
+}) => {
   const [inventoryItems, setInventoryItems] = useState<WorkOrderInventoryItem[]>(
     form.getValues('inventoryItems') || []
   );
@@ -113,8 +114,8 @@ export function WorkOrderFormLayout({
             <NotesSection form={form} />
 
             <div className="col-span-1 md:col-span-2">
-              <WorkOrderPartsEstimator
-                items={inventoryItems}
+              <WorkOrderPartsEstimator 
+                initialItems={inventoryItems} 
                 onItemsChange={handleInventoryItemsChange}
               />
             </div>
@@ -126,12 +127,10 @@ export function WorkOrderFormLayout({
           />
 
           <div className="flex justify-between items-center">
-            <div>
-              <SaveAsTemplateDialog 
-                formValues={form.getValues()} 
-                onSave={onSaveTemplate} 
-              />
-            </div>
+            <SaveAsTemplateDialog 
+              formValues={form.getValues()} 
+              onSave={onSaveTemplate} 
+            />
             <FormActions 
               isSubmitting={isSubmitting} 
               onCancel={onCancel} 
@@ -141,4 +140,4 @@ export function WorkOrderFormLayout({
       </Form>
     </div>
   );
-}
+};

@@ -5,13 +5,14 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { NoInventoryAlerts } from "./alerts/NoInventoryAlerts";
 import { AlertItemRow } from "./alerts/AlertItemRow";
-import { reorderItem, enableAutoReorder } from "@/services/inventoryService";
 
 export function LowStockAlerts() {
   const { 
     lowStockItems, 
     outOfStockItems, 
     autoReorderSettings,
+    reorderItem,
+    enableAutoReorder
   } = useInventoryManager();
   
   const allAlertItems = [...lowStockItems, ...outOfStockItems];
@@ -19,15 +20,6 @@ export function LowStockAlerts() {
   if (allAlertItems.length === 0) {
     return <NoInventoryAlerts />;
   }
-
-  // Type-safe wrapper functions to match the expected return types
-  const handleReorderItem = async (itemId: string, quantity: number) => {
-    return await reorderItem(itemId, quantity);
-  };
-
-  const handleEnableAutoReorder = async (itemId: string, settings: { threshold: number, quantity: number }) => {
-    return await enableAutoReorder(itemId, settings);
-  };
 
   return (
     <Card>
@@ -55,8 +47,8 @@ export function LowStockAlerts() {
                 key={item.id}
                 item={item}
                 autoReorderSettings={autoReorderSettings}
-                reorderItem={handleReorderItem}
-                enableAutoReorder={handleEnableAutoReorder}
+                reorderItem={reorderItem}
+                enableAutoReorder={enableAutoReorder}
               />
             ))}
           </TableBody>

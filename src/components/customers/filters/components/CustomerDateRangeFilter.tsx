@@ -1,15 +1,15 @@
 
 import React from 'react';
-import { DateRange } from 'react-day-picker';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface CustomerDateRangeFilterProps {
-  dateRange: DateRange | undefined;
+  dateRange?: DateRange;
   onDateRangeChange: (range: DateRange | undefined) => void;
 }
 
@@ -40,16 +40,18 @@ export const CustomerDateRangeFilter: React.FC<CustomerDateRangeFilterProps> = (
                 format(dateRange.from, "LLL dd, y")
               )
             ) : (
-              <span>Select date range</span>
+              <span>Pick a date range</span>
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
+            initialFocus
             mode="range"
+            defaultMonth={dateRange?.from}
             selected={dateRange}
             onSelect={onDateRangeChange}
-            initialFocus
+            numberOfMonths={2}
           />
         </PopoverContent>
       </Popover>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Invoice, StaffMember } from '@/types/invoice';
@@ -66,7 +67,7 @@ export function useInvoiceData() {
             status: (invoice.status as Invoice['status']) || 'draft',
             paymentMethod: invoice.payment_method || '',
             date: invoice.date || new Date().toISOString().split('T')[0],
-            due_date: invoice.due_date || '', // Changed from dueDate to due_date
+            dueDate: invoice.due_date || '',
             createdBy: invoice.created_by || '',
             assignedStaff: staffData?.map((staff: any): StaffMember => ({
               id: staff.id || crypto.randomUUID(),

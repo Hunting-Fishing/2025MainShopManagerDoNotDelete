@@ -18,7 +18,7 @@ export default function InvoicePDF({ invoice }: InvoicePDFProps) {
           <h1 className="text-2xl font-bold">INVOICE</h1>
           <p>Invoice #{invoice.id}</p>
           <p>Date: {invoice.date}</p>
-          <p>Due Date: {invoice.due_date}</p>
+          <p>Due Date: {invoice.dueDate}</p>
         </div>
         <div className="text-right">
           <h2 className="font-bold">ESM Auto Shop</h2>

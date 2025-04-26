@@ -23,10 +23,7 @@ export function WorkOrderNotes({ workOrder }: WorkOrderNotesProps) {
     try {
       const { error } = await supabase
         .from('work_orders')
-        .update({ 
-          // Make sure the notes field matches the database schema
-          description: notes // Using description instead of notes
-        })
+        .update({ notes })
         .eq('id', workOrder.id);
 
       if (error) throw error;

@@ -1,40 +1,41 @@
-
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { getInventoryItems } from '@/services/inventoryService';
-import { toast } from '@/components/ui/use-toast';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
+import { getInventoryItemById } from "@/services/inventoryService";
+import { useEffect, useState } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface InventoryQuantityManagerProps {
   itemId: string;
-  initialQuantity: number;
-  onQuantityChange: (newQuantity: number) => void;
+  quantity: number;
+  onUpdateQuantity: (id: string, quantity: number) => void;
+  maxAllowed?: number;
 }
 
-export function InventoryQuantityManager({ 
-  itemId, 
-  initialQuantity, 
-  onQuantityChange 
-}: InventoryQuantityManagerProps) {
-  const [quantity, setQuantity] = useState(initialQuantity);
-  const [maxAvailable, setMaxAvailable] = useState(0);
+export const InventoryQuantityManager: React.FC<InventoryQuantityManagerProps> = ({
+  itemId,
+  quantity,
+  onUpdateQuantity,
+  maxAllowed
+}) => {
+  const [inventoryItem, setInventoryItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    const getItemDetails = async () => {
+    const fetchItem = async () => {
       try {
         setLoading(true);
-        const inventoryItems = await getInventoryItems();
-        const item = inventoryItems.find(item => item.id === itemId);
-        
-        if (item) {
-          setMaxAvailable(item.quantity || 0);
-        }
+        setError(null);
+        const item = await getInventoryItemById(itemId);
+        setInventoryItem(item);
       } catch (error) {
-        console.error("Error fetching inventory details:", error);
+        console.error("Failed to fetch inventory item:", error);
+        setError("Failed to fetch inventory information");
         toast({
           title: "Error",
-          description: "Could not fetch inventory information",
+          description: "Failed to fetch inventory information",
           variant: "destructive"
         });
       } finally {
@@ -42,72 +43,72 @@ export function InventoryQuantityManager({
       }
     };
     
-    getItemDetails();
+    if (itemId) {
+      fetchItem();
+    }
   }, [itemId]);
   
-  const handleIncrement = () => {
-    if (quantity < maxAvailable) {
-      const newQuantity = quantity + 1;
-      setQuantity(newQuantity);
-      onQuantityChange(newQuantity);
-    } else {
+  const isInvalidQuantity = React.useMemo(() => {
+    if (!inventoryItem) return false;
+    const max = maxAllowed !== undefined ? maxAllowed : inventoryItem.quantity;
+    return quantity > max;
+  }, [inventoryItem, quantity, maxAllowed]);
+
+  const handleQuantityChange = (newQuantity: number) => {
+    if (newQuantity < 1) return;
+    
+    if (inventoryItem && maxAllowed === undefined && newQuantity > inventoryItem.quantity) {
       toast({
-        title: "Maximum reached",
-        description: `Only ${maxAvailable} available in inventory`,
+        title: "Insufficient inventory",
+        description: `Only ${inventoryItem.quantity} units available in stock`,
+        variant: "destructive"
       });
+      onUpdateQuantity(itemId, inventoryItem.quantity);
+      return;
     }
+    
+    onUpdateQuantity(itemId, newQuantity);
   };
-  
-  const handleDecrement = () => {
-    if (quantity > 1) {
-      const newQuantity = quantity - 1;
-      setQuantity(newQuantity);
-      onQuantityChange(newQuantity);
-    }
-  };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
-    if (isNaN(value) || value < 1) {
-      setQuantity(1);
-      onQuantityChange(1);
-    } else if (value > maxAvailable) {
-      setQuantity(maxAvailable);
-      onQuantityChange(maxAvailable);
-      toast({
-        title: "Maximum reached",
-        description: `Only ${maxAvailable} available in inventory`,
-      });
-    } else {
-      setQuantity(value);
-      onQuantityChange(value);
-    }
-  };
-  
+
+  if (loading) {
+    return <LoadingSpinner size="sm" className="mx-auto" />;
+  }
+
+  if (error) {
+    return <div className="text-sm text-red-500">{error}</div>;
+  }
+
+  if (!inventoryItem) {
+    return <div className="text-sm text-amber-500">Item not found in inventory</div>;
+  }
+
   return (
-    <div className="flex items-center">
+    <div className="flex items-center justify-center">
       <Button 
         variant="outline" 
-        size="sm" 
-        onClick={handleDecrement}
-        disabled={quantity <= 1 || loading}
+        size="icon" 
+        className="h-7 w-7"
+        onClick={() => handleQuantityChange(quantity - 1)}
+        disabled={quantity <= 1}
       >
         -
       </Button>
-      <Input
-        className="w-16 mx-1 text-center"
+      <Input 
+        type="number" 
         value={quantity}
-        onChange={handleInputChange}
-        disabled={loading}
+        onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+        className={`h-7 w-16 mx-1 text-center ${isInvalidQuantity ? 'border-red-500' : ''}`}
+        min={1}
       />
       <Button 
         variant="outline" 
-        size="sm" 
-        onClick={handleIncrement}
-        disabled={quantity >= maxAvailable || loading}
+        size="icon" 
+        className="h-7 w-7"
+        onClick={() => handleQuantityChange(quantity + 1)}
+        disabled={isInvalidQuantity}
       >
         +
       </Button>
     </div>
   );
-}
+};

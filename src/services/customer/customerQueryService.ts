@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { getCustomerLoyalty } from "@/services/loyalty/customerLoyaltyService";
@@ -61,16 +60,11 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
   try {
     console.log("Fetching customer by ID:", id);
     
-    if (!id || id === "undefined") {
-      console.error("Invalid customer ID provided:", id);
-      return null;
-    }
-    
     const { data, error } = await supabase
       .from("customers")
       .select("*")
       .eq("id", id)
-      .maybeSingle();
+      .single();
 
     if (error) {
       console.error("Error fetching customer:", error);

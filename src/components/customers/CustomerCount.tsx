@@ -1,35 +1,41 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAllCustomers } from '@/services/customer/customerQueryService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Loader2, AlertCircle } from 'lucide-react';
+import { Users } from 'lucide-react';
 
-interface CustomerCountProps {
-  loading?: boolean;
-  error?: boolean;
-  count: number;
-}
+export const CustomerCount: React.FC = () => {
+  const [customerCount, setCustomerCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-export const CustomerCount: React.FC<CustomerCountProps> = ({ loading = false, error = false, count = 0 }) => {
+  useEffect(() => {
+    const fetchCustomerCount = async () => {
+      try {
+        const customers = await getAllCustomers();
+        setCustomerCount(customers.length);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching customer count:', err);
+        setError('Failed to load customer count');
+        setLoading(false);
+      }
+    };
+
+    fetchCustomerCount();
+  }, []);
+
+  if (loading) return <div>Loading customer count...</div>;
+  if (error) return <div>{error}</div>;
+
   return (
-    <Card className="border border-gray-200">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-        {loading ? (
-          <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
-        ) : error ? (
-          <AlertCircle className="h-4 w-4 text-red-500" />
-        ) : (
-          <Users className="h-4 w-4 text-muted-foreground" />
-        )}
+        <Users className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="h-6 w-12 bg-gray-200 animate-pulse rounded-md" />
-        ) : error ? (
-          <div className="text-2xl font-bold text-red-500">-</div>
-        ) : (
-          <div className="text-2xl font-bold">{count}</div>
-        )}
+        <div className="text-2xl font-bold">{customerCount}</div>
       </CardContent>
     </Card>
   );

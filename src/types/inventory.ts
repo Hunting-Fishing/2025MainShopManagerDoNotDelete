@@ -9,13 +9,6 @@ export interface InventoryItem {
   quantity?: number;
   supplier?: string;
   status?: string;
-  reorderPoint?: number;
-  reorderQuantity?: number;
-  location?: string;
-  lastOrdered?: string;
-  lastReceived?: string;
-  autoReorder?: boolean;
-  unitPrice?: number; // For backward compatibility
 }
 
 export interface InventoryItemExtended {
@@ -25,18 +18,11 @@ export interface InventoryItemExtended {
   category: string;
   supplier: string;
   quantity: number;
-  min_stock_level: number;
-  unit_price: number;
+  reorderPoint: number;
+  unitPrice: number;
   location: string;
   status: string;
   description?: string;
-  reorder_quantity?: number;
-  last_ordered?: string;
-  last_received?: string;
-  auto_reorder?: boolean;
-  // Add these properties for compatibility with existing code
-  reorderPoint?: number; // Alias for min_stock_level
-  unitPrice?: number; // Alias for unit_price
 }
 
 export interface AutoReorderSettings {
@@ -50,23 +36,4 @@ export interface ReorderSettings {
   threshold: number;
   quantity: number;
   enabled: boolean;
-}
-
-// For backward compatibility
-export interface Inventory {
-  id: string;
-  name: string;
-  sku: string;
-  description?: string;
-  quantity: number;
-  price: number;
-  category: string;
-  supplier: string;
-  status: string;
-  minStockLevel: number;
-  reorderQuantity: number;
-  location: string;
-  lastOrdered?: string;
-  lastReceived?: string;
-  autoReorder?: boolean;
 }

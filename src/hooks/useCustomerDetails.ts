@@ -1,91 +1,176 @@
+import { useState, useEffect, useCallback } from "react";
+import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
+import { getCustomerById } from "@/services/customer";
+import { CustomerInteraction } from "@/types/interaction";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { getCustomerNotes } from "@/services/customers";
+import { getCustomerInteractions } from "@/services/customer/customerInteractionsService";
+import { handleApiError } from "@/utils/errorHandling";
 
-import { useState, useEffect, useCallback } from 'react';
-import { getCustomerById } from '@/services/customer';
-import { Customer, CustomerCommunication, CustomerNote } from '@/types/customer';
-import { WorkOrder } from '@/types/workOrder';
-import { CustomerInteraction } from '@/types/interaction';
-
-export const useCustomerDetails = (customerId?: string) => {
+export const useCustomerDetails = (id?: string) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [customerWorkOrders, setCustomerWorkOrders] = useState<WorkOrder[]>([]);
+  const [customerWorkOrders, setCustomerWorkOrders] = useState<any[]>([]);
   const [customerInteractions, setCustomerInteractions] = useState<CustomerInteraction[]>([]);
   const [customerCommunications, setCustomerCommunications] = useState<CustomerCommunication[]>([]);
   const [customerNotes, setCustomerNotes] = useState<CustomerNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState("overview");
+  const { toast } = useToast();
 
-  // Function to refresh customer data
-  const refreshCustomerData = useCallback(async () => {
-    if (!customerId) {
-      setError("No customer ID provided");
+  useEffect(() => {
+    // Validate ID before making any API calls
+    if (!id || id === "undefined") {
+      setError("Invalid customer ID provided");
       setLoading(false);
       return;
     }
     
+    loadCustomerDetails(id);
+  }, [id]);
+
+  const loadCustomerDetails = async (customerId: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log("Fetching customer details for ID:", customerId);
+      if (!customerId || customerId === "undefined") {
+        throw new Error("Invalid customer ID provided");
+      }
       
-      // Fetch customer details
+      // Fetch customer data with vehicles included
+      console.log("Loading customer details for ID:", customerId);
       const customerData = await getCustomerById(customerId);
+      console.log("Customer data loaded:", customerData);
       
-      if (!customerData) {
-        setError('Customer not found');
+      if (customerData) {
+        setCustomer(customerData);
+      } else {
+        setError("Customer not found");
+        toast({
+          title: "Not Found",
+          description: "Customer could not be found",
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
+
+      // Load work orders from Supabase
+      const { data: workOrders, error: workOrdersError } = await supabase
+        .from('work_orders')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      if (workOrdersError) {
+        console.error("Error fetching work orders:", workOrdersError);
+        toast({
+          title: "Warning", 
+          description: "Could not load customer work orders",
+          variant: "warning",
+        });
+      } else {
+        setCustomerWorkOrders(workOrders || []);
+      }
+
+      // Fetch customer interactions using the updated service
+      try {
+        const interactions = await getCustomerInteractions(customerId);
+        setCustomerInteractions(interactions || []);
+      } catch (interactionError) {
+        console.error("Error handling interactions:", interactionError);
+        toast({
+          title: "Warning", 
+          description: "Could not load customer interactions",
+          variant: "warning",
+        });
+        setCustomerInteractions([]);
+      }
+
+      // Fetch communications from Supabase
+      fetchCustomerCommunications(customerId);
       
-      setCustomer(customerData);
-      console.log("Customer data retrieved:", customerData);
-      
-      // Fetch work orders for this customer
-      // This is a placeholder - in a real app, you'd fetch this data from your API
-      setCustomerWorkOrders([]);
-      
-      // Fetch interactions
-      setCustomerInteractions([]);
-      
-      // Fetch communications
-      setCustomerCommunications([]);
-      
-      // Fetch notes
-      setCustomerNotes([]);
-      
-    } catch (err: any) {
-      console.error('Error fetching customer details:', err);
-      setError(err.message || 'Failed to load customer details');
+      // Fetch notes from Supabase
+      fetchCustomerNotes(customerId);
+
+    } catch (error) {
+      console.error("Error loading customer details:", error);
+      setError("Failed to load customer details");
+      handleApiError(error, "Failed to load customer details. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  };
 
-  // Load customer data when component mounts or ID changes
-  useEffect(() => {
-    if (customerId) {
-      console.log("Customer ID changed, refreshing data for:", customerId);
-      refreshCustomerData();
-    } else {
-      console.log("No customer ID provided to useCustomerDetails");
-      setError("No customer ID provided");
-      setLoading(false);
+  const fetchCustomerCommunications = async (customerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_communications')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching communications:", error);
+        toast({
+          title: "Warning", 
+          description: "Could not load customer communications",
+          variant: "warning",
+        });
+        return;
+      }
+      
+      // Convert the type to the correct enum type
+      const typedCommunications = data?.map(comm => ({
+        ...comm,
+        type: comm.type as "email" | "phone" | "text" | "in-person",
+        direction: comm.direction as "incoming" | "outgoing",
+        status: comm.status as "completed" | "pending" | "failed"
+      })) || [];
+      
+      setCustomerCommunications(typedCommunications);
+    } catch (error) {
+      console.error("Error fetching communications:", error);
+      handleApiError(error, "Could not load customer communications");
     }
-  }, [customerId, refreshCustomerData]);
+  };
 
-  // Handle adding a new interaction
+  const fetchCustomerNotes = async (customerId: string) => {
+    try {
+      const notes = await getCustomerNotes(customerId);
+      setCustomerNotes(notes);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      handleApiError(error, "Could not load customer notes");
+    }
+  };
+
+  // Function to refresh customer data
+  const refreshCustomerData = useCallback(async () => {
+    if (id && id !== "undefined") {
+      loadCustomerDetails(id);
+    } else {
+      setError("Cannot refresh: Missing or invalid customer ID");
+      toast({
+        title: "Error",
+        description: "Cannot refresh customer data: Missing ID",
+        variant: "destructive",
+      });
+    }
+  }, [id, toast]);
+
   const handleInteractionAdded = useCallback((interaction: CustomerInteraction) => {
     setCustomerInteractions(prev => [interaction, ...prev]);
+    setActiveTab("interactions");
   }, []);
 
-  // Handle adding a new communication
   const handleCommunicationAdded = useCallback((communication: CustomerCommunication) => {
     setCustomerCommunications(prev => [communication, ...prev]);
   }, []);
 
-  // Handle adding a new note
   const handleNoteAdded = useCallback((note: CustomerNote) => {
     setCustomerNotes(prev => [note, ...prev]);
   }, []);

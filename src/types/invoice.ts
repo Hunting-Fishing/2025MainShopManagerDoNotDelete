@@ -1,27 +1,8 @@
 
-export interface Invoice {
-  id: string;
-  customer: string;
-  customerEmail: string;
-  customerAddress: string;
-  date: string;
-  dueDate: string;
-  due_date?: string; // Added for compatibility with API
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
-  items: InvoiceItem[];
-  notes?: string;
-  description?: string;
-  paymentMethod?: string;
-  workOrderId?: string;
-  assignedStaff: StaffMember[];
-  createdBy: string;
-  lastUpdatedBy?: string;
-  lastUpdatedAt?: string;
-  customer_id?: string;
-}
+import { Dispatch, SetStateAction } from 'react';
+import { InventoryItem as BaseInventoryItem } from '@/types/inventory';
+
+export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
 
 export interface InvoiceItem {
   id: string;
@@ -29,12 +10,14 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
+  hours?: boolean; // Is this a labor/time entry
   total: number;
-  hours?: boolean;
-  sku?: string;
-  category?: string;
-  templateId?: string;
+  sku: string;
+  category: string;
 }
+
+// Use inventory type directly to avoid conflicts
+export type InventoryItem = BaseInventoryItem;
 
 export interface StaffMember {
   id: string;
@@ -42,46 +25,72 @@ export interface StaffMember {
   role?: string;
 }
 
+export interface Invoice {
+  id: string;
+  workOrderId?: string;
+  customer: string;
+  customerAddress?: string;
+  customerEmail?: string;
+  description?: string;
+  notes?: string;
+  total: number;
+  subtotal: number;
+  tax: number;
+  status: InvoiceStatus;
+  paymentMethod?: string;
+  date: string;
+  dueDate: string;
+  createdBy: string;
+  assignedStaff: StaffMember[];
+  items: InvoiceItem[];
+  customer_id?: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
+}
+
 export interface InvoiceTemplate {
   id: string;
   name: string;
-  description?: string;
-  default_tax_rate?: number;
-  default_due_date_days?: number;
-  default_notes?: string;
-  usage_count: number;
-  createdAt?: string;
-  created_at?: string;
-  lastUsed?: string;
-  last_used?: string;
-  defaultItems?: InvoiceItem[];
-}
-
-export interface InvoiceTemplateItem extends InvoiceItem {
-  templateId: string;
+  description: string;
   createdAt: string;
+  lastUsed: string | null;
+  usageCount: number;
+  defaultTaxRate: number;
+  defaultDueDateDays: number;
+  defaultNotes: string;
+  defaultItems: InvoiceItem[];
 }
 
-export interface InvoiceFiltersProps {
-  filters: any;
-  onFilterChange?: (filters: any) => void;
-  setFilters?: (filters: any) => void;
-  resetFilters?: () => void;
+export interface WorkOrder {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  vehicle_id: string;
+  vehicle_info: string;
+  status: string;
+  description: string;
+  total_cost: number;
 }
+
+export type InvoiceUpdater = (prev: Invoice) => Invoice;
 
 // Helper function to create an invoice updater
-export const createInvoiceUpdater = (updates: Partial<Invoice>) => {
+export const createInvoiceUpdater = (updates: Partial<Invoice>): InvoiceUpdater => {
   return (prev: Invoice) => ({
     ...prev,
     ...updates
   });
 };
 
-// Helper function to convert invoice items to template items
-export const convertToTemplateItems = (items: InvoiceItem[]): InvoiceTemplateItem[] => {
-  return items.map(item => ({
-    ...item,
-    templateId: 'pending-id',
-    createdAt: new Date().toISOString()
-  }));
-};
+export interface InvoiceFiltersProps {
+  filters: {
+    status: string;
+    customer: string;
+    dateRange: {
+      from: Date | null;
+      to: Date | null;
+    };
+  };
+  setFilters: (filters: any) => void;
+  resetFilters: () => void;
+}

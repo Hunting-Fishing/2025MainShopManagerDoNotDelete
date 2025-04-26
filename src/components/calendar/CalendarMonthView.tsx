@@ -1,4 +1,3 @@
-
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -10,7 +9,7 @@ import {
   isToday
 } from "date-fns";
 import { CalendarDay } from "./CalendarDay";
-import { CalendarEvent } from '@/types/calendar/events'; // Import directly from events.ts
+import { CalendarEvent } from "@/types/calendar";
 import { ChatRoom } from "@/types/chat";
 
 interface CalendarMonthViewProps {

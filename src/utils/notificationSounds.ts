@@ -1,69 +1,83 @@
 
+// This is a utility file for playing notification sounds
+
+// Audio cache to prevent reloading the same sound
+const audioCache: Record<string, HTMLAudioElement> = {};
+
 /**
- * Play notification sound based on the sound name
- * @param sound - The sound name to play
+ * Play a notification sound
+ * @param sound The sound identifier
+ * @returns Promise that resolves when the sound is played
  */
 export const playNotificationSound = (sound: string): Promise<void> => {
-  let audioPath;
-  
-  switch (sound) {
-    case 'chime':
-      audioPath = '/sounds/chime.mp3';
-      break;
-    case 'bell':
-      audioPath = '/sounds/bell.mp3';
-      break;
-    case 'ping':
-      audioPath = '/sounds/ping.mp3';
-      break;
-    case 'pop':
-      audioPath = '/sounds/pop.mp3';
-      break;
-    default:
-      audioPath = '/sounds/chime.mp3';
-  }
-  
-  // Log that we're trying to play a sound, useful for debugging
-  console.log(`Attempting to play notification sound: ${sound}`);
-  
-  // Create and play the audio
   return new Promise((resolve, reject) => {
+    if (sound === 'none') {
+      resolve();
+      return;
+    }
+
     try {
-      const audio = new Audio(audioPath);
-      audio.volume = 0.5; // Set volume to 50%
-      
-      audio.onended = () => {
-        resolve();
+      // In a real implementation, these paths would point to actual sound files
+      const soundMap: Record<string, string> = {
+        'default': '/sounds/notification-default.mp3',
+        'bell': '/sounds/notification-bell.mp3',
+        'chime': '/sounds/notification-chime.mp3',
+        'alert': '/sounds/notification-alert.mp3',
       };
+
+      const soundPath = soundMap[sound] || soundMap.default;
+
+      // Check if we have a cached audio instance
+      if (!audioCache[sound]) {
+        audioCache[sound] = new Audio(soundPath);
+      }
+
+      const audio = audioCache[sound];
       
-      audio.onerror = (error) => {
-        console.error('Error playing notification sound:', error);
-        reject(error);
-      };
+      // Reset the audio to the beginning if it's already played
+      audio.currentTime = 0;
       
       // Play the sound
-      const playPromise = audio.play();
-      
-      // Modern browsers return a promise from audio.play()
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          // Auto-play was prevented
-          // Show a UI element to let the user manually start playback
-          console.warn('Audio playback was prevented by the browser:', error);
-          resolve(); // Resolve anyway to prevent hanging
+      audio.play()
+        .then(() => resolve())
+        .catch(err => {
+          console.warn('Unable to play notification sound:', err);
+          resolve(); // Resolve anyway to not block the notification flow
         });
-      }
+
+      // Cleanup listeners
+      audio.onended = () => resolve();
+      audio.onerror = () => {
+        console.warn('Error playing notification sound');
+        resolve();  // Resolve anyway to not block the notification flow
+      };
     } catch (error) {
-      console.error('Failed to play notification sound:', error);
-      reject(error);
+      console.warn('Error initializing notification sound:', error);
+      resolve();  // Resolve anyway to not block the notification flow
     }
   });
 };
 
 /**
- * Check if notification sounds are supported in the current browser
- * @returns Boolean indicating whether notification sounds are supported
+ * Preload sounds for faster playback
  */
-export const areNotificationSoundsSupported = (): boolean => {
-  return typeof Audio !== 'undefined';
+export const preloadNotificationSounds = (): void => {
+  const sounds = ['default', 'bell', 'chime', 'alert'];
+  
+  sounds.forEach(sound => {
+    try {
+      const soundMap: Record<string, string> = {
+        'default': '/sounds/notification-default.mp3',
+        'bell': '/sounds/notification-bell.mp3',
+        'chime': '/sounds/notification-chime.mp3',
+        'alert': '/sounds/notification-alert.mp3',
+      };
+
+      const audio = new Audio(soundMap[sound]);
+      audio.preload = 'auto';
+      audioCache[sound] = audio;
+    } catch (error) {
+      console.warn(`Failed to preload sound: ${sound}`, error);
+    }
+  });
 };

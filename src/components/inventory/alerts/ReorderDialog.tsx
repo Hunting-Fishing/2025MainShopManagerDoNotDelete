@@ -1,82 +1,65 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ShoppingCart } from "lucide-react";
+import { useState } from "react";
 import { InventoryItemExtended } from "@/types/inventory";
 
 interface ReorderDialogProps {
   item: InventoryItemExtended;
-  onReorder: (itemId: string, quantity: number) => Promise<boolean>;
+  onReorder: (itemId: string, quantity: number) => void;
 }
 
 export function ReorderDialog({ item, onReorder }: ReorderDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [quantity, setQuantity] = useState(item.reorderPoint * 2);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [quantity, setQuantity] = useState(10);
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      await onReorder(item.id, quantity);
-      setOpen(false);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleReorder = () => {
+    onReorder(item.id, quantity);
+    setIsOpen(false);
   };
 
   return (
-    <>
-      <Button 
-        onClick={() => setOpen(true)} 
-        size="sm" 
-        variant={item.quantity === 0 ? "destructive" : "outline"}
-        className={item.quantity === 0 ? "bg-red-100 text-red-800 hover:bg-red-200 border-red-300" : ""}
-      >
-        Reorder
-      </Button>
-      
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reorder {item.name}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="current">Current Stock</Label>
-                <Input id="current" value={item.quantity} disabled />
-              </div>
-              <div>
-                <Label htmlFor="reorderPoint">Reorder Point</Label>
-                <Input id="reorderPoint" value={item.reorderPoint} disabled />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="quantity">Order Quantity</Label>
-              <Input 
-                id="quantity" 
-                type="number"
-                value={quantity} 
-                onChange={e => setQuantity(Number(e.target.value))}
-                min={1}
-              />
-            </div>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <ShoppingCart className="h-4 w-4 mr-1" />
+          Reorder
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reorder Item</DialogTitle>
+          <DialogDescription>
+            Specify the quantity you want to order for {item.name}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="quantity">Quantity to Order</Label>
+            <Input 
+              id="quantity" 
+              type="number" 
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+            />
           </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? "Ordering..." : "Place Order"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleReorder}>Place Order</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

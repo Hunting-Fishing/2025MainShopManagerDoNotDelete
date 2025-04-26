@@ -1,114 +1,111 @@
 
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { InvoiceItem, Invoice, InvoiceTemplate } from '@/types/invoice';
+import { InvoiceTemplate, Invoice } from "@/types/invoice";
 
-interface SaveTemplateDialogProps {
+export interface SaveTemplateDialogProps {
   open: boolean;
   onClose: () => void;
-  currentInvoice: Invoice;
-  taxRate: number;
+  invoice: Invoice;
   onSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
 }
 
-export function SaveTemplateDialog({
-  open,
-  onClose,
-  currentInvoice,
-  taxRate,
-  onSaveTemplate,
-}: SaveTemplateDialogProps) {
+export function SaveTemplateDialog({ open, onClose, invoice, onSaveTemplate }: SaveTemplateDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [taxRate, setTaxRate] = useState(8);
+  const [dueDays, setDueDays] = useState(30);
   const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!name) return;
-    
+  
+  const handleSave = () => {
     setSaving(true);
-    try {
-      // Create the template data
-      const templateData = {
-        name,
-        description,
-        default_notes: currentInvoice.notes || "",
-        default_due_date_days: 30, // Default value
-        default_tax_rate: taxRate,
-        usage_count: 0,
-        last_used: null,
-        defaultItems: currentInvoice.items || []
-      };
-      
-      onSaveTemplate(templateData);
-      onClose();
-      setName("");
-      setDescription("");
-    } catch (error) {
-      console.error("Error saving template:", error);
-    } finally {
-      setSaving(false);
-    }
+    
+    const template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount"> = {
+      name,
+      description,
+      defaultTaxRate: taxRate / 100,
+      defaultDueDateDays: dueDays,
+      defaultNotes: invoice.notes || "",
+      defaultItems: invoice.items,
+      lastUsed: null
+    };
+    
+    onSaveTemplate(template);
+    setSaving(false);
+    resetForm();
+    onClose();
   };
-
+  
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setTaxRate(8);
+    setDueDays(30);
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Save as Template</DialogTitle>
-          <DialogDescription>
-            This will save the current invoice as a reusable template.
-          </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="templateName">Template Name</Label>
-            <Input
-              id="templateName"
-              placeholder="e.g., Standard Service Invoice"
+        <div className="space-y-4 py-2">
+          <div>
+            <Label htmlFor="name">Template Name</Label>
+            <Input 
+              id="name" 
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
+              placeholder="e.g. Standard Oil Change" 
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="templateDescription">Description (optional)</Label>
+          <div>
+            <Label htmlFor="description">Description (optional)</Label>
             <Textarea
-              id="templateDescription"
-              placeholder="Describe what this template is used for"
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe when to use this template"
+              rows={2}
             />
           </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={saving}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!name || saving}>
-              {saving ? "Saving..." : "Save Template"}
-            </Button>
-          </DialogFooter>
-        </form>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+              <Input
+                id="taxRate"
+                type="number"
+                value={taxRate}
+                onChange={(e) => setTaxRate(Number(e.target.value))}
+                min={0}
+                max={100}
+              />
+            </div>
+            <div>
+              <Label htmlFor="dueDays">Default Due Days</Label>
+              <Input
+                id="dueDays"
+                type="number"
+                value={dueDays}
+                onChange={(e) => setDueDays(Number(e.target.value))}
+                min={1}
+              />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button 
+            onClick={handleSave}
+            disabled={saving || !name.trim()}
+          >
+            Save Template
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

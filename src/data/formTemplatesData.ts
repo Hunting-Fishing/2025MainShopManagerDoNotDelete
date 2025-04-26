@@ -1,240 +1,193 @@
 
-// Sample form template data for demonstration purposes
-export const formTemplateData = [
+import { FormTemplate, FormUpload, FormCategory } from "@/types/form";
+
+// Form Templates
+export const formTemplates: FormTemplate[] = [
   {
-    id: '1',
-    name: 'Vehicle Inspection Form',
-    description: 'A comprehensive vehicle inspection checklist',
+    id: "template-1",
+    name: "Vehicle Inspection Form",
+    description: "Standard vehicle inspection checklist for service entry",
+    category: "Inspections",
+    content: {
+      sections: [
+        {
+          title: "Customer Information",
+          fields: [
+            { id: "name", label: "Customer Name", type: "text", required: true },
+            { id: "phone", label: "Phone Number", type: "text", required: true }
+          ]
+        },
+        {
+          title: "Vehicle Information",
+          fields: [
+            { id: "make", label: "Make", type: "text", required: true },
+            { id: "model", label: "Model", type: "text", required: true },
+            { id: "year", label: "Year", type: "number", required: true },
+            { id: "vin", label: "VIN", type: "text", required: true }
+          ]
+        }
+      ]
+    },
+    created_by: "Admin User",
+    created_at: "2023-05-15T14:30:00Z",
+    updated_at: "2023-05-15T14:30:00Z",
     version: 1,
-    category: 'inspection',
     is_published: true,
-    created_at: '2023-01-15T10:30:00Z',
-    sections: [
-      {
-        id: 's1',
-        title: 'Vehicle Information',
-        description: 'Basic vehicle details',
-        displayOrder: 1,
-        fields: [
-          {
-            id: 'f1',
-            label: 'VIN',
-            fieldType: 'text',
-            required: true,
-            placeholder: 'Enter vehicle identification number',
-            displayOrder: 1,
-            validationRules: {
-              minLength: 17,
-              maxLength: 17
-            }
-          },
-          {
-            id: 'f2',
-            label: 'Make',
-            fieldType: 'text',
-            required: true,
-            placeholder: 'Vehicle manufacturer',
-            displayOrder: 2
-          },
-          {
-            id: 'f3',
-            label: 'Model',
-            fieldType: 'text',
-            required: true,
-            placeholder: 'Vehicle model',
-            displayOrder: 3
-          },
-          {
-            id: 'f4',
-            label: 'Year',
-            fieldType: 'number',
-            required: true,
-            placeholder: 'Vehicle year',
-            displayOrder: 4,
-            validationRules: {
-              min: 1900,
-              max: 2030
-            }
-          },
-          {
-            id: 'f5',
-            label: 'Mileage',
-            fieldType: 'number',
-            required: true,
-            placeholder: 'Current vehicle mileage',
-            displayOrder: 5
-          }
-        ]
-      },
-      {
-        id: 's2',
-        title: 'Exterior Inspection',
-        description: 'Inspection of vehicle exterior components',
-        displayOrder: 2,
-        fields: [
-          {
-            id: 'f6',
-            label: 'Body Condition',
-            fieldType: 'select',
-            required: true,
-            displayOrder: 1,
-            options: [
-              { label: 'Excellent', value: 'excellent' },
-              { label: 'Good', value: 'good' },
-              { label: 'Fair', value: 'fair' },
-              { label: 'Poor', value: 'poor' }
-            ]
-          },
-          {
-            id: 'f7',
-            label: 'Paint Condition',
-            fieldType: 'select',
-            required: true,
-            displayOrder: 2,
-            options: [
-              { label: 'Excellent', value: 'excellent' },
-              { label: 'Good', value: 'good' },
-              { label: 'Fair', value: 'fair' },
-              { label: 'Poor', value: 'poor' }
-            ]
-          },
-          {
-            id: 'f8',
-            label: 'Windshield',
-            fieldType: 'checkbox',
-            required: true,
-            displayOrder: 3,
-            helpText: 'Check if windshield is intact with no cracks'
-          },
-          {
-            id: 'f9',
-            label: 'Lights Functional',
-            fieldType: 'checkbox',
-            required: true,
-            displayOrder: 4,
-            helpText: 'Check if all exterior lights are working'
-          }
-        ]
-      }
-    ]
+    tags: ["inspection", "vehicle", "checklist"]
   },
   {
-    id: '2',
-    name: 'Customer Satisfaction Survey',
-    description: 'Post-service customer feedback form',
+    id: "template-2",
+    name: "Service Agreement",
+    description: "Standard service agreement for customer signature",
+    category: "Agreements",
+    content: {
+      sections: [
+        {
+          title: "Terms and Conditions",
+          fields: [
+            { id: "terms", label: "Terms", type: "textarea", required: false }
+          ]
+        },
+        {
+          title: "Customer Signature",
+          fields: [
+            { id: "signature", label: "Signature", type: "text", required: true },
+            { id: "date", label: "Date", type: "date", required: true }
+          ]
+        }
+      ]
+    },
+    created_by: "Admin User",
+    created_at: "2023-06-10T09:15:00Z",
+    updated_at: "2023-06-15T11:30:00Z",
     version: 2,
-    category: 'feedback',
     is_published: true,
-    created_at: '2023-02-20T14:45:00Z',
-    sections: [
-      {
-        id: 's3',
-        title: 'Service Quality',
-        description: 'Rate your satisfaction with our service',
-        displayOrder: 1,
-        fields: [
-          {
-            id: 'f10',
-            label: 'Overall Satisfaction',
-            fieldType: 'rating',
-            required: true,
-            displayOrder: 1,
-            helpText: 'Rate your overall satisfaction with our service'
-          },
-          {
-            id: 'f11',
-            label: 'Technician Professionalism',
-            fieldType: 'rating',
-            required: true,
-            displayOrder: 2
-          },
-          {
-            id: 'f12',
-            label: 'Service Timeliness',
-            fieldType: 'rating',
-            required: true,
-            displayOrder: 3
-          }
-        ]
-      },
-      {
-        id: 's4',
-        title: 'Additional Feedback',
-        description: 'Please provide any additional comments',
-        displayOrder: 2,
-        fields: [
-          {
-            id: 'f13',
-            label: 'Comments',
-            fieldType: 'textarea',
-            required: false,
-            displayOrder: 1,
-            placeholder: 'Share your thoughts about our service'
-          },
-          {
-            id: 'f14',
-            label: 'Would you recommend us?',
-            fieldType: 'radio',
-            required: true,
-            displayOrder: 2,
-            options: [
-              { label: 'Yes', value: 'yes' },
-              { label: 'No', value: 'no' },
-              { label: 'Maybe', value: 'maybe' }
-            ]
-          }
-        ]
-      }
-    ]
+    tags: ["agreement", "legal", "signature"]
   },
   {
-    id: '3',
-    name: 'Maintenance Checklist',
-    description: 'Standard maintenance checklist form',
+    id: "template-3",
+    name: "Customer Intake Form",
+    description: "New customer information collection",
+    category: "Customer Management",
+    content: {
+      sections: [
+        {
+          title: "Personal Information",
+          fields: [
+            { id: "firstName", label: "First Name", type: "text", required: true },
+            { id: "lastName", label: "Last Name", type: "text", required: true },
+            { id: "email", label: "Email", type: "text", required: true },
+            { id: "phone", label: "Phone", type: "text", required: true }
+          ]
+        },
+        {
+          title: "Additional Information",
+          fields: [
+            { id: "referralSource", label: "How did you hear about us?", type: "select", required: false, 
+              options: ["Google", "Friend", "Social Media", "Other"] }
+          ]
+        }
+      ]
+    },
+    created_by: "Admin User",
+    created_at: "2023-07-20T16:45:00Z",
+    updated_at: "2023-07-20T16:45:00Z",
     version: 1,
-    category: 'maintenance',
     is_published: true,
-    created_at: '2023-03-10T09:15:00Z',
-    sections: [
-      {
-        id: 's5',
-        title: 'Fluids Check',
-        description: 'Verification of all vehicle fluids',
-        displayOrder: 1,
-        fields: [
-          {
-            id: 'f15',
-            label: 'Engine Oil',
-            fieldType: 'checkbox',
-            required: true,
-            displayOrder: 1
-          },
-          {
-            id: 'f16',
-            label: 'Transmission Fluid',
-            fieldType: 'checkbox',
-            required: true,
-            displayOrder: 2
-          },
-          {
-            id: 'f17',
-            label: 'Brake Fluid',
-            fieldType: 'checkbox',
-            required: true,
-            displayOrder: 3
-          },
-          {
-            id: 'f18',
-            label: 'Coolant',
-            fieldType: 'checkbox',
-            required: true,
-            displayOrder: 4
-          }
-        ]
-      }
-    ]
+    tags: ["intake", "customer", "onboarding"]
+  },
+  {
+    id: "template-4",
+    name: "Work Authorization",
+    description: "Authorization form for repair work",
+    category: "Agreements",
+    content: {
+      sections: [
+        {
+          title: "Work Details",
+          fields: [
+            { id: "workDescription", label: "Work Description", type: "textarea", required: true },
+            { id: "estimatedCost", label: "Estimated Cost", type: "number", required: true }
+          ]
+        },
+        {
+          title: "Authorization",
+          fields: [
+            { id: "authorizeName", label: "Name", type: "text", required: true },
+            { id: "authorizeSignature", label: "Signature", type: "text", required: true },
+            { id: "authorizeDate", label: "Date", type: "date", required: true }
+          ]
+        }
+      ]
+    },
+    created_by: "Admin User",
+    created_at: "2023-08-05T10:20:00Z",
+    updated_at: "2023-08-05T10:20:00Z",
+    version: 1,
+    is_published: true,
+    tags: ["authorization", "work", "repair"]
   }
 ];
 
-// Export for backwards compatibility
-export const formTemplates = formTemplateData;
+// Form Uploads
+export const formUploads: FormUpload[] = [
+  {
+    id: "upload-1",
+    filename: "customer-satisfaction-survey.pdf",
+    filetype: "PDF",
+    filesize: "245 KB",
+    file_url: "/uploads/customer-satisfaction-survey.pdf",
+    uploaded_by: "Admin User",
+    uploaded_at: "2023-09-12T08:30:00Z"
+  },
+  {
+    id: "upload-2",
+    filename: "equipment-warranty-form.docx",
+    filetype: "DOCX",
+    filesize: "132 KB",
+    file_url: "/uploads/equipment-warranty-form.docx",
+    uploaded_by: "Admin User",
+    uploaded_at: "2023-10-03T14:15:00Z"
+  },
+  {
+    id: "upload-3",
+    filename: "hvac-maintenance-agreement.pdf",
+    filetype: "PDF",
+    filesize: "1.2 MB",
+    file_url: "/uploads/hvac-maintenance-agreement.pdf",
+    uploaded_by: "Admin User",
+    uploaded_at: "2023-10-15T09:45:00Z"
+  }
+];
+
+// Form Categories
+export const formCategories: FormCategory[] = [
+  {
+    id: "cat-1",
+    name: "Inspections",
+    description: "Forms for conducting equipment and vehicle inspections",
+    count: 3,
+    created_at: "2023-05-10T00:00:00Z"
+  },
+  {
+    id: "cat-2",
+    name: "Agreements",
+    description: "Service agreements and contracts for customer signature",
+    count: 4,
+    created_at: "2023-05-10T00:00:00Z"
+  },
+  {
+    id: "cat-3",
+    name: "Customer Management",
+    description: "Forms related to customer intake and management",
+    count: 2,
+    created_at: "2023-06-15T00:00:00Z"
+  },
+  {
+    id: "cat-4",
+    name: "Maintenance",
+    description: "Maintenance checklists and schedules",
+    count: 1,
+    created_at: "2023-07-20T00:00:00Z"
+  }
+];

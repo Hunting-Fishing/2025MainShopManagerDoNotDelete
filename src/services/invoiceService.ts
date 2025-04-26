@@ -1,69 +1,7 @@
-import { supabase } from '@/lib/supabase';
-import { Invoice, InvoiceTemplate, InvoiceTemplateItem } from '@/types/invoice';
-import { adaptInvoiceItemsToTemplateItems } from '@/components/invoices/templates/helpers';
 
-// Save an invoice template
-export async function saveInvoiceTemplate(
-  template: Omit<InvoiceTemplate, 'id' | 'createdAt' | 'usageCount'>
-): Promise<InvoiceTemplate> {
-  try {
-    // First save the template
-    const { data: templateData, error: templateError } = await supabase
-      .from('invoice_templates')
-      .insert({
-        name: template.name,
-        description: template.description || '',
-        default_notes: template.defaultNotes || '',
-        default_due_date_days: template.defaultDueDateDays || 30,
-        default_tax_rate: template.defaultTaxRate || 0,
-        usage_count: 0
-      })
-      .select('*')
-      .single();
-
-    if (templateError) throw templateError;
-
-    const templateId = templateData.id;
-
-    // Then save all the template items
-    const templateItems = template.defaultItems.map(item => ({
-      template_id: templateId,
-      name: item.name,
-      description: item.description || '',
-      quantity: item.quantity,
-      price: item.price,
-      total: item.total,
-      hours: item.hours || false
-    }));
-
-    const { error: itemsError } = await supabase
-      .from('invoice_template_items')
-      .insert(templateItems);
-
-    if (itemsError) throw itemsError;
-
-    // Format and return the full template
-    return {
-      id: templateData.id,
-      name: templateData.name,
-      description: templateData.description,
-      defaultNotes: templateData.default_notes,
-      defaultDueDateDays: templateData.default_due_date_days,
-      defaultTaxRate: templateData.default_tax_rate,
-      createdAt: templateData.created_at,
-      usageCount: templateData.usage_count,
-      lastUsed: templateData.last_used,
-      defaultItems: template.defaultItems.map(item => ({
-        ...item,
-        templateId: templateData.id,
-        createdAt: new Date().toISOString()
-      }))
-    };
-  } catch (error) {
-    console.error('Error saving invoice template:', error);
-    throw error;
-  }
-}
+import { supabase } from "@/integrations/supabase/client";
+import { Invoice, InvoiceItem, StaffMember } from "@/types/invoice";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Fetches all invoices for the current user/organization

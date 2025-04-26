@@ -42,7 +42,7 @@ export function InvoiceDetailsContent({
           <p className="text-slate-500">{invoice.id}</p>
           <div className="mt-4">
             <p className="font-medium">Date Issued: {invoice.date}</p>
-            <p className="font-medium">Due Date: {invoice.due_date}</p>
+            <p className="font-medium">Due Date: {invoice.dueDate}</p>
           </div>
         </div>
         
@@ -82,7 +82,7 @@ export function InvoiceDetailsContent({
         paymentMethod={invoice.paymentMethod || "N/A"}
         status={invoice.status}
         statusLabel={statusStyles[invoice.status as keyof typeof statusStyles].label}
-        createdBy={invoice.createdBy}
+        createdBy={invoice.createdBy || ""}
         customerId={invoice.customer_id}
       />
       

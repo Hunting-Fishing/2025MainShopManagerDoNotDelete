@@ -1,83 +1,130 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-// Define type for business constant
-interface BusinessConstant {
-  id: string;
+export interface BusinessConstant {
   value: string;
   label: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export function useBusinessConstants() {
   const [businessTypes, setBusinessTypes] = useState<BusinessConstant[]>([]);
-  const [industries, setIndustries] = useState<BusinessConstant[]>([]);
+  const [businessIndustries, setBusinessIndustries] = useState<BusinessConstant[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<BusinessConstant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchBusinessConstants() {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch business types
-        const { data: businessTypesData, error: businessTypesError } = await supabase
-          .from('business_types')
-          .select('*');
-
-        if (businessTypesError) throw businessTypesError;
-        setBusinessTypes(businessTypesData || []);
-
-        // Fetch industries
-        const { data: industriesData, error: industriesError } = await supabase
-          .from('business_industries')
-          .select('*');
-
-        if (industriesError) throw industriesError;
-        setIndustries(industriesData || []);
-
-        // Fetch payment methods
-        const { data: paymentMethodsData, error: paymentMethodsError } = await supabase
-          .from('payment_methods_options')
-          .select('*');
-
-        if (paymentMethodsError) throw paymentMethodsError;
-        setPaymentMethods(paymentMethodsData || []);
-      } catch (err) {
-        console.error('Error fetching business constants:', err);
-        setError('Failed to load business constants');
-      } finally {
-        setLoading(false);
+  const fetchBusinessConstants = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Check if we're authenticated first
+      const { data: authData } = await supabase.auth.getSession();
+      const isAuth = !!authData.session;
+      
+      // Fetch business types
+      const { data: typesData, error: typesError } = await supabase
+        .from('business_types')
+        .select('*')
+        .order('label');
+      
+      if (typesError) throw typesError;
+      
+      if (typesData && typesData.length > 0) {
+        setBusinessTypes(typesData.map(item => ({
+          value: item.value || item.id,
+          label: item.label || item.name
+        })));
+      } else {
+        // Fallback defaults if no data exists
+        const defaultBusinessTypes: BusinessConstant[] = [
+          { value: 'sole_proprietorship', label: 'Sole Proprietorship' },
+          { value: 'partnership', label: 'Partnership' },
+          { value: 'llc', label: 'Limited Liability Company (LLC)' },
+          { value: 'corporation', label: 'Corporation' },
+          { value: 's_corporation', label: 'S Corporation' },
+          { value: 'nonprofit', label: 'Nonprofit Organization' }
+        ];
+        setBusinessTypes(defaultBusinessTypes);
       }
+      
+      // Fetch business industries
+      const { data: industriesData, error: industriesError } = await supabase
+        .from('business_industries')
+        .select('*')
+        .order('label');
+      
+      if (industriesError) throw industriesError;
+      
+      let industriesList: BusinessConstant[] = [];
+      if (industriesData && industriesData.length > 0) {
+        industriesList = industriesData.map(item => ({
+          value: item.value || item.id,
+          label: item.label || item.name
+        }));
+      } else {
+        // Fallback defaults if no data exists
+        industriesList = [
+          { value: 'automotive', label: 'Automotive' },
+          { value: 'construction', label: 'Construction' },
+          { value: 'retail', label: 'Retail' },
+          { value: 'healthcare', label: 'Healthcare' },
+          { value: 'hospitality', label: 'Hospitality' },
+          { value: 'manufacturing', label: 'Manufacturing' },
+          { value: 'technology', label: 'Technology' },
+          { value: 'transportation', label: 'Transportation' }
+        ];
+      }
+      
+      // Always ensure "other" option is available for industries
+      if (!industriesList.some(i => i.value === 'other')) {
+        industriesList.push({ value: 'other', label: 'Other' });
+      }
+      
+      setBusinessIndustries(industriesList);
+      
+      // Fetch payment methods
+      const { data: methodsData, error: methodsError } = await supabase
+        .from('payment_methods_options')
+        .select('*');
+      
+      if (methodsError) throw methodsError;
+      
+      if (methodsData && methodsData.length > 0) {
+        setPaymentMethods(methodsData.map(item => ({
+          value: item.value || item.id,
+          label: item.label || item.name
+        })));
+      } else {
+        // Fallback defaults if no data exists
+        const defaultPaymentMethods: BusinessConstant[] = [
+          { value: 'cash', label: 'Cash' },
+          { value: 'check', label: 'Check' },
+          { value: 'credit_card', label: 'Credit Card' },
+          { value: 'debit_card', label: 'Debit Card' },
+          { value: 'bank_transfer', label: 'Bank Transfer' }
+        ];
+        setPaymentMethods(defaultPaymentMethods);
+      }
+    } catch (err: any) {
+      console.error('Error fetching business constants:', err);
+      setError('Failed to load business data: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchBusinessConstants();
   }, []);
 
-  // Format options for select components
-  const businessTypeOptions = businessTypes.map(type => ({
-    value: type.value,
-    label: type.label // Use label instead of name
-  }));
-
-  const industryOptions = industries.map(industry => ({
-    value: industry.value,
-    label: industry.label // Use label instead of name
-  }));
-
-  const paymentMethodOptions = paymentMethods.map(method => ({
-    value: method.value,
-    label: method.label // Use label instead of name
-  }));
-
-  return {
-    businessTypeOptions,
-    industryOptions,
-    paymentMethodOptions,
-    loading,
-    error
+  return { 
+    businessTypes, 
+    businessIndustries, 
+    paymentMethods, 
+    isLoading, 
+    error, 
+    fetchBusinessConstants 
   };
 }

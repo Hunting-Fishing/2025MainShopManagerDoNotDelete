@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNotifications } from "@/context/notifications";
 import { toast } from "@/hooks/use-toast";
@@ -66,9 +67,14 @@ export function NotificationsTab() {
   };
 
   // Handle changing notification sound
-  const handleSoundChange = (value: string) => {
-    const soundValue = value === 'none' ? false : value;
-    updatePreferences({ sound: soundValue });
+  const handleSoundChange = (soundName: string) => {
+    // Ensure the sound value is one of the allowed types
+    const validSound = soundName as NotificationPreferences['sound'];
+    
+    setLocalPrefs(prev => ({
+      ...prev,
+      sound: validSound
+    }));
   };
 
   // Handle changing notification frequency

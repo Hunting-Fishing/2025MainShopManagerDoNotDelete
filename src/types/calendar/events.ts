@@ -1,4 +1,3 @@
-
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -21,7 +20,6 @@ export interface CalendarEvent {
   end_time?: string;
   customer_id?: string;
   work_order_id?: string;
-  invoice_id?: string; // Add the missing invoice_id property
 }
 
 export interface CalendarEventDialogProps {

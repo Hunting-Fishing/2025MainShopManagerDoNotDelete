@@ -1,77 +1,56 @@
 
 import { supabase } from "@/lib/supabase";
-import { ReorderSettings, AutoReorderSettings } from "@/types/inventory";
+import { AutoReorderSettings } from "@/types/inventory";
 
-export const enableAutoReorder = async (
-  itemId: string,
-  settings: AutoReorderSettings
-): Promise<void> => {
+// Get auto-reorder settings for all items
+export async function getAutoReorderSettings(): Promise<Record<string, AutoReorderSettings>> {
+  const { data, error } = await supabase
+    .from("inventory_auto_reorder")
+    .select("*");
+
+  if (error) {
+    console.error("Error fetching auto-reorder settings:", error);
+    throw error;
+  }
+
+  const settings: Record<string, AutoReorderSettings> = {};
+  (data || []).forEach(setting => {
+    settings[setting.item_id] = {
+      enabled: setting.enabled,
+      threshold: setting.threshold,
+      quantity: setting.quantity
+    };
+  });
+
+  return settings;
+}
+
+// Enable auto-reorder for an item
+export async function enableAutoReorder(itemId: string, threshold: number, quantity: number): Promise<void> {
   const { error } = await supabase
-    .from('inventory_auto_reorder')
+    .from("inventory_auto_reorder")
     .upsert({
       item_id: itemId,
-      enabled: settings.enabled,
-      threshold: settings.threshold,
-      quantity: settings.quantity
+      enabled: true,
+      threshold,
+      quantity
     });
 
   if (error) {
-    throw new Error(`Error enabling auto-reorder: ${error.message}`);
+    console.error(`Error enabling auto-reorder for item ${itemId}:`, error);
+    throw error;
   }
-};
+}
 
-export const disableAutoReorder = async (itemId: string): Promise<void> => {
+// Disable auto-reorder for an item
+export async function disableAutoReorder(itemId: string): Promise<void> {
   const { error } = await supabase
-    .from('inventory_auto_reorder')
+    .from("inventory_auto_reorder")
     .update({ enabled: false })
-    .eq('item_id', itemId);
+    .eq("item_id", itemId);
 
   if (error) {
-    throw new Error(`Error disabling auto-reorder: ${error.message}`);
+    console.error(`Error disabling auto-reorder for item ${itemId}:`, error);
+    throw error;
   }
-};
-
-export const getAutoReorderSettings = async (itemId: string): Promise<AutoReorderSettings | null> => {
-  const { data, error } = await supabase
-    .from('inventory_auto_reorder')
-    .select('*')
-    .eq('item_id', itemId)
-    .single();
-
-  if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found" error
-    throw new Error(`Error fetching auto-reorder settings: ${error.message}`);
-  }
-
-  if (!data) {
-    return null;
-  }
-
-  return {
-    enabled: data.enabled,
-    threshold: data.threshold,
-    quantity: data.quantity
-  };
-};
-
-export const getReorderSettings = async (): Promise<ReorderSettings[]> => {
-  const { data, error } = await supabase
-    .from('inventory_auto_reorder')
-    .select(`
-      item_id,
-      enabled,
-      threshold,
-      quantity,
-      inventory_items(name, sku, status, quantity)
-    `);
-
-  if (error) {
-    throw new Error(`Error fetching reorder settings: ${error.message}`);
-  }
-
-  return data.map(item => ({
-    itemId: item.item_id,
-    threshold: item.threshold,
-    quantity: item.quantity,
-    enabled: item.enabled
-  }));
-};
+}

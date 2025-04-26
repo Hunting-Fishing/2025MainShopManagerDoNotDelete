@@ -60,11 +60,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     return (
       <div className="mb-4">
         <div 
-          className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md"
+          className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
           onClick={() => toggleCategory(category)}
         >
-          <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300">{title} ({roomsList.length})</h3>
-          <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-500 dark:text-gray-400">
+          <h3 className="font-medium text-sm text-gray-500 dark:text-gray-400">{title} ({roomsList.length})</h3>
+          <Button variant="ghost" size="icon" className="h-5 w-5">
             {showCategories[category] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
@@ -80,16 +80,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   onClick={() => onSelectRoom(room)}
                   className={`px-3 py-2 rounded-md cursor-pointer flex items-center ${
                     isActive
-                      ? 'bg-blue-100 dark:bg-blue-900/20 shadow-sm'
+                      ? 'bg-blue-100 dark:bg-blue-900/20'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
                   <div className="relative">
-                    <div className={`rounded-full h-8 w-8 flex items-center justify-center ${
-                      isActive 
-                        ? 'bg-blue-200 dark:bg-blue-800' 
-                        : 'bg-gray-200 dark:bg-gray-700'
-                    }`}>
+                    <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-8 w-8 flex items-center justify-center">
                       <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                         {room.name.charAt(0).toUpperCase()}
                       </span>
@@ -102,11 +98,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   </div>
                   <div className="ml-2 flex-1 overflow-hidden">
                     <div className="flex justify-between">
-                      <span className={`font-medium text-sm truncate ${
-                        isActive 
-                          ? 'text-blue-700 dark:text-blue-400' 
-                          : 'text-gray-800 dark:text-gray-200'
-                      }`}>
+                      <span className={`font-medium text-sm truncate ${isActive ? 'text-blue-700 dark:text-blue-400' : ''}`}>
                         {room.name}
                       </span>
                       {room.unread_count && room.unread_count > 0 ? (
@@ -115,7 +107,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                         </span>
                       ) : null}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <div className="text-xs text-gray-500 truncate">
                       {room.last_message ? (
                         <span>
                           {room.last_message.sender_id === userId ? 'You: ' : ''}
@@ -145,20 +137,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   };
 
   return (
-    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 flex flex-col h-full shadow-sm">
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="w-80 border-r bg-gray-50 dark:bg-gray-900 flex flex-col h-full">
+      <div className="p-3 border-b">
         <div className="mb-3">
-          <Button 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm flex items-center justify-center gap-2 py-2 rounded-full" 
-            onClick={onNewChat}
-          >
-            <Plus className="h-4 w-4" /> New Chat
+          <Button className="w-full" onClick={onNewChat}>
+            <Plus className="h-4 w-4 mr-2" /> New Chat
           </Button>
         </div>
         <div className="relative">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            className="pl-8 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:ring-1 focus:ring-blue-500"
+            className="pl-8"
             placeholder="Search conversations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -172,7 +161,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         {renderRoomList('Work Orders', workOrderRooms, 'work_order')}
         
         {filteredRooms.length === 0 && (
-          <div className="text-center py-4 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+          <div className="text-center py-4 text-gray-500">
             {search ? 'No chats match your search' : 'No conversations yet'}
           </div>
         )}

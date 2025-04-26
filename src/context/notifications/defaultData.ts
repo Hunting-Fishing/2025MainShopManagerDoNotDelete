@@ -1,32 +1,30 @@
 
-import { NotificationPreferences } from "@/types/notification";
+import { NotificationPreferences } from '@/types/notification';
 
-export const defaultNotificationPreferences: NotificationPreferences = {
-  email: true,
-  push: true,
-  inApp: true,
-  desktop: true,
-  browser: true,
-  sound: 'chime',
-  categories: {
-    workOrders: true,
-    inventory: true,
-    invoices: true,
-    customers: true,
-    system: true,
+export const defaultPreferences: NotificationPreferences = {
+  emailEnabled: true,
+  smsEnabled: false,
+  pushEnabled: true,
+  email: true, // For backward compatibility
+  push: false, // For backward compatibility
+  inApp: true, // For backward compatibility
+  sound: 'default',
+  frequencies: {
+    system: 'realtime',
+    invoice: 'realtime',
+    workOrder: 'realtime',
+    inventory: 'daily',
+    customer: 'hourly',
+    team: 'realtime',
+    chat: 'realtime'
   },
   subscriptions: [
-    { category: 'workOrders', enabled: true },
+    { category: 'system', enabled: true },
+    { category: 'invoice', enabled: true },
+    { category: 'workOrder', enabled: true },
     { category: 'inventory', enabled: true },
-    { category: 'invoices', enabled: true },
-    { category: 'customers', enabled: true },
-    { category: 'system', enabled: true }
-  ],
-  frequencies: {
-    workOrders: 'realtime',
-    inventory: 'realtime',
-    invoices: 'realtime',
-    customers: 'realtime',
-    system: 'realtime'
-  }
+    { category: 'customer', enabled: true },
+    { category: 'team', enabled: true },
+    { category: 'chat', enabled: true }
+  ]
 };

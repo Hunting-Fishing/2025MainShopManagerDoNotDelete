@@ -1,35 +1,34 @@
 
+import { ReactNode } from 'react';
+
+export interface WorkOrderNotification {
+  id: string;
+  work_order_id: string;
+  notification_type: string;
+  title: string;
+  message: string;
+  recipient_type: string;
+  recipient_id: string;
+  status: string;
+  sent_at?: string;
+  error_message?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  read: boolean;
+  type: 'info' | 'success' | 'warning' | 'error';
   timestamp: string;
-  category?: string;
-  type?: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
   link?: string;
-  actionText?: string;
-  actionLink?: string;
-  priority?: 'high' | 'medium' | 'low';
-  status?: string;
-  source?: string;
-}
-
-export interface WorkOrderNotification extends Notification {
-  workOrderId: string;
-  status?: string;
-}
-
-export interface NotificationPreferences {
-  sound: string | boolean;
-  email: boolean;
-  push: boolean;
-  desktop: boolean;
-  browser: boolean;
-  inApp: boolean;
-  categories: Record<string, boolean>;
-  subscriptions: NotificationSubscription[];
-  frequencies: Record<string, 'realtime' | 'hourly' | 'daily' | 'weekly'>;
+  category?: string;
+  priority?: 'low' | 'medium' | 'high';
+  sender?: string;
+  recipient?: string;
+  expires_at?: string;
 }
 
 export interface NotificationSubscription {
@@ -37,28 +36,16 @@ export interface NotificationSubscription {
   enabled: boolean;
 }
 
-export interface NotificationContextType {
-  notifications: Notification[];
-  unreadCount: number;
-  connectionStatus: 'connected' | 'disconnected' | 'connecting';
-  preferences: NotificationPreferences;
-  clearNotification: (id: string) => void;
-  clearAllNotifications: () => void;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  updatePreferences: (preferences: Partial<NotificationPreferences>) => void;
-  triggerTestNotification: () => void;
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
-  updateSubscription: (category: string, enabled: boolean) => void;
-}
-
-export interface NotificationsListProps {
-  notifications: WorkOrderNotification[];
-  onMarkAsRead: (id: string) => void;
-  loading?: boolean;
-}
-
-export interface NotificationItemProps {
-  notification: WorkOrderNotification;
-  onMarkAsRead: (id: string) => void;
+export interface NotificationPreferences {
+  emailEnabled?: boolean;
+  smsEnabled?: boolean;
+  pushEnabled?: boolean;
+  email?: boolean;
+  push?: boolean;
+  inApp?: boolean;
+  sound?: 'default' | 'none' | 'subtle' | 'loud';
+  frequencies?: {
+    [category: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
+  };
+  subscriptions: NotificationSubscription[];
 }

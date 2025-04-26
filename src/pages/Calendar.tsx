@@ -18,10 +18,7 @@ export default function Calendar() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   
   // Use the custom hook to fetch and manage calendar data
-  const { events, loading, error } = useCalendarEvents(currentDate, view);
-  
-  // Define shiftChats with sensible default
-  const shiftChats = [];
+  const { events, shiftChats, isLoading, error } = useCalendarEvents(currentDate, view);
   
   // Filter events based on technician and status
   const filteredEvents = events.filter(event => {
@@ -79,7 +76,7 @@ export default function Calendar() {
           events={filteredEvents}
           currentDate={currentDate}
           view={view}
-          loading={loading}
+          loading={isLoading}
           shiftChats={shiftChats}
         />
       </div>

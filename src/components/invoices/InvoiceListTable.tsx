@@ -72,7 +72,7 @@ export function InvoiceListTable({ invoices }: InvoiceListTableProps) {
                   <InvoiceStatusBadge status={invoice.status} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                  {invoice.due_date}
+                  {invoice.dueDate}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                   {invoice.createdBy}

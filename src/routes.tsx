@@ -1,3 +1,4 @@
+
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import ErrorPage from "./pages/error-page";
@@ -5,16 +6,13 @@ import NotFound from "./pages/NotFound";
 import { VehicleDetailsPage } from "./components/customers/vehicles/VehicleDetailsPage";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
-import CustomerDetails from "./pages/CustomerDetails";
 import EditCustomer from "./pages/EditCustomer";
 import CreateCustomer from "./pages/CreateCustomer";
 import Team from "./pages/Team";
 import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 import WorkOrderCreate from "./pages/WorkOrderCreate";
-import WorkOrdersPage from "./pages/WorkOrdersPage";
-import Inventory from "./pages/Inventory";
-import InventoryAdd from "./pages/InventoryAdd";
+import WorkOrdersPage from "./pages/WorkOrdersPage"; // Updated import path
 
 const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return <CustomerDataProvider>{children}</CustomerDataProvider>;
@@ -43,15 +41,15 @@ export const routeDefinitions = [
         element: <CreateCustomer />,
       },
       {
-        path: "customers/:id",
+        path: "customers/:customerId",
         element: (
           <CustomerDataProviderWrapper>
-            <CustomerDetails />
+            <>Customer Details</>
           </CustomerDataProviderWrapper>
         ),
       },
       {
-        path: "customers/:id/edit",
+        path: "customers/:customerId/edit",
         element: <EditCustomer />,
       },
       {
@@ -94,16 +92,6 @@ export const routeDefinitions = [
         path: "invoices/:invoiceId",
         element: <>Invoice Details</>,
       },
-      {
-        path: "inventory",
-        element: <Inventory />,
-      },
-      {
-        path: "inventory/add",
-        element: <InventoryAdd />,
-      },
     ],
   },
 ];
-
-export const router = createBrowserRouter(routeDefinitions);

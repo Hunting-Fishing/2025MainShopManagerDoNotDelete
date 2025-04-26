@@ -27,15 +27,6 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
   onHasVehiclesChange,
   onApplySearch
 }) => {
-  // Ensure we have valid filters
-  const safeFilters = filters || {};
-  
-  // Prepare the dateRange object from filters
-  const dateRange = {
-    from: safeFilters.dateFrom || undefined,
-    to: safeFilters.dateTo || undefined
-  };
-  
   return (
     <Card className="p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -43,7 +34,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Customer Tags</h3>
             <CustomerFilterTags
-              tags={safeFilters.tags || []}
+              tags={filters.tags || []}
               onChange={onTagsChange}
             />
           </div>
@@ -53,7 +44,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Vehicle Type</h3>
             <CustomerVehicleTypeFilter
-              vehicleType={safeFilters.vehicleType || ''}
+              vehicleType={filters.vehicleType || ''}
               onChange={onVehicleTypeChange}
             />
           </div>
@@ -63,7 +54,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Has Vehicles</h3>
             <CustomerHasVehiclesFilter
-              hasVehicles={String(safeFilters.hasVehicles || '')}
+              hasVehicles={filters.hasVehicles || ''}
               onChange={onHasVehiclesChange}
             />
           </div>
@@ -73,7 +64,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <div>
             <h3 className="text-sm font-medium mb-2">Date Added</h3>
             <CustomerDateRangeFilter
-              dateRange={dateRange}
+              dateRange={filters.dateRange}
               onDateRangeChange={onDateRangeChange}
             />
           </div>
@@ -81,7 +72,7 @@ export const CustomerFilterPanel: React.FC<CustomerFilterPanelProps> = ({
           <Separator className="my-4" />
           
           <SavedSearches
-            currentFilters={safeFilters}
+            currentFilters={filters}
             onApplySearch={onApplySearch}
           />
         </div>

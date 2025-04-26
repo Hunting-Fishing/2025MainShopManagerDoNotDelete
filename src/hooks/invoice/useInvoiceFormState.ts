@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Invoice, InvoiceItem, StaffMember, InventoryItem } from "@/types/invoice";
 import { toast } from "@/hooks/use-toast";
@@ -15,7 +16,7 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
     customerEmail: "",
     customerAddress: "",
     date: new Date().toISOString().split('T')[0],
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     subtotal: 0,
     tax: 0,
     total: 0,
@@ -32,20 +33,23 @@ export function useInvoiceFormState({ initialWorkOrderId }: UseInvoiceFormStateP
 
   // Item management handlers
   const handleAddInventoryItem = (item: InventoryItem) => {
-    const newItem: InvoiceItem = {
-      id: crypto.randomUUID(),
+    // Create a new InvoiceItem from the InventoryItem
+    const invoiceItem: InvoiceItem = {
+      id: item.id,
       name: item.name,
-      description: item.description || '',
+      description: item.description || "",
       quantity: 1,
-      price: item.price || 0,
-      total: item.price || 0
+      price: item.price,
+      total: item.price,
+      sku: item.sku || "",
+      category: item.category || ""
     };
     
     setInvoice((prev) => ({
       ...prev,
       items: [
         ...prev.items,
-        newItem
+        invoiceItem
       ]
     }));
     

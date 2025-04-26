@@ -1,3 +1,4 @@
 
-export * from './NotificationsProvider';
-export * from './useNotifications';
+export { NotificationsProvider } from './NotificationsProvider';
+export { useNotifications } from './useNotifications';
+export type { NotificationsContextProps } from './types';
