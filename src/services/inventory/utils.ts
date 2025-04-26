@@ -65,3 +65,23 @@ export function formatInventoryItem(item: InventoryItemExtended): Inventory {
     autoReorder: item.auto_reorder
   };
 }
+
+// Add the missing function to map inventory item to database format
+export function mapInventoryItemToDbFormat(item: Partial<InventoryItemExtended>): any {
+  return {
+    name: item.name,
+    sku: item.sku,
+    description: item.description,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    category: item.category,
+    supplier: item.supplier,
+    min_stock_level: item.reorderPoint,
+    reorder_quantity: item.reorderQuantity,
+    location: item.location,
+    last_ordered: item.lastOrdered,
+    last_received: item.lastReceived,
+    status: item.status,
+    auto_reorder: item.autoReorder
+  };
+}
