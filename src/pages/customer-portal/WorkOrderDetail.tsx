@@ -1,75 +1,60 @@
-
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { format, formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { WorkOrder } from '@/types/workOrder';
-import { Vehicle } from '@/types/vehicle';
 import { toast } from '@/hooks/use-toast';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Badge 
-} from '@/components/ui/badge';
-import { CalendarIcon, Clock, MessageCircle, Wrench } from 'lucide-react';
-import { format } from 'date-fns';
-import { WorkOrderChatButton } from '@/components/workOrders/WorkOrderChatButton';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft, FileText, Play, CheckCircle } from 'lucide-react';
 
-const WorkOrderDetail: React.FC = () => {
+export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const navigate = useNavigate();
+  const [workOrder, setWorkOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchWorkOrder = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
         const { data, error } = await supabase
           .from('work_orders')
-          .select('*')
+          .select(`
+            *,
+            customers (*),
+            vehicles (*)
+          `)
           .eq('id', id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
-        setWorkOrder(data);
-        if (data.vehicle_id) {
-          const { data: vehicleData, error: vehicleError } = await supabase
-            .from('vehicles')
-            .select('*')
-            .eq('id', data.vehicle_id)
-            .single();
-
-          if (vehicleError) throw vehicleError;
-
-          setVehicle(vehicleData);
+        if (data) {
+          setWorkOrder(data);
+        } else {
+          toast({
+            title: "Work Order Not Found",
+            description: "Could not retrieve work order details.",
+            variant: "destructive",
+          });
+          navigate('/customer-portal');
         }
       } catch (error) {
-        console.error('Error fetching work order:', error);
+        console.error("Error fetching work order:", error);
         toast({
-          title: 'Error',
-          description: 'Failed to load work order details',
-          variant: 'destructive',
+          title: "Error",
+          description: "Failed to load work order details.",
+          variant: "destructive",
         });
+        navigate('/customer-portal');
       } finally {
         setLoading(false);
       }
     };
 
     fetchWorkOrder();
-  }, [id]);
-
-  // Helper function to format dates
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A';
-    return format(new Date(dateString), 'MMM d, yyyy');
-  };
+  }, [id, navigate]);
 
   if (loading) {
     return (
@@ -80,110 +65,135 @@ const WorkOrderDetail: React.FC = () => {
   }
 
   if (!workOrder) {
-    return <div>Work order not found</div>;
+    return null;
   }
 
   return (
-    <Card className="shadow-md">
-      <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>{workOrder.description}</CardTitle>
-            <CardDescription>
-              <div className="flex items-center mt-2 text-sm text-slate-500">
-                <CalendarIcon className="h-3 w-3 mr-1" />
-                {formatDate(workOrder.createdAt)}
-              </div>
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <WorkOrderChatButton 
-              workOrderId={workOrder.id} 
-              workOrderName={workOrder.description || `Work Order #${workOrder.id.substring(0, 8)}`} 
-            />
-            <Badge 
-              className={`
-                ${workOrder.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
-                  workOrder.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                  workOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
-                  'bg-red-100 text-red-800 border-red-300'}
-                border px-3 py-1
-              `}
-            >
-              {workOrder.status}
-            </Badge>
-          </div>
+    <div className="container mx-auto py-8">
+      <Button onClick={() => navigate('/customer-portal')} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+      </Button>
+
+      <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-4">Work Order Details</h2>
+
+        {/* Customer Details */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Customer Information</h3>
+          <p>
+            <strong>Name:</strong> {workOrder.customers?.first_name} {workOrder.customers?.last_name}
+          </p>
+          <p>
+            <strong>Email:</strong> {workOrder.customers?.email}
+          </p>
+          <p>
+            <strong>Phone:</strong> {workOrder.customers?.phone}
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-6">
+
+        {/* Work Order Details */}
         <div>
-          <h3 className="font-semibold text-lg mb-2">Work Order Details</h3>
-          <div className="bg-slate-50 p-4 rounded-lg grid gap-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex flex-col">
-                <span className="text-sm text-slate-500">Due Date</span>
-                <span>{formatDate(workOrder.dueDate)}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-slate-500">Priority</span>
-                <span className="capitalize">{workOrder.priority || 'Standard'}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-slate-500">Technician</span>
-                <span>{workOrder.technician || 'Unassigned'}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-slate-500">Location</span>
-                <span>{workOrder.location || 'N/A'}</span>
-              </div>
-            </div>
+          <h3 className="text-lg font-semibold mb-2">Work Order Information</h3>
+          <p>
+            <strong>ID:</strong> {workOrder.id}
+          </p>
+          <p>
+            <strong>Description:</strong> {workOrder.description}
+          </p>
+          <p>
+            <strong>Status:</strong> {workOrder.status}
+          </p>
 
-            {workOrder.notes && (
-              <div className="mt-3">
-                <span className="text-sm text-slate-500 block">Notes</span>
-                <p className="mt-1">{workOrder.notes}</p>
+          {/* Creation date */}
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-slate-600">Created</h3>
+            <p className="text-sm text-slate-900">
+              {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMMM d, yyyy') : 
+               workOrder.created_at ? format(new Date(workOrder.created_at), 'MMMM d, yyyy') : 'N/A'}
+            </p>
+          </div>
+
+          {/* Vehicle information */}
+          {(workOrder.vehicleDetails || workOrder.vehicle_make) && (
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-slate-600">Vehicle</h3>
+              <p className="text-sm text-slate-900">
+                {workOrder.vehicleDetails ? 
+                  `${workOrder.vehicleDetails.year || ''} ${workOrder.vehicleDetails.make || ''} ${workOrder.vehicleDetails.model || ''}` :
+                  workOrder.vehicle_make && workOrder.vehicle_model ? 
+                    `${workOrder.vehicle_make} ${workOrder.vehicle_model}` : 
+                    'N/A'
+                }
+              </p>
+              {workOrder.vehicleDetails?.licensePlate && (
+                <p className="text-xs text-slate-500 mt-1">
+                  License: {workOrder.vehicleDetails.licensePlate}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Notes */}
+          {workOrder.notes && (
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-slate-600">Notes</h3>
+              <p className="text-sm text-slate-900">{workOrder.notes}</p>
+            </div>
+          )}
+
+          {/* Timeline section */}
+          <div className="mt-8">
+            <h3 className="text-lg font-medium">Service Timeline</h3>
+            <div className="mt-3 space-y-6">
+              {/* Creation */}
+              <div className="relative pl-8 pb-8 border-l-2 border-slate-200">
+                <div className="absolute -left-2 rounded-full w-5 h-5 bg-blue-500 flex items-center justify-center">
+                  <FileText className="text-white h-3 w-3" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Work Order Created</p>
+                  <p className="text-xs text-slate-500">
+                    {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMMM d, yyyy • h:mm a') :
+                     workOrder.created_at ? format(new Date(workOrder.created_at), 'MMMM d, yyyy • h:mm a') : 'N/A'}
+                  </p>
+                </div>
               </div>
-            )}
+
+              {/* Service Start */}
+              {(workOrder.startTime || workOrder.start_time) && (
+                <div className="relative pl-8 pb-8 border-l-2 border-slate-200">
+                  <div className="absolute -left-2 rounded-full w-5 h-5 bg-yellow-500 flex items-center justify-center">
+                    <Play className="text-white h-3 w-3" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Service Started</p>
+                    <p className="text-xs text-slate-500">
+                      {workOrder.startTime ? format(new Date(workOrder.startTime), 'MMMM d, yyyy • h:mm a') :
+                       workOrder.start_time ? format(new Date(workOrder.start_time), 'MMMM d, yyyy • h:mm a') : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Service Completion */}
+              {(workOrder.endTime || workOrder.end_time) && (
+                <div className="relative pl-8 border-l-2 border-slate-200">
+                  <div className="absolute -left-2 rounded-full w-5 h-5 bg-green-500 flex items-center justify-center">
+                    <CheckCircle className="text-white h-3 w-3" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Service Completed</p>
+                    <p className="text-xs text-slate-500">
+                      {workOrder.endTime ? format(new Date(workOrder.endTime), 'MMMM d, yyyy • h:mm a') :
+                       workOrder.end_time ? format(new Date(workOrder.end_time), 'MMMM d, yyyy • h:mm a') : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {vehicle && (
-          <div>
-            <h3 className="font-semibold text-lg mb-2">Vehicle Details</h3>
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex flex-col">
-                  <span className="text-sm text-slate-500">Make</span>
-                  <span>{vehicle.make}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm text-slate-500">Model</span>
-                  <span>{vehicle.model}</span>
-                </div>
-                {vehicle.year && (
-                  <div className="flex flex-col">
-                    <span className="text-sm text-slate-500">Year</span>
-                    <span>{vehicle.year}</span>
-                  </div>
-                )}
-                {vehicle.license_plate && (
-                  <div className="flex flex-col">
-                    <span className="text-sm text-slate-500">License Plate</span>
-                    <span>{vehicle.license_plate}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex items-center justify-end mt-6 text-sm text-slate-500 border-t pt-4">
-          <Clock className="w-4 h-4 mr-1" />
-          <span>Last updated: {formatDate(workOrder.lastUpdatedAt || workOrder.createdAt)}</span>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
-};
-
-export default WorkOrderDetail;
+}

@@ -26,3 +26,6 @@ export {
   transformDatabaseMessage, 
   validateMessageType 
 } from './types';
+
+// Note: We removed the duplicate export of saveMessageToRecord
+// The implementation is now in mutations.ts only

@@ -174,7 +174,7 @@ export const useChatRoomActions = (
 
   // View work order details
   const handleViewWorkOrderDetails = useCallback((workOrderId: string) => {
-    navigate(`/customer-portal/work-orders/${workOrderId}`);
+    navigate(`/work-orders/${workOrderId}`);
   }, [navigate]);
 
   return {

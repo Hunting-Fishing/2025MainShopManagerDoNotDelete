@@ -1,40 +1,30 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import { ChatMessage as ChatMessageType, ChatRoom } from '@/types/chat';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChatRoom, ChatMessage } from '@/types/chat';
+import { Input } from '@/components/ui/input';
+import { Send, MessageSquare, Pin, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  Send, 
-  Info,
-  Pin,
-  ArchiveIcon,
-  PinIcon,
-  MessageSquare,
-  X
-} from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { ChatMessage } from './ChatMessage';
-import { AudioRecorder } from './AudioRecorder';
-import { FileUploadButton } from './file/FileUploadButton';
+import { ChatMessage as MessageComponent } from './ChatMessage';
 import { ChatThread } from './ChatThread';
-import { Badge } from '@/components/ui/badge';
+import { FileUploadButton } from './file/FileUploadButton';
 
 interface ChatWindowProps {
   room: ChatRoom | null;
-  messages: ChatMessageType[];
+  messages: ChatMessage[];
   userId: string;
   userName: string;
   messageText: string;
   setMessageText: (text: string) => void;
   onSendMessage: (threadParentId?: string) => Promise<void>;
-  onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => Promise<void>;
+  onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => void;
   onSendFileMessage?: (fileUrl: string, threadParentId?: string) => Promise<void>;
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
   onFlagMessage?: (messageId: string, reason: string) => void;
-  onEditMessage: (messageId: string, content: string) => Promise<void>;
+  onEditMessage?: (messageId: string, content: string) => Promise<void>;
   isTyping?: boolean;
   typingUsers?: {id: string, name: string}[];
-  threadMessages?: {[key: string]: ChatMessageType[]};
+  threadMessages?: {[key: string]: ChatMessage[]};
   activeThreadId?: string | null;
   onOpenThread?: (messageId: string) => void;
   onCloseThread?: () => void;
@@ -56,233 +46,201 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onFlagMessage,
   onEditMessage,
   isTyping,
-  typingUsers = [],
-  threadMessages = {},
+  typingUsers,
+  threadMessages,
   activeThreadId,
   onOpenThread,
   onCloseThread,
   onViewInfo
 }) => {
-  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   
-  // Scroll to the bottom when new messages arrive
+  // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-  
-  // Focus textarea when room changes
-  useEffect(() => {
-    textAreaRef.current?.focus();
-  }, [room]);
-  
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      onSendMessage();
+    if (messagesEndRef.current && !activeThreadId) {
+      scrollToBottom();
     }
+  }, [messages, activeThreadId]);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Current thread parent message
+  const currentParentMessage = activeThreadId 
+    ? messages.find((m) => m.id === activeThreadId)
+    : null;
+  
+  // Current thread messages
+  const currentThreadMessages = currentParentMessage && threadMessages
+    ? threadMessages[activeThreadId!] || []
+    : [];
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim()) return;
+    await onSendMessage();
+    scrollToBottom();
   };
   
+  const handleThreadSendMessage = async () => {
+    if (!messageText.trim() || !activeThreadId) return;
+    await onSendMessage(activeThreadId);
+  };
+
   const handleReply = (messageId: string) => {
     if (onOpenThread) {
       onOpenThread(messageId);
     }
   };
 
-  // File upload handler
-  const handleFileUpload = async (fileUrl: string) => {
-    if (onSendFileMessage) {
-      await onSendFileMessage(fileUrl);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (activeThreadId) {
+        handleThreadSendMessage();
+      } else {
+        handleSendMessage();
+      }
     }
   };
 
-  // Audio recorder handlers
-  const handleStartRecording = () => {
-    setShowAudioRecorder(true);
-  };
-
-  const handleStopRecording = async (audioBlob: Blob) => {
-    setShowAudioRecorder(false);
-    if (onSendVoiceMessage) {
-      // Convert the blob to a URL
-      const audioUrl = URL.createObjectURL(audioBlob);
-      await onSendVoiceMessage(audioUrl);
-    }
-  };
-
-  const handleCancelRecording = () => {
-    setShowAudioRecorder(false);
-  };
-  
   if (!room) {
     return (
-      <div className="bg-white rounded-lg border shadow-sm p-4 h-full flex items-center justify-center">
-        <div className="text-center text-slate-500">
-          <MessageSquare className="h-12 w-12 mx-auto opacity-20 mb-2" />
-          <h3 className="text-lg font-semibold mb-1">No conversation selected</h3>
-          <p className="text-sm">Choose a conversation from the sidebar to start chatting</p>
+      <div className="flex flex-col h-full justify-center items-center bg-white text-slate-500 rounded-md border">
+        <div className="text-center p-6">
+          <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <h3 className="text-xl font-medium mb-2">No conversation selected</h3>
+          <p className="text-sm">
+            Select a conversation from the sidebar or start a new chat
+          </p>
         </div>
       </div>
     );
   }
-
+  
   return (
-    <div className="flex flex-col h-full border rounded-lg bg-white shadow-sm">
-      {/* Header */}
-      <div className="flex justify-between items-center p-3 border-b">
+    <div className="flex flex-col h-full rounded-md border overflow-hidden bg-white">
+      <div className="px-4 py-3 border-b flex justify-between items-center">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold">{room.name}</h3>
-            {room.work_order_id && (
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-                Work Order
-              </Badge>
-            )}
-          </div>
-          {room.metadata?.work_order && (
+          <h2 className="font-medium">{room.name}</h2>
+          {room.type === 'work_order' && (
             <div className="text-xs text-slate-500">
-              <span>Status: {room.metadata.work_order.status}</span> • 
-              <span> Customer: {room.metadata.work_order.customer_name}</span>
+              Work Order #{room.work_order_id?.substring(0, 8)}
+              {onViewInfo && (
+                <button 
+                  className="ml-2 text-blue-500 hover:underline" 
+                  onClick={onViewInfo}
+                >
+                  View details
+                </button>
+              )}
             </div>
           )}
         </div>
-        <div className="flex gap-1">
-          {onViewInfo && (
-            <Button variant="ghost" size="sm" onClick={onViewInfo} className="text-slate-600">
-              <Info className="h-4 w-4 mr-1" />
-              View Details
-            </Button>
-          )}
-          
+        <div className="flex gap-2">
           {onPinRoom && (
             <Button 
               variant="ghost" 
-              size="icon" 
-              onClick={onPinRoom}
-              className={room.is_pinned ? "text-amber-500" : ""}
+              size="sm" 
+              onClick={onPinRoom} 
+              className={room.is_pinned ? "text-blue-600" : ""}
             >
-              <PinIcon className="h-4 w-4" />
-              <span className="sr-only">
-                {room.is_pinned ? 'Unpin conversation' : 'Pin conversation'}
-              </span>
+              <Pin className="h-4 w-4 mr-1" />
+              {room.is_pinned ? 'Pinned' : 'Pin'}
             </Button>
           )}
           
           {onArchiveRoom && (
             <Button 
               variant="ghost" 
-              size="icon" 
+              size="sm"
               onClick={onArchiveRoom}
             >
-              <ArchiveIcon className="h-4 w-4" />
-              <span className="sr-only">Archive conversation</span>
+              <Archive className="h-4 w-4 mr-1" />
+              Archive
             </Button>
           )}
         </div>
       </div>
       
-      {/* Messages area */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center text-slate-400">
-              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-20" />
-              <p>No messages yet</p>
-              <p className="text-sm">Start the conversation!</p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-full text-slate-400 text-sm">
+            <p>No messages yet</p>
+            <p>Start the conversation by sending a message</p>
           </div>
         ) : (
           <div className="space-y-4">
             {messages.map((message) => (
-              <ChatMessage 
+              <MessageComponent 
                 key={message.id}
                 message={message}
                 isCurrentUser={message.sender_id === userId}
                 userId={userId}
-                onEdit={onEditMessage}
+                onEdit={onEditMessage || (async () => {})}
                 onFlag={onFlagMessage}
-                onReply={onOpenThread ? handleReply : undefined}
+                onReply={onOpenThread ? () => handleReply(message.id) : undefined}
               />
             ))}
+            {isTyping && (
+              <div className="flex items-center text-sm text-slate-500 italic">
+                <span className="animate-pulse mr-2">•••</span>
+                <span>
+                  {typingUsers && typingUsers.length > 0 
+                    ? `${typingUsers.map(user => user.name).join(', ')} typing...` 
+                    : 'Someone is typing...'}
+                </span>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
       
-      {/* Typing indicator */}
-      {typingUsers.length > 0 && (
-        <div className="px-4 py-1 text-xs text-slate-500 italic">
-          {typingUsers.length === 1 
-            ? `${typingUsers[0].name} is typing...` 
-            : `${typingUsers.length} people are typing...`
-          }
-        </div>
-      )}
-      
-      {/* Thread view */}
-      {activeThreadId && threadMessages[activeThreadId] && onCloseThread && (
-        <div className="absolute right-4 top-24 bottom-24 w-80 z-10">
+      {/* Thread Panel */}
+      {activeThreadId && currentParentMessage && (
+        <div className="fixed right-0 top-0 h-full w-80 bg-white border-l shadow-lg z-10">
           <ChatThread 
             threadId={activeThreadId}
-            messages={threadMessages[activeThreadId]} 
+            messages={currentThreadMessages}
+            onClose={onCloseThread || (() => {})}
+            onSendReply={onSendMessage || (async () => {})}
             userId={userId}
-            onClose={onCloseThread}
-            onSendReply={(content, threadParentId) => {
-              setMessageText(content);
-              return onSendMessage(threadParentId);
-            }}
-            onEditMessage={onEditMessage}
+            parentMessage={currentParentMessage}
+            onEditMessage={onEditMessage || (async () => {})}
             onFlagMessage={onFlagMessage}
-            parentMessage={messages.find(m => m.id === activeThreadId)}
           />
         </div>
       )}
       
-      {/* Message input */}
       <div className="p-3 border-t">
-        {showAudioRecorder ? (
-          <AudioRecorder
-            onAudioRecorded={handleStopRecording}
-            isDisabled={false}
-            onCancel={handleCancelRecording}
-          />
-        ) : (
-          <div className="flex gap-2">
-            <Textarea
+        {!activeThreadId && (
+          <div className="flex items-center gap-2">
+            {onSendFileMessage && (
+              <FileUploadButton 
+                roomId={room?.id || ''}
+                onFileUploaded={(fileUrl, fileType) => {}}
+                isDisabled={false}
+                onFileSelected={onSendFileMessage}
+              />
+            )}
+            
+            <Input 
+              type="text"
+              placeholder="Type a message..."
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Type a message..."
-              className="resize-none min-h-[60px]"
-              ref={textAreaRef}
+              className="flex-1"
             />
-            <div className="flex flex-col justify-end gap-2">
-              <FileUploadButton
-                roomId={room.id}
-                onFileUploaded={handleFileUpload}
-              />
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleStartRecording}
-                className="rounded-full"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
-                <span className="sr-only">Record voice message</span>
-              </Button>
-              
-              <Button 
-                size="icon" 
-                onClick={() => onSendMessage()} 
-                disabled={!messageText.trim()}
-                className="rounded-full"
-              >
-                <Send className="h-5 w-5" />
-                <span className="sr-only">Send message</span>
-              </Button>
-            </div>
+            
+            <Button 
+              onClick={activeThreadId ? handleThreadSendMessage : handleSendMessage}
+              disabled={!messageText.trim()}
+            >
+              <Send className="h-5 w-5" />
+              <span className="sr-only">Send message</span>
+            </Button>
           </div>
         )}
       </div>

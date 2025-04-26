@@ -53,7 +53,6 @@ export interface TypingIndicator {
   user_id: string;
   user_name: string;
   started_at: string;
-  presence_ref?: string; // Added presence_ref as optional for compatibility
 }
 
 // Set typing indicator for a user in a room

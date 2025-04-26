@@ -1,5 +1,4 @@
 
-// Export all functionality from the file module
 export * from './uploadService';
 export * from './fileMessageFormatter';
 

@@ -34,7 +34,6 @@ import CustomerPortal from '@/pages/customer-portal/CustomerPortal';
 import WorkOrdersList from '@/pages/customer-portal/WorkOrdersList';
 import CustomerWorkOrderDetail from '@/pages/customer-portal/WorkOrderDetail';
 import VehicleDetail from '@/pages/customer-portal/VehicleDetail';
-import Messages from '@/pages/customer-portal/Messages';
 import { supabase } from '@/lib/supabase';
 
 const AppRoutes = () => {
@@ -138,7 +137,6 @@ const AppRoutes = () => {
         />
         <Route path="/customer-portal/work-orders/:id" element={<CustomerWorkOrderDetail />} />
         <Route path="/customer-portal/vehicles/:id" element={<VehicleDetail />} />
-        <Route path="/customer-portal/messages" element={<Messages />} />
       </Route>
     </Routes>
   );
