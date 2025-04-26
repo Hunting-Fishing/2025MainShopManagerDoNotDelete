@@ -4,7 +4,7 @@
 
 export {
   getAllInventoryItems,
-  getInventoryItemById, // Added this export to fix the error
+  getInventoryItemById,
   createInventoryItem,
   updateInventoryItem,
   deleteInventoryItem,
@@ -14,6 +14,6 @@ export {
   getLowStockItems,
   getOutOfStockItems,
   getInventoryStatus,
-  clearAllInventoryItems,
-  reorderItem  // Added this to fix the LowStockAlerts error
+  clearAllInventoryItems
 } from './inventory/index';
+

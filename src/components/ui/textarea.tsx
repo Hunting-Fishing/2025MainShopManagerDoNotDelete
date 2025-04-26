@@ -1,6 +1,5 @@
 
 import * as React from "react"
-import { Clipboard } from "lucide-react" // Added import for the icon
 import { cn } from "@/lib/utils"
 
 export interface TextareaProps
