@@ -10,38 +10,18 @@ import { toast } from "@/components/ui/use-toast";
 // Form schema
 const inventoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  sku: z.string().optional(),
-  category: z.string().optional(),
-  supplier: z.string().optional(),
+  sku: z.string().min(1, "SKU is required"),
+  category: z.string().min(1, "Category is required"),
+  supplier: z.string().min(1, "Supplier is required"),
   quantity: z.number().int().min(0, "Quantity must be a positive number"),
   min_stock_level: z.number().int().min(0, "Minimum stock level must be a positive number"),
   unit_price: z.number().min(0, "Price must be a positive number"),
   location: z.string().optional(),
-  status: z.string().optional(),
+  status: z.string().default("In Stock"),
   description: z.string().optional(),
 });
 
 export type InventoryFormValues = z.infer<typeof inventoryFormSchema>;
-
-const getDefaultValues = (): Omit<InventoryItemExtended, "id"> => {
-  return {
-    name: "",
-    sku: "",
-    category: "",
-    supplier: "",
-    quantity: 0,
-    min_stock_level: 5,
-    unit_price: 0,
-    location: "",
-    status: "In Stock",
-    description: "",
-    // These are for display compatibility with the form
-    reorderPoint: 5,
-    unitPrice: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-};
 
 interface UseInventoryFormProps {
   item?: InventoryItemExtended;
@@ -50,6 +30,7 @@ interface UseInventoryFormProps {
 
 export function useInventoryForm({ item, onSuccess }: UseInventoryFormProps = {}) {
   const [loading, setLoading] = useState(false);
+  const isEditing = !!item;
 
   // Initialize form with default values or provided item
   const form = useForm<InventoryFormValues>({
@@ -65,34 +46,53 @@ export function useInventoryForm({ item, onSuccess }: UseInventoryFormProps = {}
       location: item.location || "",
       status: item.status || "In Stock",
       description: item.description || ""
-    } : getDefaultValues()
+    } : {
+      name: "",
+      sku: "",
+      category: "",
+      supplier: "",
+      quantity: 0,
+      min_stock_level: 5,
+      unit_price: 0,
+      location: "",
+      status: "In Stock",
+      description: ""
+    }
   });
 
   // Form submission handler
-  async function onSubmit(data: InventoryFormValues) {
+  async function handleSubmit(data: InventoryFormValues) {
     setLoading(true);
     try {
       // Map form values to inventory item format
+      const formattedData: Omit<InventoryItemExtended, "id"> = {
+        name: data.name,
+        sku: data.sku,
+        category: data.category,
+        supplier: data.supplier,
+        quantity: data.quantity,
+        min_stock_level: data.min_stock_level,
+        unit_price: data.unit_price,
+        location: data.location || "",
+        status: data.status,
+        description: data.description,
+        // Add these for compatibility with other parts of the system
+        reorderPoint: data.min_stock_level,
+        unitPrice: data.unit_price,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
       if (item) {
         // Update existing item
-        await updateInventoryItem(item.id, {
-          ...data,
-          // For backward compatibility
-          reorderPoint: data.min_stock_level,
-          unitPrice: data.unit_price,
-        });
+        await updateInventoryItem(item.id, formattedData);
         toast({
           title: "Inventory item updated",
           description: `${data.name} has been updated successfully.`
         });
       } else {
         // Create new item
-        await createInventoryItem({
-          ...data,
-          // For backward compatibility
-          reorderPoint: data.min_stock_level,
-          unitPrice: data.unit_price,
-        });
+        await createInventoryItem(formattedData);
         toast({
           title: "Inventory item created",
           description: `${data.name} has been added to inventory.`
@@ -106,7 +106,7 @@ export function useInventoryForm({ item, onSuccess }: UseInventoryFormProps = {}
       
       // Reset form if creating new item
       if (!item) {
-        form.reset(getDefaultValues());
+        form.reset();
       }
     } catch (error) {
       console.error("Error saving inventory item:", error);
@@ -123,7 +123,7 @@ export function useInventoryForm({ item, onSuccess }: UseInventoryFormProps = {}
   return {
     form,
     loading,
-    onSubmit: form.handleSubmit(onSubmit),
-    isEditing: !!item
+    onSubmit: form.handleSubmit(handleSubmit),
+    isEditing
   };
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format, addDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +61,8 @@ export function InvoiceLeftColumn({
   // State for date pickers
   const [isInvoiceDateOpen, setIsInvoiceDateOpen] = useState(false);
   const [isDueDateOpen, setIsDueDateOpen] = useState(false);
-  
+  const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false);
+
   // Helper function for date format
   const formatDate = (date: string) => {
     return format(new Date(date), "PPP");
@@ -111,6 +111,16 @@ export function InvoiceLeftColumn({
       )
     }));
   };
+
+  const SaveTemplateDialog = (
+    <SaveTemplateDialog 
+      open={saveTemplateDialogOpen}
+      onClose={() => setSaveTemplateDialogOpen(false)}
+      currentInvoice={invoice} 
+      taxRate={invoice.taxRate || 0} // Use invoice.taxRate directly
+      onSaveTemplate={handleSaveTemplate} 
+    />
+  );
 
   return (
     <div className="lg:col-span-2 space-y-6">
@@ -263,7 +273,7 @@ export function InvoiceLeftColumn({
             <CardTitle className="text-md font-semibold">Templates</CardTitle>
             <InvoiceTemplateActions 
               invoice={invoice}
-              taxRate={taxRate}
+              taxRate={invoice.taxRate || 0} // Use invoice.taxRate directly
               onSelectTemplate={handleApplyTemplate}
               onSaveTemplate={handleSaveTemplate}
             />

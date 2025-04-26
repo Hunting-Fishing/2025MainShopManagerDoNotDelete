@@ -9,7 +9,7 @@ export function useWorkOrderInventoryEffects(workOrderId: string, items: WorkOrd
       if (workOrderId && items.length > 0) {
         // Format items to match the expected interface
         const formattedItems = items.map(item => ({
-          inventoryId: item.id,
+          inventoryId: item.id, // Map id to inventoryId
           quantity: item.quantity
         }));
         

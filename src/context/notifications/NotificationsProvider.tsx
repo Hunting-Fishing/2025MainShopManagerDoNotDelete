@@ -3,8 +3,9 @@ import React, { createContext, useState, useEffect, useCallback } from "react";
 import { Notification, NotificationContextType, NotificationPreferences } from "@/types/notification";
 import { defaultNotificationPreferences } from "./defaultData";
 import { playNotificationSound } from "@/utils/notificationSounds";
+import { NotificationsContextProps } from "./types";
 
-export const NotificationsContext = createContext<NotificationContextType>({
+export const NotificationsContext = createContext<NotificationsContextProps>({
   notifications: [],
   unreadCount: 0,
   connectionStatus: 'disconnected',
@@ -15,7 +16,8 @@ export const NotificationsContext = createContext<NotificationContextType>({
   markAllAsRead: () => {},
   updatePreferences: () => {},
   triggerTestNotification: () => {},
-  addNotification: () => {}
+  addNotification: () => {},
+  updateSubscription: () => {}
 });
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
@@ -51,6 +53,23 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   // Update notification preferences
   const updatePreferences = useCallback((newPreferences: Partial<NotificationPreferences>) => {
     setPreferences(prev => ({ ...prev, ...newPreferences }));
+  }, []);
+
+  // Update subscription status for a category
+  const updateSubscription = useCallback((category: string, enabled: boolean) => {
+    setPreferences(prev => {
+      const updatedSubscriptions = prev.subscriptions ? [...prev.subscriptions] : [];
+      
+      const index = updatedSubscriptions.findIndex(sub => sub.category === category);
+      
+      if (index !== -1) {
+        updatedSubscriptions[index] = { ...updatedSubscriptions[index], enabled };
+      } else {
+        updatedSubscriptions.push({ category, enabled });
+      }
+      
+      return { ...prev, subscriptions: updatedSubscriptions };
+    });
   }, []);
 
   // Add a notification
@@ -133,6 +152,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     markAsRead,
     markAllAsRead,
     updatePreferences,
+    updateSubscription,
     triggerTestNotification,
     addNotification
   };

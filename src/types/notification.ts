@@ -3,27 +3,31 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  timestamp: string;
   read: boolean;
+  timestamp: string;
   category?: string;
-  type?: string;
+  type?: 'info' | 'success' | 'warning' | 'error';
   link?: string;
-  priority?: 'high' | 'medium' | 'low';
-  source?: string;
+  actionText?: string;
+  actionLink?: string;
+}
+
+export interface WorkOrderNotification extends Notification {
+  workOrderId: string;
 }
 
 export interface NotificationPreferences {
+  sound: string | boolean;
   email: boolean;
   push: boolean;
-  inApp: boolean;
-  sound: boolean | string;
-  categories: {
-    [key: string]: boolean;
-  };
-  subscriptions: Array<NotificationSubscription>;
-  frequencies: {
-    [category: string]: 'realtime' | 'hourly' | 'daily' | 'weekly';
-  };
+  desktop: boolean;
+  browser: boolean;
+  subscriptions: NotificationSubscription[];
+}
+
+export interface NotificationSubscription {
+  category: string;
+  enabled: boolean;
 }
 
 export interface NotificationContextType {
@@ -35,24 +39,19 @@ export interface NotificationContextType {
   clearAllNotifications: () => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
-  updatePreferences: (newPreferences: Partial<NotificationPreferences>) => void;
+  updatePreferences: (preferences: Partial<NotificationPreferences>) => void;
   triggerTestNotification: () => void;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   updateSubscription: (category: string, enabled: boolean) => void;
 }
 
-export interface NotificationSubscription {
-  category: string;
-  enabled: boolean;
-}
-
-export interface WorkOrderNotification extends Notification {
-  workOrderId: string;
-  status: string;
-}
-
 export interface NotificationsListProps {
   notifications: WorkOrderNotification[];
-  onMarkAsRead?: (id: string) => void;
+  onMarkAsRead: (id: string) => void;
   loading?: boolean;
+}
+
+export interface NotificationItemProps {
+  notification: WorkOrderNotification;
+  onMarkAsRead: (id: string) => void;
 }

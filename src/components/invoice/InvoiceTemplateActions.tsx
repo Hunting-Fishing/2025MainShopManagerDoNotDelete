@@ -1,10 +1,9 @@
 
+import { useState } from "react";
 import { InvoiceTemplateDialog } from "../invoices/templates/InvoiceTemplateDialog";
 import { SaveTemplateDialog } from "../invoices/SaveTemplateDialog";
-import { Invoice } from "@/types/invoice";
-import { InvoiceTemplate } from "@/types/invoice";
+import { Invoice, InvoiceTemplate } from "@/types/invoice";
 import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
-import { useState } from "react";
 
 interface InvoiceTemplateActionsProps {
   invoice: Invoice;
