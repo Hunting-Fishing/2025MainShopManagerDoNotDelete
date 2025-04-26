@@ -1,11 +1,12 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 
 /**
  * Search customers by name, email, or phone
  */
 export const searchCustomers = async (query: string): Promise<Customer[]> => {
+  console.log("Searching customers with query:", query);
   const { data, error } = await supabase
     .from("customers")
     .select("*")
@@ -68,7 +69,7 @@ export const getCustomersWithVehicles = async (): Promise<Customer[]> => {
       .from('customers')
       .select(`
         *,
-        vehicles:customer_vehicles(*)
+        vehicles(*)
       `)
       .order('last_name', { ascending: true });
       

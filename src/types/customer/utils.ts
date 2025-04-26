@@ -10,7 +10,7 @@ export const adaptCustomerForUI = (customer: Customer): Customer => {
   let segments = customer.segments;
   if (segments && typeof segments === 'string') {
     try {
-      segments = JSON.parse(segments);
+      segments = JSON.parse(segments as any);
     } catch (e) {
       segments = [];
     }
@@ -22,13 +22,13 @@ export const adaptCustomerForUI = (customer: Customer): Customer => {
   let tags = customer.tags;
   if (tags && typeof tags === 'string') {
     try {
-      tags = JSON.parse(tags);
+      tags = JSON.parse(tags as any);
     } catch (e) {
       tags = [];
     }
   } else if (tags && typeof tags !== 'object') {
     try {
-      tags = JSON.parse(tags.toString());
+      tags = JSON.parse(String(tags));
     } catch (e) {
       tags = [];
     }

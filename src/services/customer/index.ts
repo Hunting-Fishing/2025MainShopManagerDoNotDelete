@@ -11,6 +11,6 @@ export * from './interactions/interactionMutationService';
 // Export the renamed functions to match what existing code expects
 export { getCustomerById } from './customerQueryService';
 export { getAllCustomers } from './customerQueryService';
-export { searchCustomers } from '../customer';  // referring to the parent directory
+export { searchCustomers } from './customerSearchService';
 export { updateCustomer } from './customerUpdateService';
 export { deleteCustomer } from './customerDeleteService';

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Customer } from "@/types/customer";
-import { getAllCustomers } from "@/services/customer/customerQueryService";
+import { getAllCustomers } from "@/services/customer";
 import { useToast } from "@/hooks/use-toast";
 import { checkSupabaseConnection } from "@/lib/supabase";
 import { filterCustomers } from "@/utils/search/customerSearch";

@@ -6,89 +6,36 @@ export const filterCustomers = (
   customers: Customer[],
   filters: CustomerFilters
 ): Customer[] => {
-  if (!filters || !customers || !customers.length) {
-    return customers || [];
-  }
-
-  console.log(`Running filter on ${customers.length} customers with:`, filters);
-
-  return customers.filter((customer) => {
-    // Search query filter
-    if (filters.searchQuery && filters.searchQuery.trim() !== '') {
-      const query = filters.searchQuery.toLowerCase();
-      const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.toLowerCase();
-      const email = customer.email?.toLowerCase() || '';
-      const phone = customer.phone?.toLowerCase() || '';
-      const company = customer.company?.toLowerCase() || '';
-      
-      if (
-        !fullName.includes(query) &&
-        !email.includes(query) &&
-        !phone.includes(query) &&
-        !company.includes(query)
-      ) {
-        return false;
-      }
-    }
-
-    // Tags filter
-    if (filters.tags && filters.tags.length > 0) {
-      const customerTags = customer.tags || [];
-      // Handle different formats of tags (array or string that needs parsing)
-      const normalizedTags = Array.isArray(customerTags) 
-        ? customerTags 
-        : typeof customerTags === 'string' 
-          ? JSON.parse(customerTags) 
-          : [];
-          
-      if (!normalizedTags.some(tag => filters.tags!.includes(tag))) {
-        return false;
-      }
-    }
-
-    // Vehicle type filter
-    if (filters.vehicleType && customer.vehicles && customer.vehicles.length > 0) {
-      const hasVehicleType = customer.vehicles.some(
-        v => v.body_style?.toLowerCase() === filters.vehicleType?.toLowerCase()
+  let result = [...customers];
+  
+  // Apply search query filter
+  if (filters.searchQuery && filters.searchQuery.trim() !== '') {
+    const query = filters.searchQuery.toLowerCase().trim();
+    result = result.filter(customer => {
+      return (
+        (customer.first_name && customer.first_name.toLowerCase().includes(query)) ||
+        (customer.last_name && customer.last_name.toLowerCase().includes(query)) ||
+        (customer.email && customer.email.toLowerCase().includes(query)) ||
+        (customer.phone && customer.phone.includes(query)) ||
+        (customer.company && customer.company.toLowerCase().includes(query))
       );
-      if (!hasVehicleType) {
+    });
+  }
+  
+  // Apply tags filter
+  if (filters.tags && filters.tags.length > 0) {
+    result = result.filter(customer => {
+      // Skip customers without tags
+      if (!customer.tags || !Array.isArray(customer.tags) || customer.tags.length === 0) {
         return false;
       }
-    }
-
-    // Has vehicles filter
-    if (filters.hasVehicles) {
-      if (filters.hasVehicles === 'yes' && 
-          (!customer.vehicles || customer.vehicles.length === 0)) {
-        return false;
-      }
-      if (filters.hasVehicles === 'no' && 
-          customer.vehicles && customer.vehicles.length > 0) {
-        return false;
-      }
-    }
-
-    // Date range filter
-    if (filters.dateRange && (filters.dateRange.from || filters.dateRange.to)) {
-      const customerDateAdded = customer.created_at
-        ? new Date(customer.created_at)
-        : null;
       
-      if (customerDateAdded) {
-        if (filters.dateRange.from && customerDateAdded < filters.dateRange.from) {
-          return false;
-        }
-        if (filters.dateRange.to) {
-          // Add a day to include the end date fully
-          const endDate = new Date(filters.dateRange.to);
-          endDate.setDate(endDate.getDate() + 1);
-          if (customerDateAdded > endDate) {
-            return false;
-          }
-        }
-      }
-    }
-
-    return true;
-  });
+      // Check if customer has any of the selected tags
+      return filters.tags.some(tag => 
+        customer.tags.includes(tag)
+      );
+    });
+  }
+  
+  return result;
 };
