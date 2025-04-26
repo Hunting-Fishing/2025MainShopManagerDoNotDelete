@@ -39,3 +39,18 @@ export interface NotificationContextType {
   triggerTestNotification: () => void;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
 }
+
+export interface NotificationSubscription {
+  category: string;
+  enabled: boolean;
+}
+
+export interface WorkOrderNotification extends Notification {
+  workOrderId: string;
+  status: string;
+}
+
+export interface NotificationsListProps {
+  notifications: WorkOrderNotification[];
+  onMarkAsRead?: (id: string) => void;
+}

@@ -18,10 +18,10 @@ export function useInventoryForm() {
     location: "",
     status: "In Stock",
     description: "",
-    updated_at: new Date().toISOString(),
-    // Add any other required fields
-    reorderPoint: 5,
-    unitPrice: 0
+    // Remove updated_at and created_at as they shouldn't be in the form
+    // Only use properties defined in the InventoryItemExtended type
+    reorderPoint: 5, // This is used as an alias for min_stock_level
+    unitPrice: 0  // This is used as an alias for unit_price
   });
   
   const [categories, setCategories] = useState<string[]>([]);

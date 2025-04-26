@@ -9,6 +9,9 @@ export interface InvoiceItemsTableProps {
   items: InvoiceItem[];
   onRemoveItem: (id: string) => void;
   onUpdateItem?: (item: InvoiceItem) => void;
+  onUpdateItemQuantity?: (id: string, quantity: number) => void;
+  onUpdateItemDescription?: (id: string, description: string) => void;
+  onUpdateItemPrice?: (id: string, price: number) => void;
   readOnly?: boolean;
 }
 
@@ -16,6 +19,9 @@ export function InvoiceItemsTable({
   items, 
   onRemoveItem, 
   onUpdateItem = () => {}, 
+  onUpdateItemQuantity,
+  onUpdateItemDescription,
+  onUpdateItemPrice,
   readOnly = false 
 }: InvoiceItemsTableProps) {
   if (!items || items.length === 0) {
@@ -25,6 +31,10 @@ export function InvoiceItemsTable({
       </div>
     );
   }
+
+  const handleUpdate = (updatedItem: InvoiceItem) => {
+    onUpdateItem(updatedItem);
+  };
 
   return (
     <Table>
@@ -43,7 +53,7 @@ export function InvoiceItemsTable({
             key={item.id} 
             item={item} 
             onRemove={onRemoveItem} 
-            onUpdate={onUpdateItem}
+            onUpdate={handleUpdate}
             readOnly={readOnly}
           />
         ))}

@@ -63,8 +63,10 @@ export interface InvoiceTemplateItem extends InvoiceItem {
 }
 
 export interface InvoiceFiltersProps {
-  onFilterChange: (filters: any) => void;
   filters: any;
+  onFilterChange?: (filters: any) => void;
+  setFilters?: (filters: any) => void;
+  resetFilters?: () => void;
 }
 
 // Helper function to create an invoice updater

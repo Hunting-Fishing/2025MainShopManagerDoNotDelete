@@ -1,18 +1,19 @@
 
 import React, { useState } from 'react';
-import { format } from 'date-fns';
-import { Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
-
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { WorkOrderDialog } from '../WorkOrderDialog';
-import { InvoiceTemplateDialog } from '../templates/InvoiceTemplateDialog';
-import { InvoiceItemForm } from '../InvoiceItemForm';
 import { InvoiceItemsTable } from '../InvoiceItemsTable';
+import { InvoiceItemForm } from '../InvoiceItemForm';
+import { InvoiceTemplateDialog } from '../InvoiceTemplateDialog';
+import { InvoiceTemplateActions } from '../../invoice/InvoiceTemplateActions';
 import { InvoiceDescriptionField } from '../InvoiceDescriptionField';
 import { Invoice, InvoiceItem, InvoiceTemplate } from '@/types/invoice';
 import { WorkOrder } from '@/types/workOrder';
@@ -22,133 +23,186 @@ export interface InvoiceLeftColumnProps {
   invoice: Invoice;
   inventoryItems: InventoryItem[];
   templates: InvoiceTemplate[];
-  showWorkOrderDialog?: boolean;
-  showInventoryDialog?: boolean;
+  onAddLaborItem: () => void;
+  onRemoveItem: (id: string) => void;
+  onUpdateItemQuantity?: (id: string, quantity: number) => void;
+  onUpdateItemDescription?: (id: string, description: string) => void;
+  onUpdateItemPrice?: (id: string, price: number) => void;
+  onAddInventoryItem: (item: InventoryItem) => void;
   setInvoice: (invoice: Invoice | ((prev: Invoice) => Invoice)) => void;
-  setShowWorkOrderDialog?: (show: boolean) => void;
-  setShowInventoryDialog?: (show: boolean) => void;
-  handleSelectWorkOrder: (workOrder: WorkOrder) => void;
-  handleAddInventoryItem: (item: InvoiceItem) => void;
-  handleRemoveItem: (id: string) => void;
-  handleUpdateItemQuantity: (id: string, quantity: number) => void;
-  handleUpdateItemDescription: (id: string, description: string) => void;
-  handleUpdateItemPrice: (id: string, price: number) => void;
-  handleAddLaborItem: () => void;
   handleApplyTemplate: (template: InvoiceTemplate) => void;
   handleSaveTemplate: (template: Omit<InvoiceTemplate, "id" | "createdAt" | "usageCount">) => void;
+  // Optional props
   workOrders?: WorkOrder[];
+  showWorkOrderDialog?: boolean;
+  showInventoryDialog?: boolean;
+  setShowWorkOrderDialog?: (show: boolean) => void;
+  handleSelectWorkOrder?: (workOrder: WorkOrder) => void;
 }
 
 export function InvoiceLeftColumn({
   invoice,
   inventoryItems,
   templates,
-  showWorkOrderDialog = false,
-  showInventoryDialog = false,
+  onAddLaborItem,
+  onRemoveItem,
+  onUpdateItemQuantity,
+  onUpdateItemDescription,
+  onUpdateItemPrice,
+  onAddInventoryItem,
   setInvoice,
-  setShowWorkOrderDialog,
-  setShowInventoryDialog,
-  handleSelectWorkOrder,
-  handleAddInventoryItem,
-  handleRemoveItem,
-  handleUpdateItemQuantity,
-  handleUpdateItemDescription,
-  handleUpdateItemPrice,
-  handleAddLaborItem,
   handleApplyTemplate,
   handleSaveTemplate,
-  workOrders = []
+  // Optional with defaults
+  workOrders = [],
+  showWorkOrderDialog = false,
+  showInventoryDialog = false,
+  setShowWorkOrderDialog = () => {},
+  handleSelectWorkOrder = () => {},
 }: InvoiceLeftColumnProps) {
+  // State for handling date field popups
+  const [isWorkOrderOpen, setIsWorkOrderOpen] = useState(false);
 
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isDateCalendarOpen, setIsDateCalendarOpen] = useState(false);
-  const [isDueDateCalendarOpen, setIsDueDateCalendarOpen] = useState(false);
-
-  // Format date for display
-  const formatDate = (isoString: string) => {
-    try {
-      return format(new Date(isoString), 'PPP');
-    } catch (error) {
-      return 'Invalid date';
-    }
+  // Handle date changes
+  const handleDateChange = (field: 'date' | 'dueDate', date: Date | undefined) => {
+    if (!date) return;
+    
+    setInvoice(prev => ({
+      ...prev,
+      [field]: format(date, 'yyyy-MM-dd')
+    }));
   };
 
-  // Handle date selection (invoice date)
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setInvoice(prev => ({
-        ...prev,
-        date: date.toISOString().split('T')[0]
-      }));
-      setIsDateCalendarOpen(false);
-    }
+  const handleCustomerInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setInvoice(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  // Handle due date selection
-  const handleDueDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setInvoice(prev => ({
-        ...prev,
-        dueDate: date.toISOString().split('T')[0],
-        due_date: date.toISOString().split('T')[0]
-      }));
-      setIsDueDateCalendarOpen(false);
-    }
+  const handleDescriptionChange = (description: string) => {
+    setInvoice(prev => ({
+      ...prev,
+      description
+    }));
   };
 
-  // Update item quantity
-  const handleUpdateItem = (item: InvoiceItem) => {
-    if (item.id && item.quantity) {
-      handleUpdateItemQuantity(item.id, item.quantity);
-    }
-    if (item.id && item.description) {
-      handleUpdateItemDescription(item.id, item.description);
-    }
-    if (item.id && item.price) {
-      handleUpdateItemPrice(item.id, item.price);
-    }
+  const handleAddItem = (item: InvoiceItem) => {
+    setInvoice(prev => ({
+      ...prev,
+      items: [...prev.items, item]
+    }));
+  };
+
+  // Helper to disable past dates
+  const disablePastDates = (date: Date) => {
+    return date < new Date();
   };
 
   return (
-    <div className="col-span-2 space-y-6">
-      {/* Customer and Date Information */}
+    <div className="lg:col-span-2 space-y-6">
+      {/* Customer Information */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between">
-            <CardTitle className="text-lg">Invoice Details</CardTitle>
-            <div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowWorkOrderDialog && setShowWorkOrderDialog(true)}
-              >
-                Select Work Order
-              </Button>
+        <CardHeader>
+          <CardTitle>Customer Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Work Order Selection */}
+            {workOrders && workOrders.length > 0 && (
+              <div className="md:col-span-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowWorkOrderDialog && setShowWorkOrderDialog(true)} 
+                  className="w-full justify-start text-slate-600"
+                >
+                  {invoice.workOrderId ? 
+                    `Work Order: ${invoice.workOrderId}` : 
+                    "Select Work Order"
+                  }
+                </Button>
+              </div>
+            )}
+
+            {/* Customer Name */}
+            <div className="space-y-2">
+              <Label htmlFor="customer">Customer Name</Label>
+              <Input
+                id="customer"
+                name="customer"
+                value={invoice.customer}
+                onChange={handleCustomerInfoChange}
+                placeholder="Enter customer name"
+              />
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="customerEmail">Email</Label>
+              <Input
+                id="customerEmail"
+                name="customerEmail"
+                value={invoice.customerEmail}
+                onChange={handleCustomerInfoChange}
+                placeholder="Enter email address"
+                type="email"
+              />
+            </div>
+
+            {/* Address */}
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="customerAddress">Address</Label>
+              <Input
+                id="customerAddress"
+                name="customerAddress"
+                value={invoice.customerAddress}
+                onChange={handleCustomerInfoChange}
+                placeholder="Enter customer address"
+              />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Invoice Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <span>Invoice Details</span>
+            <InvoiceTemplateActions 
+              invoice={invoice}
+              taxRate={0.08} // This should be passed from parent
+              templates={templates}
+              onSelectTemplate={handleApplyTemplate}
+              onSaveTemplate={handleSaveTemplate}
+            />
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <CardContent className="space-y-4">
+          {/* Date Pickers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Invoice Date */}
             <div className="space-y-2">
-              <Label htmlFor="date">Invoice Date</Label>
-              <Popover open={isDateCalendarOpen} onOpenChange={setIsDateCalendarOpen}>
+              <Label>Invoice Date</Label>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !invoice.date && "text-muted-foreground"
+                    )}
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {formatDate(invoice.date)}
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {invoice.date ? format(new Date(invoice.date), 'PPP') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                  <DayPicker
+                  <Calendar
                     mode="single"
-                    selected={new Date(invoice.date)}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => date < new Date('1900-01-01')}
+                    selected={invoice.date ? new Date(invoice.date) : undefined}
+                    onSelect={(date) => handleDateChange('date', date)}
                     initialFocus
                   />
                 </PopoverContent>
@@ -157,107 +211,85 @@ export function InvoiceLeftColumn({
 
             {/* Due Date */}
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Popover open={isDueDateCalendarOpen} onOpenChange={setIsDueDateCalendarOpen}>
+              <Label>Due Date</Label>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !invoice.dueDate && "text-muted-foreground"
+                    )}
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {formatDate(invoice.dueDate)}
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {invoice.dueDate ? format(new Date(invoice.dueDate), 'PPP') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                  <DayPicker
+                  <Calendar
                     mode="single"
-                    selected={new Date(invoice.dueDate)}
-                    onSelect={handleDueDateSelect}
-                    disabled={(date) => date < new Date('1900-01-01')}
+                    selected={invoice.dueDate ? new Date(invoice.dueDate) : undefined}
+                    onSelect={(date) => handleDateChange('dueDate', date)}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
 
-            {/* Customer Name */}
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="customer">Customer</Label>
-              <div className="flex h-10 w-full rounded-md border border-input bg-gray-100 px-3 py-2 text-sm">
-                {invoice.customer}
-              </div>
-            </div>
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              name="description"
+              value={invoice.description || ''}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
+              placeholder="Enter invoice description"
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Invoice Items */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between">
-            <CardTitle className="text-lg">Items</CardTitle>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <span>Invoice Items</span>
             <div className="flex space-x-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowInventoryDialog && setShowInventoryDialog(true)}
-              >
-                Add Inventory Item
-              </Button>
-              <Button 
-                type="button" 
-                variant="secondary" 
-                size="sm"
-                onClick={handleAddLaborItem}
-              >
+              <Button size="sm" variant="outline" onClick={onAddLaborItem}>
+                <PlusCircle className="h-4 w-4 mr-2" />
                 Add Labor
               </Button>
             </div>
-          </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <InvoiceItemsTable
-            items={invoice.items}
-            onUpdateItem={handleUpdateItem}
-            onRemoveItem={handleRemoveItem}
+          <InvoiceItemsTable 
+            items={invoice.items} 
+            onRemoveItem={onRemoveItem} 
+            onUpdateItem={(item) => {
+              const updatedItems = invoice.items.map(i => i.id === item.id ? item : i);
+              setInvoice(prev => ({...prev, items: updatedItems}));
+            }}
           />
 
-          <InvoiceItemForm 
-            inventoryItems={inventoryItems} 
-            onAddItem={handleAddInventoryItem} 
-          />
-          
-          <div className="mt-6">
-            <Label htmlFor="description">Description</Label>
-            <InvoiceDescriptionField 
-              value={invoice.description || ''} 
-              onChange={(value) => 
-                setInvoice(prev => ({ ...prev, description: value }))
-              } 
-            />
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Add New Item</h4>
+            <InvoiceItemForm onAddItem={handleAddItem} />
           </div>
         </CardContent>
       </Card>
 
       {/* Work Order Dialog */}
-      {workOrders && (
-        <WorkOrderDialog 
+      {workOrders && workOrders.length > 0 && (
+        <WorkOrderDialog
           open={showWorkOrderDialog}
-          onOpenChange={setShowWorkOrderDialog || (() => {})}
+          onClose={() => setShowWorkOrderDialog(false)}
           workOrders={workOrders}
           onSelectWorkOrder={handleSelectWorkOrder}
         />
       )}
-
-      {/* Templates */}
-      <div className="flex gap-2">
-        <InvoiceTemplateDialog 
-          templates={templates} 
-          onSelectTemplate={handleApplyTemplate} 
-        />
-        <Button variant="outline">Save as Template</Button>
-      </div>
     </div>
   );
 }

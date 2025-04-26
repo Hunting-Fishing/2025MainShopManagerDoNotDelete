@@ -1,42 +1,27 @@
 
 import React from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { NotificationItem } from './NotificationItem';
 import { WorkOrderNotification, NotificationsListProps } from '@/types/notification';
 
-export function NotificationsList({ 
-  notifications, 
-  loading = false,
-  emptyMessage = "No notifications" 
-}: NotificationsListProps) {
-  if (loading) {
-    return (
-      <div className="text-center p-4">
-        <div className="animate-pulse flex justify-center">
-          <div className="h-4 w-4 bg-blue-200 rounded-full mx-1"></div>
-          <div className="h-4 w-4 bg-blue-300 rounded-full mx-1 animate-pulse delay-150"></div>
-          <div className="h-4 w-4 bg-blue-400 rounded-full mx-1 animate-pulse delay-300"></div>
-        </div>
-        <p className="text-gray-500 mt-2">Loading notifications...</p>
-      </div>
-    );
-  }
-
+export function NotificationsList({ notifications, onMarkAsRead }: NotificationsListProps) {
   if (notifications.length === 0) {
     return (
-      <div className="text-center p-4 text-gray-500">
-        {emptyMessage}
+      <div className="p-4 text-center text-slate-500">
+        No notifications found
       </div>
     );
   }
 
   return (
-    <div className="divide-y">
+    <ScrollArea className="h-[400px] pr-4">
       {notifications.map((notification) => (
         <NotificationItem 
           key={notification.id} 
           notification={notification} 
+          onMarkAsRead={onMarkAsRead}
         />
       ))}
-    </div>
+    </ScrollArea>
   );
 }

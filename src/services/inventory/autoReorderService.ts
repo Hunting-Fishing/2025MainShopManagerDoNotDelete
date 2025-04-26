@@ -1,99 +1,77 @@
 
 import { supabase } from "@/lib/supabase";
-import { InventoryItemExtended } from "@/types/inventory";
-import { AutoReorderSettings, ReorderSettings } from "@/types/inventory";
-import { updateInventoryQuantity } from "./crudService";
+import { ReorderSettings, AutoReorderSettings } from "@/types/inventory";
 
-// Enable or disable auto-reorder for an item
 export const enableAutoReorder = async (
   itemId: string,
-  threshold: number,
-  quantity: number,
-  enabled = true
-): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('inventory_auto_reorder')
-      .upsert({
-        item_id: itemId,
-        threshold,
-        quantity,
-        enabled
-      });
+  settings: AutoReorderSettings
+): Promise<void> => {
+  const { error } = await supabase
+    .from('inventory_auto_reorder')
+    .upsert({
+      item_id: itemId,
+      enabled: settings.enabled,
+      threshold: settings.threshold,
+      quantity: settings.quantity
+    });
 
-    if (error) {
-      throw error;
-    }
-
-    // Also update the item's reorder point
-    await supabase
-      .from('inventory_items')
-      .update({ min_stock_level: threshold })
-      .eq('id', itemId);
-
-    return true;
-  } catch (error) {
-    console.error('Error setting auto-reorder:', error);
-    return false;
+  if (error) {
+    throw new Error(`Error enabling auto-reorder: ${error.message}`);
   }
 };
 
-// Get auto-reorder settings for an item
+export const disableAutoReorder = async (itemId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('inventory_auto_reorder')
+    .update({ enabled: false })
+    .eq('item_id', itemId);
+
+  if (error) {
+    throw new Error(`Error disabling auto-reorder: ${error.message}`);
+  }
+};
+
 export const getAutoReorderSettings = async (itemId: string): Promise<AutoReorderSettings | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('inventory_auto_reorder')
-      .select('*')
-      .eq('item_id', itemId)
-      .single();
+  const { data, error } = await supabase
+    .from('inventory_auto_reorder')
+    .select('*')
+    .eq('item_id', itemId)
+    .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No settings found
-        return { enabled: false, threshold: 5, quantity: 10 };
-      }
-      throw error;
-    }
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found" error
+    throw new Error(`Error fetching auto-reorder settings: ${error.message}`);
+  }
 
-    return {
-      enabled: data.enabled,
-      threshold: data.threshold,
-      quantity: data.quantity
-    };
-  } catch (error) {
-    console.error('Error getting auto-reorder settings:', error);
+  if (!data) {
     return null;
   }
+
+  return {
+    enabled: data.enabled,
+    threshold: data.threshold,
+    quantity: data.quantity
+  };
 };
 
-// Reorder an item (manually)
-export const reorderItem = async (itemId: string, quantity: number): Promise<boolean> => {
-  try {
-    // Create a purchase order entry (in a real app)
-    // For now, we'll just update the inventory quantity
-    const currentItem = await supabase
-      .from('inventory_items')
-      .select('*')
-      .eq('id', itemId)
-      .single();
-    
-    if (currentItem.error) throw currentItem.error;
-    
-    const newQuantity = currentItem.data.quantity + quantity;
-    
-    await updateInventoryQuantity(itemId, newQuantity);
-    
-    // Record a transaction for this reorder
-    await supabase.from('inventory_transactions').insert({
-      inventory_item_id: itemId,
-      quantity: quantity,
-      transaction_type: 'reorder',
-      notes: 'Manual reorder'
-    });
-    
-    return true;
-  } catch (error) {
-    console.error('Error reordering item:', error);
-    return false;
+export const getReorderSettings = async (): Promise<ReorderSettings[]> => {
+  const { data, error } = await supabase
+    .from('inventory_auto_reorder')
+    .select(`
+      item_id,
+      enabled,
+      threshold,
+      quantity,
+      inventory_items(name, sku, status, quantity)
+    `);
+
+  if (error) {
+    throw new Error(`Error fetching reorder settings: ${error.message}`);
   }
+
+  return data.map(item => ({
+    itemId: item.item_id,
+    threshold: item.threshold,
+    quantity: item.quantity,
+    enabled: item.enabled
+  }));
 };

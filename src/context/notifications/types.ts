@@ -4,7 +4,7 @@ import { Notification, NotificationPreferences, NotificationSubscription } from 
 export interface NotificationsContextProps {
   notifications: Notification[];
   unreadCount: number;
-  connectionStatus: boolean;
+  connectionStatus: 'connected' | 'disconnected' | 'connecting';
   preferences: NotificationPreferences;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   markAsRead: (id: string) => void;
