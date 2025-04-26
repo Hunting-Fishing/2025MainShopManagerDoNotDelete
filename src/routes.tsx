@@ -13,8 +13,6 @@ import CreateTeamMember from "./pages/CreateTeamMember";
 import { CustomerDataProvider } from "./contexts/CustomerDataProvider";
 import WorkOrderCreate from "./pages/WorkOrderCreate";
 import WorkOrdersPage from "./pages/WorkOrdersPage"; // Updated import path
-import Inventory from "./pages/Inventory";
-import InventoryAdd from "./pages/InventoryAdd";
 
 const CustomerDataProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return <CustomerDataProvider>{children}</CustomerDataProvider>;
@@ -93,15 +91,6 @@ export const routeDefinitions = [
       {
         path: "invoices/:invoiceId",
         element: <>Invoice Details</>,
-      },
-      // Add the inventory routes
-      {
-        path: "inventory",
-        element: <Inventory />,
-      },
-      {
-        path: "inventory/add",
-        element: <InventoryAdd />,
       },
     ],
   },

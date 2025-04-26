@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, Square, Send } from "lucide-react";
@@ -6,7 +7,7 @@ import { cn } from '@/lib/utils';
 interface AudioRecorderProps {
   onAudioRecorded: (audioBlob: Blob) => void;
   isDisabled?: boolean;
-  onRecordingComplete?: (audioUrl: string) => Promise<void>;
+  onRecordingComplete?: (audioUrl: string) => Promise<void>; // Updated to make this return a Promise
   onCancel?: () => void;
 }
 
@@ -25,6 +26,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Start recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -48,6 +50,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       mediaRecorder.start();
       setIsRecording(true);
       
+      // Start timer
       let seconds = 0;
       timerRef.current = setInterval(() => {
         seconds += 1;
@@ -59,16 +62,19 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     }
   };
 
+  // Stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
+      // Stop timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
       
+      // Stop media stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -76,6 +82,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     }
   };
 
+  // Cancel recording
   const cancelRecording = () => {
     stopRecording();
     setAudioBlob(null);
@@ -83,10 +90,12 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     if (onCancel) onCancel();
   };
 
+  // Send recorded audio
   const sendAudio = async () => {
     if (audioBlob) {
       onAudioRecorded(audioBlob);
       
+      // If we have the new prop, also call it with the audio URL
       if (onRecordingComplete) {
         const audioUrl = URL.createObjectURL(audioBlob);
         await onRecordingComplete(audioUrl);
@@ -97,12 +106,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     }
   };
 
+  // Format seconds to MM:SS
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {

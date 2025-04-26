@@ -1,10 +1,10 @@
+
 import React, { useState } from 'react';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
-import { useChatMessageActions } from '@/hooks/useChatMessageActions';
 
 interface ChatThreadProps {
   threadId: string;
@@ -28,11 +28,6 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
   onFlagMessage
 }) => {
   const [replyText, setReplyText] = useState('');
-  
-  const { handleEditMessage, handleFlagMessage } = useChatMessageActions({
-    onEditMessage,
-    onFlagMessage: onFlagMessage || (() => {})
-  });
   
   const handleSendReply = async () => {
     if (replyText.trim()) {
@@ -63,8 +58,8 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
             message={parentMessage}
             isCurrentUser={parentMessage.sender_id === userId}
             userId={userId}
-            onEdit={(newContent) => handleEditMessage(newContent, parentMessage.id)}
-            onFlag={(isFlagged) => handleFlagMessage(isFlagged, parentMessage.id)}
+            onEdit={onEditMessage}
+            onFlag={onFlagMessage}
           />
         )}
       </div>
@@ -81,8 +76,8 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
                 key={message.id}
                 message={message}
                 isCurrentUser={message.sender_id === userId}
-                onEdit={(newContent) => handleEditMessage(newContent, message.id)}
-                onFlag={(isFlagged) => handleFlagMessage(isFlagged, message.id)}
+                onEdit={onEditMessage}
+                onFlag={onFlagMessage}
                 userId={userId}
               />
             ))}
@@ -102,7 +97,6 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
           <Button 
             onClick={handleSendReply}
             disabled={!replyText.trim()}
-            variant="esm"
           >
             Reply
           </Button>
