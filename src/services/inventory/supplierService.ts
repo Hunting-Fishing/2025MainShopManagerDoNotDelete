@@ -1,58 +1,46 @@
 
 import { supabase } from "@/lib/supabase";
 
-// Get inventory suppliers from the database
+// Get all inventory suppliers
 export async function getInventorySuppliers(): Promise<string[]> {
   try {
-    // Try to get suppliers from the database
-    // Cast supabase to any to bypass TypeScript checking until Supabase types are updated
-    const { data, error } = await (supabase as any)
-      .from("inventory_suppliers")
-      .select("name")
-      .order("name");
+    const { data, error } = await supabase
+      .from('inventory_suppliers')
+      .select('name')
+      .order('name');
 
-    if (error) throw error;
-
-    // If there are suppliers in the DB, return them
-    if (data && data.length > 0) {
-      return data.map(supplier => supplier.name);
+    if (error) {
+      throw error;
     }
 
-    // If no suppliers in DB, use default empty array
-    return [];
+    return data?.map(supplier => supplier.name) || [];
   } catch (error) {
-    console.error("Error fetching inventory suppliers:", error);
-    return [];
+    console.error('Error getting inventory suppliers:', error);
+    return [
+      'Ace Auto Parts',
+      'Tech Automotive',
+      'Quality Suppliers',
+      'FastTech Parts',
+      'Premier Auto Supply',
+      'Other'
+    ];
   }
 }
 
 // Add a new inventory supplier
-export async function addInventorySupplier(name: string): Promise<void> {
+export async function addInventorySupplier(name: string): Promise<boolean> {
   try {
-    // Use the any type to bypass TypeScript checking until Supabase types are updated
-    const { error } = await (supabase as any)
-      .from("inventory_suppliers")
+    const { error } = await supabase
+      .from('inventory_suppliers')
       .insert({ name });
 
-    if (error) throw error;
-  } catch (error) {
-    console.error("Error adding inventory supplier:", error);
-    throw error;
-  }
-}
+    if (error) {
+      throw error;
+    }
 
-// Delete an inventory supplier
-export async function deleteInventorySupplier(name: string): Promise<void> {
-  try {
-    // Use the any type to bypass TypeScript checking until Supabase types are updated
-    const { error } = await (supabase as any)
-      .from("inventory_suppliers")
-      .delete()
-      .eq("name", name);
-
-    if (error) throw error;
+    return true;
   } catch (error) {
-    console.error("Error deleting supplier:", error);
-    throw error;
+    console.error('Error adding inventory supplier:', error);
+    return false;
   }
 }

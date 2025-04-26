@@ -1,87 +1,49 @@
 
-import { supabase } from "@/lib/supabase";
-import { InventoryTransaction, CreateInventoryTransactionDto } from "@/types/inventory/transactions";
-import { handleApiError } from "@/utils/errorHandling";
-import { updateInventoryQuantity } from "./crudService";
+import { supabase } from '@/lib/supabase';
 
-export async function getInventoryTransactions(): Promise<InventoryTransaction[]> {
+// Get inventory transactions for an item
+export async function getItemTransactions(itemId: string) {
   try {
     const { data, error } = await supabase
-      .from("inventory_transactions")
-      .select("*, inventory_items(name, sku)")
-      .order("transaction_date", { ascending: false });
-
+      .from('inventory_transactions')
+      .select('*')
+      .eq('inventory_item_id', itemId)
+      .order('transaction_date', { ascending: false });
+      
     if (error) throw error;
-    return data || [];
-  } catch (error) {
-    handleApiError(error, "Failed to fetch inventory transactions");
-    return [];
-  }
-}
-
-export async function getTransactionsForItem(itemId: string): Promise<InventoryTransaction[]> {
-  try {
-    const { data, error } = await supabase
-      .from("inventory_transactions")
-      .select("*")
-      .eq("inventory_item_id", itemId)
-      .order("transaction_date", { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    handleApiError(error, `Failed to fetch transactions for item ${itemId}`);
-    return [];
-  }
-}
-
-export async function createInventoryTransaction(
-  transaction: CreateInventoryTransactionDto
-): Promise<InventoryTransaction | null> {
-  try {
-    // First, update the inventory item quantity
-    let quantityChange = transaction.quantity;
     
-    // For outgoing transactions like sales, make the quantity negative
-    if (
-      transaction.transaction_type === "sale" || 
-      transaction.transaction_type === "write-off" ||
-      (transaction.transaction_type === "adjustment" && transaction.quantity < 0)
-    ) {
-      quantityChange = -Math.abs(quantityChange);
-    }
-    
-    // Update the inventory quantity
-    await updateInventoryQuantity(transaction.inventory_item_id, quantityChange);
-
-    // Create the transaction record
-    const { data, error } = await supabase
-      .from("inventory_transactions")
-      .insert(transaction)
-      .select()
-      .single();
-
-    if (error) throw error;
     return data;
   } catch (error) {
-    handleApiError(error, "Failed to create inventory transaction");
-    return null;
+    console.error('Error fetching item transactions:', error);
+    return [];
   }
 }
 
-export async function getInventoryItemHistory(itemId: string, limit = 10): Promise<InventoryTransaction[]> {
+// Record an inventory transaction
+export async function recordTransaction(
+  itemId: string, 
+  quantity: number, 
+  transactionType: string,
+  notes?: string,
+  referenceId?: string,
+  referenceType?: string
+) {
   try {
     const { data, error } = await supabase
-      .from("inventory_transactions")
-      .select("*")
-      .eq("inventory_item_id", itemId)
-      .order("transaction_date", { ascending: false })
-      .limit(limit);
-
+      .from('inventory_transactions')
+      .insert({
+        inventory_item_id: itemId,
+        quantity,
+        transaction_type: transactionType,
+        notes,
+        reference_id: referenceId,
+        reference_type: referenceType
+      });
+      
     if (error) throw error;
-    return data || [];
+    return true;
   } catch (error) {
-    handleApiError(error, `Failed to fetch history for item ${itemId}`);
-    return [];
+    console.error('Error recording inventory transaction:', error);
+    return false;
   }
 }

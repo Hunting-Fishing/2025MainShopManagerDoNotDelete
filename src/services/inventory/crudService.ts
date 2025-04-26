@@ -131,7 +131,7 @@ export const clearAllInventoryItems = async (): Promise<void> => {
     const { error } = await supabase
       .from('inventory_items')
       .delete()
-      .gt('id', '0'); // This is just a trick to delete all rows
+      .gt('id', '0'); // This is a way to delete all rows
     
     if (error) {
       throw error;

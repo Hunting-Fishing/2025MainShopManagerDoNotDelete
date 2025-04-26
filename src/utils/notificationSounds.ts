@@ -1,56 +1,28 @@
 
-// Cache for preloaded sounds
-const audioCache: Record<string, HTMLAudioElement> = {};
-
-// List of available notification sounds
-const NOTIFICATION_SOUNDS = {
-  default: '/sounds/notification-default.mp3',
-  chime: '/sounds/notification-chime.mp3',
-  bell: '/sounds/notification-bell.mp3',
-  soft: '/sounds/notification-soft.mp3'
-};
-
-/**
- * Preload notification sounds for better performance
- */
-export const preloadNotificationSounds = (): void => {
-  Object.entries(NOTIFICATION_SOUNDS).forEach(([name, path]) => {
-    try {
-      const audio = new Audio(path);
-      audio.preload = 'auto';
-      audioCache[name] = audio;
-    } catch (err) {
-      console.error(`Failed to preload sound: ${name}`, err);
-    }
-  });
-};
-
-/**
- * Play a notification sound by name
- * @param sound The name of the sound to play
- */
-export const playNotificationSound = async (sound: string = 'default'): Promise<void> => {
-  if (sound === 'none') return;
+// Simple notification sound player
+export function playNotificationSound(soundType: string | boolean) {
+  if (!soundType || soundType === false) return;
   
   try {
-    // Use the cached audio if available
-    const soundName = NOTIFICATION_SOUNDS[sound as keyof typeof NOTIFICATION_SOUNDS] 
-      ? sound 
-      : 'default';
+    // Define sound file paths based on type
+    const soundMap: Record<string, string> = {
+      chime: '/sounds/chime.mp3',
+      bell: '/sounds/bell.mp3',
+      alert: '/sounds/alert.mp3',
+      default: '/sounds/notification.mp3'
+    };
     
-    let audio = audioCache[soundName];
+    // Get sound path or use default
+    const soundPath = typeof soundType === 'string' && soundMap[soundType] 
+      ? soundMap[soundType] 
+      : soundMap.default;
     
-    // Create a new audio instance if not cached
-    if (!audio) {
-      const soundPath = NOTIFICATION_SOUNDS[soundName as keyof typeof NOTIFICATION_SOUNDS];
-      audio = new Audio(soundPath);
-      audioCache[soundName] = audio;
-    }
-    
-    // Reset and play
-    audio.currentTime = 0;
-    await audio.play();
-  } catch (err) {
-    console.error('Error playing notification sound:', err);
+    // Create and play audio
+    const audio = new Audio(soundPath);
+    audio.play().catch(err => {
+      console.log("Could not play notification sound:", err);
+    });
+  } catch (error) {
+    console.error("Error playing notification sound:", error);
   }
-};
+}

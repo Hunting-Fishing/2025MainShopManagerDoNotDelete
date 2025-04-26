@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { AutoReorderSettings } from "@/types/inventory";
 
@@ -26,19 +25,45 @@ export async function getAutoReorderSettings(): Promise<Record<string, AutoReord
 }
 
 // Enable auto-reorder for an item
-export async function enableAutoReorder(itemId: string, threshold: number, quantity: number): Promise<void> {
-  const { error } = await supabase
-    .from("inventory_auto_reorder")
-    .upsert({
-      item_id: itemId,
-      enabled: true,
-      threshold,
-      quantity
-    });
-
-  if (error) {
-    console.error(`Error enabling auto-reorder for item ${itemId}:`, error);
-    throw error;
+export async function enableAutoReorder(itemId: string, threshold: number, quantity: number): Promise<boolean> {
+  try {
+    // First check if there's an existing auto-reorder setting
+    const { data: existingEntry } = await supabase
+      .from('inventory_auto_reorder')
+      .select('*')
+      .eq('item_id', itemId)
+      .single();
+    
+    if (existingEntry) {
+      // Update existing entry
+      const { error } = await supabase
+        .from('inventory_auto_reorder')
+        .update({ 
+          enabled: true,
+          threshold: threshold,
+          quantity: quantity
+        })
+        .eq('item_id', itemId);
+      
+      if (error) throw error;
+    } else {
+      // Create new entry
+      const { error } = await supabase
+        .from('inventory_auto_reorder')
+        .insert({
+          item_id: itemId,
+          enabled: true,
+          threshold: threshold,
+          quantity: quantity
+        });
+      
+      if (error) throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error enabling auto-reorder:", error);
+    return false;
   }
 }
 

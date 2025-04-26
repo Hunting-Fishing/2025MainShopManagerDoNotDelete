@@ -34,6 +34,9 @@ export interface InventoryItemExtended {
   last_ordered?: string;
   last_received?: string;
   auto_reorder?: boolean;
+  // Add these properties for compatibility with existing code
+  reorderPoint?: number; // Alias for min_stock_level
+  unitPrice?: number; // Alias for unit_price
 }
 
 export interface AutoReorderSettings {
