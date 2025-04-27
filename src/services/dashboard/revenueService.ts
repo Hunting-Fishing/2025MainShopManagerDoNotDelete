@@ -1,6 +1,6 @@
-
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { MonthlyRevenueData, ServiceTypeData } from "@/types/dashboard";
 
 interface RevenueData {
   date: string;
@@ -134,4 +134,38 @@ export const getRevenueByCategory = async (): Promise<CategoryData[]> => {
     console.error('Error in getRevenueByCategory:', error);
     return [];
   }
+};
+
+export const getMonthlyRevenue = async (): Promise<MonthlyRevenueData[]> => {
+  const { data, error } = await supabase
+    .from('monthly_revenue_data')
+    .select('*')
+    .order('month', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching monthly revenue:', error);
+    return [];
+  }
+
+  return data.map(row => ({
+    month: row.month,
+    revenue: Number(row.revenue)
+  }));
+};
+
+export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> => {
+  const { data, error } = await supabase
+    .from('service_type_distribution')
+    .select('*')
+    .order('value', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching service type distribution:', error);
+    return [];
+  }
+
+  return data.map(row => ({
+    subject: row.subject,
+    value: Number(row.value)
+  }));
 };

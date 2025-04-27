@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 
 export interface WorkOrderPhase {
@@ -50,4 +49,21 @@ export const getWorkOrderPhaseCompletionRate = async (): Promise<string> => {
     console.error("Error calculating phase completion rate:", error);
     return 'N/A';
   }
+};
+
+export const getWorkOrdersByStatus = async () => {
+  const { data, error } = await supabase
+    .from('work_order_status_counts')
+    .select('*')
+    .order('count', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching work order status counts:', error);
+    return [];
+  }
+
+  return data.map(row => ({
+    name: row.status,
+    value: row.count
+  }));
 };

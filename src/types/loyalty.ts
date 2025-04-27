@@ -1,4 +1,3 @@
-
 export interface CustomerLoyalty {
   id: string;
   customer_id: string;
@@ -54,7 +53,6 @@ export interface LoyaltyRedemption {
   notes?: string;
 }
 
-// Add the missing LoyaltySettings interface
 export interface LoyaltySettings {
   id: string;
   shop_id: string;
@@ -65,7 +63,6 @@ export interface LoyaltySettings {
   updated_at?: string;
 }
 
-// Define FeedbackAnalytics type used in FeedbackAnalytics component
 export interface FeedbackAnalytics {
   total_responses: number;
   average_rating: number;
