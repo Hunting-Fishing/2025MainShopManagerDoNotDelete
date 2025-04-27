@@ -53,3 +53,24 @@ export interface LoyaltyRedemption {
   used_at?: string;
   notes?: string;
 }
+
+// Add the missing LoyaltySettings interface
+export interface LoyaltySettings {
+  id: string;
+  shop_id: string;
+  is_enabled: boolean;
+  points_per_dollar: number;
+  points_expiration_days: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Define FeedbackAnalytics type used in FeedbackAnalytics component
+export interface FeedbackAnalytics {
+  total_responses: number;
+  average_rating: number;
+  nps_score: number;
+  promoters: number;
+  passives: number;
+  detractors: number;
+}

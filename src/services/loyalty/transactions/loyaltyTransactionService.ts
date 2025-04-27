@@ -2,17 +2,21 @@
 import { supabase } from "@/lib/supabase";
 import { LoyaltyTransaction } from "@/types/loyalty";
 
-export const createLoyaltyTransaction = async (transaction: {
+interface CreateTransactionParams {
   customer_id: string;
   points: number;
-  transaction_type: 'earn' | 'redeem' | 'expire' | 'adjust';
+  transaction_type: string;
   description?: string;
   reference_id?: string;
   reference_type?: string;
-}): Promise<LoyaltyTransaction> => {
+}
+
+export const createLoyaltyTransaction = async (
+  params: CreateTransactionParams
+): Promise<LoyaltyTransaction> => {
   const { data, error } = await supabase
     .from("loyalty_transactions")
-    .insert(transaction)
+    .insert(params)
     .select()
     .single();
 
@@ -24,7 +28,9 @@ export const createLoyaltyTransaction = async (transaction: {
   return data as LoyaltyTransaction;
 };
 
-export const getCustomerTransactions = async (customerId: string): Promise<LoyaltyTransaction[]> => {
+export const getCustomerTransactions = async (
+  customerId: string
+): Promise<LoyaltyTransaction[]> => {
   const { data, error } = await supabase
     .from("loyalty_transactions")
     .select("*")
@@ -36,5 +42,5 @@ export const getCustomerTransactions = async (customerId: string): Promise<Loyal
     throw error;
   }
 
-  return data as LoyaltyTransaction[];
+  return data || [];
 };

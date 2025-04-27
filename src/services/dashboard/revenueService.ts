@@ -1,205 +1,137 @@
 
-import { supabase } from "@/lib/supabase";
-import { MonthlyRevenueData, ServiceTypeData } from "@/types/dashboard";
+import { supabase } from '@/lib/supabase';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 
-// Get daily revenue data for the chart
-export const getRevenueData = async (): Promise<{ date: string; revenue: number }[]> => {
+interface RevenueData {
+  date: string;
+  revenue: number;
+}
+
+interface CategoryData {
+  name: string;
+  value: number;
+}
+
+/**
+ * Get revenue data for the last 30 days
+ */
+export const getRevenueData = async (days = 30): Promise<RevenueData[]> => {
   try {
-    // Get the last 30 days range
+    // Query invoices for the last X days
     const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
+    const startDate = subDays(endDate, days);
+
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('date, total')
+      .gte('date', format(startDate, 'yyyy-MM-dd'))
+      .lte('date', format(endDate, 'yyyy-MM-dd'))
+      .order('date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching revenue data:', error);
+      throw error;
+    }
+
+    // Process data to get daily revenue
+    const revenueByDate: { [date: string]: number } = {};
     
-    // Fetch completed work orders with revenue in date range
-    const { data: workOrders, error } = await supabase
-      .from('work_orders')
-      .select('id, created_at, total_cost, status')
-      .eq('status', 'completed')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .order('created_at');
+    // Initialize all dates in the range with zero revenue
+    for (let i = 0; i <= days; i++) {
+      const date = format(subDays(endDate, days - i), 'yyyy-MM-dd');
+      revenueByDate[date] = 0;
+    }
+    
+    // Sum revenues for each day
+    data.forEach(item => {
+      const date = String(item.date).substring(0, 10); // Format as YYYY-MM-DD
+      const amount = typeof item.total === 'number' ? item.total : parseFloat(String(item.total) || '0');
       
-    if (error) throw error;
-    
-    if (!workOrders || workOrders.length === 0) return [];
-    
-    // Group by date and sum revenues
-    const revenueByDate = workOrders.reduce((acc: Record<string, number>, order) => {
-      const date = new Date(order.created_at).toISOString().split('T')[0];
-      const revenue = parseFloat(order.total_cost) || 0;
-      
-      if (!acc[date]) {
-        acc[date] = 0;
+      if (revenueByDate[date] !== undefined) {
+        revenueByDate[date] += amount;
       }
-      acc[date] += revenue;
-      return acc;
-    }, {});
+    });
     
-    // Convert to array format for the chart
+    // Convert to array format for chart
     return Object.entries(revenueByDate).map(([date, revenue]) => ({
       date,
-      revenue
+      revenue: Number(revenue.toFixed(2))
     }));
   } catch (error) {
-    console.error("Error fetching revenue data:", error);
+    console.error('Error in getRevenueData:', error);
     return [];
   }
 };
 
-// Get monthly revenue data
-export const getMonthlyRevenue = async (): Promise<MonthlyRevenueData[]> => {
+/**
+ * Get total revenue for the current month
+ */
+export const getCurrentMonthRevenue = async (): Promise<number> => {
   try {
-    // Get the last 6 months
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 6);
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    // Fetch completed work orders with revenue in date range
-    const { data: workOrders, error } = await supabase
-      .from('work_orders')
-      .select('created_at, total_cost')
-      .eq('status', 'completed')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString());
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('total')
+      .gte('date', format(firstDayOfMonth, 'yyyy-MM-dd'))
+      .lte('date', format(now, 'yyyy-MM-dd'));
       
-    if (error) throw error;
-    
-    if (!workOrders || workOrders.length === 0) return [];
-    
-    // Group by month and sum revenues
-    const revenueByMonth = workOrders.reduce((acc: Record<string, number>, order) => {
-      const date = new Date(order.created_at);
-      const month = date.toLocaleString('default', { month: 'short' });
-      const revenue = parseFloat(order.total_cost) || 0;
-      
-      if (!acc[month]) {
-        acc[month] = 0;
-      }
-      acc[month] += revenue;
-      return acc;
-    }, {});
-    
-    // Get month names in correct order
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      months.push(d.toLocaleString('default', { month: 'short' }));
+    if (error) {
+      console.error('Error fetching current month revenue:', error);
+      throw error;
     }
     
-    // Convert to array format for the chart
-    return months.map(month => ({
-      month,
-      revenue: revenueByMonth[month] || 0
-    }));
+    const total = data.reduce((sum, invoice) => {
+      const amount = typeof invoice.total === 'number' ? invoice.total : parseFloat(String(invoice.total) || '0');
+      return sum + amount;
+    }, 0);
+    
+    return Number(total.toFixed(2));
   } catch (error) {
-    console.error("Error fetching monthly revenue data:", error);
-    return [];
+    console.error('Error in getCurrentMonthRevenue:', error);
+    return 0;
   }
 };
 
-// Get service type distribution data
-export const getServiceTypeDistribution = async (): Promise<ServiceTypeData[]> => {
+/**
+ * Get revenue by service category
+ */
+export const getRevenueByCategory = async (): Promise<CategoryData[]> => {
   try {
-    // Let's first try using service_category_id if available
-    const { data: workOrdersWithCategories, error: categoryError } = await supabase
-      .from('work_orders')
-      .select(`
-        service_category_id,
-        service_categories (name)
-      `)
-      .not('service_category_id', 'is', null);
-
-    // If there's no data with service_category_id, try using service_type
-    if (categoryError || !workOrdersWithCategories || workOrdersWithCategories.length === 0) {
-      const { data: workOrdersWithType, error: typeError } = await supabase
-        .from('work_orders')
-        .select('service_type')
-        .not('service_type', 'is', null);
-        
-      if (typeError || !workOrdersWithType || workOrdersWithType.length === 0) {
-        // If no data with either field, return an empty array
-        return [];
-      }
-
-      // Count work orders by service type
-      const countByType: Record<string, number> = workOrdersWithType.reduce((acc: Record<string, number>, order) => {
-        const type = order.service_type || 'Other';
-        if (!acc[type]) {
-          acc[type] = 0;
-        }
-        acc[type]++;
-        return acc;
-      }, {});
-
-      // Convert to chart data format
-      return Object.entries(countByType)
-        .map(([name, value]) => ({ subject: name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 6); // Top 6 service types
-    } else {
-      // Count work orders by service category
-      const countByCategory: Record<string, number> = workOrdersWithCategories.reduce((acc: Record<string, number>, order) => {
-        // Safely extract the category name
-        let categoryName = 'Other';
-        
-        if (order.service_categories) {
-          // Check if service_categories is an object with a name property
-          if (typeof order.service_categories === 'object' && 
-              order.service_categories !== null && 
-              'name' in order.service_categories) {
-            categoryName = order.service_categories.name as string || 'Other';
-          }
-        }
-        
-        if (!acc[categoryName]) {
-          acc[categoryName] = 0;
-        }
-        acc[categoryName]++;
-        return acc;
-      }, {});
-      
-      // Convert to chart data format
-      return Object.entries(countByCategory)
-        .map(([name, value]) => ({ subject: name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 6); // Top 6 service categories
-    }
-  } catch (error) {
-    console.error("Error fetching service type distribution:", error);
-    return [];
-  }
-};
-
-// Get work orders by status
-export const getWorkOrdersByStatus = async (): Promise<{ name: string; value: number }[]> => {
-  try {
-    // Fetch work order counts grouped by status
     const { data, error } = await supabase
       .from('work_orders')
-      .select('status');
+      .select('total_cost, service_category_id, service_categories!inner(name)')
+      .not('service_category_id', 'is', null);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching revenue by category:', error);
+      throw error;
+    }
     
-    if (!data || data.length === 0) return [];
+    // Group and sum by category
+    const categoryMap = new Map<string, number>();
     
-    // Count work orders by status
-    const countByStatus = data.reduce((acc: Record<string, number>, order) => {
-      const status = order.status || 'Unknown';
-      if (!acc[status]) {
-        acc[status] = 0;
+    data.forEach(workOrder => {
+      const categoryName = workOrder.service_categories?.name || 'Uncategorized';
+      const amount = typeof workOrder.total_cost === 'number' ? 
+        workOrder.total_cost : 
+        parseFloat(String(workOrder.total_cost) || '0');
+        
+      if (!categoryMap.has(categoryName)) {
+        categoryMap.set(categoryName, 0);
       }
-      acc[status]++;
-      return acc;
-    }, {});
+      
+      categoryMap.set(categoryName, (categoryMap.get(categoryName) || 0) + amount);
+    });
     
-    // Convert to chart data format and make status names readable
-    return Object.entries(countByStatus).map(([status, count]) => ({
-      name: status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' '),
-      value: count
+    // Convert to array format for chart
+    return Array.from(categoryMap.entries()).map(([name, value]) => ({
+      name,
+      value: Number(value.toFixed(2))
     }));
   } catch (error) {
-    console.error("Error fetching work orders by status:", error);
+    console.error('Error in getRevenueByCategory:', error);
     return [];
   }
 };

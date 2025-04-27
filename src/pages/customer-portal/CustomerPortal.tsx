@@ -188,29 +188,7 @@ const CustomerPortal: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {workOrders.map((order) => (
-                      <div 
-                        key={order.id} 
-                        className="p-4 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 cursor-pointer"
-                        onClick={() => navigate(`/customer-portal/work-orders/${order.id}`)}
-                      >
-                        <div className="flex justify-between">
-                          <p className="font-semibold">{order.description}</p>
-                          <Badge 
-                            className={`
-                              ${order.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
-                                order.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
-                                'bg-red-100 text-red-800 border-red-300'}
-                              border
-                            `}
-                          >
-                            {order.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {order.created_at ? format(new Date(order.created_at), 'MMM d, yyyy') : 'Unknown date'}
-                        </p>
-                      </div>
+                      <WorkOrderItem key={order.id} workOrder={order} />
                     ))}
                   </div>
                 )}
@@ -372,6 +350,37 @@ const CustomerPortal: React.FC = () => {
           {customerId && <WorkOrderNotifications customerId={customerId} />}
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+const WorkOrderItem = ({ workOrder }: { workOrder: WorkOrder }) => {
+  return (
+    <div className="bg-white shadow-md rounded-md p-4 mb-4 border-l-4 border-blue-600">
+      <div className="flex justify-between">
+        <h3 className="text-lg font-semibold">{workOrder.description || `Work Order #${workOrder.id.slice(0, 8)}`}</h3>
+        <Badge 
+          className={`
+            ${workOrder.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' : ''}
+            ${workOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : ''}
+            ${workOrder.status === 'in-progress' ? 'bg-blue-100 text-blue-800 border-blue-300' : ''}
+            ${workOrder.status === 'cancelled' ? 'bg-red-100 text-red-800 border-red-300' : ''}
+          `}
+        >
+          {workOrder.status}
+        </Badge>
+      </div>
+      <div className="text-sm text-gray-500 mt-1">
+        Created: {format(new Date(workOrder.createdAt || new Date().toISOString()), 'MMM d, yyyy')}
+      </div>
+      <div className="mt-2">
+        <p className="text-gray-700">{workOrder.description || 'No description provided'}</p>
+      </div>
+      {workOrder.end_time && (
+        <div className="text-sm text-gray-600 mt-2">
+          Estimated Completion: {format(new Date(workOrder.end_time), 'MMM d, yyyy')}
+        </div>
+      )}
     </div>
   );
 };

@@ -2,42 +2,50 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export function useShopId() {
+interface UseShopIdReturnType {
+  shopId: string | null;
+  loading: boolean;
+  error: Error | null;
+}
+
+export function useShopId(): UseShopIdReturnType {
   const [shopId, setShopId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const fetchShopId = async () => {
       try {
-        // Get the current authenticated user
+        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          setIsLoading(false);
-          return;
+          throw new Error('User not authenticated');
         }
-        
-        // Get the shop associated with this user
-        const { data, error } = await supabase
-          .from('shops')
-          .select('id')
-          .eq('owner_id', user.id)
+
+        // Get user's profile with shop_id
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('shop_id')
+          .eq('id', user.id)
           .single();
-          
-        if (error) {
-          console.error('Error fetching shop:', error);
-        } else if (data) {
-          setShopId(data.id);
+
+        if (profileError) {
+          throw profileError;
         }
-      } catch (error) {
-        console.error('Error in useShopId:', error);
+
+        setShopId(profileData.shop_id);
+        
+      } catch (err) {
+        console.error('Error fetching shop ID:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch shop ID'));
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-    
+
     fetchShopId();
   }, []);
 
-  return { shopId, isLoading };
+  return { shopId, loading, error };
 }

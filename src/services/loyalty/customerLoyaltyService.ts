@@ -30,6 +30,34 @@ export const getCustomerLoyalty = async (customerId: string): Promise<CustomerLo
 };
 
 /**
+ * Create new customer loyalty record
+ */
+export const createCustomerLoyalty = async (customerId: string): Promise<CustomerLoyalty> => {
+  try {
+    const { data, error } = await supabase
+      .from("customer_loyalty")
+      .insert({
+        customer_id: customerId,
+        current_points: 0,
+        lifetime_points: 0,
+        lifetime_value: 0
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error creating customer loyalty:", error);
+      throw error;
+    }
+    
+    return data as CustomerLoyalty;
+  } catch (error) {
+    console.error("Error in createCustomerLoyalty:", error);
+    throw error;
+  }
+};
+
+/**
  * Update customer loyalty points
  */
 export const updateCustomerLoyaltyPoints = async (
