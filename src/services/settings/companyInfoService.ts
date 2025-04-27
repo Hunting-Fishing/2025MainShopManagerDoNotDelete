@@ -1,6 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
-import { CompanyInfo } from "./companyService.types";
+import { CompanyInfo } from "./companyService";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/utils/formatters";
 
 async function uploadLogo(shopId: string, file: File) {
@@ -14,8 +14,6 @@ async function uploadLogo(shopId: string, file: File) {
     const fileName = `${shopId}_${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
     const filePath = `${shopId}/${fileName}`;
 
-    console.log("Uploading logo:", fileName);
-    
     // Upload file to Supabase storage
     const { data, error } = await supabase.storage
       .from('shop_logos')
@@ -62,15 +60,12 @@ async function getShopInfo() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
-      console.error("User auth error:", userError);
       throw userError;
     }
     
     if (!user) {
       throw new Error("No authenticated user found");
     }
-    
-    console.log("Fetching shop info for user:", user.id);
     
     // Get the profile with shop_id
     const { data: profile, error: profileError } = await supabase
@@ -80,18 +75,14 @@ async function getShopInfo() {
       .single();
       
     if (profileError) {
-      console.error("Profile fetch error:", profileError);
       throw profileError;
     }
     
     const shopId = profile?.shop_id;
     
     if (!shopId) {
-      console.error("No shop associated with this user");
       throw new Error("No shop associated with this user");
     }
-    
-    console.log("Found shop ID:", shopId);
     
     // Get shop details
     const { data: shop, error: shopError } = await supabase
@@ -101,16 +92,10 @@ async function getShopInfo() {
       .single();
       
     if (shopError) {
-      console.error("Shop fetch error:", shopError);
       throw shopError;
     }
     
     console.log("Shop data from DB:", shop);
-    
-    if (!shop) {
-      console.error("Shop not found");
-      throw new Error("Shop not found");
-    }
     
     // Format shop data to match CompanyInfo structure
     const companyInfo: CompanyInfo = {
@@ -139,10 +124,6 @@ async function getShopInfo() {
 
 async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
   try {
-    if (!shopId) {
-      throw new Error("Shop ID is required for updating company information");
-    }
-    
     // Clean phone number before saving
     const cleanedPhone = cleanPhoneNumber(companyInfo.phone || '');
     console.log("Original phone:", companyInfo.phone, "Cleaned phone:", cleanedPhone);
@@ -177,31 +158,23 @@ async function updateCompanyInfo(shopId: string, companyInfo: CompanyInfo) {
     
     console.log("Company info updated successfully:", data);
     
-    // Make sure we're returning consistent data format even if the response is empty
-    let updatedInfo: CompanyInfo;
+    // Return formatted data
+    const updatedCompanyInfo: CompanyInfo = {
+      name: data[0]?.name || companyInfo.name,
+      address: data[0]?.address || companyInfo.address,
+      city: data[0]?.city || companyInfo.city,
+      state: data[0]?.state || companyInfo.state,
+      zip: data[0]?.postal_code || companyInfo.zip,
+      phone: formatPhoneNumber(data[0]?.phone || companyInfo.phone),
+      email: data[0]?.email || companyInfo.email,
+      taxId: data[0]?.tax_id || companyInfo.taxId,
+      businessType: data[0]?.business_type || companyInfo.businessType,
+      industry: data[0]?.industry || companyInfo.industry,
+      otherIndustry: data[0]?.other_industry || companyInfo.otherIndustry,
+      logoUrl: data[0]?.logo_url || companyInfo.logoUrl
+    };
     
-    if (data && data.length > 0) {
-      const shopData = data[0];
-      updatedInfo = {
-        name: shopData?.name || companyInfo.name,
-        address: shopData?.address || companyInfo.address,
-        city: shopData?.city || companyInfo.city,
-        state: shopData?.state || companyInfo.state,
-        zip: shopData?.postal_code || companyInfo.zip,
-        phone: shopData?.phone ? formatPhoneNumber(shopData.phone) : companyInfo.phone,
-        email: shopData?.email || companyInfo.email,
-        taxId: shopData?.tax_id || companyInfo.taxId,
-        businessType: shopData?.business_type || companyInfo.businessType,
-        industry: shopData?.industry || companyInfo.industry,
-        otherIndustry: shopData?.other_industry || companyInfo.otherIndustry,
-        logoUrl: shopData?.logo_url || companyInfo.logoUrl
-      };
-    } else {
-      // If no data returned, use the input data as the result
-      updatedInfo = { ...companyInfo };
-    }
-    
-    return { success: true, data: updatedInfo };
+    return { success: true, data: updatedCompanyInfo };
   } catch (error) {
     console.error("Error updating company info:", error);
     throw error;

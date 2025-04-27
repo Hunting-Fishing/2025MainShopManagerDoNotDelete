@@ -40,18 +40,17 @@ export interface Vehicle {
   color?: string;
 }
 
-// Re-export other types
-export { VehicleBodyStyle, VEHICLE_BODY_STYLES };
-export type { CarMake, CarModel };
-
-interface CarMake {
+export interface CarMake {
   make_id: string;
   make_display: string;
   make_is_common?: string;
   make_country?: string;
 }
 
-interface CarModel {
+export interface CarModel {
   model_name: string;
   model_make_id: string;
 }
+
+// Re-export vehicle body style types
+export { VehicleBodyStyle, VEHICLE_BODY_STYLES };

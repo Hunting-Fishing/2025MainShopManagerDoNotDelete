@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoyaltyTier } from "@/types/loyalty";
-import { useShopId } from "@/hooks/useShopId";
 
 interface LoyaltyTierFormProps {
   tier?: LoyaltyTier;
@@ -14,15 +13,13 @@ interface LoyaltyTierFormProps {
 }
 
 export function LoyaltyTierForm({ tier, onSave, onCancel }: LoyaltyTierFormProps) {
-  const { shopId } = useShopId();
   const [formData, setFormData] = useState<LoyaltyTier>({
-    id: tier?.id || '',
+    id: tier?.id,
     name: tier?.name || '',
     threshold: tier?.threshold || 0,
     benefits: tier?.benefits || '',
     multiplier: tier?.multiplier || 1,
     color: tier?.color || 'blue',
-    shop_id: tier?.shop_id || shopId || '',
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});

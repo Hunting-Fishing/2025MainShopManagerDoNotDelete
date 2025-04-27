@@ -1,26 +1,63 @@
 
 import { z } from "zod";
 
-// Vehicle schema definition
-export const vehicleSchema = z.object({
-  id: z.string().optional(),
-  make: z.string().optional(),
-  model: z.string().optional(),
-  year: z.string().optional(),
-  vin: z.string().optional(),
-  license_plate: z.string().optional(),
-  color: z.string().optional(),
+// Define schema for vehicle data
+export interface VehicleFormData {
+  id?: string;
+  make: string;
+  model: string;
+  year: string;
+  vin?: string;
+  license_plate?: string;
+  trim?: string;
   
   // Additional vehicle details
-  transmission: z.string().optional(),
-  transmission_type: z.string().optional(),
-  drive_type: z.string().optional(),
-  fuel_type: z.string().optional(),
-  engine: z.string().optional(),
-  body_style: z.string().optional(),
-  country: z.string().optional(),
-  trim: z.string().optional(),
-  gvwr: z.string().optional()
-});
+  transmission?: string;
+  drive_type?: string; 
+  fuel_type?: string;
+  engine?: string;
+  body_style?: string;
+  country?: string;
+  transmission_type?: string;
+  gvwr?: string;
+  color?: string; // Adding color for backward compatibility
+}
 
-export type VehicleFormValues = z.infer<typeof vehicleSchema>;
+// Default empty vehicle
+export const emptyVehicle: VehicleFormData = {
+  make: '',
+  model: '',
+  year: '',
+  vin: '',
+  license_plate: '',
+  trim: '',
+  transmission: '',
+  drive_type: '',
+  fuel_type: '',
+  engine: '',
+  body_style: '',
+  country: '',
+  transmission_type: '',
+  gvwr: '',
+  color: '' // Adding color for backward compatibility
+};
+
+// Add the vehicleSchema export using Zod
+export const vehicleSchema = z.object({
+  id: z.string().optional(),
+  make: z.string().min(1, "Make is required"),
+  model: z.string().min(1, "Model is required"),
+  year: z.string().min(1, "Year is required"),
+  vin: z.string().optional().or(z.literal("")),
+  license_plate: z.string().optional().or(z.literal("")),
+  trim: z.string().optional().or(z.literal("")),
+  transmission: z.string().optional().or(z.literal("")),
+  drive_type: z.string().optional().or(z.literal("")),
+  fuel_type: z.string().optional().or(z.literal("")),
+  engine: z.string().optional().or(z.literal("")),
+  body_style: z.string().optional().or(z.literal("")),
+  country: z.string().optional().or(z.literal("")),
+  transmission_type: z.string().optional().or(z.literal("")),
+  gvwr: z.string().optional().or(z.literal("")),
+  color: z.string().optional().or(z.literal("")) // Adding color for backward compatibility
+});

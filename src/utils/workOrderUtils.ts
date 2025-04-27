@@ -1,4 +1,10 @@
 
+/**
+ * @deprecated This file is deprecated. 
+ * Please import from '@/utils/workOrders' directory instead.
+ * This file will be removed in a future version.
+ */
+
 // Re-export everything from the new modular structure
 import * as workOrderUtils from './workOrders';
 export default workOrderUtils;
@@ -9,7 +15,7 @@ export const {
   deleteWorkOrder,
   findWorkOrderById,
   formatDate,
-  formatTimeInHoursAndMinutes,  // Add this back
+  formatTimeInHoursAndMinutes,
   generateWorkOrderId,
   mapDatabaseToAppModel,
   mapTimeEntryFromDb,

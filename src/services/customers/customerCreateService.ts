@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, CustomerCreate, adaptCustomerForUI } from "@/types/customer";
-import { addCustomerNote } from "@/services/customer/customerNotesService";
+import { addCustomerNote } from "./customerNotesService";
 
 // Create a new customer
 export const createCustomer = async (customer: CustomerCreate): Promise<Customer> => {
@@ -89,16 +89,7 @@ export const createCustomer = async (customer: CustomerCreate): Promise<Customer
   // If there's a note, add it to the customer_notes table
   if (notes && notes.trim()) {
     try {
-      // Create the note data object according to the API requirements
-      const noteData = {
-        customer_id: data.id,
-        content: notes.trim(),
-        category: 'general' as 'service' | 'sales' | 'follow-up' | 'general',
-        created_by: 'System'
-      };
-      
-      // Call addCustomerNote with the correct parameter structure
-      await addCustomerNote(noteData);
+      await addCustomerNote(data.id, notes, 'general', 'System');
     } catch (noteError) {
       console.error("Error adding initial customer note:", noteError);
     }

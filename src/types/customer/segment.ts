@@ -1,4 +1,5 @@
 
+// Segment-related type definitions
 export interface CustomerSegment {
   id: string;
   name: string;
@@ -6,12 +7,16 @@ export interface CustomerSegment {
   color?: string;
   created_at: string;
   updated_at: string;
+  rule_count?: number;
+  customer_count?: number;
 }
 
-export interface CustomerSegmentRule {
+export interface SegmentRule {
   id: string;
   segment_id: string;
   rule_type: string;
-  rule_operator: string;
   rule_value: string;
+  rule_operator: string;
+  created_at: string;
+  updated_at: string;
 }

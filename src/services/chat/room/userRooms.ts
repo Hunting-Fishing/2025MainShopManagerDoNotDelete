@@ -1,82 +1,85 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ChatRoom, ChatMessage } from "@/types/chat";
+import { supabase, DatabaseChatRoom } from "../supabaseClient";
+import { ChatRoom } from "@/types/chat";
 import { transformDatabaseRoom } from "./types";
-import { transformDatabaseMessage } from "../message/types";
 
-/**
- * Get all chat rooms for a user
- */
+// Get all chat rooms for a user
 export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
   try {
-    // First get all rooms the user participates in
-    const { data: participants, error: participantsError } = await supabase
+    // Get rooms where the user is a participant
+    const { data: participantRooms, error: participantError } = await supabase
       .from('chat_participants')
       .select('room_id')
       .eq('user_id', userId);
-      
-    if (participantsError) throw participantsError;
     
-    if (!participants || participants.length === 0) {
+    if (participantError) throw participantError;
+    
+    if (!participantRooms || participantRooms.length === 0) {
       return [];
     }
     
-    const roomIds = participants.map(p => p.room_id);
+    const roomIds = participantRooms.map(p => p.room_id);
     
-    // Then fetch the actual rooms
+    // Get the room details
     const { data: rooms, error: roomsError } = await supabase
       .from('chat_rooms')
-      .select(`
-        *,
-        last_message:chat_messages(
-          *
-        )
-      `)
-      .in('id', roomIds)
-      .order('updated_at', { ascending: false });
-      
+      .select('*')
+      .in('id', roomIds);
+    
     if (roomsError) throw roomsError;
     
-    if (!rooms) return [];
-    
-    // Process the rooms to format last_message correctly and add unread count
-    const processedRooms: ChatRoom[] = await Promise.all(rooms.map(async (room) => {
-      // Get unread message count
-      const { count, error: countError } = await supabase
-        .from('chat_messages')
-        .select('id', { count: 'exact' })
-        .eq('room_id', room.id)
-        .eq('is_read', false)
-        .neq('sender_id', userId);
+    // Enhance rooms with last message and unread count
+    const enhancedRooms: ChatRoom[] = await Promise.all(
+      (rooms || []).map(async (room: DatabaseChatRoom) => {
+        // Get last message
+        const { data: lastMessages, error: lastMessageError } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('room_id', room.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
         
-      // Get last message more reliably
-      const { data: lastMessages, error: lastMsgError } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('room_id', room.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      
-      // Transform the database room to match the ChatRoom type
-      // This will handle type validation for room.type and last_message.message_type
-      const transformedRoom = transformDatabaseRoom(room);
-      
-      // Add the last message and unread count
-      let lastMessage: ChatMessage | null = null;
-      if (lastMessages && lastMessages.length > 0) {
-        lastMessage = transformDatabaseMessage(lastMessages[0]);
-      }
-      
-      return {
-        ...transformedRoom,
-        last_message: lastMessage,
-        unread_count: countError ? 0 : (count || 0)
-      };
-    }));
+        if (lastMessageError) console.error("Error fetching last message:", lastMessageError);
+        
+        const lastMessage = lastMessages && lastMessages.length > 0 ? lastMessages[0] : null;
+        
+        // Get unread count
+        const { data: unreadCountData, error: unreadCountError } = await supabase
+          .from('chat_messages')
+          .select('id', { count: 'exact' })
+          .eq('room_id', room.id)
+          .eq('is_read', false)
+          .neq('sender_id', userId);
+        
+        if (unreadCountError) console.error("Error fetching unread count:", unreadCountError);
+        
+        const unreadCount = unreadCountData ? (unreadCountData as any).count || 0 : 0;
+        
+        // Generate a proper name for shift chats if none is provided
+        let roomName = room.name;
+        if (room.type === 'group' && room.metadata?.is_shift_chat && (!roomName || roomName.trim() === '')) {
+          const shiftDate = room.metadata.shift_date 
+            ? new Date(room.metadata.shift_date).toLocaleDateString() 
+            : 'Unknown Date';
+          const shiftName = room.metadata.shift_name || 'Shift';
+          roomName = `${shiftName} - ${shiftDate}`;
+        }
+        
+        return {
+          ...transformDatabaseRoom(room),
+          name: roomName,
+          last_message: lastMessage,
+          unread_count: unreadCount
+        };
+      })
+    );
     
-    return processedRooms;
+    return enhancedRooms;
   } catch (error) {
-    console.error("Error fetching user chat rooms:", error);
+    console.error("Error fetching chat rooms:", error);
     throw error;
   }
 };
+
+// Re-export the room queries
+export { getShiftChatRoom } from './queries';

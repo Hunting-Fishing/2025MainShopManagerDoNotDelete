@@ -1,53 +1,32 @@
 
-/**
- * Format a number as currency
- * @param amount - The amount to format
- * @param currencyCode - The currency code (default: USD)
- * @returns Formatted currency string
- */
-export function formatCurrency(amount: number, currencyCode: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
-}
+import { TimeEntry } from "@/types/workOrder";
 
-/**
- * Format a date in a consistent way
- * @param dateString - ISO date string
- * @returns Formatted date string
- */
-export function formatDate(dateString: string): string {
-  if (!dateString) return '';
-  
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(date);
-}
+// Format date for display
+export const formatDate = (dateStr: string | undefined): string => {
+  if (!dateStr) return "N/A";
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Invalid date";
+  }
+};
 
-/**
- * Format a time duration in minutes to hours and minutes
- * @param minutes - Duration in minutes
- * @returns Formatted duration string
- */
-export function formatDuration(minutes: number): string {
-  if (!minutes || minutes < 0) return '0 min';
+// Format time in hours and minutes
+export const formatTimeInHoursAndMinutes = (minutes: number): string => {
+  if (!minutes) return '0h 0m';
   
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = Math.round(minutes % 60);
+  const remainingMinutes = minutes % 60;
   
-  if (hours === 0) {
-    return `${remainingMinutes} min`;
+  if (hours > 0) {
+    return `${hours}h ${remainingMinutes}m`;
   }
   
-  if (remainingMinutes === 0) {
-    return `${hours} hr`;
-  }
-  
-  return `${hours} hr ${remainingMinutes} min`;
-}
+  return `${remainingMinutes}m`;
+};

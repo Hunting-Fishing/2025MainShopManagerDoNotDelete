@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomerProfileTab } from "./CustomerProfileTab";
@@ -6,17 +7,17 @@ import { CustomerNotesTab } from "./CustomerNotesTab";
 import { CustomerWorkOrdersTab } from "./CustomerWorkOrdersTab";
 import { CustomerHistoryTab } from "./CustomerHistoryTab";
 import { CustomerCommunicationsTab } from "./CustomerCommunicationsTab";
-import { Customer, CustomerCommunication, CustomerNote } from "@/types/customer";
+import { Customer } from "@/types/customer";
 import { WorkOrder } from "@/types/workOrder";
+import { CustomerNote } from "@/types/customer";
 import { CustomerPaymentTab } from "./CustomerPaymentTab";
-import { CreditCard, BarChart } from "lucide-react";
-import { CustomerAnalyticsTab } from "./CustomerAnalyticsTab";
+import { CreditCard } from "lucide-react";
 
 interface CustomerDetailsTabsProps {
   customer: Customer;
   customerWorkOrders: WorkOrder[];
   customerInteractions: any[];
-  customerCommunications: CustomerCommunication[];
+  customerCommunications: any[];
   customerNotes: CustomerNote[];
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -44,18 +45,16 @@ export function CustomerDetailsTabs({
     { id: "payments", label: "Payments" },
     { id: "history", label: "Activity" },
     { id: "communications", label: "Communications" },
-    { id: "notes", label: "Notes" },
-    { id: "analytics", label: "Analytics" }
+    { id: "notes", label: "Notes" }
   ];
 
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-4 md:grid-cols-8">
+      <TabsList className="grid grid-cols-3 md:grid-cols-7">
         {tabs.map(tab => (
           <TabsTrigger key={tab.id} value={tab.id}>
             {tab.id === 'payments' && <CreditCard className="h-4 w-4 mr-2 md:hidden" />}
-            {tab.id === 'analytics' && <BarChart className="h-4 w-4 mr-2 md:hidden" />}
-            <span className={tab.id === 'payments' || tab.id === 'analytics' ? "hidden md:inline" : ""}>{tab.label}</span>
+            <span className={tab.id === 'payments' ? "hidden md:inline" : ""}>{tab.label}</span>
           </TabsTrigger>
         ))}
       </TabsList>
@@ -101,10 +100,6 @@ export function CustomerDetailsTabs({
           notes={customerNotes} 
           onNoteAdded={onNoteAdded}
         />
-      </TabsContent>
-
-      <TabsContent value="analytics" className="space-y-4 pt-4">
-        <CustomerAnalyticsTab customer={customer} />
       </TabsContent>
     </Tabs>
   );

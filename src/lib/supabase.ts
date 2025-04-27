@@ -1,27 +1,25 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+
+// Supabase client configuration
+const supabaseUrl = "https://oudkbrnvommbvtuispla.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91ZGticm52b21tYnZ0dWlzcGxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MTgzODgsImV4cCI6MjA1ODQ5NDM4OH0.Hyo-lkI96GBLt-zp5zZLvCL1bSEWTomIIrzvKRO4LF4";
 
 // Initialize the Supabase client
-export const supabase = createClient<Database>(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Function to check if the Supabase connection is working
+// Helper function to check if Supabase connection is working
 export const checkSupabaseConnection = async (): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.from('customers').select('count').limit(1);
-    if (error) {
-      console.error('Supabase connection check failed:', error);
-      return false;
-    }
-    return true;
+    // Try to fetch a small amount of data to verify connection
+    const { data, error } = await supabase
+      .from('customers')
+      .select('id')
+      .limit(1);
+    
+    return !error;
   } catch (error) {
-    console.error('Supabase connection check exception:', error);
+    console.error("Supabase connection check failed:", error);
     return false;
   }
 };
-
-// Make sure to export the typed client
-export default supabase;

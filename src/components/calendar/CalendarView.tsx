@@ -1,20 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { CalendarViewType } from "@/types/calendar";
+import { CalendarEvent, CalendarViewType } from "@/types/calendar";
 import { CalendarMonthView } from "./CalendarMonthView";
 import { CalendarWeekView } from "./CalendarWeekView";
 import { CalendarDayView } from "./CalendarDayView";
 import { CalendarEventDialog } from "./CalendarEventDialog";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { ChatRoom } from "@/types/chat";
-import { CalendarEvent, ShiftChat } from "@/types/calendar/events"; // Import from the specific file
 
 interface CalendarViewProps {
   events: CalendarEvent[];
   currentDate: Date;
   view: CalendarViewType;
   loading?: boolean;
-  shiftChats?: ShiftChat[];
+  shiftChats?: ChatRoom[];
 }
 
 export function CalendarView({ 
@@ -25,27 +24,7 @@ export function CalendarView({
   shiftChats = []
 }: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [showEventDialog, setShowEventDialog] = useState<boolean>(false);
   const [now, setNow] = useState(new Date());
-
-  // Convert ShiftChats to ChatRooms format for compatibility
-  const convertedShiftChats: ChatRoom[] = shiftChats.map(shift => ({
-    id: shift.chat_room_id,
-    name: shift.shift_name,
-    type: 'group' as const,
-    created_at: shift.created_at,
-    updated_at: shift.updated_at,
-    metadata: {
-      is_shift_chat: true,
-      shift_date: shift.shift_date,
-      shift_name: shift.shift_name,
-      shift_time: {
-        start: shift.start_time,
-        end: shift.end_time
-      },
-      shift_participants: shift.technician_ids || []
-    }
-  }));
 
   // Update current time every minute
   useEffect(() => {
@@ -59,12 +38,10 @@ export function CalendarView({
   // Open event details
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
-    setShowEventDialog(true);
   };
 
   // Close event details
   const handleCloseDialog = () => {
-    setShowEventDialog(false);
     setSelectedEvent(null);
   };
 
@@ -88,7 +65,7 @@ export function CalendarView({
           events={events} 
           onEventClick={handleEventClick}
           currentTime={now}
-          shiftChats={convertedShiftChats}
+          shiftChats={shiftChats}
         />
       )}
       
@@ -99,7 +76,7 @@ export function CalendarView({
             events={events} 
             onEventClick={handleEventClick}
             currentTime={now}
-            shiftChats={convertedShiftChats}
+            shiftChats={shiftChats}
           />
           <CurrentTimeIndicator currentTime={now} view="week" />
         </>
@@ -112,17 +89,19 @@ export function CalendarView({
             events={events} 
             onEventClick={handleEventClick}
             currentTime={now}
-            shiftChats={convertedShiftChats}
+            shiftChats={shiftChats}
           />
           <CurrentTimeIndicator currentTime={now} view="day" />
         </>
       )}
 
-      <CalendarEventDialog 
-        event={selectedEvent} 
-        isOpen={showEventDialog} 
-        onClose={handleCloseDialog} 
-      />
+      {selectedEvent && (
+        <CalendarEventDialog 
+          event={selectedEvent} 
+          isOpen={!!selectedEvent}
+          onClose={handleCloseDialog} 
+        />
+      )}
     </div>
   );
 }

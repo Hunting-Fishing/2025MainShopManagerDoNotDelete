@@ -1,92 +1,147 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { ShoppingCart, Star } from "lucide-react";
+
+import React, { useState, useEffect } from 'react';
+import { Product } from '@/types/shopping';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Heart } from 'lucide-react';
+import { useWishlist } from '@/hooks/useWishlist';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
-  title: string;
-  price?: number;
-  image?: string;
-  rating?: number;
-  status?: string;
-  seller?: {
-    name: string;
-    avatar?: string;
-  };
+  product: Product;
+  onAddToWishlist?: () => void;
+  onRemoveFromWishlist?: () => void;
 }
 
-export function ProductCard({ title, price = 0, image, rating, status, seller }: ProductCardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'in stock':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'low stock':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'out of stock':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onAddToWishlist,
+  onRemoveFromWishlist
+}) => {
+  const { checkIfInWishlist, addItem, removeItem, isAuthenticated } = useWishlist();
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const checkWishlist = async () => {
+      if (isAuthenticated) {
+        const inWishlist = await checkIfInWishlist(product.id);
+        setIsInWishlist(inWishlist);
+      }
+    };
+    
+    checkWishlist();
+  }, [product.id, checkIfInWishlist, isAuthenticated]);
+
+  const handleWishlistToggle = async () => {
+    setIsLoading(true);
+    try {
+      if (isInWishlist) {
+        await removeItem(product.id);
+        setIsInWishlist(false);
+        if (onRemoveFromWishlist) onRemoveFromWishlist();
+      } else {
+        await addItem(product.id);
+        setIsInWishlist(true);
+        if (onAddToWishlist) onAddToWishlist();
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase();
+  const handleBuyClick = () => {
+    if (product.affiliate_link) {
+      // Add tracking params if available
+      const link = product.tracking_params 
+        ? `${product.affiliate_link}${product.tracking_params}`
+        : product.affiliate_link;
+      window.open(link, '_blank');
+    }
+  };
+
+  // Function to format price with currency symbol
+  const formatPrice = (price?: number) => {
+    if (price === undefined) return '';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
   };
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg">
-      <CardHeader className="p-0">
-        <div className="aspect-square relative bg-gray-100">
-          {image ? (
-            <img src={image} alt={title} className="object-cover w-full h-full" />
+    <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-md">
+      <div className="relative pt-4 px-4">
+        {product.is_bestseller && (
+          <Badge className="absolute top-2 right-2 bg-yellow-500">Bestseller</Badge>
+        )}
+        {product.product_type === 'suggested' && (
+          <Badge className="absolute top-2 left-2 bg-purple-500">User Suggested</Badge>
+        )}
+        <div className="h-48 flex items-center justify-center overflow-hidden rounded-md bg-slate-50">
+          {product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={product.title}
+              className="object-contain h-full w-full"
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              No image
-            </div>
-          )}
-          {status && (
-            <Badge 
-              className={`absolute top-2 right-2 ${getStatusColor(status)}`}
-            >
-              {status}
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{title}</h3>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-lg font-bold">${price.toFixed(2)}</span>
-          {rating && (
-            <div className="flex items-center gap-1 text-amber-500">
-              <Star className="fill-current h-4 w-4" />
-              <span className="text-sm">{rating}</span>
+            <div className="flex items-center justify-center h-full w-full bg-slate-100 text-slate-400">
+              No Image
             </div>
           )}
         </div>
-        {seller && (
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={seller.avatar} />
-              <AvatarFallback className="bg-purple-600 text-white text-xs">
-                {getInitials(seller.name)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-gray-600">{seller.name}</span>
-          </div>
+      </div>
+      
+      <CardContent className="pt-4 flex-grow">
+        <h3 className="font-medium text-lg mb-1 line-clamp-2">{product.title}</h3>
+        {product.price !== undefined && (
+          <p className="text-lg font-semibold text-primary mb-2">
+            {formatPrice(product.price)}
+          </p>
+        )}
+        {product.description && (
+          <p className="text-sm text-slate-600 line-clamp-3">{product.description}</p>
         )}
       </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <Button className="w-full rounded-full" variant="default">
-          <ShoppingCart className="mr-2 h-4 w-4" />
-          Add to Cart
+      
+      <CardFooter className="pt-0 pb-4 px-4 flex justify-between gap-2">
+        {product.affiliate_link ? (
+          <Button 
+            className="flex-grow"
+            onClick={handleBuyClick}
+          >
+            Buy Now
+          </Button>
+        ) : (
+          <Button 
+            className="flex-grow"
+            variant="secondary"
+            disabled
+          >
+            No Link Available
+          </Button>
+        )}
+        
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={isLoading || !isAuthenticated}
+          onClick={handleWishlistToggle}
+          className={cn(
+            "transition-colors",
+            isInWishlist && "bg-pink-50 border-pink-200 text-pink-500 hover:bg-pink-100"
+          )}
+        >
+          <Heart 
+            className={cn(
+              "h-5 w-5",
+              isInWishlist && "fill-pink-500 text-pink-500"
+            )} 
+          />
         </Button>
       </CardFooter>
     </Card>
   );
-}
+};

@@ -59,9 +59,6 @@ export interface Customer {
   
   // Role field for distinguishing customers from employees/staff
   role?: string;
-  
-  // Customer lifetime value - can be added dynamically
-  clv?: number;
 }
 
 export interface PreferredTechnicianChange {

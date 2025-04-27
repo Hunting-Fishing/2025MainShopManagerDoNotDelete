@@ -15,26 +15,22 @@ export const calculateTier = async (lifetimePoints: number, shopId: string): Pro
     console.error('Error fetching loyalty tiers:', error);
     // Return default tier on error
     return {
-      id: 'default',
       name: 'Standard',
       threshold: 0,
       benefits: 'Basic loyalty program benefits',
       multiplier: 1,
-      color: 'green',
-      shop_id: shopId
+      color: 'green'
     };
   }
   
   if (!tiers || tiers.length === 0) {
     // Return default tier if no tiers are defined
     return {
-      id: 'default',
       name: 'Standard',
       threshold: 0,
       benefits: 'Basic loyalty program benefits',
       multiplier: 1,
-      color: 'green',
-      shop_id: shopId
+      color: 'green'
     };
   }
   

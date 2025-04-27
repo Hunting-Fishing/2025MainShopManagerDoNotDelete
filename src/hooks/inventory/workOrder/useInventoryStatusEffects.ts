@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues, WorkOrderInventoryItem } from "@/types/workOrder.d"; // Import both from .d.ts file
+import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**
  * Hook to handle inventory status changes based on work order status
  */
 export const useInventoryStatusEffects = (
-  form: UseFormReturn<any>,
+  form: UseFormReturn<WorkOrderFormFieldValues>,
   consumeWorkOrderInventory: Function,
   reserveInventory: Function
 ) => {
@@ -39,7 +40,7 @@ export const useInventoryStatusEffects = (
       }
     }
     // Other statuses don't affect inventory directly
-  }, [status, consumeWorkOrderInventory, reserveInventory, inventoryItems]);
+  }, [status, consumeWorkOrderInventory, reserveInventory]);
   
   return null;
 };

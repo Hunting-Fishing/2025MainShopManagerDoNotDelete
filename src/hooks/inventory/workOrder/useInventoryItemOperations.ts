@@ -1,12 +1,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { WorkOrderFormFieldValues } from "@/types/workOrder.d"; // Import from .d.ts file
+import { WorkOrderFormFieldValues } from "@/components/work-orders/WorkOrderFormFields";
 import { InventoryItemExtended } from "@/types/inventory";
 import { useInventoryManager } from "@/hooks/inventory/useInventoryManager";
 import { toast } from "@/hooks/use-toast";
-// Import WorkOrderInventoryItem from the same source as the form values
-import { WorkOrderInventoryItem } from "@/types/workOrder.d";
+import { WorkOrderInventoryItem } from "@/types/workOrder";
 
 /**
  * Hook to manage inventory item operations in work orders
@@ -43,7 +42,7 @@ export const useInventoryItemOperations = (
   }, [selectedItems, checkItemAvailability]);
 
   // Handle adding inventory item
-  const handleAddItem = useCallback((item: InventoryItemExtended) => {
+  const handleAddItem = (item: InventoryItemExtended) => {
     const currentItems = form.getValues("inventoryItems") || [];
     
     // Check if item already exists
@@ -109,16 +108,16 @@ export const useInventoryItemOperations = (
         setShowInventoryDialog(false);
       });
     }
-  }, [form, checkItemAvailability]);
+  };
 
   // Handle removing inventory item
-  const handleRemoveItem = useCallback((id: string) => {
+  const handleRemoveItem = (id: string) => {
     const currentItems = form.getValues("inventoryItems") || [];
     form.setValue("inventoryItems", currentItems.filter(item => item.id !== id));
-  }, [form]);
+  };
 
   // Handle updating item quantity
-  const handleUpdateQuantity = useCallback((id: string, quantity: number) => {
+  const handleUpdateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) return;
     
     const currentItems = form.getValues("inventoryItems") || [];
@@ -161,7 +160,7 @@ export const useInventoryItemOperations = (
       
       form.setValue("inventoryItems", updatedItems);
     }
-  }, [form, checkItemAvailability]);
+  };
 
   return {
     showInventoryDialog,

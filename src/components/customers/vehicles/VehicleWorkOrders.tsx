@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
@@ -94,7 +95,7 @@ export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }
             size="sm"
             asChild
           >
-            <Link to={`/work-orders/new?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(vehicleInfo)}`}>
+            <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(vehicleInfo)}`}>
               <ClipboardList className="mr-2 h-4 w-4" /> Create Work Order
             </Link>
           </Button>
@@ -114,7 +115,7 @@ export const VehicleWorkOrders: React.FC<{ vehicleId: string }> = ({ vehicleId }
               className="mt-4"
               asChild
             >
-              <Link to={`/work-orders/new?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(vehicleInfo)}`}>
+              <Link to={`/work-orders/create?customerId=${customerId}&vehicleId=${vehicleId}&customerName=${encodeURIComponent(customerName)}&vehicleInfo=${encodeURIComponent(vehicleInfo)}`}>
                 <ClipboardList className="mr-2 h-4 w-4" /> Create First Work Order
               </Link>
             </Button>

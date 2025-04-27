@@ -13,13 +13,13 @@ interface ChatPageLayoutProps {
   newMessageText: string;
   setNewMessageText: (text: string) => void;
   onSelectRoom: (room: ChatRoom) => void;
-  onSendMessage: (threadParentId?: string) => Promise<void>; // Changed to Promise<void>
+  onSendMessage: (threadParentId?: string) => void;
   onSendVoiceMessage?: (audioUrl: string, threadParentId?: string) => void;
-  onSendFileMessage?: (fileUrl: string, threadParentId?: string) => Promise<void>;
+  onSendFileMessage?: (fileUrl: string, threadParentId?: string) => void;
   onPinRoom?: () => void;
   onArchiveRoom?: () => void;
   onFlagMessage?: (messageId: string, reason: string) => void;
-  onEditMessage?: (messageId: string, content: string) => Promise<void>;
+  onEditMessage?: (messageId: string, content: string) => void;
   isTyping?: boolean;
   typingUsers?: {id: string, name: string}[];
   threadMessages?: {[key: string]: ChatMessage[]};
@@ -90,7 +90,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
             onPinRoom={onPinRoom}
             onArchiveRoom={onArchiveRoom}
             onFlagMessage={onFlagMessage}
-            onEditMessage={onEditMessage || (async () => {})}
+            onEditMessage={onEditMessage}
             isTyping={isTyping}
             typingUsers={typingUsers}
             threadMessages={threadMessages}
@@ -103,4 +103,4 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
       </div>
     </div>
   );
-}
+};

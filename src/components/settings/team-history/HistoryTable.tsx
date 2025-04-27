@@ -5,16 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Flag, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
-import { TeamMemberHistoryRecord } from "@/utils/team/history";
-import { ActionBadge } from "./ActionBadge";
-import { DateDisplay } from "./DateDisplay";
-import { HistoryDetails } from "./HistoryDetails";
+
+interface HistoryRecord {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  action: string;
+  details: string;
+  flagged: boolean;
+  resolved: boolean;
+}
 
 interface HistoryTableProps {
-  records: TeamMemberHistoryRecord[];
-  onViewDetails?: (record: TeamMemberHistoryRecord) => void;
-  onFlag?: (record: TeamMemberHistoryRecord) => void;
-  onResolve?: (record: TeamMemberHistoryRecord) => void;
+  records: HistoryRecord[];
+  onViewDetails?: (record: HistoryRecord) => void;
+  onFlag?: (record: HistoryRecord) => void;
+  onResolve?: (record: HistoryRecord) => void;
 }
 
 export function HistoryTable({ 
@@ -23,6 +30,25 @@ export function HistoryTable({
   onFlag = () => {},
   onResolve = () => {}
 }: HistoryTableProps) {
+  const getActionBadgeVariant = (action: string) => {
+    switch (action.toLowerCase()) {
+      case "create":
+        return "success";
+      case "update":
+        return "info";
+      case "delete":
+        return "destructive";
+      case "login":
+        return "default";
+      case "logout":
+        return "outline";
+      case "permission change":
+        return "warning";
+      default:
+        return "secondary";
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -32,6 +58,7 @@ export function HistoryTable({
             <TableHead>Action</TableHead>
             <TableHead>Details</TableHead>
             <TableHead>Timestamp</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -39,17 +66,36 @@ export function HistoryTable({
           {records.map((record) => (
             <TableRow key={record.id}>
               <TableCell>
-                <div className="font-medium">{record.action_by_name || "System"}</div>
-                <div className="text-xs text-muted-foreground">{record.action_by}</div>
+                <div className="font-medium">{record.userName}</div>
+                <div className="text-xs text-muted-foreground">{record.userId}</div>
               </TableCell>
               <TableCell>
-                <ActionBadge actionType={record.action_type} />
+                <Badge variant={getActionBadgeVariant(record.action)}>
+                  {record.action}
+                </Badge>
               </TableCell>
               <TableCell className="max-w-[300px] truncate">
-                <HistoryDetails record={record} />
+                {record.details}
+              </TableCell>
+              <TableCell className="whitespace-nowrap">
+                {format(new Date(record.timestamp), "MMM dd, yyyy HH:mm")}
               </TableCell>
               <TableCell>
-                <DateDisplay timestamp={record.timestamp} />
+                {record.flagged ? (
+                  record.resolved ? (
+                    <Badge variant="outline" className="text-green-500 border-green-500">
+                      Resolved
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-red-500 border-red-500">
+                      Flagged
+                    </Badge>
+                  )
+                ) : (
+                  <Badge variant="outline" className="text-gray-500">
+                    Normal
+                  </Badge>
+                )}
               </TableCell>
               <TableCell className="text-right space-x-1">
                 <Button
@@ -61,7 +107,7 @@ export function HistoryTable({
                   <Eye className="h-4 w-4" />
                 </Button>
                 
-                {record.details && record.details.flagged && !record.details.resolved ? (
+                {record.flagged && !record.resolved ? (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -70,7 +116,7 @@ export function HistoryTable({
                   >
                     <CheckCircle className="h-4 w-4" />
                   </Button>
-                ) : record.details && !record.details.flagged ? (
+                ) : !record.flagged ? (
                   <Button
                     variant="ghost"
                     size="icon"

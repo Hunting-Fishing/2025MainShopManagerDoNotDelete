@@ -1,55 +1,32 @@
-import { ChatRoom, ChatMessageMetadata } from "@/types/chat";
+
+import { ChatRoom, ChatRoomMetadata } from "@/types/chat";
+import { DatabaseChatRoom } from "../supabaseClient";
 
 export interface CreateRoomParams {
   name: string;
-  type: 'direct' | 'group' | 'work_order';
+  type: "direct" | "group" | "work_order";
   participants: string[];
-  workOrderId?: string;
-  metadata?: any;
-  id?: string; // Added to support custom IDs for shift chats
+  workOrderId?: string; 
+  metadata?: ChatRoomMetadata;
+  id?: string; // Custom ID for special cases like shift chats
 }
 
-export interface RoomSearchParams {
-  userId: string;
-  query?: string;
-  limit?: number;
-  offset?: number;
-  includeArchived?: boolean;
+export interface GetRoomOptions {
+  includeLastMessage?: boolean;
+  includeParticipants?: boolean;
 }
 
-// Transform database room object to application model
-export const transformDatabaseRoom = (dbRoom: any): ChatRoom => {
+// Transform a database chat room to our application model
+export const transformDatabaseRoom = (dbRoom: DatabaseChatRoom): ChatRoom => {
   return {
-    ...dbRoom,
-    // Ensure type is one of the allowed values
-    type: validateRoomType(dbRoom.type),
-    // If there's a last_message, ensure its message_type is valid and metadata is properly typed
-    ...(dbRoom.last_message && {
-      last_message: {
-        ...dbRoom.last_message,
-        message_type: validateMessageType(dbRoom.last_message.message_type),
-        metadata: dbRoom.last_message.metadata as ChatMessageMetadata
-      }
-    })
+    id: dbRoom.id,
+    name: dbRoom.name,
+    type: dbRoom.type as 'direct' | 'group' | 'work_order',
+    work_order_id: dbRoom.work_order_id,
+    created_at: dbRoom.created_at,
+    updated_at: dbRoom.updated_at,
+    is_pinned: dbRoom.is_pinned,
+    is_archived: dbRoom.is_archived,
+    metadata: dbRoom.metadata
   };
 };
-
-// Helper function to validate room type
-function validateRoomType(type: string): 'direct' | 'group' | 'work_order' {
-  if (type === 'direct' || type === 'group' || type === 'work_order') {
-    return type;
-  }
-  // Default to 'group' if the type is not valid
-  console.warn(`Invalid room type: ${type}. Defaulting to 'group'`);
-  return 'group';
-}
-
-// Helper function to validate message type
-function validateMessageType(type: string | null): 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread' {
-  const validTypes = ['text', 'audio', 'image', 'video', 'file', 'system', 'work_order', 'thread'];
-  if (type && validTypes.includes(type)) {
-    return type as 'text' | 'audio' | 'image' | 'video' | 'file' | 'system' | 'work_order' | 'thread';
-  }
-  // Default to 'text' if the type is not valid
-  return 'text';
-}

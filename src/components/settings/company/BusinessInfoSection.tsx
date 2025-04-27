@@ -5,12 +5,14 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BusinessConstant } from "@/hooks/useBusinessConstants";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { CompanyInfo } from "@/services/settings/companyService.types"; // Updated import to use the type definition
 
 interface BusinessInfoSectionProps {
-  companyInfo: CompanyInfo; // Updated to use the proper type
+  companyInfo: {
+    taxId: string;
+    businessType: string;
+    industry: string;
+    otherIndustry?: string;
+  };
   businessTypes: BusinessConstant[];
   businessIndustries: BusinessConstant[];
   isLoadingConstants: boolean;
@@ -27,27 +29,18 @@ export function BusinessInfoSection({
   onSelectChange
 }: BusinessInfoSectionProps) {
   const [showOtherIndustry, setShowOtherIndustry] = useState(false);
-  const [hasCustomIndustry, setHasCustomIndustry] = useState(false);
   
   // Check if "other" is selected when component mounts or industry changes
   useEffect(() => {
     setShowOtherIndustry(companyInfo.industry === "other");
-    
-    // Check if the current industry is in the list of business industries
-    if (companyInfo.industry && companyInfo.industry !== "other" && businessIndustries.length > 0) {
-      const industryExists = businessIndustries.some(i => i.value === companyInfo.industry);
-      setHasCustomIndustry(!industryExists && companyInfo.industry !== "");
-    } else {
-      setHasCustomIndustry(false);
-    }
-  }, [companyInfo.industry, businessIndustries]);
+  }, [companyInfo.industry]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FormField
         label="Tax ID / EIN"
         id="company-taxId"
-        value={companyInfo.taxId || ""}
+        value={companyInfo.taxId}
         onChange={onInputChange}
         description="Your business tax identification number"
       />
@@ -55,7 +48,7 @@ export function BusinessInfoSection({
       <div className="space-y-2">
         <Label htmlFor="business-type">Business Type</Label>
         <Select 
-          value={companyInfo.businessType || ""} 
+          value={companyInfo.businessType} 
           onValueChange={(value) => onSelectChange('businessType', value)}
           disabled={isLoadingConstants}
         >
@@ -73,7 +66,7 @@ export function BusinessInfoSection({
       <div className="space-y-2">
         <Label htmlFor="business-industry">Industry</Label>
         <Select 
-          value={companyInfo.industry || ""} 
+          value={companyInfo.industry} 
           onValueChange={(value) => {
             onSelectChange('industry', value);
             setShowOtherIndustry(value === "other");
@@ -101,17 +94,6 @@ export function BusinessInfoSection({
           required
           description="Please specify your industry"
         />
-      )}
-      
-      {hasCustomIndustry && (
-        <div className="md:col-span-2">
-          <Alert className="bg-blue-50">
-            <AlertCircle className="h-5 w-5 text-blue-500" />
-            <AlertDescription className="text-blue-700">
-              You're using a custom industry. You can select "Other" and enter a new industry if needed.
-            </AlertDescription>
-          </Alert>
-        </div>
       )}
     </div>
   );

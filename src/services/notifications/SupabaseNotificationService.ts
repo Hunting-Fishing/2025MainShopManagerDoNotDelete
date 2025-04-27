@@ -1,255 +1,330 @@
+import { supabase } from "@/lib/supabase";
+import { Notification } from "@/types/notification";
+import { NotificationDB } from "@/types/database.types";
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/lib/supabase';
-import { Notification } from '@/types/notification';
-import { INotificationService, NotificationServiceEvents } from './types';
+import { INotificationService } from "./types";
+
+// Define constants for Supabase URL and key
+const SUPABASE_URL = "https://oudkbrnvommbvtuispla.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91ZGticm52b21tYnZ0dWlzcGxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MTgzODgsImV4cCI6MjA1ODQ5NDM4OH0.Hyo-lkI96GBLt-zp5zZLvCL1bSEWTomIIrzvKRO4LF4";
 
 export class SupabaseNotificationService implements INotificationService {
+  private static instance: SupabaseNotificationService;
+  private notificationListeners: ((notification: Notification) => void)[] = [];
+  private connectionStatusListeners: ((connected: boolean) => void)[] = [];
+  private isConnected = false;
   private userId: string | null = null;
-  private listeners: NotificationServiceEvents = {
-    onNotification: [],
-    onConnectionStatus: []
-  };
-  private connected: boolean = false;
-  private channel: any = null;
+  private realtimeChannel: any = null;
 
-  constructor() {
-    // Initialize connection status
-    this.setConnectionStatus(false);
+  private constructor() {
+    // Private constructor for singleton
   }
 
-  // Connect to Supabase real-time notifications
-  connect(userId: string): void {
+  public static getInstance(): SupabaseNotificationService {
+    if (!SupabaseNotificationService.instance) {
+      SupabaseNotificationService.instance = new SupabaseNotificationService();
+    }
+    return SupabaseNotificationService.instance;
+  }
+
+  public async connect(userId: string): Promise<void> {
     this.userId = userId;
-
-    // Subscribe to the notifications channel
-    this.channel = supabase
-      .channel('notifications-channel-' + userId)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload) => {
-          const notification = this.mapDatabaseNotificationToModel(payload.new);
-          this.notifyListeners(notification);
-        }
-      )
-      .subscribe((status: any) => {
-        const isConnected = status === 'SUBSCRIBED';
-        this.setConnectionStatus(isConnected);
-        console.log('Notification service connection status:', isConnected);
-      });
-  }
-
-  // Disconnect from Supabase real-time
-  disconnect(): void {
-    if (this.channel) {
-      supabase.removeChannel(this.channel);
-      this.channel = null;
-    }
-    this.userId = null;
-    this.setConnectionStatus(false);
-  }
-
-  // Register notification listener
-  onNotification(listener: (notification: Notification) => void): () => void {
-    this.listeners.onNotification.push(listener);
-    return () => {
-      this.listeners.onNotification = this.listeners.onNotification.filter(l => l !== listener);
-    };
-  }
-
-  // Register connection status listener
-  onConnectionStatus(listener: (connected: boolean) => void): () => void {
-    this.listeners.onConnectionStatus.push(listener);
-    // Immediately notify with current status
-    listener(this.connected);
-    return () => {
-      this.listeners.onConnectionStatus = this.listeners.onConnectionStatus.filter(l => l !== listener);
-    };
-  }
-
-  // Create a demo notification for testing
-  triggerDemoNotification(type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
-    const demoTypes = {
-      info: { title: 'Information', message: 'This is a test information notification.' },
-      success: { title: 'Success', message: 'Your action was completed successfully!' },
-      warning: { title: 'Warning', message: 'Please be aware of this important notice.' },
-      error: { title: 'Error', message: 'Something went wrong. Please try again.' }
-    };
-    
-    const { title, message } = demoTypes[type];
-    
-    const notification: Notification = {
-      id: uuidv4(),
-      title,
-      message,
-      type,
-      timestamp: new Date().toISOString(),
-      read: false,
-      category: 'system',
-      priority: type === 'error' ? 'high' : 'medium'
-    };
-    
-    // Notify all listeners
-    this.notifyListeners(notification);
-    
-    // Also save to database if connected
-    if (this.userId) {
-      this.saveNotificationToDatabase(notification);
-    }
-  }
-
-  // Add a notification
-  async addNotification(notification: Omit<Notification, 'id' | 'timestamp' | 'read'>): Promise<void> {
-    if (!this.userId) {
-      console.error('Cannot add notification: Not connected');
+    if (!userId) {
+      console.error("Cannot connect notification service: No user ID provided");
+      this.updateConnectionStatus(false);
       return;
     }
 
-    const fullNotification: Notification = {
-      ...notification,
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      read: false
-    };
-
-    // Save to database and notify listeners
-    await this.saveNotificationToDatabase(fullNotification);
-    this.notifyListeners(fullNotification);
-  }
-
-  // Mark notification as read
-  async markAsRead(id: string): Promise<void> {
-    if (!this.userId) return;
-
     try {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', id)
-        .eq('user_id', this.userId);
+      // Subscribe to realtime notifications
+      this.realtimeChannel = supabase
+        .channel('notifications_channel')
+        .on('postgres_changes', 
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`
+          }, 
+          (payload: any) => {
+            const notification = this.mapDatabaseNotification(payload.new);
+            this.handleNotification(notification);
+          }
+        )
+        .subscribe((status: string) => {
+          const isConnected = status === 'SUBSCRIBED';
+          this.isConnected = isConnected;
+          this.updateConnectionStatus(isConnected);
+          console.log(`Notification channel status: ${status}`);
+        });
+
+      // Fetch existing notifications using REST API
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${userId}&order=timestamp.desc`,
+        {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+
+      const data = await response.json() as NotificationDB[];
+
+      // Process existing notifications
+      if (data && data.length > 0) {
+        data.forEach((item) => {
+          const notification = this.mapDatabaseNotification(item);
+          // Use direct notification listener call to avoid duplicating toast notifications
+          this.notificationListeners.forEach(listener => listener(notification));
+        });
+      }
+
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error connecting to notification service:", error);
+      this.updateConnectionStatus(false);
     }
   }
 
-  // Mark all notifications as read
-  async markAllAsRead(): Promise<void> {
-    if (!this.userId) return;
-
-    try {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', this.userId)
-        .is('read', false);
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+  public disconnect(): void {
+    if (this.realtimeChannel) {
+      supabase.removeChannel(this.realtimeChannel);
+      this.realtimeChannel = null;
     }
+    this.isConnected = false;
+    this.updateConnectionStatus(false);
   }
 
-  // Clear a notification
-  async clearNotification(id: string): Promise<void> {
-    if (!this.userId) return;
-
-    try {
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', this.userId);
-    } catch (error) {
-      console.error('Error clearing notification:', error);
-    }
-  }
-
-  // Clear all notifications
-  async clearAllNotifications(): Promise<void> {
-    if (!this.userId) return;
-
-    try {
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', this.userId);
-    } catch (error) {
-      console.error('Error clearing all notifications:', error);
-    }
-  }
-
-  // Private helper methods
-  private setConnectionStatus(connected: boolean): void {
-    if (this.connected === connected) return;
+  public onNotification(listener: (notification: Notification) => void): () => void {
+    this.notificationListeners.push(listener);
     
-    this.connected = connected;
-    this.listeners.onConnectionStatus.forEach(listener => {
-      try {
-        listener(connected);
-      } catch (e) {
-        console.error('Error in connection status listener:', e);
-      }
-    });
+    // Return unsubscribe function
+    return () => {
+      this.notificationListeners = this.notificationListeners.filter(l => l !== listener);
+    };
   }
 
-  private notifyListeners(notification: Notification): void {
-    this.listeners.onNotification.forEach(listener => {
-      try {
-        listener(notification);
-      } catch (e) {
-        console.error('Error in notification listener:', e);
-      }
-    });
+  public onConnectionStatus(listener: (connected: boolean) => void): () => void {
+    this.connectionStatusListeners.push(listener);
+    listener(this.isConnected);
+    
+    // Return unsubscribe function
+    return () => {
+      this.connectionStatusListeners = this.connectionStatusListeners.filter(l => l !== listener);
+    };
   }
 
-  private async saveNotificationToDatabase(notification: Notification): Promise<void> {
-    if (!this.userId) return;
+  // Add a new notification to the database using direct fetch API
+  public async addNotification(notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>): Promise<void> {
+    if (!this.userId) {
+      console.error("Cannot add notification: No user ID available");
+      return;
+    }
 
     try {
-      const dbNotification = {
-        id: notification.id,
+      const payload = {
         user_id: this.userId,
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        timestamp: notification.timestamp,
-        read: notification.read,
-        link: notification.link,
-        category: notification.category,
-        priority: notification.priority,
-        sender: notification.sender,
-        recipient: notification.recipient,
-        expires_at: notification.expires_at // Using expires_at to match schema
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+        link: notificationData.link,
+        sender: notificationData.sender,
+        recipient: notificationData.recipient,
+        category: notificationData.category || 'system',
+        priority: notificationData.priority || 'medium'
       };
 
-      await supabase
-        .from('notifications')
-        .insert(dbNotification);
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/notifications`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to add notification');
+      }
     } catch (error) {
-      console.error('Error saving notification to database:', error);
+      console.error("Error adding notification:", error);
     }
   }
 
-  private mapDatabaseNotificationToModel(dbNotification: any): Notification {
+  // Mark a notification as read in the database
+  public async markAsRead(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/notifications?id=eq.${id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ read: true })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to mark notification as read');
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  }
+
+  // Mark all notifications as read in the database
+  public async markAllAsRead(): Promise<void> {
+    if (!this.userId) return;
+
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${this.userId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ read: true })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to mark all notifications as read');
+      }
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  }
+
+  // Clear a notification from the database
+  public async clearNotification(id: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/notifications?id=eq.${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to clear notification');
+      }
+    } catch (error) {
+      console.error("Error clearing notification:", error);
+    }
+  }
+
+  // Clear all notifications for the current user
+  public async clearAllNotifications(): Promise<void> {
+    if (!this.userId) return;
+
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${this.userId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to clear all notifications');
+      }
+    } catch (error) {
+      console.error("Error clearing all notifications:", error);
+    }
+  }
+
+  // Test notification function for demo purposes
+  public async triggerDemoNotification(type: 'info' | 'success' | 'warning' | 'error' = 'info'): Promise<void> {
+    const notifications = {
+      info: {
+        title: 'Test Information',
+        message: 'This is a test information notification.',
+        type: 'info' as const,
+        category: 'system' as const,
+        priority: 'medium' as const
+      },
+      success: {
+        title: 'Test Success',
+        message: 'Operation completed successfully! This is a test success notification.',
+        type: 'success' as const,
+        category: 'system' as const,
+        priority: 'medium' as const
+      },
+      warning: {
+        title: 'Test Warning',
+        message: 'This is a test warning notification. Action may be needed.',
+        type: 'warning' as const,
+        category: 'system' as const,
+        priority: 'high' as const
+      },
+      error: {
+        title: 'Test Error',
+        message: 'This is a test error notification. Something went wrong!',
+        type: 'error' as const,
+        category: 'system' as const,
+        priority: 'high' as const
+      }
+    };
+
+    await this.addNotification(notifications[type]);
+  }
+
+  private updateConnectionStatus(connected: boolean): void {
+    this.connectionStatusListeners.forEach(listener => listener(connected));
+  }
+
+  private handleNotification(notification: Notification): void {
+    this.notificationListeners.forEach(listener => listener(notification));
+  }
+
+  private mapDatabaseNotification(dbNotification: any): Notification {
     return {
       id: dbNotification.id,
       title: dbNotification.title,
       message: dbNotification.message,
-      type: dbNotification.type,
-      timestamp: dbNotification.timestamp,
       read: dbNotification.read,
+      timestamp: dbNotification.timestamp,
+      type: (dbNotification.type || 'info') as 'info' | 'warning' | 'success' | 'error',
       link: dbNotification.link,
-      category: dbNotification.category,
-      priority: dbNotification.priority,
       sender: dbNotification.sender,
       recipient: dbNotification.recipient,
-      expires_at: dbNotification.expires_at // Using expires_at to match schema
+      category: (dbNotification.category || 'system') as 'system' | 'invoice' | 'workOrder' | 'inventory' | 'customer' | 'team' | 'chat',
+      priority: dbNotification.priority,
+      expiresAt: dbNotification.expires_at
     };
   }
 }
 
-// Create a singleton instance
-export const supabaseNotificationService = new SupabaseNotificationService();
+// Export singleton instance
+export const supabaseNotificationService = SupabaseNotificationService.getInstance();

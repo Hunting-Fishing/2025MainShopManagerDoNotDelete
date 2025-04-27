@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
 import { useShopData } from "./hooks/useShopData";
@@ -48,13 +49,7 @@ export const useCustomerCreate = () => {
   }
 
   const onSubmit = async (data: CustomerFormValues) => {
-    // Always ensure customers get the Customer role
-    const customerData = { ...data, role: "Customer" };
-    
-    // Ensure vehicles are properly formatted in the submission
-    console.log("Submitting customer with vehicles:", customerData.vehicles);
-    
-    await handleSubmit(customerData);
+    await handleSubmit(data, currentUserShopId);
   };
 
   const handleImportComplete = () => {

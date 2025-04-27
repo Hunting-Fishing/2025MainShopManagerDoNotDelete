@@ -57,7 +57,7 @@ export const useCustomerCreate = () => {
     // Ensure vehicles are properly formatted in the submission
     console.log("Submitting customer with vehicles:", customerData.vehicles);
     
-    await handleSubmit(customerData);
+    await handleSubmit(customerData, currentUserShopId);
   };
 
   const handleImportComplete = () => {

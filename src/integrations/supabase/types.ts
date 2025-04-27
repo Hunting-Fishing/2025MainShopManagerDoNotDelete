@@ -1280,34 +1280,22 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
-          auth_user_id: string | null
-          auto_billing: boolean | null
-          business_email: string | null
-          business_industry: string | null
-          business_phone: string | null
-          business_type: string | null
           city: string | null
           communication_preference: string | null
           company: string | null
           country: string | null
           created_at: string
-          credit_terms: string | null
           email: string | null
           first_name: string
           fleet_company: string | null
-          fleet_contact: string | null
-          fleet_manager: string | null
           household_id: string | null
           id: string
           is_fleet: boolean | null
           last_name: string
           notes: string | null
-          other_business_industry: string | null
           other_referral_details: string | null
           phone: string | null
           postal_code: string | null
-          preferred_payment_method: string | null
-          preferred_service_type: string | null
           preferred_technician_id: string | null
           referral_person_id: string | null
           referral_source: string | null
@@ -1315,40 +1303,26 @@ export type Database = {
           shop_id: string
           state: string | null
           tags: Json | null
-          tax_id: string | null
-          terms_agreed: boolean | null
           updated_at: string
         }
         Insert: {
           address?: string | null
-          auth_user_id?: string | null
-          auto_billing?: boolean | null
-          business_email?: string | null
-          business_industry?: string | null
-          business_phone?: string | null
-          business_type?: string | null
           city?: string | null
           communication_preference?: string | null
           company?: string | null
           country?: string | null
           created_at?: string
-          credit_terms?: string | null
           email?: string | null
           first_name: string
           fleet_company?: string | null
-          fleet_contact?: string | null
-          fleet_manager?: string | null
           household_id?: string | null
           id?: string
           is_fleet?: boolean | null
           last_name: string
           notes?: string | null
-          other_business_industry?: string | null
           other_referral_details?: string | null
           phone?: string | null
           postal_code?: string | null
-          preferred_payment_method?: string | null
-          preferred_service_type?: string | null
           preferred_technician_id?: string | null
           referral_person_id?: string | null
           referral_source?: string | null
@@ -1356,40 +1330,26 @@ export type Database = {
           shop_id: string
           state?: string | null
           tags?: Json | null
-          tax_id?: string | null
-          terms_agreed?: boolean | null
           updated_at?: string
         }
         Update: {
           address?: string | null
-          auth_user_id?: string | null
-          auto_billing?: boolean | null
-          business_email?: string | null
-          business_industry?: string | null
-          business_phone?: string | null
-          business_type?: string | null
           city?: string | null
           communication_preference?: string | null
           company?: string | null
           country?: string | null
           created_at?: string
-          credit_terms?: string | null
           email?: string | null
           first_name?: string
           fleet_company?: string | null
-          fleet_contact?: string | null
-          fleet_manager?: string | null
           household_id?: string | null
           id?: string
           is_fleet?: boolean | null
           last_name?: string
           notes?: string | null
-          other_business_industry?: string | null
           other_referral_details?: string | null
           phone?: string | null
           postal_code?: string | null
-          preferred_payment_method?: string | null
-          preferred_service_type?: string | null
           preferred_technician_id?: string | null
           referral_person_id?: string | null
           referral_source?: string | null
@@ -1397,8 +1357,6 @@ export type Database = {
           shop_id?: string
           state?: string | null
           tags?: Json | null
-          tax_id?: string | null
-          terms_agreed?: boolean | null
           updated_at?: string
         }
         Relationships: [
@@ -2172,24 +2130,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      employment_types: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
       }
       equipment: {
         Row: {
@@ -3214,57 +3154,6 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      inventory_adjustments: {
-        Row: {
-          adjusted_by: string | null
-          adjustment_type: string
-          created_at: string | null
-          id: string
-          inventory_item_id: string | null
-          notes: string | null
-          quantity: number
-          updated_at: string | null
-          work_order_id: string | null
-        }
-        Insert: {
-          adjusted_by?: string | null
-          adjustment_type: string
-          created_at?: string | null
-          id?: string
-          inventory_item_id?: string | null
-          notes?: string | null
-          quantity: number
-          updated_at?: string | null
-          work_order_id?: string | null
-        }
-        Update: {
-          adjusted_by?: string | null
-          adjustment_type?: string
-          created_at?: string | null
-          id?: string
-          inventory_item_id?: string | null
-          notes?: string | null
-          quantity?: number
-          updated_at?: string | null
-          work_order_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inventory_adjustments_inventory_item_id_fkey"
-            columns: ["inventory_item_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_adjustments_work_order_id_fkey"
-            columns: ["work_order_id"]
-            isOneToOne: false
-            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -4358,33 +4247,6 @@ export type Database = {
         }
         Relationships: []
       }
-      notification_preferences: {
-        Row: {
-          email_enabled: boolean | null
-          id: string
-          preferences: Json | null
-          push_enabled: boolean | null
-          sms_enabled: boolean | null
-          user_id: string
-        }
-        Insert: {
-          email_enabled?: boolean | null
-          id?: string
-          preferences?: Json | null
-          push_enabled?: boolean | null
-          sms_enabled?: boolean | null
-          user_id: string
-        }
-        Update: {
-          email_enabled?: boolean | null
-          id?: string
-          preferences?: Json | null
-          push_enabled?: boolean | null
-          sms_enabled?: boolean | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       notification_settings: {
         Row: {
           created_at: string | null
@@ -4425,42 +4287,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      notification_templates: {
-        Row: {
-          content: string
-          created_at: string | null
-          description: string | null
-          id: string
-          name: string
-          subject: string | null
-          trigger_event: string
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          subject?: string | null
-          trigger_event: string
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          subject?: string | null
-          trigger_event?: string
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       notifications: {
         Row: {
@@ -5234,7 +5060,6 @@ export type Database = {
           id: string
           job_title: string | null
           last_name: string | null
-          notification_preferences: Json | null
           phone: string | null
           shop_id: string | null
           updated_at: string
@@ -5248,7 +5073,6 @@ export type Database = {
           id: string
           job_title?: string | null
           last_name?: string | null
-          notification_preferences?: Json | null
           phone?: string | null
           shop_id?: string | null
           updated_at?: string
@@ -5262,7 +5086,6 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string | null
-          notification_preferences?: Json | null
           phone?: string | null
           shop_id?: string | null
           updated_at?: string
@@ -5745,33 +5568,6 @@ export type Database = {
           },
         ]
       }
-      service_categories: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       service_reminder_tags: {
         Row: {
           created_at: string
@@ -6232,24 +6028,6 @@ export type Database = {
           },
         ]
       }
-      skill_categories: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       sms_logs: {
         Row: {
           customer_id: string | null
@@ -6331,82 +6109,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_member_certifications: {
-        Row: {
-          certification_name: string
-          created_at: string | null
-          expiry_date: string | null
-          id: string
-          issue_date: string | null
-          team_member_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          certification_name: string
-          created_at?: string | null
-          expiry_date?: string | null
-          id?: string
-          issue_date?: string | null
-          team_member_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          certification_name?: string
-          created_at?: string | null
-          expiry_date?: string | null
-          id?: string
-          issue_date?: string | null
-          team_member_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_member_certifications_team_member_id_fkey"
-            columns: ["team_member_id"]
-            isOneToOne: false
-            referencedRelation: "team_members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_member_emergency_contacts: {
-        Row: {
-          contact_name: string
-          created_at: string | null
-          id: string
-          phone: string
-          relationship: string
-          team_member_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          contact_name: string
-          created_at?: string | null
-          id?: string
-          phone: string
-          relationship: string
-          team_member_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          contact_name?: string
-          created_at?: string | null
-          id?: string
-          phone?: string
-          relationship?: string
-          team_member_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_member_emergency_contacts_team_member_id_fkey"
-            columns: ["team_member_id"]
-            isOneToOne: false
-            referencedRelation: "team_members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       team_member_history: {
         Row: {
           action_by: string
@@ -6441,42 +6143,6 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_member_roles: {
-        Row: {
-          created_at: string | null
-          id: string
-          role_id: string
-          team_member_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          role_id: string
-          team_member_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          role_id?: string
-          team_member_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_member_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_member_roles_team_member_id_fkey"
-            columns: ["team_member_id"]
-            isOneToOne: false
-            referencedRelation: "team_members"
             referencedColumns: ["id"]
           },
         ]
@@ -6518,134 +6184,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      team_member_skills: {
-        Row: {
-          created_at: string | null
-          id: string
-          proficiency_level: string | null
-          skill_name: string
-          team_member_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          proficiency_level?: string | null
-          skill_name: string
-          team_member_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          proficiency_level?: string | null
-          skill_name?: string
-          team_member_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_member_skills_team_member_id_fkey"
-            columns: ["team_member_id"]
-            isOneToOne: false
-            referencedRelation: "team_members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_members: {
-        Row: {
-          access_financials: boolean | null
-          admin_privileges: boolean | null
-          banking_info_on_file: boolean | null
-          can_close_jobs: boolean | null
-          can_create_work_orders: boolean | null
-          created_at: string | null
-          department: string | null
-          email: string
-          employee_id: string | null
-          employment_type: string | null
-          first_name: string | null
-          id: string
-          job_title: string | null
-          last_name: string | null
-          notes: string | null
-          on_call_after_hours: boolean | null
-          pay_rate: number | null
-          pay_type: string | null
-          phone: string | null
-          primary_location: string | null
-          shift_end: string | null
-          shift_start: string | null
-          start_date: string | null
-          status: string | null
-          supervisor_id: string | null
-          tax_form_submitted: boolean | null
-          updated_at: string | null
-          work_at_other_locations: boolean | null
-          work_days: string[] | null
-        }
-        Insert: {
-          access_financials?: boolean | null
-          admin_privileges?: boolean | null
-          banking_info_on_file?: boolean | null
-          can_close_jobs?: boolean | null
-          can_create_work_orders?: boolean | null
-          created_at?: string | null
-          department?: string | null
-          email: string
-          employee_id?: string | null
-          employment_type?: string | null
-          first_name?: string | null
-          id?: string
-          job_title?: string | null
-          last_name?: string | null
-          notes?: string | null
-          on_call_after_hours?: boolean | null
-          pay_rate?: number | null
-          pay_type?: string | null
-          phone?: string | null
-          primary_location?: string | null
-          shift_end?: string | null
-          shift_start?: string | null
-          start_date?: string | null
-          status?: string | null
-          supervisor_id?: string | null
-          tax_form_submitted?: boolean | null
-          updated_at?: string | null
-          work_at_other_locations?: boolean | null
-          work_days?: string[] | null
-        }
-        Update: {
-          access_financials?: boolean | null
-          admin_privileges?: boolean | null
-          banking_info_on_file?: boolean | null
-          can_close_jobs?: boolean | null
-          can_create_work_orders?: boolean | null
-          created_at?: string | null
-          department?: string | null
-          email?: string
-          employee_id?: string | null
-          employment_type?: string | null
-          first_name?: string | null
-          id?: string
-          job_title?: string | null
-          last_name?: string | null
-          notes?: string | null
-          on_call_after_hours?: boolean | null
-          pay_rate?: number | null
-          pay_type?: string | null
-          phone?: string | null
-          primary_location?: string | null
-          shift_end?: string | null
-          shift_start?: string | null
-          start_date?: string | null
-          status?: string | null
-          supervisor_id?: string | null
-          tax_form_submitted?: boolean | null
-          updated_at?: string | null
-          work_at_other_locations?: boolean | null
-          work_days?: string[] | null
-        }
-        Relationships: []
       }
       team_notifications: {
         Row: {
@@ -7153,131 +6691,6 @@ export type Database = {
           },
         ]
       }
-      work_order_document_categories: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      work_order_document_versions: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          document_id: string | null
-          file_url: string
-          id: string
-          notes: string | null
-          version_number: number
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          document_id?: string | null
-          file_url: string
-          id?: string
-          notes?: string | null
-          version_number: number
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          document_id?: string | null
-          file_url?: string
-          id?: string
-          notes?: string | null
-          version_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "work_order_document_versions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "work_order_documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      work_order_documents: {
-        Row: {
-          category: string | null
-          category_id: string | null
-          created_by: string | null
-          description: string | null
-          file_name: string
-          file_type: string
-          file_url: string
-          id: string
-          metadata: Json | null
-          uploaded_at: string | null
-          uploaded_by: string | null
-          version_count: number | null
-          work_order_id: string | null
-        }
-        Insert: {
-          category?: string | null
-          category_id?: string | null
-          created_by?: string | null
-          description?: string | null
-          file_name: string
-          file_type: string
-          file_url: string
-          id?: string
-          metadata?: Json | null
-          uploaded_at?: string | null
-          uploaded_by?: string | null
-          version_count?: number | null
-          work_order_id?: string | null
-        }
-        Update: {
-          category?: string | null
-          category_id?: string | null
-          created_by?: string | null
-          description?: string | null
-          file_name?: string
-          file_type?: string
-          file_url?: string
-          id?: string
-          metadata?: Json | null
-          uploaded_at?: string | null
-          uploaded_by?: string | null
-          version_count?: number | null
-          work_order_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "work_order_documents_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "work_order_document_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "work_order_documents_work_order_id_fkey"
-            columns: ["work_order_id"]
-            isOneToOne: false
-            referencedRelation: "work_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       work_order_inventory_items: {
         Row: {
           category: string
@@ -7312,97 +6725,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "work_order_inventory_items_work_order_id_fkey"
-            columns: ["work_order_id"]
-            isOneToOne: false
-            referencedRelation: "work_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      work_order_notifications: {
-        Row: {
-          created_at: string | null
-          error_message: string | null
-          id: string
-          message: string
-          notification_type: string
-          recipient_id: string
-          recipient_type: string
-          sent_at: string | null
-          status: string | null
-          title: string
-          updated_at: string | null
-          work_order_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          message: string
-          notification_type: string
-          recipient_id: string
-          recipient_type: string
-          sent_at?: string | null
-          status?: string | null
-          title: string
-          updated_at?: string | null
-          work_order_id: string
-        }
-        Update: {
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          message?: string
-          notification_type?: string
-          recipient_id?: string
-          recipient_type?: string
-          sent_at?: string | null
-          status?: string | null
-          title?: string
-          updated_at?: string | null
-          work_order_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "work_order_notifications_work_order_id_fkey"
-            columns: ["work_order_id"]
-            isOneToOne: false
-            referencedRelation: "work_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      work_order_signatures: {
-        Row: {
-          created_at: string | null
-          id: string
-          signature_type: string
-          signature_url: string
-          signed_at: string | null
-          signed_by: string
-          work_order_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          signature_type: string
-          signature_url: string
-          signed_at?: string | null
-          signed_by: string
-          work_order_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          signature_type?: string
-          signature_url?: string
-          signed_at?: string | null
-          signed_by?: string
-          work_order_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "work_order_signatures_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
@@ -7547,10 +6869,6 @@ export type Database = {
           end_time: string | null
           estimated_hours: number | null
           id: string
-          invoice_id: string | null
-          invoiced_at: string | null
-          service_category_id: string | null
-          service_type: string | null
           start_time: string | null
           status: string
           technician_id: string | null
@@ -7567,10 +6885,6 @@ export type Database = {
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
-          invoice_id?: string | null
-          invoiced_at?: string | null
-          service_category_id?: string | null
-          service_type?: string | null
           start_time?: string | null
           status: string
           technician_id?: string | null
@@ -7587,113 +6901,12 @@ export type Database = {
           end_time?: string | null
           estimated_hours?: number | null
           id?: string
-          invoice_id?: string | null
-          invoiced_at?: string | null
-          service_category_id?: string | null
-          service_type?: string | null
           start_time?: string | null
           status?: string
           technician_id?: string | null
           total_cost?: number | null
           updated_at?: string
           vehicle_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "work_orders_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "work_orders_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "work_orders_service_category_id_fkey"
-            columns: ["service_category_id"]
-            isOneToOne: false
-            referencedRelation: "service_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      workflow_rules: {
-        Row: {
-          actions: Json | null
-          conditions: Json | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          next_status: string
-          trigger_status: string
-          updated_at: string | null
-        }
-        Insert: {
-          actions?: Json | null
-          conditions?: Json | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          next_status: string
-          trigger_status: string
-          updated_at?: string | null
-        }
-        Update: {
-          actions?: Json | null
-          conditions?: Json | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          next_status?: string
-          trigger_status?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      workflows: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          edges: Json | null
-          id: string
-          is_active: boolean | null
-          name: string
-          nodes: Json | null
-          updated_at: string | null
-          workflow_type: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          edges?: Json | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          nodes?: Json | null
-          updated_at?: string | null
-          workflow_type: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          edges?: Json | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          nodes?: Json | null
-          updated_at?: string | null
-          workflow_type?: string
         }
         Relationships: []
       }
@@ -7783,10 +6996,6 @@ export type Database = {
         Args: { industry_name: string }
         Returns: string
       }
-      adjust_customer_points: {
-        Args: { p_customer_id: string; p_points: number }
-        Returns: undefined
-      }
       assign_role_to_user: {
         Args: { user_id_param: string; role_id_param: string }
         Returns: boolean
@@ -7794,10 +7003,6 @@ export type Database = {
       calculate_ab_test_winner: {
         Args: { campaign_id: string; criteria?: string }
         Returns: string
-      }
-      check_inventory_availability: {
-        Args: { item_id: string; requested_quantity: number }
-        Returns: boolean
       }
       count_email_events: {
         Args: { campaign_id_param: string; event_type_param: string }
@@ -7816,10 +7021,6 @@ export type Database = {
       create_custom_role: {
         Args: { role_name: string; role_description: string }
         Returns: string
-      }
-      create_storage_folders: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       create_work_order_procedures: {
         Args: Record<PropertyKey, never>
@@ -7851,23 +7052,6 @@ export type Database = {
           quantity: number
           sku: string
           unit_price: number
-          work_order_id: string
-        }[]
-      }
-      get_work_order_notifications: {
-        Args: { work_order_id_param: string }
-        Returns: {
-          created_at: string | null
-          error_message: string | null
-          id: string
-          message: string
-          notification_type: string
-          recipient_id: string
-          recipient_type: string
-          sent_at: string | null
-          status: string | null
-          title: string
-          updated_at: string | null
           work_order_id: string
         }[]
       }
@@ -7943,16 +7127,6 @@ export type Database = {
         Returns: string
       }
       record_team_history: {
-        Args: {
-          profile_id_param: string
-          action_type_param: string
-          action_by_param: string
-          action_by_name_param: string
-          details_param: Json
-        }
-        Returns: string
-      }
-      record_team_member_history: {
         Args: {
           profile_id_param: string
           action_type_param: string

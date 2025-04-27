@@ -9,6 +9,3 @@ export * from '../dashboard/revenueService';
 
 // Fix function name for getPhaseProgress
 export { getPhaseProgress as getPhaseProgressData } from './workOrderService';
-
-// For backward compatibility - alias getTechnicianPerformance as getTechnicianEfficiency
-export { getTechnicianPerformance as getTechnicianEfficiency } from './technicianService';

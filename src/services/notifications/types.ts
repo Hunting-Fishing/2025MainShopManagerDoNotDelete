@@ -2,8 +2,8 @@
 import { Notification } from "@/types/notification";
 
 export interface NotificationServiceEvents {
-  onNotification: ((notification: Notification) => void)[];
-  onConnectionStatus: ((connected: boolean) => void)[];
+  onNotification: (notification: Notification) => void;
+  onConnectionStatus: (connected: boolean) => void;
 }
 
 export interface INotificationService {

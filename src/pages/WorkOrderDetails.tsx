@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WorkOrder } from "@/types/workOrder";
 import { findWorkOrderById, updateWorkOrder } from "@/utils/workOrders";
-import { TimeEntry } from "@/types/workOrder";
+import WorkOrderDetailsView from "@/components/work-orders/WorkOrderDetailsView";
+import WorkOrderEditForm from "@/components/work-orders/WorkOrderEditForm";
 import { toast } from "@/hooks/use-toast";
-import { WorkOrderDetailsTabs } from "@/components/workOrders/WorkOrderDetailsTabs";
-import { WorkOrderHeader } from "@/components/workOrders/header/WorkOrderHeader";
-import WorkOrderEditForm from "@/components/workOrders/WorkOrderEditForm";
+import { TimeEntry } from "@/types/workOrder";
 
 interface WorkOrderDetailsProps {
   edit?: boolean;
@@ -19,8 +18,7 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const currentUser = { id: "user-123", name: "Admin User" };
-
+  // Update time entries in the state
   const handleUpdateTimeEntries = async (updatedEntries: TimeEntry[]) => {
     if (!workOrder) return;
     
@@ -35,6 +33,7 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
     setWorkOrder(updatedWorkOrder);
     
     try {
+      // Save the updated work order to persist the time entries
       await updateWorkOrder(updatedWorkOrder);
     } catch (error) {
       console.error("Error updating time entries:", error);
@@ -46,10 +45,6 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
     }
   };
 
-  const handleStatusUpdate = (updatedWorkOrder: WorkOrder) => {
-    setWorkOrder(updatedWorkOrder);
-  };
-
   useEffect(() => {
     const fetchWorkOrder = async () => {
       setLoading(true);
@@ -59,6 +54,7 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
           return;
         }
 
+        // We're now using async findWorkOrderById that connects to Supabase
         const foundWorkOrder = await findWorkOrderById(id);
         
         if (foundWorkOrder) {
@@ -96,30 +92,18 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
   }
 
   if (!workOrder) {
-    return null;
+    return null; // This shouldn't happen as we navigate away if no work order is found
   }
 
   return (
-    <div className="space-y-6">
-      <WorkOrderHeader 
-        workOrder={workOrder}
-        onBack={() => navigate("/work-orders")}
-        onEdit={!edit ? () => navigate(`/work-orders/${id}/edit`) : undefined}
-      />
-      
-      <div>
-        {edit ? (
-          <WorkOrderEditForm workOrder={workOrder} />
-        ) : (
-          <WorkOrderDetailsTabs
-            workOrder={workOrder}
-            onUpdateTimeEntries={handleUpdateTimeEntries}
-            userId={currentUser.id}
-            userName={currentUser.name}
-            onStatusUpdate={handleStatusUpdate}
-          />
-        )}
-      </div>
+    <div>
+      {edit ? (
+        <WorkOrderEditForm workOrder={workOrder} />
+      ) : (
+        <WorkOrderDetailsView 
+          workOrder={workOrder} 
+        />
+      )}
     </div>
   );
 }

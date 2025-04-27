@@ -2,7 +2,6 @@
 import { useCustomers } from "@/hooks/useCustomers";
 import { CustomersList } from "@/components/customers/list/CustomersList";
 import { CustomersHeader } from "@/components/customers/list/CustomersHeader";
-import { CustomerCount } from "@/components/customers/CustomerCount";
 
 export default function Customers() {
   const {
@@ -11,8 +10,7 @@ export default function Customers() {
     filters,
     loading,
     error,
-    handleFilterChange,
-    refreshCustomers
+    handleFilterChange
   } = useCustomers();
 
   console.log("Customers page rendering with:", { 
@@ -24,14 +22,7 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="md:col-span-1">
-          <CustomerCount />
-        </div>
-        <div className="md:col-span-3">
-          <CustomersHeader />
-        </div>
-      </div>
+      <CustomersHeader />
       <CustomersList
         customers={customers}
         filteredCustomers={filteredCustomers}
@@ -39,7 +30,6 @@ export default function Customers() {
         loading={loading}
         error={error}
         onFilterChange={handleFilterChange}
-        onRefresh={refreshCustomers}
       />
     </div>
   );

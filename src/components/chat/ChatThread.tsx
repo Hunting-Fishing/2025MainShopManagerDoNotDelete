@@ -14,7 +14,6 @@ interface ChatThreadProps {
   userId: string;
   parentMessage?: ChatMessageType;
   onEditMessage: (messageId: string, content: string) => Promise<void>;
-  onFlagMessage?: (messageId: string, reason: string) => void;
 }
 
 export const ChatThread: React.FC<ChatThreadProps> = ({
@@ -24,8 +23,7 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
   onSendReply,
   userId,
   parentMessage,
-  onEditMessage,
-  onFlagMessage
+  onEditMessage
 }) => {
   const [replyText, setReplyText] = useState('');
   
@@ -58,8 +56,6 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
             message={parentMessage}
             isCurrentUser={parentMessage.sender_id === userId}
             userId={userId}
-            onEdit={onEditMessage}
-            onFlag={onFlagMessage}
           />
         )}
       </div>
@@ -77,7 +73,6 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
                 message={message}
                 isCurrentUser={message.sender_id === userId}
                 onEdit={onEditMessage}
-                onFlag={onFlagMessage}
                 userId={userId}
               />
             ))}
@@ -104,4 +99,4 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
       </div>
     </div>
   );
-};
+}

@@ -18,132 +18,21 @@ export function useTeamMemberUpdate() {
     setError(null);
 
     try {
-      // Transform form data to match database schema
-      const teamMemberData = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        job_title: formData.jobTitle,
-        department: formData.department,
-        status: formData.status ? 'Active' : 'Inactive',
-        notes: formData.notes,
-        // New fields
-        work_days: formData.work_days,
-        shift_start: formData.shift_start,
-        shift_end: formData.shift_end,
-        on_call_after_hours: formData.on_call_after_hours,
-        start_date: formData.start_date,
-        employment_type: formData.employment_type,
-        employee_id: formData.employee_id,
-        supervisor_id: formData.supervisor_id,
-        primary_location: formData.primary_location,
-        work_at_other_locations: formData.work_at_other_locations,
-        admin_privileges: formData.admin_privileges,
-        access_financials: formData.access_financials,
-        can_create_work_orders: formData.can_create_work_orders,
-        can_close_jobs: formData.can_close_jobs,
-        pay_rate: formData.pay_rate,
-        pay_type: formData.pay_type,
-        banking_info_on_file: formData.banking_info_on_file,
-        tax_form_submitted: formData.tax_form_submitted
-      };
-
       // Update the profile record
       const { error: updateError } = await supabase
-        .from('team_members')
-        .update(teamMemberData)
+        .from('profiles')
+        .update({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          job_title: formData.jobTitle,
+          department: formData.department,
+        })
         .eq('id', memberId);
 
       if (updateError) {
         throw updateError;
-      }
-
-      // Handle emergency contact if provided
-      if (formData.emergency_contact && 
-          formData.emergency_contact.contact_name &&
-          formData.emergency_contact.phone &&
-          formData.emergency_contact.relationship) {
-        
-        // Check if emergency contact exists
-        const { data: existingContact } = await supabase
-          .from('team_member_emergency_contacts')
-          .select('id')
-          .eq('team_member_id', memberId)
-          .single();
-          
-        if (existingContact) {
-          // Update existing emergency contact
-          await supabase
-            .from('team_member_emergency_contacts')
-            .update({
-              contact_name: formData.emergency_contact.contact_name,
-              phone: formData.emergency_contact.phone,
-              relationship: formData.emergency_contact.relationship
-            })
-            .eq('id', existingContact.id);
-        } else {
-          // Create new emergency contact
-          await supabase
-            .from('team_member_emergency_contacts')
-            .insert({
-              team_member_id: memberId,
-              contact_name: formData.emergency_contact.contact_name,
-              phone: formData.emergency_contact.phone,
-              relationship: formData.emergency_contact.relationship
-            });
-        }
-      }
-
-      // Handle certifications
-      if (formData.certifications && formData.certifications.length > 0) {
-        // Delete existing certifications
-        await supabase
-          .from('team_member_certifications')
-          .delete()
-          .eq('team_member_id', memberId);
-          
-        // Insert new certifications
-        await supabase
-          .from('team_member_certifications')
-          .insert(
-            formData.certifications.map(cert => ({
-              team_member_id: memberId,
-              certification_name: cert.certification_name,
-              issue_date: cert.issue_date,
-              expiry_date: cert.expiry_date
-            }))
-          );
-      }
-      
-      // Process skills to separate skill name from proficiency
-      const skillsWithProficiency = formData.skills?.map(skillEntry => {
-        // If the skill contains proficiency data
-        if (skillEntry.includes('|')) {
-          const [skill, proficiency] = skillEntry.split('|');
-          return { skill_name: skill, proficiency_level: proficiency || 'expert' };
-        }
-        return { skill_name: skillEntry, proficiency_level: 'expert' };
-      }) || [];
-      
-      // Handle skills with proficiency levels
-      if (skillsWithProficiency.length > 0) {
-        // Delete existing skills
-        await supabase
-          .from('team_member_skills')
-          .delete()
-          .eq('team_member_id', memberId);
-          
-        // Insert new skills
-        await supabase
-          .from('team_member_skills')
-          .insert(
-            skillsWithProficiency.map(item => ({
-              team_member_id: memberId,
-              skill_name: item.skill_name,
-              proficiency_level: item.proficiency_level
-            }))
-          );
       }
 
       // Get user info for history record

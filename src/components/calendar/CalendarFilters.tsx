@@ -2,7 +2,7 @@
 import { Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { getUniqueTechnicians } from "@/utils/workOrders"; // Updated import path
+import { getUniqueTechnicians } from "@/utils/workOrders";
 import { statusMap } from "@/utils/workOrders"; // Updated import path
 import {
   DropdownMenu,

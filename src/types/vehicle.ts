@@ -16,6 +16,7 @@ export type VehicleBodyStyle =
   | 'off-road'
   | 'other';
 
+// Add missing exports that many files depend on
 export interface VinDecodeResult {
   year: string | number;
   make: string;
@@ -67,6 +68,7 @@ export interface CarModel {
   model_make_id: string;
 }
 
+// Re-export vehicle body style types
 export const VEHICLE_BODY_STYLES: VehicleBodyStyle[] = [
   'sedan', 'suv', 'coupe', 'truck', 'van', 'wagon', 'hatchback',
   'convertible', 'crossover', 'minivan', 'pickup', 'bus',

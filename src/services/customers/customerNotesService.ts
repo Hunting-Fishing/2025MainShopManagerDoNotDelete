@@ -1,20 +1,22 @@
-import { supabase } from "@/lib/supabase";
-import { CustomerNote } from "@/types/customer";
 
-type CustomerNoteData = {
-  customer_id: string;
-  content: string;
-  category: 'service' | 'sales' | 'follow-up' | 'general';
-  created_by: string;
-};
+import { supabase } from "@/integrations/supabase/client";
+import { CustomerNote } from "@/types/customer";
 
 // Add customer note
 export const addCustomerNote = async (
-  noteData: CustomerNoteData
+  customerId: string, 
+  content: string, 
+  category: 'service' | 'sales' | 'follow-up' | 'general',
+  createdBy: string = 'Current User'
 ): Promise<CustomerNote> => {
   const { data, error } = await supabase
     .from("customer_notes")
-    .insert(noteData)
+    .insert({
+      customer_id: customerId,
+      content,
+      category,
+      created_by: createdBy
+    })
     .select()
     .single();
 

@@ -7,10 +7,9 @@ import { Building, CircleDollarSign, Clock, Save } from "lucide-react";
 import { BasicInfoSection } from "./BasicInfoSection";
 import { BusinessInfoSection } from "./BusinessInfoSection";
 import { BusinessHoursSection } from "./BusinessHoursSection";
-import { useCompanySettings } from "@/hooks/company-settings/useCompanySettings";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { CompanyTabSkeleton } from "./CompanyTabSkeleton";
 import { useToast } from "@/hooks/use-toast";
-import { CompanyInfo } from "@/services/settings/companyService.types";
 
 export function CompanyTabContainer() {
   const [activeTab, setActiveTab] = useState("basic");
@@ -33,42 +32,16 @@ export function CompanyTabContainer() {
     handleBusinessHoursChange,
     handleFileUpload,
     handleSave,
-    initialize
-  } = useCompanySettings();
+    loadCompanyInfo
+  } = useCompanyInfo();
 
-  // Initialize data when component mounts
+  // Debug logs
   useEffect(() => {
-    console.log("CompanyTabContainer: Initializing data");
-    initialize();
-  }, [initialize]);
-
-  // Debug logs to track the state
-  useEffect(() => {
-    if (initialized) {
+    if (initialized && !loading) {
       console.log("Company info in container:", companyInfo);
-      console.log("Company info has keys:", Object.keys(companyInfo));
-      console.log("Company info name:", companyInfo.name);
       console.log("Business hours in container:", businessHours);
-      console.log("Data changed status:", dataChanged);
-      console.log("Loading status:", loading);
     }
-  }, [companyInfo, businessHours, initialized, loading, dataChanged]);
-
-  // Check if company data appears to be empty (all fields are empty strings or null/undefined)
-  const isCompanyInfoEmpty = !companyInfo || Object.values(companyInfo).every(
-    val => val === "" || val === null || val === undefined
-  );
-
-  // Extra debug to check emptiness
-  useEffect(() => {
-    if (initialized) {
-      console.log("Is company info empty:", isCompanyInfoEmpty);
-      // Check each field individually
-      Object.entries(companyInfo).forEach(([key, value]) => {
-        console.log(`Field ${key} = ${value} (empty? ${!value})`);
-      });
-    }
-  }, [companyInfo, initialized, isCompanyInfoEmpty]);
+  }, [companyInfo, businessHours, initialized, loading]);
 
   // Prompt user before leaving if there are unsaved changes
   useEffect(() => {
@@ -91,36 +64,6 @@ export function CompanyTabContainer() {
     console.log("Active tab changed to:", activeTab);
   }, [activeTab]);
 
-  // Reload data when save operation completes
-  useEffect(() => {
-    if (saveComplete) {
-      toast({
-        title: "Success",
-        description: "Company information saved successfully",
-        variant: "success"
-      });
-    }
-  }, [saveComplete, toast]);
-
-  const handleReloadData = () => {
-    console.log("Manually reloading company data");
-    initialize();
-    toast({
-      title: "Information",
-      description: "Reloading company data from server",
-      variant: "default"
-    });
-  };
-
-  const handleSaveClick = async () => {
-    try {
-      console.log("Save button clicked, current data changed status:", dataChanged);
-      await handleSave();
-    } catch (error) {
-      console.error("Error caught in CompanyTabContainer:", error);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -140,18 +83,8 @@ export function CompanyTabContainer() {
         </TabsList>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle>Company Information</CardTitle>
-            {initialized && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleReloadData}
-                disabled={loading || saving}
-              >
-                Refresh Data
-              </Button>
-            )}
           </CardHeader>
           <CardContent>
             {loading && !initialized ? (
@@ -169,7 +102,7 @@ export function CompanyTabContainer() {
 
                 <TabsContent value="business" className="mt-0">
                   <BusinessInfoSection
-                    companyInfo={companyInfo}  // This now matches the CompanyInfo type
+                    companyInfo={companyInfo}
                     businessTypes={businessTypes}
                     businessIndustries={businessIndustries}
                     isLoadingConstants={isLoadingConstants}
@@ -185,31 +118,24 @@ export function CompanyTabContainer() {
                   />
                 </TabsContent>
 
-                <div className="flex justify-between mt-6">
-                  {isCompanyInfoEmpty && initialized && !loading && (
-                    <div className="text-amber-600 text-sm">
-                      No company information found. Please fill in the form and save.
-                    </div>
-                  )}
-                  <div className="ml-auto">
-                    <Button 
-                      className={`${dataChanged ? 'bg-esm-blue-600 hover:bg-esm-blue-700' : 'bg-gray-300 hover:bg-gray-400'}`}
-                      onClick={handleSaveClick}
-                      disabled={saving || !dataChanged}
-                    >
-                      {saving ? (
-                        <>
-                          <span className="animate-spin mr-2">⏳</span>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          {dataChanged ? "Save Changes" : "No Changes"}
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                <div className="flex justify-end mt-6">
+                  <Button 
+                    className={`${dataChanged ? 'bg-esm-blue-600 hover:bg-esm-blue-700' : 'bg-gray-300 hover:bg-gray-400'}`}
+                    onClick={handleSave}
+                    disabled={saving || !dataChanged}
+                  >
+                    {saving ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        {dataChanged ? "Save Changes" : "No Changes"}
+                      </>
+                    )}
+                  </Button>
                 </div>
               </>
             )}

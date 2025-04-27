@@ -1,16 +1,7 @@
-
 import { supabase } from "@/lib/supabase";
-import { BusinessHours } from "./companyService.types";
 
-async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
+async function getBusinessHours(shopId: string) {
   try {
-    console.log("Fetching business hours for shop:", shopId);
-    
-    if (!shopId) {
-      console.error("No shop ID provided to getBusinessHours");
-      throw new Error("Shop ID is required");
-    }
-    
     const { data, error } = await supabase
       .from('shop_hours')
       .select('*')
@@ -22,8 +13,6 @@ async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
       throw error;
     }
     
-    console.log("Raw business hours data:", data);
-    
     // If no business hours exist yet, create default business hours
     if (!data || data.length === 0) {
       const defaultHours = [];
@@ -32,8 +21,7 @@ async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
           day_of_week: i,
           open_time: '09:00:00',
           close_time: '17:00:00',
-          is_closed: i === 0 || i === 6, // Default closed on weekends
-          shop_id: shopId
+          is_closed: i === 0 || i === 6 // Default closed on weekends
         });
       }
       return defaultHours;
@@ -69,7 +57,7 @@ async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
     // Sort by day of week
     uniqueHours.sort((a, b) => a.day_of_week - b.day_of_week);
     
-    console.log("Processed business hours:", uniqueHours);
+    console.log("Loaded business hours:", uniqueHours);
     
     return uniqueHours;
   } catch (error) {
@@ -78,19 +66,9 @@ async function getBusinessHours(shopId: string): Promise<BusinessHours[]> {
   }
 }
 
-async function updateBusinessHours(shopId: string, businessHours: BusinessHours[]) {
+async function updateBusinessHours(shopId: string, businessHours: any[]) {
   try {
-    console.log("Updating business hours for shop", shopId);
-    
-    if (!shopId) {
-      console.error("No shop ID provided to updateBusinessHours");
-      throw new Error("Shop ID is required");
-    }
-    
-    if (!businessHours || !Array.isArray(businessHours) || businessHours.length === 0) {
-      console.error("Invalid business hours data:", businessHours);
-      throw new Error("Valid business hours data is required");
-    }
+    console.log("Updating business hours for shop", shopId, "with data:", businessHours);
     
     // First, delete existing business hours
     const { error: deleteError } = await supabase
@@ -112,8 +90,6 @@ async function updateBusinessHours(shopId: string, businessHours: BusinessHours[
       is_closed: hour.is_closed
     }));
     
-    console.log("Inserting new business hours:", hoursToInsert);
-    
     const { data, error } = await supabase
       .from('shop_hours')
       .insert(hoursToInsert)
@@ -124,7 +100,7 @@ async function updateBusinessHours(shopId: string, businessHours: BusinessHours[
       throw error;
     }
     
-    console.log("Business hours updated successfully, returned data:", data);
+    console.log("Business hours updated successfully");
     
     // Return the newly inserted hours to ensure state is up-to-date
     return data || hoursToInsert;

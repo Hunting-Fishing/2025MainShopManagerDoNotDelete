@@ -1,3 +1,14 @@
+// Add this type if it doesn't exist in the file
+export interface MonthlyRevenueData {
+  date: string;
+  revenue: number;
+}
+
+// Make sure these types exist or add them
+export interface ServiceTypeData {
+  name: string;
+  value: number;
+}
 
 export interface DashboardStats {
   revenue: number;
@@ -13,38 +24,34 @@ export interface DashboardStats {
   avgCompletionTime: string;
   completionTimeChange: string;
   customerSatisfaction: string;
-  schedulingEfficiency: string;
   phaseCompletionRate: string;
+  schedulingEfficiency: string;
   qualityControlPassRate: string;
-}
-
-export interface ChecklistStat {
-  name: string;
-  completionRate: number;
-  lastUpdated: string;
 }
 
 export interface PhaseProgressItem {
   id: string;
   name: string;
-  completedPhases: number;
   totalPhases: number;
+  completedPhases: number;
   progress: number;
 }
 
-export interface ServiceTypeData {
-  subject: string;
-  value: number;
+export interface RecentWorkOrder {
+  id: string;
+  customer: string;
+  service: string;
+  status: string;
+  date: string;
+  priority: string;
 }
 
-export interface TechnicianPerformanceData {
-  technicians: string[];
-  chartData: TechnicianPerformance[];
-}
-
-export interface TechnicianPerformance {
-  month: string;
-  [technician: string]: string | number;
+export interface ChecklistStat {
+  work_order_id: string;
+  checklist_id: string;
+  requiredItems: number;
+  completedRequiredItems: number;
+  completionRate: number;
 }
 
 export interface TechnicianEfficiencyData {
@@ -55,18 +62,14 @@ export interface TechnicianEfficiencyData {
   efficiency: number;
 }
 
-export interface MonthlyRevenueData {
+export interface TechnicianPerformance {
   month: string;
-  revenue: number;
+  [technicianName: string]: number | string;
 }
 
-export interface RecentWorkOrder {
-  id: string;
-  customer: string;
-  service: string;
-  status: string;
-  date: string;
-  priority: string;
+export interface TechnicianPerformanceData {
+  technicians: string[];
+  chartData: TechnicianPerformance[];
 }
 
 export interface EquipmentRecommendation {
@@ -80,3 +83,5 @@ export interface EquipmentRecommendation {
   priority: "High" | "Medium" | "Low";
 }
 
+// Re-export from revenueService if needed
+export * from "../services/dashboard/revenueService";

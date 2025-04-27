@@ -93,7 +93,7 @@ export const CustomerTable = ({ customers, loading, error }: CustomerTableProps)
             {customer.tags && customer.tags.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {customer.tags.map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs bg-green-100 text-green-800 border border-green-300">
+                  <Badge key={index} variant="outline" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
@@ -108,7 +108,6 @@ export const CustomerTable = ({ customers, loading, error }: CustomerTableProps)
                 variant="outline" 
                 size="sm"
                 asChild
-                className="rounded-full text-sm px-4 border-blue-500 text-blue-600"
               >
                 <Link to={`/customers/${customer.id}`}>
                   View Details

@@ -1,6 +1,6 @@
 
 import { ChatMessage } from "@/types/chat";
-import { supabase } from "../supabaseClient";
+import { supabase, DatabaseChatMessage } from "../supabaseClient";
 import { transformDatabaseMessage } from "./types";
 
 // Get messages for a specific chat room
@@ -16,7 +16,7 @@ export const getChatMessages = async (roomId: string): Promise<ChatMessage[]> =>
     if (error) throw error;
     
     // Transform messages to ensure proper types
-    const messages = data ? data.map(msg => transformDatabaseMessage(msg)) : [];
+    const messages = data ? data.map(msg => transformDatabaseMessage(msg as DatabaseChatMessage)) : [];
     return messages;
   } catch (error) {
     console.error("Error fetching chat messages:", error);
@@ -36,7 +36,7 @@ export const getThreadReplies = async (parentMessageId: string): Promise<ChatMes
     if (error) throw error;
     
     // Transform messages to ensure proper types
-    const messages = data ? data.map(msg => transformDatabaseMessage(msg)) : [];
+    const messages = data ? data.map(msg => transformDatabaseMessage(msg as DatabaseChatMessage)) : [];
     return messages;
   } catch (error) {
     console.error("Error fetching thread replies:", error);
@@ -56,7 +56,7 @@ export const getChatMessage = async (messageId: string): Promise<ChatMessage | n
     if (error) throw error;
     if (!data) return null;
     
-    return transformDatabaseMessage(data);
+    return transformDatabaseMessage(data as DatabaseChatMessage);
   } catch (error) {
     console.error("Error fetching chat message:", error);
     throw error;

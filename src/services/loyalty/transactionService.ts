@@ -1,14 +1,11 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { CustomerLoyalty, LoyaltyTransaction } from "@/types/loyalty";
 import { getCustomerLoyalty, createCustomerLoyalty } from './customerLoyaltyService';
 import { calculateTier } from './tierService';
-import { 
-  calculateNewPoints, 
-  calculateNewLifetimePoints 
-} from './utils/loyaltyCalculations';
-import { createLoyaltyTransaction } from './transactions/loyaltyTransactionService';
+import { useShopId } from "@/hooks/useShopId";
 
+// Add points to customer
 export const addCustomerPoints = async (
   customerId: string, 
   points: number, 
@@ -22,12 +19,12 @@ export const addCustomerPoints = async (
   let loyalty = await getCustomerLoyalty(customerId);
   
   if (!loyalty) {
-    loyalty = await createCustomerLoyalty(customerId);
+    loyalty = await createCustomerLoyalty(customerId, shopId);
   }
 
-  // Calculate new values using utility functions
-  const newCurrentPoints = calculateNewPoints(loyalty.current_points, points);
-  const newLifetimePoints = calculateNewLifetimePoints(loyalty.lifetime_points, points);
+  // Calculate new values
+  const newCurrentPoints = loyalty.current_points + points;
+  const newLifetimePoints = loyalty.lifetime_points + (points > 0 ? points : 0); // Only add positive points to lifetime
   
   // Update tier based on lifetime points
   const newTier = await calculateTier(newLifetimePoints, shopId);
@@ -74,4 +71,41 @@ export const addCustomerPoints = async (
   };
 };
 
-export { getCustomerTransactions } from './transactions/loyaltyTransactionService';
+// Create a loyalty transaction
+export const createLoyaltyTransaction = async (transaction: {
+  customer_id: string;
+  points: number;
+  transaction_type: 'earn' | 'redeem' | 'expire' | 'adjust';
+  description?: string;
+  reference_id?: string;
+  reference_type?: string;
+}): Promise<LoyaltyTransaction> => {
+  const { data, error } = await supabase
+    .from("loyalty_transactions")
+    .insert(transaction)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating loyalty transaction:", error);
+    throw error;
+  }
+
+  return data as LoyaltyTransaction;
+};
+
+// Get loyalty transactions for a customer
+export const getCustomerTransactions = async (customerId: string): Promise<LoyaltyTransaction[]> => {
+  const { data, error } = await supabase
+    .from("loyalty_transactions")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching customer transactions:", error);
+    throw error;
+  }
+
+  return data as LoyaltyTransaction[];
+};

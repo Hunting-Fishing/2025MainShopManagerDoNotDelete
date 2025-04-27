@@ -1,4 +1,25 @@
 
-// Re-export interaction service functions from specialized services
-export { getCustomerInteractions, getVehicleInteractions, getPendingFollowUps } from './interactions/interactionQueryService';
-export { addCustomerInteraction, updateCustomerInteraction, deleteCustomerInteraction, completeFollowUp } from './interactions/interactionMutationService';
+// This file re-exports from the refactored modules for backwards compatibility
+import {
+  getCustomerInteractions,
+  getVehicleInteractions,
+  getPendingFollowUps
+} from './interactions/interactionQueryService';
+
+import {
+  addCustomerInteraction,
+  updateCustomerInteraction,
+  deleteCustomerInteraction,
+  completeFollowUp
+} from './interactions/interactionMutationService';
+
+// Re-export everything for backward compatibility
+export {
+  getCustomerInteractions,
+  getVehicleInteractions,
+  addCustomerInteraction,
+  updateCustomerInteraction,
+  deleteCustomerInteraction,
+  completeFollowUp,
+  getPendingFollowUps
+};

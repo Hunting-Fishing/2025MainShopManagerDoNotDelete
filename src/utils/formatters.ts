@@ -1,99 +1,132 @@
 
 /**
- * Formats a phone number to US format (XXX) XXX-XXXX
- * 
- * @param phoneNumber The phone number to format
- * @returns Formatted phone number string
- */
-export const formatPhoneNumber = (phoneNumber?: string): string => {
-  if (!phoneNumber) return '';
-  
-  // Remove all non-digits
-  const cleaned = phoneNumber.replace(/\D/g, '');
-  
-  // Check if it's a valid US number
-  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-  
-  if (match) {
-    return `(${match[1]}) ${match[2]}-${match[3]}`;
-  } else if (cleaned.length > 0) {
-    // Return whatever digits we have if it doesn't match the pattern
-    return cleaned;
-  }
-  
-  return '';
-};
-
-/**
- * Cleans a phone number by removing all non-digit characters
- * 
- * @param phoneNumber The phone number to clean
- * @returns Phone number with only digits
- */
-export const cleanPhoneNumber = (phoneNumber?: string): string => {
-  if (!phoneNumber) return '';
-  
-  // Remove all non-digits and return just the numbers
-  return phoneNumber.replace(/\D/g, '');
-};
-
-/**
- * Formats a currency amount
- * 
- * @param amount Number to format as currency
- * @param locale Locale to use for formatting (default: 'en-US')
- * @param currency Currency code to use (default: 'USD')
+ * Format a number as currency
+ * @param value - The number to format
+ * @param currency - The currency code (default: 'USD')
  * @returns Formatted currency string
  */
-export const formatCurrency = (
-  amount?: number | string | null,
-  locale = 'en-US',
-  currency = 'USD'
-): string => {
-  if (amount === undefined || amount === null) return '';
+export function formatCurrency(value: number | string, currency = 'USD'): string {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
   
-  // Convert string to number if needed
-  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(numericValue)) {
+    return '$0.00';
+  }
   
-  // Format as currency
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(numericAmount);
-};
+  }).format(numericValue);
+}
 
 /**
- * Formats a percentage value
- * 
- * @param value Number to format as percentage
- * @param decimalPlaces Number of decimal places to show (default: 1)
+ * Format a number with commas
+ * @param value - The number to format
+ * @returns Formatted number string
+ */
+export function formatNumber(value: number | string): string {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (isNaN(numericValue)) {
+    return '0';
+  }
+  
+  return new Intl.NumberFormat('en-US').format(numericValue);
+}
+
+/**
+ * Format a date to display format
+ * @param date - Date string or Date object
+ * @param includeTime - Whether to include time
+ * @returns Formatted date string
+ */
+export function formatDate(date: string | Date, includeTime = false): string {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (isNaN(dateObj.getTime())) {
+    return '';
+  }
+  
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  };
+  
+  if (includeTime) {
+    options.hour = '2-digit';
+    options.minute = '2-digit';
+  }
+  
+  return new Intl.DateTimeFormat('en-US', options).format(dateObj);
+}
+
+/**
+ * Format a phone number to (XXX) XXX-XXXX
+ * @param phone - Phone number string
+ * @returns Formatted phone number
+ */
+export function formatPhoneNumber(phone: string): string {
+  if (!phone) return '';
+  
+  // Strip all non-numeric characters
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Handle different input lengths
+  if (cleaned.length === 10) {
+    return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 10)}`;
+  } else if (cleaned.length === 11 && cleaned.charAt(0) === '1') {
+    return `(${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 11)}`;
+  } else if (cleaned.length > 10) {
+    // If more than 10 digits, truncate to 10
+    return formatPhoneNumber(cleaned.slice(-10));
+  }
+  
+  // If not a standard format, return the original or a placeholder
+  return phone;
+}
+
+/**
+ * Remove non-numeric characters from a phone number
+ * @param phone Phone number string
+ * @returns Cleaned phone number with only digits
+ */
+export function cleanPhoneNumber(phone: string): string {
+  return phone ? phone.replace(/\D/g, '') : '';
+}
+
+/**
+ * Format a percentage value
+ * @param value - The number to format as percentage
+ * @param decimals - Number of decimal places
  * @returns Formatted percentage string
  */
-export const formatPercentage = (
-  value?: number | null, 
-  decimalPlaces = 1
-): string => {
-  if (value === undefined || value === null) return '';
+export function formatPercent(value: number, decimals = 0): string {
+  if (isNaN(value)) {
+    return '0%';
+  }
   
-  return `${value.toFixed(decimalPlaces)}%`;
-};
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value / 100);
+}
 
 /**
- * Truncates text to a specific length and adds ellipsis if needed
- * 
- * @param text Text to truncate
- * @param maxLength Maximum length before truncation (default: 50)
- * @returns Truncated text string with ellipsis if needed
+ * Format file size in bytes to human readable format
+ * @param bytes - Size in bytes
+ * @returns Formatted size string
  */
-export const truncateText = (
-  text?: string | null,
-  maxLength = 50
-): string => {
-  if (!text) return '';
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
   
-  if (text.length <= maxLength) return text;
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
   
-  return `${text.substring(0, maxLength)}...`;
-};
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}

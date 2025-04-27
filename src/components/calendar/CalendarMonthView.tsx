@@ -1,3 +1,4 @@
+
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -38,7 +39,7 @@ export function CalendarMonthView({
     end: calendarEnd,
   });
 
-  // Update getEventsForDay to properly handle work orders
+  // Group events by day
   const getEventsForDay = (date: Date) => {
     return events.filter(event => {
       const eventStart = new Date(event.start);
@@ -60,6 +61,7 @@ export function CalendarMonthView({
       </div>
       <div className="grid grid-cols-7 auto-rows-fr">
         {daysInMonth.map((day, i) => {
+          // Get events for this day
           const dayEvents = getEventsForDay(day);
           
           return (

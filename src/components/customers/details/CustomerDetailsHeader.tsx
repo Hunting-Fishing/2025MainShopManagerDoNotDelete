@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,17 +7,18 @@ import { ChevronLeft, Edit, ClipboardList, MessageSquare, AlertTriangle } from "
 import { Customer, getCustomerFullName } from "@/types/customer";
 import { Alert } from "@/components/ui/alert";
 
-interface CustomerHeaderProps {
+interface CustomerDetailsHeaderProps {
   customer: Customer & { name?: string, status?: string };
   setAddInteractionOpen: (open: boolean) => void;
 }
 
-export const CustomerDetailsHeader: React.FC<CustomerHeaderProps> = ({ 
+export const CustomerDetailsHeader: React.FC<CustomerDetailsHeaderProps> = ({ 
   customer, 
   setAddInteractionOpen 
 }) => {
   const navigate = useNavigate();
   
+  // Safety check for missing customer data
   if (!customer || !customer.id) {
     return (
       <div>
@@ -81,7 +83,7 @@ export const CustomerDetailsHeader: React.FC<CustomerHeaderProps> = ({
             asChild
             className="border-esm-blue-200 hover:bg-esm-blue-50"
           >
-            <Link to={`/work-orders/new?customerId=${customer.id}&customerName=${encodeURIComponent(customerName)}`}>
+            <Link to={`/work-orders/create?customerId=${customer.id}&customerName=${encodeURIComponent(customerName)}`}>
               <ClipboardList className="mr-2 h-4 w-4 text-esm-blue-500" /> New Work Order
             </Link>
           </Button>
@@ -98,4 +100,4 @@ export const CustomerDetailsHeader: React.FC<CustomerHeaderProps> = ({
       </div>
     </div>
   );
-};
+}

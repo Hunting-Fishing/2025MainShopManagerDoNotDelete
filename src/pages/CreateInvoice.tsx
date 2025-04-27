@@ -14,7 +14,7 @@ import {
 } from "@/types/invoice";
 import { InventoryItem } from "@/types/inventory";
 
-export default function CreateInvoice() {
+export default function InvoiceCreate() {
   const { workOrderId } = useParams<{ workOrderId?: string }>();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -73,8 +73,6 @@ export default function CreateInvoice() {
         technician_id: wo.technician_id,
         total_cost: wo.total_cost,
         estimated_hours: wo.estimated_hours,
-        invoice_id: wo.invoice_id,
-        invoiced_at: wo.invoiced_at
       }));
       setWorkOrders(formattedWorkOrders);
     }
@@ -100,52 +98,6 @@ export default function CreateInvoice() {
       setStaffMembers(formattedStaff);
     }
   }, [workOrdersData, inventoryData, staffData]);
-
-  useEffect(() => {
-    if (workOrderId && workOrdersData) {
-      // Find the work order from the data
-      const workOrder = workOrdersData.find(wo => wo.id === workOrderId);
-      
-      if (workOrder) {
-        // Pre-fill invoice with work order data
-        setInvoice(prev => ({
-          ...prev,
-          workOrderId: workOrder.id,
-          customer: workOrder.customer,
-          customerEmail: workOrder.customerEmail || '',
-          customerAddress: workOrder.customerAddress || '',
-          description: workOrder.description || '',
-          date: new Date().toISOString().split('T')[0],
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          items: [
-            ...(workOrder.inventoryItems?.map(inventoryItem => ({
-              id: inventoryItem.id,
-              name: inventoryItem.name,
-              description: '',
-              quantity: inventoryItem.quantity,
-              price: inventoryItem.unitPrice,
-              total: inventoryItem.quantity * inventoryItem.unitPrice,
-              sku: inventoryItem.sku,
-              category: inventoryItem.category
-            })) || []),
-            ...(workOrder.timeEntries?.filter(entry => entry.billable).map(entry => ({
-              id: entry.id,
-              name: 'Labor',
-              description: entry.notes || 'Service labor',
-              quantity: entry.duration / 60, // Convert minutes to hours
-              price: 85, // Default hourly rate
-              total: (entry.duration / 60) * 85,
-              hours: true
-            })) || [])
-          ],
-          assignedStaff: [workOrder.technician].filter(Boolean).map(tech => ({
-            id: crypto.randomUUID(),
-            name: tech
-          }))
-        }));
-      }
-    }
-  }, [workOrderId, workOrdersData]);
 
   const {
     invoice,
@@ -202,22 +154,6 @@ export default function CreateInvoice() {
     handleAddInventoryItem(invoiceItem);
   };
 
-  const handleRemoveItemAdapter = (id: string) => {
-    handleRemoveItem(id);
-  };
-
-  const handleUpdateItemQuantityAdapter = (id: string, quantity: number) => {
-    handleUpdateItemQuantity(id, quantity);
-  };
-
-  const handleUpdateItemDescriptionAdapter = (id: string, description: string) => {
-    handleUpdateItemDescription(id, description);
-  };
-
-  const handleUpdateItemPriceAdapter = (id: string, price: number) => {
-    handleUpdateItemPrice(id, price);
-  };
-
   const handleAddLaborItemAdapter = () => {
     const laborItem: InvoiceItem = {
       id: crypto.randomUUID(),
@@ -255,10 +191,10 @@ export default function CreateInvoice() {
       handleAddInventoryItem={handleAddInventoryItemAdapter}
       handleAddStaffMember={handleAddStaffMember}
       handleRemoveStaffMember={handleRemoveStaffMember}
-      handleRemoveItem={handleRemoveItemAdapter}
-      handleUpdateItemQuantity={handleUpdateItemQuantityAdapter}
-      handleUpdateItemDescription={handleUpdateItemDescriptionAdapter}
-      handleUpdateItemPrice={handleUpdateItemPriceAdapter}
+      handleRemoveItem={handleRemoveItem}
+      handleUpdateItemQuantity={handleUpdateItemQuantity}
+      handleUpdateItemDescription={handleUpdateItemDescription}
+      handleUpdateItemPrice={handleUpdateItemPrice}
       handleAddLaborItem={handleAddLaborItemAdapter}
       handleSaveInvoice={handleSaveInvoice}
       handleApplyTemplate={handleApplyTemplate}

@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { Customer, adaptCustomerForUI } from "@/types/customer";
-import { CustomerFormValues } from "@/components/customers/form/CustomerFormSchema";
+import { CustomerFormValues } from "@/components/customers/form/schemas/customerSchema";
 
 // Update a customer
 export const updateCustomer = async (id: string, updates: CustomerFormValues): Promise<Customer> => {
@@ -82,119 +82,80 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
     // First get existing vehicles
     const { data: existingVehicles, error: vehiclesFetchError } = await supabase
       .from("vehicles")
-      .select("id, make, model, year, vin, license_plate, color, transmission, drive_type, fuel_type, engine, body_style, country, transmission_type, gvwr, trim")
+      .select("id, make, model, year, vin, license_plate, color, transmission, drive_type, fuel_type, engine, body_style, country, transmission_type, gvwr")
       .eq("customer_id", id);
       
     if (vehiclesFetchError) {
       console.error("Error fetching customer vehicles:", vehiclesFetchError);
     } else {
-      console.log("Found existing vehicles:", existingVehicles);
+      // Create a map of existing vehicles for quick lookup
+      const existingVehiclesMap = new Map();
+      existingVehicles.forEach((vehicle, index) => {
+        existingVehiclesMap.set(index, vehicle);
+      });
       
       // Process each submitted vehicle
       for (let i = 0; i < updates.vehicles.length; i++) {
         const vehicle = updates.vehicles[i];
+        const existingVehicle = existingVehiclesMap.get(i);
         
-        // Skip empty vehicles
-        if (!vehicle.make && !vehicle.model && !vehicle.year && !vehicle.vin && !vehicle.license_plate) {
-          console.log("Skipping empty vehicle at index", i);
-          continue;
-        }
+        // Convert year from string to number
+        const vehicleYear = vehicle.year ? parseInt(vehicle.year, 10) : null;
         
-        // Convert year from string to number if present
-        const vehicleYear = vehicle.year ? parseInt(vehicle.year.toString(), 10) : null;
-        
-        // Find if this vehicle already exists for the customer
-        const existingVehicleIndex = existingVehicles?.findIndex(v => 
-          (v.id && vehicle.id && v.id === vehicle.id) || 
-          (v.vin && vehicle.vin && v.vin === vehicle.vin) ||
-          (v.make === vehicle.make && 
-           v.model === vehicle.model &&
-           v.year === vehicleYear &&
-           v.license_plate === vehicle.license_plate)
-        );
-        
-        if (existingVehicleIndex >= 0 && existingVehicles) {
-          // Update existing vehicle
-          const existingVehicle = existingVehicles[existingVehicleIndex];
-          console.log(`Updating vehicle: ${vehicleYear} ${vehicle.make} ${vehicle.model}`, existingVehicle.id);
-          
-          const { error: updateError } = await supabase
+        if (existingVehicle) {
+          // Update existing vehicle with all fields
+          await supabase
             .from("vehicles")
             .update({
               make: vehicle.make,
               model: vehicle.model,
               year: vehicleYear,
-              vin: vehicle.vin || null,
-              license_plate: vehicle.license_plate || null,
-              color: vehicle.color || null,
-              transmission: vehicle.transmission || null,
-              transmission_type: vehicle.transmission_type || null,
-              drive_type: vehicle.drive_type || null,
-              fuel_type: vehicle.fuel_type || null,
-              engine: vehicle.engine || null,
-              body_style: vehicle.body_style || null,
-              country: vehicle.country || null,
-              gvwr: vehicle.gvwr || null,
-              trim: vehicle.trim || null
+              vin: vehicle.vin,
+              license_plate: vehicle.license_plate,
+              color: vehicle.color,
+              transmission: vehicle.transmission,
+              drive_type: vehicle.drive_type,
+              fuel_type: vehicle.fuel_type,
+              engine: vehicle.engine,
+              body_style: vehicle.body_style,
+              country: vehicle.country,
+              transmission_type: vehicle.transmission_type,
+              gvwr: vehicle.gvwr
             })
             .eq("id", existingVehicle.id);
-            
-          if (updateError) {
-            console.error("Error updating vehicle:", updateError);
-          } else {
-            vehiclesUpdated++;
-          }
         } else {
-          // Insert new vehicle
-          console.log(`Adding new vehicle: ${vehicleYear} ${vehicle.make} ${vehicle.model}`);
-          
-          const { error: insertError } = await supabase
+          // Insert new vehicle with all fields
+          await supabase
             .from("vehicles")
             .insert({
               customer_id: id,
               make: vehicle.make,
               model: vehicle.model,
               year: vehicleYear,
-              vin: vehicle.vin || null,
-              license_plate: vehicle.license_plate || null,
-              color: vehicle.color || null,
-              transmission: vehicle.transmission || null,
-              transmission_type: vehicle.transmission_type || null,
-              drive_type: vehicle.drive_type || null,
-              fuel_type: vehicle.fuel_type || null,
-              engine: vehicle.engine || null,
-              body_style: vehicle.body_style || null,
-              country: vehicle.country || null,
-              gvwr: vehicle.gvwr || null,
-              trim: vehicle.trim || null
+              vin: vehicle.vin,
+              license_plate: vehicle.license_plate,
+              color: vehicle.color,
+              transmission: vehicle.transmission,
+              drive_type: vehicle.drive_type,
+              fuel_type: vehicle.fuel_type,
+              engine: vehicle.engine,
+              body_style: vehicle.body_style,
+              country: vehicle.country,
+              transmission_type: vehicle.transmission_type,
+              gvwr: vehicle.gvwr
             });
-            
-          if (insertError) {
-            console.error("Error adding vehicle:", insertError);
-          } else {
-            vehiclesUpdated++;
-          }
         }
       }
       
-      // Delete vehicles that were removed in the UI
+      // If there are more existing vehicles than submitted ones, remove the extra ones
       if (existingVehicles.length > updates.vehicles.length) {
-        const vehiclesToKeep = updates.vehicles
-          .filter(v => v.id) // Only include vehicles with IDs
-          .map(v => v.id);
-        
-        for (const existingVehicle of existingVehicles) {
-          if (!vehiclesToKeep.includes(existingVehicle.id)) {
-            console.log(`Deleting vehicle: ${existingVehicle.year} ${existingVehicle.make} ${existingVehicle.model}`);
-            
-            const { error: deleteError } = await supabase
+        for (let i = updates.vehicles.length; i < existingVehicles.length; i++) {
+          const vehicleToRemove = existingVehiclesMap.get(i);
+          if (vehicleToRemove) {
+            await supabase
               .from("vehicles")
               .delete()
-              .eq("id", existingVehicle.id);
-              
-            if (deleteError) {
-              console.error("Error deleting vehicle:", deleteError);
-            }
+              .eq("id", vehicleToRemove.id);
           }
         }
       }
@@ -221,35 +182,6 @@ export const updateCustomer = async (id: string, updates: CustomerFormValues): P
 
 // Delete a customer
 export const deleteCustomer = async (id: string): Promise<void> => {
-  // First delete related vehicles
-  try {
-    const { error: vehiclesError } = await supabase
-      .from("vehicles")
-      .delete()
-      .eq("customer_id", id);
-      
-    if (vehiclesError) {
-      console.error("Error deleting customer vehicles:", vehiclesError);
-    }
-  } catch (error) {
-    console.error("Error deleting customer vehicles:", error);
-  }
-  
-  // Delete customer notes
-  try {
-    const { error: notesError } = await supabase
-      .from("customer_notes")
-      .delete()
-      .eq("customer_id", id);
-      
-    if (notesError) {
-      console.error("Error deleting customer notes:", notesError);
-    }
-  } catch (error) {
-    console.error("Error deleting customer notes:", error);
-  }
-  
-  // Finally delete the customer
   const { error } = await supabase
     .from("customers")
     .delete()

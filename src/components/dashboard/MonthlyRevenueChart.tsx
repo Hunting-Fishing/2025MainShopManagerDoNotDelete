@@ -2,12 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getMonthlyRevenue } from '@/services/dashboard/revenueService';
+import { getMonthlyRevenue } from '@/services/dashboardService';
 import { formatCurrency } from '@/utils/formatters';
-import { MonthlyRevenueData } from '@/types/dashboard';
 
 export function MonthlyRevenueChart() {
-  const [data, setData] = useState<MonthlyRevenueData[]>([]);
+  const [data, setData] = useState<{ month: string; revenue: number }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   
   useEffect(() => {

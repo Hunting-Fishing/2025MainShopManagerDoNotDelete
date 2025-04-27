@@ -1,36 +1,21 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { HelpCircle, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { BaseFieldProps } from "./BaseFieldTypes";
 
-interface VinFieldProps extends BaseFieldProps {
+export const VinField: React.FC<BaseFieldProps & { 
   processing?: boolean;
-  success?: boolean;
-  failure?: boolean;
-}
-
-export const VinField: React.FC<VinFieldProps> = ({ 
-  form, 
-  index,
-  processing = false,
-  success = false,
-  failure = false
-}) => {
-  // Log VIN changes for debugging
-  const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const upperValue = e.target.value.toUpperCase();
-    
-    // Log to console when VIN is complete
-    if (upperValue.length === 17) {
-      console.log(`VIN field: Complete VIN entered: ${upperValue}`);
-    }
-    
-    form.setValue(`vehicles.${index}.vin`, upperValue);
+  decodedVehicleInfo?: {
+    year?: string;
+    make?: string;
+    model?: string;
+    valid: boolean;
   };
-
+}> = ({ form, index, processing = false, decodedVehicleInfo }) => {
   return (
     <FormField
       control={form.control}
@@ -44,38 +29,56 @@ export const VinField: React.FC<VinFieldProps> = ({
                 <TooltipTrigger asChild>
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>17-character Vehicle Identification Number</p>
+                <TooltipContent side="right" className="max-w-sm">
+                  <p>Vehicle Identification Number - A 17-character unique identifier for the vehicle. Enter a complete VIN to auto-populate vehicle details.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            {processing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            {success && <CheckCircle className="h-4 w-4 text-green-500" />}
-            {failure && <AlertCircle className="h-4 w-4 text-amber-500" />}
           </div>
-          <FormControl>
-            <Input
-              {...field}
-              value={field.value || ''}
-              placeholder="Vehicle Identification Number"
-              className="font-mono"
-              maxLength={17}
-              onChange={handleVinChange}
-            />
-          </FormControl>
+          <div className="relative">
+            <FormControl>
+              <Input 
+                {...field} 
+                placeholder="Enter 17-digit VIN to auto-populate" 
+                className="font-mono pr-8"
+                maxLength={17}
+                disabled={processing}
+                onChange={(e) => {
+                  // Convert to uppercase as user types
+                  field.onChange(e.target.value.toUpperCase());
+                }}
+              />
+            </FormControl>
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
+              {processing && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+              {!processing && decodedVehicleInfo && (
+                decodedVehicleInfo.valid ? 
+                  <CheckCircle2 className="h-4 w-4 text-green-500" /> : 
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+              )}
+            </div>
+          </div>
+          
+          {decodedVehicleInfo && decodedVehicleInfo.valid && decodedVehicleInfo.make && decodedVehicleInfo.model && (
+            <div className="mt-2 text-sm">
+              <Badge variant="outline" className="bg-muted/50 mr-2">
+                {decodedVehicleInfo.year || ''}
+              </Badge>
+              <Badge variant="outline" className="bg-muted/50 mr-2">
+                {decodedVehicleInfo.make || ''}
+              </Badge>
+              <Badge variant="outline" className="bg-muted/50">
+                {decodedVehicleInfo.model || ''}
+              </Badge>
+            </div>
+          )}
+          
+          <FormDescription>
+            Enter a complete 17-digit VIN to auto-populate vehicle details
+          </FormDescription>
           <FormMessage />
-          
-          {field.value && field.value.length > 0 && field.value.length < 17 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              VIN should be 17 characters ({17 - field.value.length} more needed)
-            </p>
-          )}
-          
-          {success && (
-            <p className="text-xs text-green-600 mt-1">
-              VIN decoded successfully
-            </p>
-          )}
         </FormItem>
       )}
     />

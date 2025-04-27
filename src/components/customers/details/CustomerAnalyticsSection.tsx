@@ -1,130 +1,176 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Customer } from '@/types/customer';
-import { CustomerSegmentBadges } from '@/components/analytics/CustomerSegmentBadges';
-import { calculateCustomerLifetimeValue, getCustomerLifetimeValuePercentile, predictFutureCustomerValue } from '@/utils/analytics/customerLifetimeValue';
-import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, DollarSign, Clock, AlertCircle } from 'lucide-react';
-import { calculateRetentionRiskScore } from '@/utils/analytics/customerSegmentation';
+
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Customer } from "@/types/customer";
+import { SmsLogsTable } from "@/components/sms/SmsLogsTable";
+import { SmsTemplatesList } from "@/components/sms/SmsTemplatesList";
+import { CustomerLifetimeValueCard } from "@/components/analytics/CustomerLifetimeValueCard";
+import { CustomerSegmentBadges } from "@/components/analytics/CustomerSegmentBadges";
+import { ChartContainer } from "@/components/analytics/ChartContainer";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
 
 interface CustomerAnalyticsSectionProps {
   customer: Customer;
 }
 
-export function CustomerAnalyticsSection({ customer }: CustomerAnalyticsSectionProps) {
-  const [clv, setClv] = useState<number | null>(null);
-  const [clvPercentile, setClvPercentile] = useState<number | null>(null);
-  const [predictedValue, setPredictedValue] = useState<number | null>(null);
-  const [retentionRisk, setRetentionRisk] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadAnalytics = async () => {
-      setLoading(true);
-      try {
-        const lifetimeValue = await calculateCustomerLifetimeValue(customer.id);
-        setClv(lifetimeValue);
-
-        const lifetimeValuePercentile = await getCustomerLifetimeValuePercentile(customer.id);
-        setClvPercentile(lifetimeValuePercentile);
-        
-        const futureValue = await predictFutureCustomerValue(customer.id);
-        setPredictedValue(futureValue);
-
-        const riskScore = await calculateRetentionRiskScore(customer.id);
-        setRetentionRisk(riskScore);
-      } catch (error) {
-        console.error("Error loading customer analytics:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAnalytics();
-  }, [customer.id]);
+export const CustomerAnalyticsSection: React.FC<CustomerAnalyticsSectionProps> = ({ 
+  customer 
+}) => {
+  const [timeRange, setTimeRange] = useState<'6m' | '1y' | 'all'>('1y');
+  
+  // Sample data for customer value over time
+  const clvHistoryData = [
+    { month: 'Jan', value: 145 },
+    { month: 'Feb', value: 210 },
+    { month: 'Mar', value: 320 },
+    { month: 'Apr', value: 340 },
+    { month: 'May', value: 450 },
+    { month: 'Jun', value: 480 },
+    { month: 'Jul', value: 520 },
+    { month: 'Aug', value: 590 },
+    { month: 'Sep', value: 620 },
+    { month: 'Oct', value: 700 },
+    { month: 'Nov', value: 820 },
+    { month: 'Dec', value: 900 },
+  ];
+  
+  // Sample service category data
+  const serviceCategoryData = [
+    { name: 'Repair', value: 65 },
+    { name: 'Maintenance', value: 25 },
+    { name: 'Upgrade', value: 10 },
+  ];
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Customer Segments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {customer.id ? (
-            <CustomerSegmentBadges customerId={customer.id} showDetailedView={true} />
-          ) : (
-            <p>No customer ID provided.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Lifetime Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-5 w-20" />
-            ) : (
-              <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-gray-500" />
-                <span>${clv?.toFixed(2) || '0.00'}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>CLV Percentile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-5 w-20" />
-            ) : (
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-gray-500" />
-                <span>{clvPercentile}%</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Predicted Future Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-5 w-20" />
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span>${predictedValue?.toFixed(2) || '0.00'}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Retention Risk</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-5 w-20" />
-            ) : (
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-gray-500" />
-                <span>{retentionRisk}%</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-6">
+      <Tabs defaultValue="analytics" className="w-full">
+        <TabsList>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="sms">SMS Communications</TabsTrigger>
+          <TabsTrigger value="templates">SMS Templates</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <CustomerLifetimeValueCard customerId={customer.id} className="h-full" />
+            
+            <Card className="h-full">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold">Customer Segments</CardTitle>
+                <CardDescription>
+                  Assigned customer segments and categories
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CustomerSegmentBadges customerId={customer.id} className="mb-6" />
+                
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Retention Risk</h4>
+                  <div className="w-full bg-gray-100 rounded-full h-2.5">
+                    <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: '40%' }}></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Medium risk (40%)</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <ChartContainer 
+            title="Value Over Time" 
+            description="Customer value growth over time"
+          >
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={clvHistoryData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`$${value}`, 'Value']} />
+                <Legend />
+                <Line type="monotone" dataKey="value" stroke="#4f46e5" activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+          
+          <div className="grid gap-6 md:grid-cols-2">
+            <ChartContainer
+              title="Service Category Distribution"
+              description="Services utilized by category"
+            >
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={serviceCategoryData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                  <Bar dataKey="value" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Customer Cohort Comparison</CardTitle>
+                <CardDescription>Performance versus similar customers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Revenue</span>
+                      <span className="text-sm font-medium text-green-600">+18%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '118%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Visit Frequency</span>
+                      <span className="text-sm font-medium text-green-600">+5%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '105%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Service Adoption</span>
+                      <span className="text-sm font-medium text-amber-600">-8%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '92%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Retention</span>
+                      <span className="text-sm font-medium text-green-600">+12%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '112%' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="sms">
+          <SmsLogsTable customerId={customer.id} limit={20} />
+        </TabsContent>
+        
+        <TabsContent value="templates">
+          <SmsTemplatesList />
+        </TabsContent>
+      </Tabs>
     </div>
   );
-}
+};

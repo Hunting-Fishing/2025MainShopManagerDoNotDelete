@@ -1,93 +1,110 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { CalendarEvent, ShiftChat } from '@/types/calendar/events';
-import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { CalendarEvent } from '@/types/calendar';
+import { getCalendarEvents, getWorkOrderEvents } from '@/services/calendar/calendarEventService';
+import { getShiftChats } from '@/services/calendar/shiftChatService';
+import { ChatRoom } from '@/types/chat';
+import { format, startOfMonth, endOfMonth, addMonths, startOfWeek, endOfWeek } from 'date-fns';
 
 export function useCalendarEvents(currentDate: Date, view: 'month' | 'week' | 'day') {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [shiftChats, setShiftChats] = useState<ShiftChat[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [shiftChats, setShiftChats] = useState<ChatRoom[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchCalendarData = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
-        let startDate: Date;
-        let endDate: Date;
+        // Determine date range based on view
+        let startDate: Date, endDate: Date;
         
-        // Calculate date range based on view
         if (view === 'month') {
-          startDate = startOfMonth(currentDate);
-          endDate = endOfMonth(currentDate);
+          startDate = startOfWeek(startOfMonth(currentDate));
+          endDate = endOfWeek(endOfMonth(currentDate));
         } else if (view === 'week') {
           startDate = startOfWeek(currentDate);
           endDate = endOfWeek(currentDate);
-        } else {
-          // day view
+        } else { // day view
           startDate = currentDate;
-          endDate = addDays(currentDate, 1);
+          endDate = currentDate;
         }
-        
-        // Format dates for query
-        const formattedStartDate = format(startDate, 'yyyy-MM-dd');
-        const formattedEndDate = format(endDate, 'yyyy-MM-dd');
-        
+
+        // Format dates for API calls
+        const startDateStr = format(startDate, 'yyyy-MM-dd');
+        const endDateStr = format(endDate, 'yyyy-MM-dd');
+
         // Fetch calendar events
-        const { data: calendarEvents, error: calendarError } = await supabase
-          .from('calendar_events')
-          .select('*')
-          .gte('start_time', formattedStartDate)
-          .lte('start_time', formattedEndDate);
-          
-        if (calendarError) throw calendarError;
-        
-        // Fetch shift chats for the same period
-        const { data: shiftChatData, error: shiftError } = await supabase
-          .from('shift_chats')
-          .select('*')
-          .gte('shift_date', formattedStartDate)
-          .lte('shift_date', formattedEndDate);
-          
-        if (shiftError) throw shiftError;
-        
-        // Map the database results to our CalendarEvent type
-        const mappedEvents: CalendarEvent[] = calendarEvents.map((event) => ({
+        const [calendarEvents, workOrderEvents, shiftChatsData] = await Promise.all([
+          getCalendarEvents(startDateStr, endDateStr),
+          getWorkOrderEvents(),
+          getShiftChats(startDateStr, endDateStr)
+        ]);
+
+        // Format shift chats as ChatRoom objects for the calendar
+        const formattedShiftChats: ChatRoom[] = shiftChatsData.map(shift => ({
+          id: shift.chat_room_id,
+          name: shift.shift_name,
+          type: 'group',
+          created_at: shift.created_at,
+          updated_at: shift.updated_at,
+          metadata: {
+            is_shift_chat: true,
+            shift_date: shift.shift_date,
+            shift_name: shift.shift_name,
+            shift_time: {
+              start: shift.start_time,
+              end: shift.end_time
+            }
+          }
+        }));
+
+        // Combine and format all events for the calendar
+        // Transform DatabaseCalendarEvent to CalendarEvent format for UI
+        const formattedEvents: CalendarEvent[] = [
+          ...calendarEvents,
+          ...workOrderEvents.filter(wo => {
+            // Only include work orders that aren't already in calendar_events
+            return !calendarEvents.some(event => 
+              event.workOrderId === wo.id && event.type === 'work-order'
+            );
+          })
+        ].map(event => ({
           id: event.id,
           title: event.title,
-          start: event.start_time,
-          end: event.end_time,
-          allDay: event.all_day,
-          description: event.description,
-          location: event.location,
-          workOrderId: event.work_order_id,
+          start: event.start_time || event.start,
+          end: event.end_time || event.end,
+          customer: event.customer || '',
           status: event.status,
           priority: event.priority,
-          customer: event.customer,
+          technician: event.technician || '',
+          location: event.location || '',
+          type: event.event_type || event.type || 'event',
+          
+          // Include original fields for API operations
+          description: event.description,
+          workOrderId: event.work_order_id || event.workOrderId,
+          allDay: event.all_day || event.allDay,
+          
+          // Include database fields for filtering
           technician_id: event.technician_id,
-          type: event.event_type,
-          // Include the original fields for compatibility
-          all_day: event.all_day,
-          start_time: event.start_time,
-          end_time: event.end_time,
           customer_id: event.customer_id,
-          work_order_id: event.work_order_id
+          work_order_id: event.work_order_id || event.workOrderId
         }));
-        
-        setEvents(mappedEvents);
-        setShiftChats(shiftChatData || []);
+
+        setEvents(formattedEvents);
+        setShiftChats(formattedShiftChats);
       } catch (err) {
-        console.error('Error fetching calendar data:', err);
-        setError(err instanceof Error ? err.message : 'Error fetching calendar data');
+        console.error("Error fetching calendar data:", err);
+        setError("Failed to load calendar data. Please try again.");
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchEvents();
+
+    fetchCalendarData();
   }, [currentDate, view]);
 
   return { events, shiftChats, isLoading, error };

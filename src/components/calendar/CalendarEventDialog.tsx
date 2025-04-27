@@ -1,11 +1,13 @@
 
-import React from 'react';
-import { format } from 'date-fns';
+import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from 'react-router-dom';
-import { CalendarEvent } from '@/types/calendar/events';
-import { Badge } from '@/components/ui/badge';
+import { CalendarEvent } from "@/types/calendar";
+import { Badge } from "@/components/ui/badge";
+import { Clock, MapPin, User, Calendar as CalendarIcon, FileText } from "lucide-react";
+import { statusMap } from "@/utils/workOrders"; // Updated import path
+import { formatDate, formatTime } from "@/utils/dateUtils";
+import { Link } from "react-router-dom";
 
 interface CalendarEventDialogProps {
   event: CalendarEvent | null;
@@ -14,59 +16,101 @@ interface CalendarEventDialogProps {
 }
 
 export function CalendarEventDialog({ event, isOpen, onClose }: CalendarEventDialogProps) {
-  const navigate = useNavigate();
-
   if (!event) return null;
 
-  const handleViewWorkOrder = () => {
-    if (event.work_order_id) {
-      navigate(`/work-orders/${event.work_order_id}`);
-      onClose();
-    }
-  };
+  // Format the event times for display - properly handling string dates
+  const startTime = event.start ? 
+    formatTime(event.start) : 
+    '';
+  
+  const endTime = event.end ? 
+    formatTime(event.end) : 
+    '';
+  
+  const eventDate = event.start ? 
+    formatDate(event.start) : 
+    formatDate(new Date().toISOString()); // Fallback to today if event.start is missing
 
+  // Determine if this is a work order event
+  const isWorkOrder = event.type === 'work-order';
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{event.title}</DialogTitle>
+          <DialogTitle className="text-xl">{event.title}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Time:</span>
-              <span>
-                {format(new Date(event.start), "PPP 'at' p")} - {format(new Date(event.end), 'p')}
-              </span>
-            </div>
+        
+        <div className="space-y-4 py-4">
+          {/* Event Type Badge */}
+          <div className="flex items-center justify-between">
+            <Badge variant={event.type === 'work-order' ? 'default' : 'secondary'}>
+              {event.type === 'work-order' ? 'Work Order' : 'Appointment'}
+            </Badge>
             
-            {event.location && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Location:</span>
-                <span>{event.location}</span>
-              </div>
-            )}
-            
-            {event.description && (
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-gray-500">Description:</span>
-                <p className="text-sm">{event.description}</p>
-              </div>
-            )}
-            
-            {event.status && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Status:</span>
-                <Badge variant="outline">
-                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                </Badge>
-              </div>
+            {/* Status Badge - Only for work orders */}
+            {isWorkOrder && event.status && (
+              <Badge 
+                variant="outline" 
+                className={`
+                  ${event.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
+                  ${event.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : ''}
+                  ${event.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''}
+                  ${event.status === 'cancelled' ? 'bg-gray-100 text-gray-800' : ''}
+                `}
+              >
+                {statusMap[event.status] || event.status}
+              </Badge>
             )}
           </div>
           
-          {event.work_order_id && (
-            <Button onClick={handleViewWorkOrder} className="w-full">
-              View Work Order
+          {/* Date and Time */}
+          <div className="flex items-center gap-2 text-sm">
+            <CalendarIcon className="h-4 w-4 text-gray-500" />
+            <span>{eventDate}</span>
+            <span className="text-gray-500">•</span>
+            <Clock className="h-4 w-4 text-gray-500" />
+            <span>{startTime} - {endTime}</span>
+          </div>
+          
+          {/* Location */}
+          {event.location && (
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-gray-500" />
+              <span>{event.location}</span>
+            </div>
+          )}
+          
+          {/* Assigned To - using technician property */}
+          {event.technician && (
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-gray-500" />
+              <span>Assigned to {event.technician}</span>
+            </div>
+          )}
+          
+          {/* Description */}
+          {event.description && (
+            <div className="pt-2">
+              <div className="flex items-center gap-2 text-sm mb-1">
+                <FileText className="h-4 w-4 text-gray-500" />
+                <span className="font-medium">Description</span>
+              </div>
+              <p className="text-sm text-gray-600 pl-6">{event.description}</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          
+          {isWorkOrder && event.id && (
+            <Button asChild>
+              <Link to={`/work-orders/${event.id}`}>
+                View Work Order
+              </Link>
             </Button>
           )}
         </div>

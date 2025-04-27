@@ -1,210 +1,184 @@
-
+import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateCustomerLifetimeValue } from "./customerLifetimeValue";
 
-// Define the valid segment types as a union type
+// Define customer segment types
 export type CustomerSegmentType = 
-  'high_value' | 
-  'medium_value' | 
-  'low_value' | 
-  'new' | 
-  'at_risk' | 
-  'loyal' | 
-  'inactive';
+  | 'high_value' 
+  | 'medium_value'
+  | 'low_value'
+  | 'new'
+  | 'at_risk'
+  | 'loyal'
+  | 'inactive';
+
+export interface CustomerWithSegments extends Customer {
+  segments: CustomerSegmentType[];
+  clv?: number;
+  lastOrderDate?: string;
+  orderCount?: number;
+}
 
 /**
- * Analyze a customer and determine which segments they belong to
- * @param customerId The ID of the customer to analyze
- * @returns Array of segment identifiers the customer belongs to
+ * Calculate and return all relevant segments for a customer
  */
 export const analyzeCustomerSegments = async (customerId: string): Promise<CustomerSegmentType[]> => {
   try {
-    // Fetch customer data
-    const { data: customer, error: customerError } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("id", customerId)
-      .single();
-      
-    if (customerError) {
-      console.error("Error fetching customer for segmentation:", customerError);
-      return [];
-    }
-    
-    // Fetch work orders to analyze service history
-    const { data: workOrders, error: workOrdersError } = await supabase
-      .from("work_orders")
-      .select("*")
-      .eq("customer_id", customerId)
-      .order("created_at", { ascending: false });
-      
-    if (workOrdersError) {
-      console.error("Error fetching work orders for segmentation:", workOrdersError);
-      // Continue without work orders data
-    }
-    
-    // Fetch invoices for monetary analysis
-    const { data: invoices, error: invoicesError } = await supabase
-      .from("invoices")
-      .select("*")
-      .eq("customer_id", customerId);
-      
-    if (invoicesError) {
-      console.error("Error fetching invoices for segmentation:", invoicesError);
-      // Continue without invoices data
-    }
-    
     const segments: CustomerSegmentType[] = [];
     
-    // Calculate lifetime value
-    const lifetimeValue = await calculateCustomerLifetimeValue(customerId);
+    // Get CLV
+    const clv = await calculateCustomerLifetimeValue(customerId);
     
-    // Determine value-based segment
-    if (lifetimeValue >= 1000) {
+    if (clv === null) return ['new']; // Default to new if no data
+    
+    // Get work order history
+    const { data: workOrders, error: workOrdersError } = await supabase
+      .from("work_orders")
+      .select("id, created_at, total_cost, status")
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false });
+    
+    if (workOrdersError) {
+      console.error("Error fetching work order data:", workOrdersError);
+      return ['new'];
+    }
+    
+    const orderCount = workOrders?.length || 0;
+    const lastOrderDate = orderCount > 0 ? new Date(workOrders[0].created_at) : null;
+    const now = new Date();
+    
+    // CLV-based segmentation
+    if (clv > 1000) {
       segments.push('high_value');
-    } else if (lifetimeValue >= 300) {
+    } else if (clv > 300) {
       segments.push('medium_value');
     } else {
       segments.push('low_value');
     }
     
-    // Determine recency-based segments
-    const workOrderCount = workOrders?.length || 0;
-    const mostRecentWorkOrder = workOrders && workOrders.length > 0 ? workOrders[0] : null;
-    
-    // New customer segment
-    if (workOrderCount <= 1 && 
-        mostRecentWorkOrder && 
-        new Date(mostRecentWorkOrder.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) {
+    // Recency-based segmentation
+    if (!lastOrderDate) {
       segments.push('new');
-    }
-    
-    // At-risk segment
-    const daysSinceLastService = mostRecentWorkOrder 
-      ? (Date.now() - new Date(mostRecentWorkOrder.created_at).getTime()) / (1000 * 60 * 60 * 24)
-      : Infinity;
+    } else {
+      const daysSinceLastOrder = Math.floor((now.getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24));
       
-    if (daysSinceLastService > 180 && workOrderCount > 0) {
-      segments.push('at_risk');
-    }
-    
-    // Loyal customer segment
-    if (workOrderCount >= 3 && daysSinceLastService < 365) {
-      segments.push('loyal');
-    }
-    
-    // Inactive customer segment
-    if (daysSinceLastService > 365 && workOrderCount > 0) {
-      segments.push('inactive');
+      if (daysSinceLastOrder > 365) {
+        segments.push('inactive');
+      } else if (daysSinceLastOrder > 180) {
+        segments.push('at_risk');
+      } else if (orderCount >= 3) {
+        segments.push('loyal');
+      }
     }
     
     return segments;
   } catch (error) {
     console.error("Error analyzing customer segments:", error);
+    return ['new']; // Default to new if error
+  }
+};
+
+/**
+ * Get all customers with their calculated segments
+ */
+export const getCustomersWithSegments = async (): Promise<CustomerWithSegments[]> => {
+  try {
+    // Get all customers
+    const { data: customers, error: customersError } = await supabase
+      .from("customers")
+      .select("*");
+    
+    if (customersError) {
+      throw customersError;
+    }
+    
+    // Convert raw database customers to UI-friendly format to handle JSON tags/segments
+    const uiCustomers = (customers || []).map(customer => adaptCustomerForUI(customer as Customer));
+    
+    // Process each customer to add segment information
+    const result = await Promise.all(uiCustomers.map(async (customer) => {
+      const clv = await calculateCustomerLifetimeValue(customer.id);
+      
+      // Get work order history for this customer
+      const { data: workOrders } = await supabase
+        .from("work_orders")
+        .select("created_at, total_cost, status")
+        .eq("customer_id", customer.id)
+        .order("created_at", { ascending: false });
+      
+      const orderCount = workOrders?.length || 0;
+      const lastOrderDate = orderCount > 0 ? workOrders[0].created_at : null;
+      
+      // Calculate segments for this customer
+      const segments = await analyzeCustomerSegments(customer.id);
+      
+      return {
+        ...customer,
+        segments,
+        clv: clv || 0,
+        lastOrderDate: lastOrderDate || '',
+        orderCount
+      } as CustomerWithSegments;
+    }));
+    
+    return result;
+  } catch (error) {
+    console.error("Error getting customers with segments:", error);
     return [];
   }
 };
 
 /**
- * Calculate retention risk score for a customer
- * @param customerId The ID of the customer
- * @returns Risk score from 0-100 where higher means higher risk of churning
+ * Calculate retention risk score for a customer (0-100, higher = higher risk)
  */
-export const calculateRetentionRiskScore = async (customerId: string): Promise<number> => {
+export const calculateRetentionRiskScore = async (customerId: string): Promise<number | null> => {
   try {
-    // Fetch customer data and history
-    const { data: customer, error: customerError } = await supabase
-      .from("customers")
-      .select("created_at, updated_at")
-      .eq("id", customerId)
-      .single();
-      
-    if (customerError) {
-      console.error("Error fetching customer for risk calculation:", customerError);
-      return 50; // Default to medium risk on error
-    }
-    
-    // Fetch work orders to analyze service history
+    // Get customer work order history
     const { data: workOrders, error: workOrdersError } = await supabase
       .from("work_orders")
-      .select("created_at, status")
+      .select("id, created_at, status")
       .eq("customer_id", customerId)
       .order("created_at", { ascending: false });
-      
+    
     if (workOrdersError) {
-      console.error("Error fetching work orders for risk calculation:", workOrdersError);
-      // Continue without work orders data
+      console.error("Error fetching work order data:", workOrdersError);
+      return null;
     }
     
-    // Initialize risk score factors
-    let riskScore = 50; // Start at neutral risk
+    if (!workOrders || workOrders.length === 0) {
+      return 50; // Neutral score for new customers
+    }
     
-    // Factor 1: Recency of last service
-    const mostRecentWorkOrder = workOrders && workOrders.length > 0 ? workOrders[0] : null;
-    const daysSinceLastService = mostRecentWorkOrder 
-      ? (Date.now() - new Date(mostRecentWorkOrder.created_at).getTime()) / (1000 * 60 * 60 * 24)
-      : 365; // Default to a year if no work orders
-      
-    // Increase risk as time since last service increases
-    if (daysSinceLastService > 365) {
-      riskScore += 30;
-    } else if (daysSinceLastService > 180) {
-      riskScore += 20;
-    } else if (daysSinceLastService > 90) {
-      riskScore += 10;
+    const now = new Date();
+    const lastOrderDate = new Date(workOrders[0].created_at);
+    const daysSinceLastOrder = Math.floor((now.getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Start with base score based on time since last order
+    let riskScore = 0;
+    
+    if (daysSinceLastOrder > 365) {
+      riskScore = 80; // High risk if over a year
+    } else if (daysSinceLastOrder > 180) {
+      riskScore = 60; // Medium-high risk if over 6 months
+    } else if (daysSinceLastOrder > 90) {
+      riskScore = 40; // Medium risk if over 3 months
+    } else if (daysSinceLastOrder > 30) {
+      riskScore = 20; // Low-medium risk if over 1 month
     } else {
-      riskScore -= 10; // Recent service reduces risk
+      riskScore = 10; // Low risk if recent activity
     }
     
-    // Factor 2: Frequency of services
-    const serviceFrequency = workOrders 
-      ? workOrders.length / (Math.max(daysSinceLastService, 30) / 365) 
-      : 0;
-      
-    // More frequent service indicates loyalty and lower risk
-    if (serviceFrequency > 2) {
-      riskScore -= 15;
-    } else if (serviceFrequency > 1) {
-      riskScore -= 10;
-    } else if (serviceFrequency < 0.5 && workOrders && workOrders.length > 0) {
-      riskScore += 10; // Infrequent service indicates higher risk
+    // Adjust based on order frequency
+    if (workOrders.length >= 5) {
+      riskScore -= 20; // Lower risk for frequent customers
+    } else if (workOrders.length >= 3) {
+      riskScore -= 10; // Slightly lower risk for semi-frequent customers
     }
     
-    // Factor 3: Customer engagement based on notes and communications
-    const { data: notes, error: notesError } = await supabase
-      .from("customer_notes")
-      .select("created_at")
-      .eq("customer_id", customerId)
-      .order("created_at", { ascending: false });
-      
-    const { data: communications, error: commsError } = await supabase
-      .from("customer_communications")
-      .select("date")
-      .eq("customer_id", customerId)
-      .order("date", { ascending: false });
-      
-    const lastEngagement = [
-      ...(notes?.map(n => new Date(n.created_at).getTime()) || []),
-      ...(communications?.map(c => new Date(c.date).getTime()) || [])
-    ].sort((a, b) => b - a)[0]; // Most recent engagement
-    
-    if (lastEngagement) {
-      const daysSinceEngagement = (Date.now() - lastEngagement) / (1000 * 60 * 60 * 24);
-      
-      // Recent engagement reduces risk
-      if (daysSinceEngagement < 30) {
-        riskScore -= 15;
-      } else if (daysSinceEngagement > 180) {
-        riskScore += 15; // Old engagement increases risk
-      }
-    } else {
-      riskScore += 10; // No engagement history increases risk
-    }
-    
-    // Ensure the final score is within 0-100 range
+    // Cap scores to 0-100 range
     return Math.max(0, Math.min(100, riskScore));
   } catch (error) {
     console.error("Error calculating retention risk score:", error);
-    return 50; // Default to medium risk on error
+    return null;
   }
 };

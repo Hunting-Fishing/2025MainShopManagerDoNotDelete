@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { companyService } from "@/services/settings/companyService";
-import { CompanyInfo } from "@/services/settings/companyService.types";
+import { CompanyInfo } from "@/services/settings/companyService";
 import { useBusinessConstants } from "@/hooks/useBusinessConstants";
 import { cleanPhoneNumber } from "@/utils/formatters";
 
@@ -157,9 +157,6 @@ export function useCompanyInfo() {
           description: "Logo uploaded successfully",
           variant: "success"
         });
-        
-        // Set data as changed since we've updated the logo
-        setDataChanged(true);
       }
     } catch (error) {
       console.error("Error uploading logo:", error);
