@@ -18,12 +18,14 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
   onServiceCheck,
 }) => {
   return (
-    <ScrollArea className="h-[500px] flex-1 px-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+    <ScrollArea className="h-[450px] flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 px-2">
         {category.subcategories.map((subcategory) => (
-          <Card key={subcategory.name}>
+          <Card key={subcategory.name} className="border border-muted bg-card/50">
             <CardHeader className="pb-2">
-              <h4 className="font-medium text-sm">{subcategory.name}</h4>
+              <h4 className="font-medium text-sm text-muted-foreground">
+                {subcategory.name}
+              </h4>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -38,7 +40,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                     />
                     <Label
                       htmlFor={`service-${service}`}
-                      className="text-sm cursor-pointer"
+                      className="text-sm cursor-pointer hover:text-foreground"
                     >
                       {service}
                     </Label>
