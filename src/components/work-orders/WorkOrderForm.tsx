@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -5,7 +6,6 @@ import { useWorkOrderForm } from "@/hooks/useWorkOrderForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { TimeEntry, WorkOrderTemplate } from "@/types/workOrder";
-import { workOrderTemplates } from "@/data/workOrderTemplatesData";
 import { supabase } from '@/lib/supabase';
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { toast } from "@/hooks/use-toast";
@@ -191,9 +191,9 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 p-6 bg-white">
+    <div className="space-y-8">
       {error && (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -202,49 +202,75 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Vehicle Details Card */}
           {vehicleId && vehicleInfo && (
-            <VehicleDetailsField 
-              form={form} 
-              isFleetCustomer={isFleetCustomer} 
-            />
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+              <VehicleDetailsField 
+                form={form} 
+                isFleetCustomer={isFleetCustomer} 
+              />
+            </div>
           )}
           
-          <CommonServicesChecklist onServiceChecked={handleServiceChecked} />
+          {/* Common Services Card */}
+          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-gradient-to-r from-slate-50 to-white">
+            <CommonServicesChecklist onServiceChecked={handleServiceChecked} />
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CustomerInfoSection 
-              form={form as any} 
-              customers={customers} 
-              isLoading={loadingCustomers} 
-              selectedVehicleId={selectedVehicleId}
-              preSelectedCustomerId={customerId}
-            />
+          {/* Customer & Status Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
+              <CustomerInfoSection 
+                form={form as any} 
+                customers={customers} 
+                isLoading={loadingCustomers} 
+                selectedVehicleId={selectedVehicleId}
+                preSelectedCustomerId={customerId}
+              />
+            </div>
             
-            <WorkOrderStatusSection form={form as any} />
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
+              <WorkOrderStatusSection form={form as any} />
+            </div>
+          </div>
+          
+          {/* Assignment & Info Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
+              <AssignmentSection 
+                form={form as any} 
+                technicians={technicians} 
+                isLoading={isLoadingTechnicians}
+              />
+            </div>
             
-            <AssignmentSection 
-              form={form as any} 
-              technicians={technicians} 
-              isLoading={isLoadingTechnicians}
-            />
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
+              <WorkOrderInfoSection form={form} serviceCategories={SERVICE_CATEGORIES} />
+            </div>
           </div>
 
-          <WorkOrderInfoSection form={form} serviceCategories={SERVICE_CATEGORIES} />
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-1 md:col-span-2">
+          {/* Description & Tech Tips Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
               <WorkOrderDescriptionField form={form} />
             </div>
-            <div className="col-span-1">
+            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
               <TechTips onInsert={handleInsertTechTip} />
             </div>
           </div>
-            
-          <NotesSection form={form as any} />
+          
+          {/* Notes Section */}
+          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
+            <NotesSection form={form as any} />
+          </div>
 
-          <WorkOrderInventorySection form={form as any} />
+          {/* Inventory Section */}
+          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6">
+            <WorkOrderInventorySection form={form as any} />
+          </div>
 
-          <div className="flex justify-between items-center">
+          {/* Form Actions */}
+          <div className="flex justify-between items-center border-t border-slate-200 pt-6">
             <SaveAsTemplateDialog 
               formValues={form.getValues()} 
               onSave={handleSaveTemplate} 
@@ -257,8 +283,11 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
         </form>
       </Form>
 
-      <div className="pt-8 mt-8 border-t border-gray-200">
-        <div className="text-sm text-gray-500 mb-2">Note: Additional time tracking can be added after the work order is created.</div>
+      {/* Time Tracking Section */}
+      <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-6 mt-8">
+        <div className="text-sm text-slate-500 mb-4">
+          Note: Additional time tracking can be added after the work order is created.
+        </div>
         
         {timeEntries.length > 0 && (
           <TimeTrackingSection 
