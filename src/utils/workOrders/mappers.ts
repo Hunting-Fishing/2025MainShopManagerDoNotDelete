@@ -1,5 +1,6 @@
 
 import { WorkOrder, TimeEntry, DbTimeEntry, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
+import { normalizeWorkOrder } from "./formatters";
 
 // Map time entry from DB format to app format
 export const mapTimeEntryFromDb = (entry: any): TimeEntry => ({
@@ -45,10 +46,14 @@ export const mapDatabaseToAppModel = (data: any): WorkOrder => {
     id: data.id,
     date: data.created_at,
     customer: customerName,
+    customerId: data.customer_id,
+    customer_id: data.customer_id,
     description: data.description || '',
     status: typedStatus,
     priority: determinePriority(data) as WorkOrderPriorityType,
     technician: technicianName || 'Unassigned',
+    technicianId: data.technician_id,
+    technician_id: data.technician_id,
     location: data.location || '',
     dueDate: data.end_time || data.created_at || '',
     notes: data.notes || '',
@@ -57,10 +62,21 @@ export const mapDatabaseToAppModel = (data: any): WorkOrder => {
       sum + (entry.billable ? (entry.duration || 0) : 0), 0) || 0,
     createdBy: data.created_by || 'System',
     createdAt: data.created_at,
+    created_at: data.created_at,
     lastUpdatedBy: data.updated_by || '',
+    updatedAt: data.updated_at,
+    updated_at: data.updated_at,
     lastUpdatedAt: data.updated_at,
     vehicle_id: data.vehicle_id,
     vehicleId: data.vehicle_id,
+    vehicle_make: data.vehicle_make,
+    vehicleMake: data.vehicle_make,
+    vehicle_model: data.vehicle_model,
+    vehicleModel: data.vehicle_model,
+    serviceType: data.service_type,
+    service_type: data.service_type,
+    totalCost: data.total_cost,
+    total_cost: data.total_cost,
   };
   
   // Handle service category safely
@@ -69,38 +85,27 @@ export const mapDatabaseToAppModel = (data: any): WorkOrder => {
     workOrder.service_category = data.service_category;
   }
   
-  return workOrder;
+  return normalizeWorkOrder(workOrder);
 };
 
 // Helper function to convert camelCase to snake_case for database storage
 export const mapAppModelToDatabase = (workOrder: Partial<WorkOrder>) => {
   const result: any = {};
 
-  // Handle specific field mappings
-  if (workOrder.serviceCategory !== undefined) {
-    result.service_category = workOrder.serviceCategory;
-  } else if (workOrder.service_category !== undefined) {
-    result.service_category = workOrder.service_category;
-  }
-
-  // Handle vehicle properties
-  if (workOrder.vehicleId !== undefined) {
-    result.vehicle_id = workOrder.vehicleId;
-  } else if (workOrder.vehicle_id !== undefined) {
-    result.vehicle_id = workOrder.vehicle_id;
-  }
-
   // Standard fields
   result.description = workOrder.description;
   result.status = workOrder.status;
-  result.customer_id = typeof workOrder.customer !== 'string' ? workOrder.customer : null;
-  result.technician_id = typeof workOrder.technician !== 'string' ? workOrder.technician : null;
+  result.customer_id = typeof workOrder.customerId !== 'string' ? workOrder.customerId : workOrder.customer_id;
+  result.technician_id = typeof workOrder.technicianId !== 'string' ? workOrder.technicianId : workOrder.technician_id;
+  result.vehicle_id = workOrder.vehicleId || workOrder.vehicle_id;
   result.location = workOrder.location;
   result.notes = workOrder.notes || '';
   result.end_time = workOrder.dueDate; // Map dueDate to end_time for database
   result.priority = workOrder.priority;
-  result.total_cost = workOrder.total_cost || 0;
-  result.estimated_hours = workOrder.estimated_hours || null;
+  result.total_cost = workOrder.totalCost || workOrder.total_cost || 0;
+  result.service_type = workOrder.serviceType || workOrder.service_type;
+  result.service_category = workOrder.serviceCategory || workOrder.service_category;
+  result.estimated_hours = workOrder.estimatedHours || workOrder.estimated_hours || null;
 
   return result;
 };
@@ -118,25 +123,10 @@ export const determinePriority = (workOrder: any): WorkOrderPriorityType => {
   return "medium";
 };
 
-// Export status and priority mappings for UI consistency
-export const statusMap: Record<string, string> = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-  "cancelled": "Cancelled"
-};
-
-export const priorityMap: Record<string, { label: string; classes: string; }> = {
-  "low": {
-    label: "Low",
-    classes: "bg-slate-100 text-slate-700"
-  },
-  "medium": {
-    label: "Medium",
-    classes: "bg-blue-100 text-blue-700"
-  },
-  "high": {
-    label: "High", 
-    classes: "bg-red-100 text-red-700"
-  }
-};
+// Export enumeration for WorkOrderStatus to be used consistently
+export enum WorkOrderStatus {
+  Pending = "pending",
+  InProgress = "in-progress",
+  Completed = "completed",
+  Cancelled = "cancelled"
+}

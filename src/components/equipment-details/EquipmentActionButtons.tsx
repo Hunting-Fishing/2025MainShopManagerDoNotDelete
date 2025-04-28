@@ -1,83 +1,82 @@
-
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Equipment } from "@/types/equipment";
-import { Edit, Wrench, Calendar } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { MoreHorizontal, Wrench } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useNavigate } from 'react-router-dom';
+import { Equipment } from '@/types';
 import { toast } from "@/hooks/use-toast";
-import { createWorkOrder } from "@/utils/workOrderUtils";
-import { format } from "date-fns";
+import { createWorkOrder } from '@/utils/workOrders';
+import { WorkOrderStatusType, WorkOrderPriorityType, WorkOrder } from '@/types/workOrder';
 
 interface EquipmentActionButtonsProps {
-  equipmentItem: Equipment;
-  isMaintenanceOverdue: boolean;
+  equipment: Equipment;
 }
 
-export function EquipmentActionButtons({ equipmentItem, isMaintenanceOverdue }: EquipmentActionButtonsProps) {
-  const [isScheduling, setIsScheduling] = useState(false);
+export function EquipmentActionButtons({ equipment }: EquipmentActionButtonsProps) {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  const handleScheduleMaintenance = async () => {
-    setIsScheduling(true);
-    
+  const createWorkOrder = async () => {
     try {
-      // In a real application, we would use the maintenance scheduler utility
-      // For now, we'll create a work order directly
-      const dueDate = new Date(new Date().setDate(new Date().getDate() + 5)); // 5 days from now
+      setLoading(true);
       
-      const workOrderData = {
-        customer: equipmentItem.customer,
-        description: `Maintenance for ${equipmentItem.name}`,
-        status: "pending" as const,
-        priority: isMaintenanceOverdue ? "high" as const : "medium" as const,
-        technician: "Unassigned",
-        location: equipmentItem.location,
-        dueDate: format(dueDate, "yyyy-MM-dd"), // Convert Date to string format
-        notes: `Regular ${equipmentItem.maintenanceFrequency} maintenance for ${equipmentItem.name} (${equipmentItem.model}).`,
+      // Create work order object with required properties
+      const newWorkOrder: Omit<WorkOrder, "date" | "id"> = {
+        customer: equipment.customer,
+        customerId: "", // Add required property
+        description: `Service for ${equipment.name} (${equipment.model})`,
+        status: "pending" as WorkOrderStatusType,
+        priority: "medium" as WorkOrderPriorityType,
+        technician: "", // Default empty technician
+        date: new Date().toISOString(), // Required even though Omit
+        location: equipment.location,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+        notes: `Equipment details:\nManufacturer: ${equipment.manufacturer}\nSerial Number: ${equipment.serial_number}\nCategory: ${equipment.category}\n\nMaintenance History: ${equipment.maintenance_history ? JSON.stringify(equipment.maintenance_history, null, 2) : 'None'}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
-      await createWorkOrder(workOrderData);
-      
+      // Call createWorkOrder function
+      await createWorkOrder(newWorkOrder);
+
       toast({
-        title: "Maintenance Scheduled",
-        description: `Maintenance has been scheduled for ${equipmentItem.name}.`,
+        title: "Work Order Created",
+        description: `Successfully created a work order for ${equipment.name}.`,
         variant: "success",
       });
+
+      navigate('/work-orders');
     } catch (error) {
-      console.error("Error scheduling maintenance:", error);
+      console.error("Error creating work order:", error);
       toast({
         title: "Error",
-        description: "Failed to schedule maintenance. Please try again.",
+        description: "Failed to create work order. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsScheduling(false);
+      setLoading(false);
     }
   };
-  
+
   return (
-    <div className="flex gap-2 mt-4 lg:mt-0">
-      <Button 
-        variant={isMaintenanceOverdue ? "destructive" : "outline"}
-        onClick={handleScheduleMaintenance}
-        disabled={isScheduling}
-      >
-        {isMaintenanceOverdue ? (
-          <>
-            <Wrench className="mr-2 h-4 w-4" /> 
-            {isScheduling ? "Scheduling..." : "Schedule Overdue Maintenance"}
-          </>
-        ) : (
-          <>
-            <Calendar className="mr-2 h-4 w-4" /> 
-            {isScheduling ? "Scheduling..." : "Schedule Maintenance"}
-          </>
-        )}
-      </Button>
-      <Link to={`/equipment/${equipmentItem.id}/edit`}>
-        <Button variant="outline">
-          <Edit className="mr-2 h-4 w-4" /> Edit Equipment
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="sr-only">Open menu</span>
         </Button>
-      </Link>
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={createWorkOrder} disabled={loading}>
+          <Wrench className="h-4 w-4 mr-2" />
+          Create Work Order
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

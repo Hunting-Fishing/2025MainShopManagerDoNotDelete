@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { WorkOrder, TimeEntry, WorkOrderInventoryItem } from "@/types/workOrder";
 import { generateWorkOrderId } from "./generators";
@@ -63,7 +62,7 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       id: data.id,
       date: data.created_at,
       customer: workOrderData.customer,
-      description: data.description,
+      description: workOrderData.description,
       status: data.status as WorkOrder["status"],
       priority: workOrderData.priority,
       technician: workOrderData.technician,
@@ -77,8 +76,8 @@ export const createWorkOrder = async (workOrderData: Omit<WorkOrder, "id" | "dat
       createdAt: data.created_at,
       lastUpdatedBy: workOrderData.lastUpdatedBy,
       lastUpdatedAt: data.updated_at,
-      vehicle_id: data.vehicle_id,
-      vehicleId: data.vehicle_id, // Include both casing conventions for frontend compatibility
+      vehicle_id: workOrderData.vehicle_id,
+      vehicleId: workOrderData.vehicle_id, // Include both casing conventions for frontend compatibility
     };
     
     // Handle service category assignment safely
@@ -189,8 +188,9 @@ export const findWorkOrderById = async (id: string): Promise<WorkOrder | null> =
       profiles: technicianData
     };
     
-    // Map database model to application model
-    return mapDatabaseToAppModel(workOrderWithRelations) as WorkOrder;
+    // Map database model to application model and normalize properties
+    const mappedWorkOrder = mapDatabaseToAppModel(workOrderWithRelations);
+    return mappedWorkOrder as WorkOrder;
   } catch (err) {
     console.error("Error in findWorkOrderById:", err);
     return null;

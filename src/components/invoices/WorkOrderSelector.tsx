@@ -3,6 +3,7 @@ import { WorkOrder } from "@/types/workOrder";
 import { useWorkOrderTimeEntries } from "@/hooks/invoice/useWorkOrderTimeEntries";
 import { createInvoiceUpdater } from "@/types/invoice";
 import { useState } from "react";
+import { normalizeWorkOrderObject } from "@/utils/workOrderUtils";
 
 interface WorkOrderSelectorProps {
   invoice: any;
@@ -21,16 +22,19 @@ export function useWorkOrderSelector({
 
   // Custom handler to select work order and include time entries
   const handleSelectWorkOrderWithTime = (workOrder: WorkOrder) => {
+    // Normalize work order to ensure consistent property access
+    const normalizedWorkOrder = normalizeWorkOrderObject(workOrder);
+    
     // Update the selected work order
-    setSelectedWorkOrder(workOrder);
+    setSelectedWorkOrder(normalizedWorkOrder);
     
     // First handle basic work order selection
-    handleSelectWorkOrder(workOrder);
+    handleSelectWorkOrder(normalizedWorkOrder);
     
     // Add billed time to invoice items if present
-    if (workOrder.timeEntries && workOrder.timeEntries.length > 0) {
+    if (normalizedWorkOrder.timeEntries && normalizedWorkOrder.timeEntries.length > 0) {
       // Create new items with time entries added
-      const updatedItems = addTimeEntriesToInvoiceItems(workOrder, invoice.items);
+      const updatedItems = addTimeEntriesToInvoiceItems(normalizedWorkOrder, invoice.items);
       
       // Only update if new items were added
       if (updatedItems.length > invoice.items.length) {

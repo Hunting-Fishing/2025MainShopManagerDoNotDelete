@@ -50,8 +50,8 @@ export interface WorkOrderTemplate {
   usageCount: number;
   customer?: string;
   location?: string;
-  status: "pending" | "in-progress" | "completed" | "cancelled";
-  priority: "low" | "medium" | "high";
+  status: WorkOrderStatusType;
+  priority: WorkOrderPriorityType;
   technician: string;
   notes?: string;
   inventoryItems?: WorkOrderInventoryItem[];
@@ -60,42 +60,66 @@ export interface WorkOrderTemplate {
 // Define a comprehensive WorkOrder interface that works for both UI and API
 export interface WorkOrder {
   id: string;
-  customer: string;
+  // Customer info
+  customerId?: string;
+  customer_id?: string;
+  customer: string; // Display name
+  
+  // Basic info
   description: string;
-  status: "pending" | "in-progress" | "completed" | "cancelled";
-  priority: "low" | "medium" | "high";
+  status: WorkOrderStatusType;
+  priority: WorkOrderPriorityType;
+  
+  // Personnel
   technician: string;
+  technicianId?: string;
+  technician_id?: string;
+  
+  // Dates
   date: string;
+  createdAt?: string;
+  created_at?: string;
   dueDate: string;
+  updatedAt?: string;
+  lastUpdatedAt?: string; // For backward compatibility
+  updated_at?: string;
+  
+  // Location
   location: string;
+  
+  // Notes
   notes?: string;
+  
+  // Items and entries
   inventoryItems?: WorkOrderInventoryItem[];
   timeEntries?: TimeEntry[];
   totalBillableTime?: number;
+  
+  // Meta information
   createdBy?: string;
-  createdAt?: string;
   lastUpdatedBy?: string;
-  lastUpdatedAt?: string;
   
-  // Database field format (snake_case)
-  customer_id?: string;
-  vehicle_id?: string;
-  
-  // Client-side aliases (camelCase)
+  // Vehicle information
   vehicleId?: string;
-  vehicle_make?: string;
+  vehicle_id?: string;
   vehicleMake?: string;
-  vehicle_model?: string;
+  vehicle_make?: string;
   vehicleModel?: string;
-  vehicle_year?: string;
+  vehicle_model?: string;
   vehicleYear?: string;
+  vehicle_year?: string;
   
-  technician_id?: string;
+  // Financial info
+  totalCost?: number;
   total_cost?: number;
   estimated_hours?: number;
+  estimatedHours?: number;
+  
+  // Service info
+  serviceType?: string;
   service_type?: string;
-  service_category?: string;
   serviceCategory?: string;
+  service_category?: string;
   
   // Added vehicle-related fields for form consistency
   odometer?: string;
@@ -110,6 +134,7 @@ export interface WorkOrder {
   bodyStyle?: string;
   country?: string;
   
+  // Vehicle details as an object
   vehicleDetails?: {
     make?: string;
     model?: string;
@@ -119,8 +144,32 @@ export interface WorkOrder {
   };
 }
 
-// Define status map type
+// Define status types
 export type WorkOrderStatusType = "pending" | "in-progress" | "completed" | "cancelled";
 
-// Define priority map type
+// Define priority types
 export type WorkOrderPriorityType = "low" | "medium" | "high";
+
+// Export status map for UI display
+export const statusMap: Record<WorkOrderStatusType, string> = {
+  "pending": "Pending",
+  "in-progress": "In Progress",
+  "completed": "Completed",
+  "cancelled": "Cancelled"
+};
+
+// Export priority map for UI display
+export const priorityMap: Record<WorkOrderPriorityType, { label: string; classes: string; }> = {
+  "low": {
+    label: "Low",
+    classes: "bg-slate-100 text-slate-700"
+  },
+  "medium": {
+    label: "Medium",
+    classes: "bg-blue-100 text-blue-700"
+  },
+  "high": {
+    label: "High", 
+    classes: "bg-red-100 text-red-700"
+  }
+};
