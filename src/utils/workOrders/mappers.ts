@@ -1,4 +1,3 @@
-
 import { WorkOrder, TimeEntry, DbTimeEntry, WorkOrderStatusType, WorkOrderPriorityType } from "@/types/workOrder";
 import { normalizeWorkOrder } from "./formatters";
 
