@@ -9,6 +9,7 @@ import { TimeEntry, WorkOrderTemplate } from "@/types/workOrder";
 import { supabase } from '@/lib/supabase';
 import { Customer, adaptCustomerForUI } from "@/types/customer";
 import { toast } from "@/hooks/use-toast";
+import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
 
 // Import components
 import { CustomerInfoSection } from "@/components/work-orders/CustomerInfoSection";
@@ -56,6 +57,7 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [isFleetCustomer, setIsFleetCustomer] = useState<boolean>(false);
+  const { createTemplate } = useWorkOrderTemplates();
 
   const customerId = searchParams.get('customerId');
   const vehicleId = searchParams.get('vehicleId');
@@ -153,13 +155,30 @@ export const WorkOrderForm: React.FC<WorkOrderFormProps> = ({
     setTimeEntries(entries);
   };
 
-  const handleSaveTemplate = (template: WorkOrderTemplate) => {
+  const handleSaveTemplate = async (template: WorkOrderTemplate) => {
     console.log("Saving template:", template.name);
-    workOrderTemplates.push(template);
-    toast({
-      title: "Template Saved",
-      description: `Template "${template.name}" has been saved.`,
-    });
+    try {
+      const result = await createTemplate(template);
+      if (result.success) {
+        toast({
+          title: "Template Saved",
+          description: `Template "${template.name}" has been saved.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: `Failed to save template: ${result.message}`,
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error("Error saving template:", err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while saving the template.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleServiceChecked = (services: string[]) => {
