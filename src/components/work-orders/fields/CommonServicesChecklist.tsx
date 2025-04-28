@@ -1,19 +1,18 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { serviceCategories } from "@/data/commonServices";
+import { ServiceCategoryList } from "./services/ServiceCategoryList";
+import { ServiceSubcategoryGrid } from "./services/ServiceSubcategoryGrid";
 
 interface CommonServicesChecklistProps {
   onServiceChecked: (checkedServices: string[]) => void;
 }
 
-export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = ({ 
-  onServiceChecked 
+export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = ({
+  onServiceChecked,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [checkedServices, setCheckedServices] = useState<Record<string, boolean>>({});
@@ -21,7 +20,7 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
   const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>(
     serviceCategories[0]?.name || null
   );
-  
+
   const handleCheckboxChange = (service: string, checked: boolean) => {
     const updatedServices = { ...checkedServices, [service]: checked };
     setCheckedServices(updatedServices);
@@ -33,9 +32,7 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
     onServiceChecked(selectedServices);
   };
 
-  // Count total checked services
   const checkedCount = Object.values(checkedServices).filter(Boolean).length;
-
   const selectedCategory = serviceCategories.find(cat => cat.name === selectedMainCategory);
 
   return (
@@ -59,7 +56,7 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
         </div>
         {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
       </CardHeader>
-      
+
       {expanded && (
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -71,59 +68,19 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
 
             <TabsContent value="categories">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Main Categories */}
-                <div className="space-y-2 border-r pr-4">
-                  <h4 className="font-medium text-sm text-blue-800 border-b pb-1 mb-2">
-                    Categories
-                  </h4>
-                  {serviceCategories.map((category) => (
-                    <div
-                      key={category.name}
-                      className={`cursor-pointer p-2 rounded-lg transition-colors ${
-                        selectedMainCategory === category.name
-                          ? "bg-blue-100 text-blue-800"
-                          : "hover:bg-gray-100"
-                      }`}
-                      onClick={() => setSelectedMainCategory(category.name)}
-                    >
-                      {category.name}
-                    </div>
-                  ))}
-                </div>
+                <ServiceCategoryList
+                  categories={serviceCategories}
+                  selectedCategory={selectedMainCategory}
+                  onCategorySelect={setSelectedMainCategory}
+                />
 
-                {/* Subcategories and Services */}
-                <div className="col-span-3">
-                  {selectedCategory && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      {selectedCategory.subcategories.map((subcategory) => (
-                        <div key={subcategory.name} className="space-y-2">
-                          <h4 className="font-medium text-sm text-blue-800 border-b pb-1 mb-2">
-                            {subcategory.name}
-                          </h4>
-                          <div className="space-y-2">
-                            {subcategory.services.map((service) => (
-                              <div key={service} className="flex items-center space-x-2">
-                                <Checkbox 
-                                  id={`service-${service}`}
-                                  checked={checkedServices[service] || false}
-                                  onCheckedChange={(checked) => 
-                                    handleCheckboxChange(service, checked === true)
-                                  }
-                                />
-                                <Label 
-                                  htmlFor={`service-${service}`}
-                                  className="text-sm cursor-pointer"
-                                >
-                                  {service}
-                                </Label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {selectedCategory && (
+                  <ServiceSubcategoryGrid
+                    category={selectedCategory}
+                    checkedServices={checkedServices}
+                    onServiceCheck={handleCheckboxChange}
+                  />
+                )}
               </div>
             </TabsContent>
 
