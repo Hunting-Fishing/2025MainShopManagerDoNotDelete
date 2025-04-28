@@ -1,14 +1,22 @@
 
 import React, { useState } from "react";
-import { SettingsLayout } from "@/components/settings/SettingsLayout";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Cog, User, Building, Shield, Bell, Palette, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link, ShieldCheck } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 
 // Main Settings component
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("grid");
+  const navigate = useNavigate();
 
   const settingsCategories = [
     {
@@ -108,20 +116,25 @@ const Settings = () => {
   };
 
   const handleCardClick = (categoryId: string) => {
-    // Navigate to specific settings tab
-    const tabContent = document.getElementById(`settings-tab-content`);
-    if (tabContent) {
-      // Scroll to tab content area
-      tabContent.scrollIntoView({ behavior: "smooth" });
-    }
-    
-    // This is where we would update the URL or state to show the specific settings section
-    console.log(`Navigating to settings: ${categoryId}`);
+    // Navigate to the specific settings page
+    navigate(`/settings/${categoryId}`);
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex justify-between items-center mb-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Settings</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex justify-between items-center my-6">
         <h1 className="text-2xl font-bold">Settings</h1>
         <div className="flex space-x-2 bg-muted/20 rounded-md p-1">
           <button
@@ -180,18 +193,8 @@ const Settings = () => {
           </CardContent>
         </Card>
       )}
-
-      <div id="settings-tab-content" className="mt-12">
-        {/* Render selected settings section */}
-        <SettingsTabContent tab="account" />
-      </div>
     </div>
   );
-};
-
-// Component to render the content based on active tab
-const SettingsTabContent = ({ tab }: { tab: string }) => {
-  return <SettingsLayout defaultTab={tab} />;
 };
 
 export default Settings;
