@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { serviceCategories } from "@/data/commonServices";
 
 interface CommonServicesChecklistProps {
@@ -16,7 +17,10 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [checkedServices, setCheckedServices] = useState<Record<string, boolean>>({});
-  const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("categories");
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>(
+    serviceCategories[0]?.name || null
+  );
   
   const handleCheckboxChange = (service: string, checked: boolean) => {
     const updatedServices = { ...checkedServices, [service]: checked };
@@ -31,6 +35,8 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
 
   // Count total checked services
   const checkedCount = Object.values(checkedServices).filter(Boolean).length;
+
+  const selectedCategory = serviceCategories.find(cat => cat.name === selectedMainCategory);
 
   return (
     <Card>
@@ -56,64 +62,86 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
       
       {expanded && (
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Main Categories */}
-            <div className="space-y-2 border-r pr-4">
-              <h4 className="font-medium text-sm text-blue-800 border-b pb-1 mb-2">
-                Categories
-              </h4>
-              {serviceCategories.map((category) => (
-                <div
-                  key={category.name}
-                  className={`cursor-pointer p-2 rounded-lg transition-colors ${
-                    selectedMainCategory === category.name
-                      ? "bg-blue-100 text-blue-800"
-                      : "hover:bg-gray-100"
-                  }`}
-                  onClick={() => setSelectedMainCategory(category.name)}
-                >
-                  {category.name}
-                </div>
-              ))}
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="categories">Categories</TabsTrigger>
+              <TabsTrigger value="transmission">Transmission</TabsTrigger>
+              <TabsTrigger value="trans-axle">Trans-Axle</TabsTrigger>
+            </TabsList>
 
-            {/* Subcategories and Services */}
-            <div className="col-span-3">
-              {selectedMainCategory && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {serviceCategories
-                    .find((cat) => cat.name === selectedMainCategory)
-                    ?.subcategories.map((subcategory) => (
-                      <div key={subcategory.name} className="space-y-2">
-                        <h4 className="font-medium text-sm text-blue-800 border-b pb-1 mb-2">
-                          {subcategory.name}
-                        </h4>
-                        <div className="space-y-2">
-                          {subcategory.services.map((service) => (
-                            <div key={service} className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`service-${service}`}
-                                checked={checkedServices[service] || false}
-                                onCheckedChange={(checked) => 
-                                  handleCheckboxChange(service, checked === true)
-                                }
-                              />
-                              <Label 
-                                htmlFor={`service-${service}`}
-                                className="text-sm cursor-pointer"
-                              >
-                                {service}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+            <TabsContent value="categories">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Main Categories */}
+                <div className="space-y-2 border-r pr-4">
+                  <h4 className="font-medium text-sm text-blue-800 border-b pb-1 mb-2">
+                    Categories
+                  </h4>
+                  {serviceCategories.map((category) => (
+                    <div
+                      key={category.name}
+                      className={`cursor-pointer p-2 rounded-lg transition-colors ${
+                        selectedMainCategory === category.name
+                          ? "bg-blue-100 text-blue-800"
+                          : "hover:bg-gray-100"
+                      }`}
+                      onClick={() => setSelectedMainCategory(category.name)}
+                    >
+                      {category.name}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-          </div>
-          
+
+                {/* Subcategories and Services */}
+                <div className="col-span-3">
+                  {selectedCategory && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {selectedCategory.subcategories.map((subcategory) => (
+                        <div key={subcategory.name} className="space-y-2">
+                          <h4 className="font-medium text-sm text-blue-800 border-b pb-1 mb-2">
+                            {subcategory.name}
+                          </h4>
+                          <div className="space-y-2">
+                            {subcategory.services.map((service) => (
+                              <div key={service} className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id={`service-${service}`}
+                                  checked={checkedServices[service] || false}
+                                  onCheckedChange={(checked) => 
+                                    handleCheckboxChange(service, checked === true)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`service-${service}`}
+                                  className="text-sm cursor-pointer"
+                                >
+                                  {service}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="transmission">
+              <div className="space-y-4">
+                <h3 className="font-medium">Transmission Services</h3>
+                {/* Add transmission-specific services here */}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="trans-axle">
+              <div className="space-y-4">
+                <h3 className="font-medium">Trans-Axle Services</h3>
+                {/* Add trans-axle specific services here */}
+              </div>
+            </TabsContent>
+          </Tabs>
+
           {checkedCount > 0 && (
             <div className="flex justify-end mt-4">
               <Button
