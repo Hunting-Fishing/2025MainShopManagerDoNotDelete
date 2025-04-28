@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
 import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { useTranslation } from "react-i18next";
+import { SettingsLayout } from "@/components/settings/SettingsLayout";
 import {
   Building,
   User,
@@ -17,7 +17,6 @@ import {
   Users,
   MailPlus,
   Wrench,
-  Workflow,
   CircleDollarSign,
   FileText,
   AlertTriangle,
@@ -237,11 +236,7 @@ const SettingsPage = () => {
 
 // Component to render the content based on active tab
 const SettingsTabContent = ({ tab }: { tab: string }) => {
-  // Import the SettingsLayout for backward compatibility
-  const { SettingsLayout } = require("@/components/settings/SettingsLayout");
-  
-  // Later this can be changed to directly render specific components
-  // based on the tab value, without using the tabs from SettingsLayout
+  // Use a proper import instead of require
   return <SettingsLayout defaultTab={tab} />;
 };
 
