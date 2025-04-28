@@ -66,14 +66,13 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
               <TabsTrigger value="trans-axle">Trans-Axle</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="categories">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <TabsContent value="categories" className="m-0">
+              <div className="flex gap-4">
                 <ServiceCategoryList
                   categories={serviceCategories}
                   selectedCategory={selectedMainCategory}
                   onCategorySelect={setSelectedMainCategory}
                 />
-
                 {selectedCategory && (
                   <ServiceSubcategoryGrid
                     category={selectedCategory}
