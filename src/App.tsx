@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -32,7 +33,7 @@ import TeamHistorySettings from './pages/settings/TeamHistorySettings';
 import EmailSchedulingSettings from './pages/settings/EmailSchedulingSettings';
 import DataExportSettings from './pages/settings/DataExportSettings';
 import LanguageSettings from './pages/settings/LanguageSettings';
-import { WorkOrderCreate } from './pages/WorkOrderCreate';
+import WorkOrderCreate from './pages/WorkOrderCreate';
 import WorkOrders from './pages/WorkOrders';
 import { VehicleDetailsPage } from './components/customers/vehicles/VehicleDetailsPage';
 import { CustomerDataProvider } from './contexts/CustomerDataProvider';
