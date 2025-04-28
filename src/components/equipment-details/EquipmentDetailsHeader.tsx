@@ -25,8 +25,7 @@ export function EquipmentDetailsHeader({ equipmentItem, isMaintenanceOverdue }: 
           <p className="text-slate-500">{equipmentItem.id} | {equipmentItem.model}</p>
         </div>
         <EquipmentActionButtons 
-          equipmentItem={equipmentItem}
-          isMaintenanceOverdue={isMaintenanceOverdue}
+          equipment={equipmentItem}
         />
       </div>
     </div>

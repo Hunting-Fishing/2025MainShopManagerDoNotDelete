@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/table";
 import { WorkOrder } from "@/types/workOrder";
 import { Link } from "react-router-dom";
-import { formatDate, formatTimeInHoursAndMinutes } from "@/utils/workOrders/formatters";
+import { formatTimeInHoursAndMinutes } from "@/utils/workOrders/formatters";
+import { formatDate } from "@/utils/workOrderUtils"; // Import from workOrderUtils instead
 import { Badge } from "@/components/ui/badge";
 import { statusMap, priorityMap } from "@/utils/workOrders";
 
