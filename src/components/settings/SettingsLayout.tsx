@@ -26,9 +26,22 @@ import { EmailSchedulingTab } from "./EmailSchedulingTab";
 import { DataExportTab } from "./DataExportTab";
 import { LanguageTab } from "./LanguageTab";
 
-export const SettingsLayout = () => {
-  // Get active tab from localStorage or default to "account"
+interface SettingsLayoutProps {
+  defaultTab?: string;
+}
+
+export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ defaultTab }) => {
+  // Get active tab from URL parameter, defaultTab prop, or localStorage, or default to "account"
   const [activeTab, setActiveTab] = useState(() => {
+    // Check URL parameters first
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get("tab");
+    
+    // Then check prop
+    if (tabFromUrl) return tabFromUrl;
+    if (defaultTab) return defaultTab;
+    
+    // Finally check localStorage
     const savedTab = localStorage.getItem("settingsActiveTab");
     return savedTab || "account";
   });
@@ -129,3 +142,4 @@ export const SettingsLayout = () => {
     </ResponsiveContainer>
   );
 };
+
