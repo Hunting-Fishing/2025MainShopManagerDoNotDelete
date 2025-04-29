@@ -132,6 +132,7 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
     // Set default values for required fields
     const productSuggestion = {
       ...suggestion,
+      category_id: suggestion.category_id || 'default', // Ensure category_id is set
       product_type: 'suggested',
       is_approved: false,
       is_featured: false,
@@ -160,6 +161,11 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
 
 export async function createProduct(product: Partial<Product>): Promise<Product> {
   try {
+    // Ensure required fields are present
+    if (!product.category_id) {
+      throw new Error("Category ID is required");
+    }
+
     const { data, error } = await supabase
       .from('products')
       .insert(product)

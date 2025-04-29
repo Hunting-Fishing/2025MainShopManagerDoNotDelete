@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +8,7 @@ import { Wrench, Settings, Cog, LifeBuoy, Gauge, Fuel, ArrowRight } from 'lucide
 const ShoppingCategories = () => {
   return (
     <ShoppingPageLayout title="Tool Categories" description="Explore our wide range of automotive tool categories">
-      <Tabs defaultActive="engine">
+      <Tabs defaultValue="engine">
         <TabsList>
           <TabsTrigger value="engine">Engine Tools</TabsTrigger>
           <TabsTrigger value="brakes">Brake Tools</TabsTrigger>
