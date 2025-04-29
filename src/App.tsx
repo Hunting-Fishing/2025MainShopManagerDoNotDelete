@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -16,6 +15,8 @@ import Team from './pages/Team';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import Shopping from './pages/Shopping';
+import ShoppingAdmin from './pages/ShoppingAdmin';
 
 // Import the settings pages
 import AccountSettings from './pages/settings/AccountSettings';
@@ -75,6 +76,10 @@ function App() {
         return 'Create Work Order | Easy Shop Manager';
       case '/login':
         return 'Login | Easy Shop Manager';
+      case '/shopping':
+        return 'Shop | Easy Shop Manager';
+      case '/shopping/admin':
+        return 'Shop Admin | Easy Shop Manager';
       default:
         return 'Easy Shop Manager';
     }
@@ -114,6 +119,19 @@ function App() {
           <Route path="invoices" element={<>Invoices</>} />
           <Route path="invoices/new" element={<>Create Invoice</>} />
           <Route path="invoices/:invoiceId" element={<>Invoice Details</>} />
+          
+          {/* Shopping routes */}
+          <Route path="shopping" element={<Shopping />} />
+          <Route path="shopping/admin" element={<ShoppingAdmin />} />
+          <Route path="shopping/products" element={<>Products</>} />
+          <Route path="shopping/categories" element={<>Categories</>} />
+          <Route path="shopping/cart" element={<>Shopping Cart</>} />
+          <Route path="shopping/wishlist" element={<>Wishlist</>} />
+          <Route path="shopping/deals" element={<>Special Deals</>} />
+          <Route path="shopping/recommendations" element={<>Recommended</>} />
+          <Route path="shopping/orders" element={<>My Orders</>} />
+          <Route path="shopping/suggestions" element={<>Product Suggestions</>} />
+          <Route path="shopping/saved" element={<>Saved Items</>} />
           
           {/* Settings routes */}
           <Route path="settings" element={<Settings />} />
