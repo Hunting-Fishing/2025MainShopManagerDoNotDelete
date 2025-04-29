@@ -1,277 +1,163 @@
 
-import React, { useState, useEffect } from 'react';
-import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
-import { SuggestionForm } from '@/components/shopping/SuggestionForm';
-import { ProductGrid } from '@/components/shopping/ProductGrid';
-import { useProducts } from '@/hooks/useProducts';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Coffee, ThumbsUp, Heart, Lightbulb, Tool, Filter, ArrowUpDown } from 'lucide-react'; 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from 'react';
+import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import SuggestionForm from "@/components/shopping/SuggestionForm";
+import { useProducts } from '@/hooks/useProducts';
+import { Product } from '@/types/shopping';
+import { Badge } from '@/components/ui/badge';
+import { Wrench } from 'lucide-react'; // Changed from 'Tool' to 'Wrench'
+import ShoppingPageLayout from '@/components/shopping/ShoppingPageLayout';
+import { toast } from '@/hooks/use-toast';
 
-const ProductSuggestionsPage = () => {
-  const [activeTab, setActiveTab] = useState('suggest');
+export default function ProductSuggestionsPage() {
+  const [activeTab, setActiveTab] = useState("suggest");
   const { fetchUserSuggestions, suggestProduct } = useProducts();
-  const [suggestedProducts, setSuggestedProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortOption, setSortOption] = useState('newest');
-  const [approvalFilter, setApprovalFilter] = useState('all');
-
-  useEffect(() => {
-    async function loadSuggestions() {
-      setIsLoading(true);
-      try {
-        // Include unapproved suggestions in the results
-        const includeUnapproved = approvalFilter === 'all' || approvalFilter === 'pending';
-        const suggestions = await fetchUserSuggestions(includeUnapproved);
-        
-        let filteredSuggestions = [...suggestions];
-        
-        // Apply approval filter
-        if (approvalFilter === 'approved') {
-          filteredSuggestions = filteredSuggestions.filter(item => item.is_approved);
-        } else if (approvalFilter === 'pending') {
-          filteredSuggestions = filteredSuggestions.filter(item => !item.is_approved);
-        }
-        
-        // Apply sorting
-        filteredSuggestions.sort((a, b) => {
-          switch (sortOption) {
-            case 'newest':
-              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            case 'oldest':
-              return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-            case 'price_asc':
-              return (a.price || 0) - (b.price || 0);
-            case 'price_desc':
-              return (b.price || 0) - (a.price || 0);
-            case 'name_asc':
-              return a.title.localeCompare(b.title);
-            case 'name_desc':
-              return b.title.localeCompare(a.title);
-            default:
-              return 0;
-          }
-        });
-        
-        setSuggestedProducts(filteredSuggestions);
-      } catch (error) {
-        console.error('Error loading suggestions:', error);
-      } finally {
-        setIsLoading(false);
-      }
+  const [userSuggestions, setUserSuggestions] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Function to load user suggestions
+  const loadUserSuggestions = async () => {
+    setIsLoading(true);
+    try {
+      const suggestions = await fetchUserSuggestions();
+      setUserSuggestions(suggestions);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      toast({
+        title: "Error loading suggestions",
+        description: "Could not load product suggestions. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    if (activeTab === 'browse') {
-      loadSuggestions();
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === "browse" && userSuggestions.length === 0) {
+      loadUserSuggestions();
     }
-  }, [activeTab, fetchUserSuggestions, sortOption, approvalFilter]);
+  };
 
-  return (
-    <ShoppingPageLayout
-      title="Product Suggestions"
-      description="Suggest tools you'd like to see in our catalog or browse community suggestions"
-    >
-      <div className="mb-6">
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-6 items-center">
-              <div className="bg-blue-500 p-4 rounded-full text-white">
-                <Lightbulb size={32} />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-blue-800 mb-2">
-                  Help Us Improve Our Tool Catalog
-                </h3>
-                <p className="text-blue-700">
-                  Know of a great automotive tool that's missing from our catalog? Help fellow mechanics by suggesting 
-                  it here. We regularly review community suggestions and add the best ones to our collection.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+  // Handle form submission
+  const handleSubmit = async (data: Partial<Product>) => {
+    try {
+      await suggestProduct(data);
+      setActiveTab("browse");
+      await loadUserSuggestions(); // Reload suggestions after adding a new one
+      return true;
+    } catch (error) {
+      console.error("Error submitting suggestion:", error);
+      return false;
+    }
+  };
 
-      <Tabs defaultValue="suggest" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted/60 grid w-full grid-cols-2">
-          <TabsTrigger value="suggest" className="data-[state=active]:bg-white rounded-md">
-            <div className="flex items-center gap-2">
-              <Coffee className="h-4 w-4" />
-              <span>Suggest a Product</span>
+  // Components for displaying user suggestions
+  const SuggestionItem = ({ product }: { product: Product }) => (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          {product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={product.title} 
+              className="w-16 h-16 object-contain"
+            />
+          ) : (
+            <div className="w-16 h-16 bg-gray-100 flex items-center justify-center">
+              <Wrench className="text-gray-400" size={24} /> {/* Changed from 'Tool' to 'Wrench' */}
             </div>
-          </TabsTrigger>
-          <TabsTrigger value="browse" className="data-[state=active]:bg-white rounded-md">
-            <div className="flex items-center gap-2">
-              <ThumbsUp className="h-4 w-4" />
-              <span>Browse Suggestions</span>
-            </div>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="suggest" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <SuggestionForm />
-            </div>
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>How It Works</CardTitle>
-                  <CardDescription>
-                    Our community-driven suggestions process
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-blue-100 text-blue-600 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
-                      <span className="font-medium">1</span>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Submit a Suggestion</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Fill out the form with information about the tool you're recommending
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="bg-blue-100 text-blue-600 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
-                      <span className="font-medium">2</span>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Review Process</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Our team reviews all suggestions for quality and relevance
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="bg-blue-100 text-blue-600 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0">
-                      <span className="font-medium">3</span>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Product Addition</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Approved suggestions are added to our product catalog
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <p className="text-xs text-muted-foreground">
-                    We appreciate your contribution to making our tool catalog more comprehensive!
-                  </p>
-                </CardFooter>
-              </Card>
+          )}
+          <div className="flex-1">
+            <h3 className="text-lg font-medium">{product.title}</h3>
+            <p className="text-sm text-gray-500 mt-1">{product.description || "No description provided"}</p>
+            
+            <div className="flex items-center mt-2 gap-2">
+              {product.is_approved ? (
+                <Badge className="bg-green-100 text-green-800 border border-green-300">
+                  Approved
+                </Badge>
+              ) : (
+                <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300">
+                  Pending Review
+                </Badge>
+              )}
+              
+              {product.price && (
+                <span className="text-sm font-medium">${product.price.toFixed(2)}</span>
+              )}
             </div>
           </div>
-        </TabsContent>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const EmptySuggestions = () => (
+    <div className="text-center py-12">
+      <Wrench className="mx-auto text-gray-400" size={48} /> {/* Changed from 'Tool' to 'Wrench' */}
+      <h3 className="mt-4 text-lg font-medium">No Suggestions Yet</h3>
+      <p className="mt-2 text-gray-500">Be the first to suggest a product!</p>
+      <Button 
+        variant="outline" 
+        className="mt-4"
+        onClick={() => setActiveTab("suggest")}
+      >
+        Suggest a Product
+      </Button>
+    </div>
+  );
+
+  return (
+    <ShoppingPageLayout title="Product Suggestions">
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold">Product Suggestions</h1>
+          <p className="text-gray-600 mt-2">
+            Suggest tools and products that you'd like to see in our shop or browse existing suggestions
+          </p>
+        </div>
         
-        <TabsContent value="browse">
-          <div className="mb-6">
-            <div className="flex flex-col md:flex-row justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-medium mb-1">Community Suggestions</h3>
-                <p className="text-muted-foreground">
-                  These are tools that have been suggested by our community. Approved suggestions will appear in our main catalog.
-                </p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-2 mt-4 md:mt-0">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <Select 
-                    defaultValue="all" 
-                    value={approvalFilter}
-                    onValueChange={(value) => setApprovalFilter(value)}
-                  >
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder="Filter by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All suggestions</SelectItem>
-                      <SelectItem value="approved">Approved only</SelectItem>
-                      <SelectItem value="pending">Pending approval</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                  <Select 
-                    defaultValue="newest"
-                    value={sortOption}
-                    onValueChange={(value) => setSortOption(value)}
-                  >
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest first</SelectItem>
-                      <SelectItem value="oldest">Oldest first</SelectItem>
-                      <SelectItem value="price_asc">Price: Low to high</SelectItem>
-                      <SelectItem value="price_desc">Price: High to low</SelectItem>
-                      <SelectItem value="name_asc">Name: A to Z</SelectItem>
-                      <SelectItem value="name_desc">Name: Z to A</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            
+        <Tabs 
+          defaultValue="suggest" 
+          value={activeTab} 
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="suggest">Suggest a Product</TabsTrigger>
+            <TabsTrigger value="browse">Browse Suggestions</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="suggest" className="mt-4">
+            <Card>
+              <CardContent className="pt-6">
+                <SuggestionForm onSubmit={handleSubmit} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="browse" className="mt-4">
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <div className="h-48 bg-slate-200 rounded-t-lg"></div>
-                    <CardContent className="p-4">
-                      <div className="h-6 bg-slate-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
-                      <div className="h-4 bg-slate-200 rounded w-2/4 mb-4"></div>
-                      <div className="h-9 bg-slate-200 rounded w-full"></div>
-                    </CardContent>
-                  </Card>
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : userSuggestions.length > 0 ? (
+              <div>
+                {userSuggestions.map((product) => (
+                  <SuggestionItem key={product.id} product={product} />
                 ))}
               </div>
             ) : (
-              <>
-                {approvalFilter !== 'all' && (
-                  <div className="mb-4">
-                    <Badge 
-                      variant={approvalFilter === 'approved' ? 'success' : 'default'} 
-                      className="mr-2"
-                    >
-                      Showing {approvalFilter === 'approved' ? 'approved' : 'pending'} suggestions
-                    </Badge>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setApprovalFilter('all')}
-                      className="text-xs"
-                    >
-                      Clear filter
-                    </Button>
-                  </div>
-                )}
-                
-                <ProductGrid 
-                  products={suggestedProducts} 
-                  isLoading={isLoading} 
-                  emptyMessage="No product suggestions yet. Be the first to suggest a tool!" 
-                />
-              </>
+              <EmptySuggestions />
             )}
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </ShoppingPageLayout>
   );
-};
-
-export default ProductSuggestionsPage;
+}
