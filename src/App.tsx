@@ -40,6 +40,7 @@ import WorkOrderDetails from './pages/WorkOrderDetails';
 import { VehicleDetailsPage } from './components/customers/vehicles/VehicleDetailsPage';
 import { CustomerDataProvider } from './contexts/CustomerDataProvider';
 import ShoppingCategories from './pages/ShoppingCategories';
+import CategoryDetailPage from './pages/CategoryDetailPage';
 
 function App() {
   const location = useLocation();
@@ -125,6 +126,7 @@ function App() {
           <Route path="shopping" element={<Shopping />} />
           <Route path="shopping/admin" element={<ShoppingAdmin />} />
           <Route path="shopping/categories" element={<ShoppingCategories />} />
+          <Route path="shopping/categories/:categorySlug" element={<CategoryDetailPage />} />
           <Route path="shopping/products" element={<>Products</>} />
           <Route path="shopping/cart" element={<>Shopping Cart</>} />
           <Route path="shopping/wishlist" element={<>Wishlist</>} />
