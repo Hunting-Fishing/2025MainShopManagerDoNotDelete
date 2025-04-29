@@ -1,49 +1,23 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { FormField } from '@/components/ui/form-field';
 import { toast } from '@/hooks/use-toast';
 import { Product } from '@/types/shopping';
 import { useProducts } from '@/hooks/useProducts';
 import { useToolCategories } from '@/hooks/useToolCategories';
-import { ToolCategory } from '@/hooks/useToolCategories';
 import { MANUFACTURERS } from '@/data/manufacturersData';
+import { TextAreaField } from './form/TextAreaField';
+import { CategorySelector } from './form/CategorySelector';
+import { ManufacturerSelector } from './form/ManufacturerSelector';
 
 export function SuggestionForm() {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
   const { suggestProduct } = useProducts();
   const { toolCategories } = useToolCategories();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [subCategories, setSubCategories] = useState<string[]>([]);
   
-  // Watch the category to populate subcategories
-  const categoryValue = watch('category');
-  
-  // Effect to update subcategories when category changes
-  useEffect(() => {
-    if (categoryValue) {
-      const selectedToolCategory = toolCategories.find(tc => tc.category === categoryValue);
-      if (selectedToolCategory && selectedToolCategory.items) {
-        setSubCategories(selectedToolCategory.items);
-      } else {
-        setSubCategories([]);
-      }
-      // Reset subcategory when category changes
-      setValue('subcategory', '');
-    }
-  }, [categoryValue, toolCategories, setValue]);
-
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
@@ -98,90 +72,27 @@ export function SuggestionForm() {
         placeholder="Enter product name"
       />
 
-      {/* Description field - using Textarea directly instead of 'as' prop */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium flex items-center">
-          Description
-          <span className="text-destructive ml-1">*</span>
-        </label>
-        <Textarea
-          {...register('description', { required: "Description is required" })}
-          placeholder="Describe the product and its features"
-        />
-        {errors.description && (
-          <p className="text-xs font-medium text-destructive">{errors.description.message as string}</p>
-        )}
-      </div>
+      <TextAreaField
+        label="Description"
+        name="description"
+        register={register}
+        error={errors.description}
+        placeholder="Describe the product and its features"
+        required
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center">
-            Tool Category
-            <span className="text-destructive ml-1">*</span>
-          </label>
-          <Select
-            value={categoryValue}
-            onValueChange={(value) => setValue('category', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {toolCategories.map((category) => (
-                <SelectItem key={category.category} value={category.category}>
-                  {category.category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.category && (
-            <p className="text-xs font-medium text-destructive">{errors.category.message as string}</p>
-          )}
-        </div>
+      <CategorySelector
+        toolCategories={toolCategories}
+        watch={watch}
+        setValue={setValue}
+        errors={errors}
+      />
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center">
-            Subcategory
-          </label>
-          <Select
-            disabled={!categoryValue || subCategories.length === 0}
-            value={watch('subcategory') || ''}
-            onValueChange={(value) => setValue('subcategory', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a subcategory" />
-            </SelectTrigger>
-            <SelectContent>
-              {subCategories.map((sub) => (
-                <SelectItem key={sub} value={sub}>
-                  {sub}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium flex items-center">
-          Manufacturer
-        </label>
-        <Select 
-          value={watch('manufacturer') || ''}
-          onValueChange={(value) => setValue('manufacturer', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a manufacturer" />
-          </SelectTrigger>
-          <SelectContent>
-            {MANUFACTURERS.map((manufacturer) => (
-              <SelectItem key={manufacturer} value={manufacturer}>
-                {manufacturer}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <ManufacturerSelector
+        manufacturers={MANUFACTURERS}
+        watch={watch}
+        setValue={setValue}
+      />
 
       <FormField
         label="Price (optional)"
@@ -203,16 +114,12 @@ export function SuggestionForm() {
         placeholder="https://www.example.com/product"
       />
 
-      {/* Recommendation reason field - using Textarea directly instead of 'as' prop */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">
-          Why do you recommend this product? (optional)
-        </label>
-        <Textarea
-          {...register('reason')}
-          placeholder="Tell us why this product should be added to our store"
-        />
-      </div>
+      <TextAreaField
+        label="Why do you recommend this product? (optional)"
+        name="reason"
+        register={register}
+        placeholder="Tell us why this product should be added to our store"
+      />
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Submitting..." : "Submit Suggestion"}
