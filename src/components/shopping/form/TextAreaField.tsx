@@ -1,12 +1,12 @@
 
 import { Textarea } from "@/components/ui/textarea";
-import { UseFormRegister, FieldError } from "react-hook-form";
+import { UseFormRegister, FieldError, FieldErrors } from "react-hook-form";
 
 interface TextAreaFieldProps {
   label: string;
   name: string;
   register: UseFormRegister<any>;
-  error?: FieldError;
+  error?: FieldError | FieldErrors;
   placeholder?: string;
   required?: boolean;
 }
@@ -30,7 +30,9 @@ export function TextAreaField({
         placeholder={placeholder}
       />
       {error && (
-        <p className="text-xs font-medium text-destructive">{error.message as string}</p>
+        <p className="text-xs font-medium text-destructive">
+          {(error as FieldError).message as string}
+        </p>
       )}
     </div>
   );
