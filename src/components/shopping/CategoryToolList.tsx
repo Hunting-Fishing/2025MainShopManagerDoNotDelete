@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Tool, WrenchScrewdriver, Wrench, Hammer, Screwdriver, Shovel, PaintBucket, Truck, Gauge, Scissors } from "lucide-react";
+import { ChevronRight, Wrench, Hammer, Truck, Gauge, Scissors } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ToolCategory {
@@ -36,20 +36,20 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
   };
 
   const getIconForCategory = (category: string) => {
-    // Map categories to icons based on their name
+    // Map categories to icons based on their name - using only available icons
     const categoryToIcon: Record<string, React.ComponentType<any>> = {
       "Hand Tools": Wrench,
-      "Power Tools": WrenchScrewdriver,
+      "Power Tools": Wrench,
       "Diagnostic Tools": Gauge,
-      "Shop Equipment": Tool,
-      "Specialty Tools": Screwdriver,
+      "Shop Equipment": Wrench,
+      "Specialty Tools": Wrench,
       "Body Shop": Hammer,
-      "Cleaning Supplies": PaintBucket,
+      "Cleaning Supplies": Scissors,
       "Lighting": Scissors,
       "Lifting Equipment": Truck,
     };
     
-    return categoryToIcon[category] || Tool;
+    return categoryToIcon[category] || Wrench;
   };
   
   return (
