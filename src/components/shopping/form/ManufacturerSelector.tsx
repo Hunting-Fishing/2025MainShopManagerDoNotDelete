@@ -32,6 +32,7 @@ export function ManufacturerSelector({
           <SelectValue placeholder="Select a manufacturer" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="ALL">ALL</SelectItem>
           {manufacturers.map((manufacturer) => (
             <SelectItem key={manufacturer} value={manufacturer}>
               {manufacturer}

@@ -32,7 +32,6 @@ export function SuggestionForm() {
         title: data.title,
         description: data.description,
         price: data.price ? parseFloat(data.price) : undefined,
-        image_url: data.image_url,
         affiliate_link: data.affiliate_link,
         product_type: 'suggested',
         category_id: 'suggestion', // Will be properly assigned by backend
@@ -100,12 +99,6 @@ export function SuggestionForm() {
         step="0.01"
         {...register('price')}
         placeholder="Enter estimated price"
-      />
-
-      <FormField
-        label="Image URL (optional)"
-        {...register('image_url')}
-        placeholder="Link to product image"
       />
 
       <FormField
