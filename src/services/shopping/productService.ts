@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFilterOptions } from "@/types/shopping";
 
@@ -142,8 +141,13 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
       is_approved: false,
       is_featured: false,
       is_bestseller: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       ...suggestion,
     };
+
+    // Log the submission for debugging
+    console.log("Submitting product suggestion:", productSuggestion);
 
     const { data, error } = await supabase
       .from('products')
@@ -261,5 +265,65 @@ export async function getProductReviews(productId: string): Promise<any[]> {
   } catch (error) {
     console.error("Error in getProductReviews:", error);
     return [];
+  }
+}
+
+// Add a new function to extract images from Amazon product links
+export async function extractAmazonProductInfo(amazonUrl: string): Promise<Partial<Product> | null> {
+  try {
+    // This would normally be an edge function call
+    // For now, we'll just return a placeholder
+    console.log("Extracting Amazon product info for:", amazonUrl);
+    
+    // In a real implementation, we would call an edge function:
+    // const { data, error } = await supabase.functions.invoke('extract-amazon-product-info', {
+    //   body: { amazonUrl }
+    // });
+    
+    return null;
+  } catch (error) {
+    console.error("Error extracting Amazon product info:", error);
+    return null;
+  }
+}
+
+// Add a new function to approve a suggested product
+export async function approveSuggestion(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .update({ is_approved: true })
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error approving product suggestion:", error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in approveSuggestion:", error);
+    return false;
+  }
+}
+
+// Add a new function to reject a suggested product
+export async function rejectSuggestion(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id)
+      .eq('product_type', 'suggested');
+    
+    if (error) {
+      console.error("Error rejecting product suggestion:", error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in rejectSuggestion:", error);
+    return false;
   }
 }

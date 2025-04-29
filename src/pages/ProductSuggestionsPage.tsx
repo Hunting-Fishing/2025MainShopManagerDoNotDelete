@@ -7,26 +7,69 @@ import { useProducts } from '@/hooks/useProducts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Coffee, ThumbsUp, Heart, Lightbulb } from 'lucide-react'; 
+import { Coffee, ThumbsUp, Heart, Lightbulb, Tool, Filter, ArrowUpDown } from 'lucide-react'; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ProductSuggestionsPage = () => {
   const [activeTab, setActiveTab] = useState('suggest');
-  const { fetchUserSuggestions } = useProducts();
+  const { fetchUserSuggestions, suggestProduct } = useProducts();
   const [suggestedProducts, setSuggestedProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortOption, setSortOption] = useState('newest');
+  const [approvalFilter, setApprovalFilter] = useState('all');
 
   useEffect(() => {
     async function loadSuggestions() {
       setIsLoading(true);
-      const suggestions = await fetchUserSuggestions(true);
-      setSuggestedProducts(suggestions);
-      setIsLoading(false);
+      try {
+        // Include unapproved suggestions in the results
+        const includeUnapproved = approvalFilter === 'all' || approvalFilter === 'pending';
+        const suggestions = await fetchUserSuggestions(includeUnapproved);
+        
+        let filteredSuggestions = [...suggestions];
+        
+        // Apply approval filter
+        if (approvalFilter === 'approved') {
+          filteredSuggestions = filteredSuggestions.filter(item => item.is_approved);
+        } else if (approvalFilter === 'pending') {
+          filteredSuggestions = filteredSuggestions.filter(item => !item.is_approved);
+        }
+        
+        // Apply sorting
+        filteredSuggestions.sort((a, b) => {
+          switch (sortOption) {
+            case 'newest':
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            case 'oldest':
+              return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            case 'price_asc':
+              return (a.price || 0) - (b.price || 0);
+            case 'price_desc':
+              return (b.price || 0) - (a.price || 0);
+            case 'name_asc':
+              return a.title.localeCompare(b.title);
+            case 'name_desc':
+              return b.title.localeCompare(a.title);
+            default:
+              return 0;
+          }
+        });
+        
+        setSuggestedProducts(filteredSuggestions);
+      } catch (error) {
+        console.error('Error loading suggestions:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     if (activeTab === 'browse') {
       loadSuggestions();
     }
-  }, [activeTab, fetchUserSuggestions]);
+  }, [activeTab, fetchUserSuggestions, sortOption, approvalFilter]);
 
   return (
     <ShoppingPageLayout
@@ -132,17 +175,99 @@ const ProductSuggestionsPage = () => {
         
         <TabsContent value="browse">
           <div className="mb-6">
-            <h3 className="text-lg font-medium mb-2">Community Suggestions</h3>
-            <p className="text-muted-foreground">
-              These are tools that have been suggested by our community. Approved suggestions will appear in our main catalog.
-            </p>
+            <div className="flex flex-col md:flex-row justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-medium mb-1">Community Suggestions</h3>
+                <p className="text-muted-foreground">
+                  These are tools that have been suggested by our community. Approved suggestions will appear in our main catalog.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-2 mt-4 md:mt-0">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Select 
+                    defaultValue="all" 
+                    value={approvalFilter}
+                    onValueChange={(value) => setApprovalFilter(value)}
+                  >
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Filter by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All suggestions</SelectItem>
+                      <SelectItem value="approved">Approved only</SelectItem>
+                      <SelectItem value="pending">Pending approval</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                  <Select 
+                    defaultValue="newest"
+                    value={sortOption}
+                    onValueChange={(value) => setSortOption(value)}
+                  >
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest first</SelectItem>
+                      <SelectItem value="oldest">Oldest first</SelectItem>
+                      <SelectItem value="price_asc">Price: Low to high</SelectItem>
+                      <SelectItem value="price_desc">Price: High to low</SelectItem>
+                      <SelectItem value="name_asc">Name: A to Z</SelectItem>
+                      <SelectItem value="name_desc">Name: Z to A</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <div className="h-48 bg-slate-200 rounded-t-lg"></div>
+                    <CardContent className="p-4">
+                      <div className="h-6 bg-slate-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
+                      <div className="h-4 bg-slate-200 rounded w-2/4 mb-4"></div>
+                      <div className="h-9 bg-slate-200 rounded w-full"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <>
+                {approvalFilter !== 'all' && (
+                  <div className="mb-4">
+                    <Badge 
+                      variant={approvalFilter === 'approved' ? 'success' : 'default'} 
+                      className="mr-2"
+                    >
+                      Showing {approvalFilter === 'approved' ? 'approved' : 'pending'} suggestions
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setApprovalFilter('all')}
+                      className="text-xs"
+                    >
+                      Clear filter
+                    </Button>
+                  </div>
+                )}
+                
+                <ProductGrid 
+                  products={suggestedProducts} 
+                  isLoading={isLoading} 
+                  emptyMessage="No product suggestions yet. Be the first to suggest a tool!" 
+                />
+              </>
+            )}
           </div>
-          
-          <ProductGrid 
-            products={suggestedProducts} 
-            isLoading={isLoading} 
-            emptyMessage="No product suggestions yet. Be the first to suggest a tool!" 
-          />
         </TabsContent>
       </Tabs>
     </ShoppingPageLayout>

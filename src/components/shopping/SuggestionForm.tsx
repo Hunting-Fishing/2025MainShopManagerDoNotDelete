@@ -1,206 +1,269 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProducts } from '@/hooks/useProducts';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useCategories } from '@/hooks/useCategories';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from '@/components/ui/label';
+import { AlertCircle, CheckCircle2, Link as LinkIcon } from "lucide-react";
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { isValidAmazonLink, cleanAmazonUrl, extractAmazonASIN, generateAmazonTrackingParams } from '@/utils/amazonUtils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const SuggestionForm: React.FC = () => {
-  const { categories } = useCategories();
   const { suggestProduct } = useProducts();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { categories, isLoading: categoriesLoading } = useCategories();
   
-  const [formData, setFormData] = useState({
+  const [formState, setFormState] = useState({
     title: '',
     description: '',
+    imageUrl: '',
     affiliateLink: '',
     categoryId: '',
-    suggestionReason: ''
+    reason: '',
+    price: '',
   });
+  
+  const [validLink, setValidLink] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getUser();
-      setIsAuthenticated(!!data.user);
-    };
-    
-    checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkAuth();
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  // Validate affiliate link when it changes
+  useEffect(() => {
+    if (formState.affiliateLink) {
+      setValidLink(isValidAmazonLink(formState.affiliateLink));
+    } else {
+      setValidLink(null);
+    }
+  }, [formState.affiliateLink]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormState(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormState(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isAuthenticated) {
+    if (!formState.title || !formState.categoryId) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to suggest products",
+        title: "Missing required fields",
+        description: "Please provide a product title and category",
         variant: "destructive",
       });
       return;
     }
     
-    if (!formData.title || !formData.categoryId || !formData.suggestionReason) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     try {
+      // Process the affiliate link if it exists
+      let processedLink = formState.affiliateLink;
+      let trackingParams = '';
+      
+      if (processedLink) {
+        // Clean the link
+        processedLink = cleanAmazonUrl(processedLink);
+        
+        // Generate tracking parameters
+        const asin = extractAmazonASIN(processedLink);
+        if (asin) {
+          trackingParams = generateAmazonTrackingParams().replace('{ASIN}', asin);
+        }
+      }
+      
+      // Convert price to number if present
+      const price = formState.price ? parseFloat(formState.price) : undefined;
+      
+      // Submit the product suggestion
       const success = await suggestProduct({
-        title: formData.title,
-        description: formData.description,
-        affiliate_link: formData.affiliateLink,
-        category_id: formData.categoryId,
-        suggestion_reason: formData.suggestionReason
+        title: formState.title,
+        description: formState.description,
+        image_url: formState.imageUrl,
+        affiliate_link: processedLink,
+        tracking_params: trackingParams,
+        category_id: formState.categoryId,
+        suggestion_reason: formState.reason,
+        price,
+        product_type: 'suggested',
       });
       
       if (success) {
-        setFormData({
+        setSubmitted(true);
+        setFormState({
           title: '',
           description: '',
+          imageUrl: '',
           affiliateLink: '',
           categoryId: '',
-          suggestionReason: ''
+          reason: '',
+          price: '',
         });
+        
+        // Reset form state after 3 seconds
+        setTimeout(() => {
+          setSubmitted(false);
+        }, 3000);
       }
+    } catch (error) {
+      console.error('Error submitting suggestion:', error);
+      toast({
+        title: "Error submitting suggestion",
+        description: "There was a problem submitting your product suggestion",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <Card className="border-dashed">
+    <Card>
       <CardHeader>
-        <CardTitle>Suggest a Product</CardTitle>
-        <CardDescription>
-          Help us grow our collection by suggesting products that you find useful
-        </CardDescription>
+        <CardTitle>Suggest a Tool</CardTitle>
       </CardHeader>
-      
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Product Name *</Label>
-            <Input
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Enter product name"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Briefly describe the product"
-              rows={3}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="affiliateLink">Product Link</Label>
-            <Input
-              id="affiliateLink"
-              name="affiliateLink"
-              value={formData.affiliateLink}
-              onChange={handleChange}
-              placeholder="https://example.com/product"
-              type="url"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="categoryId">Category *</Label>
-            <Select
-              value={formData.categoryId}
-              onValueChange={(value) => handleSelectChange('categoryId', value)}
-            >
-              <SelectTrigger id="categoryId">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.flatMap(category => [
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>,
-                  ...(category.subcategories?.map(sub => (
-                    <SelectItem key={sub.id} value={sub.id}>
-                      &nbsp;&nbsp;{sub.name}
-                    </SelectItem>
-                  )) || [])
-                ])}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="suggestionReason">Why are you suggesting this product? *</Label>
-            <Textarea
-              id="suggestionReason"
-              name="suggestionReason"
-              value={formData.suggestionReason}
-              onChange={handleChange}
-              placeholder="Tell us why you recommend this product"
-              rows={3}
-              required
-            />
-          </div>
-
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={isLoading || !isAuthenticated}
-          >
-            {isLoading ? 'Submitting...' : 'Submit Suggestion'}
-          </Button>
-          
-          {!isAuthenticated && (
-            <p className="text-sm text-center text-muted-foreground">
-              Please sign in to suggest products
+        {submitted ? (
+          <div className="flex flex-col items-center justify-center py-6">
+            <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
+            <h3 className="text-xl font-medium text-center">Thank you for your suggestion!</h3>
+            <p className="text-center text-muted-foreground mt-2">
+              Our team will review your submission shortly.
             </p>
-          )}
-        </form>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Tool Name <span className="text-red-500">*</span></Label>
+              <Input 
+                id="title"
+                name="title"
+                value={formState.title}
+                onChange={handleChange}
+                placeholder="Enter the tool name"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description"
+                name="description"
+                value={formState.description}
+                onChange={handleChange}
+                placeholder="Describe the tool and its uses"
+                rows={3}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="categoryId">Category <span className="text-red-500">*</span></Label>
+              <Select
+                value={formState.categoryId}
+                onValueChange={(value) => handleSelectChange('categoryId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoriesLoading ? (
+                    <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                  ) : (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="price">Approximate Price (USD)</Label>
+              <Input 
+                id="price"
+                name="price"
+                type="number"
+                value={formState.price}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="affiliateLink" className="flex items-center gap-1">
+                <LinkIcon className="h-4 w-4" />
+                Amazon Link
+              </Label>
+              <Input 
+                id="affiliateLink"
+                name="affiliateLink"
+                value={formState.affiliateLink}
+                onChange={handleChange}
+                placeholder="https://www.amazon.com/..."
+                className={validLink === false ? "border-red-500" : ""}
+              />
+              
+              {validLink === false && (
+                <Alert variant="destructive" className="py-2 mt-1">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Please enter a valid Amazon product URL
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">Image URL</Label>
+              <Input 
+                id="imageUrl"
+                name="imageUrl"
+                value={formState.imageUrl}
+                onChange={handleChange}
+                placeholder="https://example.com/image.jpg"
+              />
+              <p className="text-xs text-muted-foreground">
+                Direct link to product image (optional)
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="reason">Why do you recommend this tool?</Label>
+              <Textarea 
+                id="reason"
+                name="reason"
+                value={formState.reason}
+                onChange={handleChange}
+                placeholder="Share why you think this tool would be useful"
+                rows={3}
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={isSubmitting || validLink === false}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Suggestion'}
+            </Button>
+            
+            <p className="text-xs text-muted-foreground text-center">
+              * Required fields
+            </p>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
