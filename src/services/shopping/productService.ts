@@ -141,6 +141,7 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
       is_approved: false,
       is_featured: false,
       is_bestseller: false,
+      image_url: suggestion.image_url || null, // Make sure to include the image URL
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       ...suggestion,
