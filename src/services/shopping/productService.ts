@@ -133,7 +133,7 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
     const productSuggestion = {
       ...suggestion,
       category_id: suggestion.category_id || 'default', // Ensure category_id is set
-      product_type: 'suggested',
+      product_type: 'suggested' as const, // Use 'as const' to specify the exact string literal type
       is_approved: false,
       is_featured: false,
       is_bestseller: false
@@ -159,13 +159,8 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
 
 // Add the missing functions that are being imported by admin components
 
-export async function createProduct(product: Partial<Product>): Promise<Product> {
+export async function createProduct(product: Partial<Product> & { category_id: string }): Promise<Product> {
   try {
-    // Ensure required fields are present
-    if (!product.category_id) {
-      throw new Error("Category ID is required");
-    }
-
     const { data, error } = await supabase
       .from('products')
       .insert(product)
