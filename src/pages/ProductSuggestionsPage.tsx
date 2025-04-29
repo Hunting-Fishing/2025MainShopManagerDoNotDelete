@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -135,7 +136,7 @@ export default function ProductSuggestionsPage() {
           <TabsContent value="suggest" className="mt-4">
             <Card>
               <CardContent className="pt-6">
-                <SuggestionForm onSubmit={handleSubmit} />
+                <SuggestionForm />
               </CardContent>
             </Card>
           </TabsContent>
