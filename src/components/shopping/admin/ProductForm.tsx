@@ -117,7 +117,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           description: "Product updated successfully",
         });
       } else {
-        await createProduct(formData);
+        // Ensure formData has title and category_id
+        await createProduct({
+          ...formData,
+          title: formData.title!, // Non-null assertion because we checked above
+          category_id: formData.category_id! // Non-null assertion because we checked above
+        });
         toast({
           title: "Success",
           description: "Product created successfully",

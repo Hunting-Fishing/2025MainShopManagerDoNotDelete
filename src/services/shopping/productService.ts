@@ -129,14 +129,20 @@ export async function getUserSuggestions(includeUnapproved: boolean = false): Pr
 
 export async function submitProductSuggestion(suggestion: Partial<Product>): Promise<Product> {
   try {
+    // Make sure title is provided
+    if (!suggestion.title) {
+      throw new Error("Title is required for product suggestions");
+    }
+    
     // Set default values for required fields
     const productSuggestion = {
-      ...suggestion,
+      title: suggestion.title, // Make title explicit to satisfy TypeScript
       category_id: suggestion.category_id || 'default', // Ensure category_id is set
       product_type: 'suggested' as const, // Use 'as const' to specify the exact string literal type
       is_approved: false,
       is_featured: false,
-      is_bestseller: false
+      is_bestseller: false,
+      ...suggestion,
     };
 
     const { data, error } = await supabase
@@ -159,7 +165,7 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
 
 // Add the missing functions that are being imported by admin components
 
-export async function createProduct(product: Partial<Product> & { category_id: string }): Promise<Product> {
+export async function createProduct(product: Partial<Product> & { title: string; category_id: string }): Promise<Product> {
   try {
     const { data, error } = await supabase
       .from('products')
