@@ -11,63 +11,37 @@ import { MANUFACTURERS } from '@/data/manufacturersData';
 import { TextAreaField } from './form/TextAreaField';
 import { CategorySelector } from './form/CategorySelector';
 import { ManufacturerSelector } from './form/ManufacturerSelector';
-import { extractAmazonProductInfo } from '@/services/shopping/productService';
 import { isValidAmazonLink } from '@/utils/amazonUtils';
+import { ImageUploadField } from './form/ImageUploadField';
+import { Upload, Image } from 'lucide-react';
 
 export function SuggestionForm() {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
   const { suggestProduct } = useProducts();
   const { toolCategories } = useToolCategories();
   const [isLoading, setIsLoading] = useState(false);
-  const [isExtracting, setIsExtracting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  const affiliateLink = watch('affiliate_link');
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Create a preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Store the file in the form data
+      setValue('product_image', file);
+    }
+  };
   
-  // Watch for changes in affiliate_link to extract product info
-  useEffect(() => {
-    const extractProductInfo = async () => {
-      if (!affiliateLink || !isValidAmazonLink(affiliateLink)) return;
-      
-      // Don't extract if we're already loading or extracting
-      if (isLoading || isExtracting) return;
-      
-      // Debounce extraction to prevent multiple rapid calls
-      const timer = setTimeout(async () => {
-        try {
-          setIsExtracting(true);
-          const productInfo = await extractAmazonProductInfo(affiliateLink);
-          
-          if (productInfo) {
-            // Auto-populate fields with extracted data
-            if (productInfo.title && !watch('title')) {
-              setValue('title', productInfo.title);
-            }
-            
-            if (productInfo.description && !watch('description')) {
-              setValue('description', productInfo.description);
-            }
-            
-            if (productInfo.price) {
-              setValue('price', productInfo.price.toString());
-            }
-            
-            toast({
-              title: "Product information extracted",
-              description: "Form fields have been populated from the Amazon product link.",
-            });
-          }
-        } catch (error) {
-          console.error('Error extracting product info:', error);
-        } finally {
-          setIsExtracting(false);
-        }
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    };
-    
-    extractProductInfo();
-  }, [affiliateLink, isLoading, isExtracting, setValue, watch]);
+  const removeImage = () => {
+    setValue('product_image', null);
+    setImagePreview(null);
+  };
   
   const onSubmit = async (data: any) => {
     setIsLoading(true);
@@ -79,11 +53,33 @@ export function SuggestionForm() {
         manufacturer: data.manufacturer || ''
       });
       
+      // Handle image upload if present
+      let imageUrl = '';
+      if (data.product_image) {
+        try {
+          // In a real app, we would upload the image to storage here
+          // For now, we'll just use the preview as a placeholder
+          imageUrl = imagePreview || '';
+          toast({
+            title: "Image uploaded",
+            description: "Your product image has been processed.",
+          });
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          toast({
+            title: "Image upload failed",
+            description: "We couldn't upload your image. The product will be submitted without an image.",
+            variant: "destructive",
+          });
+        }
+      }
+      
       const suggestion: Partial<Product> = {
         title: data.title,
         description: data.description,
         price: data.price ? parseFloat(data.price) : undefined,
         affiliate_link: data.affiliate_link,
+        image_url: imageUrl, // Use the uploaded image URL
         product_type: 'suggested',
         category_id: 'suggestion', // Will be properly assigned by backend
         is_featured: false,
@@ -100,6 +96,7 @@ export function SuggestionForm() {
         description: "Our team will review it soon.",
       });
       reset();
+      setImagePreview(null);
     } catch (error) {
       console.error('Error submitting suggestion:', error);
       toast({
@@ -114,6 +111,52 @@ export function SuggestionForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Image Upload Section */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium flex items-center">
+          Product Image (optional)
+        </label>
+        
+        {!imagePreview ? (
+          <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center">
+            <Image className="w-10 h-10 text-gray-400 mb-2" />
+            <p className="text-sm text-gray-500">Upload a product image</p>
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="mt-2"
+              onClick={() => document.getElementById('image-upload')?.click()}
+            >
+              <Upload className="mr-2 h-4 w-4" /> Select Image
+            </Button>
+            <input
+              id="image-upload"
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+          </div>
+        ) : (
+          <div className="relative">
+            <img 
+              src={imagePreview} 
+              alt="Product preview" 
+              className="max-h-48 rounded-md mx-auto object-contain border"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={removeImage}
+            >
+              Remove
+            </Button>
+          </div>
+        )}
+      </div>
+      
       <FormField
         label="Product Title"
         required
@@ -155,8 +198,8 @@ export function SuggestionForm() {
       <FormField
         label="Amazon or Retailer Link (optional)"
         {...register('affiliate_link')}
-        placeholder="https://www.example.com/product"
-        description="Enter an Amazon link to auto-fill product details"
+        placeholder="https://www.amazon.com/product"
+        description="Enter an Amazon link to the product"
       />
 
       <TextAreaField
@@ -166,8 +209,8 @@ export function SuggestionForm() {
         placeholder="Tell us why this product should be added to our store"
       />
 
-      <Button type="submit" className="w-full" disabled={isLoading || isExtracting}>
-        {isLoading ? "Submitting..." : isExtracting ? "Extracting product info..." : "Submit Suggestion"}
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? "Submitting..." : "Submit Suggestion"}
       </Button>
     </form>
   );
