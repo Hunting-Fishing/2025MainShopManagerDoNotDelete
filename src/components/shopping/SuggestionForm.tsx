@@ -12,9 +12,22 @@ import { TextAreaField } from './form/TextAreaField';
 import { CategorySelector } from './form/CategorySelector';
 import { ManufacturerSelector } from './form/ManufacturerSelector';
 import { ImageUploadField } from './form/ImageUploadField';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function SuggestionForm() {
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
+    defaultValues: {
+      title: '',
+      description: '',
+      category: '',
+      subcategory: '',
+      manufacturer: '',
+      price: '',
+      affiliate_link: '',
+      reason: ''
+    }
+  });
   const { suggestProduct } = useProducts();
   const { toolCategories } = useToolCategories();
   const [isLoading, setIsLoading] = useState(false);
@@ -23,10 +36,12 @@ export function SuggestionForm() {
   const handleImageChange = (file: File | null, uploadedImageUrl?: string) => {
     if (uploadedImageUrl) {
       setImageUrl(uploadedImageUrl);
+      console.log("Image URL set:", uploadedImageUrl);
     }
   };
   
   const onSubmit = async (data: any) => {
+    console.log("Form submitted with data:", data);
     setIsLoading(true);
     try {
       // Create metadata as JSON string
@@ -52,11 +67,14 @@ export function SuggestionForm() {
         metadata: metadata
       };
 
+      console.log("Submitting suggestion:", suggestion);
       await suggestProduct(suggestion);
+      
       toast({
         title: "Thank you for your suggestion!",
         description: "Our team will review it soon.",
       });
+      
       reset();
       setImageUrl(null);
     } catch (error) {
@@ -78,14 +96,25 @@ export function SuggestionForm() {
         onImageChange={handleImageChange}
       />
       
-      <FormField
-        label="Product Title"
-        required
-        id="title"
-        {...register('title', { required: "Product title is required" })}
-        error={errors.title?.message as string}
-        placeholder="Enter product name"
-      />
+      {/* Product Title Field */}
+      <div className="space-y-2">
+        <Label htmlFor="product-title" className="text-sm font-medium flex items-center">
+          Product Title <span className="text-destructive ml-1">*</span>
+        </Label>
+        <Input
+          id="product-title"
+          {...register('title', { 
+            required: "Product title is required" 
+          })}
+          placeholder="Enter product name"
+          className={errors.title ? "border-destructive" : ""}
+        />
+        {errors.title && (
+          <p className="text-xs font-medium text-destructive">
+            {errors.title.message as string}
+          </p>
+        )}
+      </div>
 
       <TextAreaField
         label="Description"
@@ -109,22 +138,32 @@ export function SuggestionForm() {
         setValue={setValue}
       />
 
-      <FormField
-        label="Price (optional)"
-        type="number"
-        step="0.01"
-        id="price"
-        {...register('price')}
-        placeholder="Enter estimated price"
-      />
+      <div className="space-y-2">
+        <Label htmlFor="product-price" className="text-sm font-medium">
+          Price (optional)
+        </Label>
+        <Input
+          id="product-price"
+          type="number" 
+          step="0.01"
+          {...register('price')}
+          placeholder="Enter estimated price"
+        />
+      </div>
 
-      <FormField
-        label="Amazon or Retailer Link (optional)"
-        id="affiliate_link"
-        {...register('affiliate_link')}
-        placeholder="https://www.amazon.com/product"
-        description="Enter an Amazon link to the product"
-      />
+      <div className="space-y-2">
+        <Label htmlFor="affiliate-link" className="text-sm font-medium">
+          Amazon or Retailer Link (optional)
+        </Label>
+        <Input
+          id="affiliate-link"
+          {...register('affiliate_link')}
+          placeholder="https://www.amazon.com/product"
+        />
+        <p className="text-xs text-muted-foreground">
+          Enter an Amazon link to the product
+        </p>
+      </div>
 
       <TextAreaField
         label="Why do you recommend this product? (optional)"
@@ -133,7 +172,7 @@ export function SuggestionForm() {
         placeholder="Tell us why this product should be added to our store"
       />
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full rounded-full text-white bg-blue-600" disabled={isLoading}>
         {isLoading ? "Submitting..." : "Submit Suggestion"}
       </Button>
     </form>
