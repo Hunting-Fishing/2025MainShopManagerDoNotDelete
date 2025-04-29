@@ -39,7 +39,7 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
     // Map categories to icons based on their name - using only available icons
     const categoryToIcon: Record<string, React.ComponentType<any>> = {
       "Hand Tools": Wrench,
-      "Power Tools": Wrench,
+      "Power Tools": Gauge,
       "Diagnostic Tools": Gauge,
       "Shop Equipment": Wrench,
       "Specialty Tools": Wrench,
@@ -73,7 +73,7 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex gap-3">
-                      <div className="bg-blue-50 p-3 rounded-lg">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
                         <Icon className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
