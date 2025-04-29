@@ -4,11 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Tool, WrenchScrewdriver, Wrench, Hammer, Screwdriver, Shovel, PaintBucket, Truck, Gauge, Scissors } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ToolCategory {
   category: string;
   items: string[];
+  description?: string;
+  icon?: React.ComponentType<any>;
+  isNew?: boolean;
+  isPopular?: boolean;
 }
 
 interface CategoryToolListProps {
@@ -29,47 +34,101 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
     const slug = category.toLowerCase().replace(/\s+/g, '-');
     navigate(`/shopping/categories/${slug}`);
   };
+
+  const getIconForCategory = (category: string) => {
+    // Map categories to icons based on their name
+    const categoryToIcon: Record<string, React.ComponentType<any>> = {
+      "Hand Tools": Wrench,
+      "Power Tools": WrenchScrewdriver,
+      "Diagnostic Tools": Gauge,
+      "Shop Equipment": Tool,
+      "Specialty Tools": Screwdriver,
+      "Body Shop": Hammer,
+      "Cleaning Supplies": PaintBucket,
+      "Lighting": Scissors,
+      "Lifting Equipment": Truck,
+    };
+    
+    return categoryToIcon[category] || Tool;
+  };
   
   return (
-    <div>
-      <div className="mb-4">
+    <div className="bg-white rounded-xl p-6">
+      <div className="mb-6">
         <h2 className="text-2xl font-bold">{title}</h2>
         <p className="text-muted-foreground">{description}</p>
       </div>
       
-      <ScrollArea className="h-[500px] pr-4">
+      <ScrollArea className="h-[600px] pr-4">
         <div className="space-y-6">
-          {tools.map((toolCategory, index) => (
-            <Card 
-              key={index} 
-              className="overflow-hidden border-l-4 border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleCategoryClick(toolCategory.category)}
-            >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-lg font-medium">{toolCategory.category}</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent the card click from firing too
-                      handleCategoryClick(toolCategory.category);
-                    }}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    View All <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-                <ul className="list-disc pl-5 space-y-1">
-                  {toolCategory.items.map((item, itemIndex) => (
-                    <li key={itemIndex} className="text-muted-foreground">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ))}
+          {tools.map((toolCategory, index) => {
+            const Icon = toolCategory.icon || getIconForCategory(toolCategory.category);
+            
+            return (
+              <Card 
+                key={index} 
+                className="overflow-hidden border-l-4 border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => handleCategoryClick(toolCategory.category)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex gap-3">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <Icon className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-medium group-hover:text-blue-600 transition-colors">
+                            {toolCategory.category}
+                          </h3>
+                          {toolCategory.isNew && (
+                            <Badge variant="success" className="text-xs">New</Badge>
+                          )}
+                          {toolCategory.isPopular && (
+                            <Badge variant="warning" className="text-xs">Popular</Badge>
+                          )}
+                        </div>
+                        {toolCategory.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {toolCategory.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent the card click from firing too
+                        handleCategoryClick(toolCategory.category);
+                      }}
+                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                    >
+                      View All <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                  
+                  {toolCategory.items.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+                      {toolCategory.items.slice(0, 6).map((item, itemIndex) => (
+                        <div key={itemIndex} className="flex items-center py-1">
+                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></div>
+                          <span className="text-sm text-slate-600 truncate">{item}</span>
+                        </div>
+                      ))}
+                      {toolCategory.items.length > 6 && (
+                        <div className="col-span-2 text-sm text-blue-500 mt-1">
+                          +{toolCategory.items.length - 6} more items
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No items available</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>
