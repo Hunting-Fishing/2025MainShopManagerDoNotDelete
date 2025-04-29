@@ -155,3 +155,104 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
     throw error;
   }
 }
+
+// Add the missing functions that are being imported by admin components
+
+export async function createProduct(product: Partial<Product>): Promise<Product> {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .insert(product)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating product:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error in createProduct:", error);
+    throw error;
+  }
+}
+
+export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating product:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error in updateProduct:", error);
+    throw error;
+  }
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting product:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error in deleteProduct:", error);
+    throw error;
+  }
+}
+
+export async function approveProductSuggestion(id: string): Promise<Product> {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .update({ is_approved: true })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error approving product suggestion:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error in approveProductSuggestion:", error);
+    throw error;
+  }
+}
+
+export async function getProductReviews(productId: string): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .from('product_reviews')
+      .select('*, profiles:user_id(username, avatar_url)')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching product reviews:", error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error("Error in getProductReviews:", error);
+    return [];
+  }
+}
