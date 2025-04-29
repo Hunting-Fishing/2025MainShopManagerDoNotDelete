@@ -1,149 +1,149 @@
 
-import React from "react";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { WorkOrder } from "@/types/workOrder";
+import { useState } from "react";
+import { format } from "date-fns";
 import { Link } from "react-router-dom";
-import { formatTimeInHoursAndMinutes } from "@/utils/workOrders/formatters";
-import { formatDate } from "@/utils/workOrderUtils"; // Import from workOrderUtils instead
+import { Eye, Clock, Calendar, User } from "lucide-react";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { statusMap, priorityMap } from "@/utils/workOrders";
+import { 
+  WorkOrder, 
+  priorityMap, 
+  statusMap 
+} from "@/types/workOrder";
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
 }
 
-const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({ workOrders }) => {
-  const columns: ColumnDef<WorkOrder>[] = [
-    {
-      accessorKey: "id",
-      header: "ID",
-      cell: ({ row }) => (
-        <Link to={`/work-orders/${row.getValue("id")}`} className="underline">
-          {row.getValue("id")}
-        </Link>
-      ),
-    },
-    {
-      accessorKey: "customer",
-      header: "Customer",
-    },
-    {
-      accessorKey: "date",
-      header: "Date",
-      cell: ({ row }) => formatDate(row.getValue("date")),
-    },
-    {
-      accessorKey: "dueDate",
-      header: "Due Date",
-      cell: ({ row }) => formatDate(row.getValue("dueDate")),
-    },
-    {
-      accessorKey: "technician",
-      header: "Technician",
-    },
-    {
-      accessorKey: "location",
-      header: "Location",
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as keyof typeof statusMap;
-        return (
-          <Badge variant="secondary">
-            {String(statusMap[status])}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: "priority",
-      header: "Priority",
-      cell: ({ row }) => {
-        const priority = row.getValue("priority") as keyof typeof priorityMap;
-        return (
-          <Badge className={priorityMap[priority]?.classes}>
-            {priorityMap[priority]?.label}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: "totalBillableTime",
-      header: "Billable Time",
-      cell: ({ row }) => {
-        const totalBillableTime = row.getValue("totalBillableTime") as number;
-        return formatTimeInHoursAndMinutes(totalBillableTime);
-      },
-    },
-  ];
+export default function WorkOrdersTable({ workOrders }: WorkOrdersTableProps) {
+  
+  // Function to get status badge styles
+  const getStatusStyles = (status: string) => {
+    switch(status) {
+      case 'pending':
+        return 'text-yellow-800 bg-yellow-100 border-yellow-200';
+      case 'in-progress':
+        return 'text-blue-800 bg-blue-100 border-blue-200'; 
+      case 'completed':
+        return 'text-green-800 bg-green-100 border-green-200';
+      case 'cancelled':
+        return 'text-red-800 bg-red-100 border-red-200';
+      default:
+        return 'text-gray-800 bg-gray-100 border-gray-200';
+    }
+  };
 
-  const table = useReactTable({
-    data: workOrders,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  // If no work orders, show empty state
+  if (workOrders.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-lg bg-white dark:bg-slate-900">
+        <h3 className="text-lg font-medium">No work orders found</h3>
+        <p className="text-muted-foreground mt-1">
+          Try adjusting your filters or create a new work order
+        </p>
+        <Button className="mt-4">
+          <Link to="/work-orders/create">Create Work Order</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-md border">
+    <div className="border rounded-xl overflow-hidden bg-white dark:bg-slate-900">
       <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
+        <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+          <TableRow>
+            <TableHead className="w-[100px]">ID</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Customer</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Due Date</TableHead>
+            <TableHead>Priority</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center"
-              >
-                No results.
+          {workOrders.map((order) => (
+            <TableRow 
+              key={order.id}
+              className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
+            >
+              <TableCell className="font-mono text-sm">
+                <Link 
+                  to={`/work-orders/${order.id}`}
+                  className="font-medium text-blue-600 hover:underline"
+                >
+                  {order.id}
+                </Link>
+              </TableCell>
+              <TableCell>
+                {order.description}
+                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                  {order.location && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" /> 
+                      {format(new Date(order.date || order.createdAt || new Date()), "MMM d, yyyy")}
+                    </span>
+                  )}
+                  {order.technician && (
+                    <span className="flex items-center gap-1">
+                      <User className="h-3 w-3" /> 
+                      {order.technician}
+                    </span>
+                  )}
+                  {order.totalBillableTime && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> 
+                      {Math.floor(order.totalBillableTime / 60)}h {order.totalBillableTime % 60}m
+                    </span>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>{order.customer}</TableCell>
+              <TableCell>
+                <Badge 
+                  variant="outline" 
+                  className={`rounded-full border px-2 py-1 font-medium ${getStatusStyles(order.status)}`}
+                >
+                  {statusMap[order.status as keyof typeof statusMap] || order.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {order.dueDate ? format(new Date(order.dueDate), "MMM d, yyyy") : "—"}
+              </TableCell>
+              <TableCell>
+                <Badge 
+                  variant="outline" 
+                  className={`rounded-full border text-xs ${priorityMap[order.priority as keyof typeof priorityMap]?.classes || ""}`}
+                >
+                  {order.priority}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="rounded-full hover:bg-blue-50 hover:text-blue-600"
+                  asChild
+                >
+                  <Link to={`/work-orders/${order.id}`}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Link>
+                </Button>
               </TableCell>
             </TableRow>
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>
   );
-};
-
-export default WorkOrdersTable;
+}

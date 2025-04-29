@@ -7,6 +7,9 @@ import WorkOrderDetailsView from "@/components/work-orders/WorkOrderDetailsView"
 import WorkOrderEditForm from "@/components/work-orders/WorkOrderEditForm";
 import { toast } from "@/hooks/use-toast";
 import { TimeEntry } from "@/types/workOrder";
+import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
+import { Button } from "@/components/ui/button";
+import { Edit, Printer } from "lucide-react";
 
 interface WorkOrderDetailsProps {
   edit?: boolean;
@@ -83,6 +86,14 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
     fetchWorkOrder();
   }, [id, navigate]);
 
+  const handleEdit = () => {
+    navigate(`/work-orders/${id}/edit`);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-40">
@@ -95,15 +106,34 @@ export default function WorkOrderDetails({ edit = false }: WorkOrderDetailsProps
     return null; // This shouldn't happen as we navigate away if no work order is found
   }
 
-  return (
-    <div>
-      {edit ? (
-        <WorkOrderEditForm workOrder={workOrder} />
-      ) : (
-        <WorkOrderDetailsView 
-          workOrder={workOrder} 
-        />
-      )}
+  const actions = !edit ? (
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={handlePrint} className="rounded-full">
+        <Printer className="h-4 w-4 mr-2" />
+        Print
+      </Button>
+      <Button onClick={handleEdit} className="rounded-full bg-blue-600 hover:bg-blue-700">
+        <Edit className="h-4 w-4 mr-2" />
+        Edit
+      </Button>
     </div>
+  ) : null;
+
+  return (
+    <WorkOrderPageLayout
+      title={edit ? "Edit Work Order" : `Work Order: ${workOrder.id}`}
+      description={edit ? "Modify work order details" : workOrder.description}
+      actions={actions}
+    >
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        {edit ? (
+          <WorkOrderEditForm workOrder={workOrder} />
+        ) : (
+          <WorkOrderDetailsView 
+            workOrder={workOrder} 
+          />
+        )}
+      </div>
+    </WorkOrderPageLayout>
   );
 }

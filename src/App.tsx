@@ -35,6 +35,7 @@ import DataExportSettings from './pages/settings/DataExportSettings';
 import LanguageSettings from './pages/settings/LanguageSettings';
 import WorkOrderCreate from './pages/WorkOrderCreate';
 import WorkOrders from './pages/WorkOrders';
+import WorkOrderDetails from './pages/WorkOrderDetails';
 import { VehicleDetailsPage } from './components/customers/vehicles/VehicleDetailsPage';
 import { CustomerDataProvider } from './contexts/CustomerDataProvider';
 
@@ -68,6 +69,10 @@ function App() {
         return 'Settings | Easy Shop Manager';
       case '/reports':
         return 'Reports | Easy Shop Manager';
+      case '/work-orders':
+        return 'Work Orders | Easy Shop Manager';
+      case '/work-orders/create':
+        return 'Create Work Order | Easy Shop Manager';
       case '/login':
         return 'Login | Easy Shop Manager';
       default:
@@ -102,6 +107,8 @@ function App() {
           {/* Work Order routes */}
           <Route path="work-orders" element={<WorkOrders />} />
           <Route path="work-orders/create" element={<WorkOrderCreate />} />
+          <Route path="work-orders/:id" element={<WorkOrderDetails />} />
+          <Route path="work-orders/:id/edit" element={<WorkOrderDetails edit={true} />} />
 
           {/* Invoice routes */}
           <Route path="invoices" element={<>Invoices</>} />

@@ -1,5 +1,8 @@
 
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import WorkOrdersHeader from "@/components/work-orders/WorkOrdersHeader";
 import WorkOrderFilters from "@/components/work-orders/WorkOrderFilters";
 import WorkOrdersTable from "@/components/work-orders/WorkOrdersTable";
@@ -10,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { mapDatabaseToAppModel, getUniqueTechnicians } from "@/utils/workOrders";
 
 export default function WorkOrders() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedTechnician, setSelectedTechnician] = useState<string>("all");
@@ -133,6 +137,11 @@ export default function WorkOrders() {
     setCurrentPage(page);
   };
 
+  // Create new work order
+  const handleCreateWorkOrder = () => {
+    navigate('/work-orders/create');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -143,7 +152,23 @@ export default function WorkOrders() {
 
   return (
     <div className="space-y-6">
-      <WorkOrdersHeader workOrders={filteredWorkOrders} />
+      <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Work Orders</h1>
+            <p className="text-muted-foreground">
+              Manage and track all your service work orders
+            </p>
+          </div>
+          <Button 
+            onClick={handleCreateWorkOrder}
+            className="rounded-full bg-blue-600 hover:bg-blue-700"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Create Work Order
+          </Button>
+        </div>
+      </div>
       
       {/* Filters and search */}
       <WorkOrderFilters 

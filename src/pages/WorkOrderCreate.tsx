@@ -9,6 +9,7 @@ import { ResponsiveContainer } from "@/components/ui/responsive-container";
 import { toast } from "@/hooks/use-toast";
 import { useTechnicians } from "@/hooks/useTechnicians";
 import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates";
+import { WorkOrderPageLayout } from "@/components/work-orders/WorkOrderPageLayout";
 
 export default function WorkOrderCreate() {
   const { templates: workOrderTemplates, updateTemplateUsage } = useWorkOrderTemplates();
@@ -37,29 +38,32 @@ export default function WorkOrderCreate() {
   };
 
   return (
-    <ResponsiveContainer>
+    <WorkOrderPageLayout
+      title={pageTitle}
+      description={pageDescription}
+      backLink="/work-orders"
+      backLinkText="Back to Work Orders"
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <WorkOrderFormHeader 
-            title={pageTitle}
-            description={pageDescription}
-          />
-          {!hasPreFilledInfo && (
+        {/* Template selector */}
+        {!hasPreFilledInfo && (
+          <div className="flex justify-end mb-4">
             <WorkOrderTemplateSelector
               templates={workOrderTemplates}
               onSelectTemplate={handleSelectTemplate}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Form */}
-        <WorkOrderForm 
-          technicians={technicians} 
-          isLoadingTechnicians={loadingTechnicians}
-          initialTemplate={selectedTemplate}
-        />
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+          <WorkOrderForm 
+            technicians={technicians} 
+            isLoadingTechnicians={loadingTechnicians}
+            initialTemplate={selectedTemplate}
+          />
+        </div>
       </div>
-    </ResponsiveContainer>
+    </WorkOrderPageLayout>
   );
 }
