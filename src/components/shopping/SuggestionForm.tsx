@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
+import { useToolCategories } from '@/hooks/useToolCategories';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +13,12 @@ import { AlertCircle, CheckCircle2, Link as LinkIcon } from "lucide-react";
 import { toast } from '@/hooks/use-toast';
 import { isValidAmazonLink, cleanAmazonUrl, extractAmazonASIN, generateAmazonTrackingParams } from '@/utils/amazonUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MANUFACTURERS } from '@/data/manufacturersData';
 
 export const SuggestionForm: React.FC = () => {
   const { suggestProduct } = useProducts();
   const { categories, isLoading: categoriesLoading } = useCategories();
+  const { toolCategories, isLoading: toolCategoriesLoading } = useToolCategories();
   
   const [formState, setFormState] = useState({
     title: '',
@@ -23,6 +26,8 @@ export const SuggestionForm: React.FC = () => {
     imageUrl: '',
     affiliateLink: '',
     categoryId: '',
+    toolCategory: '',
+    manufacturer: '',
     reason: '',
     price: '',
   });
@@ -30,6 +35,7 @@ export const SuggestionForm: React.FC = () => {
   const [validLink, setValidLink] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [filteredItems, setFilteredItems] = useState<string[]>([]);
 
   // Validate affiliate link when it changes
   useEffect(() => {
@@ -39,6 +45,18 @@ export const SuggestionForm: React.FC = () => {
       setValidLink(null);
     }
   }, [formState.affiliateLink]);
+
+  // Update filtered items when tool category changes
+  useEffect(() => {
+    if (formState.toolCategory) {
+      const selectedCategory = toolCategories.find(cat => cat.category === formState.toolCategory);
+      if (selectedCategory) {
+        setFilteredItems(selectedCategory.items);
+      }
+    } else {
+      setFilteredItems([]);
+    }
+  }, [formState.toolCategory, toolCategories]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -82,6 +100,13 @@ export const SuggestionForm: React.FC = () => {
       // Convert price to number if present
       const price = formState.price ? parseFloat(formState.price) : undefined;
       
+      // Additional metadata to store tool category and manufacturer
+      const metadata = {
+        tool_category: formState.toolCategory,
+        tool_subcategory: formState.toolCategory ? filteredItems.join(', ') : '',
+        manufacturer: formState.manufacturer
+      };
+      
       // Submit the product suggestion
       const success = await suggestProduct({
         title: formState.title,
@@ -93,6 +118,7 @@ export const SuggestionForm: React.FC = () => {
         suggestion_reason: formState.reason,
         price,
         product_type: 'suggested',
+        metadata: JSON.stringify(metadata),
       });
       
       if (success) {
@@ -103,6 +129,8 @@ export const SuggestionForm: React.FC = () => {
           imageUrl: '',
           affiliateLink: '',
           categoryId: '',
+          toolCategory: '',
+          manufacturer: '',
           reason: '',
           price: '',
         });
@@ -164,22 +192,61 @@ export const SuggestionForm: React.FC = () => {
               />
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="categoryId">Product Category <span className="text-red-500">*</span></Label>
+                <Select
+                  value={formState.categoryId}
+                  onValueChange={(value) => handleSelectChange('categoryId', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {categoriesLoading ? (
+                      <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                    ) : (
+                      categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="price">Approximate Price (USD)</Label>
+                <Input 
+                  id="price"
+                  name="price"
+                  type="number"
+                  value={formState.price}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="categoryId">Category <span className="text-red-500">*</span></Label>
+              <Label htmlFor="toolCategory">Tool Category</Label>
               <Select
-                value={formState.categoryId}
-                onValueChange={(value) => handleSelectChange('categoryId', value)}
+                value={formState.toolCategory}
+                onValueChange={(value) => handleSelectChange('toolCategory', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder="Select a tool category" />
                 </SelectTrigger>
-                <SelectContent>
-                  {categoriesLoading ? (
-                    <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                <SelectContent className="max-h-[300px]">
+                  {toolCategoriesLoading ? (
+                    <SelectItem value="loading" disabled>Loading tool categories...</SelectItem>
                   ) : (
-                    categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
+                    toolCategories.map((toolCat, index) => (
+                      <SelectItem key={index} value={toolCat.category}>
+                        {toolCat.category}
                       </SelectItem>
                     ))
                   )}
@@ -187,18 +254,40 @@ export const SuggestionForm: React.FC = () => {
               </Select>
             </div>
             
+            {formState.toolCategory && filteredItems.length > 0 && (
+              <div className="p-3 bg-gray-50 rounded-md border">
+                <Label className="block mb-2 text-sm font-medium">Subcategories in this tool category:</Label>
+                <div className="flex flex-wrap gap-2">
+                  {filteredItems.map((item, i) => (
+                    <span key={i} className="text-sm px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-800 border border-blue-300">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
-              <Label htmlFor="price">Approximate Price (USD)</Label>
-              <Input 
-                id="price"
-                name="price"
-                type="number"
-                value={formState.price}
-                onChange={handleChange}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
+              <Label htmlFor="manufacturer">Manufacturer</Label>
+              <Select
+                value={formState.manufacturer}
+                onValueChange={(value) => handleSelectChange('manufacturer', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a manufacturer (if applicable)" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="">Not manufacturer specific</SelectItem>
+                  {MANUFACTURERS.map((manufacturer, index) => (
+                    <SelectItem key={index} value={manufacturer}>
+                      {manufacturer}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Select a manufacturer if this tool is specific to a certain make of vehicle
+              </p>
             </div>
             
             <div className="space-y-2">

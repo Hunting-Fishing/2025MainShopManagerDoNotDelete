@@ -1,3 +1,4 @@
+
 export interface ProductCategory {
   id: string;
   name: string;
@@ -26,6 +27,7 @@ export interface Product {
   suggestion_reason?: string;
   created_at: string;
   updated_at: string;
+  metadata?: string; // Added for storing additional data like tool category and manufacturer
   
   stock_quantity?: number;
   sku?: string;
