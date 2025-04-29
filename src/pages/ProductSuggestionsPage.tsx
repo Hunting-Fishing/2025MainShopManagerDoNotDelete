@@ -1,14 +1,13 @@
-
 import { useState } from 'react';
 import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import SuggestionForm from "@/components/shopping/SuggestionForm";
+import { SuggestionForm } from "@/components/shopping/SuggestionForm";
 import { useProducts } from '@/hooks/useProducts';
 import { Product } from '@/types/shopping';
 import { Badge } from '@/components/ui/badge';
 import { Wrench } from 'lucide-react'; // Changed from 'Tool' to 'Wrench'
-import ShoppingPageLayout from '@/components/shopping/ShoppingPageLayout';
+import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import { toast } from '@/hooks/use-toast';
 
 export default function ProductSuggestionsPage() {
