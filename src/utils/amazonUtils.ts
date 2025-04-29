@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for working with Amazon product links and data
  */
@@ -76,6 +77,29 @@ export const cleanAmazonUrl = (url: string): string => {
     
     // Rebuild URL
     urlObj.search = params.toString();
+    return urlObj.toString();
+  } catch (e) {
+    return url;
+  }
+};
+
+/**
+ * Add affiliate tracking parameters to an Amazon URL
+ */
+export const addAffiliateTracking = (url: string, affiliateId: string = 'toolshop-20'): string => {
+  if (!url || !isValidAmazonLink(url)) return url;
+  
+  try {
+    const urlObj = new URL(url);
+    const asin = extractAmazonASIN(url);
+    
+    if (asin) {
+      urlObj.searchParams.set('tag', affiliateId);
+      urlObj.searchParams.set('linkCode', 'll1');
+      urlObj.searchParams.set('creativeASIN', asin);
+      urlObj.searchParams.set('creative', Date.now().toString());
+    }
+    
     return urlObj.toString();
   } catch (e) {
     return url;

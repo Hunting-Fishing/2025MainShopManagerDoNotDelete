@@ -65,7 +65,7 @@ serve(async (req) => {
       title: `Amazon Product (ASIN: ${asin})`,
       description: "Product description would appear here.",
       image_url: `https://images-na.ssl-images-amazon.com/images/I/${asin}.jpg`,
-      price: null,  // Would be extracted from the page
+      price: 29.99,  // Would be extracted from the page
       asin: asin
     };
 

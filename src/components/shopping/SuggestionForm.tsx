@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -11,12 +11,63 @@ import { MANUFACTURERS } from '@/data/manufacturersData';
 import { TextAreaField } from './form/TextAreaField';
 import { CategorySelector } from './form/CategorySelector';
 import { ManufacturerSelector } from './form/ManufacturerSelector';
+import { extractAmazonProductInfo } from '@/services/shopping/productService';
+import { isValidAmazonLink } from '@/utils/amazonUtils';
 
 export function SuggestionForm() {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
   const { suggestProduct } = useProducts();
   const { toolCategories } = useToolCategories();
   const [isLoading, setIsLoading] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  
+  const affiliateLink = watch('affiliate_link');
+  
+  // Watch for changes in affiliate_link to extract product info
+  useEffect(() => {
+    const extractProductInfo = async () => {
+      if (!affiliateLink || !isValidAmazonLink(affiliateLink)) return;
+      
+      // Don't extract if we're already loading or extracting
+      if (isLoading || isExtracting) return;
+      
+      // Debounce extraction to prevent multiple rapid calls
+      const timer = setTimeout(async () => {
+        try {
+          setIsExtracting(true);
+          const productInfo = await extractAmazonProductInfo(affiliateLink);
+          
+          if (productInfo) {
+            // Auto-populate fields with extracted data
+            if (productInfo.title && !watch('title')) {
+              setValue('title', productInfo.title);
+            }
+            
+            if (productInfo.description && !watch('description')) {
+              setValue('description', productInfo.description);
+            }
+            
+            if (productInfo.price) {
+              setValue('price', productInfo.price.toString());
+            }
+            
+            toast({
+              title: "Product information extracted",
+              description: "Form fields have been populated from the Amazon product link.",
+            });
+          }
+        } catch (error) {
+          console.error('Error extracting product info:', error);
+        } finally {
+          setIsExtracting(false);
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    };
+    
+    extractProductInfo();
+  }, [affiliateLink, isLoading, isExtracting, setValue, watch]);
   
   const onSubmit = async (data: any) => {
     setIsLoading(true);
@@ -105,6 +156,7 @@ export function SuggestionForm() {
         label="Amazon or Retailer Link (optional)"
         {...register('affiliate_link')}
         placeholder="https://www.example.com/product"
+        description="Enter an Amazon link to auto-fill product details"
       />
 
       <TextAreaField
@@ -114,8 +166,8 @@ export function SuggestionForm() {
         placeholder="Tell us why this product should be added to our store"
       />
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Submitting..." : "Submit Suggestion"}
+      <Button type="submit" className="w-full" disabled={isLoading || isExtracting}>
+        {isLoading ? "Submitting..." : isExtracting ? "Extracting product info..." : "Submit Suggestion"}
       </Button>
     </form>
   );
