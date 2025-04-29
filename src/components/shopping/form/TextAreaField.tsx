@@ -21,11 +21,12 @@ export function TextAreaField({
 }: TextAreaFieldProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium flex items-center">
+      <label htmlFor={name} className="text-sm font-medium flex items-center">
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </label>
       <Textarea
+        id={name}
         {...register(name, required ? { required: `${label} is required` } : {})}
         placeholder={placeholder}
       />

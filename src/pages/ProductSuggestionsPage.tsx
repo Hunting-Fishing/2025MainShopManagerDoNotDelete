@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,9 +7,10 @@ import { SuggestionForm } from "@/components/shopping/SuggestionForm";
 import { useProducts } from '@/hooks/useProducts';
 import { Product } from '@/types/shopping';
 import { Badge } from '@/components/ui/badge';
-import { Wrench } from 'lucide-react'; // Changed from 'Tool' to 'Wrench'
+import { Wrench } from 'lucide-react';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import { toast } from '@/hooks/use-toast';
+import { handleFormError } from '@/utils/errorHandling';
 
 export default function ProductSuggestionsPage() {
   const [activeTab, setActiveTab] = useState("suggest");
@@ -25,34 +26,24 @@ export default function ProductSuggestionsPage() {
       setUserSuggestions(suggestions);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
-      toast({
-        title: "Error loading suggestions",
-        description: "Could not load product suggestions. Please try again.",
-        variant: "destructive",
-      });
+      handleFormError(error, 'suggestions');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Load suggestions on initial render if we're on the browse tab
+  useEffect(() => {
+    if (activeTab === "browse") {
+      loadUserSuggestions();
+    }
+  }, [activeTab]);
+
   // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    if (value === "browse" && userSuggestions.length === 0) {
+    if (value === "browse") {
       loadUserSuggestions();
-    }
-  };
-
-  // Handle form submission
-  const handleSubmit = async (data: Partial<Product>) => {
-    try {
-      await suggestProduct(data);
-      setActiveTab("browse");
-      await loadUserSuggestions(); // Reload suggestions after adding a new one
-      return true;
-    } catch (error) {
-      console.error("Error submitting suggestion:", error);
-      return false;
     }
   };
 
@@ -69,7 +60,7 @@ export default function ProductSuggestionsPage() {
             />
           ) : (
             <div className="w-16 h-16 bg-gray-100 flex items-center justify-center">
-              <Wrench className="text-gray-400" size={24} /> {/* Changed from 'Tool' to 'Wrench' */}
+              <Wrench className="text-gray-400" size={24} />
             </div>
           )}
           <div className="flex-1">
@@ -99,7 +90,7 @@ export default function ProductSuggestionsPage() {
 
   const EmptySuggestions = () => (
     <div className="text-center py-12">
-      <Wrench className="mx-auto text-gray-400" size={48} /> {/* Changed from 'Tool' to 'Wrench' */}
+      <Wrench className="mx-auto text-gray-400" size={48} />
       <h3 className="mt-4 text-lg font-medium">No Suggestions Yet</h3>
       <p className="mt-2 text-gray-500">Be the first to suggest a product!</p>
       <Button 

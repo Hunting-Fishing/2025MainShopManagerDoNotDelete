@@ -8,6 +8,7 @@ import {
   submitProductSuggestion
 } from '@/services/shopping/productService';
 import { toast } from '@/hooks/use-toast';
+import { handleApiError } from '@/utils/errorHandling';
 
 export function useProducts(initialOptions: ProductFilterOptions = {}) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,11 +23,7 @@ export function useProducts(initialOptions: ProductFilterOptions = {}) {
       setProducts(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
-      toast({
-        title: "Error loading products",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+      handleApiError(err, "Error loading products");
     } finally {
       setIsLoading(false);
     }
@@ -46,42 +43,39 @@ export function useProducts(initialOptions: ProductFilterOptions = {}) {
     try {
       return await getProductById(id);
     } catch (err) {
-      toast({
-        title: "Error loading product",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+      handleApiError(err, "Error loading product");
       return null;
     }
   };
 
   const fetchUserSuggestions = async (includeUnapproved = false): Promise<Product[]> => {
     try {
-      return await getUserSuggestions(includeUnapproved);
+      console.log("Fetching user suggestions, includeUnapproved:", includeUnapproved);
+      const suggestions = await getUserSuggestions(includeUnapproved);
+      console.log("Fetched suggestions:", suggestions);
+      return suggestions;
     } catch (err) {
-      toast({
-        title: "Error loading user suggestions",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+      console.error("Error fetching user suggestions:", err);
+      handleApiError(err, "Error loading suggestions");
       return [];
     }
   };
 
   const suggestProduct = async (suggestion: Partial<Product>): Promise<boolean> => {
     try {
-      await submitProductSuggestion(suggestion);
+      console.log("Submitting product suggestion:", suggestion);
+      const result = await submitProductSuggestion(suggestion);
+      console.log("Suggestion submitted successfully:", result);
+      
       toast({
         title: "Thank you for your suggestion!",
         description: "It will be reviewed by our team soon.",
       });
+      
       return true;
     } catch (err) {
-      toast({
-        title: "Error submitting suggestion",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+      console.error("Error submitting suggestion:", err);
+      handleApiError(err, "Error submitting product suggestion");
       return false;
     }
   };

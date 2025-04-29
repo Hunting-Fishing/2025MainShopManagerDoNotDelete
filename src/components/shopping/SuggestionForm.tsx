@@ -81,6 +81,7 @@ export function SuggestionForm() {
       <FormField
         label="Product Title"
         required
+        id="title"
         {...register('title', { required: "Product title is required" })}
         error={errors.title?.message as string}
         placeholder="Enter product name"
@@ -112,12 +113,14 @@ export function SuggestionForm() {
         label="Price (optional)"
         type="number"
         step="0.01"
+        id="price"
         {...register('price')}
         placeholder="Enter estimated price"
       />
 
       <FormField
         label="Amazon or Retailer Link (optional)"
+        id="affiliate_link"
         {...register('affiliate_link')}
         placeholder="https://www.amazon.com/product"
         description="Enter an Amazon link to the product"
