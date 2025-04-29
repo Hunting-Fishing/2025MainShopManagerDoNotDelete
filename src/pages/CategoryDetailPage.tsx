@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { Product } from '@/types/shopping';
 
@@ -37,6 +37,8 @@ const SUBCATEGORIES: Record<string, string[]> = {
   'hand-tools': ['Socket Sets', 'Wrenches', 'Screwdrivers', 'Pliers', 'Hammers'],
   'brake-repair': ['Disc Brake Tools', 'Drum Brake Tools', 'Bleeding Tools'],
   'fuel-service': ['Fuel Line Tools', 'Testing Equipment', 'Injector Tools'],
+  'cleaning-supplies': ['General Cleaners', 'Brake Cleaners', 'Degreasers', 'Microfiber Towels'],
+  'lighting': ['Work Lights', 'Flashlights', 'Inspection Lights', 'Drop Lights'],
   // Add more as needed
 };
 
@@ -64,10 +66,17 @@ const CategoryDetailPage: React.FC = () => {
       title={categoryName} 
       description="Browse our selection of high-quality tools for your automotive needs"
       actions={
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Suggest Tool
-        </Button>
+        <>
+          <Link to="/shopping/categories">
+            <Button variant="outline" className="mr-2">
+              <ChevronLeft className="mr-1 h-4 w-4" /> Back to Categories
+            </Button>
+          </Link>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Suggest Tool
+          </Button>
+        </>
       }
     >
       <Tabs defaultValue="all" className="w-full" value={activeTab} onValueChange={setActiveTab}>

@@ -42,7 +42,8 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
           {tools.map((toolCategory, index) => (
             <Card 
               key={index} 
-              className="overflow-hidden border-l-4 border-l-blue-500 hover:shadow-md transition-shadow"
+              className="overflow-hidden border-l-4 border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleCategoryClick(toolCategory.category)}
             >
               <CardContent className="p-4">
                 <div className="flex justify-between items-center mb-2">
@@ -50,7 +51,10 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => handleCategoryClick(toolCategory.category)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent the card click from firing too
+                      handleCategoryClick(toolCategory.category);
+                    }}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     View All <ChevronRight className="h-4 w-4 ml-1" />
