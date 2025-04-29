@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Cog, User, Building, Shield, Bell, Palette, Database, Globe2, Gift, Package, Users, Mail, Brush, MailPlus, Link, ShieldCheck } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
@@ -16,7 +15,6 @@ import {
 // Main Settings component
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("grid");
-  const navigate = useNavigate();
 
   const settingsCategories = [
     {
@@ -24,100 +22,110 @@ const Settings = () => {
       title: "Account Settings",
       description: "Manage your profile and preferences",
       icon: User,
+      path: "/settings/account"
     },
     {
       id: "company",
       title: "Company Information",
       description: "Update your business details and address",
       icon: Building,
+      path: "/settings/company"
     },
     {
       id: "security",
       title: "Security",
       description: "Password and authentication settings",
       icon: Shield,
+      path: "/settings/security"
     },
     {
       id: "security-advanced",
       title: "Advanced Security",
       description: "2FA and security protocols",
       icon: ShieldCheck,
+      path: "/settings/security-advanced"
     },
     {
       id: "notifications",
       title: "Notifications",
       description: "Configure email and system notifications",
       icon: Bell,
+      path: "/settings/notifications"
     },
     {
       id: "branding",
       title: "Branding",
       description: "Customize your shop's branding",
       icon: Palette,
+      path: "/settings/branding"
     },
     {
       id: "appearance",
       title: "Appearance",
       description: "Customize the look and feel of your account",
       icon: Brush,
+      path: "/settings/appearance"
     },
     {
       id: "email",
       title: "Email Settings",
       description: "Configure email templates and signatures",
       icon: MailPlus,
+      path: "/settings/email"
     },
     {
       id: "integrations",
       title: "Integrations",
       description: "Connect with third-party services",
       icon: Link,
+      path: "/settings/integrations"
     },
     {
       id: "loyalty",
       title: "Customer Loyalty",
       description: "Set up your loyalty program",
       icon: Gift,
+      path: "/settings/loyalty"
     },
     {
       id: "inventory",
       title: "Inventory Settings",
       description: "Configure inventory preferences",
       icon: Package,
+      path: "/settings/inventory"
     },
     {
       id: "team",
       title: "Team History",
       description: "View team member activity logs",
       icon: Users,
+      path: "/settings/team"
     },
     {
       id: "email-scheduling",
       title: "Email Scheduling",
       description: "Set up automated email campaigns",
       icon: Mail,
+      path: "/settings/email-scheduling"
     },
     {
       id: "export",
       title: "Data Export",
       description: "Export your shop data",
       icon: Database,
+      path: "/settings/export"
     },
     {
       id: "language",
       title: "Language",
       description: "Change your language settings",
       icon: Globe2,
+      path: "/settings/language"
     },
   ];
 
   const toggleView = (view: string) => {
     setActiveTab(view);
-  };
-
-  const handleCardClick = (categoryId: string) => {
-    // Navigate to the specific settings page
-    navigate(`/settings/${categoryId}`);
   };
 
   return (
@@ -164,7 +172,7 @@ const Settings = () => {
               title={category.title}
               description={category.description}
               icon={category.icon}
-              onClick={() => handleCardClick(category.id)}
+              path={category.path}
             />
           ))}
         </div>
@@ -173,21 +181,25 @@ const Settings = () => {
           <CardContent className="p-0">
             <div className="divide-y">
               {settingsCategories.map((category) => (
-                <div
-                  key={category.id}
-                  className="flex items-center p-4 hover:bg-muted/10 cursor-pointer"
-                  onClick={() => handleCardClick(category.id)}
+                <Link 
+                  to={category.path}
+                  key={category.id} 
+                  className="block"
                 >
-                  <div className="bg-gray-100 p-2 rounded-full mr-4">
-                    <category.icon className="h-5 w-5 text-gray-600" />
+                  <div
+                    className="flex items-center p-4 hover:bg-muted/10 cursor-pointer"
+                  >
+                    <div className="bg-gray-100 p-2 rounded-full mr-4">
+                      <category.icon className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{category.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {category.description}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium">{category.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {category.description}
-                    </p>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           </CardContent>
