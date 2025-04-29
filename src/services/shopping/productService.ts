@@ -136,9 +136,9 @@ export async function submitProductSuggestion(suggestion: Partial<Product>): Pro
     
     // Set default values for required fields
     const productSuggestion = {
-      title: suggestion.title, // Make title explicit to satisfy TypeScript
-      category_id: suggestion.category_id || 'default', // Ensure category_id is set
-      product_type: 'suggested' as const, // Use 'as const' to specify the exact string literal type
+      title: suggestion.title, 
+      category_id: suggestion.category_id || 'default', 
+      product_type: 'suggested' as const,
       is_approved: false,
       is_featured: false,
       is_bestseller: false,
