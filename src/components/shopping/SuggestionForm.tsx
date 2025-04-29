@@ -98,14 +98,20 @@ export function SuggestionForm() {
         placeholder="Enter product name"
       />
 
-      <FormField
-        label="Description"
-        required
-        as={Textarea}
-        {...register('description', { required: "Description is required" })}
-        error={errors.description?.message as string}
-        placeholder="Describe the product and its features"
-      />
+      {/* Description field - using Textarea directly instead of 'as' prop */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium flex items-center">
+          Description
+          <span className="text-destructive ml-1">*</span>
+        </label>
+        <Textarea
+          {...register('description', { required: "Description is required" })}
+          placeholder="Describe the product and its features"
+        />
+        {errors.description && (
+          <p className="text-xs font-medium text-destructive">{errors.description.message as string}</p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -197,12 +203,16 @@ export function SuggestionForm() {
         placeholder="https://www.example.com/product"
       />
 
-      <FormField
-        label="Why do you recommend this product? (optional)"
-        as={Textarea}
-        {...register('reason')}
-        placeholder="Tell us why this product should be added to our store"
-      />
+      {/* Recommendation reason field - using Textarea directly instead of 'as' prop */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          Why do you recommend this product? (optional)
+        </label>
+        <Textarea
+          {...register('reason')}
+          placeholder="Tell us why this product should be added to our store"
+        />
+      </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Submitting..." : "Submit Suggestion"}
