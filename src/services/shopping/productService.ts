@@ -1,215 +1,157 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFilterOptions } from "@/types/shopping";
 
 export async function getProducts(options: ProductFilterOptions = {}): Promise<Product[]> {
-  let query = (supabase as any)
-    .from('products')
-    .select('*')
-    .eq('is_approved', true);
+  try {
+    let query = supabase.from('products').select('*');
 
-  // Apply filters
-  if (options.categoryId) {
-    query = query.eq('category_id', options.categoryId);
+    // Apply filters
+    if (options.categoryId) {
+      query = query.eq('category_id', options.categoryId);
+    }
+
+    if (options.search) {
+      query = query.ilike('title', `%${options.search}%`);
+    }
+
+    if (options.minPrice !== undefined) {
+      query = query.gte('price', options.minPrice);
+    }
+
+    if (options.maxPrice !== undefined) {
+      query = query.lte('price', options.maxPrice);
+    }
+
+    // Apply filter type
+    if (options.filterType) {
+      switch(options.filterType) {
+        case 'bestsellers':
+          query = query.eq('is_bestseller', true);
+          break;
+        case 'featured':
+          query = query.eq('is_featured', true);
+          break;
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'suggested':
+          query = query.eq('product_type', 'suggested');
+          break;
+      }
+    }
+
+    // Apply sorting
+    if (options.sortBy) {
+      switch(options.sortBy) {
+        case 'price_asc':
+          query = query.order('price', { ascending: true });
+          break;
+        case 'price_desc':
+          query = query.order('price', { ascending: false });
+          break;
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'popularity':
+        default:
+          // We'll use is_bestseller as an indicator of popularity
+          query = query.order('is_bestseller', { ascending: false })
+                       .order('average_rating', { ascending: false });
+          break;
+      }
+    }
+
+    // Only return approved products in normal view
+    query = query.eq('is_approved', true);
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching products:", error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error("Error in getProducts:", error);
+    return []; 
   }
-
-  if (options.search) {
-    query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%`);
-  }
-
-  if (options.minPrice !== undefined) {
-    query = query.gte('price', options.minPrice);
-  }
-
-  if (options.maxPrice !== undefined) {
-    query = query.lte('price', options.maxPrice);
-  }
-
-  if (options.filterType === 'bestsellers') {
-    query = query.eq('is_bestseller', true);
-  } else if (options.filterType === 'featured') {
-    query = query.eq('is_featured', true);
-  } else if (options.filterType === 'suggested') {
-    query = query.eq('product_type', 'suggested');
-  }
-
-  // Apply sorting
-  if (options.sortBy === 'price_asc') {
-    query = query.order('price', { ascending: true });
-  } else if (options.sortBy === 'price_desc') {
-    query = query.order('price', { ascending: false });
-  } else if (options.sortBy === 'newest') {
-    query = query.order('created_at', { ascending: false });
-  } else {
-    // Default sort by popularity (bestsellers first, then featured, then others)
-    query = query.order('is_bestseller', { ascending: false })
-                 .order('is_featured', { ascending: false })
-                 .order('title');
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("Error fetching products:", error);
-    throw error;
-  }
-
-  return data || [];
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  const { data, error } = await (supabase as any)
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null; // Product not found
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Product not found
+      }
+      console.error("Error fetching product:", error);
+      throw error;
     }
-    console.error("Error fetching product:", error);
-    throw error;
-  }
 
-  return data;
-}
-
-export async function createProduct(product: Partial<Product>): Promise<Product> {
-  const { data, error } = await (supabase as any)
-    .from('products')
-    .insert(product)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error creating product:", error);
-    throw error;
-  }
-
-  return data;
-}
-
-export async function updateProduct(id: string, product: Partial<Product>): Promise<Product> {
-  const { data, error } = await (supabase as any)
-    .from('products')
-    .update(product)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error updating product:", error);
-    throw error;
-  }
-
-  return data;
-}
-
-export async function deleteProduct(id: string): Promise<void> {
-  const { error } = await (supabase as any)
-    .from('products')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.error("Error deleting product:", error);
-    throw error;
+    return data;
+  } catch (error) {
+    console.error("Error in getProductById:", error);
+    return null;
   }
 }
 
 export async function getUserSuggestions(includeUnapproved: boolean = false): Promise<Product[]> {
-  let query = (supabase as any)
-    .from('products')
-    .select('*')
-    .eq('product_type', 'suggested');
-  
-  if (!includeUnapproved) {
-    query = query.eq('is_approved', true);
-  }
-  
-  const { data, error } = await query.order('created_at', { ascending: false });
-
-  if (error) {
-    console.error("Error fetching user suggestions:", error);
-    throw error;
-  }
-
-  return data || [];
-}
-
-export async function submitProductSuggestion(suggestion: Partial<Product>): Promise<Product> {
-  const productData = {
-    ...suggestion,
-    product_type: 'suggested',
-    is_approved: false,
-    suggested_by: (await supabase.auth.getUser()).data.user?.id
-  };
-
-  const { data, error } = await (supabase as any)
-    .from('products')
-    .insert(productData)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error submitting product suggestion:", error);
-    throw error;
-  }
-
-  return data;
-}
-
-export async function approveProductSuggestion(id: string): Promise<Product> {
-  const { data, error } = await (supabase as any)
-    .from('products')
-    .update({ is_approved: true })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error approving product suggestion:", error);
-    throw error;
-  }
-
-  return data;
-}
-
-export async function getProductReviews(productId: string): Promise<any[]> {
   try {
-    const { data, error } = await (supabase as any)
-      .from('product_reviews')
-      .select(`
-        id,
-        rating,
-        review_title,
-        review_text,
-        is_verified_purchase,
-        helpful_votes,
-        created_at,
-        profiles:user_id (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('product_id', productId)
-      .eq('is_approved', true)
-      .order('created_at', { ascending: false });
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('product_type', 'suggested');
+
+    if (!includeUnapproved) {
+      query = query.eq('is_approved', true);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
-      console.error("Error fetching product reviews:", error);
+      console.error("Error fetching user suggestions:", error);
       throw error;
     }
 
-    // Format the reviews data
-    return data.map((review: any) => ({
-      ...review,
-      user_name: review.profiles ? 
-        `${review.profiles.first_name || ''} ${review.profiles.last_name ? review.profiles.last_name[0] + '.' : ''}` : 
-        'Anonymous'
-    })) || [];
+    return data || [];
   } catch (error) {
-    console.error("Error in getProductReviews:", error);
+    console.error("Error in getUserSuggestions:", error);
     return [];
+  }
+}
+
+export async function submitProductSuggestion(suggestion: Partial<Product>): Promise<Product> {
+  try {
+    // Set default values for required fields
+    const productSuggestion = {
+      ...suggestion,
+      product_type: 'suggested',
+      is_approved: false,
+      is_featured: false,
+      is_bestseller: false
+    };
+
+    const { data, error } = await supabase
+      .from('products')
+      .insert(productSuggestion)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error submitting product suggestion:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error in submitProductSuggestion:", error);
+    throw error;
   }
 }

@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Tag, ShoppingCart, Heart, Gift, Truck, Coffee, Bookmark, Sparkles } from 'lucide-react';
+import { ShoppingBag, Tag, ShoppingCart, Heart, Gift, Truck, Coffee, Bookmark, Sparkles, Wrench } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Breadcrumb,
@@ -37,11 +36,12 @@ const Shopping = () => {
     },
     {
       id: "categories",
-      title: "Categories",
-      description: "Shop by product categories",
-      icon: Tag,
+      title: "Tool Categories",
+      description: "Shop by automotive tool categories",
+      icon: Wrench,
       path: "/shopping/categories",
-      badgeColor: "blue"
+      badge: "Updated",
+      badgeColor: "green"
     },
     {
       id: "cart",
