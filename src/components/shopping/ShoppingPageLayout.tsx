@@ -17,13 +17,15 @@ interface ShoppingPageLayoutProps {
   description?: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
+  affiliateDisclaimer?: boolean;
 }
 
 export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({ 
   title, 
   description, 
   children,
-  actions
+  actions,
+  affiliateDisclaimer = true
 }) => {
   const navigate = useNavigate();
 
@@ -70,6 +72,12 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       <div className="mt-6">
         {children}
       </div>
+      
+      {affiliateDisclaimer && (
+        <div className="mt-8 pt-4 border-t text-sm text-muted-foreground">
+          <p>As an Amazon Associate, we earn from qualifying purchases. This helps support our shop and allows us to continue bringing you quality content.</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -15,16 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Button } from '@/components/ui/button';
-import { useProducts } from '@/hooks/useProducts';
-import { useCategories } from '@/hooks/useCategories';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { ResponsiveContainer } from '@/components/ui/responsive-container';
+import { ShoppingCard } from '@/components/shopping/ShoppingCard';
 
 const Shopping = () => {
   const [activeTab, setActiveTab] = useState("grid");
   const navigate = useNavigate();
   const { isAdmin } = useAuthUser();
-  const isMobile = useIsMobile();
   
   const toggleView = (view: string) => {
     setActiveTab(view);
@@ -36,7 +32,8 @@ const Shopping = () => {
       title: "All Products",
       description: "Browse our complete product catalog",
       icon: ShoppingBag,
-      path: "/shopping/products"
+      path: "/shopping/products",
+      badgeColor: "blue"
     },
     {
       id: "categories",
@@ -44,6 +41,7 @@ const Shopping = () => {
       description: "Shop by product categories",
       icon: Tag,
       path: "/shopping/categories",
+      badgeColor: "blue"
     },
     {
       id: "cart",
@@ -51,50 +49,57 @@ const Shopping = () => {
       description: "View and manage your shopping cart",
       icon: ShoppingCart,
       path: "/shopping/cart",
-      badge: "3 items"
+      badge: "3 items",
+      badgeColor: "green"
     },
     {
       id: "wishlist",
       title: "Wishlist",
       description: "Products you've saved for later",
       icon: Heart,
-      path: "/shopping/wishlist"
+      path: "/shopping/wishlist",
+      badgeColor: "red"
     },
     {
       id: "deals",
-      title: "Special Deals",
+      title: "Amazon Deals",
       description: "Limited-time offers and discounts",
       icon: Sparkles,
       path: "/shopping/deals",
-      badge: "New"
+      badge: "New",
+      badgeColor: "orange"
     },
     {
       id: "recommendations",
       title: "Recommended for You",
       description: "Products picked just for you",
       icon: Gift,
-      path: "/shopping/recommendations"
+      path: "/shopping/recommendations",
+      badgeColor: "purple"
     },
     {
       id: "orders",
       title: "My Orders",
       description: "Track and manage your orders",
       icon: Truck,
-      path: "/shopping/orders"
+      path: "/shopping/orders",
+      badgeColor: "blue"
     },
     {
       id: "suggestions",
       title: "Product Suggestions",
       description: "Submit and view customer suggestions",
       icon: Coffee,
-      path: "/shopping/suggestions"
+      path: "/shopping/suggestions",
+      badgeColor: "yellow"
     },
     {
       id: "saved",
       title: "Saved Items",
       description: "Your saved product collections",
       icon: Bookmark,
-      path: "/shopping/saved"
+      path: "/shopping/saved",
+      badgeColor: "purple"
     },
   ];
 
@@ -113,7 +118,7 @@ const Shopping = () => {
       </Breadcrumb>
 
       <div className="flex justify-between items-center my-6">
-        <h1 className="text-2xl font-bold">Shop</h1>
+        <h1 className="text-2xl font-bold">Amazon Shopping</h1>
         <div className="flex space-x-2 bg-muted/20 rounded-md p-1">
           <button
             className={`px-3 py-1 rounded-md ${
@@ -142,35 +147,24 @@ const Shopping = () => {
         </div>
       )}
 
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <p className="text-blue-800">
+          As an Amazon Associate, we earn from qualifying purchases. This helps support our shop and allows us to continue bringing you quality content.
+        </p>
+      </div>
+
       {activeTab === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {shoppingCategories.map((category) => (
-            <Link to={category.path} className="block" key={category.id}>
-              <Card 
-                className="cursor-pointer transition-all duration-200 hover:shadow-md border overflow-hidden hover:border-slate-300"
-              >
-                <CardContent className="p-0">
-                  <div className="p-5">
-                    <div className="flex items-start">
-                      <div className="rounded-full p-2 mr-3 text-slate-600 bg-slate-100">
-                        <category.icon className="h-5 w-5" />
-                      </div>
-                      <div className="flex-grow">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-medium text-slate-900">{category.title}</h3>
-                          {category.badge && (
-                            <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
-                              {category.badge}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-1 text-sm text-slate-500 line-clamp-2">{category.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+            <ShoppingCard
+              key={category.id}
+              title={category.title}
+              description={category.description}
+              icon={category.icon}
+              path={category.path}
+              badge={category.badge}
+              badgeColor={category.badgeColor as any}
+            />
           ))}
         </div>
       ) : (
@@ -196,7 +190,10 @@ const Shopping = () => {
                       </div>
                     </div>
                     {category.badge && (
-                      <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                      <Badge 
+                        variant="outline" 
+                        className={`bg-${category.badgeColor}-100 text-${category.badgeColor}-800 border-${category.badgeColor}-300`}
+                      >
                         {category.badge}
                       </Badge>
                     )}
@@ -207,6 +204,13 @@ const Shopping = () => {
           </CardContent>
         </Card>
       )}
+
+      <div className="mt-8 pt-4 border-t">
+        <h2 className="text-lg font-medium mb-2">About Our Amazon Shop</h2>
+        <p className="text-muted-foreground">
+          Our shop features carefully selected products from Amazon. We've curated the best options across various categories to help you find quality items. When you purchase through our links, you support our business at no additional cost to you.
+        </p>
+      </div>
     </div>
   );
 };

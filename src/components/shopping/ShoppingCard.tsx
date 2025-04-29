@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ShoppingCardProps {
   title: string;
@@ -12,6 +13,7 @@ interface ShoppingCardProps {
   path: string;
   isActive?: boolean;
   badge?: string;
+  badgeColor?: "green" | "red" | "blue" | "yellow" | "purple" | "orange";
 }
 
 export const ShoppingCard: React.FC<ShoppingCardProps> = ({
@@ -20,8 +22,19 @@ export const ShoppingCard: React.FC<ShoppingCardProps> = ({
   icon: Icon,
   path,
   isActive = false,
-  badge
+  badge,
+  badgeColor = "purple"
 }) => {
+  // Map badge colors to Tailwind classes
+  const badgeColorClasses = {
+    green: "bg-green-100 text-green-800 border-green-300",
+    red: "bg-red-100 text-red-800 border-red-300",
+    blue: "bg-blue-100 text-blue-800 border-blue-300",
+    yellow: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    purple: "bg-purple-100 text-purple-800 border-purple-300", 
+    orange: "bg-orange-100 text-orange-800 border-orange-300"
+  };
+  
   return (
     <Link to={path} className="block">
       <Card 
@@ -43,7 +56,10 @@ export const ShoppingCard: React.FC<ShoppingCardProps> = ({
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-slate-900">{title}</h3>
                   {badge && (
-                    <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                    <Badge 
+                      variant="outline" 
+                      className={cn(badgeColorClasses[badgeColor])}
+                    >
                       {badge}
                     </Badge>
                   )}
