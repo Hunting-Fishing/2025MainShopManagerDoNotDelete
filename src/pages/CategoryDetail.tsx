@@ -20,6 +20,8 @@ export default function CategoryDetail() {
     isLoading, 
     productsLoading,
     error, 
+    filterOptions,
+    updateFilters,
     similarCategories,
     diagnosticInfo,
     handleRetry
@@ -48,12 +50,16 @@ export default function CategoryDetail() {
     ];
     
     if (category) {
-      breadcrumbs.push({ label: category.name });
+      breadcrumbs.push({ 
+        label: category.name,
+        path: `/shopping/categories/${category.slug}` // Add required path prop
+      });
     } else if (slug) {
       breadcrumbs.push({ 
         label: slug.split('-')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ') 
+          .join(' '),
+        path: `/shopping/categories/${slug}` // Add required path prop
       });
     }
     
@@ -62,14 +68,14 @@ export default function CategoryDetail() {
   
   // Show loading state
   if (isLoading) {
-    return <CategoryLoading slug={slug} />;
+    return <CategoryLoading />;  // Remove the slug prop as it's not expected
   }
   
   // Show error state if category not found
   if (error) {
     return (
       <CategoryNotFound 
-        slug={slug} 
+        slug={slug || ''} 
         error={error} 
         similarCategories={similarCategories} 
         diagnosticInfo={diagnosticInfo}
@@ -87,15 +93,22 @@ export default function CategoryDetail() {
       {category && category.subcategories && category.subcategories.length > 0 && (
         <div className="mb-8">
           <CategoryTabs 
-            category={category} 
-            subcategories={category.subcategories} 
+            selectedCategoryId={category.id} 
+            onCategoryChange={(categoryId) => {
+              if (categoryId) {
+                updateFilters({ categoryId });
+              }
+            }}
           />
         </div>
       )}
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
-          <ProductFilters />
+          <ProductFilters 
+            filters={filterOptions} 
+            onUpdateFilters={updateFilters} 
+          />
         </div>
         
         <div className="lg:col-span-3">
@@ -104,7 +117,11 @@ export default function CategoryDetail() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : products && products.length > 0 ? (
-            <ProductGrid products={products} />
+            <ProductGrid 
+              products={products} 
+              isLoading={productsLoading}
+              categoryName={category?.name}
+            />
           ) : (
             <Alert className="bg-amber-50 border-amber-200 mb-4">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
