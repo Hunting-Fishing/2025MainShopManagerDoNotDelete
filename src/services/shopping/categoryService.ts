@@ -15,11 +15,17 @@ export async function getCategories(): Promise<ProductCategory[]> {
       throw error;
     }
 
+    // Add debug log to see what categories are returned
+    console.log("Raw categories data from database:", data);
+
     // Organize categories into a hierarchy
     const mainCategories: ProductCategory[] = [];
     const subCategories: ProductCategory[] = [];
 
     data.forEach((category: ProductCategory) => {
+      // Log each category to help with debugging
+      console.log(`Processing category: ${category.name}, slug: ${category.slug}, id: ${category.id}`);
+      
       if (!category.parent_id) {
         category.subcategories = [];
         mainCategories.push(category);
@@ -54,7 +60,7 @@ export async function getCategoryBySlug(slug: string): Promise<ProductCategory |
   }
   
   try {
-    console.log(`Fetching category with slug: "${slug}"`);
+    console.log(`DB Query: Fetching category with slug: "${slug}"`);
     
     const { data, error } = await (supabase as any)
       .from('product_categories')
@@ -70,11 +76,11 @@ export async function getCategoryBySlug(slug: string): Promise<ProductCategory |
     }
     
     if (!data) {
-      console.log(`No category found with slug: "${slug}"`);
+      console.log(`DB Result: No category found with slug: "${slug}"`);
       return null;
     }
     
-    console.log(`Found category for slug "${slug}":`, data.name);
+    console.log(`DB Result: Found category for slug "${slug}":`, data.name);
     return data;
   } catch (err) {
     console.error(`Error fetching category with slug "${slug}":`, err);
@@ -83,6 +89,12 @@ export async function getCategoryBySlug(slug: string): Promise<ProductCategory |
 }
 
 export async function createCategory(category: Partial<ProductCategory>): Promise<ProductCategory> {
+  // Generate a slug if not provided
+  if (!category.slug && category.name) {
+    const { slugify } = await import('@/utils/slugUtils');
+    category.slug = slugify(category.name);
+  }
+  
   const { data, error } = await (supabase as any)
     .from('product_categories')
     .insert(category)
@@ -98,6 +110,12 @@ export async function createCategory(category: Partial<ProductCategory>): Promis
 }
 
 export async function updateCategory(id: string, category: Partial<ProductCategory>): Promise<ProductCategory> {
+  // Update slug if name is updated and slug isn't specified
+  if (category.name && !category.slug) {
+    const { slugify } = await import('@/utils/slugUtils');
+    category.slug = slugify(category.name);
+  }
+
   const { data, error } = await (supabase as any)
     .from('product_categories')
     .update(category)

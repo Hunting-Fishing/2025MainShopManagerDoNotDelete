@@ -10,13 +10,13 @@ import { ProductFilters } from '@/components/shopping/ProductFilters';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Info, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Info, RefreshCw, ArrowLeft, AlertCircle } from 'lucide-react';
 import { slugify, normalizeSlug } from '@/utils/slugUtils';
 
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { categories, fetchCategoryBySlug } = useCategories();
+  const { categories, fetchCategoryBySlug, isLoading: categoriesLoading } = useCategories();
   const { products, isLoading: productsLoading, filterOptions, updateFilters } = useProducts();
   
   const [category, setCategory] = useState<ProductCategory | null>(null);
@@ -24,6 +24,7 @@ const CategoryDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [similarCategories, setSimilarCategories] = useState<ProductCategory[]>([]);
   const [retries, setRetries] = useState(0);
+  const [diagnosticInfo, setDiagnosticInfo] = useState<string | null>(null);
 
   useEffect(() => {
     // Reset state when the slug changes
@@ -31,6 +32,7 @@ const CategoryDetail = () => {
     setError(null);
     setCategory(null);
     setSimilarCategories([]);
+    setDiagnosticInfo(null);
     
     // If no slug is provided, show an error
     if (!slug) {
@@ -45,12 +47,15 @@ const CategoryDetail = () => {
         
         // Try to normalize the slug (remove or standardize special characters)
         const normalizedSlug = normalizeSlug(slug);
+        console.log(`Normalized slug: ${normalizedSlug}`);
+        console.log(`Available categories:`, categories.map(c => ({id: c.id, name: c.name, slug: c.slug})));
         
         // First, try to find the category by normalized slug
         let categoryData = await fetchCategoryBySlug(normalizedSlug);
         
         // If we couldn't find it, try with the original slug
         if (!categoryData && normalizedSlug !== slug) {
+          console.log(`Trying with original slug: ${slug}`);
           categoryData = await fetchCategoryBySlug(slug);
         }
         
@@ -80,6 +85,14 @@ const CategoryDetail = () => {
           } else {
             setError(`Category "${slug}" not found.`);
           }
+          
+          // Add diagnostic information
+          setDiagnosticInfo(`
+            We couldn't find a category with the slug "${slug}". 
+            ${categories.length > 0 
+              ? `There are ${categories.length} categories in the database.` 
+              : "There are no categories in the database yet."}
+          `);
         }
       } catch (err) {
         console.error("Error fetching category:", err);
@@ -93,7 +106,7 @@ const CategoryDetail = () => {
   }, [slug, fetchCategoryBySlug, categories, updateFilters, retries]);
 
   // If the page is still loading, show a loading message
-  if (isLoading) {
+  if (isLoading || categoriesLoading) {
     return (
       <ShoppingPageLayout
         title="Loading Category..."
@@ -123,6 +136,17 @@ const CategoryDetail = () => {
         ]}
       >
         <div className="space-y-8">
+          {/* Add diagnostic information */}
+          {diagnosticInfo && (
+            <Alert className="bg-blue-50 border-blue-200 mb-6">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <AlertTitle className="text-blue-800">Diagnostic Information</AlertTitle>
+              <AlertDescription className="text-blue-700 whitespace-pre-line">
+                {diagnosticInfo}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Show similar category suggestions if available */}
           {similarCategories.length > 0 && (
             <div className="mt-6">
@@ -192,7 +216,7 @@ const CategoryDetail = () => {
       <ProductGrid 
         products={products}
         isLoading={productsLoading}
-        emptyMessage={`No products found in ${category?.name || 'this category'}.`}
+        emptyMessage={`No products found in ${category?.name || 'this category'}. ${category ? 'Try adding some products first.' : ''}`}
       />
     </ShoppingPageLayout>
   );

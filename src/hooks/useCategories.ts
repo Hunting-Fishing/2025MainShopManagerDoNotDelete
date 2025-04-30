@@ -13,9 +13,13 @@ export function useCategories() {
     async function fetchCategories() {
       try {
         setIsLoading(true);
+        console.log("Fetching all categories");
         const data = await getCategories();
+        console.log(`Fetched ${data.length} categories:`, data);
         setCategories(data);
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        console.error("Error loading categories:", errorMessage);
         setError(err instanceof Error ? err : new Error('Unknown error'));
         toast({
           title: "Error loading categories",
@@ -48,8 +52,17 @@ export function useCategories() {
 
   const fetchCategoryBySlug = async (slug: string): Promise<ProductCategory | null> => {
     try {
-      return await getCategoryBySlug(slug);
+      console.log(`Fetching category with slug: "${slug}"`);
+      const result = await getCategoryBySlug(slug);
+      if (result) {
+        console.log(`Found category by slug "${slug}":`, result);
+      } else {
+        console.log(`No category found with slug: "${slug}"`);
+      }
+      return result;
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error(`Error fetching category with slug "${slug}":`, errorMessage);
       toast({
         title: "Error loading category",
         description: "Please try again later",
