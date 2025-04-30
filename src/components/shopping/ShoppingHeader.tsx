@@ -6,6 +6,7 @@ import { Search, SlidersHorizontal, Heart, ShoppingBag } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useWishlist } from '@/hooks/useWishlist';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
 
 interface ShoppingHeaderProps {
   onSearch: (searchTerm: string) => void;
@@ -19,13 +20,36 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
   onToggleWishlist
 }) => {
   const isMobile = useIsMobile();
-  const { wishlistItems, isAuthenticated } = useWishlist();
+  const { wishlistItems = [], isAuthenticated, error: wishlistError } = useWishlist();
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Display error toast when wishlist errors occur
+  React.useEffect(() => {
+    if (wishlistError) {
+      toast({
+        title: "Wishlist Error",
+        description: "There was an issue loading your wishlist. Please try again later.",
+        variant: "destructive",
+      });
+      console.error("Wishlist error:", wishlistError);
+    }
+  }, [wishlistError]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("ShoppingHeader: Search submitted:", searchTerm);
     onSearch(searchTerm);
+  };
+
+  const handleToggleWishlist = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to access your wishlist",
+        variant: "default",
+      });
+    }
+    onToggleWishlist();
   };
 
   return (
@@ -34,30 +58,30 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
         <h1 className="text-2xl font-bold">Amazon Shop</h1>
         
         <div className="flex items-center gap-2">
-          {isAuthenticated && (
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={onToggleWishlist}
-              className="relative"
-            >
-              <Heart className="h-5 w-5" />
-              {wishlistItems.length > 0 && (
-                <Badge 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0"
-                  variant="destructive"
-                >
-                  {wishlistItems.length}
-                </Badge>
-              )}
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleToggleWishlist}
+            className="relative"
+            aria-label="Toggle wishlist"
+          >
+            <Heart className="h-5 w-5" />
+            {wishlistItems.length > 0 && (
+              <Badge 
+                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-100 text-red-800 border border-red-300"
+                variant="destructive"
+              >
+                {wishlistItems.length}
+              </Badge>
+            )}
+          </Button>
           
           {isMobile && (
             <Button 
               variant="outline" 
               size="icon" 
               onClick={onToggleFilters}
+              aria-label="Toggle filters"
             >
               <SlidersHorizontal className="h-5 w-5" />
             </Button>
@@ -73,6 +97,7 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pr-10"
+              aria-label="Search products"
             />
             <Button 
               type="submit" 

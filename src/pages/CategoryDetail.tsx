@@ -9,6 +9,8 @@ import { useToolCategories } from '@/hooks/useToolCategories';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { toast } from '@/hooks/use-toast';
+import { AlertTriangle } from 'lucide-react';
 
 interface CategoryData {
   title: string;
@@ -20,52 +22,92 @@ interface CategoryData {
 
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { toolCategories, isLoading: isLoadingToolCategories } = useToolCategories();
-  const { products, isLoading: isLoadingProducts } = useProducts();
+  const { toolCategories, isLoading: isLoadingToolCategories, error: categoriesError } = useToolCategories();
+  const { products, isLoading: isLoadingProducts, error: productsError } = useProducts();
   
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Handle errors
+  useEffect(() => {
+    if (categoriesError) {
+      console.error("CategoryDetail: Error loading tool categories:", categoriesError);
+      setError("Failed to load category data. Please try again later.");
+      toast({
+        title: "Error Loading Category",
+        description: "There was a problem loading the category details.",
+        variant: "destructive",
+      });
+    }
+    
+    if (productsError) {
+      console.error("CategoryDetail: Error loading products:", productsError);
+      toast({
+        title: "Error Loading Products",
+        description: "There was a problem loading the products for this category.",
+        variant: "destructive",
+      });
+    }
+  }, [categoriesError, productsError]);
   
   // Load category data
   useEffect(() => {
     console.log(`CategoryDetail: Loading category data for slug: ${slug}`);
     
-    if (!slug || !toolCategories || isLoadingToolCategories) {
+    if (!slug) {
+      console.error("CategoryDetail: No slug provided");
+      setError("Category not found.");
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!toolCategories || isLoadingToolCategories) {
       console.log('CategoryDetail: Still waiting for toolCategories data...');
       return;
     }
     
-    // Format slug for display as fallback
-    const formattedTitle = slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
-    // Find matching category
-    const matchedCategory = toolCategories.find(
-      cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
-    );
-    
-    if (matchedCategory) {
-      console.log('CategoryDetail: Category found:', matchedCategory);
+    try {
+      // Format slug for display as fallback
+      const formattedTitle = slug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
       
-      setCategory({
-        title: matchedCategory.category,
-        description: matchedCategory.description || `Browse our selection of ${matchedCategory.category}`,
-        items: matchedCategory.items || [],
-        isNew: matchedCategory.isNew || false,
-        isPopular: matchedCategory.isPopular || false
-      });
-    } else {
-      console.log(`CategoryDetail: Category not found for slug: ${slug}, using formatted title`);
+      // Find matching category
+      const matchedCategory = toolCategories.find(
+        cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
+      );
       
-      setCategory({
-        title: formattedTitle,
-        description: `Browse our selection of ${formattedTitle}`,
-        items: [],
-        isNew: false,
-        isPopular: false
+      if (matchedCategory) {
+        console.log('CategoryDetail: Category found:', matchedCategory);
+        
+        setCategory({
+          title: matchedCategory.category,
+          description: matchedCategory.description || `Browse our selection of ${matchedCategory.category}`,
+          items: matchedCategory.items || [],
+          isNew: matchedCategory.isNew || false,
+          isPopular: matchedCategory.isPopular || false
+        });
+      } else {
+        console.log(`CategoryDetail: Category not found for slug: ${slug}, using formatted title`);
+        
+        setCategory({
+          title: formattedTitle,
+          description: `Browse our selection of ${formattedTitle}`,
+          items: [],
+          isNew: false,
+          isPopular: false
+        });
+      }
+    } catch (err) {
+      console.error("CategoryDetail: Error processing category data:", err);
+      setError("Error processing category data. Please try again later.");
+      toast({
+        title: "Error",
+        description: "There was a problem loading the category.",
+        variant: "destructive",
       });
     }
   }, [slug, toolCategories, isLoadingToolCategories]);
@@ -77,34 +119,43 @@ const CategoryDetail = () => {
       return;
     }
     
-    console.log(`CategoryDetail: Filtering products for category: ${category.title}`);
-    const categoryLower = category.title.toLowerCase();
-    
-    const filtered = products.filter(product => {
-      // Try to parse metadata if it exists
-      let metadata = {};
-      if (product.metadata) {
-        try {
-          metadata = JSON.parse(product.metadata);
-        } catch (e) {
-          console.warn(`CategoryDetail: Failed to parse metadata for product ${product.id}`);
+    try {
+      console.log(`CategoryDetail: Filtering products for category: ${category.title}`);
+      const categoryLower = category.title.toLowerCase();
+      
+      const filtered = products.filter(product => {
+        // Try to parse metadata if it exists
+        let metadata = {};
+        if (product.metadata) {
+          try {
+            metadata = JSON.parse(product.metadata);
+          } catch (e) {
+            console.warn(`CategoryDetail: Failed to parse metadata for product ${product.id}`);
+          }
         }
-      }
+        
+        const titleLower = product.title.toLowerCase();
+        
+        return (
+          titleLower.includes(categoryLower) || 
+          (metadata && 
+           typeof metadata === 'object' && 
+           'category' in metadata && 
+           typeof metadata.category === 'string' &&
+           metadata.category.toLowerCase() === categoryLower)
+        );
+      });
       
-      const titleLower = product.title.toLowerCase();
-      
-      return (
-        titleLower.includes(categoryLower) || 
-        (metadata && 
-         typeof metadata === 'object' && 
-         'category' in metadata && 
-         typeof metadata.category === 'string' &&
-         metadata.category.toLowerCase() === categoryLower)
-      );
-    });
-    
-    console.log(`CategoryDetail: Found ${filtered.length} products for ${category.title}`);
-    setFilteredProducts(filtered);
+      console.log(`CategoryDetail: Found ${filtered.length} products for ${category.title}`);
+      setFilteredProducts(filtered);
+    } catch (err) {
+      console.error("CategoryDetail: Error filtering products:", err);
+      toast({
+        title: "Error",
+        description: "There was a problem filtering products for this category.",
+        variant: "destructive",
+      });
+    }
   }, [category, products, isLoadingProducts]);
   
   // Track overall loading state
@@ -127,15 +178,18 @@ const CategoryDetail = () => {
     );
   }
 
-  if (!category) {
+  if (error || !category) {
     return (
       <ShoppingPageLayout
         title="Category Not Found"
         description="We couldn't find the requested category"
       >
-        <div className="flex flex-col items-center justify-center h-64">
+        <div className="flex flex-col items-center justify-center h-64 bg-red-50 border border-red-200 rounded-xl p-8">
+          <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
           <h2 className="text-xl font-medium mb-2">Category Not Found</h2>
-          <p className="text-muted-foreground">The category you're looking for doesn't exist or has been moved</p>
+          <p className="text-muted-foreground text-center">
+            {error || "The category you're looking for doesn't exist or has been moved"}
+          </p>
         </div>
       </ShoppingPageLayout>
     );

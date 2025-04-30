@@ -4,7 +4,7 @@ import { Product } from '@/types/shopping';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart, ShoppingCart } from 'lucide-react';
+import { Star, Heart, ShoppingCart, AlertTriangle, ImageOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -12,10 +12,27 @@ interface ProductGridProps {
   products: Product[];
   isLoading: boolean;
   emptyMessage?: string;
+  error?: string | null;
 }
 
-export function ProductGrid({ products, isLoading, emptyMessage = "No products found." }: ProductGridProps) {
+export function ProductGrid({ 
+  products, 
+  isLoading, 
+  emptyMessage = "No products found.", 
+  error = null 
+}: ProductGridProps) {
   const navigate = useNavigate();
+  
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="rounded-md bg-red-50 border border-red-200 p-6 text-center">
+        <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-red-800 mb-2">Failed to load products</h3>
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
   
   if (isLoading) {
     return (
@@ -35,9 +52,10 @@ export function ProductGrid({ products, isLoading, emptyMessage = "No products f
     );
   }
   
-  if (products.length === 0) {
+  if (!products || products.length === 0) {
     return (
-      <div className="text-center py-10">
+      <div className="text-center py-10 bg-gray-50 rounded-md border border-gray-200">
+        <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-lg text-muted-foreground">{emptyMessage}</p>
       </div>
     );
@@ -54,12 +72,15 @@ export function ProductGrid({ products, isLoading, emptyMessage = "No products f
                 alt={product.title}
                 className="w-full h-48 object-cover"
                 onError={(e) => {
+                  console.log(`Error loading image for product: ${product.id}`);
                   (e.target as HTMLImageElement).src = '/placeholder.png';
+                  // Add a class to show the error state
+                  (e.target as HTMLImageElement).classList.add('bg-gray-100', 'p-4');
                 }}
               />
             ) : (
               <div className="w-full h-48 bg-slate-100 flex items-center justify-center">
-                <span className="text-slate-400">No image</span>
+                <ImageOff className="h-12 w-12 text-slate-400" />
               </div>
             )}
             
@@ -86,18 +107,18 @@ export function ProductGrid({ products, isLoading, emptyMessage = "No products f
             <div className="cursor-pointer" onClick={() => navigate(`/shopping/product/${product.id}`)}>
               <h3 className="font-medium line-clamp-1 hover:text-primary transition-colors">{product.title}</h3>
               
-              {product.average_rating > 0 && (
+              {product.average_rating && product.average_rating > 0 && (
                 <div className="flex items-center mt-1">
                   <div className="flex space-x-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star 
                         key={i} 
                         size={14}
-                        className={i < product.average_rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} 
+                        className={i < (product.average_rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} 
                       />
                     ))}
                   </div>
-                  <span className="text-xs ml-1 text-muted-foreground">({product.review_count})</span>
+                  <span className="text-xs ml-1 text-muted-foreground">({product.review_count || 0})</span>
                 </div>
               )}
               
@@ -124,7 +145,11 @@ export function ProductGrid({ products, isLoading, emptyMessage = "No products f
                 className="flex-1"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/shopping/product/${product.id}`);
+                  try {
+                    navigate(`/shopping/product/${product.id}`);
+                  } catch (err) {
+                    console.error("Error navigating to product:", err);
+                  }
                 }}
               >
                 View Product
