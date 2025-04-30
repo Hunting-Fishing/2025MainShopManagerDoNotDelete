@@ -10,19 +10,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
+interface CategoryData {
+  title: string;
+  description: string;
+  items: string[];
+  isNew: boolean;
+  isPopular: boolean;
+}
+
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toolCategories, isLoading: isLoadingToolCategories } = useToolCategories();
   const { products, isLoading: isLoadingProducts } = useProducts();
   
-  const [category, setCategory] = useState<{
-    title: string;
-    description: string;
-    items: string[];
-    isNew: boolean;
-    isPopular: boolean;
-  } | null>(null);
-  
+  const [category, setCategory] = useState<CategoryData | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -94,7 +95,10 @@ const CategoryDetail = () => {
       
       return (
         titleLower.includes(categoryLower) || 
-        (metadata && metadata.category && 
+        (metadata && 
+         typeof metadata === 'object' && 
+         'category' in metadata && 
+         typeof metadata.category === 'string' &&
          metadata.category.toLowerCase() === categoryLower)
       );
     });
