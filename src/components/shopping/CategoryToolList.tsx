@@ -32,6 +32,7 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
   const handleCategoryClick = (category: string) => {
     // Create a URL-friendly slug from the category name
     const slug = category.toLowerCase().replace(/\s+/g, '-');
+    console.log(`Navigating to category: ${slug}`);
     navigate(`/shopping/categories/${slug}`);
   };
 
@@ -82,10 +83,10 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
                             {toolCategory.category}
                           </h3>
                           {toolCategory.isNew && (
-                            <Badge variant="success" className="text-xs">New</Badge>
+                            <Badge className="bg-green-100 text-green-800 border border-green-300">New</Badge>
                           )}
                           {toolCategory.isPopular && (
-                            <Badge variant="warning" className="text-xs">Popular</Badge>
+                            <Badge className="bg-amber-100 text-amber-800 border border-amber-300">Popular</Badge>
                           )}
                         </div>
                         {toolCategory.description && (

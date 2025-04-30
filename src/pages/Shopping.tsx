@@ -193,7 +193,7 @@ const Shopping = () => {
                     </div>
                     {category.badge && (
                       <Badge 
-                        className={`bg-${category.badgeColor}-100 text-${category.badgeColor}-800 border-${category.badgeColor}-300`}
+                        className={`bg-${category.badgeColor}-100 text-${category.badgeColor}-800 border border-${category.badgeColor}-300`}
                       >
                         {category.badge}
                       </Badge>
