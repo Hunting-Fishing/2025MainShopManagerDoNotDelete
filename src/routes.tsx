@@ -2,12 +2,6 @@
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
-import Shopping from '@/pages/Shopping';
-import ShoppingCategories from '@/pages/ShoppingCategories';
-import ProductDetail from '@/pages/ProductDetail';
-import ProductsPage from '@/pages/ProductsPage';
-import ShoppingAdmin from '@/pages/ShoppingAdmin';
-import CategoryDetailPage from '@/pages/CategoryDetailPage';
 import NotFound from '@/pages/NotFound';
 import Customers from '@/pages/Customers';
 import CreateCustomer from '@/pages/CreateCustomer';
@@ -20,8 +14,6 @@ import WorkOrderCreate from '@/pages/WorkOrderCreate';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import { VehicleDetailsPage } from '@/components/customers/vehicles/VehicleDetailsPage';
-import WishlistPage from '@/pages/WishlistPage';
-import ProductSuggestionsPage from '@/pages/ProductSuggestionsPage';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -76,38 +68,6 @@ export const routes: RouteObject[] = [
       {
         path: 'settings',
         element: <Settings />,
-      },
-      {
-        path: 'shopping',
-        element: <Shopping />,
-      },
-      {
-        path: 'shopping/categories',
-        element: <ShoppingCategories />,
-      },
-      {
-        path: 'shopping/categories/:slug',
-        element: <CategoryDetailPage />,
-      },
-      {
-        path: 'shopping/products',
-        element: <ProductsPage />,
-      },
-      {
-        path: 'shopping/product/:productId',
-        element: <ProductDetail />,
-      },
-      {
-        path: 'shopping/wishlist',
-        element: <WishlistPage />,
-      },
-      {
-        path: 'shopping/suggestions',
-        element: <ProductSuggestionsPage />,
-      },
-      {
-        path: 'shopping/admin',
-        element: <ShoppingAdmin />,
       },
       {
         path: 'login',
