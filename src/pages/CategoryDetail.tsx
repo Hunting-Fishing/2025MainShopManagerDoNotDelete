@@ -182,7 +182,7 @@ const CategoryDetail = () => {
       <div className="mb-8">
         <ProductFilters 
           filterOptions={filterOptions}
-          onChange={updateFilters}
+          onFilterChange={updateFilters}
         />
       </div>
       
