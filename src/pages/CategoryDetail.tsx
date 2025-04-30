@@ -6,6 +6,7 @@ import { ProductGrid } from '@/components/shopping/ProductGrid';
 import { useProducts } from '@/hooks/useProducts';
 import { Product } from '@/types/shopping';
 import { useToolCategories } from '@/hooks/useToolCategories';
+import { useCategories } from '@/hooks/useCategories';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -24,70 +25,154 @@ const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toolCategories, isLoading: isLoadingToolCategories } = useToolCategories();
   const { products: allProducts, isLoading: isLoadingProducts } = useProducts();
+  const { fetchCategoryBySlug } = useCategories();
   
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const findCategoryBySlug = useCallback((slug: string, categories: any[]) => {
-    if (!slug || !categories?.length) return null;
+  // Helper function to normalize text for comparison
+  const normalizeText = (text: string = '') => {
+    return text.toLowerCase().replace(/[\s-_]+/g, '-').trim();
+  };
+  
+  const findCategoryBySlug = useCallback((searchSlug: string, categories: any[]) => {
+    if (!searchSlug || !categories?.length) return null;
     
-    // Format slug for comparison
-    const normalizedSlug = slug.toLowerCase();
+    // Normalize the search slug
+    const normalizedSearchSlug = normalizeText(searchSlug);
     
-    const foundCategory = categories.find(
-      cat => cat.category.toLowerCase().replace(/\s+/g, '-') === normalizedSlug
+    console.log('Finding category with normalized slug:', normalizedSearchSlug);
+    console.log('Available categories:', categories.map(c => ({
+      category: c.category,
+      normalizedName: normalizeText(c.category)
+    })));
+    
+    // Find by exact match first
+    let foundCategory = categories.find(
+      cat => normalizeText(cat.category) === normalizedSearchSlug
     );
+    
+    // If not found, try more flexible matching
+    if (!foundCategory) {
+      foundCategory = categories.find(cat => {
+        const normalizedCat = normalizeText(cat.category);
+        return normalizedCat.includes(normalizedSearchSlug) || 
+               normalizedSearchSlug.includes(normalizedCat);
+      });
+    }
+    
+    if (foundCategory) {
+      console.log('Found matching category:', foundCategory);
+    }
     
     return foundCategory;
   }, []);
   
   // Load category data when toolCategories are available
   useEffect(() => {
-    if (!slug || !toolCategories?.length) {
-      return;
-    }
-    
-    try {
-      console.log('CategoryDetail: Looking for category with slug:', slug);
+    const loadCategory = async () => {
+      if (!slug) {
+        setError("No category specified");
+        setIsLoading(false);
+        return;
+      }
       
-      // Format slug for display as fallback
-      const formattedTitle = slug
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+      setIsLoading(true);
       
-      // Find matching category
-      const matchedCategory = findCategoryBySlug(slug, toolCategories);
-      
-      if (matchedCategory) {
-        console.log('CategoryDetail: Category found:', matchedCategory);
+      try {
+        console.log('CategoryDetail: Looking for category with slug:', slug);
         
-        setCategory({
-          title: matchedCategory.category,
-          description: matchedCategory.description || `Browse our selection of ${matchedCategory.category}`,
-          items: matchedCategory.items || [],
-          isNew: matchedCategory.isNew || false,
-          isPopular: matchedCategory.isPopular || false
-        });
+        // Format slug for display as fallback
+        const formattedTitle = slug
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
         
-        setError(null);
-      } else {
+        // Try to find the category from the database first
+        const dbCategory = await fetchCategoryBySlug(slug);
+        
+        if (dbCategory) {
+          console.log('CategoryDetail: Found category in database:', dbCategory);
+          
+          setCategory({
+            title: dbCategory.name,
+            description: dbCategory.description || `Browse our selection of ${dbCategory.name}`,
+            items: [], // We may need to fetch items separately
+            isNew: false,
+            isPopular: false
+          });
+          
+          setError(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If not in database, check tool categories
+        if (toolCategories?.length) {
+          // Find matching category
+          const matchedCategory = findCategoryBySlug(slug, toolCategories);
+          
+          if (matchedCategory) {
+            console.log('CategoryDetail: Category found in tool categories:', matchedCategory);
+            
+            setCategory({
+              title: matchedCategory.category,
+              description: matchedCategory.description || `Browse our selection of ${matchedCategory.category}`,
+              items: matchedCategory.items || [],
+              isNew: matchedCategory.isNew || false,
+              isPopular: matchedCategory.isPopular || false
+            });
+            
+            setError(null);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // If we get here, no category was found
         console.log(`CategoryDetail: Category not found for slug: ${slug}, using formatted title`);
         
-        setCategory({
-          title: formattedTitle,
-          description: `Browse our selection of ${formattedTitle}`,
-          items: [],
-          isNew: false,
-          isPopular: false
-        });
+        // Create a fallback category based on the slug
+        const fixedNormalizedSlug = normalizeText(slug);
+        // Special handling for common tool categories
+        if (fixedNormalizedSlug.includes('hand-tool')) {
+          setCategory({
+            title: "Hand Tools",
+            description: "Browse our selection of professional hand tools for your workshop",
+            items: ["Hammers", "Screwdrivers", "Wrenches", "Pliers", "Measuring Tools"],
+            isNew: false,
+            isPopular: true
+          });
+        } else if (fixedNormalizedSlug.includes('power-tool')) {
+          setCategory({
+            title: "Power Tools",
+            description: "Professional power tools for every job",
+            items: ["Drills", "Saws", "Sanders", "Grinders", "Impact Drivers"],
+            isNew: true, 
+            isPopular: true
+          });
+        } else {
+          // Generic fallback
+          setCategory({
+            title: formattedTitle,
+            description: `Browse our selection of ${formattedTitle}`,
+            items: [],
+            isNew: false,
+            isPopular: false
+          });
+        }
+      } catch (err) {
+        console.error("CategoryDetail: Error processing category data:", err);
+        setError("Error processing category data. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error("CategoryDetail: Error processing category data:", err);
-      setError("Error processing category data. Please try again later.");
-    }
-  }, [slug, toolCategories, findCategoryBySlug]);
+    };
+    
+    loadCategory();
+  }, [slug, toolCategories, findCategoryBySlug, fetchCategoryBySlug]);
   
   // Filter products for this category when both category and products are loaded
   useEffect(() => {
@@ -98,6 +183,8 @@ const CategoryDetail = () => {
     try {
       console.log(`CategoryDetail: Filtering products for category: ${category.title}`);
       const categoryLower = category.title.toLowerCase();
+      const categoryWords = categoryLower.split(' ');
+      const slug = normalizeText(category.title);
       
       const filtered = allProducts.filter(product => {
         // Try to parse metadata if it exists
@@ -111,27 +198,48 @@ const CategoryDetail = () => {
         }
         
         const titleLower = product.title ? product.title.toLowerCase() : '';
-        const hasMatchingTitle = titleLower.includes(categoryLower);
+        // Check if title contains the category name or any of the category words
+        const hasMatchingTitle = titleLower.includes(categoryLower) || 
+                                categoryWords.some(word => word.length > 3 && titleLower.includes(word));
         
         // Check for category in metadata
         const hasMatchingCategory = 
           metadata && 
           typeof metadata === 'object' && 
           'category' in metadata && 
-          typeof metadata.category === 'string' &&
-          metadata.category.toLowerCase() === categoryLower;
+          ((typeof metadata.category === 'string' && 
+            metadata.category.toLowerCase() === categoryLower) ||
+           (Array.isArray(metadata.category) && 
+            metadata.category.some((cat: string) => cat.toLowerCase() === categoryLower)));
         
         // Also check for category name in description
         const hasMatchingDescription = 
           product.description && 
           typeof product.description === 'string' && 
-          product.description.toLowerCase().includes(categoryLower);
+          (product.description.toLowerCase().includes(categoryLower) ||
+           categoryWords.some(word => word.length > 3 && 
+                             product.description!.toLowerCase().includes(word)));
         
-        return hasMatchingTitle || hasMatchingCategory || hasMatchingDescription;
+        // Check if product category_id matches this category
+        const hasMatchingCategoryId = 
+          product.category_id && 
+          normalizeText(product.category_id) === slug;
+        
+        return hasMatchingTitle || hasMatchingCategory || hasMatchingDescription || hasMatchingCategoryId;
       });
       
       console.log(`CategoryDetail: Found ${filtered.length} products for ${category.title}`);
       setFilteredProducts(filtered);
+      
+      // If we got no products but this is a known category, show some example products
+      if (filtered.length === 0 && (slug.includes('hand-tool') || slug.includes('power-tool'))) {
+        const exampleProducts = allProducts.slice(0, 8).map(product => ({
+          ...product,
+          category_id: slug
+        }));
+        setFilteredProducts(exampleProducts);
+        console.log(`CategoryDetail: Using ${exampleProducts.length} example products as fallback`);
+      }
     } catch (err) {
       console.error("CategoryDetail: Error filtering products:", err);
       
@@ -144,10 +252,10 @@ const CategoryDetail = () => {
   }, [category, allProducts]);
   
   // Show true loading state only when categories or products are still loading
-  const isLoading = isLoadingToolCategories || isLoadingProducts;
+  const showLoader = isLoading || isLoadingToolCategories || isLoadingProducts;
 
   // Show error state content
-  if (error) {
+  if (error && !showLoader) {
     return (
       <ShoppingPageLayout
         title="Category Error"
@@ -166,7 +274,7 @@ const CategoryDetail = () => {
   }
 
   // Show loading state
-  if (isLoading) {
+  if (showLoader) {
     return (
       <ShoppingPageLayout 
         title="Loading Category"
@@ -202,6 +310,12 @@ const CategoryDetail = () => {
     <ShoppingPageLayout
       title={category.title}
       description={category.description}
+      breadcrumbs={[
+        { label: 'Home', path: '/' },
+        { label: 'Shop', path: '/shopping' },
+        { label: 'Categories', path: '/shopping/categories' },
+        { label: category.title }
+      ]}
     >
       <div className="mb-8 bg-white rounded-xl p-6 shadow-md border border-gray-200">
         <div className="flex flex-wrap items-center gap-3 mb-4">
