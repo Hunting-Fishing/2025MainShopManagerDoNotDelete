@@ -6,6 +6,7 @@ import Shopping from '@/pages/Shopping';
 import ShoppingCategories from '@/pages/ShoppingCategories';
 import ProductSuggestionsPage from '@/pages/ProductSuggestionsPage';
 import CategoryDetail from '@/pages/CategoryDetail';
+import ProductsPage from '@/pages/ProductsPage';
 
 export const routes: RouteObject[] = [
   {
@@ -27,6 +28,10 @@ export const routes: RouteObject[] = [
       {
         path: 'shopping/categories/:slug',
         element: <CategoryDetail />,
+      },
+      {
+        path: 'shopping/products',
+        element: <ProductsPage />,
       },
       {
         path: 'shopping/suggestions',

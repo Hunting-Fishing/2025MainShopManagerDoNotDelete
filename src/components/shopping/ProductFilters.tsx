@@ -1,84 +1,50 @@
 
 import React, { useState } from 'react';
-import { ProductCategory, ProductFilterOptions } from '@/types/shopping';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { useCategories } from '@/hooks/useCategories';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ProductFilterOptions } from '@/types/shopping';
+import { formatCurrency } from '@/lib/formatters';
+import { Filter, SlidersHorizontal, X, Tag, Check, Star } from 'lucide-react';
 
 interface ProductFiltersProps {
-  filterOptions: ProductFilterOptions;
-  onFilterChange: (newFilters: Partial<ProductFilterOptions>) => void;
-  minPrice?: number;
-  maxPrice?: number;
-  onMobileClose?: () => void;
-  isMobileVisible?: boolean;
+  filters: ProductFilterOptions;
+  onUpdateFilters: (filters: Partial<ProductFilterOptions>) => void;
 }
 
-export const ProductFilters: React.FC<ProductFiltersProps> = ({
-  filterOptions,
-  onFilterChange,
-  minPrice = 0,
-  maxPrice = 1000,
-  onMobileClose,
-  isMobileVisible = false
+export const ProductFilters: React.FC<ProductFiltersProps> = ({ 
+  filters, 
+  onUpdateFilters 
 }) => {
-  const { categories } = useCategories();
-  const isMobile = useIsMobile();
-  const [search, setSearch] = useState(filterOptions.search || '');
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    filterOptions.minPrice || minPrice,
-    filterOptions.maxPrice || maxPrice
-  ]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onFilterChange({ search });
-  };
-
-  const handleCategoryChange = (categoryId: string | undefined) => {
-    onFilterChange({ categoryId });
-  };
-
-  const handleSortChange = (sortBy: string) => {
-    onFilterChange({ sortBy: sortBy as ProductFilterOptions['sortBy'] });
-  };
-
-  const handleFilterTypeChange = (filterType: string) => {
-    onFilterChange({ filterType: filterType as ProductFilterOptions['filterType'] });
-  };
-
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
   const handlePriceChange = (values: number[]) => {
     setPriceRange([values[0], values[1]]);
   };
-
+  
   const applyPriceFilter = () => {
-    onFilterChange({ minPrice: priceRange[0], maxPrice: priceRange[1] });
+    onUpdateFilters({ 
+      minPrice: priceRange[0], 
+      maxPrice: priceRange[1] 
+    });
   };
 
+  const handleFilterTypeChange = (filterType: ProductFilterOptions['filterType']) => {
+    onUpdateFilters({ filterType });
+  };
+
+  const handleSortChange = (sortBy: ProductFilterOptions['sortBy']) => {
+    onUpdateFilters({ sortBy });
+  };
+  
   const resetFilters = () => {
-    setSearch('');
-    setPriceRange([minPrice, maxPrice]);
-    onFilterChange({
-      search: '',
-      categoryId: undefined,
+    setPriceRange([0, 1000]);
+    onUpdateFilters({
       minPrice: undefined,
       maxPrice: undefined,
       filterType: 'all',
@@ -86,179 +52,185 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
     });
   };
 
-  // Determine if any filters are active
-  const hasActiveFilters = filterOptions.search ||
-    filterOptions.categoryId ||
-    filterOptions.minPrice !== undefined ||
-    filterOptions.maxPrice !== undefined ||
-    filterOptions.filterType !== 'all';
-
-  const containerClasses = isMobile
-    ? `fixed inset-0 bg-white z-50 overflow-auto transition-transform p-4 ${isMobileVisible ? 'translate-x-0' : '-translate-x-full'}`
-    : 'w-full sticky top-20 max-h-[calc(100vh-5rem)] overflow-auto';
+  // Toggle mobile filters panel
+  const toggleMobileFilters = () => {
+    setShowMobileFilters(!showMobileFilters);
+  };
 
   return (
-    <div className={containerClasses}>
-      {isMobile && (
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Filters</h2>
-          <Button variant="ghost" size="icon" onClick={onMobileClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
+    <>
+      {/* Mobile Filter Toggle */}
+      <div className="md:hidden mb-4">
+        <Button 
+          onClick={toggleMobileFilters} 
+          variant="outline"
+          className="w-full flex items-center justify-between"
+        >
+          <span className="flex items-center">
+            <SlidersHorizontal className="h-4 w-4 mr-2" />
+            Filters
+          </span>
+          {(filters.filterType !== 'all' || filters.minPrice || filters.maxPrice) && (
+            <Badge className="ml-2 bg-primary">Active</Badge>
+          )}
+        </Button>
+      </div>
 
-      <form onSubmit={handleSearchSubmit} className="mb-4">
-        <div className="relative">
-          <Input
-            placeholder="Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pr-10"
-          />
-          <Button 
-            type="submit" 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-0 top-0 h-10"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
-      </form>
-
-      <Accordion type="single" collapsible defaultValue="categories">
-        <AccordionItem value="categories">
-          <AccordionTrigger>Categories</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-1">
-              <Button
-                variant={!filterOptions.categoryId ? "secondary" : "outline"}
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => handleCategoryChange(undefined)}
-              >
-                All Categories
-              </Button>
-              
-              {categories.map((category) => (
-                <React.Fragment key={category.id}>
-                  <Button
-                    variant={filterOptions.categoryId === category.id ? "secondary" : "outline"}
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => handleCategoryChange(category.id)}
-                  >
-                    {category.name}
-                  </Button>
-                  
-                  {category.subcategories?.map((subCategory) => (
-                    <Button
-                      key={subCategory.id}
-                      variant={filterOptions.categoryId === subCategory.id ? "secondary" : "outline"}
-                      size="sm"
-                      className="w-full justify-start pl-6"
-                      onClick={() => handleCategoryChange(subCategory.id)}
+      {/* Filters Content - Hidden on mobile unless toggled */}
+      <div className={`${showMobileFilters ? 'block' : 'hidden'} md:block space-y-6`}>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex justify-between items-center">
+              <span className="flex items-center">
+                <Filter className="h-5 w-5 mr-2" /> 
+                Filters
+              </span>
+              {(filters.filterType !== 'all' || filters.minPrice || filters.maxPrice) && (
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={resetFilters}
+                  className="h-8 text-xs flex items-center"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Reset
+                </Button>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Product Types */}
+            <div className="space-y-2">
+              <h3 className="font-medium text-sm">Product Type</h3>
+              <div className="space-y-1">
+                {[
+                  { label: 'All Products', value: 'all' },
+                  { label: 'Bestsellers', value: 'bestsellers' },
+                  { label: 'Featured', value: 'featured' },
+                  { label: 'Newest Arrivals', value: 'newest' },
+                  { label: 'Community Suggestions', value: 'suggested' }
+                ].map(option => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`filter-${option.value}`} 
+                      checked={filters.filterType === option.value}
+                      onCheckedChange={() => handleFilterTypeChange(option.value as any)}
+                    />
+                    <Label 
+                      htmlFor={`filter-${option.value}`}
+                      className="text-sm cursor-pointer flex items-center"
                     >
-                      {subCategory.name}
-                    </Button>
-                  ))}
-                </React.Fragment>
-              ))}
+                      {option.label}
+                      {option.value === 'bestsellers' && <Star className="h-3 w-3 ml-1 fill-amber-400 text-amber-400" />}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </AccordionContent>
-        </AccordionItem>
 
-        <AccordionItem value="price">
-          <AccordionTrigger>Price Range</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-4">
-              <div className="pt-4">
-                <Slider
-                  value={[priceRange[0], priceRange[1]]}
-                  min={minPrice}
-                  max={maxPrice}
-                  step={1}
+            {/* Price Range */}
+            <div className="space-y-2">
+              <h3 className="font-medium text-sm">Price Range</h3>
+              <div className="pt-4 px-1">
+                <Slider 
+                  defaultValue={[0, 1000]} 
+                  min={0} 
+                  max={1000} 
+                  step={1} 
+                  value={priceRange}
                   onValueChange={handlePriceChange}
                 />
               </div>
-              
-              <div className="flex justify-between">
-                <span>${priceRange[0]}</span>
-                <span>${priceRange[1]}</span>
+              <div className="flex items-center justify-between pt-2 pb-4">
+                <span className="text-xs">{formatCurrency(priceRange[0])}</span>
+                <span className="text-xs">{formatCurrency(priceRange[1])}</span>
               </div>
-              
               <Button 
-                variant="outline" 
+                onClick={applyPriceFilter} 
+                size="sm" 
                 className="w-full"
-                onClick={applyPriceFilter}
               >
-                Apply Price Range
+                Apply Price Filter
               </Button>
             </div>
-          </AccordionContent>
-        </AccordionItem>
 
-        <AccordionItem value="sort">
-          <AccordionTrigger>Sort By</AccordionTrigger>
-          <AccordionContent>
-            <Select
-              value={filterOptions.sortBy || 'popularity'}
-              onValueChange={handleSortChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popularity">Popularity</SelectItem>
-                <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                <SelectItem value="newest">Newest First</SelectItem>
-              </SelectContent>
-            </Select>
-          </AccordionContent>
-        </AccordionItem>
+            {/* Sort Options */}
+            <div className="space-y-2">
+              <h3 className="font-medium text-sm">Sort By</h3>
+              <div className="space-y-1">
+                {[
+                  { label: 'Popularity', value: 'popularity' },
+                  { label: 'Price: Low to High', value: 'price_asc' },
+                  { label: 'Price: High to Low', value: 'price_desc' },
+                  { label: 'Newest First', value: 'newest' }
+                ].map(option => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`sort-${option.value}`} 
+                      checked={filters.sortBy === option.value}
+                      onCheckedChange={() => handleSortChange(option.value as any)}
+                    />
+                    <Label 
+                      htmlFor={`sort-${option.value}`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        <AccordionItem value="filters">
-          <AccordionTrigger>Filter Type</AccordionTrigger>
-          <AccordionContent>
-            <Select
-              value={filterOptions.filterType || 'all'}
-              onValueChange={handleFilterTypeChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Products</SelectItem>
-                <SelectItem value="bestsellers">Bestsellers</SelectItem>
-                <SelectItem value="featured">Featured Items</SelectItem>
-                <SelectItem value="newest">New Arrivals</SelectItem>
-                <SelectItem value="suggested">User Suggestions</SelectItem>
-              </SelectContent>
-            </Select>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {hasActiveFilters && (
-        <Button 
-          variant="ghost" 
-          className="mt-4 w-full"
-          onClick={resetFilters}
-        >
-          Reset All Filters
-        </Button>
-      )}
-
-      {isMobile && (
-        <Button 
-          className="mt-4 w-full"
-          onClick={onMobileClose}
-        >
-          Apply Filters
-        </Button>
-      )}
-    </div>
+            {/* Active Filters Display */}
+            {(filters.filterType !== 'all' || 
+              filters.minPrice || 
+              filters.maxPrice || 
+              filters.sortBy !== 'popularity') && (
+              <div className="pt-2 space-y-2">
+                <h3 className="font-medium text-sm">Active Filters</h3>
+                <div className="flex flex-wrap gap-2">
+                  {filters.filterType !== 'all' && (
+                    <Badge variant="secondary" className="flex items-center gap-1 bg-blue-100 text-blue-800 border-blue-300">
+                      {filters.filterType === 'bestsellers' ? 'Bestsellers' : 
+                       filters.filterType === 'featured' ? 'Featured' :
+                       filters.filterType === 'newest' ? 'Newest' :
+                       filters.filterType === 'suggested' ? 'Suggested' : ''}
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={() => handleFilterTypeChange('all')}
+                      />
+                    </Badge>
+                  )}
+                  
+                  {(filters.minPrice !== undefined || filters.maxPrice !== undefined) && (
+                    <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 border-green-300">
+                      Price: {formatCurrency(filters.minPrice || 0)} - {formatCurrency(filters.maxPrice || 1000)}
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={() => onUpdateFilters({ minPrice: undefined, maxPrice: undefined })}
+                      />
+                    </Badge>
+                  )}
+                  
+                  {filters.sortBy !== 'popularity' && (
+                    <Badge variant="secondary" className="flex items-center gap-1 bg-purple-100 text-purple-800 border-purple-300">
+                      Sort: {
+                        filters.sortBy === 'price_asc' ? 'Price ↑' : 
+                        filters.sortBy === 'price_desc' ? 'Price ↓' : 
+                        filters.sortBy === 'newest' ? 'Newest' : ''
+                      }
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={() => handleSortChange('popularity')}
+                      />
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
