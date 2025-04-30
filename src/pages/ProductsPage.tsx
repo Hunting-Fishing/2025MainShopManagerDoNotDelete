@@ -37,7 +37,7 @@ export default function ProductsPage() {
           <ProductGrid
             products={products}
             isLoading={isLoading}
-            error={error}
+            error={error ? error.message : null}
             emptyMessage={
               searchTerm 
                 ? `No products found matching "${searchTerm}". Try different search terms or browse our categories.`

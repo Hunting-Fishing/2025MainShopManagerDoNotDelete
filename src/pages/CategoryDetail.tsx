@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
@@ -271,9 +270,9 @@ const CategoryDetail = () => {
       
       {/* Filter interface */}
       <div className="mb-8">
-        <ProductFilters 
-          filterOptions={filterOptions}
-          onFilterChange={updateFilters}
+        <ProductFilters
+          filters={filterOptions}
+          onUpdateFilters={updateFilters}
         />
       </div>
       
