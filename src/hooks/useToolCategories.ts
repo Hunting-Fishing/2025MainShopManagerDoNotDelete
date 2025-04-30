@@ -13,10 +13,12 @@ export interface ToolCategory {
 export function useToolCategories() {
   const [toolCategories, setToolCategories] = useState<ToolCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchToolCategories = async () => {
       try {
+        setIsLoading(true);
         // In a real application, this would be an API call
         // For now, we'll use the hardcoded data from ShoppingCategories
         const categories = [
@@ -124,9 +126,11 @@ export function useToolCategories() {
         ];
         
         setToolCategories(categories);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error loading tool categories:", error);
+        setError(null);
+      } catch (err) {
+        console.error("Error loading tool categories:", err);
+        setError("Failed to load tool categories. Please try again later.");
+      } finally {
         setIsLoading(false);
       }
     };
@@ -134,5 +138,5 @@ export function useToolCategories() {
     fetchToolCategories();
   }, []);
 
-  return { toolCategories, isLoading };
+  return { toolCategories, isLoading, error };
 }
