@@ -4,6 +4,8 @@ import { ProductCategory } from "@/types/shopping";
 
 export async function getCategories(): Promise<ProductCategory[]> {
   try {
+    console.log("Starting getCategories service call");
+    
     // Using any type to work around TypeScript issues with Supabase client
     const { data, error } = await (supabase as any)
       .from('product_categories')
@@ -17,6 +19,11 @@ export async function getCategories(): Promise<ProductCategory[]> {
 
     // Add debug log to see what categories are returned
     console.log("Raw categories data from database:", data);
+    
+    if (!data || data.length === 0) {
+      console.log("No categories found in the database");
+      return [];
+    }
 
     // Organize categories into a hierarchy
     const mainCategories: ProductCategory[] = [];
@@ -42,13 +49,15 @@ export async function getCategories(): Promise<ProductCategory[]> {
           parent.subcategories = [];
         }
         parent.subcategories.push(subCategory);
+      } else {
+        console.warn(`Parent category not found for subcategory: ${subCategory.name} (ID: ${subCategory.id}, Parent ID: ${subCategory.parent_id})`);
       }
     });
 
-    console.log(`Fetched ${mainCategories.length} categories with ${subCategories.length} subcategories`);
+    console.log(`Returning ${mainCategories.length} main categories with ${subCategories.length} subcategories`);
     return mainCategories;
   } catch (error) {
-    console.error("Error in getCategories:", error);
+    console.error("Error in getCategories service call:", error);
     return []; // Return an empty array instead of throwing, to prevent UI breakage
   }
 }
@@ -80,7 +89,7 @@ export async function getCategoryBySlug(slug: string): Promise<ProductCategory |
       return null;
     }
     
-    console.log(`DB Result: Found category for slug "${slug}":`, data.name);
+    console.log(`DB Result: Found category for slug "${slug}":`, data);
     return data;
   } catch (err) {
     console.error(`Error fetching category with slug "${slug}":`, err);
