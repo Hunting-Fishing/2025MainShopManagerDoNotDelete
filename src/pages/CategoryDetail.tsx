@@ -6,7 +6,6 @@ import { ProductGrid } from '@/components/shopping/ProductGrid';
 import { useProducts } from '@/hooks/useProducts';
 import { Product } from '@/types/shopping';
 import { useToolCategories } from '@/hooks/useToolCategories';
-import { toast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -19,8 +18,8 @@ interface ProductMetadata {
 
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { toolCategories } = useToolCategories();
-  const { products, isLoading } = useProducts();
+  const { toolCategories, isLoading: isLoadingToolCategories } = useToolCategories();
+  const { products, isLoading: isLoadingProducts } = useProducts();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categoryTitle, setCategoryTitle] = useState('');
   const [categoryDescription, setDescription] = useState('');
@@ -28,11 +27,18 @@ const CategoryDetail = () => {
   const [isNew, setIsNew] = useState(false);
   const [isPopular, setIsPopular] = useState(false);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
   
-  // Initialize category data from local tool categories
+  console.log(`CategoryDetail rendering - slug: ${slug}, loadingCategory: ${isLoadingCategory}, loadingToolCategories: ${isLoadingToolCategories}`);
+  
+  // Step 1: Initialize category data from local tool categories
   useEffect(() => {
-    if (!slug || !toolCategories) return;
+    if (!slug || !toolCategories || isLoadingToolCategories) {
+      console.log("Waiting for toolCategories data...");
+      return;
+    }
     
+    console.log(`Processing category for slug: ${slug}`);
     setIsLoadingCategory(true);
     
     // Convert slug like "power-tools" to "Power Tools" for display (as fallback)
@@ -64,43 +70,57 @@ const CategoryDetail = () => {
       console.warn(`Category not found for slug: ${slug}`);
     }
     
-    // No longer attempting Supabase API calls as they're failing with 406 errors
+    // Category data is loaded
     setIsLoadingCategory(false);
-  }, [slug, toolCategories]);
+  }, [slug, toolCategories, isLoadingToolCategories]);
 
-  // Filter products for this category whenever needed data changes
+  // Step 2: Filter products for this category whenever needed data changes
   useEffect(() => {
-    if (!isLoading && products.length > 0 && categoryTitle && !isLoadingCategory) {
-      const categoryLower = categoryTitle.toLowerCase();
-      console.log("Filtering products for category:", categoryTitle);
-      
-      const filtered = products.filter(product => {
-        // Try to parse metadata if it exists
-        let metadata: ProductMetadata = {};
-        if (product.metadata) {
-          try {
-            metadata = JSON.parse(product.metadata) as ProductMetadata;
-          } catch (e) {
-            console.warn("Failed to parse metadata for product", product.id);
-          }
-        }
-        
-        const titleLower = product.title.toLowerCase();
-        
-        return (
-          titleLower.includes(categoryLower) || 
-          (metadata?.category && 
-           metadata.category.toLowerCase() === categoryLower)
-        );
-      });
-      
-      console.log(`Found ${filtered.length} products for ${categoryTitle}`);
-      setFilteredProducts(filtered);
+    // Only filter products when we have all the necessary data
+    if (isLoadingProducts || isLoadingCategory || !categoryTitle || products.length === 0) {
+      console.log("Waiting for products or category data to filter...");
+      return;
     }
-  }, [products, isLoading, categoryTitle, isLoadingCategory]);
+    
+    console.log(`Filtering products for category: ${categoryTitle}`);
+    const categoryLower = categoryTitle.toLowerCase();
+    
+    const filtered = products.filter(product => {
+      // Try to parse metadata if it exists
+      let metadata: ProductMetadata = {};
+      if (product.metadata) {
+        try {
+          metadata = JSON.parse(product.metadata) as ProductMetadata;
+        } catch (e) {
+          console.warn("Failed to parse metadata for product", product.id);
+        }
+      }
+      
+      const titleLower = product.title.toLowerCase();
+      
+      return (
+        titleLower.includes(categoryLower) || 
+        (metadata?.category && 
+         metadata.category.toLowerCase() === categoryLower)
+      );
+    });
+    
+    console.log(`Found ${filtered.length} products for ${categoryTitle}`);
+    setFilteredProducts(filtered);
+    
+    // All data is loaded and processed
+    setIsLoadingPage(false);
+  }, [products, isLoadingProducts, categoryTitle, isLoadingCategory]);
 
-  // Render loading state while category data is being loaded
-  if (isLoadingCategory) {
+  // Track overall loading state to ensure consistent UI
+  useEffect(() => {
+    const isLoading = isLoadingToolCategories || isLoadingCategory || isLoadingProducts;
+    console.log(`Setting loading state: ${isLoading}`);
+    setIsLoadingPage(isLoading);
+  }, [isLoadingToolCategories, isLoadingCategory, isLoadingProducts]);
+
+  // Render loading state while data is being loaded
+  if (isLoadingPage) {
     return (
       <ShoppingPageLayout 
         title="Loading Category"
@@ -152,7 +172,7 @@ const CategoryDetail = () => {
 
       <ProductGrid 
         products={filteredProducts}
-        isLoading={isLoading || isLoadingCategory} 
+        isLoading={false} 
         emptyMessage={`No products found in the ${categoryTitle} category.`}
       />
     </ShoppingPageLayout>
