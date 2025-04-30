@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from '@/hooks/use-toast';
 import { AlertTriangle } from 'lucide-react';
+import { handleApiError } from '@/utils/errorHandling';
 
 interface CategoryData {
   title: string;
@@ -28,11 +29,7 @@ const CategoryDetail = () => {
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
-  
-  // Compute derived loading state
-  const isLoading = useMemo(() => {
-    return isLoadingToolCategories || isLoadingProducts || !category;
-  }, [isLoadingToolCategories, isLoadingProducts, category]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Handle errors
   useEffect(() => {
@@ -144,6 +141,11 @@ const CategoryDetail = () => {
       
       console.log(`CategoryDetail: Found ${filtered.length} products for ${category.title}`);
       setFilteredProducts(filtered);
+      
+      // After first successful data load
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     } catch (err) {
       console.error("CategoryDetail: Error filtering products:", err);
       
@@ -153,10 +155,10 @@ const CategoryDetail = () => {
         variant: "destructive",
       });
     }
-  }, [category, products, isLoadingProducts]);
+  }, [category, products, isLoadingProducts, isInitialLoad]);
   
-  // Loading state content
-  if (isLoading) {
+  // Show loading state only on initial load
+  if (isInitialLoad && (isLoadingToolCategories || isLoadingProducts || !category)) {
     return (
       <ShoppingPageLayout 
         title="Loading Category"
@@ -227,7 +229,7 @@ const CategoryDetail = () => {
 
       <ProductGrid 
         products={filteredProducts}
-        isLoading={false} 
+        isLoading={isLoadingProducts && !isInitialLoad} 
         emptyMessage={`No products found in the ${category.title} category.`}
       />
     </ShoppingPageLayout>

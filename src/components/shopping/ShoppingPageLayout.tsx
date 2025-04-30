@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Breadcrumb,
@@ -102,22 +101,20 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
-          {generatedBreadcrumbs.map((crumb, index) => {
-            return (
-              <div key={`breadcrumb-${index}`}>
-                <BreadcrumbItem>
-                  {index === generatedBreadcrumbs.length - 1 ? (
-                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink href={crumb.path}>{crumb.label}</BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-                {index < generatedBreadcrumbs.length - 1 && (
-                  <BreadcrumbSeparator />
+          {generatedBreadcrumbs.map((crumb, index) => (
+            <div key={`breadcrumb-${index}`}>
+              <BreadcrumbItem>
+                {index === generatedBreadcrumbs.length - 1 ? (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink href={crumb.path}>{crumb.label}</BreadcrumbLink>
                 )}
-              </div>
-            );
-          })}
+              </BreadcrumbItem>
+              {index < generatedBreadcrumbs.length - 1 && (
+                <BreadcrumbSeparator />
+              )}
+            </div>
+          ))}
         </BreadcrumbList>
       </Breadcrumb>
       
@@ -146,4 +143,3 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
     </div>
   );
 };
-
