@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
@@ -8,6 +9,7 @@ import { useToolCategories } from '@/hooks/useToolCategories';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 // Define an interface for the product metadata
 interface ProductMetadata {
@@ -26,13 +28,11 @@ const CategoryDetail = () => {
   const [isNew, setIsNew] = useState(false);
   const [isPopular, setIsPopular] = useState(false);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
-  const [hasSupabaseError, setHasSupabaseError] = useState(false);
-
-  // Find category from URL slug
+  
+  // Find category from URL slug and set data
   useEffect(() => {
     if (slug) {
       setIsLoadingCategory(true);
-      setHasSupabaseError(false);
       
       // Convert slug like "power-tools" to "Power Tools" for display
       const formattedTitle = slug
@@ -44,7 +44,7 @@ const CategoryDetail = () => {
       setCategoryTitle(formattedTitle);
       setDescription(`Browse our selection of ${formattedTitle}`);
       
-      // Now try to find the actual category data from our local data
+      // Find the actual category data from our local data
       if (toolCategories && toolCategories.length > 0) {
         const category = toolCategories.find(
           cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
@@ -61,14 +61,11 @@ const CategoryDetail = () => {
           setCategoryItems([]);
           setIsNew(false);
           setIsPopular(false);
-          
           console.warn(`Category not found for slug: ${slug}`);
         }
       }
       
-      // The Supabase API call is failing with 406 error, so we'll gracefully handle that by
-      // relying on our local data instead and setting a flag to prevent further API calls
-      setHasSupabaseError(true);
+      // We're not going to make Supabase API calls since they're failing with 406 errors
       setIsLoadingCategory(false);
     }
   }, [slug, toolCategories]);
@@ -102,6 +99,19 @@ const CategoryDetail = () => {
       setFilteredProducts(filtered);
     }
   }, [products, isLoading, categoryTitle]);
+
+  if (isLoadingCategory) {
+    return (
+      <ShoppingPageLayout 
+        title="Loading Category"
+        description="Please wait while we load the category details"
+      >
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </ShoppingPageLayout>
+    );
+  }
 
   return (
     <ShoppingPageLayout
