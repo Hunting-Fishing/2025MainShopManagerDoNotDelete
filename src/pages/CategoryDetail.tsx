@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
@@ -27,44 +27,40 @@ const CategoryDetail = () => {
   
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Compute derived loading state
+  const isLoading = useMemo(() => {
+    return isLoadingToolCategories || isLoadingProducts || !category;
+  }, [isLoadingToolCategories, isLoadingProducts, category]);
   
   // Handle errors
   useEffect(() => {
     if (categoriesError) {
       console.error("CategoryDetail: Error loading tool categories:", categoriesError);
       setError("Failed to load category data. Please try again later.");
+      
       toast({
         title: "Error Loading Category",
         description: "There was a problem loading the category details.",
         variant: "destructive",
       });
-    }
-    
-    if (productsError) {
+    } else if (productsError) {
       console.error("CategoryDetail: Error loading products:", productsError);
+      
       toast({
         title: "Error Loading Products",
         description: "There was a problem loading the products for this category.",
         variant: "destructive",
       });
+    } else {
+      setError(null);
     }
   }, [categoriesError, productsError]);
   
-  // Load category data
+  // Load category data when toolCategories are available
   useEffect(() => {
-    console.log(`CategoryDetail: Loading category data for slug: ${slug}`);
-    
-    if (!slug) {
-      console.error("CategoryDetail: No slug provided");
-      setError("Category not found.");
-      setIsLoading(false);
-      return;
-    }
-    
-    if (!toolCategories || isLoadingToolCategories) {
-      console.log('CategoryDetail: Still waiting for toolCategories data...');
+    if (!slug || isLoadingToolCategories || !toolCategories?.length) {
       return;
     }
     
@@ -104,6 +100,7 @@ const CategoryDetail = () => {
     } catch (err) {
       console.error("CategoryDetail: Error processing category data:", err);
       setError("Error processing category data. Please try again later.");
+      
       toast({
         title: "Error",
         description: "There was a problem loading the category.",
@@ -112,10 +109,9 @@ const CategoryDetail = () => {
     }
   }, [slug, toolCategories, isLoadingToolCategories]);
   
-  // Filter products for this category
+  // Filter products for this category when both category and products are loaded
   useEffect(() => {
-    if (!category || !products.length || isLoadingProducts) {
-      console.log('CategoryDetail: Waiting for category data or products to filter...');
+    if (!category || !products?.length || isLoadingProducts) {
       return;
     }
     
@@ -150,6 +146,7 @@ const CategoryDetail = () => {
       setFilteredProducts(filtered);
     } catch (err) {
       console.error("CategoryDetail: Error filtering products:", err);
+      
       toast({
         title: "Error",
         description: "There was a problem filtering products for this category.",
@@ -158,13 +155,7 @@ const CategoryDetail = () => {
     }
   }, [category, products, isLoadingProducts]);
   
-  // Track overall loading state
-  useEffect(() => {
-    const loading = isLoadingToolCategories || isLoadingProducts || !category;
-    console.log(`CategoryDetail: Setting loading state to ${loading}`);
-    setIsLoading(loading);
-  }, [isLoadingToolCategories, isLoadingProducts, category]);
-  
+  // Loading state content
   if (isLoading) {
     return (
       <ShoppingPageLayout 
@@ -178,6 +169,7 @@ const CategoryDetail = () => {
     );
   }
 
+  // Error state content
   if (error || !category) {
     return (
       <ShoppingPageLayout
@@ -195,6 +187,7 @@ const CategoryDetail = () => {
     );
   }
 
+  // Render the category page with products
   return (
     <ShoppingPageLayout
       title={category.title}

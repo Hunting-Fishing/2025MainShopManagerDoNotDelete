@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Breadcrumb,
@@ -102,7 +103,6 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           {generatedBreadcrumbs.map((crumb, index) => {
-            // Use a div with a key instead of a Fragment with data-lov-id
             return (
               <div key={`breadcrumb-${index}`}>
                 <BreadcrumbItem>
@@ -146,3 +146,4 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
     </div>
   );
 };
+
