@@ -18,7 +18,7 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
   onToggleWishlist = () => {},
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { items: wishlistItems } = useWishlist();
+  const { wishlistItems } = useWishlist();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -59,7 +59,7 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
             className="relative"
           >
             <Heart size={18} />
-            {wishlistItems.length > 0 && (
+            {wishlistItems && wishlistItems.length > 0 && (
               <Badge 
                 className="absolute -top-2 -right-2 px-1.5 min-w-[20px] h-5 flex items-center justify-center bg-blue-500"
                 variant="secondary"
