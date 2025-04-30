@@ -3,15 +3,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Wrench } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Button } from '@/components/ui/button';
@@ -125,13 +116,6 @@ const Shopping = () => {
                         </p>
                       </div>
                     </div>
-                    {category.badge && (
-                      <Badge 
-                        className={`bg-${category.badgeColor}-100 text-${category.badgeColor}-800 border border-${category.badgeColor}-300`}
-                      >
-                        {category.badge}
-                      </Badge>
-                    )}
                   </div>
                 </Link>
               ))}

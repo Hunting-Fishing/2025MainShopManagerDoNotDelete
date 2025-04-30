@@ -1,10 +1,11 @@
 
 import { useState } from 'react';
-import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Toaster } from "@/components/ui/toaster";
 
 import Layout from './components/layout/Layout';
+import routes from './routes';
 
 import './App.css';
 import Dashboard from './pages/Dashboard';
@@ -18,6 +19,9 @@ import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Shopping from './pages/Shopping';
 import ShoppingAdmin from './pages/ShoppingAdmin';
+import ShoppingCategories from './pages/ShoppingCategories'; 
+import CategoryDetailPage from './pages/CategoryDetailPage';
+import ProductsPage from './pages/ProductsPage';
 
 // Import the settings pages
 import AccountSettings from './pages/settings/AccountSettings';
@@ -40,11 +44,11 @@ import WorkOrders from './pages/WorkOrders';
 import WorkOrderDetails from './pages/WorkOrderDetails';
 import { VehicleDetailsPage } from './components/customers/vehicles/VehicleDetailsPage';
 import { CustomerDataProvider } from './contexts/CustomerDataProvider';
-import ShoppingCategories from './pages/ShoppingCategories';
-import CategoryDetailPage from './pages/CategoryDetailPage';
+
+// Create a browser router
+const router = createBrowserRouter(routes);
 
 function App() {
-  const location = useLocation();
   const [authToken, setAuthToken] = useState(null);
   
   // Logic to handle authentication (not relevant to this task)
@@ -58,100 +62,13 @@ function App() {
     setAuthToken(null);
   };
 
-  // Get page title based on route
-  const getPageTitle = () => {
-    switch (location.pathname) {
-      case '/':
-        return 'Dashboard | Easy Shop Manager';
-      case '/customers':
-        return 'Customers | Easy Shop Manager';
-      case '/customers/new':
-        return 'Create Customer | Easy Shop Manager';
-      case '/team':
-        return 'Team | Easy Shop Manager';
-      case '/settings':
-        return 'Settings | Easy Shop Manager';
-      case '/reports':
-        return 'Reports | Easy Shop Manager';
-      case '/work-orders':
-        return 'Work Orders | Easy Shop Manager';
-      case '/work-orders/create':
-        return 'Create Work Order | Easy Shop Manager';
-      case '/login':
-        return 'Login | Easy Shop Manager';
-      case '/shopping':
-        return 'Shop | Easy Shop Manager';
-      case '/shopping/admin':
-        return 'Shop Admin | Easy Shop Manager';
-      default:
-        return 'Easy Shop Manager';
-    }
-  };
-
   return (
     <>
       <Helmet>
-        <title>{getPageTitle()}</title>
+        <title>Easy Shop Manager</title>
       </Helmet>
 
-      <Routes>
-        {/* Public routes that don't require the main layout */}
-        <Route path="/login" element={<Login />} />
-        
-        {/* Main layout with protected routes */}
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          
-          {/* Customer routes */}
-          <Route path="customers" element={<Customers />} />
-          <Route path="customers/new" element={<CreateCustomer />} />
-          <Route path="customers/:customerId" element={<CustomerDataProvider><>Customer Details</></CustomerDataProvider>} />
-          <Route path="customers/:customerId/edit" element={<EditCustomer />} />
-          <Route path="customers/:customerId/vehicles/:vehicleId" element={<VehicleDetailsPage />} />
-          
-          {/* Team routes */}
-          <Route path="team" element={<Team />} />
-          
-          {/* Work Order routes */}
-          <Route path="work-orders" element={<WorkOrders />} />
-          <Route path="work-orders/create" element={<WorkOrderCreate />} />
-          <Route path="work-orders/:id" element={<WorkOrderDetails />} />
-          <Route path="work-orders/:id/edit" element={<WorkOrderDetails edit={true} />} />
-
-          {/* Invoice routes */}
-          <Route path="invoices" element={<>Invoices</>} />
-          <Route path="invoices/new" element={<>Create Invoice</>} />
-          <Route path="invoices/:invoiceId" element={<>Invoice Details</>} />
-          
-          {/* Shopping routes */}
-          <Route path="shopping" element={<Shopping />} />
-          <Route path="shopping/admin" element={<ShoppingAdmin />} />
-          <Route path="shopping/categories" element={<ShoppingCategories />} />
-          <Route path="shopping/categories/:categorySlug" element={<CategoryDetailPage />} />
-          <Route path="shopping/products" element={<>Products</>} />
-          
-          {/* Settings routes */}
-          <Route path="settings" element={<Settings />} />
-          <Route path="settings/account" element={<AccountSettings />} />
-          <Route path="settings/company" element={<CompanySettings />} />
-          <Route path="settings/security" element={<SecuritySettings />} />
-          <Route path="settings/security-advanced" element={<SecurityAdvancedSettings />} />
-          <Route path="settings/notifications" element={<NotificationSettings />} />
-          <Route path="settings/branding" element={<BrandingSettings />} />
-          <Route path="settings/appearance" element={<AppearanceSettings />} />
-          <Route path="settings/email" element={<EmailSettings />} />
-          <Route path="settings/integrations" element={<IntegrationSettings />} />
-          <Route path="settings/loyalty" element={<LoyaltySettings />} />
-          <Route path="settings/inventory" element={<InventorySettings />} />
-          <Route path="settings/team" element={<TeamHistorySettings />} />
-          <Route path="settings/email-scheduling" element={<EmailSchedulingSettings />} />
-          <Route path="settings/export" element={<DataExportSettings />} />
-          <Route path="settings/language" element={<LanguageSettings />} />
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <RouterProvider router={router} />
       
       <Toaster />
     </>
