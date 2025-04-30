@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
@@ -27,11 +26,13 @@ const CategoryDetail = () => {
   const [isNew, setIsNew] = useState(false);
   const [isPopular, setIsPopular] = useState(false);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
+  const [hasSupabaseError, setHasSupabaseError] = useState(false);
 
   // Find category from URL slug
   useEffect(() => {
     if (slug) {
       setIsLoadingCategory(true);
+      setHasSupabaseError(false);
       
       // Convert slug like "power-tools" to "Power Tools" for display
       const formattedTitle = slug
@@ -43,7 +44,7 @@ const CategoryDetail = () => {
       setCategoryTitle(formattedTitle);
       setDescription(`Browse our selection of ${formattedTitle}`);
       
-      // Now try to find the actual category data
+      // Now try to find the actual category data from our local data
       if (toolCategories && toolCategories.length > 0) {
         const category = toolCategories.find(
           cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
@@ -61,17 +62,13 @@ const CategoryDetail = () => {
           setIsNew(false);
           setIsPopular(false);
           
-          // Only show toast if toolCategories loaded successfully but this category wasn't found
-          if (toolCategories.length > 0) {
-            toast({
-              variant: "destructive",
-              title: "Category not found",
-              description: "We couldn't find detailed information for this category."
-            });
-          }
+          console.warn(`Category not found for slug: ${slug}`);
         }
       }
       
+      // The Supabase API call is failing with 406 error, so we'll gracefully handle that by
+      // relying on our local data instead and setting a flag to prevent further API calls
+      setHasSupabaseError(true);
       setIsLoadingCategory(false);
     }
   }, [slug, toolCategories]);
@@ -79,8 +76,9 @@ const CategoryDetail = () => {
   // Filter products for this category
   useEffect(() => {
     if (!isLoading && products.length > 0 && categoryTitle) {
-      // In a real app, we'd filter by category from the database
-      // For now we just filter products that might match the category name or category field in metadata
+      // When working with the products we filter them based on category name from our local data
+      const categoryLower = categoryTitle.toLowerCase();
+      
       const filtered = products.filter(product => {
         // Try to parse metadata if it exists
         let metadata: ProductMetadata = {};
@@ -92,7 +90,6 @@ const CategoryDetail = () => {
           }
         }
         
-        const categoryLower = categoryTitle.toLowerCase();
         const titleLower = product.title.toLowerCase();
         
         return (
