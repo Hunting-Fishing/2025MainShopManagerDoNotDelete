@@ -29,52 +29,50 @@ const CategoryDetail = () => {
   const [isPopular, setIsPopular] = useState(false);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
   
-  // Find category from URL slug and set data
+  // Initialize category data from local tool categories
   useEffect(() => {
-    if (slug) {
-      setIsLoadingCategory(true);
-      
-      // Convert slug like "power-tools" to "Power Tools" for display
-      const formattedTitle = slug
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      
-      // Set a default immediately to prevent flashing
+    if (!slug || !toolCategories) return;
+    
+    setIsLoadingCategory(true);
+    
+    // Convert slug like "power-tools" to "Power Tools" for display (as fallback)
+    const formattedTitle = slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    // Try to find the matching category from our local data
+    const category = toolCategories.find(
+      cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
+    );
+    
+    if (category) {
+      // Set values from found category
+      setCategoryTitle(category.category);
+      setDescription(category.description || '');
+      setCategoryItems(category.items || []);
+      setIsNew(category.isNew || false);
+      setIsPopular(category.isPopular || false);
+      console.log("Category found:", category);
+    } else {
+      // Use formatted slug as fallback
       setCategoryTitle(formattedTitle);
       setDescription(`Browse our selection of ${formattedTitle}`);
-      
-      // Find the actual category data from our local data
-      if (toolCategories && toolCategories.length > 0) {
-        const category = toolCategories.find(
-          cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
-        );
-        
-        if (category) {
-          setCategoryTitle(category.category);
-          setDescription(category.description || '');
-          setCategoryItems(category.items || []);
-          setIsNew(category.isNew || false);
-          setIsPopular(category.isPopular || false);
-        } else {
-          // Keep using the formatted title if category not found
-          setCategoryItems([]);
-          setIsNew(false);
-          setIsPopular(false);
-          console.warn(`Category not found for slug: ${slug}`);
-        }
-      }
-      
-      // We're not going to make Supabase API calls since they're failing with 406 errors
-      setIsLoadingCategory(false);
+      setCategoryItems([]);
+      setIsNew(false);
+      setIsPopular(false);
+      console.warn(`Category not found for slug: ${slug}`);
     }
+    
+    // No longer attempting Supabase API calls as they're failing with 406 errors
+    setIsLoadingCategory(false);
   }, [slug, toolCategories]);
 
-  // Filter products for this category
+  // Filter products for this category whenever needed data changes
   useEffect(() => {
-    if (!isLoading && products.length > 0 && categoryTitle) {
-      // When working with the products we filter them based on category name from our local data
+    if (!isLoading && products.length > 0 && categoryTitle && !isLoadingCategory) {
       const categoryLower = categoryTitle.toLowerCase();
+      console.log("Filtering products for category:", categoryTitle);
       
       const filtered = products.filter(product => {
         // Try to parse metadata if it exists
@@ -96,10 +94,12 @@ const CategoryDetail = () => {
         );
       });
       
+      console.log(`Found ${filtered.length} products for ${categoryTitle}`);
       setFilteredProducts(filtered);
     }
-  }, [products, isLoading, categoryTitle]);
+  }, [products, isLoading, categoryTitle, isLoadingCategory]);
 
+  // Render loading state while category data is being loaded
   if (isLoadingCategory) {
     return (
       <ShoppingPageLayout 
@@ -152,7 +152,7 @@ const CategoryDetail = () => {
 
       <ProductGrid 
         products={filteredProducts}
-        isLoading={isLoading} 
+        isLoading={isLoading || isLoadingCategory} 
         emptyMessage={`No products found in the ${categoryTitle} category.`}
       />
     </ShoppingPageLayout>
