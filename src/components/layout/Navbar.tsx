@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -10,7 +9,6 @@ const navigation = [
   { name: 'Work Orders', href: '/work-orders' },
   { name: 'Equipment', href: '/equipment' },
   { name: 'Inventory', href: '/inventory' },
-  { name: 'Shopping', href: '/shopping' },
   { name: 'Team', href: '/team' },
   { name: 'Reports', href: '/reports' },
 ];
