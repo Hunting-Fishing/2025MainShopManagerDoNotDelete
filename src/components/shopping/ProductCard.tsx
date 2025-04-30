@@ -42,7 +42,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         setIsInWishlist(false);
         if (onRemoveFromWishlist) onRemoveFromWishlist();
       } else {
-        await addItem(product.id);
+        await addItem(product);
         setIsInWishlist(true);
         if (onAddToWishlist) onAddToWishlist();
       }
@@ -134,7 +134,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {product.affiliate_link ? (
           <Button 
             className="flex-grow bg-[#FF9900] hover:bg-[#E68A00] text-white"
-            onClick={handleBuyClick}
+            onClick={() => {
+              if (handleBuyClick) handleBuyClick(); 
+              else window.open(product.affiliate_link, '_blank');
+            }}
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             View on Amazon

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Product } from '@/types/shopping';
 import { X } from 'lucide-react';
 import { useWishlist } from '@/hooks/useWishlist';
 import { ScrollArea } from '@/components/ui/scroll-area';

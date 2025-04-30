@@ -1,9 +1,10 @@
 
-import { Navigate, RouteObject } from 'react-router-dom';
+import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import Shopping from '@/pages/Shopping';
 import ShoppingCategories from '@/pages/ShoppingCategories';
+import ProductDetail from '@/pages/ProductDetail';
 import CategoryDetail from '@/pages/CategoryDetail';
 import ProductsPage from '@/pages/ProductsPage';
 import ShoppingAdmin from '@/pages/ShoppingAdmin';
@@ -90,6 +91,10 @@ export const routes: RouteObject[] = [
       {
         path: 'shopping/products',
         element: <ProductsPage />,
+      },
+      {
+        path: 'shopping/product/:productId',
+        element: <ProductDetail />,
       },
       {
         path: 'shopping/admin',
