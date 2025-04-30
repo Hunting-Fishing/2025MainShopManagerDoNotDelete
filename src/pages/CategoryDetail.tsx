@@ -29,8 +29,8 @@ const CategoryDetail = () => {
     updateFilters
   } = useCategoryDetail(slug);
 
-  // Special handling for the hand-tools category
-  const isHandTools = slug === 'hand-tools';
+  // Special handling for categories that need custom displays
+  const isSpecialCategory = slug === 'hand-tools' || slug === 'power-tools';
   
   // Format the slug for display when category is not available
   const formatSlugForDisplay = (slug: string) => {
@@ -62,7 +62,7 @@ const CategoryDetail = () => {
   }
 
   // Special display for hand-tools category
-  if (isHandTools) {
+  if (slug === 'hand-tools') {
     return (
       <ShoppingPageLayout
         title="Hand Tools"
@@ -115,6 +115,90 @@ const CategoryDetail = () => {
               </div>
             ))}
           </div>
+        </div>
+        
+        <Separator className="my-8" />
+        
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-8">
+          <div className="flex items-center">
+            <InfoIcon className="h-5 w-5 text-blue-600 mr-2" />
+            <p className="text-blue-800 text-sm">
+              As an Amazon Associate, we earn from qualifying purchases.
+            </p>
+          </div>
+        </div>
+      </ShoppingPageLayout>
+    );
+  }
+  
+  // Special display for power-tools category
+  if (slug === 'power-tools') {
+    return (
+      <ShoppingPageLayout
+        title="Power Tools"
+        description="Professional power tools for your automotive projects"
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Shop', path: '/shopping' },
+          { label: 'Categories', path: '/shopping/categories' },
+          { label: 'Power Tools' }
+        ]}
+      >
+        <div className="mb-8 p-6 border border-blue-200 rounded-xl bg-blue-50">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 rounded-full bg-blue-100 border border-blue-300">
+              <Wrench className="h-8 w-8 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-blue-800 mb-2">Power Tools Selection Coming Soon</h2>
+              <p className="text-blue-700 mb-4">
+                We're assembling a premium collection of power tools perfect for automotive maintenance and repair work.
+                Our team is selecting only the highest quality brands and models.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100"
+                  onClick={handleRetry}
+                >
+                  Check Again
+                </Button>
+                <Button 
+                  variant="default" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => window.location.href = '/shopping/categories'}
+                >
+                  View All Categories
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="text-lg font-medium mb-4">Featured Power Tool Categories</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {["Drills & Drivers", "Impact Wrenches", "Air Tools", "Power Sanders", "Grinders", "Battery Systems"].map((item, index) => (
+              <div key={index} className="p-4 border rounded-lg bg-white hover:shadow-md transition-shadow">
+                <p className="font-medium text-gray-800">{item}</p>
+                <p className="text-sm text-gray-500 mt-1">Premium Selection Coming Soon</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="mt-8 p-5 border border-green-200 rounded-xl bg-green-50">
+          <h3 className="text-lg font-medium text-green-800 mb-3">Want to suggest a specific power tool?</h3>
+          <p className="text-green-700 mb-4">
+            Have a favorite power tool brand or model you'd like to see in our shop? Let us know and we'll consider adding it to our catalog.
+          </p>
+          <Button 
+            variant="default" 
+            className="bg-green-600 hover:bg-green-700 text-white"
+            onClick={() => window.location.href = '/shopping/suggestions'}
+          >
+            Suggest a Product
+          </Button>
         </div>
         
         <Separator className="my-8" />

@@ -4,7 +4,7 @@ import { Product } from '@/types/shopping';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart, ShoppingCart, AlertTriangle, ImageOff, PackageOpen } from 'lucide-react';
+import { Star, Heart, ShoppingCart, AlertTriangle, ImageOff, PackageOpen, Wrench, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -69,12 +69,14 @@ export function ProductGrid({
               <Button 
                 variant="outline"
                 onClick={() => navigate('/shopping/categories')}
+                className="bg-white border-blue-300 text-blue-700 hover:bg-blue-50"
               >
                 Browse Categories
               </Button>
               <Button 
                 variant="default"
                 onClick={() => navigate('/shopping/suggestions')}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Suggest Products
               </Button>

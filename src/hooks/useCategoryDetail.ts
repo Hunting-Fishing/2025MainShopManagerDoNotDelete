@@ -15,6 +15,7 @@ export function useCategoryDetail(slug: string | undefined) {
   const [similarCategories, setSimilarCategories] = useState<ProductCategory[]>([]);
   const [retries, setRetries] = useState(0);
   const [diagnosticInfo, setDiagnosticInfo] = useState<string | null>(null);
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   useEffect(() => {
     // Reset state when the slug changes
@@ -53,7 +54,16 @@ export function useCategoryDetail(slug: string | undefined) {
         if (categoryData) {
           console.log("Category found:", categoryData);
           setCategory(categoryData);
+          
+          // Filter products by this category
           updateFilters({ categoryId: categoryData.id });
+          
+          // For demo/testing purposes, let's add some sample products if there are none
+          // This is just for development - remove in production
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Checking if we need to create sample products for this category");
+            // Left empty intentionally - implement if needed
+          }
         } else {
           // If not found, find similar categories for suggestions
           const slugParts = slug.split('-');
