@@ -124,7 +124,9 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
                   <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                 ) : (
                   crumb.path ? (
-                    <BreadcrumbLink as={Link} to={crumb.path}>{crumb.label}</BreadcrumbLink>
+                    <BreadcrumbLink asChild>
+                      <Link to={crumb.path}>{crumb.label}</Link>
+                    </BreadcrumbLink>
                   ) : (
                     <span className="text-muted-foreground">{crumb.label}</span>
                   )
