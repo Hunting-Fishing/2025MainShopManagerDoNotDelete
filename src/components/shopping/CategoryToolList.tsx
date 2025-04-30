@@ -12,6 +12,7 @@ interface ToolCategory {
   items: string[];
   isPopular?: boolean;
   isNew?: boolean;
+  slug?: string;  // Added slug property
 }
 
 interface CategoryToolListProps {
@@ -85,7 +86,7 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
               
               <div className="border-t p-3">
                 <Link
-                  to={`/shopping/categories/${slugify(category.category)}`}
+                  to={`/shopping/categories/${category.slug || slugify(category.category)}`}
                   className="flex items-center justify-between text-blue-600 hover:text-blue-800 font-medium text-sm group"
                 >
                   <span>Browse {category.category}</span>
