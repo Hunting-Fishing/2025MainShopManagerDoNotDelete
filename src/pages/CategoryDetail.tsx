@@ -29,12 +29,29 @@ const CategoryDetail = () => {
   // Special handling for the hand-tools category
   const isHandTools = slug === 'hand-tools';
   
+  // Format the slug for display when category is not available
+  const formatSlugForDisplay = (slug: string) => {
+    if (!slug) return 'Category';
+    return slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+  
+  const displayName = category?.name || (slug ? formatSlugForDisplay(slug) : 'Category');
+  
   // If the page is still loading, show a loading message
   if (isLoading) {
     return (
       <ShoppingPageLayout
         title="Loading Category..."
         description="Please wait while we fetch the category details"
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Shop', path: '/shopping' },
+          { label: 'Categories', path: '/shopping/categories' },
+          { label: displayName }
+        ]}
       >
         <CategoryLoading />
       </ShoppingPageLayout>
@@ -83,7 +100,7 @@ const CategoryDetail = () => {
           { label: 'Home', path: '/' },
           { label: 'Shop', path: '/shopping' },
           { label: 'Categories', path: '/shopping/categories' },
-          { label: slug || 'Unknown' }
+          { label: displayName }
         ]}
       >
         <CategoryNotFound
@@ -100,13 +117,13 @@ const CategoryDetail = () => {
   // Show the category details
   return (
     <ShoppingPageLayout
-      title={category?.name || 'Category'}
+      title={displayName}
       description={category?.description}
       breadcrumbs={[
         { label: 'Home', path: '/' },
         { label: 'Shop', path: '/shopping' },
         { label: 'Categories', path: '/shopping/categories' },
-        { label: category?.name || slug || 'Category' }
+        { label: displayName }
       ]}
     >
       {/* Filter interface */}
@@ -123,7 +140,7 @@ const CategoryDetail = () => {
       <ProductGrid 
         products={products}
         isLoading={productsLoading}
-        emptyMessage={`No products found in ${category?.name || 'this category'}. ${category ? 'Try adding some products first.' : ''}`}
+        emptyMessage={`No products found in ${displayName}. ${category ? 'Try adding some products first.' : ''}`}
       />
     </ShoppingPageLayout>
   );
