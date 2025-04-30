@@ -1,319 +1,303 @@
 
-import React, { useEffect, useState } from 'react';
-import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, RefreshCw, Wrench, Hammer } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useCategoryDetail } from '@/hooks/useCategoryDetail';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
 import { ProductFilters } from '@/components/shopping/ProductFilters';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Product, ProductCategory } from '@/types/shopping';
+import { 
+  Breadcrumb, 
+  BreadcrumbItem, 
+  BreadcrumbLink, 
+  BreadcrumbList, 
+  BreadcrumbPage, 
+  BreadcrumbSeparator 
+} from '@/components/ui/breadcrumb';
+import { ChevronRight, Home, MessageSquarePlus, Grid3X3, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Separator } from '@/components/ui/separator';
+import { Product } from '@/types/shopping';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { slugify } from '@/utils/slugUtils';
 
-const CategoryDetailPage: React.FC = () => {
+interface SubcategoryProps {
+  name: string;
+  slug: string;
+  description?: string;
+  itemCount: number;
+  isNew?: boolean;
+  isPopular?: boolean;
+}
+
+const CategoryDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  
-  const {
-    category,
-    products,
-    isLoading,
-    productsLoading,
-    error,
-    filterOptions,
-    updateFilters,
-    similarCategories,
-    diagnosticInfo,
-    handleRetry
+  const { 
+    category, 
+    products, 
+    isLoading, 
+    productsLoading, 
+    error, 
+    filterOptions, 
+    updateFilters, 
+    similarCategories 
   } = useCategoryDetail(slug);
 
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  
-  // Define top hand tools subcategories
-  const handToolsCategories = [
+  // For demo purposes, let's create some subcategories for the Hand Tools category
+  const subcategories: SubcategoryProps[] = [
     {
-      title: "Wrenches & Wrench Sets",
-      icon: Wrench,
-      status: "Coming Soon"
+      name: "Screwdrivers",
+      slug: "screwdrivers",
+      description: "Phillips, flathead, and specialty screwdrivers",
+      itemCount: 24,
+      isPopular: true
     },
     {
-      title: "Sockets & Socket Sets",
-      icon: Wrench,
-      status: "Coming Soon"
+      name: "Wrenches",
+      slug: "wrenches",
+      description: "Fixed and adjustable wrenches for every application",
+      itemCount: 18
     },
     {
-      title: "Pliers",
-      icon: Wrench,
-      status: "Coming Soon"
+      name: "Pliers",
+      slug: "pliers",
+      description: "Needle nose, slip joint, and specialty pliers",
+      itemCount: 15
     },
     {
-      title: "Screwdrivers",
-      icon: Wrench,
-      status: "Coming Soon"
+      name: "Hammers",
+      slug: "hammers",
+      description: "Ball peen, dead blow, and mallets",
+      itemCount: 12
     },
     {
-      title: "Hammers & Mallets",
-      icon: Hammer,
-      status: "Coming Soon"
+      name: "Specialty Tools",
+      slug: "specialty-tools",
+      description: "Specialized hand tools for specific applications",
+      itemCount: 32,
+      isNew: true
     },
     {
-      title: "Pry Bars",
-      icon: Wrench, 
-      status: "Coming Soon"
+      name: "Tool Sets",
+      slug: "tool-sets",
+      description: "Complete hand tool kits and sets",
+      itemCount: 9,
+      isPopular: true
     }
   ];
 
-  useEffect(() => {
-    if (products) {
-      setFilteredProducts(products);
-    }
-  }, [products]);
-
-  const handleSearch = (term: string) => {
-    if (!term) {
-      setFilteredProducts(products);
-      return;
-    }
-    
-    const filtered = products.filter(
-      product => product.title.toLowerCase().includes(term.toLowerCase())
-    );
-    setFilteredProducts(filtered);
-  };
-
-  const handleCategoryClick = (categoryId: string) => {
-    updateFilters({ categoryId });
-  };
-
-  const toggleFilters = () => {
-    setShowFilters(!showFilters);
-  };
-
   if (isLoading) {
     return (
-      <ShoppingPageLayout title="Loading Category..." onSearch={handleSearch}>
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
-            <p className="text-muted-foreground">Loading category details...</p>
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3 mb-10"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded"></div>
+            ))}
           </div>
         </div>
-      </ShoppingPageLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <ShoppingPageLayout title="Category Not Found" onSearch={handleSearch}>
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 my-8">
-          <div className="flex items-start gap-4">
-            <div className="bg-amber-100 rounded-full p-2">
-              <AlertCircle className="h-6 w-6 text-amber-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-medium text-amber-800 mb-2">Category Not Found</h2>
-              <p className="text-amber-700 mb-4">{error}</p>
-              
-              {similarCategories.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-medium text-amber-800 mb-2">Similar categories you might be interested in:</h3>
-                  <ul className="space-y-1">
-                    {similarCategories.map((cat) => (
-                      <li key={cat.id}>
-                        <Link 
-                          to={`/shopping/categories/${cat.slug}`} 
-                          className="text-blue-600 hover:text-blue-800 underline"
-                        >
-                          {cat.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              <div className="flex flex-wrap gap-3 mt-4">
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate(-1)}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Go Back
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={handleRetry}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Retry
-                </Button>
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="text-center py-12 bg-red-50 border border-red-200 rounded-lg">
+          <h2 className="text-xl font-semibold text-red-800">Error Loading Category</h2>
+          <p className="text-red-600 mt-2">{error}</p>
+          {similarCategories.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-medium mb-3">Did you mean one of these categories?</h3>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {similarCategories.map((cat) => (
+                  <Button 
+                    key={cat.id} 
+                    variant="outline"
+                    onClick={() => navigate(`/shopping/categories/${cat.slug}`)}
+                  >
+                    {cat.name}
+                  </Button>
+                ))}
               </div>
             </div>
-          </div>
+          )}
+          <Button 
+            className="mt-6"
+            onClick={() => navigate('/shopping/categories')}
+          >
+            Return to Categories
+          </Button>
         </div>
-        
-        {diagnosticInfo && (
-          <Card className="mt-8">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold mb-2">Diagnostic Information</h3>
-              <pre className="bg-muted p-2 rounded text-xs whitespace-pre-wrap">
-                {diagnosticInfo}
-              </pre>
-            </CardContent>
-          </Card>
-        )}
-      </ShoppingPageLayout>
+      </div>
     );
   }
 
-  const pageTitle = category ? category.name : slug ? slug.replace(/-/g, ' ') : 'Category';
+  // Get the category name from the URL slug if category is not available
+  const categoryName = category?.name || slug?.split('-').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
 
+  // Get a list of products for this page (will be empty if no products)
+  const categoryProducts: Product[] = products || [];
+  
   return (
-    <ShoppingPageLayout 
-      title={pageTitle} 
-      description={category?.description || "Browse products in this category"} 
-      onSearch={handleSearch}
-    >
-      <div className="mb-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/shopping">Shop</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/shopping/categories">Categories</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/">
+                <Home className="h-4 w-4" />
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/shopping">Shop</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/shopping/categories">Categories</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{categoryName}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
+      {/* Category Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{pageTitle}</h1>
-        <p className="text-muted-foreground">
-          {category?.description || "Essential hand tools for every mechanic and DIY enthusiast"}
+        <h1 className="text-3xl font-bold">{categoryName}</h1>
+        <p className="text-muted-foreground mt-2">
+          Browse our collection of {categoryName.toLowerCase()} for your automotive needs.
         </p>
       </div>
-      
-      {/* Collection Coming Soon Alert */}
-      <div className="bg-amber-50 border border-amber-100 rounded-lg p-6 mb-8">
-        <div className="flex items-start gap-4">
-          <div className="bg-amber-100 rounded-full p-3 flex-shrink-0">
-            <div className="w-10 h-10 flex items-center justify-center text-amber-800">
-              {/* Tool icon placeholder */}
-              <Wrench className="w-6 h-6" />
-            </div>
-          </div>
+
+      {/* Coming Soon Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-amber-800">Hand Tools Collection Coming Soon</h2>
-            <p className="text-amber-700 mt-2">
-              Our team is currently curating a selection of high-quality hand tools for automotive professionals and DIY enthusiasts. 
-              Check back soon to browse our complete collection!
+            <h3 className="font-medium text-blue-800">Product Suggestions Coming Soon</h3>
+            <p className="text-blue-700 text-sm mt-1">
+              We're working on adding more products to this category. Check back soon!
             </p>
-            <div className="mt-4 flex gap-3">
-              <Button variant="outline" className="bg-white">
-                Check Again
-              </Button>
-              <Button className="bg-amber-600 hover:bg-amber-700 text-white">
-                View All Categories
-              </Button>
-            </div>
           </div>
+          <Button 
+            onClick={() => navigate('/shopping/suggestions')} 
+            variant="default"
+            className="bg-blue-600 hover:bg-blue-700"
+            size="sm"
+          >
+            Suggest a Product
+          </Button>
         </div>
       </div>
 
-      {/* Top Categories Section */}
-      <div className="mb-12">
-        <h2 className="text-xl font-bold mb-6">Top {pageTitle} Categories</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {handToolsCategories.map((category, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold">{category.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {category.status}
-                    </p>
+      {/* Main Content Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Column - Subcategories + Filters */}
+        <div className="space-y-6">
+          {/* Subcategories List */}
+          <Card>
+            <CardContent className="p-5">
+              <h2 className="font-semibold text-lg mb-4">
+                {categoryName} Categories
+              </h2>
+              <div className="space-y-3">
+                {subcategories.map((subcat) => (
+                  <div 
+                    key={subcat.slug}
+                    className="flex items-center justify-between hover:bg-slate-50 p-2 rounded-md cursor-pointer"
+                    onClick={() => navigate(`/shopping/categories/${slug}/${subcat.slug}`)}
+                  >
+                    <div className="flex items-start">
+                      <div>
+                        <div className="flex items-center">
+                          <span className="font-medium text-sm">{subcat.name}</span>
+                          {subcat.isNew && (
+                            <Badge className="ml-2 bg-purple-100 text-purple-800 border border-purple-300 text-xs">
+                              New
+                            </Badge>
+                          )}
+                          {subcat.isPopular && !subcat.isNew && (
+                            <Badge className="ml-2 bg-green-100 text-green-800 border border-green-300 text-xs">
+                              Popular
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {subcat.itemCount} items
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <category.icon className="h-5 w-5 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Products section would go here when available */}
-      {productsLoading ? (
-        <div className="flex justify-center my-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      ) : filteredProducts.length > 0 ? (
-        <>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Available Products</h2>
-            <Button
-              variant="outline"
-              onClick={toggleFilters}
-              className="flex items-center gap-2"
-            >
-              <span>Filters</span>
-              {showFilters ? '×' : '+'}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {showFilters && (
-              <div className="lg:col-span-1">
-                <ProductFilters 
-                  options={filterOptions} 
-                  onChange={updateFilters} 
-                />
+                ))}
               </div>
-            )}
-            <div className={`${showFilters ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
-              <ProductGrid products={filteredProducts} />
+              <div className="mt-4 pt-3 border-t">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-blue-600 hover:text-blue-800 hover:bg-blue-50 text-sm p-2 h-auto"
+                  onClick={() => navigate('/shopping/categories')}
+                >
+                  <Grid3X3 className="h-4 w-4 mr-2" />
+                  View all categories
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Filters */}
+          <ProductFilters 
+            filters={filterOptions}
+            onUpdateFilters={updateFilters}
+          />
+        </div>
+
+        {/* Right Column - Products Grid */}
+        <div className="lg:col-span-3">
+          <ProductGrid 
+            products={categoryProducts}
+            isLoading={productsLoading}
+            categoryName={categoryName}
+            emptyMessage={`We don't have any ${categoryName.toLowerCase()} products yet.`}
+          />
+          
+          {/* Suggestion CTA */}
+          <div className="mt-8 bg-gray-50 rounded-xl border p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-lg">Can't find what you're looking for?</h3>
+              <p className="text-muted-foreground mt-1">
+                Suggest products you'd like to see in our collection.
+              </p>
             </div>
-          </div>
-        </>
-      ) : (
-        <div className="bg-muted/20 rounded-lg p-8 text-center my-6">
-          <h3 className="text-lg font-medium mb-2">No Products Available Yet</h3>
-          <p className="mb-4 text-muted-foreground">
-            We're still adding products to this category. Check back soon!
-          </p>
-          <div className="flex justify-center">
-            <Button asChild variant="outline">
-              <Link to="/shopping/suggestions">Suggest a Product</Link>
+            <Button 
+              onClick={() => navigate('/shopping/suggestions')}
+              className="whitespace-nowrap"
+            >
+              <MessageSquarePlus className="mr-2 h-4 w-4" />
+              Suggest Products
             </Button>
           </div>
         </div>
-      )}
-
-      {/* Suggestion CTA */}
-      <div className="mt-12 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-        <div>
-          <h4 className="font-medium text-blue-800">Looking for a specific tool?</h4>
-          <p className="text-sm text-blue-700 mt-1">
-            If you don't see what you need, visit our <Link to="/shopping/suggestions" className="underline font-medium">product suggestions</Link> page to request it.
-          </p>
-        </div>
       </div>
-    </ShoppingPageLayout>
+    </div>
   );
 };
 
