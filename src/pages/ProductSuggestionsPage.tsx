@@ -24,6 +24,7 @@ export default function ProductSuggestionsPage() {
     try {
       const suggestions = await fetchUserSuggestions();
       setUserSuggestions(suggestions);
+      console.log("Loaded suggestions:", suggestions);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
       handleFormError(error, 'suggestions');

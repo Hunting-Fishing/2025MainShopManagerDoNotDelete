@@ -20,14 +20,16 @@ export function TextAreaField({
   placeholder,
   required = false,
 }: TextAreaFieldProps) {
+  const fieldId = `field-${name}`;
+  
   return (
     <div className="space-y-2">
-      <Label htmlFor={name} className="text-sm font-medium flex items-center">
+      <Label htmlFor={fieldId} className="text-sm font-medium flex items-center">
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
       <Textarea
-        id={name}
+        id={fieldId}
         {...register(name, required ? { required: `${label} is required` } : {})}
         placeholder={placeholder}
         className={error ? "border-destructive" : ""}

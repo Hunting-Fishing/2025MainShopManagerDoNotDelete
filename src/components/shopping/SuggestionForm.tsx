@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/ui/form-field';
 import { toast } from '@/hooks/use-toast';
 import { Product } from '@/types/shopping';
 import { useProducts } from '@/hooks/useProducts';

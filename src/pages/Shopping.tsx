@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Tag, ShoppingCart, Heart, Gift, Truck, Coffee, Bookmark, Sparkles, Wrench } from 'lucide-react';
@@ -44,6 +45,15 @@ const Shopping = () => {
       badgeColor: "green"
     },
     {
+      id: "suggestions",
+      title: "Product Suggestions",
+      description: "Submit and view customer suggestions",
+      icon: Coffee,
+      path: "/shopping/suggestions",
+      badge: "New",
+      badgeColor: "yellow"
+    },
+    {
       id: "cart",
       title: "Shopping Cart",
       description: "View and manage your shopping cart",
@@ -86,14 +96,6 @@ const Shopping = () => {
       badgeColor: "blue"
     },
     {
-      id: "suggestions",
-      title: "Product Suggestions",
-      description: "Submit and view customer suggestions",
-      icon: Coffee,
-      path: "/shopping/suggestions",
-      badgeColor: "yellow"
-    },
-    {
       id: "saved",
       title: "Saved Items",
       description: "Your saved product collections",
@@ -118,7 +120,7 @@ const Shopping = () => {
       </Breadcrumb>
 
       <div className="flex justify-between items-center my-6">
-        <h1 className="text-2xl font-bold">Amazon Shopping</h1>
+        <h1 className="text-2xl font-bold">Amazon Shop</h1>
         <div className="flex space-x-2 bg-muted/20 rounded-md p-1">
           <button
             className={`px-3 py-1 rounded-md ${
@@ -191,7 +193,6 @@ const Shopping = () => {
                     </div>
                     {category.badge && (
                       <Badge 
-                        variant="outline" 
                         className={`bg-${category.badgeColor}-100 text-${category.badgeColor}-800 border-${category.badgeColor}-300`}
                       >
                         {category.badge}
