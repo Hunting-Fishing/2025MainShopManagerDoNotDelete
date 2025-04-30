@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
@@ -20,40 +19,53 @@ const CategoryDetail = () => {
   const [categoryItems, setCategoryItems] = useState<string[]>([]);
   const [isNew, setIsNew] = useState(false);
   const [isPopular, setIsPopular] = useState(false);
+  const [isLoadingCategory, setIsLoadingCategory] = useState(true);
 
   // Find category from URL slug
   useEffect(() => {
-    if (slug && toolCategories) {
+    if (slug) {
+      setIsLoadingCategory(true);
+      
       // Convert slug like "power-tools" to "Power Tools" for display
       const formattedTitle = slug
         .split('-')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
       
-      const category = toolCategories.find(
-        cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
-      );
+      // Set a default immediately to prevent flashing
+      setCategoryTitle(formattedTitle);
+      setDescription(`Browse our selection of ${formattedTitle}`);
       
-      if (category) {
-        setCategoryTitle(category.category);
-        setDescription(category.description || '');
-        setCategoryItems(category.items || []);
-        setIsNew(category.isNew || false);
-        setIsPopular(category.isPopular || false);
-      } else {
-        // Fallback to the formatted title if category not found
-        setCategoryTitle(formattedTitle);
-        setDescription(`Browse our selection of ${formattedTitle}`);
-        setCategoryItems([]);
-        setIsNew(false);
-        setIsPopular(false);
+      // Now try to find the actual category data
+      if (toolCategories && toolCategories.length > 0) {
+        const category = toolCategories.find(
+          cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
+        );
         
-        toast({
-          variant: "destructive",
-          title: "Category not found",
-          description: "We couldn't find detailed information for this category."
-        });
+        if (category) {
+          setCategoryTitle(category.category);
+          setDescription(category.description || '');
+          setCategoryItems(category.items || []);
+          setIsNew(category.isNew || false);
+          setIsPopular(category.isPopular || false);
+        } else {
+          // Keep using the formatted title if category not found
+          setCategoryItems([]);
+          setIsNew(false);
+          setIsPopular(false);
+          
+          // Only show toast if toolCategories loaded successfully but this category wasn't found
+          if (toolCategories.length > 0) {
+            toast({
+              variant: "destructive",
+              title: "Category not found",
+              description: "We couldn't find detailed information for this category."
+            });
+          }
+        }
       }
+      
+      setIsLoadingCategory(false);
     }
   }, [slug, toolCategories]);
 
@@ -61,14 +73,28 @@ const CategoryDetail = () => {
   useEffect(() => {
     if (!isLoading && products.length > 0 && categoryTitle) {
       // In a real app, we'd filter by category from the database
-      // For now we just filter products that might match the category name
+      // For now we just filter products that might match the category name or category field in metadata
       const filtered = products.filter(product => {
-        const metadata = product.metadata ? JSON.parse(product.metadata) : {};
+        // Try to parse metadata if it exists
+        let metadata = {};
+        if (product.metadata) {
+          try {
+            metadata = JSON.parse(product.metadata);
+          } catch (e) {
+            console.warn("Failed to parse metadata for product", product.id);
+          }
+        }
+        
+        const categoryLower = categoryTitle.toLowerCase();
+        const titleLower = product.title.toLowerCase();
+        
         return (
-          product.title.toLowerCase().includes(categoryTitle.toLowerCase()) ||
-          (metadata.category && metadata.category.toLowerCase() === categoryTitle.toLowerCase())
+          titleLower.includes(categoryLower) || 
+          (metadata && metadata.category && 
+           metadata.category.toLowerCase() === categoryLower)
         );
       });
+      
       setFilteredProducts(filtered);
     }
   }, [products, isLoading, categoryTitle]);
