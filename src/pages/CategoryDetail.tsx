@@ -9,7 +9,8 @@ import { CategoryLoading } from '@/components/shopping/CategoryLoading';
 import { CategoryNotFound } from '@/components/shopping/CategoryNotFound';
 import { useCategoryDetail } from '@/hooks/useCategoryDetail';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, InfoIcon, Tool } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -58,12 +59,12 @@ const CategoryDetail = () => {
     );
   }
 
-  // Special error handling for hand-tools category
-  if (isHandTools && !category) {
+  // Special display for hand-tools category
+  if (isHandTools) {
     return (
       <ShoppingPageLayout
         title="Hand Tools"
-        description="Shop our selection of quality hand tools"
+        description="Essential hand tools for every mechanic and DIY enthusiast"
         breadcrumbs={[
           { label: 'Home', path: '/' },
           { label: 'Shop', path: '/shopping' },
@@ -71,21 +72,59 @@ const CategoryDetail = () => {
           { label: 'Hand Tools' }
         ]}
       >
-        <Alert className="mb-6 bg-amber-50 border-amber-200">
-          <AlertCircle className="h-5 w-5 text-amber-600" />
-          <AlertTitle className="text-amber-800">Category Under Construction</AlertTitle>
-          <AlertDescription className="text-amber-700">
-            The Hand Tools category is currently being set up. Please check back soon to browse our selection of quality hand tools.
-          </AlertDescription>
-        </Alert>
+        <div className="mb-8 p-6 border border-amber-200 rounded-xl bg-amber-50">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 rounded-full bg-amber-100 border border-amber-300">
+              <Tool className="h-8 w-8 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-amber-800 mb-2">Hand Tools Collection Coming Soon</h2>
+              <p className="text-amber-700 mb-4">
+                Our team is currently curating a selection of high-quality hand tools for automotive professionals and DIY enthusiasts.
+                Check back soon to browse our complete collection!
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  className="bg-white border-amber-300 text-amber-700 hover:bg-amber-100"
+                  onClick={handleRetry}
+                >
+                  Check Again
+                </Button>
+                <Button 
+                  variant="default" 
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={() => window.location.href = '/shopping/categories'}
+                >
+                  View All Categories
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="text-lg font-medium mb-4">Top Hand Tools Categories</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {["Wrenches & Wrench Sets", "Sockets & Socket Sets", "Pliers", "Screwdrivers", "Hammers & Mallets", "Pry Bars"].map((item, index) => (
+              <div key={index} className="p-4 border rounded-lg bg-white hover:shadow-md transition-shadow">
+                <p className="font-medium text-gray-800">{item}</p>
+                <p className="text-sm text-gray-500 mt-1">Coming Soon</p>
+              </div>
+            ))}
+          </div>
+        </div>
         
-        <CategoryNotFound
-          slug={slug || ''}
-          error="This category is still being set up. Our team is working on adding products."
-          similarCategories={similarCategories}
-          diagnosticInfo={diagnosticInfo}
-          onRetry={handleRetry}
-        />
+        <Separator className="my-8" />
+        
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-8">
+          <div className="flex items-center">
+            <InfoIcon className="h-5 w-5 text-blue-600 mr-2" />
+            <p className="text-blue-800 text-sm">
+              As an Amazon Associate, we earn from qualifying purchases.
+            </p>
+          </div>
+        </div>
       </ShoppingPageLayout>
     );
   }
