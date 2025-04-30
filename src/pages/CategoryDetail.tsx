@@ -9,7 +9,7 @@ import { CategoryLoading } from '@/components/shopping/CategoryLoading';
 import { CategoryNotFound } from '@/components/shopping/CategoryNotFound';
 import { useCategoryDetail } from '@/hooks/useCategoryDetail';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, InfoIcon, Tool } from 'lucide-react';
+import { AlertCircle, InfoIcon, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const CategoryDetail = () => {
@@ -75,7 +75,7 @@ const CategoryDetail = () => {
         <div className="mb-8 p-6 border border-amber-200 rounded-xl bg-amber-50">
           <div className="flex items-start space-x-4">
             <div className="p-3 rounded-full bg-amber-100 border border-amber-300">
-              <Tool className="h-8 w-8 text-amber-600" />
+              <Wrench className="h-8 w-8 text-amber-600" />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-amber-800 mb-2">Hand Tools Collection Coming Soon</h2>
