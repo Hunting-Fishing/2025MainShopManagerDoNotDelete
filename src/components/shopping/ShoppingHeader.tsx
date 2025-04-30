@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWishlist } from '@/hooks/useWishlist';
+import { Link } from 'react-router-dom';
 
 interface ShoppingHeaderProps {
   onSearch?: (term: string) => void;
@@ -55,18 +56,20 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={onToggleWishlist}
             className="relative"
+            asChild
           >
-            <Heart size={18} />
-            {wishlistItems && wishlistItems.length > 0 && (
-              <Badge 
-                className="absolute -top-2 -right-2 px-1.5 min-w-[20px] h-5 flex items-center justify-center bg-blue-500"
-                variant="secondary"
-              >
-                {wishlistItems.length}
-              </Badge>
-            )}
+            <Link to="/shopping/wishlist">
+              <Heart size={18} />
+              {wishlistItems && wishlistItems.length > 0 && (
+                <Badge 
+                  className="absolute -top-2 -right-2 px-1.5 min-w-[20px] h-5 flex items-center justify-center bg-blue-500"
+                  variant="secondary"
+                >
+                  {wishlistItems.length}
+                </Badge>
+              )}
+            </Link>
           </Button>
         </div>
       </div>

@@ -22,12 +22,18 @@ export function Navbar() {
   // Function to check if a navigation item is active based on the current URL path
   const isNavItemActive = (href: string) => {
     const currentPath = location.pathname;
-    // Check if current path starts with this nav item's href
-    // But make sure we're not matching partial route segments like '/dashboard' matching '/dash'
+    
+    // Special case for root path
     if (href === '/') {
       return currentPath === '/';
     }
-    return currentPath === href || currentPath.startsWith(`${href}/`);
+    
+    // For other paths, we consider it active if:
+    // 1. The current path exactly matches the href, or
+    // 2. The current path starts with the href followed by a slash
+    // This ensures that '/shopping/categories' will highlight the 'Shopping' nav item
+    return currentPath === href || 
+           currentPath.startsWith(`${href}/`);
   };
   
   return (
