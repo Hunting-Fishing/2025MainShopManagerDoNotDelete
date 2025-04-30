@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Work Orders', href: '/work-orders' },
   { name: 'Equipment', href: '/equipment' },
   { name: 'Inventory', href: '/inventory' },
+  { name: 'Shopping', href: '/shopping' },
   { name: 'Team', href: '/team' },
   { name: 'Reports', href: '/reports' },
 ];
@@ -17,6 +18,17 @@ const navigation = [
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  
+  // Function to check if a navigation item is active based on the current URL path
+  const isNavItemActive = (href: string) => {
+    const currentPath = location.pathname;
+    // Check if current path starts with this nav item's href
+    // But make sure we're not matching partial route segments like '/dashboard' matching '/dash'
+    if (href === '/') {
+      return currentPath === '/';
+    }
+    return currentPath === href || currentPath.startsWith(`${href}/`);
+  };
   
   return (
     <header className="bg-white shadow-sm dark:bg-slate-800 dark:border-slate-700 border-b border-slate-200">
@@ -44,7 +56,7 @@ export function Navbar() {
               key={item.name}
               to={item.href}
               className={`text-sm font-medium ${
-                location.pathname === item.href 
+                isNavItemActive(item.href) 
                   ? 'text-blue-600 dark:text-blue-400'
                   : 'text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400'
               }`}
@@ -97,7 +109,7 @@ export function Navbar() {
                       key={item.name}
                       to={item.href}
                       className={`-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 ${
-                        location.pathname === item.href 
+                        isNavItemActive(item.href) 
                           ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-700'
                           : 'text-slate-700 hover:bg-blue-50 dark:text-slate-300 dark:hover:bg-slate-700'
                       }`}
