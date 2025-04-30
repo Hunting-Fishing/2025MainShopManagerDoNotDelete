@@ -25,11 +25,6 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
   title = "Tool Categories",
   description = "Browse our collection of automotive tools"
 }) => {
-  // Convert category name to slug for routing
-  const getCategorySlug = (categoryName: string) => {
-    return slugify(categoryName);
-  };
-  
   return (
     <div className="space-y-6">
       {title && (
@@ -90,7 +85,7 @@ export const CategoryToolList: React.FC<CategoryToolListProps> = ({
               
               <div className="border-t p-3">
                 <Link
-                  to={`/shopping/categories/${getCategorySlug(category.category)}`}
+                  to={`/shopping/categories/${slugify(category.category)}`}
                   className="flex items-center justify-between text-blue-600 hover:text-blue-800 font-medium text-sm group"
                 >
                   <span>Browse {category.category}</span>
