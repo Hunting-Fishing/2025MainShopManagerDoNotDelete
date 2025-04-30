@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
@@ -8,6 +9,12 @@ import { useToolCategories } from '@/hooks/useToolCategories';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+
+// Define an interface for the product metadata
+interface ProductMetadata {
+  category?: string;
+  [key: string]: any;
+}
 
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -76,10 +83,10 @@ const CategoryDetail = () => {
       // For now we just filter products that might match the category name or category field in metadata
       const filtered = products.filter(product => {
         // Try to parse metadata if it exists
-        let metadata = {};
+        let metadata: ProductMetadata = {};
         if (product.metadata) {
           try {
-            metadata = JSON.parse(product.metadata);
+            metadata = JSON.parse(product.metadata) as ProductMetadata;
           } catch (e) {
             console.warn("Failed to parse metadata for product", product.id);
           }
@@ -90,7 +97,7 @@ const CategoryDetail = () => {
         
         return (
           titleLower.includes(categoryLower) || 
-          (metadata && metadata.category && 
+          (metadata?.category && 
            metadata.category.toLowerCase() === categoryLower)
         );
       });
