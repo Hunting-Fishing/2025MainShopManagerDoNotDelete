@@ -4,7 +4,7 @@ import { Product } from '@/types/shopping';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart, ShoppingCart, AlertTriangle, ImageOff } from 'lucide-react';
+import { Star, Heart, ShoppingCart, AlertTriangle, ImageOff, PackageOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -13,13 +13,15 @@ interface ProductGridProps {
   isLoading: boolean;
   emptyMessage?: string;
   error?: string | null;
+  categoryName?: string;
 }
 
 export function ProductGrid({ 
   products, 
   isLoading, 
   emptyMessage = "No products found.", 
-  error = null 
+  error = null,
+  categoryName
 }: ProductGridProps) {
   const navigate = useNavigate();
   
@@ -55,8 +57,30 @@ export function ProductGrid({
   if (!products || products.length === 0) {
     return (
       <div className="text-center py-10 bg-gray-50 rounded-md border border-gray-200">
-        <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-lg text-muted-foreground">{emptyMessage}</p>
+        <PackageOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-lg text-muted-foreground mb-2">{emptyMessage}</p>
+        
+        {categoryName && (
+          <div className="max-w-md mx-auto mt-4">
+            <p className="text-sm text-gray-500 mb-4">
+              We're working on adding new {categoryName} products to our catalog.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/shopping/categories')}
+              >
+                Browse Categories
+              </Button>
+              <Button 
+                variant="default"
+                onClick={() => navigate('/shopping/suggestions')}
+              >
+                Suggest Products
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
