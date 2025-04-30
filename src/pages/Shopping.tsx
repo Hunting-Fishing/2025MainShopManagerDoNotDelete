@@ -16,14 +16,21 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Button } from '@/components/ui/button';
 import { ShoppingCard } from '@/components/shopping/ShoppingCard';
+import { WishlistPanel } from '@/components/shopping/WishlistPanel';
+import { ShoppingHeader } from '@/components/shopping/ShoppingHeader';
 
 const Shopping = () => {
   const [activeTab, setActiveTab] = useState("grid");
+  const [showWishlist, setShowWishlist] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useAuthUser();
   
   const toggleView = (view: string) => {
     setActiveTab(view);
+  };
+
+  const toggleWishlist = () => {
+    setShowWishlist(!showWishlist);
   };
 
   const shoppingCategories = [
@@ -48,6 +55,12 @@ const Shopping = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <ShoppingHeader 
+        onSearch={(term) => console.log('Search:', term)}
+        onToggleFilters={() => console.log('Toggle filters')}
+        onToggleWishlist={toggleWishlist}
+      />
+      
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -153,6 +166,11 @@ const Shopping = () => {
           Our shop features carefully selected products from Amazon. We've curated the best options across various categories to help you find quality items. When you purchase through our links, you support our business at no additional cost to you.
         </p>
       </div>
+      
+      <WishlistPanel 
+        visible={showWishlist} 
+        onClose={() => setShowWishlist(false)} 
+      />
     </div>
   );
 };

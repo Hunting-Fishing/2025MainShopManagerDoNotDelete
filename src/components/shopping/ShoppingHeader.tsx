@@ -2,18 +2,20 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Heart, Search, SlidersHorizontal } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 
 interface ShoppingHeaderProps {
   onSearch: (searchTerm: string) => void;
   onToggleFilters: () => void;
+  onToggleWishlist: () => void;
 }
 
 export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
   onSearch,
-  onToggleFilters
+  onToggleFilters,
+  onToggleWishlist
 }) => {
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,6 +32,16 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
         <h1 className="text-2xl font-bold">Amazon Shop</h1>
         
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onToggleWishlist}
+            aria-label="View saved items"
+            className="text-pink-500 border-pink-200 hover:bg-pink-50"
+          >
+            <Heart className="h-5 w-5" />
+          </Button>
+          
           {isMobile && (
             <Button 
               variant="outline" 
