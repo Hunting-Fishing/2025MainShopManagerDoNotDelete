@@ -8,16 +8,20 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ShoppingHeader } from './ShoppingHeader';
 import { Card } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 interface ShoppingPageLayoutProps {
   title: string;
   description?: string;
   children: React.ReactNode;
   error?: string | null;
+  warning?: string | null;
+  info?: string | null;
   breadcrumbs?: Array<{
     label: string;
     path?: string;
@@ -30,6 +34,8 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
   description,
   children,
   error = null,
+  warning = null,
+  info = null,
   breadcrumbs = [],
   onSearch = () => {}
 }) => {
@@ -65,17 +71,26 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       currentPath += '/shopping';
       crumbs.push({ label: 'Shop', path: currentPath });
       
-      if (paths.includes('categories') && paths.length > 2) {
+      if (paths.includes('categories')) {
         currentPath += '/categories';
         crumbs.push({ label: 'Categories', path: currentPath });
         
-        const categorySlug = paths[paths.length - 1];
-        const categoryName = categorySlug
-          .split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
+        // If we have a category slug
+        if (paths.length > 2) {
+          const categorySlug = paths[paths.length - 1];
+          const categoryName = categorySlug
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          
+          crumbs.push({ label: categoryName });
+        }
+      } else if (paths.includes('product') && paths.length > 2) {
+        currentPath += '/product';
+        crumbs.push({ label: 'Product', path: currentPath });
         
-        crumbs.push({ label: categoryName });
+        // Just show a placeholder for the product ID
+        crumbs.push({ label: 'Product Details' });
       } else if (paths.length > 1) {
         const lastPath = paths[paths.length - 1];
         const formattedPath = lastPath
@@ -108,7 +123,11 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
                 {index === generatedBreadcrumbs.length - 1 ? (
                   <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink href={crumb.path}>{crumb.label}</BreadcrumbLink>
+                  crumb.path ? (
+                    <BreadcrumbLink as={Link} to={crumb.path}>{crumb.label}</BreadcrumbLink>
+                  ) : (
+                    <span className="text-muted-foreground">{crumb.label}</span>
+                  )
                 )}
               </BreadcrumbItem>
               {index < generatedBreadcrumbs.length - 1 && (
@@ -125,12 +144,27 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       </div>
       
       {error && (
-        <Card className="bg-red-50 border-red-200 p-4 mb-6">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-            <p className="text-red-700">{error}</p>
-          </div>
-        </Card>
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
+      {warning && (
+        <Alert variant="warning" className="mb-6 bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="text-amber-800">Warning</AlertTitle>
+          <AlertDescription className="text-amber-700">{warning}</AlertDescription>
+        </Alert>
+      )}
+      
+      {info && (
+        <Alert className="mb-6 bg-blue-50 border-blue-200">
+          <Info className="h-5 w-5 text-blue-600" />
+          <AlertTitle className="text-blue-800">Information</AlertTitle>
+          <AlertDescription className="text-blue-700">{info}</AlertDescription>
+        </Alert>
       )}
       
       {children}

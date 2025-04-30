@@ -1,13 +1,13 @@
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import CategoryDetail from './CategoryDetail';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, RefreshCw } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 
 const LoadingFallback = () => (
   <ShoppingPageLayout 
@@ -15,7 +15,12 @@ const LoadingFallback = () => (
     description="Please wait while we load the category details"
   >
     <div className="flex flex-col items-center justify-center h-64 space-y-4">
-      <LoadingSpinner size="lg" />
+      <div className="relative">
+        <LoadingSpinner size="lg" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
       <p className="text-muted-foreground animate-pulse">Loading products...</p>
     </div>
   </ShoppingPageLayout>
@@ -23,6 +28,7 @@ const LoadingFallback = () => (
 
 const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
   
   return (
     <ShoppingPageLayout 
@@ -37,12 +43,28 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetError
           <AlertDescription className="space-y-2">
             <p>{error?.message || "An unexpected error occurred"}</p>
             <p className="text-xs text-muted-foreground">Error details: {error?.stack?.split('\n')[0]}</p>
+            {slug && (
+              <p className="text-sm">
+                Tried to load: <span className="font-mono bg-gray-100 px-1 rounded">{slug}</span>
+              </p>
+            )}
           </AlertDescription>
         </Alert>
         
         <div className="flex flex-col sm:flex-row gap-4 mt-4">
           <Button 
-            onClick={resetErrorBoundary}
+            onClick={() => {
+              // Clear local storage cache if any
+              try {
+                const cacheKeys = Object.keys(localStorage).filter(key => 
+                  key.startsWith('category_') || key.startsWith('products_')
+                );
+                cacheKeys.forEach(key => localStorage.removeItem(key));
+              } catch (err) {
+                console.error("Error clearing cache:", err);
+              }
+              resetErrorBoundary();
+            }}
             className="flex items-center gap-2"
           >
             <RefreshCw size={16} />
@@ -58,21 +80,62 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetError
             View All Categories
           </Button>
         </div>
+        
+        <div className="mt-10 text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            If this issue persists, please try clearing your browser cache or contact support.
+          </p>
+          
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+          >
+            Return to Home
+          </Button>
+        </div>
       </div>
     </ShoppingPageLayout>
   );
 };
 
+const DelayedFallback = () => {
+  const [showLoading, setShowLoading] = useState(false);
+  
+  useEffect(() => {
+    // Only show loading spinner after 500ms to avoid flicker for fast loads
+    const timer = setTimeout(() => setShowLoading(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (!showLoading) return null;
+  return <LoadingFallback />;
+};
+
 const CategoryDetailPage = () => {
+  // Track mount state to avoid memory leaks
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+  
   return (
     <ErrorBoundary 
       FallbackComponent={ErrorFallback}
       onReset={() => {
         // Reset application state here if needed
-        window.location.reload();
+        if (isMounted) {
+          window.location.reload();
+        }
+      }}
+      onError={(error, info) => {
+        // Log the error to the console for debugging
+        console.error("Category page error:", error);
+        console.error("Component stack:", info.componentStack);
       }}
     >
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<DelayedFallback />}>
         <CategoryDetail />
       </Suspense>
     </ErrorBoundary>
