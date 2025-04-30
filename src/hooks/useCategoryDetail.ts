@@ -15,33 +15,43 @@ export function useCategoryDetail(slug: string | undefined) {
   const [similarCategories, setSimilarCategories] = useState<ProductCategory[]>([]);
   const [retries, setRetries] = useState(0);
   const [diagnosticInfo, setDiagnosticInfo] = useState<string | null>(null);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [hasFetched, setHasFetched] = useState(false); // Track if we've already fetched data
 
   useEffect(() => {
     // Reset state when the slug changes
-    setIsLoading(true);
-    setError(null);
-    setCategory(null);
-    setSimilarCategories([]);
-    setDiagnosticInfo(null);
-    
-    // If no slug is provided, show an error
     if (!slug) {
       setError("No category specified");
       setIsLoading(false);
       return;
     }
     
+    // If we already have the correct category, don't refetch
+    if (category && category.slug === slug) {
+      console.log(`Category ${slug} already loaded, skipping fetch`);
+      return;
+    }
+    
     const fetchCategory = async () => {
       try {
+        setIsLoading(true);
         console.log(`Fetching category for slug: ${slug}`);
         
-        // Try to normalize the slug (remove or standardize special characters)
-        const normalizedSlug = normalizeSlug(slug);
-        console.log(`Normalized slug: ${normalizedSlug}`);
-        console.log(`Available categories:`, categories.map(c => ({id: c.id, name: c.name, slug: c.slug})));
+        // First check if the category is in the already loaded categories
+        const existingCategory = categories.find(c => c.slug === slug);
         
-        // First, try to find the category by normalized slug
+        if (existingCategory) {
+          console.log(`Found category "${slug}" in existing data:`, existingCategory);
+          setCategory(existingCategory);
+          updateFilters({ categoryId: existingCategory.id });
+          setIsLoading(false);
+          setHasFetched(true);
+          return;
+        }
+        
+        // If not found in memory, try the normalized slug
+        const normalizedSlug = normalizeSlug(slug);
+        
+        // Try to find the category by normalized slug
         let categoryData = await fetchCategoryBySlug(normalizedSlug);
         
         // If we couldn't find it, try with the original slug
@@ -50,25 +60,14 @@ export function useCategoryDetail(slug: string | undefined) {
           categoryData = await fetchCategoryBySlug(slug);
         }
         
-        // If we found a category, use it
         if (categoryData) {
           console.log("Category found:", categoryData);
           setCategory(categoryData);
-          
-          // Filter products by this category
           updateFilters({ categoryId: categoryData.id });
-          
-          // For demo/testing purposes, let's add some sample products if there are none
-          // This is just for development - remove in production
-          if (process.env.NODE_ENV === 'development') {
-            console.log("Checking if we need to create sample products for this category");
-            // Left empty intentionally - implement if needed
-          }
         } else {
-          // If not found, find similar categories for suggestions
+          // Find similar categories for suggestions
           const slugParts = slug.split('-');
           
-          // Look for categories that match any part of the slug
           const similar = categories.filter(cat => {
             if (!cat.slug) return false;
             return slugParts.some(part => 
@@ -79,14 +78,12 @@ export function useCategoryDetail(slug: string | undefined) {
           console.log(`No category found for slug "${slug}", found ${similar.length} similar categories`);
           setSimilarCategories(similar);
           
-          // If we have similar categories, suggest them
           if (similar.length > 0) {
             setError(`Category "${slug}" not found. Did you mean one of these?`);
           } else {
             setError(`Category "${slug}" not found.`);
           }
           
-          // Add diagnostic information
           setDiagnosticInfo(`
             We couldn't find a category with the slug "${slug}". 
             ${categories.length > 0 
@@ -106,11 +103,15 @@ export function useCategoryDetail(slug: string | undefined) {
         setError(err instanceof Error ? err.message : "Failed to load category");
       } finally {
         setIsLoading(false);
+        setHasFetched(true);
       }
     };
 
-    fetchCategory();
-  }, [slug, fetchCategoryBySlug, categories, updateFilters, retries]);
+    // Only fetch if we haven't already fetched or the slug has changed
+    if (!hasFetched || category?.slug !== slug) {
+      fetchCategory();
+    }
+  }, [slug, fetchCategoryBySlug, categories, updateFilters, retries, category, hasFetched]);
 
   const handleRetry = () => setRetries(r => r + 1);
 

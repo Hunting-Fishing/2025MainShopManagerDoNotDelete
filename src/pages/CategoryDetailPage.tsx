@@ -80,19 +80,6 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetError
             View All Categories
           </Button>
         </div>
-        
-        <div className="mt-10 text-center">
-          <p className="text-sm text-muted-foreground mb-4">
-            If this issue persists, please try clearing your browser cache or contact support.
-          </p>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-          >
-            Return to Home
-          </Button>
-        </div>
       </div>
     </ShoppingPageLayout>
   );
@@ -112,6 +99,8 @@ const DelayedFallback = () => {
 };
 
 const CategoryDetailPage = () => {
+  const { slug } = useParams<{ slug: string }>();
+  
   // Track mount state to avoid memory leaks
   const [isMounted, setIsMounted] = useState(false);
   
@@ -119,7 +108,9 @@ const CategoryDetailPage = () => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
-  
+
+  // Use a key to force remount when the slug changes
+  // This prevents stale data when navigating between categories
   return (
     <ErrorBoundary 
       FallbackComponent={ErrorFallback}
@@ -136,7 +127,7 @@ const CategoryDetailPage = () => {
       }}
     >
       <Suspense fallback={<DelayedFallback />}>
-        <CategoryDetail />
+        <CategoryDetail key={slug} />
       </Suspense>
     </ErrorBoundary>
   );

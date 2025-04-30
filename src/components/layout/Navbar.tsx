@@ -30,7 +30,7 @@ export function Navbar() {
     
     // For other paths, we consider it active if:
     // 1. The current path exactly matches the href, or
-    // 2. The current path starts with the href followed by a slash
+    // 2. The current path starts with the href followed by a slash or nothing
     // This ensures that '/shopping/categories' will highlight the 'Shopping' nav item
     return currentPath === href || 
            currentPath.startsWith(`${href}/`);
