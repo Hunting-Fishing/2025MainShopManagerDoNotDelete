@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Breadcrumb,
@@ -102,7 +103,7 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           {generatedBreadcrumbs.map((crumb, index) => (
-            <div key={`breadcrumb-${index}`}>
+            <React.Fragment key={`breadcrumb-${index}`}>
               <BreadcrumbItem>
                 {index === generatedBreadcrumbs.length - 1 ? (
                   <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
@@ -113,7 +114,7 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
               {index < generatedBreadcrumbs.length - 1 && (
                 <BreadcrumbSeparator />
               )}
-            </div>
+            </React.Fragment>
           ))}
         </BreadcrumbList>
       </Breadcrumb>

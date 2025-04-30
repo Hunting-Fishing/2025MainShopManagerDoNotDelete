@@ -16,15 +16,15 @@ const LoadingFallback = () => (
   </ShoppingPageLayout>
 );
 
-const ErrorFallback = () => (
+const ErrorFallback = ({ error }: { error: Error }) => (
   <ShoppingPageLayout 
     title="Error Loading Category" 
     description="We encountered a problem loading this category."
-    error="An unexpected error occurred. Please try refreshing the page."
+    error={error?.message || "An unexpected error occurred. Please try refreshing the page."}
   >
     <div className="flex flex-col items-center justify-center h-64">
       <button 
-        className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+        className="px-4 py-2 mt-4 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
         onClick={() => window.location.reload()}
       >
         Refresh Page

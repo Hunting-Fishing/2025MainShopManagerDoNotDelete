@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import { ProductGrid } from '@/components/shopping/ProductGrid';
@@ -23,11 +23,24 @@ interface CategoryData {
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toolCategories, isLoading: isLoadingToolCategories } = useToolCategories();
-  const { products, isLoading: isLoadingProducts } = useProducts();
+  const { products: allProducts, isLoading: isLoadingProducts } = useProducts();
   
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  const findCategoryBySlug = useCallback((slug: string, categories: any[]) => {
+    if (!slug || !categories?.length) return null;
+    
+    // Format slug for comparison
+    const normalizedSlug = slug.toLowerCase();
+    
+    const foundCategory = categories.find(
+      cat => cat.category.toLowerCase().replace(/\s+/g, '-') === normalizedSlug
+    );
+    
+    return foundCategory;
+  }, []);
   
   // Load category data when toolCategories are available
   useEffect(() => {
@@ -45,9 +58,7 @@ const CategoryDetail = () => {
         .join(' ');
       
       // Find matching category
-      const matchedCategory = toolCategories.find(
-        cat => cat.category.toLowerCase().replace(/\s+/g, '-') === slug
-      );
+      const matchedCategory = findCategoryBySlug(slug, toolCategories);
       
       if (matchedCategory) {
         console.log('CategoryDetail: Category found:', matchedCategory);
@@ -76,11 +87,11 @@ const CategoryDetail = () => {
       console.error("CategoryDetail: Error processing category data:", err);
       setError("Error processing category data. Please try again later.");
     }
-  }, [slug, toolCategories]);
+  }, [slug, toolCategories, findCategoryBySlug]);
   
   // Filter products for this category when both category and products are loaded
   useEffect(() => {
-    if (!category || !products?.length) {
+    if (!category || !allProducts?.length) {
       return;
     }
     
@@ -88,10 +99,10 @@ const CategoryDetail = () => {
       console.log(`CategoryDetail: Filtering products for category: ${category.title}`);
       const categoryLower = category.title.toLowerCase();
       
-      const filtered = products.filter(product => {
+      const filtered = allProducts.filter(product => {
         // Try to parse metadata if it exists
         let metadata = {};
-        if (product.metadata) {
+        if (product.metadata && typeof product.metadata === 'string') {
           try {
             metadata = JSON.parse(product.metadata);
           } catch (e) {
@@ -99,16 +110,24 @@ const CategoryDetail = () => {
           }
         }
         
-        const titleLower = product.title.toLowerCase();
+        const titleLower = product.title ? product.title.toLowerCase() : '';
+        const hasMatchingTitle = titleLower.includes(categoryLower);
         
-        return (
-          titleLower.includes(categoryLower) || 
-          (metadata && 
-           typeof metadata === 'object' && 
-           'category' in metadata && 
-           typeof metadata.category === 'string' &&
-           metadata.category.toLowerCase() === categoryLower)
-        );
+        // Check for category in metadata
+        const hasMatchingCategory = 
+          metadata && 
+          typeof metadata === 'object' && 
+          'category' in metadata && 
+          typeof metadata.category === 'string' &&
+          metadata.category.toLowerCase() === categoryLower;
+        
+        // Also check for category name in description
+        const hasMatchingDescription = 
+          product.description && 
+          typeof product.description === 'string' && 
+          product.description.toLowerCase().includes(categoryLower);
+        
+        return hasMatchingTitle || hasMatchingCategory || hasMatchingDescription;
       });
       
       console.log(`CategoryDetail: Found ${filtered.length} products for ${category.title}`);
@@ -122,10 +141,10 @@ const CategoryDetail = () => {
         variant: "destructive",
       });
     }
-  }, [category, products]);
+  }, [category, allProducts]);
   
-  // Show true loading state only when categories are still loading
-  const isLoading = isLoadingToolCategories;
+  // Show true loading state only when categories or products are still loading
+  const isLoading = isLoadingToolCategories || isLoadingProducts;
 
   // Show error state content
   if (error) {
@@ -218,7 +237,7 @@ const CategoryDetail = () => {
 
       <ProductGrid 
         products={filteredProducts}
-        isLoading={isLoadingProducts} 
+        isLoading={false}
         emptyMessage={`No products found in the ${category.title} category.`}
       />
     </ShoppingPageLayout>
