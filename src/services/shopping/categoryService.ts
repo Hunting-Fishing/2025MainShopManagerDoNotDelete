@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCategory } from "@/types/shopping";
 
@@ -38,6 +39,7 @@ export async function getCategories(): Promise<ProductCategory[]> {
       }
     });
 
+    console.log(`Fetched ${mainCategories.length} categories with ${subCategories.length} subcategories`);
     return mainCategories;
   } catch (error) {
     console.error("Error in getCategories:", error);
@@ -46,21 +48,38 @@ export async function getCategories(): Promise<ProductCategory[]> {
 }
 
 export async function getCategoryBySlug(slug: string): Promise<ProductCategory | null> {
-  const { data, error } = await (supabase as any)
-    .from('product_categories')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null; // Category not found
-    }
-    console.error("Error fetching category:", error);
-    throw error;
+  if (!slug) {
+    console.warn("getCategoryBySlug called with empty slug");
+    return null;
   }
-
-  return data;
+  
+  try {
+    console.log(`Fetching category with slug: "${slug}"`);
+    
+    const { data, error } = await (supabase as any)
+      .from('product_categories')
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle(); // Use maybeSingle instead of single to avoid errors when not found
+    
+    if (error) {
+      if (error.code !== 'PGRST116') { // PGRST116 is "not found" which we handle separately
+        console.error("Error fetching category:", error);
+        throw error;
+      }
+    }
+    
+    if (!data) {
+      console.log(`No category found with slug: "${slug}"`);
+      return null;
+    }
+    
+    console.log(`Found category for slug "${slug}":`, data.name);
+    return data;
+  } catch (err) {
+    console.error(`Error fetching category with slug "${slug}":`, err);
+    throw err;
+  }
 }
 
 export async function createCategory(category: Partial<ProductCategory>): Promise<ProductCategory> {
