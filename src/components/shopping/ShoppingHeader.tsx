@@ -24,6 +24,7 @@ export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("ShoppingHeader: Search submitted:", searchTerm);
     onSearch(searchTerm);
   };
 
