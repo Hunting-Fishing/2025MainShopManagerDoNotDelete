@@ -117,26 +117,29 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
-          {generatedBreadcrumbs.map((crumb, index) => (
-            <React.Fragment key={`breadcrumb-${index}`}>
-              <BreadcrumbItem>
-                {index === generatedBreadcrumbs.length - 1 ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                ) : (
-                  crumb.path ? (
-                    <BreadcrumbLink asChild>
-                      <Link to={crumb.path}>{crumb.label}</Link>
-                    </BreadcrumbLink>
+          {generatedBreadcrumbs.map((crumb, index) => {
+            // Use explicit div wrapper instead of React Fragment with key prop
+            return (
+              <div key={`breadcrumb-${index}`}>
+                <BreadcrumbItem>
+                  {index === generatedBreadcrumbs.length - 1 ? (
+                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                   ) : (
-                    <span className="text-muted-foreground">{crumb.label}</span>
-                  )
+                    crumb.path ? (
+                      <BreadcrumbLink asChild>
+                        <Link to={crumb.path}>{crumb.label}</Link>
+                      </BreadcrumbLink>
+                    ) : (
+                      <span className="text-muted-foreground">{crumb.label}</span>
+                    )
+                  )}
+                </BreadcrumbItem>
+                {index < generatedBreadcrumbs.length - 1 && (
+                  <BreadcrumbSeparator />
                 )}
-              </BreadcrumbItem>
-              {index < generatedBreadcrumbs.length - 1 && (
-                <BreadcrumbSeparator />
-              )}
-            </React.Fragment>
-          ))}
+              </div>
+            );
+          })}
         </BreadcrumbList>
       </Breadcrumb>
       

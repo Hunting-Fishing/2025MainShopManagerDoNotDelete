@@ -102,6 +102,12 @@ const CategoryDetail = () => {
     <ShoppingPageLayout
       title={category?.name || 'Category'}
       description={category?.description}
+      breadcrumbs={[
+        { label: 'Home', path: '/' },
+        { label: 'Shop', path: '/shopping' },
+        { label: 'Categories', path: '/shopping/categories' },
+        { label: category?.name || slug || 'Category' }
+      ]}
     >
       {/* Filter interface */}
       <div className="mb-8">
