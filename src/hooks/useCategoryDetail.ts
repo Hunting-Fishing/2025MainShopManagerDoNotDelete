@@ -15,12 +15,21 @@ export function useCategoryDetail(slug: string | undefined) {
   const [similarCategories, setSimilarCategories] = useState<ProductCategory[]>([]);
   const [retries, setRetries] = useState(0);
   const [diagnosticInfo, setDiagnosticInfo] = useState<string | null>(null);
-  const [hasFetched, setHasFetched] = useState(false); // Track if we've already fetched data
   
-  // Use ref to prevent duplicate fetches in development due to React.StrictMode
+  // Use refs to prevent duplicate fetches and track mounted state
   const fetchingRef = useRef(false);
+  const hasFetchedRef = useRef(false);
+  const currentSlugRef = useRef<string | undefined>();
 
   useEffect(() => {
+    // Skip effect if slug is the same as the one we've already fetched
+    if (currentSlugRef.current === slug) {
+      return;
+    }
+    
+    // Update current slug ref
+    currentSlugRef.current = slug;
+    
     // Reset state when the slug changes
     if (!slug) {
       setError("No category specified");
@@ -28,7 +37,7 @@ export function useCategoryDetail(slug: string | undefined) {
       return;
     }
     
-    // If we already have the correct category, don't refetch
+    // If we already have the correct category loaded, don't refetch
     if (category && category.slug === slug) {
       console.log(`Category ${slug} already loaded, skipping fetch`);
       return;
@@ -36,6 +45,7 @@ export function useCategoryDetail(slug: string | undefined) {
     
     // Prevent duplicate fetches (especially important in React.StrictMode)
     if (fetchingRef.current) {
+      console.log('Already fetching, skipping duplicate fetch');
       return;
     }
     
@@ -53,7 +63,7 @@ export function useCategoryDetail(slug: string | undefined) {
           setCategory(existingCategory);
           updateFilters({ categoryId: existingCategory.id });
           setIsLoading(false);
-          setHasFetched(true);
+          hasFetchedRef.current = true;
           fetchingRef.current = false;
           return;
         }
@@ -113,18 +123,22 @@ export function useCategoryDetail(slug: string | undefined) {
         setError(err instanceof Error ? err.message : "Failed to load category");
       } finally {
         setIsLoading(false);
-        setHasFetched(true);
+        hasFetchedRef.current = true;
         fetchingRef.current = false;
       }
     };
 
-    // Only fetch if we haven't already fetched or the slug has changed
-    if (!hasFetched || category?.slug !== slug) {
+    // Only fetch if we haven't already fetched the current slug
+    if (!hasFetchedRef.current || currentSlugRef.current !== slug) {
       fetchCategory();
     }
-  }, [slug, fetchCategoryBySlug, categories, updateFilters, retries, category, hasFetched]);
+  }, [slug, fetchCategoryBySlug, categories, updateFilters, retries, category]);
 
-  const handleRetry = () => setRetries(r => r + 1);
+  const handleRetry = () => {
+    hasFetchedRef.current = false;
+    fetchingRef.current = false;
+    setRetries(r => r + 1);
+  };
 
   return {
     category,

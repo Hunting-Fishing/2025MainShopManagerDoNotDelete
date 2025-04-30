@@ -2,7 +2,7 @@
 import React, { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
-import CategoryDetail from './CategoryDetail';
+import CategoryDetail from '@/pages/CategoryDetail';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
