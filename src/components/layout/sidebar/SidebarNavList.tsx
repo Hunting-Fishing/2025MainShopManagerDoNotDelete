@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   LayoutDashboard,
@@ -16,7 +15,6 @@ import {
   BellRing,
   HardDrive,
   UserCog,
-  ShoppingBag,
   FilePen
 } from "lucide-react";
 import { SidebarNavItem, NavItem } from "./SidebarNavItem";
@@ -77,11 +75,6 @@ const navigationItems: NavItem[] = [
     title: "Chat",
     href: "/chat",
     icon: <MessageCircle className="h-5 w-5" />
-  },
-  {
-    title: "Shopping",
-    href: "/shopping",
-    icon: <ShoppingBag className="h-5 w-5" />
   },
   {
     title: "Reports",

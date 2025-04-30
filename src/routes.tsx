@@ -14,7 +14,6 @@ import WorkOrderCreate from '@/pages/WorkOrderCreate';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import { VehicleDetailsPage } from '@/components/customers/vehicles/VehicleDetailsPage';
-import Shopping from '@/pages/Shopping';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -73,10 +72,6 @@ export const routes: RouteObject[] = [
       {
         path: 'login',
         element: <Login />,
-      },
-      {
-        path: 'shopping',
-        element: <Shopping />,
       },
       {
         path: '*',
