@@ -50,10 +50,6 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
     console.log("Toggle filters");
   };
   
-  const handleToggleWishlist = () => {
-    console.log("Toggle wishlist");
-  };
-  
   const getBreadcrumbs = () => {
     // If custom breadcrumbs are provided, use those
     if (breadcrumbs.length > 0) {
@@ -111,7 +107,6 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       <ShoppingHeader 
         onSearch={handleSearch}
         onToggleFilters={handleToggleFilters}
-        onToggleWishlist={handleToggleWishlist}
       />
       
       <Breadcrumb className="mb-6">

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Wrench, Coffee, ShoppingCart, Heart, Gift, Truck, Bookmark, Sparkles } from 'lucide-react';
+import { ShoppingBag, Wrench } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Breadcrumb,
@@ -43,66 +43,7 @@ const Shopping = () => {
       path: "/shopping/categories",
       badge: "Updated",
       badgeColor: "green"
-    },
-    {
-      id: "suggestions",
-      title: "Product Suggestions",
-      description: "Submit and view customer suggestions",
-      icon: Coffee,
-      path: "/shopping/suggestions",
-      badge: "New",
-      badgeColor: "yellow"
-    },
-    {
-      id: "cart",
-      title: "Shopping Cart",
-      description: "View and manage your shopping cart",
-      icon: ShoppingCart,
-      path: "/shopping/cart",
-      badge: "3 items",
-      badgeColor: "green"
-    },
-    {
-      id: "wishlist",
-      title: "Wishlist",
-      description: "Products you've saved for later",
-      icon: Heart,
-      path: "/shopping/wishlist",
-      badgeColor: "red"
-    },
-    {
-      id: "deals",
-      title: "Amazon Deals",
-      description: "Limited-time offers and discounts",
-      icon: Sparkles,
-      path: "/shopping/deals",
-      badge: "New",
-      badgeColor: "orange"
-    },
-    {
-      id: "recommendations",
-      title: "Recommended for You",
-      description: "Products picked just for you",
-      icon: Gift,
-      path: "/shopping/recommendations",
-      badgeColor: "purple"
-    },
-    {
-      id: "orders",
-      title: "My Orders",
-      description: "Track and manage your orders",
-      icon: Truck,
-      path: "/shopping/orders",
-      badgeColor: "blue"
-    },
-    {
-      id: "saved",
-      title: "Saved Items",
-      description: "Your saved product collections",
-      icon: Bookmark,
-      path: "/shopping/saved",
-      badgeColor: "purple"
-    },
+    }
   ];
 
   return (

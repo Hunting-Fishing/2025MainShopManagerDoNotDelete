@@ -4,7 +4,6 @@ import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import Shopping from '@/pages/Shopping';
 import ShoppingCategories from '@/pages/ShoppingCategories';
-import ProductSuggestionsPage from '@/pages/ProductSuggestionsPage';
 import CategoryDetail from '@/pages/CategoryDetail';
 import ProductsPage from '@/pages/ProductsPage';
 
@@ -32,10 +31,6 @@ export const routes: RouteObject[] = [
       {
         path: 'shopping/products',
         element: <ProductsPage />,
-      },
-      {
-        path: 'shopping/suggestions',
-        element: <ProductSuggestionsPage />,
       },
       {
         path: '*',

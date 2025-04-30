@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -41,7 +42,6 @@ import { VehicleDetailsPage } from './components/customers/vehicles/VehicleDetai
 import { CustomerDataProvider } from './contexts/CustomerDataProvider';
 import ShoppingCategories from './pages/ShoppingCategories';
 import CategoryDetailPage from './pages/CategoryDetailPage';
-import ProductSuggestionsPage from './pages/ProductSuggestionsPage';
 
 function App() {
   const location = useLocation();
@@ -83,8 +83,6 @@ function App() {
         return 'Shop | Easy Shop Manager';
       case '/shopping/admin':
         return 'Shop Admin | Easy Shop Manager';
-      case '/shopping/suggestions':
-        return 'Product Suggestions | Easy Shop Manager';
       default:
         return 'Easy Shop Manager';
     }
@@ -131,13 +129,6 @@ function App() {
           <Route path="shopping/categories" element={<ShoppingCategories />} />
           <Route path="shopping/categories/:categorySlug" element={<CategoryDetailPage />} />
           <Route path="shopping/products" element={<>Products</>} />
-          <Route path="shopping/cart" element={<>Shopping Cart</>} />
-          <Route path="shopping/wishlist" element={<>Wishlist</>} />
-          <Route path="shopping/deals" element={<>Special Deals</>} />
-          <Route path="shopping/recommendations" element={<>Recommended</>} />
-          <Route path="shopping/orders" element={<>My Orders</>} />
-          <Route path="shopping/suggestions" element={<ProductSuggestionsPage />} />
-          <Route path="shopping/saved" element={<>Saved Items</>} />
           
           {/* Settings routes */}
           <Route path="settings" element={<Settings />} />
