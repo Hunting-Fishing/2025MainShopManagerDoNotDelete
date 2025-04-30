@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { WishlistPanel } from './WishlistPanel';
 
 interface ShoppingPageLayoutProps {
   title: string;
@@ -40,6 +42,7 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
 }) => {
   const location = useLocation();
   const paths = location.pathname.split('/').filter(Boolean);
+  const [showWishlist, setShowWishlist] = useState(false);
   
   const handleSearch = (term: string) => {
     console.log("Search term:", term);
@@ -48,6 +51,10 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
   
   const handleToggleFilters = () => {
     console.log("Toggle filters");
+  };
+  
+  const handleToggleWishlist = () => {
+    setShowWishlist(!showWishlist);
   };
   
   const getBreadcrumbs = () => {
@@ -107,6 +114,7 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       <ShoppingHeader 
         onSearch={handleSearch}
         onToggleFilters={handleToggleFilters}
+        onToggleWishlist={handleToggleWishlist}
       />
       
       <Breadcrumb className="mb-6">
@@ -171,6 +179,11 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
           This means at no additional cost to you, we earn a commission if you click through and make a purchase.
         </p>
       </div>
+      
+      <WishlistPanel 
+        visible={showWishlist} 
+        onClose={() => setShowWishlist(false)} 
+      />
     </div>
   );
 };
