@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { useProducts } from '@/hooks/useProducts';
 import { ProductCategory } from '@/types/shopping';
@@ -16,6 +16,9 @@ export function useCategoryDetail(slug: string | undefined) {
   const [retries, setRetries] = useState(0);
   const [diagnosticInfo, setDiagnosticInfo] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false); // Track if we've already fetched data
+  
+  // Use ref to prevent duplicate fetches in development due to React.StrictMode
+  const fetchingRef = useRef(false);
 
   useEffect(() => {
     // Reset state when the slug changes
@@ -31,8 +34,14 @@ export function useCategoryDetail(slug: string | undefined) {
       return;
     }
     
+    // Prevent duplicate fetches (especially important in React.StrictMode)
+    if (fetchingRef.current) {
+      return;
+    }
+    
     const fetchCategory = async () => {
       try {
+        fetchingRef.current = true;
         setIsLoading(true);
         console.log(`Fetching category for slug: ${slug}`);
         
@@ -45,6 +54,7 @@ export function useCategoryDetail(slug: string | undefined) {
           updateFilters({ categoryId: existingCategory.id });
           setIsLoading(false);
           setHasFetched(true);
+          fetchingRef.current = false;
           return;
         }
         
@@ -104,6 +114,7 @@ export function useCategoryDetail(slug: string | undefined) {
       } finally {
         setIsLoading(false);
         setHasFetched(true);
+        fetchingRef.current = false;
       }
     };
 
@@ -122,9 +133,9 @@ export function useCategoryDetail(slug: string | undefined) {
     productsLoading,
     error,
     filterOptions,
+    updateFilters,
     similarCategories,
     diagnosticInfo,
-    handleRetry,
-    updateFilters
+    handleRetry
   };
 }

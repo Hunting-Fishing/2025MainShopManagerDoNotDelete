@@ -1,5 +1,5 @@
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import CategoryDetail from './CategoryDetail';
@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, AlertCircle, RefreshCw } from 'lucide-react';
 
 const LoadingFallback = () => (
   <ShoppingPageLayout 
@@ -85,29 +85,8 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetError
   );
 };
 
-const DelayedFallback = () => {
-  const [showLoading, setShowLoading] = useState(false);
-  
-  useEffect(() => {
-    // Only show loading spinner after 500ms to avoid flicker for fast loads
-    const timer = setTimeout(() => setShowLoading(true), 500);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  if (!showLoading) return null;
-  return <LoadingFallback />;
-};
-
 const CategoryDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  
-  // Track mount state to avoid memory leaks
-  const [isMounted, setIsMounted] = useState(false);
-  
-  useEffect(() => {
-    setIsMounted(true);
-    return () => setIsMounted(false);
-  }, []);
 
   // Use a key to force remount when the slug changes
   // This prevents stale data when navigating between categories
@@ -116,9 +95,7 @@ const CategoryDetailPage = () => {
       FallbackComponent={ErrorFallback}
       onReset={() => {
         // Reset application state here if needed
-        if (isMounted) {
-          window.location.reload();
-        }
+        window.location.reload();
       }}
       onError={(error, info) => {
         // Log the error to the console for debugging
@@ -126,7 +103,7 @@ const CategoryDetailPage = () => {
         console.error("Component stack:", info.componentStack);
       }}
     >
-      <Suspense fallback={<DelayedFallback />}>
+      <Suspense fallback={<LoadingFallback />}>
         <CategoryDetail key={slug} />
       </Suspense>
     </ErrorBoundary>

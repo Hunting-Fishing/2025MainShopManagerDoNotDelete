@@ -5,7 +5,6 @@ import Dashboard from '@/pages/Dashboard';
 import Shopping from '@/pages/Shopping';
 import ShoppingCategories from '@/pages/ShoppingCategories';
 import ProductDetail from '@/pages/ProductDetail';
-import CategoryDetail from '@/pages/CategoryDetail';
 import ProductsPage from '@/pages/ProductsPage';
 import ShoppingAdmin from '@/pages/ShoppingAdmin';
 import CategoryDetailPage from '@/pages/CategoryDetailPage';

@@ -52,14 +52,14 @@ export default function CategoryDetail() {
     if (category) {
       breadcrumbs.push({ 
         label: category.name,
-        path: `/shopping/categories/${category.slug}` // Add required path prop
+        path: `/shopping/categories/${category.slug}`
       });
     } else if (slug) {
       breadcrumbs.push({ 
         label: slug.split('-')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
           .join(' '),
-        path: `/shopping/categories/${slug}` // Add required path prop
+        path: `/shopping/categories/${slug}`
       });
     }
     
@@ -68,7 +68,7 @@ export default function CategoryDetail() {
   
   // Show loading state
   if (isLoading) {
-    return <CategoryLoading />;  // Remove the slug prop as it's not expected
+    return <CategoryLoading />;
   }
   
   // Show error state if category not found
@@ -93,7 +93,7 @@ export default function CategoryDetail() {
       {category && category.subcategories && category.subcategories.length > 0 && (
         <div className="mb-8">
           <CategoryTabs 
-            selectedCategoryId={category.id} 
+            selectedCategoryId={category.id}
             onCategoryChange={(categoryId) => {
               if (categoryId) {
                 updateFilters({ categoryId });
