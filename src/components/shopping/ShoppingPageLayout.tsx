@@ -101,20 +101,23 @@ export const ShoppingPageLayout: React.FC<ShoppingPageLayoutProps> = ({
       
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
-          {generatedBreadcrumbs.map((crumb, index) => (
-            <React.Fragment key={index}>
-              <BreadcrumbItem>
-                {index === generatedBreadcrumbs.length - 1 ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink href={crumb.path}>{crumb.label}</BreadcrumbLink>
+          {generatedBreadcrumbs.map((crumb, index) => {
+            // Use a div with a key instead of a Fragment with data-lov-id
+            return (
+              <div key={`breadcrumb-${index}`}>
+                <BreadcrumbItem>
+                  {index === generatedBreadcrumbs.length - 1 ? (
+                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href={crumb.path}>{crumb.label}</BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+                {index < generatedBreadcrumbs.length - 1 && (
+                  <BreadcrumbSeparator />
                 )}
-              </BreadcrumbItem>
-              {index < generatedBreadcrumbs.length - 1 && (
-                <BreadcrumbSeparator />
-              )}
-            </React.Fragment>
-          ))}
+              </div>
+            );
+          })}
         </BreadcrumbList>
       </Breadcrumb>
       
