@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Tag, ShoppingCart, Heart, Gift, Truck, Coffee, Bookmark, Sparkles, Wrench } from 'lucide-react';
+import { ShoppingBag, Wrench, Coffee, ShoppingCart, Heart, Gift, Truck, Bookmark, Sparkles } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Breadcrumb,
