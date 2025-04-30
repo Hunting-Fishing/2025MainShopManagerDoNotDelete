@@ -21,6 +21,7 @@ import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import { VehicleDetailsPage } from '@/components/customers/vehicles/VehicleDetailsPage';
 import WishlistPage from '@/pages/WishlistPage';
+import ProductSuggestionsPage from '@/pages/ProductSuggestionsPage';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -99,6 +100,10 @@ export const routes: RouteObject[] = [
       {
         path: 'shopping/wishlist',
         element: <WishlistPage />,
+      },
+      {
+        path: 'shopping/suggestions',
+        element: <ProductSuggestionsPage />,
       },
       {
         path: 'shopping/admin',

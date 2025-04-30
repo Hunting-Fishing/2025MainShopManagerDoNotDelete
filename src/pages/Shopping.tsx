@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Wrench } from 'lucide-react';
+import { ShoppingBag, Wrench, MessageSquarePlus } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -35,6 +35,15 @@ const Shopping = () => {
       path: "/shopping/categories",
       badge: "Updated",
       badgeColor: "green"
+    },
+    {
+      id: "suggestions",
+      title: "Product Suggestions",
+      description: "Suggest products or browse suggestions",
+      icon: MessageSquarePlus,
+      path: "/shopping/suggestions",
+      badge: "New",
+      badgeColor: "purple"
     }
   ];
 
