@@ -1,9 +1,20 @@
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ShoppingPageLayout } from '@/components/shopping/ShoppingPageLayout';
 import CategoryDetail from './CategoryDetail';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+
+const LoadingFallback = () => (
+  <ShoppingPageLayout 
+    title="Loading Category" 
+    description="Please wait while we load the category details"
+  >
+    <div className="flex items-center justify-center h-64">
+      <LoadingSpinner size="lg" />
+    </div>
+  </ShoppingPageLayout>
+);
 
 const ErrorFallback = () => (
   <ShoppingPageLayout 
@@ -25,7 +36,9 @@ const ErrorFallback = () => (
 const CategoryDetailPage = () => {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <CategoryDetail />
+      <Suspense fallback={<LoadingFallback />}>
+        <CategoryDetail />
+      </Suspense>
     </ErrorBoundary>
   );
 };

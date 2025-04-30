@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from '@/hooks/use-toast';
 import { AlertTriangle } from 'lucide-react';
-import { handleApiError } from '@/utils/errorHandling';
 
 interface CategoryData {
   title: string;
@@ -23,45 +22,22 @@ interface CategoryData {
 
 const CategoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { toolCategories, isLoading: isLoadingToolCategories, error: categoriesError } = useToolCategories();
-  const { products, isLoading: isLoadingProducts, error: productsError } = useProducts();
+  const { toolCategories, isLoading: isLoadingToolCategories } = useToolCategories();
+  const { products, isLoading: isLoadingProducts } = useProducts();
   
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
-  // Handle errors
-  useEffect(() => {
-    if (categoriesError) {
-      console.error("CategoryDetail: Error loading tool categories:", categoriesError);
-      setError("Failed to load category data. Please try again later.");
-      
-      toast({
-        title: "Error Loading Category",
-        description: "There was a problem loading the category details.",
-        variant: "destructive",
-      });
-    } else if (productsError) {
-      console.error("CategoryDetail: Error loading products:", productsError);
-      
-      toast({
-        title: "Error Loading Products",
-        description: "There was a problem loading the products for this category.",
-        variant: "destructive",
-      });
-    } else {
-      setError(null);
-    }
-  }, [categoriesError, productsError]);
   
   // Load category data when toolCategories are available
   useEffect(() => {
-    if (!slug || isLoadingToolCategories || !toolCategories?.length) {
+    if (!slug || !toolCategories?.length) {
       return;
     }
     
     try {
+      console.log('CategoryDetail: Looking for category with slug:', slug);
+      
       // Format slug for display as fallback
       const formattedTitle = slug
         .split('-')
@@ -83,6 +59,8 @@ const CategoryDetail = () => {
           isNew: matchedCategory.isNew || false,
           isPopular: matchedCategory.isPopular || false
         });
+        
+        setError(null);
       } else {
         console.log(`CategoryDetail: Category not found for slug: ${slug}, using formatted title`);
         
@@ -97,18 +75,12 @@ const CategoryDetail = () => {
     } catch (err) {
       console.error("CategoryDetail: Error processing category data:", err);
       setError("Error processing category data. Please try again later.");
-      
-      toast({
-        title: "Error",
-        description: "There was a problem loading the category.",
-        variant: "destructive",
-      });
     }
-  }, [slug, toolCategories, isLoadingToolCategories]);
+  }, [slug, toolCategories]);
   
   // Filter products for this category when both category and products are loaded
   useEffect(() => {
-    if (!category || !products?.length || isLoadingProducts) {
+    if (!category || !products?.length) {
       return;
     }
     
@@ -141,11 +113,6 @@ const CategoryDetail = () => {
       
       console.log(`CategoryDetail: Found ${filtered.length} products for ${category.title}`);
       setFilteredProducts(filtered);
-      
-      // After first successful data load
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
     } catch (err) {
       console.error("CategoryDetail: Error filtering products:", err);
       
@@ -155,10 +122,32 @@ const CategoryDetail = () => {
         variant: "destructive",
       });
     }
-  }, [category, products, isLoadingProducts, isInitialLoad]);
+  }, [category, products]);
   
-  // Show loading state only on initial load
-  if (isInitialLoad && (isLoadingToolCategories || isLoadingProducts || !category)) {
+  // Show true loading state only when categories are still loading
+  const isLoading = isLoadingToolCategories;
+
+  // Show error state content
+  if (error) {
+    return (
+      <ShoppingPageLayout
+        title="Category Error"
+        description="We encountered a problem loading this category"
+        error={error}
+      >
+        <div className="flex flex-col items-center justify-center h-64 bg-red-50 border border-red-200 rounded-xl p-8">
+          <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-medium mb-2">Error Loading Category</h2>
+          <p className="text-muted-foreground text-center">
+            {error || "An unexpected error occurred while loading this category"}
+          </p>
+        </div>
+      </ShoppingPageLayout>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
     return (
       <ShoppingPageLayout 
         title="Loading Category"
@@ -171,8 +160,8 @@ const CategoryDetail = () => {
     );
   }
 
-  // Error state content
-  if (error || !category) {
+  // Empty state when no category found
+  if (!category) {
     return (
       <ShoppingPageLayout
         title="Category Not Found"
@@ -182,7 +171,7 @@ const CategoryDetail = () => {
           <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
           <h2 className="text-xl font-medium mb-2">Category Not Found</h2>
           <p className="text-muted-foreground text-center">
-            {error || "The category you're looking for doesn't exist or has been moved"}
+            The category you're looking for doesn't exist or has been moved
           </p>
         </div>
       </ShoppingPageLayout>
@@ -229,7 +218,7 @@ const CategoryDetail = () => {
 
       <ProductGrid 
         products={filteredProducts}
-        isLoading={isLoadingProducts && !isInitialLoad} 
+        isLoading={isLoadingProducts} 
         emptyMessage={`No products found in the ${category.title} category.`}
       />
     </ShoppingPageLayout>
