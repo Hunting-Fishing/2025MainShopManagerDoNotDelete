@@ -1,137 +1,116 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { ChevronRight, Wrench, Hammer, Truck, Gauge, Scissors } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowRight, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { slugify } from '@/utils/slugUtils';
 
 interface ToolCategory {
   category: string;
-  items: string[];
   description?: string;
-  icon?: React.ComponentType<any>;
-  isNew?: boolean;
+  items: string[];
   isPopular?: boolean;
+  isNew?: boolean;
 }
 
 interface CategoryToolListProps {
-  title: string;
-  description: string;
   tools: ToolCategory[];
+  title?: string;
+  description?: string;
 }
 
 export const CategoryToolList: React.FC<CategoryToolListProps> = ({ 
-  title, 
-  description, 
-  tools 
+  tools,
+  title = "Tool Categories",
+  description = "Browse our collection of automotive tools"
 }) => {
-  const navigate = useNavigate();
-  
-  const handleCategoryClick = (category: string) => {
-    // Create a URL-friendly slug from the category name
-    const slug = category.toLowerCase().replace(/\s+/g, '-');
-    console.log(`Navigating to category: ${slug}`);
-    navigate(`/shopping/categories/${slug}`);
-  };
-
-  const getIconForCategory = (category: string) => {
-    // Map categories to icons based on their name - using only available icons
-    const categoryToIcon: Record<string, React.ComponentType<any>> = {
-      "Hand Tools": Wrench,
-      "Power Tools": Gauge,
-      "Diagnostic Tools": Gauge,
-      "Shop Equipment": Wrench,
-      "Specialty Tools": Wrench,
-      "Body Shop": Hammer,
-      "Cleaning Supplies": Scissors,
-      "Lighting": Scissors,
-      "Lifting Equipment": Truck,
-    };
-    
-    return categoryToIcon[category] || Wrench;
+  // Convert category name to slug for routing
+  const getCategorySlug = (categoryName: string) => {
+    return slugify(categoryName);
   };
   
   return (
-    <div className="bg-white rounded-xl p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold">{title}</h2>
-        <p className="text-muted-foreground">{description}</p>
-      </div>
+    <div className="space-y-6">
+      {title && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold">{title}</h2>
+          {description && (
+            <p className="text-muted-foreground mt-2">{description}</p>
+          )}
+        </div>
+      )}
       
-      <ScrollArea className="h-[600px] pr-4">
-        <div className="space-y-6">
-          {tools.map((toolCategory, index) => {
-            const Icon = toolCategory.icon || getIconForCategory(toolCategory.category);
-            
-            return (
-              <Card 
-                key={index} 
-                className="overflow-hidden border-l-4 border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer group"
-                onClick={() => handleCategoryClick(toolCategory.category)}
-              >
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex gap-3">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
-                        <Icon className="h-5 w-5 text-blue-600" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tools.map((category, index) => (
+          <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
+            <CardContent className="p-0">
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-semibold">
+                    {category.category}
+                  </h3>
+                  <div className="flex gap-2">
+                    {category.isPopular && (
+                      <Badge className="bg-green-100 text-green-800 border border-green-300">
+                        Popular
+                      </Badge>
+                    )}
+                    {category.isNew && (
+                      <Badge className="bg-purple-100 text-purple-800 border border-purple-300">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
+                {category.description && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {category.description}
+                  </p>
+                )}
+                
+                <div className="mt-4">
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 mb-4">
+                    {category.items.slice(0, 6).map((item, idx) => (
+                      <div key={idx} className="flex items-start">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 mr-2"></span>
+                        <span className="text-sm">{item}</span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-medium group-hover:text-blue-600 transition-colors">
-                            {toolCategory.category}
-                          </h3>
-                          {toolCategory.isNew && (
-                            <Badge className="bg-green-100 text-green-800 border border-green-300">New</Badge>
-                          )}
-                          {toolCategory.isPopular && (
-                            <Badge className="bg-amber-100 text-amber-800 border border-amber-300">Popular</Badge>
-                          )}
-                        </div>
-                        {toolCategory.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {toolCategory.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent the card click from firing too
-                        handleCategoryClick(toolCategory.category);
-                      }}
-                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                    >
-                      View All <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    ))}
                   </div>
                   
-                  {toolCategory.items.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                      {toolCategory.items.slice(0, 6).map((item, itemIndex) => (
-                        <div key={itemIndex} className="flex items-center py-1">
-                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></div>
-                          <span className="text-sm text-slate-600 truncate">{item}</span>
-                        </div>
-                      ))}
-                      {toolCategory.items.length > 6 && (
-                        <div className="col-span-2 text-sm text-blue-500 mt-1">
-                          +{toolCategory.items.length - 6} more items
-                        </div>
-                      )}
+                  {category.items.length > 6 && (
+                    <div className="text-sm text-muted-foreground">
+                      +{category.items.length - 6} more items
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">No items available</p>
                   )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                </div>
+              </div>
+              
+              <div className="border-t p-3">
+                <Link
+                  to={`/shopping/categories/${getCategorySlug(category.category)}`}
+                  className="flex items-center justify-between text-blue-600 hover:text-blue-800 font-medium text-sm group"
+                >
+                  <span>Browse {category.category}</span>
+                  <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+        <div>
+          <h4 className="font-medium text-amber-800">Looking for a specific tool?</h4>
+          <p className="text-sm text-amber-700 mt-1">
+            If you don't see what you need, visit our <Link to="/shopping/suggestions" className="underline font-medium">product suggestions</Link> page to request it.
+          </p>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 };

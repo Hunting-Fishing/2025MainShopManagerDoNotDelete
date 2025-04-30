@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Wrench, MessageSquarePlus } from 'lucide-react';
+import { ShoppingBag, Wrench, MessageSquarePlus, Heart } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -44,6 +44,14 @@ const Shopping = () => {
       path: "/shopping/suggestions",
       badge: "New",
       badgeColor: "purple"
+    },
+    {
+      id: "wishlist",
+      title: "Wishlist",
+      description: "View your saved products",
+      icon: Heart,
+      path: "/shopping/wishlist",
+      badgeColor: "red"
     }
   ];
 
