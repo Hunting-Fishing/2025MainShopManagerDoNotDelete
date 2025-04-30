@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
@@ -24,15 +23,13 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <ThemeProvider>
-            <LanguageProvider>
-              <NotificationsProvider>
-                <App />
-              </NotificationsProvider>
-            </LanguageProvider>
-          </ThemeProvider>
-        </BrowserRouter>
+        <ThemeProvider>
+          <LanguageProvider>
+            <NotificationsProvider>
+              <App />
+            </NotificationsProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </HelmetProvider>
   </React.StrictMode>

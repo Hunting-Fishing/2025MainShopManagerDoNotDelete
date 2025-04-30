@@ -1,81 +1,75 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Search, Heart, Filter, ShoppingCart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Heart, Search, SlidersHorizontal } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useWishlist } from '@/hooks/useWishlist';
 
 interface ShoppingHeaderProps {
-  onSearch: (searchTerm: string) => void;
-  onToggleFilters: () => void;
-  onToggleWishlist: () => void;
+  onSearch?: (term: string) => void;
+  onToggleFilters?: () => void;
+  onToggleWishlist?: () => void;
 }
 
 export const ShoppingHeader: React.FC<ShoppingHeaderProps> = ({
-  onSearch,
-  onToggleFilters,
-  onToggleWishlist
+  onSearch = () => {},
+  onToggleFilters = () => {},
+  onToggleWishlist = () => {},
 }) => {
-  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
+  const { items: wishlistItems } = useWishlist();
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("ShoppingHeader: Search submitted:", searchTerm);
     onSearch(searchTerm);
   };
 
   return (
-    <div className="flex flex-col space-y-4 pb-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Amazon Shop</h1>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onToggleWishlist}
-            aria-label="View saved items"
-            className="text-pink-500 border-pink-200 hover:bg-pink-50"
-          >
-            <Heart className="h-5 w-5" />
-          </Button>
-          
-          {isMobile && (
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={onToggleFilters}
-              aria-label="Toggle filters"
-            >
-              <SlidersHorizontal className="h-5 w-5" />
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {isMobile && (
-        <form onSubmit={handleSearchSubmit} className="flex w-full">
-          <div className="relative flex-grow">
+    <div className="bg-white shadow-sm rounded-xl p-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between gap-4">
+        <form onSubmit={handleSearchSubmit} className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <Input
+              type="search"
               placeholder="Search products..."
+              className="w-full pl-10"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-              aria-label="Search products"
+              onChange={handleSearchChange}
             />
-            <Button 
-              type="submit" 
-              variant="ghost" 
-              size="icon" 
-              className="absolute right-0 top-0 h-10"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
           </div>
         </form>
-      )}
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={onToggleFilters}
+          >
+            <Filter size={18} />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={onToggleWishlist}
+            className="relative"
+          >
+            <Heart size={18} />
+            {wishlistItems.length > 0 && (
+              <Badge 
+                className="absolute -top-2 -right-2 px-1.5 min-w-[20px] h-5 flex items-center justify-center bg-blue-500"
+                variant="secondary"
+              >
+                {wishlistItems.length}
+              </Badge>
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
