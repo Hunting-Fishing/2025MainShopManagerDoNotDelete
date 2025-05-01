@@ -69,7 +69,12 @@ export function useShoppingAnalytics() {
         
         // Products by manufacturer
         const productsByManufacturer = manufacturers?.map(manufacturer => {
-          const count = products?.filter(p => p.manufacturer_id === manufacturer.id).length || 0;
+          // Using manufacturer's name to match products since we don't have manufacturer_id in products
+          const count = products?.filter(p => {
+            // This would need to be replaced with actual logic to match products to manufacturers
+            // For now, we're just making a placeholder implementation
+            return p.affiliate_link.toLowerCase().includes(manufacturer.name.toLowerCase());
+          }).length || 0;
           return { name: manufacturer.name, count };
         }).sort((a, b) => b.count - a.count).slice(0, 6) || [];
         

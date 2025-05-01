@@ -9,7 +9,7 @@ interface ProductsByCategoryChartProps {
 
 export function ProductsByCategoryChart({ data }: ProductsByCategoryChartProps) {
   return (
-    <Card className="shadow-md">
+    <Card className="shadow-md bg-white rounded-xl border border-gray-100">
       <CardHeader>
         <CardTitle>Products by Category</CardTitle>
         <CardDescription>Distribution of products across categories</CardDescription>
@@ -32,8 +32,20 @@ export function ProductsByCategoryChart({ data }: ProductsByCategoryChartProps) 
                 height={70} 
               />
               <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#8884d8" name="Product Count" />
+              <Tooltip 
+                contentStyle={{ 
+                  borderRadius: '8px', 
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                  border: '1px solid #f1f1f1' 
+                }} 
+                formatter={(value) => [`${value} products`, 'Count']}
+              />
+              <Bar 
+                dataKey="count" 
+                fill="#8884d8" 
+                name="Product Count"
+                radius={[4, 4, 0, 0]} // Rounded corners on bars
+              />
             </BarChart>
           </ResponsiveContainer>
         )}

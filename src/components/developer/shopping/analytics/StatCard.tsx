@@ -8,14 +8,15 @@ interface StatCardProps {
   value: number;
   icon: React.ReactNode;
   additionalInfo?: React.ReactNode;
+  colorClass?: string; // For customizable color styling
 }
 
-export function StatCard({ title, value, icon, additionalInfo }: StatCardProps) {
+export function StatCard({ title, value, icon, additionalInfo, colorClass = "bg-blue-100 text-blue-800" }: StatCardProps) {
   return (
-    <Card>
+    <Card className="shadow-md bg-white rounded-xl border border-gray-100">
       <CardContent className="p-6">
         <div className="flex justify-between items-center">
-          <div className="bg-blue-100 p-2 rounded-full">
+          <div className={`p-2 rounded-full ${colorClass}`}>
             {icon}
           </div>
           <ArrowUpRight className="h-5 w-5 text-green-500" />

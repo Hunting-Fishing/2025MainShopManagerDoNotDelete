@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { StatCard } from './StatCard';
-import { ShoppingBag, Star, TrendingUp, Users } from 'lucide-react';
+import { BarChart3, ShoppingBag, Award, BookOpen, ListChecks, Package } from 'lucide-react';
 import { AnalyticsData } from '@/types/analytics';
 
 interface StatsCardsProps {
@@ -10,50 +10,47 @@ interface StatsCardsProps {
 
 export function StatsCards({ data }: StatsCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatCard
-        title="Total Products"
-        value={data.totalProducts}
-        icon={<ShoppingBag className="h-6 w-6 text-blue-700" />}
-        additionalInfo={
-          <p className="text-xs text-slate-500">
-            <span className="text-green-500 font-medium">{data.approvedProducts}</span> approved, 
-            <span className="text-amber-500 font-medium"> {data.pendingProducts}</span> pending
-          </p>
-        }
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <StatCard 
+        title="Total Products" 
+        value={data.totalProducts} 
+        icon={<ShoppingBag className="h-5 w-5" />}
+        colorClass="bg-blue-100 text-blue-800"
       />
-
-      <StatCard
-        title="Featured Products"
-        value={data.featuredProducts}
-        icon={<Star className="h-6 w-6 text-purple-700" />}
-        additionalInfo={
-          <p className="text-xs text-slate-500">
-            {data.totalProducts > 0 ? ((data.featuredProducts / data.totalProducts) * 100).toFixed(1) : '0'}% of products
-          </p>
-        }
+      
+      <StatCard 
+        title="Approved Products" 
+        value={data.approvedProducts} 
+        icon={<ListChecks className="h-5 w-5" />}
+        colorClass="bg-green-100 text-green-800"
       />
-
-      <StatCard
-        title="Categories"
-        value={data.totalCategories}
-        icon={<TrendingUp className="h-6 w-6 text-amber-700" />}
-        additionalInfo={
-          <p className="text-xs text-slate-500">
-            {data.totalManufacturers} manufacturers
-          </p>
-        }
+      
+      <StatCard 
+        title="Featured Products" 
+        value={data.featuredProducts} 
+        icon={<Award className="h-5 w-5" />}
+        colorClass="bg-purple-100 text-purple-800"
       />
-
-      <StatCard
-        title="Submissions"
-        value={data.totalSubmissions}
-        icon={<Users className="h-6 w-6 text-green-700" />}
-        additionalInfo={
-          <p className="text-xs text-slate-500">
-            From user product suggestions
-          </p>
-        }
+      
+      <StatCard 
+        title="Categories" 
+        value={data.totalCategories} 
+        icon={<BookOpen className="h-5 w-5" />}
+        colorClass="bg-amber-100 text-amber-800"
+      />
+      
+      <StatCard 
+        title="Manufacturers" 
+        value={data.totalManufacturers} 
+        icon={<Package className="h-5 w-5" />}
+        colorClass="bg-red-100 text-red-800"
+      />
+      
+      <StatCard 
+        title="Total Submissions" 
+        value={data.totalSubmissions} 
+        icon={<BarChart3 className="h-5 w-5" />}
+        colorClass="bg-indigo-100 text-indigo-800"
       />
     </div>
   );
