@@ -1,11 +1,5 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Container, Header as SemanticHeader, Segment } from 'semantic-ui-react';
-
-const categories = {
+export const categories = {
   Engine: [
     "Valve Spring Compressor",
     "Camshaft Holding Tool",
@@ -157,71 +151,3 @@ const categories = {
     "Glass Setting Stick"
   ]
 };
-
-const sampleProducts = (category, subcategory) => Array.from({ length: 6 }, (_, i) => ({
-  title: `${subcategory} #${i + 1}`,
-  img: `https://via.placeholder.com/300x200?text=${encodeURIComponent(subcategory)}+${i + 1}`,
-  link: "#",
-}));
-
-export default function AffiliateTool() {
-  const [selectedCategory, setSelectedCategory] = useState("Engine");
-
-  return (
-    <Container fluid>
-      <Segment raised className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 p-6 mb-6 border-l-4 border-blue-500">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div>
-            <SemanticHeader as="h1" className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              Professional Tool Shop
-              <SemanticHeader.Subheader className="text-slate-600 dark:text-slate-300">
-                Discover high-quality automotive tools recommended by professionals. Select a category to explore specialized tools.
-              </SemanticHeader.Subheader>
-            </SemanticHeader>
-          </div>
-        </div>
-      </Segment>
-
-      <Tabs defaultValue={selectedCategory} onValueChange={setSelectedCategory}>
-        <TabsList className="flex flex-wrap gap-2 overflow-x-auto mb-4">
-          {Object.keys(categories).map((cat) => (
-            <TabsTrigger
-              key={cat}
-              value={cat}
-              className="px-4 py-2 text-sm rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700"
-            >
-              {cat}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
-      <ScrollArea className="h-[calc(100vh-15rem)]">
-        {categories[selectedCategory].map((sub) => (
-          <div key={sub} className="mb-8">
-            <h2 className="text-xl font-semibold mb-2 px-4 py-2 bg-blue-50 dark:bg-slate-800 rounded-lg">{sub}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {sampleProducts(selectedCategory, sub).map((item, index) => (
-                <Card key={`${item.title}-${index}`} className="hover:shadow-lg transition-shadow border-t-4 border-blue-500">
-                  <a href={item.link} target="_blank" rel="noopener noreferrer">
-                    <CardContent className="p-0">
-                      <img
-                        src={item.img}
-                        alt={item.title}
-                        className="w-full h-[200px] object-cover rounded-t-lg"
-                      />
-                      <div className="p-4 text-center">
-                        <p className="font-medium">{item.title}</p>
-                        <p className="text-sm text-gray-500 mt-1">Professional Grade</p>
-                      </div>
-                    </CardContent>
-                  </a>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ))}
-      </ScrollArea>
-    </Container>
-  );
-}

@@ -17,6 +17,8 @@ import { VehicleDetailsPage } from '@/components/customers/vehicles/VehicleDetai
 import AffiliateTool from '@/pages/AffiliateTool';
 import DeveloperPortal from '@/pages/DeveloperPortal';
 import ShoppingControls from '@/pages/developer/ShoppingControls';
+import ToolCategoryPage from '@/pages/ToolCategoryPage';
+import ToolDetailPage from '@/pages/ToolDetailPage';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -68,9 +70,18 @@ export const routes: RouteObject[] = [
         path: 'team',
         element: <Team />,
       },
+      // Tool shop routes
       {
         path: 'tools',
         element: <AffiliateTool />,
+      },
+      {
+        path: 'tools/:category',
+        element: <ToolCategoryPage />,
+      },
+      {
+        path: 'tools/:category/:toolId',
+        element: <ToolDetailPage />,
       },
       {
         path: 'settings',
