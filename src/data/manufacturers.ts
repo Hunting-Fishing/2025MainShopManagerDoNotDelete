@@ -5,7 +5,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "1",
     name: "Toyota",
-    logoUrl: "https://via.placeholder.com/150x80?text=Toyota",
+    logoUrl: "https://www.carlogos.org/car-logos/toyota-logo-2019-1350x1500.png",
     description: "Japanese automotive manufacturer",
     slug: "toyota",
     featured: true
@@ -13,7 +13,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "2",
     name: "Honda",
-    logoUrl: "https://via.placeholder.com/150x80?text=Honda",
+    logoUrl: "https://www.carlogos.org/car-logos/honda-logo-2000-2300x1300.png",
     description: "Japanese automotive and motorcycle manufacturer",
     slug: "honda",
     featured: true
@@ -21,7 +21,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "3", 
     name: "Ford",
-    logoUrl: "https://via.placeholder.com/150x80?text=Ford",
+    logoUrl: "https://www.carlogos.org/logo/Ford-logo-2003-1366x768.png",
     description: "American multinational automaker",
     slug: "ford",
     featured: true
@@ -29,7 +29,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "4",
     name: "Chevrolet",
-    logoUrl: "https://via.placeholder.com/150x80?text=Chevrolet",
+    logoUrl: "https://www.carlogos.org/car-logos/chevrolet-logo-2013-2560x1440.png",
     description: "American automobile division of GM",
     slug: "chevrolet",
     featured: true
@@ -37,7 +37,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "5",
     name: "BMW",
-    logoUrl: "https://via.placeholder.com/150x80?text=BMW",
+    logoUrl: "https://www.carlogos.org/car-logos/bmw-logo-2020-blue-white-1500x1500.png",
     description: "German luxury vehicle manufacturer",
     slug: "bmw",
     featured: true
@@ -45,7 +45,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "6",
     name: "Mercedes-Benz",
-    logoUrl: "https://via.placeholder.com/150x80?text=Mercedes",
+    logoUrl: "https://www.carlogos.org/logo/Mercedes-Benz-logo-2011-1920x1080.png",
     description: "German luxury automobile manufacturer",
     slug: "mercedes",
     featured: false
@@ -53,7 +53,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "7",
     name: "Audi",
-    logoUrl: "https://via.placeholder.com/150x80?text=Audi", 
+    logoUrl: "https://www.carlogos.org/car-logos/audi-logo-2016-1500x1500.png", 
     description: "German luxury vehicle manufacturer",
     slug: "audi",
     featured: false
@@ -61,7 +61,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "8",
     name: "Hyundai",
-    logoUrl: "https://via.placeholder.com/150x80?text=Hyundai",
+    logoUrl: "https://www.carlogos.org/car-logos/hyundai-logo-2017-1400x1500.png",
     description: "South Korean multinational automaker",
     slug: "hyundai",
     featured: false
@@ -69,7 +69,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "9",
     name: "Kia",
-    logoUrl: "https://via.placeholder.com/150x80?text=Kia",
+    logoUrl: "https://www.carlogos.org/car-logos/kia-logo-2560x1440.png",
     description: "South Korean multinational automaker",
     slug: "kia",
     featured: false
@@ -77,7 +77,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "10",
     name: "Nissan",
-    logoUrl: "https://via.placeholder.com/150x80?text=Nissan",
+    logoUrl: "https://www.carlogos.org/car-logos/nissan-logo-2020-black-1500x1500.png",
     description: "Japanese multinational automobile manufacturer",
     slug: "nissan",
     featured: false
@@ -85,7 +85,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "11",
     name: "Subaru",
-    logoUrl: "https://via.placeholder.com/150x80?text=Subaru",
+    logoUrl: "https://www.carlogos.org/car-logos/subaru-logo-2019-1500x1500.png",
     description: "Japanese automobile manufacturer",
     slug: "subaru",
     featured: false
@@ -93,7 +93,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "12",
     name: "Mazda",
-    logoUrl: "https://via.placeholder.com/150x80?text=Mazda",
+    logoUrl: "https://www.carlogos.org/car-logos/mazda-logo-2018-1500x1500.png",
     description: "Japanese automaker based in Hiroshima",
     slug: "mazda",
     featured: false
@@ -101,7 +101,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "13",
     name: "Volkswagen",
-    logoUrl: "https://via.placeholder.com/150x80?text=VW",
+    logoUrl: "https://www.carlogos.org/car-logos/volkswagen-logo-2019-1500x1500.png",
     description: "German motor vehicle manufacturer",
     slug: "volkswagen",
     featured: false
@@ -109,7 +109,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "14",
     name: "Volvo",
-    logoUrl: "https://via.placeholder.com/150x80?text=Volvo",
+    logoUrl: "https://www.carlogos.org/car-logos/volvo-logo-2014-1500x1500.png",
     description: "Swedish luxury vehicle manufacturer",
     slug: "volvo",
     featured: false
@@ -117,7 +117,7 @@ export const manufacturers: Manufacturer[] = [
   {
     id: "15",
     name: "Jeep",
-    logoUrl: "https://via.placeholder.com/150x80?text=Jeep",
+    logoUrl: "https://www.carlogos.org/car-logos/jeep-logo-2000-1920x1080.png",
     description: "American SUV and off-road vehicle brand",
     slug: "jeep",
     featured: false

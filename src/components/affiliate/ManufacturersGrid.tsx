@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { Grid, Segment, Header } from 'semantic-ui-react';
+import { Segment, Header } from 'semantic-ui-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Manufacturer } from '@/types/affiliate';
 import { Link } from 'react-router-dom';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
+import { Car } from 'lucide-react';
 
 interface ManufacturersGridProps {
   manufacturers: Manufacturer[];
@@ -27,15 +28,25 @@ const ManufacturersGrid = ({ manufacturers }: ManufacturersGridProps) => {
           <Link key={manufacturer.id} to={`/manufacturers/${manufacturer.slug}`} className="group">
             <Card className="h-full hover:shadow-md transition-all duration-300 transform group-hover:-translate-y-1 border border-gray-200 text-center">
               <CardContent className="p-3 flex flex-col items-center justify-center">
-                <div className="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mb-3 border border-gray-100 overflow-hidden">
-                  <img 
-                    src={manufacturer.logoUrl} 
-                    alt={manufacturer.name} 
-                    className="max-h-12 max-w-full object-contain"
-                  />
+                <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center mb-3 border border-gray-100 overflow-hidden shadow-sm">
+                  {manufacturer.logoUrl ? (
+                    <img 
+                      src={manufacturer.logoUrl} 
+                      alt={manufacturer.name} 
+                      className="max-h-12 max-w-12 object-contain"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = 'https://via.placeholder.com/150?text=' + manufacturer.name.charAt(0);
+                      }}
+                    />
+                  ) : (
+                    <div className="bg-blue-100 w-full h-full flex items-center justify-center text-blue-600">
+                      <Car size={24} />
+                    </div>
+                  )}
                 </div>
                 <h3 className="font-bold text-sm text-blue-700 line-clamp-1">{manufacturer.name}</h3>
-                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{manufacturer.description}</p>
                 <Button 
                   variant="outline" 
                   size="xs" 
