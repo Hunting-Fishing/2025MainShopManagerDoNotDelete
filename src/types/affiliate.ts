@@ -1,4 +1,7 @@
+
 export type ProductTier = 'premium' | 'midgrade' | 'economy';
+
+export type ManufacturerCategory = 'automotive' | 'heavy-duty' | 'equipment' | 'marine' | 'atv-utv' | 'motorcycle' | 'other';
 
 export interface AffiliateProduct {
   id: string;
@@ -39,6 +42,7 @@ export interface Manufacturer {
   description: string;
   slug: string;
   featured: boolean;
+  category: ManufacturerCategory;
 }
 
 export interface AffiliateLink {
