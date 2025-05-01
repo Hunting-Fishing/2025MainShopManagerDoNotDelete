@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Settings, Store, Hammer, Users, Wrench } from "lucide-react";
+import { Container, Segment, Header as SemanticHeader, Message, Grid, Icon } from "semantic-ui-react";
 
 export default function DeveloperPortal() {
   const adminModules = [
@@ -45,41 +46,46 @@ export default function DeveloperPortal() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Developer Portal</h1>
+    <Container fluid className="px-4 py-8">
+      <Segment raised className="mb-8 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-900">
+        <SemanticHeader as="h1" className="text-3xl font-bold mb-2">Developer Portal</SemanticHeader>
         <p className="text-slate-600 dark:text-slate-300">
           Advanced controls and management tools for application administrators.
         </p>
-      </div>
+      </Segment>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <Grid columns={3} stackable doubling>
         {adminModules.map((module) => (
-          <Card key={module.id} className="transition-all hover:shadow-md">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between mb-2">
-                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                  {module.icon}
+          <Grid.Column key={module.id}>
+            <Card className="h-full transition-all hover:shadow-lg border-t-4 border-t-blue-500">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="p-2 bg-blue-100 dark:bg-slate-800 rounded-lg">
+                    {module.icon}
+                  </div>
                 </div>
-              </div>
-              <CardTitle>{module.title}</CardTitle>
-              <CardDescription>{module.description}</CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Button asChild className="w-full">
-                <Link to={module.href}>Access {module.title}</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+                <CardTitle>{module.title}</CardTitle>
+                <CardDescription>{module.description}</CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button asChild className="w-full" variant="outline">
+                  <Link to={module.href}>Access {module.title}</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </Grid.Column>
         ))}
-      </div>
+      </Grid>
       
-      <div className="mt-10 p-6 border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900/30 rounded-lg">
-        <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-500 mb-2">Restricted Access</h3>
-        <p className="text-amber-700 dark:text-amber-400">
-          The Developer Portal is restricted to authorized personnel only. Actions performed here directly affect the application's functionality.
-        </p>
-      </div>
-    </div>
+      <Message warning icon className="mt-10">
+        <Icon name="warning sign" />
+        <Message.Content>
+          <Message.Header>Restricted Access</Message.Header>
+          <p>
+            The Developer Portal is restricted to authorized personnel only. Actions performed here directly affect the application's functionality.
+          </p>
+        </Message.Content>
+      </Message>
+    </Container>
   );
 }

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -6,9 +7,18 @@ import {
   Upload,
   FolderTree
 } from 'lucide-react';
+import { 
+  Container, 
+  Header as SemanticHeader, 
+  Segment, 
+  Input, 
+  Menu,
+  Icon,
+  Message
+} from 'semantic-ui-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input as ShadcnInput } from "@/components/ui/input";
 import { ProductTier, AffiliateProduct, ToolCategory } from '@/types/affiliate';
 import { addAffiliateTracking } from '@/utils/amazonUtils';
 import ProductTierBadge from '@/components/affiliate/ProductTierBadge';
@@ -109,120 +119,131 @@ export default function AffiliateTool() {
     : sampleProducts;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Professional Tool Shop
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300 max-w-3xl">
-            Discover high-quality tools recommended by professionals. From diagnostic equipment to specialty tools - all with quality tiers to fit your budget.
-          </p>
+    <Container fluid>
+      <Segment raised className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 p-6 mb-6 border-l-4 border-blue-500">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <SemanticHeader as="h1" className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              Professional Tool Shop
+              <SemanticHeader.Subheader className="text-slate-600 dark:text-slate-300">
+                Discover high-quality tools recommended by professionals. From diagnostic equipment to specialty tools - all with quality tiers to fit your budget.
+              </SemanticHeader.Subheader>
+            </SemanticHeader>
+          </div>
         </div>
-      </div>
+      </Segment>
 
       <div className="mb-6">
-        <div className="relative">
-          <Input
-            type="search"
-            placeholder="Search for tools, brands, or categories..."
-            className="pl-10 py-2"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
-            <Hammer className="h-5 w-5" />
-          </span>
-        </div>
+        <Input 
+          fluid
+          icon={<Icon name="search" />}
+          placeholder="Search for tools, brands, or categories..."
+          value={searchQuery}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+        />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-8">
-          <TabsTrigger value="categories" className="flex items-center gap-2">
-            <FolderTree className="h-4 w-4" />
-            <span>Categories</span>
-          </TabsTrigger>
-          <TabsTrigger value="saved" className="flex items-center gap-2">
-            <Save className="h-4 w-4" />
-            <span>Saved Items</span>
-          </TabsTrigger>
-          <TabsTrigger value="submit" className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            <span>Submit a Tool</span>
-          </TabsTrigger>
-        </TabsList>
+      <Segment>
+        <Menu attached="top" tabular>
+          <Menu.Item
+            active={activeTab === "categories"}
+            onClick={() => setActiveTab("categories")}
+          >
+            <Icon name="folder" /> Categories
+          </Menu.Item>
+          <Menu.Item
+            active={activeTab === "saved"}
+            onClick={() => setActiveTab("saved")}
+          >
+            <Icon name="heart" /> Saved Items
+          </Menu.Item>
+          <Menu.Item
+            active={activeTab === "submit"}
+            onClick={() => setActiveTab("submit")}
+          >
+            <Icon name="upload" /> Submit a Tool
+          </Menu.Item>
+        </Menu>
 
-        <TabsContent value="categories" className="space-y-8">
-          <CategoryGrid categories={sampleCategories} />
+        <Segment attached="bottom" className="p-6">
+          {activeTab === "categories" && (
+            <div className="space-y-8">
+              <CategoryGrid categories={sampleCategories} />
 
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold">Featured Tools</h2>
-              <div className="flex items-center gap-2">
-                <ProductTierBadge tier="premium" />
-                <ProductTierBadge tier="midgrade" />
-                <ProductTierBadge tier="economy" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <SemanticHeader as="h2" className="text-2xl font-semibold">Featured Tools</SemanticHeader>
+                  <div className="flex items-center gap-2">
+                    <ProductTierBadge tier="premium" />
+                    <ProductTierBadge tier="midgrade" />
+                    <ProductTierBadge tier="economy" />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredProducts.filter(p => p.isFeatured).map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      isSaved={savedProducts.some(p => p.id === product.id)}
+                      onSaveToggle={() => toggleSaveProduct(product.id)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.filter(p => p.isFeatured).map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isSaved={savedProducts.some(p => p.id === product.id)}
-                  onSaveToggle={() => toggleSaveProduct(product.id)}
-                />
-              ))}
-            </div>
-          </div>
 
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">All Tools</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isSaved={savedProducts.some(p => p.id === product.id)}
-                  onSaveToggle={() => toggleSaveProduct(product.id)}
-                />
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="saved">
-          {savedProducts.length > 0 ? (
-            <div>
-              <h2 className="text-2xl font-semibold mb-6">Your Saved Items</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {savedProducts.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    isSaved={true}
-                    onSaveToggle={() => toggleSaveProduct(product.id)}
-                  />
-                ))}
+              <div>
+                <SemanticHeader as="h2" className="text-2xl font-semibold mb-4">All Tools</SemanticHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      isSaved={savedProducts.some(p => p.id === product.id)}
+                      onSaveToggle={() => toggleSaveProduct(product.id)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-20">
-              <Save className="h-16 w-16 mx-auto text-slate-400 mb-4" />
-              <h3 className="text-2xl font-semibold mb-2">No saved items</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
-                You haven't saved any tools yet. Browse the categories and save items for later.
-              </p>
-              <Button onClick={() => setActiveTab("categories")}>Browse Tools</Button>
             </div>
           )}
-        </TabsContent>
 
-        <TabsContent value="submit">
-          <SubmitProductForm />
-        </TabsContent>
-      </Tabs>
-    </div>
+          {activeTab === "saved" && (
+            <div>
+              {savedProducts.length > 0 ? (
+                <div>
+                  <SemanticHeader as="h2" className="text-2xl font-semibold mb-6">Your Saved Items</SemanticHeader>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {savedProducts.map(product => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        isSaved={true}
+                        onSaveToggle={() => toggleSaveProduct(product.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Message info icon className="p-8 text-center">
+                  <Icon name="heart outline" size="huge" className="mb-4" />
+                  <Message.Content>
+                    <Message.Header as="h3" className="text-2xl font-semibold mb-2">No saved items</Message.Header>
+                    <p className="text-slate-500 dark:text-slate-400 mb-6">
+                      You haven't saved any tools yet. Browse the categories and save items for later.
+                    </p>
+                    <Button onClick={() => setActiveTab("categories")}>Browse Tools</Button>
+                  </Message.Content>
+                </Message>
+              )}
+            </div>
+          )}
+
+          {activeTab === "submit" && (
+            <SubmitProductForm />
+          )}
+        </Segment>
+      </Segment>
+    </Container>
   );
 }
