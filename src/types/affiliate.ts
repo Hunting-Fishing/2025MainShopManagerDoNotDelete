@@ -13,6 +13,12 @@ export interface AffiliateProduct {
   source: 'amazon' | 'other';
   isFeatured?: boolean;
   isSaved?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  discount?: number;
+  stockQuantity?: number;
+  freeShipping?: boolean;
+  bestSeller?: boolean;
 }
 
 export interface ToolCategory {
@@ -21,6 +27,7 @@ export interface ToolCategory {
   description: string;
   iconName?: string;
   slug: string;
+  subcategories?: string[];
 }
 
 export interface AffiliateLink {
@@ -40,4 +47,28 @@ export interface UserSubmission {
   submittedBy?: string;
   status: 'pending' | 'approved' | 'rejected';
   submittedAt: string;
+}
+
+export interface ProductReview {
+  id: string;
+  productId: string;
+  rating: number;
+  comment: string;
+  userName: string;
+  userAvatar?: string;
+  createdAt: string;
+  verified: boolean;
+  helpful: number;
+}
+
+export interface ProductSpecification {
+  key: string;
+  value: string;
+}
+
+export interface ProductWarranty {
+  type: string;
+  duration: string;
+  coverage: string[];
+  exclusions: string[];
 }
