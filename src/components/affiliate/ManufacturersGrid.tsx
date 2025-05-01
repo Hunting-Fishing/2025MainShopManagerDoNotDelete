@@ -1,18 +1,21 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Segment, Header } from 'semantic-ui-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Manufacturer } from '@/types/affiliate';
 import { Link } from 'react-router-dom';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
-import { Car } from 'lucide-react';
+import { Car, Truck, Filter } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ManufacturersGridProps {
   manufacturers: Manufacturer[];
 }
 
 const ManufacturersGrid = ({ manufacturers }: ManufacturersGridProps) => {
+  const [activeCategory, setActiveCategory] = useState<'all' | 'auto' | 'truck'>('all');
+  
   // Logo fallback handler
   const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement, Event>, manufacturerName: string) => {
     const target = e.target as HTMLImageElement;
@@ -35,18 +38,57 @@ const ManufacturersGrid = ({ manufacturers }: ManufacturersGridProps) => {
     }
   };
 
+  // Heavy-duty truck manufacturers IDs (16 and above in our data)
+  const isTruckManufacturer = (manufacturer: Manufacturer) => {
+    const truckManufacturerIds = ['16', '17', '18', '19', '20'];
+    return truckManufacturerIds.includes(manufacturer.id);
+  };
+
+  // Filter manufacturers based on active category
+  const filteredManufacturers = manufacturers.filter(manufacturer => {
+    if (activeCategory === 'all') return true;
+    if (activeCategory === 'auto') return !isTruckManufacturer(manufacturer);
+    if (activeCategory === 'truck') return isTruckManufacturer(manufacturer);
+    return true;
+  });
+
   return (
     <Segment className="mt-8 mb-8 bg-white p-6 rounded-lg">
       <Header as="h2" className="text-3xl font-bold mb-6 text-center">
-        Auto Manufacturers
+        Auto & Truck Manufacturers
       </Header>
-      <p className="text-lg mb-8 text-center max-w-2xl mx-auto">
-        Browse tools specifically designed for popular automotive manufacturers.
+      <p className="text-lg mb-6 text-center max-w-2xl mx-auto">
+        Browse tools specifically designed for popular automotive and heavy-duty truck manufacturers.
         Select a manufacturer to find tools compatible with your vehicle.
       </p>
       
+      {/* Category Filter Tabs */}
+      <div className="flex justify-center mb-6">
+        <Tabs 
+          defaultValue="all" 
+          value={activeCategory}
+          onValueChange={(value) => setActiveCategory(value as 'all' | 'auto' | 'truck')}
+          className="w-full max-w-md"
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all" className="flex items-center gap-2">
+              <Filter size={16} />
+              <span>All</span>
+            </TabsTrigger>
+            <TabsTrigger value="auto" className="flex items-center gap-2">
+              <Car size={16} />
+              <span>Automotive</span>
+            </TabsTrigger>
+            <TabsTrigger value="truck" className="flex items-center gap-2">
+              <Truck size={16} />
+              <span>Heavy-Duty</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+      
       <ResponsiveGrid cols={{ default: 2, sm: 3, md: 4, lg: 5, xl: 6 }} gap="md" className="mt-6">
-        {manufacturers.map(manufacturer => (
+        {filteredManufacturers.map(manufacturer => (
           <Link key={manufacturer.id} to={`/manufacturers/${manufacturer.slug}`} className="group">
             <Card className="h-full hover:shadow-md transition-all duration-300 transform group-hover:-translate-y-1 border border-gray-200 text-center">
               <CardContent className="p-3 flex flex-col items-center justify-center">
@@ -60,7 +102,11 @@ const ManufacturersGrid = ({ manufacturers }: ManufacturersGridProps) => {
                     />
                   )}
                   <div className="absolute inset-0 flex items-center justify-center bg-blue-100 z-0">
-                    <Car size={24} className="text-blue-600" />
+                    {isTruckManufacturer(manufacturer) ? (
+                      <Truck size={24} className="text-blue-600" />
+                    ) : (
+                      <Car size={24} className="text-blue-600" />
+                    )}
                   </div>
                 </div>
                 <h3 className="font-bold text-sm text-blue-700 line-clamp-1">{manufacturer.name}</h3>

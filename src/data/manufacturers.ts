@@ -1,4 +1,3 @@
-
 import { Manufacturer, AffiliateProduct, ProductTier } from "@/types/affiliate";
 
 export const manufacturers: Manufacturer[] = [
@@ -120,6 +119,47 @@ export const manufacturers: Manufacturer[] = [
     logoUrl: "https://www.carlogos.org/car-logos/jeep-logo-2000-1920x1080.png",
     description: "American SUV and off-road vehicle brand",
     slug: "jeep",
+    featured: false
+  },
+  
+  {
+    id: "16",
+    name: "Peterbilt",
+    logoUrl: "https://www.carlogos.org/logo/Peterbilt-logo-5500x1100.png",
+    description: "American manufacturer of medium and heavy-duty trucks",
+    slug: "peterbilt",
+    featured: true
+  },
+  {
+    id: "17",
+    name: "Kenworth",
+    logoUrl: "https://www.carlogos.org/car-logos/kenworth-logo-1200x1200.png",
+    description: "American manufacturer of commercial vehicles",
+    slug: "kenworth",
+    featured: false
+  },
+  {
+    id: "18",
+    name: "Mack Trucks",
+    logoUrl: "https://www.carlogos.org/car-logos/mack-logo-2200x500.png",
+    description: "American truck manufacturing company",
+    slug: "mack",
+    featured: false
+  },
+  {
+    id: "19",
+    name: "Freightliner",
+    logoUrl: "https://www.carlogos.org/car-logos/freightliner-logo-1200x400.png",
+    description: "American truck manufacturer",
+    slug: "freightliner",
+    featured: false
+  },
+  {
+    id: "20",
+    name: "International",
+    logoUrl: "https://www.carlogos.org/car-logos/international-trucks-logo-1200x900.png",
+    description: "American manufacturer of heavy-duty trucks",
+    slug: "international",
     featured: false
   }
 ];
