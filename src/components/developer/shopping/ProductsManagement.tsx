@@ -1,561 +1,500 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { DataGrid, GridColDef, GridRenderCellParams, GridRowParams } from '@mui/x-data-grid';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { v4 as uuidv4 } from 'uuid';
 import { isValidAmazonLink, extractAmazonASIN } from '@/utils/amazonUtils';
-import { Card } from '@/components/ui/card';
-import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+
+// Define the schema for product creation/edition
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Product name must be at least 2 characters.",
+  }),
+  description: z.string().min(10, {
+    message: "Description must be at least 10 characters.",
+  }),
+  image_url: z.string().url({ message: "Invalid URL format" }),
+  amazon_url: z.string().url({ message: "Invalid URL format" }).refine(isValidAmazonLink, {
+    message: "Must be a valid Amazon product link.",
+  }),
+  category_id: z.string().uuid({ message: "Invalid category ID" }),
+  manufacturer_id: z.string().uuid({ message: "Invalid manufacturer ID" }),
+  price: z.number({
+    invalid_type_error: "Price must be a number.",
+  }).min(0, {
+    message: "Price must be a positive number.",
+  }),
+  is_featured: z.boolean().default(false),
+  is_approved: z.boolean().default(true),
+});
+
+// Define a type for the form values based on the schema
+type FormValues = z.infer<typeof formSchema>;
 
 interface Product {
   id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  image_url: string | null;
-  affiliate_link: string | null;
-  category_id: string | null;
-  manufacturer_id: string | null;
-  is_featured: boolean;
-  is_bestseller: boolean;
-  is_approved: boolean;
   created_at: string;
+  name: string;
+  description: string;
+  image_url: string;
+  amazon_url: string;
+  category_id: string;
+  manufacturer_id: string;
+  price: number;
+  is_featured: boolean;
+  is_approved: boolean;
+  product_categories?: { name: string } | null;
   category_name?: string;
   manufacturer_name?: string;
 }
 
-interface Category {
+interface ProductCategory {
   id: string;
+  created_at: string;
   name: string;
-  slug: string;
-  description: string | null;
 }
 
 interface Manufacturer {
   id: string;
+  created_at: string;
   name: string;
-  category: string;
 }
 
 export default function ProductsManagement() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
-  
-  // Form state
-  const [productForm, setProductForm] = useState({
-    title: '',
-    description: '',
-    price: 0,
-    image_url: '',
-    affiliate_link: '',
-    category_id: '',
-    manufacturer_id: '',
-    is_featured: false,
-    is_bestseller: false,
-    is_approved: true
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      image_url: "",
+      amazon_url: "",
+      category_id: "",
+      manufacturer_id: "",
+      price: 0,
+      is_featured: false,
+      is_approved: true,
+    },
   });
-  
+
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-    fetchManufacturers();
+    fetchData();
   }, []);
-  
-  const fetchProducts = async () => {
-    setIsLoading(true);
+
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First get products with category names
+      const { data: productsWithCategories, error: productsError } = await supabase
         .from('products')
         .select(`
-          *,
-          product_categories(name),
-          manufacturers(name)
-        `)
-        .order('created_at', { ascending: false });
+        *,
+        product_categories(name)
+      `);
       
-      if (error) throw error;
-      
-      if (data) {
-        const formattedProducts = data.map(product => ({
-          ...product,
-          category_name: product.product_categories?.name,
-          manufacturer_name: product.manufacturers?.name
-        }));
-        setProducts(formattedProducts);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('product_categories')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      if (data) setCategories(data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-  
-  const fetchManufacturers = async () => {
-    try {
-      const { data, error } = await supabase
+      if (productsError) throw productsError;
+
+      // Then get manufacturer information separately
+      const { data: manufacturersData, error: manufacturersError } = await supabase
         .from('manufacturers')
-        .select('*')
-        .order('name');
+        .select('id, name');
       
-      if (error) throw error;
-      if (data) setManufacturers(data);
+      if (manufacturersError) throw manufacturersError;
+
+      // Create a lookup for manufacturer names
+      const manufacturerMap = manufacturersData.reduce((acc, manufacturer) => {
+        acc[manufacturer.id] = manufacturer.name;
+        return acc;
+      }, {});
+
+      // Map the products with both category and manufacturer names
+      const productsWithDetails = productsWithCategories.map(product => ({
+        ...product,
+        category_name: product.product_categories?.name || 'Uncategorized',
+        manufacturer_name: manufacturerMap[product.manufacturer_id] || 'Unknown'
+      }));
+
+      setProducts(productsWithDetails);
+
+      // Fetch categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('product_categories')
+        .select('*');
+      
+      if (categoriesError) throw categoriesError;
+      setCategories(categoriesData);
+
+      // Fetch manufacturers
+      setManufacturers(manufacturersData);
     } catch (error) {
-      console.error('Error fetching manufacturers:', error);
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
-  
-  const handleAddProduct = () => {
-    setEditingProduct(null);
-    setProductForm({
-      title: '',
-      description: '',
-      price: 0,
-      image_url: '',
-      affiliate_link: '',
-      category_id: '',
-      manufacturer_id: '',
-      is_featured: false,
-      is_bestseller: false,
-      is_approved: true
-    });
-    setFormErrors({});
-    setIsDialogOpen(true);
-  };
-  
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setProductForm({
-      title: product.title,
-      description: product.description || '',
-      price: product.price || 0,
-      image_url: product.image_url || '',
-      affiliate_link: product.affiliate_link || '',
-      category_id: product.category_id || '',
-      manufacturer_id: product.manufacturer_id || '',
-      is_featured: product.is_featured || false,
-      is_bestseller: product.is_bestseller || false,
-      is_approved: product.is_approved || false,
-    });
-    setFormErrors({});
-    setIsDialogOpen(true);
-  };
-  
-  const handleDeleteProduct = async (id: string) => {
+
+  const onSubmit = async (values: FormValues) => {
+    setLoading(true);
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      fetchProducts();
-      setIsDeleteDialogOpen(false);
-    } catch (error) {
-      console.error('Error deleting product:', error);
-    }
-  };
-  
-  const validateForm = (): boolean => {
-    let errors: {[key: string]: string} = {};
-    let isValid = true;
-    
-    if (!productForm.title.trim()) {
-      errors.title = 'Title is required';
-      isValid = false;
-    }
-    
-    if (productForm.affiliate_link && !isValidAmazonLink(productForm.affiliate_link)) {
-      errors.affiliate_link = 'Please enter a valid Amazon product link';
-      isValid = false;
-    }
-    
-    // Convert string price to number for validation
-    if (isNaN(Number(productForm.price))) {
-      errors.price = 'Price must be a valid number';
-      isValid = false;
-    }
-    
-    setFormErrors(errors);
-    return isValid;
-  };
-  
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    
-    // Convert price to a number
-    const numericPrice = Number(productForm.price);
-    
-    try {
-      if (editingProduct) {
+      if (selectedProduct) {
+        // Update existing product
         const { error } = await supabase
           .from('products')
-          .update({
-            ...productForm,
-            price: numericPrice
-          })
-          .eq('id', editingProduct.id);
-        
+          .update(values)
+          .eq('id', selectedProduct.id);
+
         if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Product updated successfully.",
+        });
       } else {
+        // Create new product
         const { error } = await supabase
           .from('products')
-          .insert({
-            ...productForm,
-            price: numericPrice
-          });
-        
+          .insert({ id: uuidv4(), ...values });
+
         if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Product created successfully.",
+        });
       }
-      
-      fetchProducts();
-      setIsDialogOpen(false);
+      fetchData(); // Refresh product list
     } catch (error) {
       console.error('Error saving product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save product. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setOpen(false);
+      setLoading(false);
     }
   };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setProductForm(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSwitchChange = (name: string, checked: boolean) => {
-    setProductForm(prev => ({ ...prev, [name]: checked }));
-  };
-  
-  const handleSelectChange = (name: string, value: string) => {
-    setProductForm(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory = categoryFilter === 'all' || product.category_id === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      setLoading(true);
+      try {
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Product deleted successfully.",
+        });
+        fetchData(); // Refresh product list
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete product. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setSelectedProduct(product);
+    form.reset({
+      name: product.name,
+      description: product.description,
+      image_url: product.image_url,
+      amazon_url: product.amazon_url,
+      category_id: product.category_id,
+      manufacturer_id: product.manufacturer_id,
+      price: product.price,
+      is_featured: product.is_featured,
+      is_approved: product.is_approved,
+    });
+    setOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedProduct(null);
+    form.reset();
+    setOpen(true);
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.category_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.manufacturer_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Name', width: 200 },
+    { field: 'category_name', headerName: 'Category', width: 150 },
+    { field: 'manufacturer_name', headerName: 'Manufacturer', width: 150 },
+    { field: 'price', headerName: 'Price', width: 100, valueFormatter: ({ value }) => `$${value}` },
+    {
+      field: 'is_featured',
+      headerName: 'Featured',
+      width: 100,
+      renderCell: (params: GridRenderCellParams) => (
+        <Checkbox
+          checked={params.value}
+          disabled
+        />
+      ),
+    },
+    {
+      field: 'is_approved',
+      headerName: 'Approved',
+      width: 100,
+      renderCell: (params: GridRenderCellParams) => (
+        <Checkbox
+          checked={params.value}
+          disabled
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 200,
+      renderCell: (params: GridRowParams) => (
+        <div>
+          <Button variant="secondary" size="sm" onClick={() => handleEdit(params.row as Product)}>Edit</Button>
+          <Button variant="destructive" size="sm" onClick={() => handleDelete((params.row as Product).id)}>Delete</Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Products Management</h2>
-        <Button onClick={handleAddProduct}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <Input
+          type="text"
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <Button onClick={handleCreate}>Create Product</Button>
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-grow">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-            <Input 
-              placeholder="Search products..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <div className="w-full sm:w-64">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </Card>
+      <div style={{ height: 600, width: '100%' }}>
+        <DataGrid
+          rows={filteredProducts}
+          columns={columns}
+          getRowId={(row) => row.id}
+          loading={loading}
+          disableRowSelectionOnClick
+        />
+      </div>
 
-      {filteredProducts.length === 0 ? (
-        <div className="text-center py-10 bg-slate-50 rounded-lg">
-          <p className="text-slate-500">No products found</p>
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProducts.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.title}</TableCell>
-                <TableCell>{product.category_name || 'Uncategorized'}</TableCell>
-                <TableCell>{product.price ? `$${product.price.toFixed(2)}` : 'N/A'}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {product.is_approved ? (
-                      <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">Approved</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">Pending</Badge>
-                    )}
-                    {product.is_featured && (
-                      <Badge variant="outline" className="bg-purple-50 text-purple-800 border-purple-300">Featured</Badge>
-                    )}
-                    {product.is_bestseller && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-300">Bestseller</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
-                      <Pencil size={16} className="mr-1" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => {
-                        setEditingProduct(product);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 size={16} className="mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {/* Product Form Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">Edit Product</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
-            <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+            <DialogTitle>{selectedProduct ? "Edit Product" : "Create Product"}</DialogTitle>
+            <DialogDescription>
+              {selectedProduct
+                ? "Make changes to your product here. Click save when you're done."
+                : "Create a new product by filling out the form below."}
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="title" className="mb-2 block">
-                  Product Title <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={productForm.title}
-                  onChange={handleInputChange}
-                  className={formErrors.title ? 'border-red-500' : ''}
-                />
-                {formErrors.title && <p className="text-red-500 text-xs mt-1">{formErrors.title}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="description" className="mb-2 block">
-                  Description
-                </Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={productForm.description}
-                  onChange={handleInputChange}
-                  className="min-h-[100px]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price" className="mb-2 block">
-                  Price ($)
-                </Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  value={productForm.price}
-                  onChange={handleInputChange}
-                  className={formErrors.price ? 'border-red-500' : ''}
-                  step="0.01"
-                />
-                {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="image_url" className="mb-2 block">
-                  Image URL
-                </Label>
-                <Input
-                  id="image_url"
-                  name="image_url"
-                  value={productForm.image_url}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="category_id" className="mb-2 block">
-                  Category
-                </Label>
-                <Select 
-                  value={productForm.category_id}
-                  onValueChange={(value) => handleSelectChange('category_id', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="manufacturer_id" className="mb-2 block">
-                  Manufacturer
-                </Label>
-                <Select 
-                  value={productForm.manufacturer_id}
-                  onValueChange={(value) => handleSelectChange('manufacturer_id', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select manufacturer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {manufacturers.map((manufacturer) => (
-                      <SelectItem key={manufacturer.id} value={manufacturer.id}>{manufacturer.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="affiliate_link" className="mb-2 block">
-                Amazon Affiliate Link
-              </Label>
-              <Input
-                id="affiliate_link"
-                name="affiliate_link"
-                value={productForm.affiliate_link}
-                onChange={handleInputChange}
-                className={formErrors.affiliate_link ? 'border-red-500' : ''}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Product name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {formErrors.affiliate_link && <p className="text-red-500 text-xs mt-1">{formErrors.affiliate_link}</p>}
-              {productForm.affiliate_link && isValidAmazonLink(productForm.affiliate_link) && (
-                <p className="text-green-600 text-xs mt-1">
-                  Valid Amazon link. ASIN: {extractAmazonASIN(productForm.affiliate_link)}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_approved"
-                  checked={productForm.is_approved}
-                  onCheckedChange={(checked) => handleSwitchChange('is_approved', checked)}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Product description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="image_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Image URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Image URL" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="amazon_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amazon URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Amazon URL" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="is_approved" className="cursor-pointer">Approved</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_featured"
-                  checked={productForm.is_featured}
-                  onCheckedChange={(checked) => handleSwitchChange('is_featured', checked)}
+                <FormField
+                  control={form.control}
+                  name="manufacturer_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Manufacturer</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a manufacturer" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {manufacturers.map((manufacturer) => (
+                            <SelectItem key={manufacturer.id} value={manufacturer.id}>{manufacturer.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="is_featured" className="cursor-pointer">Featured</Label>
               </div>
-
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Product price" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_bestseller"
-                  checked={productForm.is_bestseller}
-                  onCheckedChange={(checked) => handleSwitchChange('is_bestseller', checked)}
+                <FormField
+                  control={form.control}
+                  name="is_featured"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel>Is Featured</FormLabel>
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="is_bestseller" className="cursor-pointer">Bestseller</Label>
+                <FormField
+                  control={form.control}
+                  name="is_approved"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel>Is Approved</FormLabel>
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit}>
-              {editingProduct ? 'Update Product' : 'Add Product'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Are you sure you want to delete "{editingProduct?.title}"? This action cannot be undone.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => editingProduct && handleDeleteProduct(editingProduct.id)}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Saving..." : "Save changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
