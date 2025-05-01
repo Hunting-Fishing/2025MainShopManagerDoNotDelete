@@ -43,7 +43,7 @@ export default function ManufacturersGrid({ manufacturers }: ManufacturersGridPr
     : manufacturers.filter(m => m.category === activeCategory);
 
   return (
-    <div className="py-8">
+    <div className="py-8 bg-gradient-to-b from-gray-50 to-white">
       <div className="container max-w-7xl mx-auto">
         <div className="flex flex-col space-y-6">
           <div className="flex items-center justify-between">
@@ -61,7 +61,7 @@ export default function ManufacturersGrid({ manufacturers }: ManufacturersGridPr
                     key={category}
                     value={category}
                     onClick={() => setActiveCategory(category)}
-                    className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:text-gray-900"
+                    className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
                   >
                     <div className="flex items-center gap-1.5">
                       {category !== "all" && (
