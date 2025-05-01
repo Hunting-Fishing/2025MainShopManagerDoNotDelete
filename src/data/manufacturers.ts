@@ -1,5 +1,5 @@
 
-import { Manufacturer } from "@/types/affiliate";
+import { Manufacturer, AffiliateProduct, ProductTier } from "@/types/affiliate";
 
 export const manufacturers: Manufacturer[] = [
   {
@@ -69,23 +69,28 @@ export const manufacturers: Manufacturer[] = [
 ];
 
 // Sample manufacturer products data
-export const generateManufacturerProducts = (manufacturerSlug: string) => {
+export const generateManufacturerProducts = (manufacturerSlug: string): AffiliateProduct[] => {
   // Generate 12 products for the manufacturer
-  return Array.from({ length: 12 }, (_, i) => ({
-    id: `${manufacturerSlug}-product-${i + 1}`,
-    name: `${manufacturerSlug.charAt(0).toUpperCase() + manufacturerSlug.slice(1)} Tool ${i + 1}`,
-    description: `High quality tool from ${manufacturerSlug.charAt(0).toUpperCase() + manufacturerSlug.slice(1)}`,
-    imageUrl: `https://via.placeholder.com/300x200?text=${manufacturerSlug}-tool-${i + 1}`,
-    tier: i % 3 === 0 ? 'premium' : i % 3 === 1 ? 'midgrade' : 'economy',
-    category: i % 5 === 0 ? 'Engine' : i % 5 === 1 ? 'Brakes' : i % 5 === 2 ? 'Electrical' : i % 5 === 3 ? 'Diagnostics' : 'Body',
-    retailPrice: 50 + i * 10,
-    affiliateUrl: "#",
-    source: 'amazon',
-    rating: Math.floor(Math.random() * 2) + 3 + Math.random(),
-    reviewCount: Math.floor(Math.random() * 200) + 50,
-    discount: i % 3 === 0 ? 10 : null,
-    manufacturer: manufacturerSlug.charAt(0).toUpperCase() + manufacturerSlug.slice(1),
-    model: `Model ${String.fromCharCode(65 + i % 10)}`,
-    engineType: i % 3 === 0 ? '4-Cylinder' : i % 3 === 1 ? 'V6' : 'V8'
-  }));
+  return Array.from({ length: 12 }, (_, i) => {
+    // Properly type the tier property to match ProductTier type
+    const tier: ProductTier = i % 3 === 0 ? 'premium' : i % 3 === 1 ? 'midgrade' : 'economy';
+    
+    return {
+      id: `${manufacturerSlug}-product-${i + 1}`,
+      name: `${manufacturerSlug.charAt(0).toUpperCase() + manufacturerSlug.slice(1)} Tool ${i + 1}`,
+      description: `High quality tool from ${manufacturerSlug.charAt(0).toUpperCase() + manufacturerSlug.slice(1)}`,
+      imageUrl: `https://via.placeholder.com/300x200?text=${manufacturerSlug}-tool-${i + 1}`,
+      tier,
+      category: i % 5 === 0 ? 'Engine' : i % 5 === 1 ? 'Brakes' : i % 5 === 2 ? 'Electrical' : i % 5 === 3 ? 'Diagnostics' : 'Body',
+      retailPrice: 50 + i * 10,
+      affiliateUrl: "#",
+      source: 'amazon',
+      rating: Math.floor(Math.random() * 2) + 3 + Math.random(),
+      reviewCount: Math.floor(Math.random() * 200) + 50,
+      discount: i % 3 === 0 ? 10 : null,
+      manufacturer: manufacturerSlug.charAt(0).toUpperCase() + manufacturerSlug.slice(1),
+      model: `Model ${String.fromCharCode(65 + i % 10)}`,
+      engineType: i % 3 === 0 ? '4-Cylinder' : i % 3 === 1 ? 'V6' : 'V8'
+    };
+  });
 };
