@@ -1,37 +1,33 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Container, Segment, Header, Grid } from 'semantic-ui-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
+import { Container, Header, Segment } from 'semantic-ui-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Star, ShoppingCart, Filter, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+  SelectValue
+} from '@/components/ui/select';
 import { manufacturers, generateManufacturerProducts } from '@/data/manufacturers';
-import { Manufacturer, AffiliateProduct } from '@/types/affiliate';
-import ProductTierBadge from '@/components/affiliate/ProductTierBadge';
+import { AffiliateProduct, Manufacturer } from '@/types/affiliate';
+import { Car } from 'lucide-react';
+import { ResponsiveGrid } from '@/components/ui/responsive-grid';
+import SearchBar from '@/components/affiliate/SearchBar';
 
 const ManufacturerPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [manufacturer, setManufacturer] = useState<Manufacturer | null>(null);
   const [products, setProducts] = useState<AffiliateProduct[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<AffiliateProduct[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [tierFilter, setTierFilter] = useState('');
-  const [modelFilter, setModelFilter] = useState('');
-  const [engineFilter, setEngineFilter] = useState('');
-
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  
   useEffect(() => {
-    // Find the manufacturer by slug
+    // Find manufacturer by slug
     const foundManufacturer = manufacturers.find(m => m.slug === slug);
     if (foundManufacturer) {
       setManufacturer(foundManufacturer);
@@ -39,287 +35,158 @@ const ManufacturerPage = () => {
       // Generate products for this manufacturer
       const manufacturerProducts = generateManufacturerProducts(foundManufacturer.slug);
       setProducts(manufacturerProducts);
-      setFilteredProducts(manufacturerProducts);
     }
   }, [slug]);
 
-  // Filter products when any filter changes
-  useEffect(() => {
-    if (products.length) {
-      let filtered = [...products];
+  // Get unique categories for the filter
+  const categories = products.length > 0 
+    ? ['all', ...new Set(products.map(product => product.category))]
+    : ['all'];
+    
+  // Filter products based on search and category
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = searchQuery.trim() === '' || 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Apply search filter
-      if (searchQuery) {
-        filtered = filtered.filter(p => 
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          p.description.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      
-      // Apply category filter
-      if (categoryFilter) {
-        filtered = filtered.filter(p => p.category === categoryFilter);
-      }
-      
-      // Apply tier filter
-      if (tierFilter) {
-        filtered = filtered.filter(p => p.tier === tierFilter);
-      }
-      
-      // Apply model filter
-      if (modelFilter) {
-        filtered = filtered.filter(p => p.model === modelFilter);
-      }
-      
-      // Apply engine filter
-      if (engineFilter) {
-        filtered = filtered.filter(p => p.engineType === engineFilter);
-      }
-      
-      setFilteredProducts(filtered);
-    }
-  }, [products, searchQuery, categoryFilter, tierFilter, modelFilter, engineFilter]);
-
-  // Extract unique values for filters
-  const categories = [...new Set(products.map(p => p.category))];
-  const tiers = [...new Set(products.map(p => p.tier))];
-  const models = [...new Set(products.map(p => p.model))];
-  const engines = [...new Set(products.map(p => p.engineType))];
+    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   if (!manufacturer) {
     return (
-      <Container>
-        <Segment className="p-8 text-center">
+      <Container fluid>
+        <Segment className="mt-8 text-center p-12">
           <Header as="h2">Manufacturer not found</Header>
-          <Link to="/tools">Back to Tools</Link>
+          <p>The manufacturer you are looking for doesn't exist or has been removed.</p>
         </Segment>
       </Container>
     );
   }
 
   return (
-    <Container fluid className="py-6">
+    <Container fluid>
       {/* Manufacturer Header */}
-      <Segment className="mb-6 bg-white shadow-sm rounded-lg">
-        <Link to="/tools" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
-          <ArrowLeft className="mr-1 h-4 w-4" /> 
-          Back to Tool Shop
-        </Link>
-        
-        <div className="flex flex-col md:flex-row items-center gap-6 p-4">
-          <div className="bg-gray-50 p-6 rounded-lg flex items-center justify-center h-32 w-32 md:h-40 md:w-40">
-            <img 
-              src={manufacturer.logoUrl} 
-              alt={manufacturer.name} 
-              className="max-h-32 max-w-full"
-            />
+      <Segment className="mt-4 mb-6 bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-lg">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="bg-white rounded-full w-24 h-24 flex items-center justify-center border border-gray-100 overflow-hidden shadow-sm relative">
+            {manufacturer.logoUrl && (
+              <img 
+                src={manufacturer.logoUrl} 
+                alt={manufacturer.name} 
+                className="max-h-16 max-w-16 object-contain z-10"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.style.display = 'none';
+                }}
+              />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-blue-100 z-0">
+              <Car size={36} className="text-blue-600" />
+            </div>
           </div>
-          
           <div>
-            <Header as="h1" className="text-3xl font-bold mb-2">
-              {manufacturer.name} Tools & Equipment
+            <Header as="h1" className="text-3xl font-bold mb-2 text-white">
+              {manufacturer.name} Tools
             </Header>
-            <p className="text-lg text-gray-600 mb-4">
-              {manufacturer.description}
+            <p className="text-lg opacity-90">
+              Professional diagnostic and repair tools compatible with {manufacturer.name} vehicles
             </p>
-            <Badge className="bg-blue-100 text-blue-800 border border-blue-200">
-              Official Dealer
-            </Badge>
           </div>
         </div>
       </Segment>
       
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Filter Sidebar */}
-        <div className="lg:w-1/4">
-          <Segment className="bg-white shadow-sm rounded-lg p-4">
-            <div className="mb-6">
-              <h3 className="font-medium text-lg mb-3 flex items-center">
-                <Filter className="w-5 h-5 mr-2 text-gray-600" />
-                Filters
-              </h3>
-              
-              <div className="space-y-4">
-                {/* Search */}
-                <div className="relative">
-                  <Input 
-                    type="text" 
-                    placeholder="Search products..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Tier Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quality Tier
-                  </label>
-                  <Select value={tierFilter} onValueChange={setTierFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Tiers" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Tiers</SelectItem>
-                      {tiers.map((tier) => (
-                        <SelectItem key={tier} value={tier}>
-                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Model Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Model
-                  </label>
-                  <Select value={modelFilter} onValueChange={setModelFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Models" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Models</SelectItem>
-                      {models.map((model) => (
-                        <SelectItem key={model} value={model}>
-                          {model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Engine Type Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Engine Type
-                  </label>
-                  <Select value={engineFilter} onValueChange={setEngineFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Engine Types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Engine Types</SelectItem>
-                      {engines.map((engine) => (
-                        <SelectItem key={engine} value={engine}>
-                          {engine}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setCategoryFilter('');
-                    setTierFilter('');
-                    setModelFilter('');
-                    setEngineFilter('');
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            </div>
-          </Segment>
-        </div>
+      {/* Search and Filters */}
+      <div className="mb-6">
+        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
-        {/* Product Grid */}
-        <div className="lg:w-3/4">
-          <div className="bg-white shadow-sm rounded-lg p-4">
-            <Header as="h2" className="text-xl font-semibold mb-4">
-              {filteredProducts.length} Products Available
-            </Header>
-            
-            <Grid columns={3} stackable doubling>
-              {filteredProducts.map((product) => (
-                <Grid.Column key={product.id}>
-                  <Card className="h-full hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border">
-                    <CardContent className="p-0 relative">
-                      {product.discount && (
-                        <div className="absolute top-2 left-2">
-                          <Badge className="bg-red-100 text-red-800 border border-red-300">
-                            {product.discount}% OFF
-                          </Badge>
-                        </div>
-                      )}
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-full h-[180px] object-cover"
-                      />
-                      <div className="p-4">
-                        <p className="font-medium mb-1">{product.name}</p>
-                        <div className="flex gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs">{product.category}</Badge>
-                          <ProductTierBadge tier={product.tier} />
-                        </div>
-                        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{product.description}</p>
-                        <div className="flex justify-between items-center">
-                          <span className="text-blue-600 font-bold">${product.retailPrice.toFixed(2)}</span>
-                          <span className="text-sm text-gray-600 flex items-center">
-                            <Star size={14} className="text-yellow-500 mr-1 fill-yellow-500" /> 
-                            {product.rating?.toFixed(1)} ({product.reviewCount})
-                          </span>
-                        </div>
-                        <Button className="w-full mt-3 bg-blue-600 hover:bg-blue-700">
-                          <ShoppingCart size={16} className="mr-1" /> View Details
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Grid.Column>
-              ))}
-              
-              {filteredProducts.length === 0 && (
-                <div className="col-span-3 p-12 text-center">
-                  <p className="text-lg text-gray-500">
-                    No products match your current filters.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setCategoryFilter('');
-                      setTierFilter('');
-                      setModelFilter('');
-                      setEngineFilter('');
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              )}
-            </Grid>
+        <div className="mt-4 flex gap-4 flex-wrap">
+          <div className="w-full md:w-auto">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Categories</SelectLabel>
+                  {categories.map(category => (
+                    <SelectItem key={category} value={category}>
+                      {category === 'all' ? 'All Categories' : category}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
+      
+      {/* Products Grid */}
+      <Segment className="bg-white p-6 rounded-lg">
+        <Header as="h2" className="text-2xl font-bold mb-4">
+          {filteredProducts.length > 0 ? `${manufacturer.name} Compatible Tools (${filteredProducts.length})` : 'No tools found'}
+        </Header>
+        
+        {filteredProducts.length > 0 ? (
+          <ResponsiveGrid cols={{ default: 1, sm: 2, md: 3, lg: 4 }} gap="md" className="mt-6">
+            {filteredProducts.map(product => (
+              <Card key={product.id} className="h-full hover:shadow-md transition-all duration-200">
+                <CardContent className="p-4">
+                  <div className="aspect-video mb-3 bg-gray-100 rounded-md overflow-hidden">
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = `https://via.placeholder.com/300x200?text=${product.name}`;
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                      {product.category}
+                    </span>
+                    <h3 className="font-bold text-base line-clamp-2">{product.name}</h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                    <div className="flex items-baseline justify-between mt-2">
+                      <div className="font-bold text-lg">
+                        ${product.retailPrice.toFixed(2)}
+                        {product.discount && (
+                          <span className="ml-2 text-sm text-green-600 font-normal">
+                            {product.discount}% off
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Button className="w-full mt-2 bg-blue-600 hover:bg-blue-700">
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </ResponsiveGrid>
+        ) : (
+          <div className="text-center p-8 bg-gray-50 rounded-lg">
+            <Car size={48} className="text-gray-400 mx-auto mb-3" />
+            <p className="text-lg text-gray-600">No tools found matching your search criteria.</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => {
+                setSearchQuery('');
+                setCategoryFilter('all');
+              }}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        )}
+      </Segment>
     </Container>
   );
 };
