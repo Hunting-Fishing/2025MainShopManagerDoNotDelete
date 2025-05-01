@@ -3,7 +3,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Segment, Header, Grid } from "semantic-ui-react";
 import { ToolCategory } from "@/types/affiliate";
-import { Wrench, Tool, Hammer, Cog, Gauge, Zap, Flame, Snowflake, Cogs, Cloud, Droplet, Car } from "lucide-react";
+import { Wrench, Hammer, Cog, Gauge, Zap, Flame, Snowflake, Settings, Cloud, Droplet, Car } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface CategoryGridProps {
@@ -16,11 +16,11 @@ const getCategoryIcon = (name: string) => {
     case 'Engine': return <Cog className="h-5 w-5 text-blue-600" />;
     case 'Brakes': return <Gauge className="h-5 w-5 text-red-600" />;
     case 'Steering & Suspension': return <Wrench className="h-5 w-5 text-purple-600" />;
-    case 'Diagnostics': return <Tool className="h-5 w-5 text-green-600" />;
+    case 'Diagnostics': return <Settings className="h-5 w-5 text-green-600" />; // Changed from Tool to Settings
     case 'Electrical': return <Zap className="h-5 w-5 text-yellow-600" />;
     case 'Heating': return <Flame className="h-5 w-5 text-orange-600" />;
     case 'Cooling': return <Snowflake className="h-5 w-5 text-cyan-600" />;
-    case 'Drivetrain': return <Cogs className="h-5 w-5 text-indigo-600" />;
+    case 'Drivetrain': return <Settings className="h-5 w-5 text-indigo-600" />; // Changed from Cogs to Settings
     case 'Exhaust': return <Cloud className="h-5 w-5 text-gray-600" />;
     case 'Fuel': return <Droplet className="h-5 w-5 text-emerald-600" />;
     case 'Body': return <Car className="h-5 w-5 text-amber-600" />;

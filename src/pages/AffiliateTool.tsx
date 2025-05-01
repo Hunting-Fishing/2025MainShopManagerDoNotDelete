@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tool, Search, Star, Tag, Sparkles, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Search, Star, Tag, Sparkles, ShoppingCart, TrendingUp, Settings } from 'lucide-react';
 import { categories } from '@/data/toolCategories';
 
 // Convert the categories dictionary to an array format for display
@@ -138,7 +138,7 @@ const AffiliateTool = () => {
           </Grid.Column>
           <Grid.Column width={6} className="flex items-center justify-center">
             <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm border border-white/20 shadow-xl">
-              <Tool size={120} className="text-white" />
+              <Settings size={120} className="text-white" /> {/* Changed from Tool to Settings */}
             </div>
           </Grid.Column>
         </Grid>
