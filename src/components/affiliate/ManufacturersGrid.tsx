@@ -3,9 +3,15 @@ import React, { useState } from 'react';
 import { Manufacturer, ManufacturerCategory } from '@/types/affiliate';
 import { Link } from 'react-router-dom';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
-import { Car, Truck, Ship, Tractor, Filter, Anchor, Hammer, Wrench } from 'lucide-react';
+import { Car, Truck, Ship, Tractor, Filter, Anchor, Hammer, Wrench, ChevronDown, ChevronUp } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface ManufacturersGridProps {
   manufacturers: Manufacturer[];
@@ -31,6 +37,14 @@ const getCategoryIcon = (category: ManufacturerCategory) => {
   }
 };
 
+// Helper function to capitalize and format category names
+const formatCategoryName = (category: string): string => {
+  return category
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export default function ManufacturersGrid({ manufacturers }: ManufacturersGridProps) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
 
@@ -41,6 +55,19 @@ export default function ManufacturersGrid({ manufacturers }: ManufacturersGridPr
   const filteredManufacturers = activeCategory === "all" 
     ? manufacturers 
     : manufacturers.filter(m => m.category === activeCategory);
+
+  // Group manufacturers by category
+  const manufacturersByCategory = filteredManufacturers.reduce((acc, manufacturer) => {
+    const category = manufacturer.category;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(manufacturer);
+    return acc;
+  }, {} as Record<string, Manufacturer[]>);
+
+  // Sort categories for consistent display
+  const sortedCategories = Object.keys(manufacturersByCategory).sort();
 
   return (
     <div className="py-8 bg-gradient-to-b from-gray-50 to-white">
@@ -78,41 +105,94 @@ export default function ManufacturersGrid({ manufacturers }: ManufacturersGridPr
             </div>
           </Tabs>
 
-          <ResponsiveGrid 
-            cols={{
-              default: 2,
-              sm: 3,
-              md: 4,
-              lg: 5
-            }}
-            className="gap-6"
-          >
-            {filteredManufacturers.map((manufacturer) => (
-              <Link
-                key={manufacturer.id}
-                to={`/manufacturers/${manufacturer.slug}`}
-                className="group flex flex-col items-center p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="w-full h-24 flex items-center justify-center mb-4 relative">
-                  <img
-                    src={manufacturer.logoUrl}
-                    alt={`${manufacturer.name} logo`}
-                    className="max-h-24 max-w-full object-contain"
-                  />
-                  <Badge 
-                    variant="info" 
-                    className="absolute top-0 right-0 text-xs capitalize"
-                  >
-                    {manufacturer.category.replace("-", " ")}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {getCategoryIcon(manufacturer.category)}
-                  <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600">{manufacturer.name}</h3>
-                </div>
-              </Link>
-            ))}
-          </ResponsiveGrid>
+          {activeCategory === "all" ? (
+            <Accordion type="multiple" className="w-full space-y-4">
+              {sortedCategories.map(category => (
+                <AccordionItem 
+                  key={category} 
+                  value={category}
+                  className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden"
+                >
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      {getCategoryIcon(category as ManufacturerCategory)}
+                      <span className="font-medium">{formatCategoryName(category)}</span>
+                      <Badge variant="outline" className="ml-2">
+                        {manufacturersByCategory[category].length}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4 pt-0">
+                    <ResponsiveGrid 
+                      cols={{
+                        default: 1,
+                        sm: 2,
+                        md: 3,
+                        lg: 4
+                      }}
+                      className="gap-4"
+                    >
+                      {manufacturersByCategory[category].map((manufacturer) => (
+                        <Link
+                          key={manufacturer.id}
+                          to={`/manufacturers/${manufacturer.slug}`}
+                          className="group flex flex-col items-center p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="w-full h-20 flex items-center justify-center mb-3 relative">
+                            <img
+                              src={manufacturer.logoUrl}
+                              alt={`${manufacturer.name} logo`}
+                              className="max-h-20 max-w-full object-contain"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {getCategoryIcon(manufacturer.category)}
+                            <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600">{manufacturer.name}</h3>
+                          </div>
+                        </Link>
+                      ))}
+                    </ResponsiveGrid>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          ) : (
+            <ResponsiveGrid 
+              cols={{
+                default: 2,
+                sm: 3,
+                md: 4,
+                lg: 5
+              }}
+              className="gap-6"
+            >
+              {filteredManufacturers.map((manufacturer) => (
+                <Link
+                  key={manufacturer.id}
+                  to={`/manufacturers/${manufacturer.slug}`}
+                  className="group flex flex-col items-center p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="w-full h-24 flex items-center justify-center mb-4 relative">
+                    <img
+                      src={manufacturer.logoUrl}
+                      alt={`${manufacturer.name} logo`}
+                      className="max-h-24 max-w-full object-contain"
+                    />
+                    <Badge 
+                      variant="info" 
+                      className="absolute top-0 right-0 text-xs capitalize"
+                    >
+                      {manufacturer.category.replace("-", " ")}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {getCategoryIcon(manufacturer.category)}
+                    <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600">{manufacturer.name}</h3>
+                  </div>
+                </Link>
+              ))}
+            </ResponsiveGrid>
+          )}
         </div>
       </div>
     </div>
