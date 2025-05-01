@@ -1,4 +1,3 @@
-
 export type ProductTier = 'premium' | 'midgrade' | 'economy';
 
 export interface AffiliateProduct {
@@ -19,6 +18,9 @@ export interface AffiliateProduct {
   stockQuantity?: number;
   freeShipping?: boolean;
   bestSeller?: boolean;
+  manufacturer?: string;
+  model?: string;
+  engineType?: string;
 }
 
 export interface ToolCategory {
@@ -28,6 +30,15 @@ export interface ToolCategory {
   iconName?: string;
   slug: string;
   subcategories?: string[];
+}
+
+export interface Manufacturer {
+  id: string;
+  name: string;
+  logoUrl: string;
+  description: string;
+  slug: string;
+  featured: boolean;
 }
 
 export interface AffiliateLink {

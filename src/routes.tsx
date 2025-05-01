@@ -1,4 +1,3 @@
-
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -19,6 +18,7 @@ import DeveloperPortal from '@/pages/DeveloperPortal';
 import ShoppingControls from '@/pages/developer/ShoppingControls';
 import ToolCategoryPage from '@/pages/ToolCategoryPage';
 import ToolDetailPage from '@/pages/ToolDetailPage';
+import ManufacturerPage from '@/pages/ManufacturerPage';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -82,6 +82,10 @@ export const routes: RouteObject[] = [
       {
         path: 'tools/:category/:toolId',
         element: <ToolDetailPage />,
+      },
+      {
+        path: 'manufacturers/:slug',
+        element: <ManufacturerPage />,
       },
       {
         path: 'settings',

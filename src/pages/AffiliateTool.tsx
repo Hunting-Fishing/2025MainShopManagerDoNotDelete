@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Container, Segment, Header, Grid } from 'semantic-ui-react';
 import CategoryGrid from '@/components/affiliate/CategoryGrid';
@@ -9,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Star, Tag, Sparkles, ShoppingCart, TrendingUp, Settings } from 'lucide-react';
 import { categories } from '@/data/toolCategories';
+import { manufacturers } from '@/data/manufacturers';
+import { Link } from 'react-router-dom';
 
 // Convert the categories dictionary to an array format for display
 const categoryList = Object.keys(categories).map((name, id) => ({
@@ -113,6 +114,9 @@ const bestSellingTools = [
 
 const AffiliateTool = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Get featured manufacturers
+  const featuredManufacturers = manufacturers.filter(m => m.featured);
   
   return (
     <Container fluid>
@@ -249,18 +253,40 @@ const AffiliateTool = () => {
         </Grid>
       </Segment>
       
-      {/* Call to Action */}
-      <Segment className="mt-8 mb-8 bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-8 rounded-lg text-center">
-        <Header as="h2" className="text-3xl font-bold mb-2">
-          Get the Right Tools for the Job
+      {/* Manufacturers Section - replacing the Call to Action */}
+      <Segment className="mt-8 mb-8 bg-white p-6 rounded-lg">
+        <Header as="h2" className="text-3xl font-bold mb-6 text-center">
+          Shop by Manufacturer
         </Header>
-        <p className="text-lg opacity-90 mb-6 max-w-2xl mx-auto">
-          Browse our extensive collection of professional-grade automotive tools.
-          Free shipping on orders over $100!
+        <p className="text-lg mb-8 text-center max-w-2xl mx-auto">
+          Browse tools from the most trusted manufacturers in the automotive industry.
+          Click on a manufacturer to see their complete product line.
         </p>
-        <Button size="lg" className="bg-white text-blue-700 hover:bg-gray-100 hover:text-blue-800">
-          Shop All Tools
-        </Button>
+        
+        <Grid columns={5} stackable doubling centered>
+          {manufacturers.map(manufacturer => (
+            <Grid.Column key={manufacturer.id}>
+              <Link to={`/manufacturers/${manufacturer.slug}`}>
+                <Card className="h-full hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 text-center">
+                  <CardContent className="p-4 flex flex-col items-center justify-center">
+                    <div className="bg-gray-50 p-4 rounded-lg w-full flex items-center justify-center h-24 mb-3">
+                      <img 
+                        src={manufacturer.logoUrl} 
+                        alt={manufacturer.name} 
+                        className="max-h-20 max-w-full"
+                      />
+                    </div>
+                    <h3 className="font-bold text-lg">{manufacturer.name}</h3>
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{manufacturer.description}</p>
+                    <Button variant="outline" className="mt-4 w-full">
+                      View Products
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </Grid.Column>
+          ))}
+        </Grid>
       </Segment>
     </Container>
   );
