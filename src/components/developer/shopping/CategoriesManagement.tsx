@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToolCategory } from '@/types/affiliate';
-import { Plus, Search, Pencil, Trash2, Category } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, FolderTree } from 'lucide-react';
 
 // Sample categories for demonstration
 const sampleCategories: ToolCategory[] = [
@@ -118,7 +117,7 @@ export default function CategoriesManagement() {
               filteredCategories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="font-medium flex items-center gap-2">
-                    <Category className="h-4 w-4" />
+                    <FolderTree className="h-4 w-4" />
                     {category.name}
                   </TableCell>
                   <TableCell>{category.description}</TableCell>

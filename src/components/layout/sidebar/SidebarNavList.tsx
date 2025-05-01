@@ -17,11 +17,11 @@ import {
   HardDrive,
   UserCog,
   FilePen,
-  Tool,
+  Hammer,
   Save,
   Link,
   Store,
-  Gear
+  Cog
 } from "lucide-react";
 import { SidebarNavItem, NavItem } from "./SidebarNavItem";
 
@@ -60,7 +60,7 @@ const navigationItems: NavItem[] = [
   {
     title: "Tools Shop",
     href: "/tools",
-    icon: <Tool className="h-5 w-5" />
+    icon: <Hammer className="h-5 w-5" />
   },
   {
     title: "Forms",
@@ -127,7 +127,7 @@ const navigationItems: NavItem[] = [
   {
     title: "Developer Portal",
     href: "/developer",
-    icon: <Gear className="h-5 w-5" />
+    icon: <Cog className="h-5 w-5" />
   },
   {
     title: "Settings",

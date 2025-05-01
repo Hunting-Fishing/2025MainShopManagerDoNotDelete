@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ToolCategory } from "@/types/affiliate";
-import { Category } from "lucide-react";
+import { FolderTree } from "lucide-react";
 
 interface CategoryGridProps {
   categories: ToolCategory[];
@@ -17,7 +17,7 @@ const CategoryGrid = ({ categories }: CategoryGridProps) => {
           <Card key={category.id} className="transition-all hover:shadow-md">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2">
-                <Category className="h-5 w-5" />
+                <FolderTree className="h-5 w-5" />
                 {category.name}
               </CardTitle>
               <CardDescription>{category.description}</CardDescription>

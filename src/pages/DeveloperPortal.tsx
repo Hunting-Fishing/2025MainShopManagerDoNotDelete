@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Settings, Store, Tool, Users, Wrench } from "lucide-react";
+import { Settings, Store, Hammer, Users, Wrench } from "lucide-react";
 
 export default function DeveloperPortal() {
   const adminModules = [
@@ -32,7 +32,7 @@ export default function DeveloperPortal() {
       id: "tools-management",
       title: "Tool Management",
       description: "Manage tools, equipment, and their categories",
-      icon: <Tool className="h-6 w-6" />,
+      icon: <Hammer className="h-6 w-6" />,
       href: "#",
     },
     {

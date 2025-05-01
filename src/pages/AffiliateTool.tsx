@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Tool,
+  Hammer,
   Save,
   Upload,
-  Category
+  FolderTree
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,7 +131,7 @@ export default function AffiliateTool() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
-            <Tool className="h-5 w-5" />
+            <Hammer className="h-5 w-5" />
           </span>
         </div>
       </div>
@@ -140,7 +139,7 @@ export default function AffiliateTool() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-8">
           <TabsTrigger value="categories" className="flex items-center gap-2">
-            <Category className="h-4 w-4" />
+            <FolderTree className="h-4 w-4" />
             <span>Categories</span>
           </TabsTrigger>
           <TabsTrigger value="saved" className="flex items-center gap-2">
