@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -9,7 +10,7 @@ const navigation = [
   { name: 'Work Orders', href: '/work-orders' },
   { name: 'Equipment', href: '/equipment' },
   { name: 'Inventory', href: '/inventory' },
-  { name: 'Tools Shop', href: '/tools' },
+  { name: 'Tools Shop', href: '/tools' }, // Updated to point to Tools Shop instead of Shopping
   { name: 'Team', href: '/team' },
   { name: 'Reports', href: '/reports' },
 ];

@@ -47,8 +47,8 @@ const ManufacturerPage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">Manufacturer Not Found</h1>
-          <Link to="/manufacturers" className="text-blue-600 hover:text-blue-800">
-            Back to Manufacturers
+          <Link to="/tools" className="text-blue-600 hover:text-blue-800">
+            Back to Tools Shop
           </Link>
         </div>
         <p>The requested manufacturer was not found.</p>
@@ -71,9 +71,9 @@ const ManufacturerPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <Link to="/manufacturers" className="text-blue-600 hover:text-blue-800 flex items-center">
+          <Link to="/tools" className="text-blue-600 hover:text-blue-800 flex items-center">
             <Home className="mr-2 h-4 w-4" />
-            Back to Manufacturers
+            Back to Tools Shop
           </Link>
           <h1 className="text-2xl font-bold">{manufacturer.name}</h1>
           <Badge variant="secondary">{manufacturer.category}</Badge>

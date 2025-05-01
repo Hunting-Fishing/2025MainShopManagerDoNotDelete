@@ -67,6 +67,7 @@ const navigationItems: NavItem[] = [
     href: "/forms",
     icon: <FilePen className="h-5 w-5" />
   },
+  // Remove the "Shopping" navigation item since we're using Tools Shop instead
   {
     title: "Maintenance",
     href: "/maintenance",

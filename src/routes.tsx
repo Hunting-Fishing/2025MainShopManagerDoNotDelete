@@ -1,3 +1,4 @@
+
 import { RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -70,7 +71,7 @@ export const routes: RouteObject[] = [
         path: 'team',
         element: <Team />,
       },
-      // Tool shop routes
+      // Tool shop routes - make sure these are correct and nothing is routing to /shopping
       {
         path: 'tools',
         element: <AffiliateTool />,
@@ -84,7 +85,7 @@ export const routes: RouteObject[] = [
         element: <ToolDetailPage />,
       },
       {
-        path: 'manufacturers/:slug',
+        path: 'manufacturers/:manufacturerSlug',
         element: <ManufacturerPage />,
       },
       {
@@ -102,6 +103,11 @@ export const routes: RouteObject[] = [
       {
         path: 'developer/shopping-controls',
         element: <ShoppingControls />,
+      },
+      // Redirect any /shopping routes to /tools
+      {
+        path: 'shopping',
+        element: <AffiliateTool />,
       },
       {
         path: '*',
