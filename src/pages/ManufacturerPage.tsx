@@ -15,8 +15,9 @@ import { generateManufacturerProducts } from '@/data/manufacturers/productGenera
 import { AffiliateProduct, Manufacturer } from '@/types/affiliate';
 import { Car, Grid3X3, Home, List, ChevronRight, ArrowUpDown } from 'lucide-react';
 
+// Fix the interface to use a string type for the manufacturerSlug
 interface ManufacturerParams {
-  manufacturerSlug?: string;
+  manufacturerSlug: string;
 }
 
 const ManufacturerPage = () => {
@@ -24,7 +25,9 @@ const ManufacturerPage = () => {
   const [sortBy, setSortBy] = useState<"name" | "rating" | "price">("name");
   const [manufacturer, setManufacturer] = useState<Manufacturer | undefined>(undefined);
   const [products, setProducts] = useState<AffiliateProduct[]>([]);
-  const { manufacturerSlug } = useParams<ManufacturerParams>();
+  
+  // Use the correct type with React Router's useParams
+  const { manufacturerSlug } = useParams<Record<string, string>>();
 
   useEffect(() => {
     if (manufacturerSlug) {
