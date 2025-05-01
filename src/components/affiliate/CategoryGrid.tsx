@@ -50,7 +50,7 @@ const CategoryGrid = ({ categories }: CategoryGridProps) => {
   return (
     <Segment raised className="bg-white">
       <Header as="h2" className="text-2xl font-semibold mb-6 flex items-center">
-        <Tool className="mr-2 text-blue-600" />
+        <Settings className="mr-2 text-blue-600" /> {/* Changed from Tool to Settings */}
         Shop by Category
       </Header>
       <Grid columns={3} stackable doubling>

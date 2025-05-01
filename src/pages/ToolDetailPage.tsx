@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container, Header, Segment, Grid, Icon } from 'semantic-ui-react';
 import { useParams, Link } from 'react-router-dom';
@@ -5,7 +6,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
+import { 
+  BreadcrumbList, 
+  BreadcrumbItem, 
+  BreadcrumbLink, 
+  BreadcrumbPage, 
+  BreadcrumbSeparator, 
+  Breadcrumb 
+} from '@/components/ui/breadcrumb';
 import { Star, ShoppingCart, Heart, Settings, Check, X, Share2 } from 'lucide-react';
 
 interface ToolDetailParams {
@@ -48,7 +56,8 @@ const mockToolData = {
 };
 
 export default function ToolDetailPage() {
-  const { category, toolId } = useParams<ToolDetailParams>();
+  const params = useParams<{ category?: string; toolId?: string }>();
+  const { category, toolId } = params;
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
@@ -74,23 +83,33 @@ export default function ToolDetailPage() {
     <Container>
       <Segment>
         <Breadcrumb>
-          <Breadcrumb.Section link as={Link} to="/tools">
-            Tool Categories
-          </Breadcrumb.Section>
-          {category && (
-            <>
-              <Breadcrumb.Divider icon="right angle" />
-              <Breadcrumb.Section link as={Link} to={`/tools/${category}`}>
-                {category}
-              </Breadcrumb.Section>
-            </>
-          )}
-          {mockToolData.name && (
-            <>
-              <Breadcrumb.Divider icon="right angle" />
-              <Breadcrumb.Section active>{mockToolData.name}</Breadcrumb.Section>
-            </>
-          )}
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/tools">Tool Categories</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            
+            {category && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to={`/tools/${category}`}>{category}</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            )}
+            
+            {mockToolData.name && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{mockToolData.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
         </Breadcrumb>
       </Segment>
 
@@ -143,16 +162,16 @@ export default function ToolDetailPage() {
       </Grid>
 
       <Segment>
-        <Tabs defaultActiveKey="specifications">
+        <Tabs defaultValue="specifications">
           <TabsList>
-            <TabsTrigger key="specifications" value="specifications">
+            <TabsTrigger value="specifications">
               Specifications
             </TabsTrigger>
-            <TabsTrigger key="reviews" value="reviews">
+            <TabsTrigger value="reviews">
               Reviews ({mockToolData.reviews.length})
             </TabsTrigger>
           </TabsList>
-          <TabsContent key="specifications" value="specifications">
+          <TabsContent value="specifications">
             <Grid columns={2} divided>
               {mockToolData.specifications.map((spec, index) => (
                 <Grid.Row key={index}>
@@ -164,7 +183,7 @@ export default function ToolDetailPage() {
               ))}
             </Grid>
           </TabsContent>
-          <TabsContent key="reviews" value="reviews">
+          <TabsContent value="reviews">
             {mockToolData.reviews.map((review) => (
               <Card key={review.id} className="mb-4">
                 <CardContent>
