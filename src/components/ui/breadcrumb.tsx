@@ -38,7 +38,7 @@ BreadcrumbList.displayName = "BreadcrumbList"
 
 const BreadcrumbItem = React.forwardRef<
   HTMLLIElement,
-  React.LIHTMLAttributes<HTMLLIElement>
+  React.LiHTMLAttributes<HTMLLIElement>
 >(({ className, ...props }, ref) => (
   <li
     ref={ref}
@@ -98,6 +98,22 @@ const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLinkProps>(
 )
 BreadcrumbLink.displayName = "BreadcrumbLink"
 
+// Add the missing BreadcrumbPage component
+const BreadcrumbPage = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement>
+>(({ className, ...props }, ref) => (
+  <span
+    ref={ref}
+    role="link"
+    aria-disabled="true"
+    aria-current="page"
+    className={cn("font-normal text-foreground", className)}
+    {...props}
+  />
+))
+BreadcrumbPage.displayName = "BreadcrumbPage"
+
 export {
   Breadcrumb,
   BreadcrumbList,
@@ -105,4 +121,5 @@ export {
   BreadcrumbLink,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
+  BreadcrumbPage,
 }
