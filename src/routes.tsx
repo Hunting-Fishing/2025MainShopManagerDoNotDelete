@@ -14,6 +14,9 @@ import WorkOrderCreate from '@/pages/WorkOrderCreate';
 import WorkOrders from '@/pages/WorkOrders';
 import WorkOrderDetails from '@/pages/WorkOrderDetails';
 import { VehicleDetailsPage } from '@/components/customers/vehicles/VehicleDetailsPage';
+import AffiliateTool from '@/pages/AffiliateTool';
+import DeveloperPortal from '@/pages/DeveloperPortal';
+import ShoppingControls from '@/pages/developer/ShoppingControls';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -66,12 +69,24 @@ export const routes: RouteObject[] = [
         element: <Team />,
       },
       {
+        path: 'tools',
+        element: <AffiliateTool />,
+      },
+      {
         path: 'settings',
         element: <Settings />,
       },
       {
         path: 'login',
         element: <Login />,
+      },
+      {
+        path: 'developer',
+        element: <DeveloperPortal />,
+      },
+      {
+        path: 'developer/shopping-controls',
+        element: <ShoppingControls />,
       },
       {
         path: '*',

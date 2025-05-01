@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   LayoutDashboard,
@@ -15,7 +16,12 @@ import {
   BellRing,
   HardDrive,
   UserCog,
-  FilePen
+  FilePen,
+  Tool,
+  Save,
+  Link,
+  Store,
+  Gear
 } from "lucide-react";
 import { SidebarNavItem, NavItem } from "./SidebarNavItem";
 
@@ -50,6 +56,11 @@ const navigationItems: NavItem[] = [
     title: "Inventory",
     href: "/inventory",
     icon: <Package className="h-5 w-5" />
+  },
+  {
+    title: "Tools Shop",
+    href: "/tools",
+    icon: <Tool className="h-5 w-5" />
   },
   {
     title: "Forms",
@@ -112,6 +123,11 @@ const navigationItems: NavItem[] = [
         icon: <MessageCircle className="h-4 w-4" />
       }
     ]
+  },
+  {
+    title: "Developer Portal",
+    href: "/developer",
+    icon: <Gear className="h-5 w-5" />
   },
   {
     title: "Settings",
