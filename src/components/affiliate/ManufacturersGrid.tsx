@@ -138,12 +138,28 @@ export default function ManufacturersGrid({ manufacturers }: ManufacturersGridPr
                           to={`/manufacturers/${manufacturer.slug}`}
                           className="group flex flex-col items-center p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                         >
-                          <div className="w-full h-20 flex items-center justify-center mb-3 relative">
-                            <img
-                              src={manufacturer.logoUrl}
-                              alt={`${manufacturer.name} logo`}
-                              className="max-h-20 max-w-full object-contain"
-                            />
+                          <div className="w-full h-20 flex items-center justify-center mb-3 relative bg-white p-2">
+                            {manufacturer.logoUrl ? (
+                              <img
+                                src={manufacturer.logoUrl}
+                                alt={`${manufacturer.name} logo`}
+                                className="max-h-20 max-w-full object-contain"
+                                onError={(e) => {
+                                  // Fallback to a text display if image fails to load
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parentNode = target.parentNode as HTMLElement;
+                                  if (parentNode) {
+                                    const fallbackText = document.createElement('div');
+                                    fallbackText.className = 'text-lg font-bold text-center';
+                                    fallbackText.textContent = manufacturer.name;
+                                    parentNode.appendChild(fallbackText);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="text-lg font-bold text-center">{manufacturer.name}</div>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5">
                             {getCategoryIcon(manufacturer.category)}
@@ -172,12 +188,28 @@ export default function ManufacturersGrid({ manufacturers }: ManufacturersGridPr
                   to={`/manufacturers/${manufacturer.slug}`}
                   className="group flex flex-col items-center p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <div className="w-full h-24 flex items-center justify-center mb-4 relative">
-                    <img
-                      src={manufacturer.logoUrl}
-                      alt={`${manufacturer.name} logo`}
-                      className="max-h-24 max-w-full object-contain"
-                    />
+                  <div className="w-full h-24 flex items-center justify-center mb-4 relative bg-white p-2">
+                    {manufacturer.logoUrl ? (
+                      <img
+                        src={manufacturer.logoUrl}
+                        alt={`${manufacturer.name} logo`}
+                        className="max-h-24 max-w-full object-contain"
+                        onError={(e) => {
+                          // Fallback to a text display if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parentNode = target.parentNode as HTMLElement;
+                          if (parentNode) {
+                            const fallbackText = document.createElement('div');
+                            fallbackText.className = 'text-lg font-bold text-center';
+                            fallbackText.textContent = manufacturer.name;
+                            parentNode.appendChild(fallbackText);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="text-lg font-bold text-center">{manufacturer.name}</div>
+                    )}
                     <Badge 
                       variant="info" 
                       className="absolute top-0 right-0 text-xs capitalize"
