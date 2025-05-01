@@ -43,7 +43,7 @@ export default function AnalyticsTab() {
         // Fetch product counts
         const { data: products, error: productsError } = await supabase
           .from('products')
-          .select('id, is_approved, is_featured, category_id, manufacturer_id');
+          .select('*');
         
         if (productsError) throw productsError;
         

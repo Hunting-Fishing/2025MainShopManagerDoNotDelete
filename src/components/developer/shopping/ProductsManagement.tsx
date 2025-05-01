@@ -1,71 +1,46 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, Search, Save, X, CheckCircle2, XCircle } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { isValidAmazonLink, extractAmazonASIN } from '@/utils/amazonUtils';
+import { Card } from '@/components/ui/card';
+import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-// Define the product schema for form validation
-const productSchema = z.object({
-  title: z.string().min(2, { message: 'Title must be at least 2 characters long' }),
-  description: z.string().min(10, { message: 'Description must be at least 10 characters long' }),
-  price: z.string().transform(val => Number(val) || 0),
-  image_url: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
-  affiliate_link: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
-  category_id: z.string().optional(),
-  manufacturer_id: z.string().optional(),
-  is_featured: z.boolean().default(false),
-  is_bestseller: z.boolean().default(false),
-  is_approved: z.boolean().default(false),
-  stock_quantity: z.string().transform(val => Number(val) || 0),
-  tracking_params: z.string().optional()
-});
-
-type ProductFormValues = z.infer<typeof productSchema>;
-
-// Interfaces for our data types
 interface Product {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   price: number;
-  image_url?: string;
-  affiliate_link?: string;
-  category_id?: string;
-  manufacturer_id?: string;
-  category_name?: string;
-  manufacturer_name?: string;
+  image_url: string | null;
+  affiliate_link: string | null;
+  category_id: string | null;
+  manufacturer_id: string | null;
   is_featured: boolean;
   is_bestseller: boolean;
   is_approved: boolean;
-  stock_quantity: number;
-  tracking_params?: string;
   created_at: string;
-  updated_at: string;
+  category_name?: string;
+  manufacturer_name?: string;
 }
 
 interface Category {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
 }
 
 interface Manufacturer {
   id: string;
   name: string;
-  slug: string;
   category: string;
 }
 
@@ -74,126 +49,114 @@ export default function ProductsManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      price: '',
-      image_url: '',
-      affiliate_link: '',
-      category_id: '',
-      manufacturer_id: '',
-      is_featured: false,
-      is_bestseller: false,
-      is_approved: false,
-      stock_quantity: '0',
-      tracking_params: ''
-    }
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
+  
+  // Form state
+  const [productForm, setProductForm] = useState({
+    title: '',
+    description: '',
+    price: 0,
+    image_url: '',
+    affiliate_link: '',
+    category_id: '',
+    manufacturer_id: '',
+    is_featured: false,
+    is_bestseller: false,
+    is_approved: true
   });
-
-  // Fetch products with category and manufacturer names
-  const fetchProducts = useCallback(async () => {
+  
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+    fetchManufacturers();
+  }, []);
+  
+  const fetchProducts = async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('products')
         .select(`
           *,
-          category:product_categories(id, name),
-          manufacturer:manufacturers(id, name)
+          product_categories(name),
+          manufacturers(name)
         `)
         .order('created_at', { ascending: false });
-
+      
       if (error) throw error;
-
-      const productsWithNames = data.map(product => ({
-        ...product,
-        category_name: product.category?.name,
-        manufacturer_name: product.manufacturer?.name,
-      }));
-
-      setProducts(productsWithNames);
+      
+      if (data) {
+        const formattedProducts = data.map(product => ({
+          ...product,
+          category_name: product.product_categories?.name,
+          manufacturer_name: product.manufacturers?.name
+        }));
+        setProducts(formattedProducts);
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch products',
-        variant: 'destructive'
-      });
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  // Fetch categories
-  const fetchCategories = useCallback(async () => {
+  };
+  
+  const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
         .from('product_categories')
-        .select('id, name, slug')
+        .select('*')
         .order('name');
-
+      
       if (error) throw error;
-      setCategories(data || []);
+      if (data) setCategories(data);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  }, []);
-
-  // Fetch manufacturers
-  const fetchManufacturers = useCallback(async () => {
+  };
+  
+  const fetchManufacturers = async () => {
     try {
       const { data, error } = await supabase
         .from('manufacturers')
-        .select('id, name, slug, category')
+        .select('*')
         .order('name');
-
+      
       if (error) throw error;
-      setManufacturers(data || []);
+      if (data) setManufacturers(data);
     } catch (error) {
       console.error('Error fetching manufacturers:', error);
     }
-  }, []);
-
-  // Load data on component mount
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-    fetchManufacturers();
-  }, [fetchProducts, fetchCategories, fetchManufacturers]);
-
-  // Open add dialog
+  };
+  
   const handleAddProduct = () => {
-    form.reset({
+    setEditingProduct(null);
+    setProductForm({
       title: '',
       description: '',
-      price: '',
+      price: 0,
       image_url: '',
       affiliate_link: '',
       category_id: '',
       manufacturer_id: '',
       is_featured: false,
       is_bestseller: false,
-      is_approved: false,
-      stock_quantity: '0',
-      tracking_params: ''
+      is_approved: true
     });
-    setIsAddDialogOpen(true);
+    setFormErrors({});
+    setIsDialogOpen(true);
   };
-
-  // Open edit dialog
+  
   const handleEditProduct = (product: Product) => {
-    setSelectedProduct(product);
-    form.reset({
+    setEditingProduct(product);
+    setProductForm({
       title: product.title,
-      description: product.description,
-      price: String(product.price || ''),
+      description: product.description || '',
+      price: product.price || 0,
       image_url: product.image_url || '',
       affiliate_link: product.affiliate_link || '',
       category_id: product.category_id || '',
@@ -201,690 +164,400 @@ export default function ProductsManagement() {
       is_featured: product.is_featured || false,
       is_bestseller: product.is_bestseller || false,
       is_approved: product.is_approved || false,
-      stock_quantity: String(product.stock_quantity || 0),
-      tracking_params: product.tracking_params || ''
     });
-    setIsEditDialogOpen(true);
+    setFormErrors({});
+    setIsDialogOpen(true);
   };
-
-  // Delete product
+  
   const handleDeleteProduct = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      fetchProducts();
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+  
+  const validateForm = (): boolean => {
+    let errors: {[key: string]: string} = {};
+    let isValid = true;
+    
+    if (!productForm.title.trim()) {
+      errors.title = 'Title is required';
+      isValid = false;
+    }
+    
+    if (productForm.affiliate_link && !isValidAmazonLink(productForm.affiliate_link)) {
+      errors.affiliate_link = 'Please enter a valid Amazon product link';
+      isValid = false;
+    }
+    
+    // Convert string price to number for validation
+    if (isNaN(Number(productForm.price))) {
+      errors.price = 'Price must be a valid number';
+      isValid = false;
+    }
+    
+    setFormErrors(errors);
+    return isValid;
+  };
+  
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
+    // Convert price to a number
+    const numericPrice = Number(productForm.price);
+    
+    try {
+      if (editingProduct) {
         const { error } = await supabase
           .from('products')
-          .delete()
-          .eq('id', id);
-
+          .update({
+            ...productForm,
+            price: numericPrice
+          })
+          .eq('id', editingProduct.id);
+        
         if (error) throw error;
-
-        toast({
-          title: 'Success',
-          description: 'Product deleted successfully',
-          variant: 'success'
-        });
-        fetchProducts();
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to delete product',
-          variant: 'destructive'
-        });
-      }
-    }
-  };
-
-  // Submit form function
-  const onSubmit = async (values: ProductFormValues) => {
-    try {
-      const productData = {
-        title: values.title,
-        description: values.description,
-        price: Number(values.price),
-        image_url: values.image_url,
-        affiliate_link: values.affiliate_link,
-        category_id: values.category_id || null,
-        manufacturer_id: values.manufacturer_id || null,
-        is_featured: values.is_featured,
-        is_bestseller: values.is_bestseller,
-        is_approved: values.is_approved,
-        stock_quantity: Number(values.stock_quantity),
-        tracking_params: values.tracking_params
-      };
-
-      let result;
-
-      if (isEditDialogOpen && selectedProduct) {
-        // Update existing product
-        result = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', selectedProduct.id);
       } else {
-        // Create new product
-        result = await supabase
+        const { error } = await supabase
           .from('products')
-          .insert([productData]);
+          .insert({
+            ...productForm,
+            price: numericPrice
+          });
+        
+        if (error) throw error;
       }
-
-      if (result.error) throw result.error;
-
-      toast({
-        title: 'Success',
-        description: isEditDialogOpen 
-          ? 'Product updated successfully' 
-          : 'Product added successfully',
-        variant: 'success'
-      });
-
-      // Close dialogs and refresh data
-      setIsAddDialogOpen(false);
-      setIsEditDialogOpen(false);
-      setSelectedProduct(null);
+      
       fetchProducts();
+      setIsDialogOpen(false);
     } catch (error) {
-      console.error('Error submitting product:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save product',
-        variant: 'destructive'
-      });
+      console.error('Error saving product:', error);
     }
   };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProductForm(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSwitchChange = (name: string, checked: boolean) => {
+    setProductForm(prev => ({ ...prev, [name]: checked }));
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setProductForm(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCategory = categoryFilter === 'all' || product.category_id === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
-  // Filter products based on search query
-  const filteredProducts = products.filter(product => 
-    product.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.manufacturer_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <Card className="shadow-md">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-2xl font-bold">Tools Product Management</CardTitle>
-        <Button onClick={handleAddProduct} className="bg-blue-600">
-          <PlusCircle className="mr-2 h-4 w-4" />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Products Management</h2>
+        <Button onClick={handleAddProduct}>
+          <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search products..."
-              className="pl-10"
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+            <Input 
+              placeholder="Search products..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
             />
           </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center py-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-10 text-slate-500">
-            {searchQuery ? "No products match your search" : "No products found. Add your first product!"}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table className="border">
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead className="w-[250px]">Product</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Manufacturer</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center space-x-2">
-                        {product.image_url && (
-                          <div className="h-10 w-10 rounded overflow-hidden flex-shrink-0">
-                            <img 
-                              src={product.image_url} 
-                              alt={product.title} 
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=No+Image';
-                              }}
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium">{product.title}</div>
-                          <div className="text-xs text-slate-500 truncate max-w-[200px]">{product.description}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{product.category_name || '—'}</TableCell>
-                    <TableCell>{product.manufacturer_name || '—'}</TableCell>
-                    <TableCell>${product.price?.toFixed(2) || '0.00'}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {product.is_approved ? (
-                          <Badge className="bg-green-100 text-green-800 border border-green-300">
-                            Approved
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-orange-500 border-orange-200">
-                            Pending
-                          </Badge>
-                        )}
-                        {product.is_featured && (
-                          <Badge className="bg-purple-100 text-purple-800 border border-purple-300">
-                            Featured
-                          </Badge>
-                        )}
-                        {product.is_bestseller && (
-                          <Badge className="bg-blue-100 text-blue-800 border border-blue-300">
-                            Best Seller
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleEditProduct(product)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-red-500 hover:text-white hover:bg-red-500"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+          <div className="w-full sm:w-64">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                 ))}
-              </TableBody>
-            </Table>
+              </SelectContent>
+            </Select>
           </div>
-        )}
-      </CardContent>
+        </div>
+      </Card>
 
-      {/* Add Product Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+      {filteredProducts.length === 0 ? (
+        <div className="text-center py-10 bg-slate-50 rounded-lg">
+          <p className="text-slate-500">No products found</p>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredProducts.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell className="font-medium">{product.title}</TableCell>
+                <TableCell>{product.category_name || 'Uncategorized'}</TableCell>
+                <TableCell>{product.price ? `$${product.price.toFixed(2)}` : 'N/A'}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {product.is_approved ? (
+                      <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">Approved</Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">Pending</Badge>
+                    )}
+                    {product.is_featured && (
+                      <Badge variant="outline" className="bg-purple-50 text-purple-800 border-purple-300">Featured</Badge>
+                    )}
+                    {product.is_bestseller && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-300">Bestseller</Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
+                      <Pencil size={16} className="mr-1" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        setEditingProduct(product);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 size={16} className="mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+
+      {/* Product Form Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add New Product</DialogTitle>
+            <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <Label htmlFor="title" className="mb-2 block">
+                  Product Title <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="title"
                   name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Title*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter product title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  value={productForm.title}
+                  onChange={handleInputChange}
+                  className={formErrors.title ? 'border-red-500' : ''}
                 />
-                <FormField
-                  control={form.control}
+                {formErrors.title && <p className="text-red-500 text-xs mt-1">{formErrors.title}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="description" className="mb-2 block">
+                  Description
+                </Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={productForm.description}
+                  onChange={handleInputChange}
+                  className="min-h-[100px]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="price" className="mb-2 block">
+                  Price ($)
+                </Label>
+                <Input
+                  id="price"
                   name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter price" type="number" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  type="number"
+                  value={productForm.price}
+                  onChange={handleInputChange}
+                  className={formErrors.price ? 'border-red-500' : ''}
+                  step="0.01"
                 />
+                {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
               </div>
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description*</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Enter product description" className="h-20" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="category_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="manufacturer_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Manufacturer</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a manufacturer" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {manufacturers.map((manufacturer) => (
-                            <SelectItem key={manufacturer.id} value={manufacturer.id}>
-                              {manufacturer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
+              <div>
+                <Label htmlFor="image_url" className="mb-2 block">
+                  Image URL
+                </Label>
+                <Input
+                  id="image_url"
                   name="image_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter image URL" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="affiliate_link"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Affiliate Link</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter affiliate link" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  value={productForm.image_url}
+                  onChange={handleInputChange}
                 />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="stock_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock Quantity</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter stock quantity" type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tracking_params"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tracking Parameters</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter tracking parameters" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="category_id" className="mb-2 block">
+                  Category
+                </Label>
+                <Select 
+                  value={productForm.category_id}
+                  onValueChange={(value) => handleSelectChange('category_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="is_featured"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        Featured Product
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
+              <div>
+                <Label htmlFor="manufacturer_id" className="mb-2 block">
+                  Manufacturer
+                </Label>
+                <Select 
+                  value={productForm.manufacturer_id}
+                  onValueChange={(value) => handleSelectChange('manufacturer_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select manufacturer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {manufacturers.map((manufacturer) => (
+                      <SelectItem key={manufacturer.id} value={manufacturer.id}>{manufacturer.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="is_bestseller"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        Best Seller
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
+            <div>
+              <Label htmlFor="affiliate_link" className="mb-2 block">
+                Amazon Affiliate Link
+              </Label>
+              <Input
+                id="affiliate_link"
+                name="affiliate_link"
+                value={productForm.affiliate_link}
+                onChange={handleInputChange}
+                className={formErrors.affiliate_link ? 'border-red-500' : ''}
+              />
+              {formErrors.affiliate_link && <p className="text-red-500 text-xs mt-1">{formErrors.affiliate_link}</p>}
+              {productForm.affiliate_link && isValidAmazonLink(productForm.affiliate_link) && (
+                <p className="text-green-600 text-xs mt-1">
+                  Valid Amazon link. ASIN: {extractAmazonASIN(productForm.affiliate_link)}
+                </p>
+              )}
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="is_approved"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        Approved
-                      </FormLabel>
-                    </FormItem>
-                  )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_approved"
+                  checked={productForm.is_approved}
+                  onCheckedChange={(checked) => handleSwitchChange('is_approved', checked)}
                 />
+                <Label htmlFor="is_approved" className="cursor-pointer">Approved</Label>
               </div>
 
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-blue-600">
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Product
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_featured"
+                  checked={productForm.is_featured}
+                  onCheckedChange={(checked) => handleSwitchChange('is_featured', checked)}
+                />
+                <Label htmlFor="is_featured" className="cursor-pointer">Featured</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_bestseller"
+                  checked={productForm.is_bestseller}
+                  onCheckedChange={(checked) => handleSwitchChange('is_bestseller', checked)}
+                />
+                <Label htmlFor="is_bestseller" className="cursor-pointer">Bestseller</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>
+              {editingProduct ? 'Update Product' : 'Add Product'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Product Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Title*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter product title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter price" type="number" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description*</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Enter product description" className="h-20" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="category_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="manufacturer_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Manufacturer</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a manufacturer" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {manufacturers.map((manufacturer) => (
-                            <SelectItem key={manufacturer.id} value={manufacturer.id}>
-                              {manufacturer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="image_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter image URL" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="affiliate_link"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Affiliate Link</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter affiliate link" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="stock_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock Quantity</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter stock quantity" type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tracking_params"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tracking Parameters</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter tracking parameters" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="is_featured"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        Featured Product
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="is_bestseller"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        Best Seller
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="is_approved"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        Approved
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-blue-600">
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Product
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <div className="py-4">
+            <p>Are you sure you want to delete "{editingProduct?.title}"? This action cannot be undone.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => editingProduct && handleDeleteProduct(editingProduct.id)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }

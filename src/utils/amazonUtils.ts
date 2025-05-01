@@ -67,3 +67,24 @@ export function buildAmazonAffiliateLink(url: string, trackingId: string): strin
     return url;
   }
 }
+
+/**
+ * Adds Amazon affiliate tracking parameter to a URL if it's a valid Amazon link
+ * @param url The original URL
+ * @param trackingId The affiliate tracking ID
+ * @returns The URL with affiliate tracking
+ */
+export function addAffiliateTracking(url: string, trackingId: string = 'yourtag-20'): string {
+  if (!isValidAmazonLink(url)) return url;
+  
+  try {
+    // Check if URL already has query parameters
+    const hasQueryParams = url.includes('?');
+    const separator = hasQueryParams ? '&' : '?';
+    
+    // Add the tracking ID
+    return `${url}${separator}tag=${trackingId}`;
+  } catch (error) {
+    return url;
+  }
+}
