@@ -1,107 +1,69 @@
 
 /**
- * Utility functions for working with Amazon product links and data
+ * Validates if a URL is a valid Amazon product link
+ * @param url The URL to validate
+ * @returns boolean indicating if it's a valid Amazon product link
  */
-
-/**
- * Extracts the Amazon Standard Identification Number (ASIN) from an Amazon URL
- * This is useful for identifying unique products
- */
-export const extractAmazonASIN = (url: string): string | null => {
-  if (!url || !url.includes('amazon')) return null;
-  
-  // Try to extract ASIN from URL patterns
-  let match;
-  
-  // Pattern: /dp/ASIN/
-  match = url.match(/\/dp\/([A-Z0-9]{10})/);
-  if (match) return match[1];
-  
-  // Pattern: /gp/product/ASIN/
-  match = url.match(/\/gp\/product\/([A-Z0-9]{10})/);
-  if (match) return match[1];
-  
-  // Pattern: /ASIN/
-  match = url.match(/\/([A-Z0-9]{10})(?:\/|\?|$)/);
-  if (match) return match[1];
-
-  return null;
-};
-
-/**
- * Validate if a URL is a valid Amazon product link
- */
-export const isValidAmazonLink = (url: string): boolean => {
-  if (!url) return false;
-  
+export function isValidAmazonLink(url: string): boolean {
   try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname.toLowerCase();
+    const parsedUrl = new URL(url);
     
     // Check if it's an Amazon domain
-    if (!hostname.includes('amazon.')) return false;
-    
-    // Check if it has an ASIN
-    return !!extractAmazonASIN(url);
-  } catch (e) {
-    return false;
-  }
-};
-
-/**
- * Generate a tracking parameter string for Amazon affiliate links
- */
-export const generateAmazonTrackingParams = (campaignId: string = 'toolshop'): string => {
-  const timestamp = Date.now();
-  return `?tag=${campaignId}-20&linkCode=ll1&creativeASIN={ASIN}&creative=${timestamp}`;
-};
-
-/**
- * Clean and normalize an Amazon URL by removing unnecessary parameters
- */
-export const cleanAmazonUrl = (url: string): string => {
-  if (!url) return '';
-  
-  try {
-    const urlObj = new URL(url);
-    
-    // Keep only essential parameters
-    const essentialParams = ['tag', 'linkCode', 'creativeASIN', 'creative'];
-    const params = new URLSearchParams();
-    
-    for (const param of essentialParams) {
-      if (urlObj.searchParams.has(param)) {
-        params.set(param, urlObj.searchParams.get(param)!);
-      }
+    if (!parsedUrl.hostname.includes('amazon.')) {
+      return false;
     }
     
-    // Rebuild URL
-    urlObj.search = params.toString();
-    return urlObj.toString();
-  } catch (e) {
-    return url;
+    // Check typical Amazon product URL patterns
+    const isProductPage = 
+      parsedUrl.pathname.includes('/dp/') || 
+      parsedUrl.pathname.includes('/gp/product/') ||
+      parsedUrl.pathname.includes('/exec/obidos/ASIN/');
+      
+    return isProductPage;
+  } catch (error) {
+    return false; // Not a valid URL
   }
-};
+}
 
 /**
- * Add affiliate tracking parameters to an Amazon URL
+ * Extracts Amazon ASIN from a product URL
+ * @param url The Amazon product URL
+ * @returns The ASIN if found, otherwise null
  */
-export const addAffiliateTracking = (url: string, affiliateId: string = 'toolshop-20'): string => {
-  if (!url || !isValidAmazonLink(url)) return url;
+export function extractAmazonASIN(url: string): string | null {
+  if (!isValidAmazonLink(url)) return null;
   
   try {
-    const urlObj = new URL(url);
+    // Extract ASIN from common Amazon URL formats
+    const asinRegex = /(?:\/dp\/|\/gp\/product\/|\/ASIN\/|\/exec\/obidos\/ASIN\/)([A-Z0-9]{10})/i;
+    const match = url.match(asinRegex);
+    
+    return match ? match[1] : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Builds a clean Amazon affiliate link with tracking ID
+ * @param url The original Amazon URL
+ * @param trackingId The affiliate tracking ID
+ * @returns A cleaned affiliate link
+ */
+export function buildAmazonAffiliateLink(url: string, trackingId: string): string {
+  if (!isValidAmazonLink(url)) return url;
+  
+  try {
     const asin = extractAmazonASIN(url);
+    if (!asin) return url;
     
-    if (asin) {
-      urlObj.searchParams.set('tag', affiliateId);
-      urlObj.searchParams.set('linkCode', 'll1');
-      urlObj.searchParams.set('creativeASIN', asin);
-      urlObj.searchParams.set('creative', Date.now().toString());
-    }
+    // Parse the URL to get the domain
+    const parsedUrl = new URL(url);
+    const domain = parsedUrl.hostname;
     
-    return urlObj.toString();
-  } catch (e) {
+    // Build a clean affiliate link
+    return `https://${domain}/dp/${asin}?tag=${trackingId}`;
+  } catch (error) {
     return url;
   }
-};
+}

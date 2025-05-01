@@ -4157,6 +4157,42 @@ export type Database = {
           },
         ]
       }
+      manufacturers: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          featured: boolean | null
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       marketing_assets: {
         Row: {
           asset_type: string
@@ -5060,6 +5096,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_submissions: {
+        Row: {
+          id: string
+          notes: string | null
+          product_name: string
+          product_url: string
+          status: string | null
+          submitted_at: string
+          suggested_by: string | null
+          suggested_category: string
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          product_name: string
+          product_url: string
+          status?: string | null
+          submitted_at?: string
+          suggested_by?: string | null
+          suggested_category: string
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          product_name?: string
+          product_url?: string
+          status?: string | null
+          submitted_at?: string
+          suggested_by?: string | null
+          suggested_category?: string
+        }
+        Relationships: []
       }
       product_view_history: {
         Row: {

@@ -1,343 +1,379 @@
 
-import React, { useState } from 'react';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { UserSubmission } from '@/types/affiliate';
-import { Search, Eye, CheckCheck, X, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, CheckCircle2, XCircle2, ExternalLink, Eye } from 'lucide-react';
 
-// Sample submissions for demonstration
-const sampleSubmissions: UserSubmission[] = [
-  {
-    id: '1',
-    productName: 'Snap-on Ratchet Set',
-    productUrl: 'https://www.amazon.com/snap-on-ratchet-set',
-    suggestedCategory: 'hand-tools',
-    notes: 'This is a professional-grade ratchet set that would be great for the premium tier.',
-    submittedBy: 'john.doe@example.com',
-    status: 'pending',
-    submittedAt: '2023-05-10T14:32:00Z',
-  },
-  {
-    id: '2',
-    productName: 'ANCEL OBD2 Scanner',
-    productUrl: 'https://www.amazon.com/ancel-scanner',
-    suggestedCategory: 'diagnostic',
-    notes: 'Good mid-range scanner for DIY mechanics',
-    submittedBy: 'jane.smith@example.com',
-    status: 'approved',
-    submittedAt: '2023-05-09T11:20:00Z',
-  },
-  {
-    id: '3',
-    productName: 'Clipsandfasteners Body Clip Set',
-    productUrl: 'https://www.amazon.com/clips-set',
-    suggestedCategory: 'clips-fasteners',
-    submittedBy: 'mike.wilson@example.com',
-    status: 'rejected',
-    submittedAt: '2023-05-08T16:45:00Z',
-  }
-];
+interface ProductSubmission {
+  id: string;
+  product_name: string;
+  product_url: string;
+  suggested_category: string;
+  notes?: string;
+  submitted_by?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submitted_at: string;
+}
 
 export default function SubmissionsManagement() {
-  const [submissions, setSubmissions] = useState<UserSubmission[]>(sampleSubmissions);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [viewSubmission, setViewSubmission] = useState<UserSubmission | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [submissions, setSubmissions] = useState<ProductSubmission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewingSubmission, setViewingSubmission] = useState<ProductSubmission | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  
+  // Fetch all product submissions
+  const fetchSubmissions = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('product_submissions')
+        .select('*')
+        .order('submitted_at', { ascending: false });
 
-  const filteredSubmissions = searchTerm
-    ? submissions.filter(sub => 
-        sub.productName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        sub.suggestedCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.submittedBy?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : submissions;
+      if (error) throw error;
+      setSubmissions(data || []);
+    } catch (error) {
+      console.error('Error fetching product submissions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch product submissions',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
+
+  // Update submission status
+  const updateSubmissionStatus = async (id: string, status: 'pending' | 'approved' | 'rejected') => {
+    try {
+      const { error } = await supabase
+        .from('product_submissions')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Submission ${status}`,
+        variant: 'success'
+      });
+
+      // Update local state
+      setSubmissions(prevSubmissions => 
+        prevSubmissions.map(sub => 
+          sub.id === id ? { ...sub, status } : sub
+        )
+      );
+      
+      // If viewing the submission, update it
+      if (viewingSubmission && viewingSubmission.id === id) {
+        setViewingSubmission({ ...viewingSubmission, status });
+      }
+    } catch (error) {
+      console.error('Error updating submission status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update submission status',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // View submission details
+  const viewSubmission = (submission: ProductSubmission) => {
+    setViewingSubmission(submission);
+    setIsViewDialogOpen(true);
+  };
+  
+  // Convert to product
+  const convertToProduct = async (submission: ProductSubmission) => {
+    try {
+      // First, find the category ID based on the suggested category
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('product_categories')
+        .select('id')
+        .eq('name', submission.suggested_category)
+        .maybeSingle();
+      
+      if (categoryError) throw categoryError;
+      
+      // Prepare the product data
+      const productData = {
+        title: submission.product_name,
+        description: submission.notes || `Product suggested via user submission`,
+        affiliate_link: submission.product_url,
+        category_id: categoryData?.id || null,
+        is_approved: false, // Default to non-approved
+      };
+      
+      // Insert the product
+      const { error: insertError } = await supabase
+        .from('products')
+        .insert([productData]);
+        
+      if (insertError) throw insertError;
+      
+      // Update submission status
+      await updateSubmissionStatus(submission.id, 'approved');
+      
+      toast({
+        title: 'Success',
+        description: 'Product created successfully from submission',
+        variant: 'success'
+      });
+      
+      setIsViewDialogOpen(false);
+    } catch (error) {
+      console.error('Error converting submission to product:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create product from submission',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Filter submissions based on search query
+  const filteredSubmissions = submissions.filter(sub => 
+    sub.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sub.product_url.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sub.suggested_category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (sub.notes && sub.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // Format submission date
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    });
-  };
-
-  const handleApprove = (id: string) => {
-    setSubmissions(submissions.map(sub => 
-      sub.id === id ? { ...sub, status: 'approved' } : sub
-    ));
-    toast({
-      title: "Submission approved",
-      description: "The product submission has been approved.",
-    });
-  };
-
-  const handleReject = (id: string) => {
-    setSubmissions(submissions.map(sub => 
-      sub.id === id ? { ...sub, status: 'rejected' } : sub
-    ));
-    toast({
-      title: "Submission rejected",
-      description: "The product submission has been rejected.",
-    });
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">User Submissions</h2>
-      </div>
-
-      <div className="flex mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-          <Input
-            type="search"
-            placeholder="Search submissions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
+    <Card className="shadow-md">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <CardTitle className="text-2xl font-bold">Product Submissions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search submissions..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Product Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Submitted By</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSubmissions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-slate-500">
-                  No submissions found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredSubmissions.map((submission) => (
-                <TableRow key={submission.id}>
-                  <TableCell className="font-medium">{submission.productName}</TableCell>
-                  <TableCell>{submission.suggestedCategory}</TableCell>
-                  <TableCell>{submission.submittedBy || "Anonymous"}</TableCell>
-                  <TableCell>{formatDate(submission.submittedAt)}</TableCell>
-                  <TableCell>
-                    <SubmissionStatusBadge status={submission.status} />
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Dialog>
-                      <DialogTrigger asChild>
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : filteredSubmissions.length === 0 ? (
+          <div className="text-center py-10 text-slate-500">
+            {searchQuery ? "No submissions match your search" : "No product submissions yet."}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table className="border">
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead>Product Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSubmissions.map((submission) => (
+                  <TableRow key={submission.id}>
+                    <TableCell className="font-medium">
+                      <div>
+                        {submission.product_name}
+                        <div className="text-xs text-slate-500 truncate max-w-xs">
+                          {submission.product_url}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {submission.suggested_category || '—'}
+                    </TableCell>
+                    <TableCell className="text-sm text-slate-500">
+                      {formatDate(submission.submitted_at)}
+                    </TableCell>
+                    <TableCell>
+                      {submission.status === 'pending' && (
+                        <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300">
+                          Pending
+                        </Badge>
+                      )}
+                      {submission.status === 'approved' && (
+                        <Badge className="bg-green-100 text-green-800 border border-green-300">
+                          Approved
+                        </Badge>
+                      )}
+                      {submission.status === 'rejected' && (
+                        <Badge className="bg-red-100 text-red-800 border border-red-300">
+                          Rejected
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
                         <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={() => setViewSubmission(submission)}
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => viewSubmission(submission)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[500px]">
-                        <SubmissionDetails 
-                          submission={submission} 
-                          onClose={() => setIsDialogOpen(false)} 
-                          onApprove={() => handleApprove(submission.id)}
-                          onReject={() => handleReject(submission.id)}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                    {submission.status === 'pending' && (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-green-500 hover:text-green-600"
-                          onClick={() => handleApprove(submission.id)}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-white hover:bg-green-600"
+                          onClick={() => updateSubmissionStatus(submission.id, 'approved')}
+                          disabled={submission.status === 'approved'}
                         >
-                          <CheckCheck className="h-4 w-4" />
+                          <CheckCircle2 className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-red-500 hover:text-red-600"
-                          onClick={() => handleReject(submission.id)}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:text-white hover:bg-red-500"
+                          onClick={() => updateSubmissionStatus(submission.id, 'rejected')}
+                          disabled={submission.status === 'rejected'}
                         >
-                          <X className="h-4 w-4" />
+                          <XCircle2 className="h-4 w-4" />
                         </Button>
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-}
-
-function SubmissionStatusBadge({ status }: { status: UserSubmission['status'] }) {
-  switch (status) {
-    case 'pending':
-      return (
-        <Badge variant="outline" className="bg-amber-100 text-amber-800 border border-amber-300">
-          Pending
-        </Badge>
-      );
-    case 'approved':
-      return (
-        <Badge variant="outline" className="bg-green-100 text-green-800 border border-green-300">
-          Approved
-        </Badge>
-      );
-    case 'rejected':
-      return (
-        <Badge variant="outline" className="bg-red-100 text-red-800 border border-red-300">
-          Rejected
-        </Badge>
-      );
-    default:
-      return null;
-  }
-}
-
-interface SubmissionDetailsProps {
-  submission: UserSubmission;
-  onClose: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-}
-
-function SubmissionDetails({ submission, onClose, onApprove, onReject }: SubmissionDetailsProps) {
-  const formatDateFull = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Product Submission</DialogTitle>
-        <DialogDescription>
-          Review the product submission details below.
-        </DialogDescription>
-      </DialogHeader>
-      
-      <div className="py-4 space-y-4">
-        <div>
-          <h3 className="text-sm font-medium text-slate-500">Status</h3>
-          <div className="mt-1">
-            <SubmissionStatusBadge status={submission.status} />
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-medium text-slate-500">Product Name</h3>
-          <p className="mt-1">{submission.productName}</p>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-medium text-slate-500">Product URL</h3>
-          <div className="mt-1 flex items-center">
-            <a 
-              href={submission.productUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline flex items-center gap-1"
-            >
-              {submission.productUrl}
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-medium text-slate-500">Suggested Category</h3>
-          <p className="mt-1">{submission.suggestedCategory}</p>
-        </div>
-
-        {submission.notes && (
-          <div>
-            <h3 className="text-sm font-medium text-slate-500">Notes</h3>
-            <p className="mt-1">{submission.notes}</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
+      </CardContent>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-slate-500">Submitted By</h3>
-            <p className="mt-1">{submission.submittedBy || "Anonymous"}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-slate-500">Submitted On</h3>
-            <p className="mt-1">{formatDateFull(submission.submittedAt)}</p>
-          </div>
-        </div>
-      </div>
-
-      <DialogFooter className="gap-2 sm:justify-between">
-        {submission.status === 'pending' && (
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="border-red-300 text-red-600 hover:bg-red-50"
-              onClick={() => {
-                onReject();
-                onClose();
-              }}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Reject
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="border-green-300 text-green-600 hover:bg-green-50"
-              onClick={() => {
-                onApprove();
-                onClose();
-              }}
-            >
-              <CheckCheck className="h-4 w-4 mr-1" />
-              Approve
-            </Button>
-          </div>
-        )}
-        <Button type="button" onClick={onClose}>
-          Close
-        </Button>
-      </DialogFooter>
-    </>
+      {/* View Submission Dialog */}
+      {viewingSubmission && (
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Submission Details</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div>
+                <h3 className="text-lg font-semibold">{viewingSubmission.product_name}</h3>
+                <Badge className={`mt-1 ${
+                  viewingSubmission.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                  viewingSubmission.status === 'approved' ? 'bg-green-100 text-green-800 border border-green-300' :
+                  'bg-red-100 text-red-800 border border-red-300'
+                }`}>
+                  {viewingSubmission.status.charAt(0).toUpperCase() + viewingSubmission.status.slice(1)}
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Submitted</label>
+                  <div>{formatDate(viewingSubmission.submitted_at)}</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Category</label>
+                  <div>{viewingSubmission.suggested_category || '—'}</div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-500">Product URL</label>
+                <div className="flex items-center mt-1">
+                  <a 
+                    href={viewingSubmission.product_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline truncate flex items-center"
+                  >
+                    {viewingSubmission.product_url}
+                    <ExternalLink className="ml-1 h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+              
+              {viewingSubmission.notes && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Notes</label>
+                  <Textarea 
+                    value={viewingSubmission.notes} 
+                    readOnly 
+                    className="mt-1" 
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                Close
+              </Button>
+              
+              {viewingSubmission.status === 'pending' && (
+                <>
+                  <Button 
+                    onClick={() => updateSubmissionStatus(viewingSubmission.id, 'rejected')}
+                    variant="destructive"
+                  >
+                    <XCircle2 className="mr-2 h-4 w-4" />
+                    Reject
+                  </Button>
+                  <Button 
+                    onClick={() => convertToProduct(viewingSubmission)}
+                    className="bg-green-600"
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Convert to Product
+                  </Button>
+                </>
+              )}
+              
+              {viewingSubmission.status === 'approved' && (
+                <Button disabled variant="outline">
+                  Already Approved
+                </Button>
+              )}
+              
+              {viewingSubmission.status === 'rejected' && (
+                <Button 
+                  onClick={() => updateSubmissionStatus(viewingSubmission.id, 'pending')}
+                  variant="outline"
+                >
+                  Mark as Pending
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </Card>
   );
 }
