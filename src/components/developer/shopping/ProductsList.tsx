@@ -1,11 +1,13 @@
+
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Edit, Search } from "lucide-react";
+import { ExternalLink, Edit, Search, DollarSign, Image } from "lucide-react";
 import { AffiliateTool, AffiliateProduct } from "@/types/affiliate";
 import ProductDetailEditor from './ProductDetailEditor';
 import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductsListProps {
   products: (AffiliateTool | AffiliateProduct)[];
@@ -63,7 +65,31 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
     return (product as any).salePrice;
   };
 
+  const getSource = (product: AffiliateTool | AffiliateProduct) => {
+    if ((product as AffiliateProduct).source) {
+      return (product as AffiliateProduct).source;
+    }
+    return 'other';
+  };
+
+  const getAffiliateUrl = (product: AffiliateTool | AffiliateProduct) => {
+    return (product as any).affiliateLink || (product as any).affiliateUrl || '';
+  };
+
+  const getImageUrl = (product: AffiliateTool | AffiliateProduct) => {
+    return (product as any).imageUrl || '';
+  };
+
   const checkUrl = (url: string) => {
+    if (!url) {
+      toast({
+        title: "Missing URL",
+        description: "This product doesn't have a valid affiliate link",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       window.open(url, '_blank');
     } catch (error) {
@@ -73,6 +99,19 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
         variant: "destructive"
       });
     }
+  };
+
+  const previewImage = (imageUrl: string) => {
+    if (!imageUrl) {
+      toast({
+        title: "No Image",
+        description: "This product doesn't have an image",
+        variant: "warning"
+      });
+      return;
+    }
+    
+    window.open(imageUrl, '_blank');
   };
 
   return (
@@ -94,9 +133,12 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[30%]">Name</TableHead>
+              <TableHead className="w-[20%]">Name</TableHead>
               <TableHead>Manufacturer</TableHead>
+              <TableHead>Source</TableHead>
               <TableHead>Price</TableHead>
+              <TableHead>Image</TableHead>
+              <TableHead>URL</TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -106,6 +148,11 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{(product as any).name}</TableCell>
                   <TableCell>{(product as any).manufacturer}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize">
+                      {getSource(product)}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     {getSalePrice(product) ? (
                       <div>
@@ -117,6 +164,28 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
                     )}
                   </TableCell>
                   <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => previewImage(getImageUrl(product))}
+                      disabled={!getImageUrl(product)}
+                      className="px-2"
+                    >
+                      <Image className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                  <TableCell className="max-w-[150px] truncate">
+                    <a 
+                      href={getAffiliateUrl(product)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline truncate block"
+                      title={getAffiliateUrl(product)}
+                    >
+                      {getAffiliateUrl(product)}
+                    </a>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex justify-center space-x-2">
                       <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
                         <Edit className="h-4 w-4 mr-2" />
@@ -125,7 +194,7 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => checkUrl((product as any).affiliateLink || (product as any).affiliateUrl)}
+                        onClick={() => checkUrl(getAffiliateUrl(product))}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Visit
@@ -136,7 +205,7 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No products found in this category.
                 </TableCell>
               </TableRow>
