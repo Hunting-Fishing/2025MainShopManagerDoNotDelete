@@ -23,8 +23,22 @@ const CategoriesManagement: React.FC = () => {
     id: name.toLowerCase().replace(/\s+/g, '-'),
     name,
     productCount: tools.length,
-    imageUrl: null // We don't have images in the data, so set to null
+    imageUrl: null, // We don't have images in the data, so set to null
+    slug: name.toLowerCase().replace(/\s+/g, '-'),
+    description: `Tools for ${name}`, // Adding a simple description
   }));
+  
+  // Group manufacturers by category
+  const manufacturersByCategory = manufacturers.reduce((acc, manufacturer) => {
+    if (!acc[manufacturer.category]) {
+      acc[manufacturer.category] = [];
+    }
+    acc[manufacturer.category].push(manufacturer);
+    return acc;
+  }, {} as Record<string, Manufacturer[]>);
+  
+  // Get unique manufacturer categories
+  const manufacturerCategories = Object.keys(manufacturersByCategory).sort();
   
   const { products, loading, error, updateProduct } = useProductsManager({
     categoryType: activeTab === 'tools' ? 'tool' : 'manufacturer',
@@ -68,6 +82,14 @@ const CategoriesManagement: React.FC = () => {
 
   const handleSortToggle = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Format category name for display
+  const formatCategoryName = (category: string): string => {
+    return category
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   const renderCategoryCard = (category: ToolCategory) => (
@@ -165,14 +187,18 @@ const CategoriesManagement: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="manufacturers" className="mt-6 space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {sortedManufacturers.length > 0 ? (
-              sortedManufacturers.map(renderManufacturerCard)
-            ) : (
-              <div className="col-span-full p-4 text-center text-muted-foreground">
-                No manufacturers found
+          {/* Manufacturer categories accordion */}
+          <div className="space-y-6">
+            {manufacturerCategories.map(categoryKey => (
+              <div key={categoryKey} className="space-y-3">
+                <h3 className="text-xl font-semibold capitalize bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
+                  {formatCategoryName(categoryKey)}
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {manufacturersByCategory[categoryKey].map(manufacturer => renderManufacturerCard(manufacturer))}
+                </div>
               </div>
-            )}
+            ))}
           </div>
         </TabsContent>
       </Tabs>
