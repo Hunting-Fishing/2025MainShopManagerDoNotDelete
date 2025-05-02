@@ -1,540 +1,421 @@
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { 
   Building, 
   ChevronDown, 
-  Edit, 
+  ChevronRight, 
   Plus, 
-  Search, 
-  Trash, 
-  Settings,
-  ChevronRight,
-  Tag,
-  Wrench,
+  Search,
+  Edit,
+  Trash2, 
+  LayoutGrid,
+  TagIcon,
+  ListFilter
 } from "lucide-react";
-import { categories } from '@/data/toolCategories';
-import { manufacturers } from '@/data/manufacturers';
-import { Manufacturer, ToolCategory } from '@/types/affiliate';
+import { categories } from "@/data/toolCategories";
+import { manufacturers } from "@/data/manufacturers";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { toast } from "@/hooks/use-toast";
+import ProductsList from './ProductsList';
+import { AffiliateTool, AffiliateProduct } from "@/types/affiliate";
 
-const CategoriesManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("tool-categories");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [toolCategories, setToolCategories] = useState<ToolCategory[]>([]);
-  const [manufacturerCategories, setManufacturerCategories] = useState<{[key: string]: Manufacturer[]}>({});
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState<ToolCategory | null>(null);
+// Mock data for featured groups
+const featuredGroups = [
+  { id: '1', name: 'New Arrivals', description: 'Latest tools and equipment', toolCount: 12 },
+  { id: '2', name: 'Summer Deals', description: 'Special offers for summer', toolCount: 8 },
+  { id: '3', name: 'Essential Tools', description: 'Must-have tools for every mechanic', toolCount: 15 },
+  { id: '4', name: 'Holiday Specials', description: 'Great gift ideas for mechanics', toolCount: 6 },
+];
+
+// Mock product data
+const mockProducts: AffiliateTool[] = [
+  {
+    id: "t1",
+    name: "Premium Socket Set",
+    description: "Complete socket set with ratchet and extensions",
+    slug: "premium-socket-set",
+    price: 129.99,
+    salePrice: 99.99,
+    imageUrl: "https://example.com/images/socket-set.jpg",
+    category: "Engine",
+    manufacturer: "Craftsman",
+    rating: 4.8,
+    reviewCount: 152,
+    featured: true,
+    bestSeller: true,
+    affiliateLink: "https://example.com/affiliate/socket-set"
+  },
+  {
+    id: "t2",
+    name: "Torque Wrench",
+    description: "Precision torque wrench with digital display",
+    slug: "torque-wrench",
+    price: 89.99,
+    imageUrl: "https://example.com/images/torque-wrench.jpg",
+    category: "Engine",
+    manufacturer: "Snap-on",
+    rating: 4.6,
+    reviewCount: 98,
+    featured: false,
+    bestSeller: false,
+    affiliateLink: "https://example.com/affiliate/torque-wrench"
+  },
+  {
+    id: "t3",
+    name: "OBD-II Scanner",
+    description: "Advanced diagnostic scanner for all vehicles",
+    slug: "obd-ii-scanner",
+    price: 149.99,
+    salePrice: 129.99,
+    imageUrl: "https://example.com/images/scanner.jpg",
+    category: "Diagnostics",
+    manufacturer: "Autel",
+    rating: 4.9,
+    reviewCount: 215,
+    featured: true,
+    bestSeller: true,
+    affiliateLink: "https://example.com/affiliate/scanner"
+  }
+];
+
+export default function CategoriesManagement() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentTab, setCurrentTab] = useState('tool-categories');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<AffiliateTool[]>([]);
 
-  // For the edit dialog
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryDescription, setCategoryDescription] = useState("");
-  const [categorySubcategories, setCategorySubcategories] = useState<string[]>([]);
-  const [newSubcategory, setNewSubcategory] = useState("");
-
-  useEffect(() => {
-    // Convert flat categories to ToolCategory objects
-    const categoriesArray: ToolCategory[] = Object.entries(categories).map(([name, subcategories], index) => ({
-      id: `cat-${index + 1}`,
-      name,
-      slug: name.toLowerCase().replace(/\s+/g, '-'),
-      description: `Tools and equipment for ${name.toLowerCase()} systems and components`,
-      subcategories: subcategories as string[],
-      productCount: Math.floor(Math.random() * 100) + 20,
-      imageUrl: `/images/categories/${name.toLowerCase().replace(/\s+/g, '-')}.jpg`,
-      featured: index < 5
-    }));
-    setToolCategories(categoriesArray);
-
-    // Group manufacturers by category
-    const groupedManufacturers = manufacturers.reduce((acc, manufacturer) => {
-      if (!acc[manufacturer.category]) {
-        acc[manufacturer.category] = [];
-      }
-      acc[manufacturer.category].push(manufacturer);
-      return acc;
-    }, {} as {[key: string]: Manufacturer[]});
-    
-    setManufacturerCategories(groupedManufacturers);
-  }, []);
-
-  const filteredToolCategories = toolCategories.filter(category => 
-    category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    category.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleEditCategory = (category: ToolCategory) => {
-    setCurrentCategory(category);
-    setCategoryName(category.name);
-    setCategoryDescription(category.description);
-    setCategorySubcategories(category.subcategories || []);
-    setIsEditDialogOpen(true);
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+    setExpandedCategory(null);
+    setSelectedProducts([]);
   };
 
-  const handleSaveCategory = () => {
-    if (!currentCategory) return;
-
-    const updatedCategories = toolCategories.map(cat => 
-      cat.id === currentCategory.id 
-        ? { 
-            ...cat, 
-            name: categoryName, 
-            description: categoryDescription, 
-            subcategories: categorySubcategories,
-            slug: categoryName.toLowerCase().replace(/\s+/g, '-')
-          } 
-        : cat
-    );
-    
-    setToolCategories(updatedCategories);
-    setIsEditDialogOpen(false);
-    // In a real app, you would save this to your backend
-  };
-
-  const handleAddSubcategory = () => {
-    if (newSubcategory.trim() && !categorySubcategories.includes(newSubcategory)) {
-      setCategorySubcategories([...categorySubcategories, newSubcategory]);
-      setNewSubcategory("");
+  const handleCategoryClick = (categoryName: string) => {
+    if (expandedCategory === categoryName) {
+      setExpandedCategory(null);
+      setSelectedProducts([]);
+    } else {
+      setExpandedCategory(categoryName);
+      // Simulate loading products for this category
+      setSelectedProducts(mockProducts.filter(p => p.category === categoryName));
     }
   };
 
-  const handleRemoveSubcategory = (subcategory: string) => {
-    setCategorySubcategories(categorySubcategories.filter(sub => sub !== subcategory));
+  const handleDeleteCategory = (categoryName: string) => {
+    if (confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
+      toast({
+        title: "Category Deleted",
+        description: `${categoryName} has been deleted successfully.`,
+      });
+    }
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    // In a real app, you'd show a confirmation dialog
-    setToolCategories(toolCategories.filter(cat => cat.id !== categoryId));
+  const handleEditCategory = (categoryName: string) => {
+    // In a real app, open an edit dialog
+    console.log("Edit category:", categoryName);
+    toast({
+      title: "Edit Category",
+      description: `Editing ${categoryName} - This would open an edit dialog in a complete implementation.`,
+    });
   };
 
-  const toggleCategoryExpansion = (categoryId: string) => {
-    setExpandedCategory(expandedCategory === categoryId ? null : categoryId);
+  const handleProductUpdate = async (updatedProduct: AffiliateTool | AffiliateProduct) => {
+    // In a real app, this would update the database
+    console.log("Updated product:", updatedProduct);
+    
+    // Update the local state to reflect the changes
+    setSelectedProducts(prev => 
+      prev.map(p => p.id === updatedProduct.id ? updatedProduct as AffiliateTool : p)
+    );
+    
+    toast({
+      title: "Product Updated",
+      description: `${updatedProduct.name} has been updated successfully.`,
+    });
   };
+
+  const filteredToolCategories = Object.keys(categories).filter(category =>
+    category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredManufacturerCategories = Object.keys(manufacturers).filter(category =>
+    category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredFeaturedGroups = featuredGroups.filter(group =>
+    group.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Categories Management</h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Category
-          </Button>
-          <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-            <Input
-              className="pl-10 w-[250px]"
-              placeholder="Search categories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Categories Management</CardTitle>
+        <CardDescription>
+          Manage tool categories, manufacturer categories, and featured product groups
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="tool-categories" className="flex items-center">
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Tool Categories
+            </TabsTrigger>
+            <TabsTrigger value="manufacturer-categories" className="flex items-center">
+              <Building className="h-4 w-4 mr-2" />
+              Manufacturer Categories
+            </TabsTrigger>
+            <TabsTrigger value="featured-groups" className="flex items-center">
+              <TagIcon className="h-4 w-4 mr-2" />
+              Featured Groups
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex justify-between items-center">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={`Search ${currentTab === 'tool-categories' ? 'tool categories' : currentTab === 'manufacturer-categories' ? 'manufacturer categories' : 'featured groups'}`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Button variant="outline" className="ml-2">
+              <Plus className="h-4 w-4 mr-2" />
+              Add New
+            </Button>
+            <Button variant="outline" className="ml-2">
+              <ListFilter className="h-4 w-4 mr-2" />
+              Sort
+            </Button>
           </div>
-        </div>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-6">
-          <TabsTrigger value="tool-categories" className="flex items-center">
-            <Wrench className="h-4 w-4 mr-2" />
-            Tool Categories
-          </TabsTrigger>
-          <TabsTrigger value="manufacturer-categories" className="flex items-center">
-            <Building className="h-4 w-4 mr-2" />
-            Manufacturer Categories
-          </TabsTrigger>
-          <TabsTrigger value="featured-groups" className="flex items-center">
-            <Tag className="h-4 w-4 mr-2" />
-            Featured Groups
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="tool-categories">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tool Categories</CardTitle>
-              <CardDescription>
-                Manage the categories of tools shown in the shop
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-md overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[250px]">Category Name</TableHead>
-                      <TableHead className="w-[400px]">Description</TableHead>
-                      <TableHead className="text-center">Products</TableHead>
-                      <TableHead className="text-center">Featured</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredToolCategories.map((category) => (
-                      <React.Fragment key={category.id}>
-                        <TableRow className="cursor-pointer hover:bg-slate-50" onClick={() => toggleCategoryExpansion(category.id)}>
-                          <TableCell className="font-medium flex items-center">
-                            {expandedCategory === category.id ? 
-                              <ChevronDown className="h-4 w-4 mr-2 text-blue-600" /> : 
-                              <ChevronRight className="h-4 w-4 mr-2 text-gray-600" />
-                            }
-                            {category.name}
-                          </TableCell>
-                          <TableCell>{category.description}</TableCell>
-                          <TableCell className="text-center">{category.productCount || 0}</TableCell>
-                          <TableCell className="text-center">
-                            {category.featured ? 
-                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">Featured</span> : 
-                              "-"
-                            }
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end items-center space-x-2">
-                              <Button variant="ghost" size="sm" onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditCategory(category);
-                              }}>
-                                <Edit className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteCategory(category.id);
-                              }}>
-                                <Trash className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                        
-                        {expandedCategory === category.id && (
-                          <TableRow className="bg-slate-50">
-                            <TableCell colSpan={5} className="p-0">
-                              <div className="p-4 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h3 className="text-sm font-semibold mb-2">Subcategories ({category.subcategories?.length || 0})</h3>
-                                    <div className="border rounded-md p-2 max-h-60 overflow-y-auto">
-                                      {category.subcategories && category.subcategories.length > 0 ? (
-                                        <ul className="space-y-1">
-                                          {category.subcategories.map((sub, idx) => (
-                                            <li key={idx} className="text-sm py-1 px-2 hover:bg-slate-100 rounded flex justify-between items-center">
-                                              {sub}
-                                              <button className="text-red-500 hover:text-red-700">
-                                                <Trash className="h-3 w-3" />
-                                              </button>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      ) : (
-                                        <p className="text-sm text-gray-500 py-2 text-center">No subcategories defined</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <h3 className="text-sm font-semibold mb-2">Products in this Category</h3>
-                                    <div className="border rounded-md p-2 max-h-60 overflow-y-auto">
-                                      <p className="text-sm text-blue-600 underline cursor-pointer py-2 text-center">
-                                        View {category.productCount} products in this category
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex justify-end space-x-2 pt-2">
-                                  <Button size="sm" variant="outline" onClick={() => handleEditCategory(category)}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit Category
-                                  </Button>
-                                  <Button size="sm" variant="default">
-                                    <Settings className="h-4 w-4 mr-2" />
-                                    Manage Products
-                                  </Button>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
+          
+          {/* Tool Categories Tab */}
+          <TabsContent value="tool-categories" className="border rounded-md p-4">
+            <div className="space-y-4">
+              {filteredToolCategories.length > 0 ? (
+                filteredToolCategories.map((category) => (
+                  <div key={category} className="border rounded-md overflow-hidden">
+                    <div
+                      className="flex items-center justify-between p-4 bg-muted/40 cursor-pointer"
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      <div className="flex items-center">
+                        {expandedCategory === category ? (
+                          <ChevronDown className="h-5 w-5 mr-2 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 mr-2 text-muted-foreground" />
                         )}
-                      </React.Fragment>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="manufacturer-categories">
-          <Card>
-            <CardHeader>
-              <CardTitle>Manufacturer Categories</CardTitle>
-              <CardDescription>
-                Manage manufacturers grouped by category
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="border rounded-md">
-                {Object.entries(manufacturerCategories).map(([category, manufacturers], idx) => (
-                  <AccordionItem key={idx} value={category}>
-                    <AccordionTrigger className="px-4 hover:bg-slate-50">
-                      <div className="flex justify-between items-center w-full pr-4">
-                        <span className="font-medium">{category}</span>
-                        <span className="text-sm text-gray-500">
-                          {manufacturers.length} manufacturers
-                        </span>
+                        <div>
+                          <h3 className="font-medium">{category}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {(categories as any)[category]?.length || 0} subcategories
+                          </p>
+                        </div>
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <div className="border rounded-md overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Description</TableHead>
-                              <TableHead className="text-center">Products</TableHead>
-                              <TableHead className="text-center">Featured</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {manufacturers.map((manufacturer) => (
-                              <TableRow key={manufacturer.id}>
-                                <TableCell className="font-medium">{manufacturer.name}</TableCell>
-                                <TableCell>{manufacturer.description || 'No description'}</TableCell>
-                                <TableCell className="text-center">{manufacturer.productCount || 0}</TableCell>
-                                <TableCell className="text-center">
-                                  {manufacturer.featured ? 
-                                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">Featured</span> : 
-                                    "-"
-                                  }
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end items-center space-x-2">
-                                    <Button variant="ghost" size="sm">
-                                      <Edit className="h-4 w-4 text-blue-600" />
-                                    </Button>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm">
-                                          <ChevronDown className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>View Products</DropdownMenuItem>
-                                        <DropdownMenuItem>Edit Manufacturer</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-red-600">Remove</DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="featured-groups">
-          <Card>
-            <CardHeader>
-              <CardTitle>Featured Groups</CardTitle>
-              <CardDescription>
-                Manage featured product collections and promotions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border rounded-md p-4 hover:shadow-md transition-all">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <Tag className="h-5 w-5 mr-2 text-amber-500" />
-                      Featured Tools
-                    </h3>
-                    <p className="text-gray-500 text-sm mt-1">Showcase highlighted tools across all categories</p>
-                    <div className="mt-4 flex justify-between items-center">
-                      <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
-                      <Button size="sm" variant="outline">Manage Products</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="border rounded-md p-4 hover:shadow-md transition-all">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <Tag className="h-5 w-5 mr-2 text-green-500" />
-                      Best Selling Tools
-                    </h3>
-                    <p className="text-gray-500 text-sm mt-1">Collection of our most popular selling tools</p>
-                    <div className="mt-4 flex justify-between items-center">
-                      <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
-                      <Button size="sm" variant="outline">Manage Products</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="border rounded-md p-4 hover:shadow-md transition-all">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <Tag className="h-5 w-5 mr-2 text-blue-500" />
-                      New Arrivals
-                    </h3>
-                    <p className="text-gray-500 text-sm mt-1">Recently added tools and equipment</p>
-                    <div className="mt-4 flex justify-between items-center">
-                      <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
-                      <Button size="sm" variant="outline">Manage Products</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="border rounded-md p-4 hover:shadow-md transition-all">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <Tag className="h-5 w-5 mr-2 text-red-500" />
-                      Special Offers
-                    </h3>
-                    <p className="text-gray-500 text-sm mt-1">Discounted and promotional tools</p>
-                    <div className="mt-4 flex justify-between items-center">
-                      <span className="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Inactive</span>
-                      <Button size="sm" variant="outline">Manage Products</Button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Featured Group
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Edit Category Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>
-              Make changes to the category details. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">Name</label>
-              <Input 
-                id="name" 
-                value={categoryName} 
-                onChange={(e) => setCategoryName(e.target.value)} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium">Description</label>
-              <Textarea 
-                id="description" 
-                value={categoryDescription} 
-                onChange={(e) => setCategoryDescription(e.target.value)} 
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subcategories</label>
-              <div className="border rounded-md p-2 max-h-40 overflow-y-auto">
-                {categorySubcategories.length > 0 ? (
-                  <ul className="space-y-1">
-                    {categorySubcategories.map((sub, idx) => (
-                      <li key={idx} className="flex justify-between items-center py-1 px-2 hover:bg-slate-100 rounded">
-                        {sub}
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleRemoveSubcategory(sub)}
-                        >
-                          <Trash className="h-3 w-3 text-red-500" />
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCategory(category);
+                        }}>
+                          <Edit className="h-4 w-4" />
                         </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-gray-500 py-2 text-center">No subcategories defined</p>
-                )}
-              </div>
-              
-              <div className="flex gap-2 mt-2">
-                <Input 
-                  placeholder="New subcategory" 
-                  value={newSubcategory} 
-                  onChange={(e) => setNewSubcategory(e.target.value)} 
-                />
-                <Button type="button" onClick={handleAddSubcategory}>Add</Button>
-              </div>
+                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700" onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCategory(category);
+                        }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {expandedCategory === category && (
+                      <div className="p-4 bg-card border-t">
+                        <Accordion type="single" collapsible className="mb-4">
+                          <AccordionItem value="subcategories">
+                            <AccordionTrigger>Subcategories</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {(categories as any)[category]?.map((subcategory: string) => (
+                                  <div key={subcategory} className="flex justify-between items-center border rounded-md p-2">
+                                    <span>{subcategory}</span>
+                                    <div className="flex space-x-1">
+                                      <Button variant="ghost" size="sm">
+                                        <Edit className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                        
+                        <ProductsList 
+                          products={selectedProducts}
+                          categoryName={category}
+                          onProductUpdated={handleProductUpdate}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center p-8 text-muted-foreground">
+                  No categories found matching your search.
+                </div>
+              )}
             </div>
-            
-            {currentCategory?.featured !== undefined && (
-              <div className="flex items-center space-x-2">
-                <input 
-                  type="checkbox" 
-                  id="featured" 
-                  checked={!!currentCategory?.featured}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="featured" className="text-sm font-medium text-gray-700">
-                  Featured Category
-                </label>
-              </div>
-            )}
-          </div>
+          </TabsContent>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveCategory}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          {/* Manufacturer Categories Tab */}
+          <TabsContent value="manufacturer-categories" className="border rounded-md p-4">
+            <div className="space-y-4">
+              {filteredManufacturerCategories.length > 0 ? (
+                filteredManufacturerCategories.map((category) => (
+                  <div key={category} className="border rounded-md overflow-hidden">
+                    <div
+                      className="flex items-center justify-between p-4 bg-muted/40 cursor-pointer"
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      <div className="flex items-center">
+                        {expandedCategory === category ? (
+                          <ChevronDown className="h-5 w-5 mr-2 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 mr-2 text-muted-foreground" />
+                        )}
+                        <div>
+                          <h3 className="font-medium capitalize">{category}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {manufacturers[category as keyof typeof manufacturers]?.length || 0} manufacturers
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCategory(category);
+                        }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700" onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCategory(category);
+                        }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {expandedCategory === category && (
+                      <div className="p-4 bg-card border-t">
+                        <Accordion type="single" collapsible className="mb-4">
+                          <AccordionItem value="manufacturers">
+                            <AccordionTrigger>Manufacturers</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {manufacturers[category as keyof typeof manufacturers]?.map((manufacturer: any) => (
+                                  <div key={manufacturer.id} className="flex justify-between items-center border rounded-md p-2">
+                                    <span>{manufacturer.name}</span>
+                                    <div className="flex space-x-1">
+                                      <Button variant="ghost" size="sm">
+                                        <Edit className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                        
+                        <ProductsList 
+                          products={selectedProducts}
+                          categoryName={category}
+                          onProductUpdated={handleProductUpdate}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center p-8 text-muted-foreground">
+                  No manufacturer categories found matching your search.
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          {/* Featured Groups Tab */}
+          <TabsContent value="featured-groups" className="border rounded-md p-4">
+            <div className="space-y-4">
+              {filteredFeaturedGroups.length > 0 ? (
+                filteredFeaturedGroups.map((group) => (
+                  <div key={group.id} className="border rounded-md overflow-hidden">
+                    <div
+                      className="flex items-center justify-between p-4 bg-muted/40 cursor-pointer"
+                      onClick={() => handleCategoryClick(group.name)}
+                    >
+                      <div className="flex items-center">
+                        {expandedCategory === group.name ? (
+                          <ChevronDown className="h-5 w-5 mr-2 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 mr-2 text-muted-foreground" />
+                        )}
+                        <div>
+                          <h3 className="font-medium">{group.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {group.description} • {group.toolCount} tools
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCategory(group.name);
+                        }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700" onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCategory(group.name);
+                        }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {expandedCategory === group.name && (
+                      <div className="p-4 bg-card border-t">
+                        <ProductsList 
+                          products={selectedProducts}
+                          categoryName={group.name}
+                          onProductUpdated={handleProductUpdate}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center p-8 text-muted-foreground">
+                  No featured groups found matching your search.
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
-};
-
-export default CategoriesManagement;
+}
