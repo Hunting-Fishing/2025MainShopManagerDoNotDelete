@@ -28,6 +28,14 @@ interface TrackProductInteractionProps {
   additionalData?: Record<string, any>;
 }
 
+interface ProductAnalytics {
+  product_id: string;
+  product_name: string;
+  interaction_type: ProductInteractionType;
+  category: string;
+  additional_data?: Record<string, any>;
+}
+
 /**
  * Hook to track product interactions
  */
@@ -36,13 +44,17 @@ export const useProductAnalytics = () => {
 
   const trackView = useCallback(async ({ productId, productName, category, source }: TrackProductViewProps) => {
     try {
-      await supabase.from('product_analytics').insert({
+      const analyticsData: ProductAnalytics = {
         product_id: productId,
         product_name: productName,
         interaction_type: ProductInteractionType.VIEW,
         category,
-        additional_data: { source },
-      });
+        additional_data: source ? { source } : undefined,
+      };
+      
+      await supabase
+        .from('product_analytics')
+        .insert(analyticsData);
     } catch (error) {
       console.error('Failed to track product view:', error);
     }
@@ -56,13 +68,17 @@ export const useProductAnalytics = () => {
     additionalData 
   }: TrackProductInteractionProps) => {
     try {
-      await supabase.from('product_analytics').insert({
+      const analyticsData: ProductAnalytics = {
         product_id: productId,
         product_name: productName,
         interaction_type: interactionType,
         category,
         additional_data: additionalData,
-      });
+      };
+      
+      await supabase
+        .from('product_analytics')
+        .insert(analyticsData);
     } catch (error) {
       console.error(`Failed to track product ${interactionType}:`, error);
     }

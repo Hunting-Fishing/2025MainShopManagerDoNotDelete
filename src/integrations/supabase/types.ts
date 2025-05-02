@@ -4954,6 +4954,39 @@ export type Database = {
           },
         ]
       }
+      product_analytics: {
+        Row: {
+          additional_data: Json | null
+          category: string
+          created_at: string
+          id: string
+          interaction_type: string
+          product_id: string
+          product_name: string
+          user_id: string | null
+        }
+        Insert: {
+          additional_data?: Json | null
+          category: string
+          created_at?: string
+          id?: string
+          interaction_type: string
+          product_id: string
+          product_name: string
+          user_id?: string | null
+        }
+        Update: {
+          additional_data?: Json | null
+          category?: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          product_id?: string
+          product_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           created_at: string
