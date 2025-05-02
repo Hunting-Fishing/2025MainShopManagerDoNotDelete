@@ -1,89 +1,78 @@
 
-export type ProductTier = 'premium' | 'midgrade' | 'economy';
+export type ManufacturerCategory = 
+  | 'automotive'
+  | 'heavy-duty'
+  | 'equipment'
+  | 'marine'
+  | 'atv-utv'
+  | 'motorcycle';
 
-export type ManufacturerCategory = 'automotive' | 'heavy-duty' | 'equipment' | 'marine' | 'atv-utv' | 'motorcycle' | 'other';
-
-export interface AffiliateProduct {
+export interface Manufacturer {
   id: string;
   name: string;
-  description: string;
-  imageUrl: string;
-  tier: ProductTier;
-  category: string;
-  retailPrice: number;
-  affiliateUrl: string;
-  source: 'amazon' | 'other';
-  isFeatured?: boolean;
-  isSaved?: boolean;
-  rating?: number;
-  reviewCount?: number;
-  discount?: number;
-  stockQuantity?: number;
-  freeShipping?: boolean;
-  bestSeller?: boolean;
-  manufacturer?: string;
-  model?: string;
-  engineType?: string;
+  slug: string;
+  description?: string;
+  category: ManufacturerCategory;
+  logoUrl?: string;
+  websiteUrl?: string;
+  featured?: boolean;
+  productCount?: number;
 }
 
 export interface ToolCategory {
   id: string;
   name: string;
-  description: string;
-  iconName?: string;
   slug: string;
+  description: string;
   subcategories?: string[];
+  imageUrl?: string;
+  featured?: boolean;
+  productCount?: number;
 }
 
-export interface Manufacturer {
+export interface AffiliateTool {
   id: string;
   name: string;
-  logoUrl: string;
   description: string;
   slug: string;
-  featured: boolean;
-  category: ManufacturerCategory;
+  price?: number;
+  salePrice?: number;
+  imageUrl?: string;
+  category: string;
+  subcategory?: string;
+  manufacturer: string;
+  rating?: number;
+  reviewCount?: number;
+  featured?: boolean;
+  bestSeller?: boolean;
+  affiliateLink: string;
+  seller?: string;
 }
 
-export interface AffiliateLink {
+export interface ToolSubmission {
   id: string;
-  productId: string;
-  url: string;
-  trackingId: string;
-  createdAt: string;
-}
-
-export interface UserSubmission {
-  id: string;
-  productName: string;
-  productUrl: string;
-  suggestedCategory: string;
+  toolName: string;
+  manufacturerName: string;
+  category: string;
+  subcategory?: string;
+  description?: string;
+  imageUrl?: string;
+  suggestedPrice?: number;
+  submitterEmail: string;
+  submitterName?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'modifications';
+  submissionDate: string;
   notes?: string;
-  submittedBy?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string;
 }
 
-export interface ProductReview {
+export interface FeaturedGroup {
   id: string;
-  productId: string;
-  rating: number;
-  comment: string;
-  userName: string;
-  userAvatar?: string;
-  createdAt: string;
-  verified: boolean;
-  helpful: number;
-}
-
-export interface ProductSpecification {
-  key: string;
-  value: string;
-}
-
-export interface ProductWarranty {
-  type: string;
-  duration: string;
-  coverage: string[];
-  exclusions: string[];
+  name: string;
+  description: string;
+  slug: string;
+  toolIds: string[];
+  priority: number;
+  active: boolean;
+  startDate?: string;
+  endDate?: string;
 }
