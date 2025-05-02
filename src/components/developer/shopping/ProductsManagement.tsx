@@ -1,347 +1,358 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Pencil,
-  Trash,
-  Upload,
-  Download,
-  Plus,
-  Search,
-  Filter,
+import { 
+  Search, 
+  PlusCircle, 
+  MoreHorizontal, 
+  ArrowUpDown,
   Tag,
+  Star,
+  Sparkles,
+  DollarSign,
+  Globe
 } from "lucide-react";
 import { AffiliateProduct } from '@/types/affiliate';
 
-interface ProductsManagementProps {}
-
-const ProductsManagement: React.FC<ProductsManagementProps> = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [filterTier, setFilterTier] = useState<string>("all");
-  const [filterFeatured, setFilterFeatured] = useState<string>("all");
-  
-  // Use React Query to fetch products data
-  const { data: products = [], isLoading, error } = useQuery({
-    queryKey: ['adminProducts'],
-    queryFn: async () => {
-      // In a real implementation, this would fetch from your database
-      // For now, we're simulating a delay and returning an empty array
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return [];
-    },
-  });
-  
-  // Use React Query to fetch categories for filtering
-  const { data: categories = [] } = useQuery({
-    queryKey: ['productCategories'],
-    queryFn: async () => {
-      // In a real implementation, this would fetch from your database
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return [
-        { id: 'automotive', name: 'Automotive' },
-        { id: 'heavy-duty', name: 'Heavy Duty' },
-        { id: 'equipment', name: 'Equipment' },
-        { id: 'marine', name: 'Marine' },
-        { id: 'atv-utv', name: 'ATV/UTV' },
-        { id: 'motorcycle', name: 'Motorcycle' }
-      ];
-    },
-  });
-  
-  // Filter and search products
-  const filteredProducts = React.useMemo(() => {
-    return products.filter((product: AffiliateProduct) => {
-      const matchesSearch = searchTerm === "" || 
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-      const matchesCategory = filterCategory === "all" || product.category === filterCategory;
-      const matchesTier = filterTier === "all" || product.tier === filterTier;
-      const matchesFeatured = filterFeatured === "all" || 
-        (filterFeatured === "featured" && product.isFeatured) ||
-        (filterFeatured === "not-featured" && !product.isFeatured);
-        
-      return matchesSearch && matchesCategory && matchesTier && matchesFeatured;
-    });
-  }, [products, searchTerm, filterCategory, filterTier, filterFeatured]);
-  
-  if (error) {
-    return (
-      <Card className="bg-white shadow-md rounded-lg mb-6">
-        <CardHeader>
-          <CardTitle>Products Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-10">
-            <p className="text-red-500">Error loading products. Please try again later.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+// Mock data for products
+const productsData: AffiliateProduct[] = [
+  {
+    id: "p1",
+    name: "Professional OBD2 Scanner",
+    description: "Advanced diagnostic scanner for all vehicle types",
+    imageUrl: "https://via.placeholder.com/150",
+    retailPrice: 149.99,
+    affiliateUrl: "https://example.com/product/123",
+    category: "Diagnostics",
+    tier: "premium",
+    rating: 4.8,
+    reviewCount: 156,
+    manufacturer: "AutoTech",
+    model: "AT-5000",
+    discount: 15,
+    isFeatured: true,
+    bestSeller: true,
+    freeShipping: true,
+    source: "amazon"
+  },
+  {
+    id: "p2",
+    name: "Brake Pad Set - Front",
+    description: "Ceramic brake pads for improved stopping power",
+    imageUrl: "https://via.placeholder.com/150",
+    retailPrice: 49.99,
+    affiliateUrl: "https://example.com/product/124",
+    category: "Brakes",
+    tier: "midgrade",
+    rating: 4.5,
+    reviewCount: 89,
+    manufacturer: "StopTech",
+    model: "CT-550",
+    isFeatured: false,
+    bestSeller: false,
+    freeShipping: false,
+    source: "other"
+  },
+  {
+    id: "p3",
+    name: "Engine Oil Filter Wrench Set",
+    description: "Universal oil filter wrench set for most vehicle types",
+    imageUrl: "https://via.placeholder.com/150",
+    retailPrice: 29.99,
+    affiliateUrl: "https://example.com/product/125",
+    category: "Engine",
+    tier: "economy",
+    rating: 4.2,
+    reviewCount: 45,
+    manufacturer: "ToolMaster",
+    model: "TM-123",
+    isFeatured: false,
+    bestSeller: true,
+    freeShipping: true,
+    source: "amazon"
+  },
+  {
+    id: "p4",
+    name: "Multimeter Digital Professional",
+    description: "Automotive electrical system testing multimeter",
+    imageUrl: "https://via.placeholder.com/150",
+    retailPrice: 89.99,
+    affiliateUrl: "https://example.com/product/126",
+    category: "Electrical",
+    tier: "premium",
+    rating: 4.9,
+    reviewCount: 102,
+    manufacturer: "VoltPro",
+    model: "VP-2000",
+    discount: 10,
+    isFeatured: true,
+    bestSeller: false,
+    freeShipping: false,
+    source: "other"
   }
-  
-  const handleAddProduct = () => {
-    // Logic for adding a new product
-    console.log("Add product clicked");
+];
+
+export default function ProductsManagement() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortColumn, setSortColumn] = useState<keyof AffiliateProduct | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+
+  // Get unique categories for filter
+  const categories = Array.from(new Set(productsData.map(product => product.category)));
+
+  // Filter products based on search and filters
+  const filteredProducts = productsData.filter((product) => {
+    const matchesSearch = 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      product.manufacturer.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = !filterCategory || product.category === filterCategory;
+    const matchesStatus = !filterStatus || 
+      (filterStatus === 'featured' && product.isFeatured) || 
+      (filterStatus === 'bestseller' && product.bestSeller);
+    
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  // Sort products based on current sort state
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortColumn) {
+      const valueA = a[sortColumn];
+      const valueB = b[sortColumn];
+
+      if (typeof valueA === "string" && typeof valueB === "string") {
+        return sortDirection === "asc"
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      } else if (typeof valueA === "number" && typeof valueB === "number") {
+        return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+      }
+    }
+    return 0;
+  });
+
+  // Handle sort column changes
+  const handleSort = (column: keyof AffiliateProduct) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
   };
-  
-  const handleEditProduct = (id: string) => {
-    console.log(`Edit product ${id}`);
-  };
-  
-  const handleDeleteProduct = (id: string) => {
-    console.log(`Delete product ${id}`);
-  };
-  
-  const handleImportProducts = () => {
-    console.log("Import products clicked");
-  };
-  
-  const handleExportProducts = () => {
-    console.log("Export products clicked");
-  };
-  
+
   return (
-    <div className="space-y-6">
-      <Card className="bg-white shadow-md rounded-lg mb-6">
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2">
-          <CardTitle>Product Management</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={handleImportProducts}
-            >
-              <Upload size={16} />
-              <span className="hidden sm:inline">Import</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={handleExportProducts}
-            >
-              <Download size={16} />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
-            <Button 
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
-              onClick={handleAddProduct}
-            >
-              <Plus size={16} />
-              <span>Add Product</span>
-            </Button>
-          </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Affiliate Products</CardTitle>
         </CardHeader>
-        
         <CardContent>
-          {/* Search and filters */}
-          <div className="flex flex-wrap gap-2 bg-white p-3 shadow-sm border border-gray-200 rounded-xl mb-4">
-            <div className="relative flex-grow min-w-[200px]">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products by name or manufacturer..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <select 
+                  className="border rounded px-2 py-2 text-sm"
+                  value={filterCategory || ''}
+                  onChange={(e) => setFilterCategory(e.target.value || null)}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="border rounded px-2 py-2 text-sm"
+                  value={filterStatus || ''}
+                  onChange={(e) => setFilterStatus(e.target.value || null)}
+                >
+                  <option value="">All Status</option>
+                  <option value="featured">Featured</option>
+                  <option value="bestseller">Best Seller</option>
+                </select>
+                
+                <Button variant="default">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Product
+                </Button>
+              </div>
             </div>
             
-            <div className="flex flex-wrap gap-2">
-              <div className="flex items-center min-w-[150px]">
-                <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((category: any) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center min-w-[120px]">
-                <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
-                <Select value={filterTier} onValueChange={setFilterTier}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Tiers</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                    <SelectItem value="midgrade">Mid-grade</SelectItem>
-                    <SelectItem value="economy">Economy</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center min-w-[150px]">
-                <Select value={filterFeatured} onValueChange={setFilterFeatured}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Featured Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Products</SelectItem>
-                    <SelectItem value="featured">Featured Only</SelectItem>
-                    <SelectItem value="not-featured">Not Featured</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Products table */}
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
+            <div className="overflow-auto rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
-                        <p className="text-muted-foreground">Loading products...</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : filteredProducts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <p className="text-muted-foreground">No products found.</p>
-                      <Button 
-                        variant="outline" 
-                        className="mt-4"
-                        onClick={handleAddProduct}
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("name")}
                       >
-                        Add your first product
+                        Name
+                        {sortColumn === "name" && (
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
                       </Button>
-                    </TableCell>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("category")}
+                      >
+                        Category
+                        {sortColumn === "category" && (
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("manufacturer")}
+                      >
+                        Manufacturer
+                        {sortColumn === "manufacturer" && (
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("retailPrice")}
+                      >
+                        Price
+                        {sortColumn === "retailPrice" && (
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("rating")}
+                      >
+                        Rating
+                        {sortColumn === "rating" && (
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredProducts.map((product: AffiliateProduct) => (
-                    <TableRow key={product.id} className="hover:bg-slate-50">
+                </TableHeader>
+                <TableBody>
+                  {sortedProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
-                            {product.imageUrl ? (
-                              <img 
-                                src={product.imageUrl} 
-                                alt={product.name} 
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center text-slate-400">
-                                No image
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium">{product.name}</div>
-                            {product.manufacturer && (
-                              <div className="text-xs text-muted-foreground">{product.manufacturer}</div>
-                            )}
-                          </div>
+                        <Badge variant="outline">{product.category}</Badge>
+                      </TableCell>
+                      <TableCell>{product.manufacturer}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <DollarSign className="h-4 w-4 text-green-600 mr-1" />
+                          {product.retailPrice.toFixed(2)}
+                          {product.discount && (
+                            <Badge variant="outline" className="ml-2 bg-red-100 text-red-800">
+                              {product.discount}% OFF
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {product.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>${product.retailPrice.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={
-                            product.tier === 'premium' ? 'bg-purple-100 text-purple-800 border-purple-300' :
-                            product.tier === 'midgrade' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                            'bg-green-100 text-green-800 border-green-300'
-                          }
-                        >
-                          {product.tier.charAt(0).toUpperCase() + product.tier.slice(1)}
-                        </Badge>
+                        <div className="flex items-center">
+                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
+                          {product.rating} 
+                          <span className="text-gray-500 text-xs ml-1">({product.reviewCount})</span>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          className={
-                            product.isFeatured 
-                              ? 'bg-amber-100 text-amber-800 border-amber-300' 
-                              : 'bg-slate-100 text-slate-800 border-slate-300'
-                          }
-                        >
-                          {product.isFeatured ? 'Featured' : 'Standard'}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {product.isFeatured && (
+                            <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300">
+                              <Sparkles className="h-3 w-3 mr-1" /> Featured
+                            </Badge>
+                          )}
+                          {product.bestSeller && (
+                            <Badge className="bg-green-100 text-green-800 border border-green-300">
+                              Best Seller
+                            </Badge>
+                          )}
+                          {product.freeShipping && (
+                            <Badge className="bg-blue-100 text-blue-800 border border-blue-300">
+                              Free Shipping
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleEditProduct(product.id)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-red-500 hover:text-red-600" 
-                            onClick={() => handleDeleteProduct(product.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Globe className="h-4 w-4 mr-2" /> View Affiliate Link
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ))}
+                  {sortedProducts.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        No products found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default ProductsManagement;
+}
