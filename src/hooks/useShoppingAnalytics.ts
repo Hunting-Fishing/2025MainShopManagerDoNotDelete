@@ -61,15 +61,26 @@ export function useShoppingAnalytics() {
         // Get products by category
         const { data: categoryProductsData, error: categoryProductsError } = await supabase
           .from('products')
-          .select('category_id, product_categories!inner(name)');
+          .select(`
+            category_id,
+            product_categories:category_id (name)
+          `);
         
         if (categoryProductsError) throw categoryProductsError;
         
         const categoryProductMap = new Map<string, {name: string, count: number}>();
         if (categoryProductsData) {
           categoryProductsData.forEach(product => {
-            // Fix the access to name property - product.product_categories is an object, not an array
-            const categoryName = product.product_categories ? product.product_categories.name : 'Uncategorized';
+            // Handle the product_categories data correctly
+            // Note: product.product_categories could be an array or single object depending on the join
+            const categoryObj = product.product_categories;
+            let categoryName = 'Uncategorized';
+            
+            // If it's an object with a name property
+            if (categoryObj && typeof categoryObj === 'object' && 'name' in categoryObj) {
+              categoryName = categoryObj.name;
+            }
+            
             const entry = categoryProductMap.get(categoryName) || { name: categoryName, count: 0 };
             categoryProductMap.set(categoryName, { ...entry, count: entry.count + 1 });
           });
