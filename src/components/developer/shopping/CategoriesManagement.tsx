@@ -1,15 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ProductsList from './ProductsList';
 import { manufacturers } from '@/data/manufacturers';
 import { categories } from '@/data/toolCategories';
-import { Manufacturer, ToolCategory } from '@/types/affiliate';
+import { Manufacturer, ToolCategory, AffiliateTool } from '@/types/affiliate';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { ArrowUpDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
 
 const CategoriesManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("tools");
@@ -39,7 +39,7 @@ const CategoriesManagement: React.FC = () => {
   // Get unique manufacturer categories
   const manufacturerCategories = Object.keys(manufacturersByCategory).sort();
   
-  const { products, loading, error, updateProduct } = useProductsManager({
+  const { products, loading, error, updateProduct, deleteProduct } = useProductsManager({
     categoryType: activeTab === 'tools' ? 'tool' : 'manufacturer',
     categoryName: selectedCategory || undefined
   });
@@ -81,6 +81,37 @@ const CategoriesManagement: React.FC = () => {
 
   const handleSortToggle = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Define the onEdit handler function
+  const handleEdit = (product: AffiliateTool) => {
+    // In a real app, you might open an edit dialog/form here
+    console.log("Edit product:", product);
+    toast({
+      title: "Edit Product",
+      description: `You selected to edit ${product.name}`,
+    });
+  };
+
+  // Define the onDelete handler function
+  const handleDelete = async (product: AffiliateTool) => {
+    try {
+      if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
+        await deleteProduct(product.id);
+        toast({
+          title: "Success",
+          description: `${product.name} was deleted successfully`,
+          variant: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the product",
+        variant: "destructive",
+      });
+    }
   };
 
   // Format category name for display
@@ -216,16 +247,8 @@ const CategoriesManagement: React.FC = () => {
               products={products}
               categoryName={selectedCategory}
               loading={loading}
-              onEdit={(product) => {
-                if (onEdit) {
-                  onEdit(product);
-                }
-              }}
-              onDelete={(product) => {
-                if (onDelete) {
-                  onDelete(product);
-                }
-              }}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           )}
         </div>
