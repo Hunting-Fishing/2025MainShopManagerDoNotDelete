@@ -51,7 +51,7 @@ export function VehicleMakeSelector<T>({
           <SelectContent>
             {safeMakes.length > 0 ? (
               safeMakes.map(make => {
-                // Skip any empty values to avoid Radix UI error
+                // Skip any empty or undefined values to avoid Radix UI error
                 if (!make.make_id) return null;
                 
                 return (

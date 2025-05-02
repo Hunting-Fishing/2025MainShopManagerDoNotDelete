@@ -47,7 +47,7 @@ export function VehicleModelSelector<T>({
           </SelectTrigger>
           <SelectContent>
             {loading ? (
-              <SelectItem value="loading" disabled>Loading models...</SelectItem>
+              <SelectItem value="loading-models" disabled>Loading models...</SelectItem>
             ) : safeModels.length > 0 ? (
               safeModels.map(model => {
                 // Skip any empty values to avoid Radix UI error
@@ -60,7 +60,7 @@ export function VehicleModelSelector<T>({
                 );
               })
             ) : (
-              <SelectItem value="no-models" disabled>No models available</SelectItem>
+              <SelectItem value="no-models-available" disabled>No models available</SelectItem>
             )}
           </SelectContent>
         </Select>
