@@ -1,4 +1,5 @@
 
+// Base types
 export interface AnalyticsData {
   totalProducts: number;
   approvedProducts: number;
@@ -55,7 +56,7 @@ export interface CategoryAnalytics {
   averageViewsPerProduct: number;
 }
 
-// Add the missing types for our analytics data hook
+// Product analytics data hook interface
 export interface ProductAnalyticsData {
   totalViews: number;
   totalClicks: number;

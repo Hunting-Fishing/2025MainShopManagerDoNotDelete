@@ -7943,6 +7943,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_product_interactions_by_category: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          name: string
+          views: number
+          clicks: number
+          saves: number
+          shares: number
+        }[]
+      }
       get_work_order_inventory_items: {
         Args: { work_order_id: string }
         Returns: {

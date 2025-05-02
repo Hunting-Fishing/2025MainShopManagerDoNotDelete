@@ -10,11 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Eye, MousePointer, Heart, Share2 } from 'lucide-react';
-import { TopProduct } from '@/types/analytics';
+import { TopProductAnalytics } from '@/types/analytics';
 
 interface TopProductsTableProps {
   title: string;
-  products: TopProduct[];
+  products: TopProductAnalytics[];
   metric: 'views' | 'clicks' | 'saves' | 'shares';
 }
 
