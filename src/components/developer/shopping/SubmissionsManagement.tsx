@@ -1,466 +1,284 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Check,
-  X,
-  Search,
-  ExternalLink,
-  Calendar,
-  Eye,
-  Filter,
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/lib/supabase';
+import { UserSubmission } from '@/types/affiliate';
+import { MoreHorizontal, X, Check, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
-interface ProductSubmission {
-  id: string;
-  productName: string;
-  submittedBy?: string;
-  suggestedCategory: string;
-  submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected' | 'modifications';
-  notes?: string;
-  productUrl?: string;
-  manufacturer?: string;
-}
+const SubmissionsManagement = () => {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedSubmission, setSelectedSubmission] = useState<UserSubmission | null>(null);
+  const [dialogAction, setDialogAction] = useState<'approve' | 'reject' | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
-const SubmissionsManagement: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [viewSubmission, setViewSubmission] = useState<ProductSubmission | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
-  
-  // Use React Query to fetch product submissions
-  const { data: submissions = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['productSubmissions'],
+  // Fetch submissions data
+  const { data: submissions, isLoading, error, refetch } = useQuery({
+    queryKey: ['product-submissions'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('product_submissions')
-          .select('*')
-          .order('submitted_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        return data.map(item => ({
-          id: item.id,
-          productName: item.product_name,
-          submittedBy: item.suggested_by,
-          suggestedCategory: item.suggested_category,
-          submittedAt: item.submitted_at,
-          status: item.status,
-          notes: item.notes,
-          productUrl: item.product_url,
-          manufacturer: item.manufacturer || 'Not specified'
-        }));
-      } catch (error) {
-        console.error('Error fetching submissions:', error);
-        return [];
-      }
-    },
+      const { data, error } = await supabase
+        .from('product_submissions')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data.map(submission => ({
+        id: submission.id,
+        productName: submission.product_name,
+        submittedBy: submission.suggested_by || undefined,
+        suggestedCategory: submission.suggested_category,
+        submittedAt: submission.submitted_at,
+        status: submission.status as 'pending' | 'approved' | 'rejected' | 'modifications',
+        notes: submission.notes,
+        productUrl: submission.product_url,
+      })) as UserSubmission[];
+    }
   });
-  
-  // Filter submissions based on search and status
-  const filteredSubmissions = React.useMemo(() => {
-    return submissions.filter((submission: ProductSubmission) => {
-      const matchesSearch = searchTerm === "" || 
-        submission.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        submission.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        submission.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-      const matchesStatus = statusFilter === "all" || submission.status === statusFilter;
-        
-      return matchesSearch && matchesStatus;
-    });
-  }, [submissions, searchTerm, statusFilter]);
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
+
+  // Filter submissions based on status and search term
+  const filteredSubmissions = submissions?.filter(submission => {
+    const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
+    const matchesSearch = submission.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (submission.notes && submission.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesStatus && matchesSearch;
+  });
+
+  // Handle status update
+  const handleStatusUpdate = async (id: string, newStatus: 'approved' | 'rejected' | 'pending' | 'modifications') => {
+    try {
+      const { error } = await supabase
+        .from('product_submissions')
+        .update({ status: newStatus })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Status updated",
+        description: `Product submission has been ${newStatus}.`,
+      });
+      
+      refetch();
+    } catch (error) {
+      console.error("Error updating submission status:", error);
+      toast({
+        title: "Update failed",
+        description: "There was an error updating the submission status.",
+        variant: "destructive",
+      });
+    }
   };
-  
-  const handleViewSubmission = (submission: ProductSubmission) => {
-    setViewSubmission(submission);
+
+  // Handle approval dialog
+  const handleApproveSubmission = (submission: UserSubmission) => {
+    setSelectedSubmission(submission);
+    setDialogAction('approve');
     setIsDialogOpen(true);
   };
-  
-  const handleApproveSubmission = async (id: string) => {
-    try {
-      setIsApproving(true);
-      
-      const { error } = await supabase
-        .from('product_submissions')
-        .update({ status: 'approved' })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Submission approved",
-        description: "The product submission has been approved.",
-        variant: "success",
-      });
-      
-      refetch();
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error('Error approving submission:', error);
-      toast({
-        title: "Error",
-        description: "Failed to approve the submission. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsApproving(false);
-    }
-  };
-  
-  const handleRejectSubmission = async (id: string) => {
-    try {
-      setIsRejecting(true);
-      
-      const { error } = await supabase
-        .from('product_submissions')
-        .update({ status: 'rejected' })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Submission rejected",
-        description: "The product submission has been rejected.",
-        variant: "default",
-      });
-      
-      refetch();
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error('Error rejecting submission:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reject the submission. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRejecting(false);
-    }
-  };
-  
-  const handleVisitLink = (url: string) => {
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  };
-  
-  if (error) {
-    return (
-      <Card className="bg-white shadow-md rounded-lg mb-6">
-        <CardHeader>
-          <CardTitle>Product Submissions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-10">
-            <p className="text-red-500">Error loading submissions. Please try again later.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  return (
-    <div className="space-y-6">
-      <Card className="bg-white shadow-md rounded-lg mb-6">
-        <CardHeader>
-          <CardTitle>Product Submissions</CardTitle>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="flex flex-wrap gap-3 mb-4">
-            <div className="relative flex-grow min-w-[200px]">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search submissions..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex items-center min-w-[180px]">
-              <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Manufacturer</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
-                        <p className="text-muted-foreground">Loading submissions...</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : filteredSubmissions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <p className="text-muted-foreground">No submissions found.</p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredSubmissions.map((submission: ProductSubmission) => (
-                    <TableRow key={submission.id} className="hover:bg-slate-50">
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{submission.productName}</div>
-                          {submission.submittedBy && (
-                            <div className="text-xs text-muted-foreground">by {submission.submittedBy}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {submission.suggestedCategory}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-slate-700">
-                          {submission.manufacturer || 'Not specified'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Calendar className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
-                          <span>{formatDate(submission.submittedAt)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={
-                            submission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-300' :
-                            submission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-300' :
-                            'bg-amber-100 text-amber-800 border-amber-300'
-                          }
-                        >
-                          {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleViewSubmission(submission)}
-                          >
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">View details</span>
-                          </Button>
-                          {submission.productUrl && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleVisitLink(submission.productUrl!)}
-                              className="text-blue-500 hover:text-blue-700"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              <span className="sr-only">Visit product URL</span>
-                            </Button>
-                          )}
-                          {submission.status === 'pending' && (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-green-500 hover:text-green-600"
-                                onClick={() => handleApproveSubmission(submission.id)}
-                              >
-                                <Check className="h-4 w-4" />
-                                <span className="sr-only">Approve</span>
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-red-500 hover:text-red-600"
-                                onClick={() => handleRejectSubmission(submission.id)}
-                              >
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Reject</span>
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Submission Details Dialog */}
-      {viewSubmission && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Product Submission Details</DialogTitle>
-              <DialogDescription>
-                Review the submission details and take action.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="py-4">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500">Product Name</h4>
-                  <p className="mt-1">{viewSubmission.productName}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500">Suggested Category</h4>
-                  <Badge variant="outline" className="mt-1 bg-blue-50 text-blue-700 border-blue-200">
-                    {viewSubmission.suggestedCategory}
-                  </Badge>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500">Manufacturer</h4>
-                  <p className="mt-1">{viewSubmission.manufacturer || 'Not specified'}</p>
-                </div>
-                
-                {viewSubmission.productUrl && (
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-500">Product URL</h4>
-                    <a 
-                      href={viewSubmission.productUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="mt-1 text-blue-600 hover:text-blue-800 underline flex items-center"
-                    >
-                      View Product Link
-                      <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
+  // Handle rejection dialog
+  const handleRejectSubmission = (submission: UserSubmission) => {
+    setSelectedSubmission(submission);
+    setDialogAction('reject');
+    setIsDialogOpen(true);
+  };
+
+  // Process submission after dialog confirmation
+  const processSubmission = () => {
+    if (!selectedSubmission || !dialogAction) return;
+    
+    const newStatus = dialogAction === 'approve' ? 'approved' : 'rejected';
+    handleStatusUpdate(selectedSubmission.id, newStatus);
+    setIsDialogOpen(false);
+  };
+
+  // Status badge component
+  const StatusBadge = ({ status }: { status: string }) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300"><Check className="w-3 h-3 mr-1" /> Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300"><X className="w-3 h-3 mr-1" /> Rejected</Badge>;
+      case 'modifications':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Needs Changes</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading submissions...</div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center items-center h-64 text-red-500">Error loading submissions</div>;
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-2">User Tool Submissions</h2>
+        <p className="text-slate-600 dark:text-slate-300">
+          Review and approve tool submissions from users
+        </p>
+      </div>
+
+      {/* Filters and search */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="w-full md:w-1/3">
+          <Input
+            placeholder="Search submissions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="w-full md:w-1/4">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Submissions</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="modifications">Needs Modifications</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Submission list */}
+      {filteredSubmissions && filteredSubmissions.length > 0 ? (
+        <div className="grid gap-4">
+          {filteredSubmissions.map((submission) => (
+            <Card key={submission.id} className="overflow-hidden border border-gray-100">
+              <CardContent className="p-0">
+                <div className="p-6">
+                  <div className="flex flex-col md:flex-row justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold">{submission.productName}</h3>
+                        <StatusBadge status={submission.status} />
+                      </div>
+                      <p className="text-sm text-slate-500 mb-2">
+                        Category: <span className="font-medium">{submission.suggestedCategory}</span>
+                      </p>
+                      <p className="text-sm text-slate-500 mb-2">
+                        Submitted: <span className="font-medium">{new Date(submission.submittedAt).toLocaleDateString()}</span>
+                      </p>
+                      {submission.productUrl && (
+                        <a 
+                          href={submission.productUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline mb-2 inline-block"
+                        >
+                          View Product
+                        </a>
+                      )}
+                      {submission.notes && (
+                        <p className="text-sm mt-2 bg-slate-50 p-3 rounded-md">
+                          <span className="font-semibold block mb-1">Notes:</span>
+                          {submission.notes}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-4 md:mt-0">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => handleApproveSubmission(submission)}
+                            className="text-green-600"
+                          >
+                            <Check className="mr-2 h-4 w-4" /> Approve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleRejectSubmission(submission)}
+                            className="text-red-600"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Reject
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusUpdate(submission.id, 'pending')}
+                          >
+                            Mark as Pending
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                )}
-                
-                {viewSubmission.notes && (
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-500">Notes</h4>
-                    <p className="mt-1 whitespace-pre-line text-sm">{viewSubmission.notes}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500">Status</h4>
-                  <Badge 
-                    className={
-                      viewSubmission.status === 'approved' ? 'mt-1 bg-green-100 text-green-800 border-green-300' :
-                      viewSubmission.status === 'rejected' ? 'mt-1 bg-red-100 text-red-800 border-red-300' :
-                      'mt-1 bg-amber-100 text-amber-800 border-amber-300'
-                    }
-                  >
-                    {viewSubmission.status.charAt(0).toUpperCase() + viewSubmission.status.slice(1)}
-                  </Badge>
                 </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500">Submitted Date</h4>
-                  <p className="mt-1">{formatDate(viewSubmission.submittedAt)}</p>
-                </div>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              {viewSubmission.status === 'pending' && (
-                <div className="flex gap-2 w-full">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => handleRejectSubmission(viewSubmission.id)}
-                    disabled={isRejecting}
-                  >
-                    {isRejecting ? 'Rejecting...' : 'Reject'}
-                  </Button>
-                  <Button 
-                    variant="default"
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => handleApproveSubmission(viewSubmission.id)}
-                    disabled={isApproving}
-                  >
-                    {isApproving ? 'Approving...' : 'Approve'}
-                  </Button>
-                </div>
-              )}
-              {viewSubmission.status !== 'pending' && (
-                <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-slate-50 border border-slate-100 rounded-lg p-8 text-center">
+          <h3 className="text-lg font-medium text-slate-600 mb-1">No submissions found</h3>
+          <p className="text-slate-500">
+            {searchTerm || statusFilter !== 'all'
+              ? "Try changing your filters"
+              : "There are no product submissions yet"}
+          </p>
+        </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {dialogAction === 'approve' ? 'Approve Submission' : 'Reject Submission'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {dialogAction === 'approve'
+                ? "Are you sure you want to approve this product submission? It will be marked as approved."
+                : "Are you sure you want to reject this product submission? It will be marked as rejected."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={processSubmission}>
+              {dialogAction === 'approve' ? 'Approve' : 'Reject'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
