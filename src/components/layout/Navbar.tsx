@@ -10,9 +10,11 @@ const navigation = [
   { name: 'Work Orders', href: '/work-orders' },
   { name: 'Equipment', href: '/equipment' },
   { name: 'Inventory', href: '/inventory' },
-  { name: 'Tools Shop', href: '/tools' }, // Updated to point to Tools Shop instead of Shopping
+  { name: 'Tools Shop', href: '/tools' },
+  { name: 'Shopping', href: '/shopping' },
   { name: 'Team', href: '/team' },
   { name: 'Reports', href: '/reports' },
+  { name: 'Developer', href: '/developer' }
 ];
 
 export function Navbar() {

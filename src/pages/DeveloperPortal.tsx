@@ -20,38 +20,47 @@ export default function DeveloperPortal() {
       title: "User Management",
       description: "Manage application users and their permissions",
       icon: <Users className="h-6 w-6" />,
-      href: "#",
+      href: "/developer/user-management",
     },
     {
       id: "system-settings",
       title: "System Settings",
       description: "Configure application-wide settings",
       icon: <Settings className="h-6 w-6" />,
-      href: "#",
+      href: "/developer/system-settings",
     },
     {
       id: "tools-management",
       title: "Tool Management",
       description: "Manage tools, equipment, and their categories",
       icon: <Hammer className="h-6 w-6" />,
-      href: "#",
+      href: "/developer/tools-management",
     },
     {
       id: "service-management",
       title: "Service Management",
       description: "Configure available services and pricing",
       icon: <Wrench className="h-6 w-6" />,
-      href: "#",
+      href: "/developer/service-management",
     },
   ];
 
   return (
     <Container fluid className="px-4 py-8">
-      <Segment raised className="mb-8 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-900">
-        <SemanticHeader as="h1" className="text-3xl font-bold mb-2">Developer Portal</SemanticHeader>
-        <p className="text-slate-600 dark:text-slate-300">
-          Advanced controls and management tools for application administrators.
-        </p>
+      <Segment raised className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <div>
+            <SemanticHeader as="h1" className="text-3xl font-bold">Developer Portal</SemanticHeader>
+            <p className="text-slate-600 dark:text-slate-300 mt-2">
+              Advanced controls and management tools for application administrators
+            </p>
+          </div>
+          <Button asChild variant="outline" className="self-start">
+            <Link to="/dashboard">
+              Back to Dashboard
+            </Link>
+          </Button>
+        </div>
       </Segment>
 
       <Grid columns={3} stackable doubling>
