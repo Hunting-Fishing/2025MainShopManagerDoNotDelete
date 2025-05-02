@@ -1,107 +1,184 @@
-
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import React from 'react';
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AffiliateProduct } from "@/types/affiliate";
-import ProductTierBadge from "./ProductTierBadge";
-import { addAffiliateTracking } from "@/utils/amazonUtils";
-import { ExternalLink, Save } from "lucide-react";
-import { useCallback } from "react";
-import { useProductAnalytics, ProductInteractionType } from "@/components/developer/shopping/analytics/AnalyticsTracker";
+import { Heart, Share2, ShoppingCart } from "lucide-react";
+import { AffiliateProduct } from '@/types/affiliate';
+import { ProductTierBadge } from './ProductTierBadge';
+import { ProductRating } from './ProductRating';
+import { formatCurrency } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
+import { 
+  ProductViewTracker, 
+  useProductAnalytics,
+  ProductInteractionType 
+} from '@/components/developer/shopping/analytics/AnalyticsTracker';
 
 interface ProductCardProps {
   product: AffiliateProduct;
-  isSaved: boolean;
-  onSaveToggle: () => void;
+  onProductClick?: () => void;
+  onSaveClick?: () => void;
+  onShareClick?: () => void;
+  onAddToCartClick?: () => void;
 }
 
-const ProductCard = ({ product, isSaved, onSaveToggle }: ProductCardProps) => {
+const ProductCard: React.FC<ProductCardProps> = ({ 
+  product, 
+  onProductClick,
+  onSaveClick,
+  onShareClick,
+  onAddToCartClick
+}) => {
+  const { toast } = useToast();
   const { trackInteraction } = useProductAnalytics();
-
-  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const trackedUrl = addAffiliateTracking(product.affiliateUrl);
-    e.currentTarget.href = trackedUrl;
+  
+  const handleClick = () => {
+    if (onProductClick) {
+      onProductClick();
+    } else {
+      trackInteraction({
+        productId: product.id,
+        productName: product.name,
+        interactionType: ProductInteractionType.CLICK,
+        category: product.category
+      });
+    }
     
-    // Track product click
-    trackInteraction({
-      productId: product.id,
-      productName: product.name,
-      interactionType: ProductInteractionType.CLICK,
-      category: product.category,
-      additionalData: {
-        tier: product.tier,
-        manufacturer: product.manufacturer,
-        price: product.retailPrice
-      }
+    // Open the affiliate link in a new tab
+    window.open(product.affiliateUrl, '_blank');
+  };
+  
+  const handleSaveClick = () => {
+    if (onSaveClick) {
+      onSaveClick();
+    } else {
+      trackInteraction({
+        productId: product.id,
+        productName: product.name,
+        interactionType: ProductInteractionType.SAVE,
+        category: product.category
+      });
+    }
+    
+    toast({
+      title: "Product saved",
+      description: `${product.name} has been added to your saved items.`,
     });
   };
   
-  const handleSaveClick = useCallback(() => {
-    // Track save/unsave interaction
-    trackInteraction({
-      productId: product.id,
-      productName: product.name,
-      interactionType: isSaved ? ProductInteractionType.UNSAVE : ProductInteractionType.SAVE,
-      category: product.category
-    });
+  const handleShareClick = () => {
+    if (onShareClick) {
+      onShareClick();
+    } else {
+      trackInteraction({
+        productId: product.id,
+        productName: product.name,
+        interactionType: ProductInteractionType.SHARE,
+        category: product.category
+      });
+    }
     
-    onSaveToggle();
-  }, [product, isSaved, onSaveToggle, trackInteraction]);
+    // Copy the product URL to clipboard
+    navigator.clipboard.writeText(window.location.origin + '/product/' + product.id);
+    
+    toast({
+      title: "Link copied",
+      description: "Product link copied to clipboard.",
+    });
+  };
+  
+  const handleAddToCartClick = () => {
+    if (onAddToCartClick) {
+      onAddToCartClick();
+    } else {
+      trackInteraction({
+        productId: product.id,
+        productName: product.name,
+        interactionType: ProductInteractionType.ADD_TO_CART,
+        category: product.category
+      });
+    }
+    
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden transition-all hover:shadow-md">
-      <div className="relative">
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className="w-full aspect-square object-cover"
-        />
-        <div className="absolute top-2 right-2">
-          <ProductTierBadge tier={product.tier} />
+    <>
+      <ProductViewTracker product={product} />
+      <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-md">
+        <div 
+          className="relative aspect-square cursor-pointer overflow-hidden"
+          onClick={handleClick}
+        >
+          <img 
+            src={product.imageUrl} 
+            alt={product.name} 
+            className="h-full w-full object-cover transition-all hover:scale-105"
+          />
+          {product.discount && (
+            <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+              {product.discount}% OFF
+            </div>
+          )}
+          {product.isFeatured && (
+            <div className="absolute top-2 left-2">
+              <ProductTierBadge tier={product.tier} />
+            </div>
+          )}
         </div>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            handleSaveClick();
-          }}
-          className={`absolute top-2 left-2 p-1.5 rounded-full ${
-            isSaved 
-              ? "bg-blue-500 text-white" 
-              : "bg-white/80 text-slate-700 hover:bg-white"
-          } transition-colors`}
-        >
-          <Save className="h-5 w-5" />
-        </button>
-      </div>
-      
-      <CardHeader className="pb-2">
-        <h3 className="font-semibold text-lg line-clamp-2">{product.name}</h3>
-      </CardHeader>
-      
-      <CardContent className="pb-2 flex-grow">
-        <p className="text-slate-600 dark:text-slate-300 text-sm line-clamp-3">
-          {product.description}
-        </p>
-      </CardContent>
-      
-      <CardFooter className="flex justify-between items-center pt-2">
-        <div className="font-semibold">${product.retailPrice.toFixed(2)}</div>
-        <Button 
-          size="sm"
-          className="flex items-center gap-1"
-          asChild
-        >
-          <a 
-            href={product.affiliateUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleLinkClick}
+        <CardContent className="flex-grow p-4">
+          <div className="mb-2">
+            <p className="text-sm text-slate-500">{product.manufacturer}</p>
+            <h3 
+              className="font-medium text-lg line-clamp-2 cursor-pointer hover:text-blue-600"
+              onClick={handleClick}
+            >
+              {product.name}
+            </h3>
+          </div>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <span className="font-bold text-lg">
+                {formatCurrency(product.retailPrice)}
+              </span>
+              {product.discount && (
+                <span className="text-sm text-slate-500 line-through ml-2">
+                  {formatCurrency(product.retailPrice * (1 + product.discount / 100))}
+                </span>
+              )}
+            </div>
+          </div>
+          {product.rating && (
+            <ProductRating rating={product.rating} reviewCount={product.reviewCount} />
+          )}
+        </CardContent>
+        <CardFooter className="p-4 pt-0 flex gap-2">
+          <Button 
+            variant="default" 
+            className="flex-1"
+            onClick={handleClick}
           >
-            <span>View</span>
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        </Button>
-      </CardFooter>
-    </Card>
+            View Details
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleSaveClick}
+          >
+            <Heart className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleShareClick}
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </CardFooter>
+      </Card>
+    </>
   );
 };
 
