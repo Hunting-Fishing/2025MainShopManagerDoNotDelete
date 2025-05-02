@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
-import { StatsCards } from './analytics/StatsCards';
+import StatsCards from './analytics/StatsCards';
 import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
 import { SubmissionStatusChart } from './analytics/SubmissionStatusChart';
 
@@ -19,7 +19,7 @@ export default function AnalyticsTab() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <StatsCards data={analyticsData} />
+      <StatsCards />
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
