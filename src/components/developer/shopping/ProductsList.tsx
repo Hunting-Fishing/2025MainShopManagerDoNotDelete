@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Edit, Search, DollarSign, Image } from "lucide-react";
+import { ExternalLink, Edit, Search, DollarSign, Image, Tag } from "lucide-react";
 import { AffiliateTool, AffiliateProduct } from "@/types/affiliate";
 import ProductDetailEditor from './ProductDetailEditor';
 import { toast } from "@/hooks/use-toast";
@@ -80,6 +80,15 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
     return (product as any).imageUrl || '';
   };
 
+  const getSourceBadgeColor = (source: string): "default" | "outline" | "success" | "warning" | "info" | undefined => {
+    switch(source.toLowerCase()) {
+      case 'amazon': return 'warning';
+      case 'ebay': return 'info';
+      case 'walmart': return 'success'; 
+      default: return 'outline';
+    }
+  };
+
   const checkUrl = (url: string) => {
     if (!url) {
       toast({
@@ -129,7 +138,7 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -149,7 +158,7 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
                   <TableCell className="font-medium">{(product as any).name}</TableCell>
                   <TableCell>{(product as any).manufacturer}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">
+                    <Badge variant={getSourceBadgeColor(getSource(product))} className="capitalize">
                       {getSource(product)}
                     </Badge>
                   </TableCell>
@@ -170,6 +179,7 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
                       onClick={() => previewImage(getImageUrl(product))}
                       disabled={!getImageUrl(product)}
                       className="px-2"
+                      title={getImageUrl(product) ? "View image" : "No image available"}
                     >
                       <Image className="h-4 w-4" />
                     </Button>
