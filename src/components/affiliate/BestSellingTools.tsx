@@ -4,7 +4,8 @@ import { Grid, Segment, Header } from 'semantic-ui-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Star, TrendingUp, ShoppingCart, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Tool {
   id: string;
@@ -19,9 +20,39 @@ interface Tool {
 
 interface BestSellingToolsProps {
   tools: Tool[];
+  isLoading?: boolean;
 }
 
-const BestSellingTools = ({ tools }: BestSellingToolsProps) => {
+const BestSellingTools = ({ tools, isLoading = false }: BestSellingToolsProps) => {
+  if (isLoading) {
+    return (
+      <Segment className="mt-6 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500">
+        <Header as="h2" className="text-2xl font-semibold mb-4 flex items-center">
+          <TrendingUp className="mr-2 text-green-600" />
+          Best Selling Tools
+        </Header>
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+          <span className="ml-2 text-green-700">Loading best-selling tools...</span>
+        </div>
+      </Segment>
+    );
+  }
+
+  if (tools.length === 0) {
+    return (
+      <Segment className="mt-6 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500">
+        <Header as="h2" className="text-2xl font-semibold mb-4 flex items-center">
+          <TrendingUp className="mr-2 text-green-600" />
+          Best Selling Tools
+        </Header>
+        <div className="text-center py-8">
+          <p className="text-green-700">No best-selling tools available at this time.</p>
+        </div>
+      </Segment>
+    );
+  }
+
   return (
     <Segment className="mt-6 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500">
       <Header as="h2" className="text-2xl font-semibold mb-4 flex items-center">
@@ -52,9 +83,11 @@ const BestSellingTools = ({ tools }: BestSellingToolsProps) => {
                       <Star size={14} className="text-yellow-500 mr-1 fill-yellow-500" /> {tool.rating} ({tool.reviewCount})
                     </span>
                   </div>
-                  <Button className="w-full mt-3 bg-blue-600 hover:bg-blue-700">
-                    <ShoppingCart size={16} className="mr-1" /> View Details
-                  </Button>
+                  <Link to={`/tools/${tool.category.toLowerCase().replace(/\s+/g, '-')}/${tool.id}`}>
+                    <Button className="w-full mt-3 bg-blue-600 hover:bg-blue-700">
+                      <ShoppingCart size={16} className="mr-1" /> View Details
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

@@ -5,7 +5,7 @@ import { ArrowUpRight } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
-  value: number;
+  value: number | string;
   icon: React.ReactNode;
   additionalInfo?: React.ReactNode;
   colorClass?: string; // For customizable color styling
@@ -13,7 +13,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon, additionalInfo, colorClass = "bg-blue-100 text-blue-800" }: StatCardProps) {
   return (
-    <Card className="shadow-md bg-white rounded-xl border border-gray-100">
+    <Card className="shadow-md bg-white rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-300">
       <CardContent className="p-6">
         <div className="flex justify-between items-center">
           <div className={`p-2 rounded-full ${colorClass}`}>

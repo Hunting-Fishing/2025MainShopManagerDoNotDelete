@@ -4,7 +4,8 @@ import { Grid, Segment, Header } from 'semantic-ui-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Sparkles, ShoppingCart } from 'lucide-react';
+import { Star, Sparkles, ShoppingCart, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Tool {
   id: string;
@@ -20,9 +21,39 @@ interface Tool {
 
 interface FeaturedToolsProps {
   tools: Tool[];
+  isLoading?: boolean;
 }
 
-const FeaturedTools = ({ tools }: FeaturedToolsProps) => {
+const FeaturedTools = ({ tools, isLoading = false }: FeaturedToolsProps) => {
+  if (isLoading) {
+    return (
+      <Segment className="mb-6 bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-400">
+        <Header as="h2" className="text-2xl font-semibold mb-4 flex items-center">
+          <Sparkles className="mr-2 text-amber-500" />
+          Featured Tools
+        </Header>
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+          <span className="ml-2 text-amber-700">Loading featured tools...</span>
+        </div>
+      </Segment>
+    );
+  }
+
+  if (tools.length === 0) {
+    return (
+      <Segment className="mb-6 bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-400">
+        <Header as="h2" className="text-2xl font-semibold mb-4 flex items-center">
+          <Sparkles className="mr-2 text-amber-500" />
+          Featured Tools
+        </Header>
+        <div className="text-center py-8">
+          <p className="text-amber-700">No featured tools available at this time.</p>
+        </div>
+      </Segment>
+    );
+  }
+
   return (
     <Segment className="mb-6 bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-400">
       <Header as="h2" className="text-2xl font-semibold mb-4 flex items-center">
@@ -55,9 +86,11 @@ const FeaturedTools = ({ tools }: FeaturedToolsProps) => {
                       <Star size={14} className="text-yellow-500 mr-1 fill-yellow-500" /> {tool.rating} ({tool.reviewCount})
                     </span>
                   </div>
-                  <Button className="w-full mt-3 bg-blue-600 hover:bg-blue-700">
-                    <ShoppingCart size={16} className="mr-1" /> View Details
-                  </Button>
+                  <Link to={`/tools/${tool.category.toLowerCase().replace(/\s+/g, '-')}/${tool.id}`}>
+                    <Button className="w-full mt-3 bg-blue-600 hover:bg-blue-700">
+                      <ShoppingCart size={16} className="mr-1" /> View Details
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
