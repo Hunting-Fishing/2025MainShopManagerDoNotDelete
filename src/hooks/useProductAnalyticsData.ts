@@ -61,16 +61,60 @@ export const useProductAnalyticsData = () => {
         }
         
         const categoryData = Array.from(categoryMap.entries()).map(([name, count]) => ({
-          name: name,
-          count: count
+          name,
+          count
         }));
 
-        // Get category based interactions
-        const { data: interactionData, error: interactionError } = await supabase
-          .rpc('get_product_interactions_by_category');
+        // Get interaction data by category
+        const interactionData: {
+          name: string;
+          views: number;
+          clicks: number;
+          saves: number;
+          shares: number;
+        }[] = [];
 
-        if (interactionError) {
-          console.error('Error fetching interaction data:', interactionError);
+        // Create a map of categories and their interaction counts
+        const categoriesSet = new Set<string>();
+        if (categoryResponse.data) {
+          categoryResponse.data.forEach(item => {
+            if (item.category) categoriesSet.add(item.category);
+          });
+        }
+
+        // For each unique category, count the different interaction types
+        for (const categoryName of categoriesSet) {
+          const viewsForCategory = await supabase
+            .from('product_analytics')
+            .select('*')
+            .eq('category', categoryName)
+            .eq('interaction_type', 'view');
+            
+          const clicksForCategory = await supabase
+            .from('product_analytics')
+            .select('*')
+            .eq('category', categoryName)
+            .eq('interaction_type', 'click');
+            
+          const savesForCategory = await supabase
+            .from('product_analytics')
+            .select('*')
+            .eq('category', categoryName)
+            .eq('interaction_type', 'save');
+            
+          const sharesForCategory = await supabase
+            .from('product_analytics')
+            .select('*')
+            .eq('category', categoryName)
+            .eq('interaction_type', 'share');
+            
+          interactionData.push({
+            name: categoryName,
+            views: viewsForCategory.data?.length || 0,
+            clicks: clicksForCategory.data?.length || 0,
+            saves: savesForCategory.data?.length || 0,
+            shares: sharesForCategory.data?.length || 0
+          });
         }
 
         return {
@@ -79,7 +123,7 @@ export const useProductAnalyticsData = () => {
           totalSaved,
           conversionRate,
           categoryData,
-          interactionData: interactionData || []
+          interactionData
         };
       } catch (error) {
         console.error('Error fetching product analytics:', error);
