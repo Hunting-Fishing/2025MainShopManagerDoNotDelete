@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { isValidAmazonLink } from '@/utils/amazonUtils';
+import { supabase } from '@/lib/supabase';
 
 const formSchema = z.object({
   productName: z.string().min(3, {
@@ -26,6 +27,9 @@ const formSchema = z.object({
   category: z.string().min(1, {
     message: "Please select a category.",
   }),
+  manufacturer: z.string().min(1, {
+    message: "Please enter a manufacturer name.",
+  }),
   notes: z.string().optional(),
 });
 
@@ -36,21 +40,40 @@ const SubmitProductForm = () => {
       productName: "",
       productUrl: "",
       category: "",
+      manufacturer: "",
       notes: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    
-    // Show success toast
-    toast({
-      title: "Product submitted successfully!",
-      description: "Thank you for your suggestion. We'll review it soon.",
-    });
-    
-    // Reset form
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { error } = await supabase.from('product_submissions').insert({
+        product_name: values.productName,
+        product_url: values.productUrl,
+        suggested_category: values.category,
+        manufacturer: values.manufacturer,
+        notes: values.notes,
+        status: 'pending',
+      });
+      
+      if (error) throw error;
+      
+      // Show success toast
+      toast({
+        title: "Product submitted successfully!",
+        description: "Thank you for your suggestion. We'll review it soon.",
+      });
+      
+      // Reset form
+      form.reset();
+    } catch (error) {
+      console.error("Error submitting product:", error);
+      toast({
+        title: "Submission failed",
+        description: "There was an error submitting your product. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -92,6 +115,23 @@ const SubmitProductForm = () => {
                 </FormControl>
                 <FormDescription>
                   Paste the direct link to the product (Amazon or other retail website).
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="manufacturer"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Manufacturer</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Toyota, Volvo, Polaris, DeWalt" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Enter the manufacturer or brand name of the product.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
