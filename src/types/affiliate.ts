@@ -76,3 +76,41 @@ export interface FeaturedGroup {
   startDate?: string;
   endDate?: string;
 }
+
+// Add missing types to fix build errors
+
+// ProductTier type for ProductTierBadge
+export type ProductTier = 'premium' | 'midgrade' | 'economy';
+
+// AffiliateProduct for components that need it
+export interface AffiliateProduct {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  retailPrice: number;
+  affiliateUrl: string;
+  category: string;
+  tier: ProductTier;
+  rating?: number;
+  reviewCount?: number;
+  manufacturer: string;
+  model?: string;
+  discount?: number;
+  isFeatured?: boolean;
+  bestSeller?: boolean;
+  freeShipping?: boolean;
+  source?: 'amazon' | 'other';
+}
+
+// UserSubmission for SubmissionsManagement
+export interface UserSubmission {
+  id: string;
+  productName: string;
+  submittedBy?: string;
+  suggestedCategory: string;
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected' | 'modifications';
+  notes?: string;
+  productUrl?: string;
+}

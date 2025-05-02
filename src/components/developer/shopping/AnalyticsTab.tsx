@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
-import StatsCards from './analytics/StatsCards';
+import StatsCards from './analytics/StatsCards'; // Changed from named import to default import
 import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
 import { SubmissionStatusChart } from './analytics/SubmissionStatusChart';
 
