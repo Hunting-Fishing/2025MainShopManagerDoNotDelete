@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -37,8 +36,8 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
   const handleSaveProduct = async (updatedProduct: AffiliateTool | AffiliateProduct) => {
     try {
       await onProductUpdated(updatedProduct);
-      // Return true but don't use it as a return value to fix the type error
-      return true;
+      // Don't return a boolean value, just return void
+      return;
     } catch (error) {
       console.error("Error updating product:", error);
       toast({
@@ -46,8 +45,8 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
         description: "Failed to update the product. Please try again.",
         variant: "destructive"
       });
-      // Return false but don't use it as a return value to fix the type error
-      return false;
+      // Don't return a boolean value, just throw the error to be caught by the caller
+      throw error;
     }
   };
 
