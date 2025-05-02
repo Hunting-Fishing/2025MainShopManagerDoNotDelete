@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,22 +11,90 @@ import { ArrowUpDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 const CategoriesManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("tools");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [toolCategories, setToolCategories] = useState<ToolCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
   
-  // Transform the categories object into an array of ToolCategory objects
-  const toolCategories: ToolCategory[] = Object.entries(categories).map(([name, tools]) => ({
-    id: name.toLowerCase().replace(/\s+/g, '-'),
-    name,
-    productCount: tools.length,
-    imageUrl: null, // We don't have images in the data, so set to null
-    slug: name.toLowerCase().replace(/\s+/g, '-'),
-    description: `Tools for ${name}`, // Adding a simple description
-  }));
+  // Load products by category to get actual counts
+  useEffect(() => {
+    const loadCategoriesWithCounts = async () => {
+      setIsLoadingCategories(true);
+      try {
+        // First get all categories from the database
+        const { data: dbCategories, error: categoriesError } = await supabase
+          .from('product_categories')
+          .select('id, name, slug, description');
+        
+        if (categoriesError) throw categoriesError;
+        
+        // Transform categories from the static data but use DB categories if available
+        const cats: ToolCategory[] = Object.entries(categories).map(([name, tools]) => {
+          // Look for matching category in DB
+          const dbCategory = dbCategories?.find(
+            cat => cat.name.toLowerCase() === name.toLowerCase()
+          );
+          
+          return {
+            id: dbCategory?.id || name.toLowerCase().replace(/\s+/g, '-'),
+            name,
+            productCount: 0, // Start with 0, we'll update this with actual counts
+            imageUrl: null,
+            slug: dbCategory?.slug || name.toLowerCase().replace(/\s+/g, '-'),
+            description: dbCategory?.description || `Tools for ${name}`,
+          };
+        });
+        
+        // For each category, get the product count
+        const categoriesWithCounts = await Promise.all(
+          cats.map(async (category) => {
+            const { data, error, count } = await supabase
+              .from('products')
+              .select('*', { count: 'exact', head: false })
+              .eq('category', category.name);
+              
+            if (error) {
+              console.error(`Error fetching products for ${category.name}:`, error);
+              return category;
+            }
+            
+            return {
+              ...category,
+              productCount: count || 0
+            };
+          })
+        );
+        
+        setToolCategories(categoriesWithCounts);
+      } catch (error) {
+        console.error("Error loading categories with counts:", error);
+        // Fallback to static data if there's an error
+        const staticCategories: ToolCategory[] = Object.entries(categories).map(([name, tools]) => ({
+          id: name.toLowerCase().replace(/\s+/g, '-'),
+          name,
+          productCount: 0, // Set to 0 since we don't know actual counts
+          imageUrl: null,
+          slug: name.toLowerCase().replace(/\s+/g, '-'),
+          description: `Tools for ${name}`,
+        }));
+        setToolCategories(staticCategories);
+        toast({
+          title: "Error",
+          description: "Failed to load product counts. Showing default categories.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    
+    loadCategoriesWithCounts();
+  }, []);
   
   // Group manufacturers by category
   const manufacturersByCategory = manufacturers.reduce((acc, manufacturer) => {
@@ -53,7 +122,7 @@ const CategoriesManagement: React.FC = () => {
     } else {
       setSelectedCategory(null);
     }
-  }, [activeTab]);
+  }, [activeTab, toolCategories]);
 
   const filteredToolCategories = toolCategories.filter(category => 
     category.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -205,15 +274,23 @@ const CategoriesManagement: React.FC = () => {
         </div>
 
         <TabsContent value="tools" className="mt-6 space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {sortedToolCategories.length > 0 ? (
-              sortedToolCategories.map(renderCategoryCard)
-            ) : (
-              <div className="col-span-full p-4 text-center text-muted-foreground">
-                No tool categories found
-              </div>
-            )}
-          </div>
+          {isLoadingCategories ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {[...Array(10)].map((_, i) => (
+                <Card key={i} className="h-[100px] animate-pulse bg-gray-100 dark:bg-gray-800"></Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {sortedToolCategories.length > 0 ? (
+                sortedToolCategories.map(renderCategoryCard)
+              ) : (
+                <div className="col-span-full p-4 text-center text-muted-foreground">
+                  No tool categories found
+                </div>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="manufacturers" className="mt-6 space-y-6">
@@ -244,7 +321,7 @@ const CategoriesManagement: React.FC = () => {
             </div>
           ) : (
             <ProductsList 
-              products={products}
+              products={products} 
               categoryName={selectedCategory}
               loading={loading}
               onEdit={handleEdit}
