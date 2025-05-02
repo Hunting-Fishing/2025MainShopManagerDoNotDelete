@@ -5,6 +5,8 @@ import { AffiliateProduct } from "@/types/affiliate";
 import ProductTierBadge from "./ProductTierBadge";
 import { addAffiliateTracking } from "@/utils/amazonUtils";
 import { ExternalLink, Save } from "lucide-react";
+import { useCallback } from "react";
+import { useProductAnalytics, ProductInteractionType } from "@/components/developer/shopping/analytics/AnalyticsTracker";
 
 interface ProductCardProps {
   product: AffiliateProduct;
@@ -13,10 +15,37 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, isSaved, onSaveToggle }: ProductCardProps) => {
+  const { trackInteraction } = useProductAnalytics();
+
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const trackedUrl = addAffiliateTracking(product.affiliateUrl);
     e.currentTarget.href = trackedUrl;
+    
+    // Track product click
+    trackInteraction({
+      productId: product.id,
+      productName: product.name,
+      interactionType: ProductInteractionType.CLICK,
+      category: product.category,
+      additionalData: {
+        tier: product.tier,
+        manufacturer: product.manufacturer,
+        price: product.retailPrice
+      }
+    });
   };
+  
+  const handleSaveClick = useCallback(() => {
+    // Track save/unsave interaction
+    trackInteraction({
+      productId: product.id,
+      productName: product.name,
+      interactionType: isSaved ? ProductInteractionType.UNSAVE : ProductInteractionType.SAVE,
+      category: product.category
+    });
+    
+    onSaveToggle();
+  }, [product, isSaved, onSaveToggle, trackInteraction]);
 
   return (
     <Card className="h-full flex flex-col overflow-hidden transition-all hover:shadow-md">
@@ -32,7 +61,7 @@ const ProductCard = ({ product, isSaved, onSaveToggle }: ProductCardProps) => {
         <button
           onClick={(e) => {
             e.preventDefault();
-            onSaveToggle();
+            handleSaveClick();
           }}
           className={`absolute top-2 left-2 p-1.5 rounded-full ${
             isSaved 

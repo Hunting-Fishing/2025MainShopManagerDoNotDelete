@@ -1,11 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
-import StatsCards from './analytics/StatsCards'; // Changed from named import to default import
+import StatsCards from './analytics/StatsCards';
 import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
 import { SubmissionStatusChart } from './analytics/SubmissionStatusChart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 
 export default function AnalyticsTab() {
+  const [activeTab, setActiveTab] = useState<string>("overview");
   const { analyticsData, isLoading } = useShoppingAnalytics();
   
   if (isLoading) {
@@ -18,20 +21,33 @@ export default function AnalyticsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <StatsCards />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="products">Product Analytics</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-6">
+          {/* Stats Cards */}
+          <StatsCards />
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Products by Category Chart */}
-        <ProductsByCategoryChart data={analyticsData.productsByCategory} />
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Products by Category Chart */}
+            <ProductsByCategoryChart data={analyticsData.productsByCategory} />
 
-        {/* Submission Status Chart */}
-        <SubmissionStatusChart 
-          data={analyticsData.submissionStatusData} 
-          totalSubmissions={analyticsData.totalSubmissions} 
-        />
-      </div>
+            {/* Submission Status Chart */}
+            <SubmissionStatusChart 
+              data={analyticsData.submissionStatusData} 
+              totalSubmissions={analyticsData.totalSubmissions} 
+            />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="products">
+          <AnalyticsDashboard />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
