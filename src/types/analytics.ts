@@ -1,4 +1,3 @@
-
 export interface AnalyticsData {
   totalProducts: number;
   approvedProducts: number;
@@ -37,11 +36,13 @@ export interface TopProductAnalytics {
   id: string;
   name: string;
   category: string;
-  views: number;
-  clicks: number;
-  saves: number;
-  ctr: number; // Click-through rate
-  viewToSaveRate: number;
+  count: number;
+  percentage: number;
+  views?: number;
+  clicks?: number;
+  saves?: number;
+  ctr?: number; // Click-through rate
+  viewToSaveRate?: number;
 }
 
 export interface CategoryAnalytics {
@@ -51,4 +52,28 @@ export interface CategoryAnalytics {
   saves: number;
   products: number;
   averageViewsPerProduct: number;
+}
+
+// Add the missing types for our analytics data hook
+export interface ProductAnalyticsData {
+  totalViews: number;
+  totalClicks: number;
+  totalSaved: number;
+  conversionRate: number;
+  categoryData: { name: string; count: number }[];
+  interactionData: {
+    name: string;
+    views: number;
+    clicks: number;
+    saves: number;
+    shares: number;
+  }[];
+}
+
+export interface TopProduct {
+  id: string;
+  name: string;
+  category: string;
+  count: number;
+  percentage: number;
 }

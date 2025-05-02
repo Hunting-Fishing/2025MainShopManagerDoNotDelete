@@ -28,7 +28,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .from('product_analytics')
       .select('category, count(*)')
       .eq('interaction_type', ProductInteractionType.VIEW)
-      .group('category');
+      .select('category, count(*)');
 
     if (categoryError) throw categoryError;
 
@@ -55,13 +55,14 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
     if (savesError) throw savesError;
 
     // Fetch interaction data by category
-    const { data: interactionData, error: interactionError } = await supabase.rpc('get_product_interactions_by_category');
+    const { data: interactionData, error: interactionError } = await supabase
+      .rpc('get_product_interactions_by_category');
 
     if (interactionError) {
       // If the RPC function doesn't exist, we'll use a workaround with raw data
       const { data: rawInteractionData, error: rawError } = await supabase
         .from('product_analytics')
-        .select('category, interaction_type')
+        .select('category, interaction_type');
         
       if (rawError) throw rawError;
       
@@ -88,9 +89,9 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
         }, new Map())
       ).map(([_, value]) => value);
 
-      const totalViews = viewsData?.count || 0;
-      const totalClicks = clicksData?.count || 0;
-      const totalSaves = savesData?.count || 0;
+      const totalViews = viewsData?.[0]?.count || 0;
+      const totalClicks = clicksData?.[0]?.count || 0;
+      const totalSaves = savesData?.[0]?.count || 0;
       const conversionRate = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
       
       return {
@@ -108,10 +109,10 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
 
     // If the RPC function exists, use its results
     return {
-      totalViews: viewsData?.count || 0,
-      totalClicks: clicksData?.count || 0,
-      totalSaved: savesData?.count || 0,
-      conversionRate: viewsData?.count > 0 ? ((clicksData?.count || 0) / viewsData.count) * 100 : 0,
+      totalViews: viewsData?.[0]?.count || 0,
+      totalClicks: clicksData?.[0]?.count || 0,
+      totalSaved: savesData?.[0]?.count || 0,
+      conversionRate: viewsData?.[0]?.count > 0 ? ((clicksData?.[0]?.count || 0) / viewsData[0].count) * 100 : 0,
       categoryData: (categoryData || []).map(item => ({ 
         name: item.category, 
         count: item.count 
@@ -129,7 +130,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .from('product_analytics')
       .select('product_id, product_name, category, count(*)')
       .eq('interaction_type', ProductInteractionType.VIEW)
-      .group('product_id, product_name, category')
+      .select('product_id, product_name, category, count(*)')
       .order('count', { ascending: false })
       .limit(5);
 
@@ -140,7 +141,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .from('product_analytics')
       .select('product_id, product_name, category, count(*)')
       .eq('interaction_type', ProductInteractionType.CLICK)
-      .group('product_id, product_name, category')
+      .select('product_id, product_name, category, count(*)')
       .order('count', { ascending: false })
       .limit(5);
 
@@ -162,8 +163,8 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
 
     if (totalClicksError) throw totalClicksError;
 
-    const totalViewCount = totalViews.count || 0;
-    const totalClickCount = totalClicks.count || 0;
+    const totalViewCount = totalViews?.[0]?.count || 0;
+    const totalClickCount = totalClicks?.[0]?.count || 0;
 
     return {
       views: (topViewedProducts || []).map(product => ({
@@ -189,7 +190,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .from('product_analytics')
       .select('product_id, product_name, category, count(*)')
       .eq('interaction_type', ProductInteractionType.SAVE)
-      .group('product_id, product_name, category')
+      .select('product_id, product_name, category, count(*)')
       .order('count', { ascending: false })
       .limit(5);
 
@@ -203,7 +204,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
 
     if (totalSavedError) throw totalSavedError;
 
-    const totalSavedCount = totalSaved.count || 0;
+    const totalSavedCount = totalSaved?.[0]?.count || 0;
 
     return (topSavedProducts || []).map(product => ({
       id: product.product_id,
