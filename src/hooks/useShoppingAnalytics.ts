@@ -78,7 +78,9 @@ export function useShoppingAnalytics() {
             
             // If it's an object with a name property
             if (categoryObj && typeof categoryObj === 'object' && 'name' in categoryObj) {
-              categoryName = categoryObj.name;
+              // Ensure we have a string by converting if needed
+              const nameValue = categoryObj.name;
+              categoryName = typeof nameValue === 'string' ? nameValue : String(nameValue);
             }
             
             const entry = categoryProductMap.get(categoryName) || { name: categoryName, count: 0 };
