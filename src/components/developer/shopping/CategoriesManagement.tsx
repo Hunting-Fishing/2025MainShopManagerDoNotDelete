@@ -10,7 +10,6 @@ import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { ArrowUpDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CategoriesManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("tools");
@@ -216,7 +215,17 @@ const CategoriesManagement: React.FC = () => {
             <ProductsList 
               products={products}
               categoryName={selectedCategory}
-              onProductUpdated={updateProduct}
+              loading={loading}
+              onEdit={(product) => {
+                if (onEdit) {
+                  onEdit(product);
+                }
+              }}
+              onDelete={(product) => {
+                if (onDelete) {
+                  onDelete(product);
+                }
+              }}
             />
           )}
         </div>

@@ -4,19 +4,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { PenLine, Trash2, Eye, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { AffiliateTool } from "@/types/affiliate";
+import { AffiliateTool, AffiliateProduct } from "@/types/affiliate";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface ProductsListProps {
+export interface ProductsListProps {
   products: AffiliateTool[];
-  loading: boolean;
-  onEdit: (product: AffiliateTool) => void;
-  onDelete: (product: AffiliateTool) => void;
+  loading?: boolean;
+  categoryName?: string;
+  onEdit?: (product: AffiliateTool) => void;
+  onDelete?: (product: AffiliateTool) => void;
 }
 
 const ProductsList: React.FC<ProductsListProps> = ({ 
   products, 
-  loading, 
+  loading = false,
+  categoryName,
   onEdit,
   onDelete
 }) => {
@@ -39,7 +41,7 @@ const ProductsList: React.FC<ProductsListProps> = ({
   if (!products?.length) {
     return (
       <div className="text-center py-8 border rounded-md bg-slate-50 dark:bg-slate-900">
-        <p className="text-slate-500 dark:text-slate-400">No products found</p>
+        <p className="text-slate-500 dark:text-slate-400">No products found {categoryName ? `in ${categoryName}` : ''}</p>
       </div>
     );
   }
@@ -119,21 +121,25 @@ const ProductsList: React.FC<ProductsListProps> = ({
                   >
                     <ExternalLink className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost"
-                    onClick={() => onEdit(product)}
-                  >
-                    <PenLine className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => onDelete(product)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {onEdit && (
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      onClick={() => onEdit(product)}
+                    >
+                      <PenLine className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => onDelete(product)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
