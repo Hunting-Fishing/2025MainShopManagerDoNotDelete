@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
-import { ProductInteractionsChart, ProductInteraction } from './ProductInteractionsChart';
-import { TopProductsTable, TopProductAnalytics } from './TopProductsTable';
+import { ProductInteractionsChart } from './analytics/ProductInteractionsChart';
+import { TopProductsTable } from './analytics/TopProductsTable';
 import { useProductAnalyticsData } from '@/hooks/useProductAnalyticsData';
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw } from 'lucide-react';
@@ -38,7 +39,7 @@ export const AnalyticsDashboard: React.FC = () => {
   }, [analyticsData]);
 
   // Calculate percentages for top products
-  const processTopProducts = (products: any[], total: number): TopProductAnalytics[] => {
+  const processTopProducts = (products: any[], total: number) => {
     return products.map(product => ({
       ...product,
       percentage: total > 0 ? (product.count / total) * 100 : 0
