@@ -22,25 +22,22 @@ export const useProductAnalyticsData = () => {
         const viewsResponse = await supabase
           .from('product_analytics')
           .select('*')
-          .eq('interaction_type', 'view')
-          .count();
-        const totalViews = viewsResponse.count || 0;
+          .eq('interaction_type', 'view');
+        const totalViews = viewsResponse.data?.length || 0;
 
         // Get total clicks
         const clicksResponse = await supabase
           .from('product_analytics')
           .select('*')
-          .eq('interaction_type', 'click')
-          .count();
-        const totalClicks = clicksResponse.count || 0;
+          .eq('interaction_type', 'click');
+        const totalClicks = clicksResponse.data?.length || 0;
 
         // Get total saves
         const savesResponse = await supabase
           .from('product_analytics')
           .select('*')
-          .eq('interaction_type', 'save')
-          .count();
-        const totalSaved = savesResponse.count || 0;
+          .eq('interaction_type', 'save');
+        const totalSaved = savesResponse.data?.length || 0;
 
         // Calculate conversion rate
         const conversionRate = totalViews > 0
@@ -50,20 +47,27 @@ export const useProductAnalyticsData = () => {
         // Get category data
         const categoryResponse = await supabase
           .from('product_analytics')
-          .select('category, count')
+          .select('category')
           .eq('interaction_type', 'view')
           .not('category', 'is', null);
-
-        const categoryData = categoryResponse.data ? 
-          categoryResponse.data.map(item => ({
-            name: item.category || 'Unknown',
-            count: item.count || 1
-          })) : [];
+        
+        // Count entries by category
+        const categoryMap = new Map<string, number>();
+        if (categoryResponse.data) {
+          categoryResponse.data.forEach(item => {
+            const category = item.category || 'Unknown';
+            categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+          });
+        }
+        
+        const categoryData = Array.from(categoryMap.entries()).map(([name, count]) => ({
+          name: name,
+          count: count
+        }));
 
         // Get category based interactions
-        const { data: interactionData, error: interactionError } = await supabase.rpc(
-          'get_product_interactions_by_category'
-        );
+        const { data: interactionData, error: interactionError } = await supabase
+          .rpc('get_product_interactions_by_category');
 
         if (interactionError) {
           console.error('Error fetching interaction data:', interactionError);
@@ -97,24 +101,49 @@ export const useProductAnalyticsData = () => {
     queryKey: ['topProductsViews'],
     queryFn: async (): Promise<TopProductAnalytics[]> => {
       try {
+        // Fetch products with view counts
         const response = await supabase
           .from('product_analytics')
-          .select('product_id, product_name, category, count(*)')
+          .select('product_id, product_name, category')
           .eq('interaction_type', 'view')
-          .not('product_id', 'is', null)
-          .order('count', { ascending: false })
-          .limit(5);
+          .not('product_id', 'is', null);
 
         if (response.error) throw response.error;
+        
+        // Count views by product
+        const productViewCounts = new Map<string, {name: string, category: string, count: number}>();
+        
+        if (response.data) {
+          response.data.forEach(item => {
+            if (!item.product_id) return;
+            
+            const entry = productViewCounts.get(item.product_id) || {
+              name: item.product_name || 'Unknown Product',
+              category: item.category || 'Uncategorized',
+              count: 0
+            };
+            
+            productViewCounts.set(item.product_id, {
+              ...entry,
+              count: entry.count + 1
+            });
+          });
+        }
 
-        return (response.data || []).map(item => ({
-          id: item.product_id,
-          name: item.product_name || 'Unknown Product',
-          category: item.category || 'Uncategorized',
-          count: parseInt(item.count, 10) || 0,
-          percentage: 0, // Will calculate after
-          views: parseInt(item.count, 10) || 0
-        }));
+        // Convert to array and sort
+        const topViews = Array.from(productViewCounts.entries())
+          .map(([id, data]) => ({
+            id,
+            name: data.name,
+            category: data.category,
+            count: data.count,
+            percentage: 0,
+            views: data.count
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        return topViews;
       } catch (error) {
         console.error('Error fetching top viewed products:', error);
         return [];
@@ -128,24 +157,49 @@ export const useProductAnalyticsData = () => {
     queryKey: ['topProductsClicks'],
     queryFn: async (): Promise<TopProductAnalytics[]> => {
       try {
+        // Fetch products with click counts
         const response = await supabase
           .from('product_analytics')
-          .select('product_id, product_name, category, count(*)')
+          .select('product_id, product_name, category')
           .eq('interaction_type', 'click')
-          .not('product_id', 'is', null)
-          .order('count', { ascending: false })
-          .limit(5);
+          .not('product_id', 'is', null);
 
         if (response.error) throw response.error;
+        
+        // Count clicks by product
+        const productClickCounts = new Map<string, {name: string, category: string, count: number}>();
+        
+        if (response.data) {
+          response.data.forEach(item => {
+            if (!item.product_id) return;
+            
+            const entry = productClickCounts.get(item.product_id) || {
+              name: item.product_name || 'Unknown Product',
+              category: item.category || 'Uncategorized',
+              count: 0
+            };
+            
+            productClickCounts.set(item.product_id, {
+              ...entry,
+              count: entry.count + 1
+            });
+          });
+        }
 
-        return (response.data || []).map(item => ({
-          id: item.product_id,
-          name: item.product_name || 'Unknown Product',
-          category: item.category || 'Uncategorized',
-          count: parseInt(item.count, 10) || 0,
-          percentage: 0, // Will calculate after
-          clicks: parseInt(item.count, 10) || 0
-        }));
+        // Convert to array and sort
+        const topClicks = Array.from(productClickCounts.entries())
+          .map(([id, data]) => ({
+            id,
+            name: data.name,
+            category: data.category,
+            count: data.count,
+            percentage: 0,
+            clicks: data.count
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        return topClicks;
       } catch (error) {
         console.error('Error fetching top clicked products:', error);
         return [];
@@ -159,24 +213,49 @@ export const useProductAnalyticsData = () => {
     queryKey: ['mostSavedProducts'],
     queryFn: async (): Promise<TopProductAnalytics[]> => {
       try {
+        // Fetch products with save counts
         const response = await supabase
           .from('product_analytics')
-          .select('product_id, product_name, category, count(*)')
+          .select('product_id, product_name, category')
           .eq('interaction_type', 'save')
-          .not('product_id', 'is', null)
-          .order('count', { ascending: false })
-          .limit(10);
+          .not('product_id', 'is', null);
 
         if (response.error) throw response.error;
+        
+        // Count saves by product
+        const productSaveCounts = new Map<string, {name: string, category: string, count: number}>();
+        
+        if (response.data) {
+          response.data.forEach(item => {
+            if (!item.product_id) return;
+            
+            const entry = productSaveCounts.get(item.product_id) || {
+              name: item.product_name || 'Unknown Product',
+              category: item.category || 'Uncategorized',
+              count: 0
+            };
+            
+            productSaveCounts.set(item.product_id, {
+              ...entry,
+              count: entry.count + 1
+            });
+          });
+        }
 
-        return (response.data || []).map(item => ({
-          id: item.product_id,
-          name: item.product_name || 'Unknown Product',
-          category: item.category || 'Uncategorized',
-          count: parseInt(item.count, 10) || 0,
-          percentage: 0, // Will calculate after
-          saves: parseInt(item.count, 10) || 0
-        }));
+        // Convert to array and sort
+        const topSaves = Array.from(productSaveCounts.entries())
+          .map(([id, data]) => ({
+            id,
+            name: data.name,
+            category: data.category,
+            count: data.count,
+            percentage: 0,
+            saves: data.count
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10);
+
+        return topSaves;
       } catch (error) {
         console.error('Error fetching most saved products:', error);
         return [];

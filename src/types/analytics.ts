@@ -52,8 +52,9 @@ export interface CategoryAnalytics {
   views: number;
   clicks: number;
   saves: number;
-  products: number;
-  averageViewsPerProduct: number;
+  shares: number;
+  products?: number;
+  averageViewsPerProduct?: number;
 }
 
 // Product analytics data hook interface
@@ -70,12 +71,4 @@ export interface ProductAnalyticsData {
     saves: number;
     shares: number;
   }[];
-}
-
-export interface TopProduct {
-  id: string;
-  name: string;
-  category: string;
-  count: number;
-  percentage: number;
 }
