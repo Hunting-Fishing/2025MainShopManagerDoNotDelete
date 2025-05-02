@@ -27,29 +27,28 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
     const { data: categoryData, error: categoryError } = await supabase
       .from('product_analytics')
       .select('category, count(*)')
-      .eq('interaction_type', ProductInteractionType.VIEW)
-      .select('category, count(*)');
+      .eq('interaction_type', ProductInteractionType.VIEW);
 
     if (categoryError) throw categoryError;
 
     // Fetch total views, clicks, saves counts
     const { data: viewsData, error: viewsError } = await supabase
       .from('product_analytics')
-      .select('count(*)', { count: 'exact' })
+      .select('count(*)', { count: 'exact', head: false })
       .eq('interaction_type', ProductInteractionType.VIEW);
 
     if (viewsError) throw viewsError;
     
     const { data: clicksData, error: clicksError } = await supabase
       .from('product_analytics')
-      .select('count(*)', { count: 'exact' })
+      .select('count(*)', { count: 'exact', head: false })
       .eq('interaction_type', ProductInteractionType.CLICK);
 
     if (clicksError) throw clicksError;
     
     const { data: savesData, error: savesError } = await supabase
       .from('product_analytics')
-      .select('count(*)', { count: 'exact' })
+      .select('count(*)', { count: 'exact', head: false })
       .eq('interaction_type', ProductInteractionType.SAVE);
 
     if (savesError) throw savesError;
@@ -59,6 +58,8 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .rpc('get_product_interactions_by_category');
 
     if (interactionError) {
+      console.error('Error fetching interaction data by category:', interactionError);
+      
       // If the RPC function doesn't exist, we'll use a workaround with raw data
       const { data: rawInteractionData, error: rawError } = await supabase
         .from('product_analytics')
@@ -88,35 +89,68 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
           return acc;
         }, new Map())
       ).map(([_, value]) => value);
-
-      const totalViews = viewsData?.[0]?.count || 0;
-      const totalClicks = clicksData?.[0]?.count || 0;
-      const totalSaves = savesData?.[0]?.count || 0;
-      const conversionRate = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
+      
+      // Get counts from the count query responses
+      const totalViewCount = Array.isArray(viewsData) && viewsData.length > 0 
+        ? parseInt(viewsData[0].count as string, 10) 
+        : 0;
+        
+      const totalClickCount = Array.isArray(clicksData) && clicksData.length > 0 
+        ? parseInt(clicksData[0].count as string, 10) 
+        : 0;
+        
+      const totalSaveCount = Array.isArray(savesData) && savesData.length > 0 
+        ? parseInt(savesData[0].count as string, 10) 
+        : 0;
+      
+      const conversionRate = totalViewCount > 0 ? (totalClickCount / totalViewCount) * 100 : 0;
+      
+      const formattedCategoryData = Array.isArray(categoryData) 
+        ? categoryData.map(item => ({ 
+            name: item.category, 
+            count: parseInt(item.count as string, 10) 
+          }))
+        : [];
       
       return {
-        totalViews,
-        totalClicks,
-        totalSaved: totalSaves,
+        totalViews: totalViewCount,
+        totalClicks: totalClickCount,
+        totalSaved: totalSaveCount,
         conversionRate,
-        categoryData: (categoryData || []).map(item => ({ 
-          name: item.category, 
-          count: item.count 
-        })),
+        categoryData: formattedCategoryData,
         interactionData: processedData
       };
     }
 
     // If the RPC function exists, use its results
+    // Get counts from the count query responses
+    const totalViewCount = Array.isArray(viewsData) && viewsData.length > 0 
+      ? parseInt(viewsData[0].count as string, 10) 
+      : 0;
+      
+    const totalClickCount = Array.isArray(clicksData) && clicksData.length > 0 
+      ? parseInt(clicksData[0].count as string, 10) 
+      : 0;
+      
+    const totalSaveCount = Array.isArray(savesData) && savesData.length > 0 
+      ? parseInt(savesData[0].count as string, 10)
+      : 0;
+    
+    const conversionRate = totalViewCount > 0 ? (totalClickCount / totalViewCount) * 100 : 0;
+
+    const formattedCategoryData = Array.isArray(categoryData) 
+      ? categoryData.map(item => ({ 
+          name: item.category, 
+          count: parseInt(item.count as string, 10) 
+        }))
+      : [];
+
     return {
-      totalViews: viewsData?.[0]?.count || 0,
-      totalClicks: clicksData?.[0]?.count || 0,
-      totalSaved: savesData?.[0]?.count || 0,
-      conversionRate: viewsData?.[0]?.count > 0 ? ((clicksData?.[0]?.count || 0) / viewsData[0].count) * 100 : 0,
-      categoryData: (categoryData || []).map(item => ({ 
-        name: item.category, 
-        count: item.count 
-      })),
+      totalViews: totalViewCount,
+      totalClicks: totalClickCount,
+      totalSaved: totalSaveCount,
+      conversionRate,
+      categoryData: formattedCategoryData,
       interactionData: interactionData || []
     };
   };
@@ -130,7 +164,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .from('product_analytics')
       .select('product_id, product_name, category, count(*)')
       .eq('interaction_type', ProductInteractionType.VIEW)
-      .select('product_id, product_name, category, count(*)')
+      .group('product_id, product_name, category')
       .order('count', { ascending: false })
       .limit(5);
 
@@ -141,7 +175,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .from('product_analytics')
       .select('product_id, product_name, category, count(*)')
       .eq('interaction_type', ProductInteractionType.CLICK)
-      .select('product_id, product_name, category, count(*)')
+      .group('product_id, product_name, category')
       .order('count', { ascending: false })
       .limit(5);
 
@@ -150,7 +184,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
     // Get total view count for percentage calculation
     const { data: totalViews, error: totalViewsError } = await supabase
       .from('product_analytics')
-      .select('count(*)', { count: 'exact' })
+      .select('count(*)', { count: 'exact', head: false })
       .eq('interaction_type', ProductInteractionType.VIEW);
 
     if (totalViewsError) throw totalViewsError;
@@ -158,30 +192,40 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
     // Get total click count for percentage calculation
     const { data: totalClicks, error: totalClicksError } = await supabase
       .from('product_analytics')
-      .select('count(*)', { count: 'exact' })
+      .select('count(*)', { count: 'exact', head: false })
       .eq('interaction_type', ProductInteractionType.CLICK);
 
     if (totalClicksError) throw totalClicksError;
 
-    const totalViewCount = totalViews?.[0]?.count || 0;
-    const totalClickCount = totalClicks?.[0]?.count || 0;
+    const totalViewCount = Array.isArray(totalViews) && totalViews.length > 0 
+      ? parseInt(totalViews[0].count as string, 10)
+      : 0;
+      
+    const totalClickCount = Array.isArray(totalClicks) && totalClicks.length > 0 
+      ? parseInt(totalClicks[0].count as string, 10) 
+      : 0;
 
-    return {
-      views: (topViewedProducts || []).map(product => ({
-        id: product.product_id,
-        name: product.product_name,
-        category: product.category,
-        count: product.count,
-        percentage: totalViewCount > 0 ? (product.count / totalViewCount) * 100 : 0
-      })),
-      clicks: (topClickedProducts || []).map(product => ({
-        id: product.product_id,
-        name: product.product_name,
-        category: product.category,
-        count: product.count,
-        percentage: totalClickCount > 0 ? (product.count / totalClickCount) * 100 : 0
-      }))
-    };
+    const views = Array.isArray(topViewedProducts) 
+      ? topViewedProducts.map(product => ({
+          id: product.product_id,
+          name: product.product_name,
+          category: product.category,
+          count: parseInt(product.count as string, 10),
+          percentage: totalViewCount > 0 ? (parseInt(product.count as string, 10) / totalViewCount) * 100 : 0
+        }))
+      : [];
+      
+    const clicks = Array.isArray(topClickedProducts) 
+      ? topClickedProducts.map(product => ({
+          id: product.product_id,
+          name: product.product_name,
+          category: product.category,
+          count: parseInt(product.count as string, 10),
+          percentage: totalClickCount > 0 ? (parseInt(product.count as string, 10) / totalClickCount) * 100 : 0
+        }))
+      : [];
+
+    return { views, clicks };
   };
 
   const fetchSavedProducts = async (): Promise<TopProduct[]> => {
@@ -190,7 +234,7 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
       .from('product_analytics')
       .select('product_id, product_name, category, count(*)')
       .eq('interaction_type', ProductInteractionType.SAVE)
-      .select('product_id, product_name, category, count(*)')
+      .group('product_id, product_name, category')
       .order('count', { ascending: false })
       .limit(5);
 
@@ -199,20 +243,24 @@ export const useProductAnalyticsData = (): ProductAnalyticsResult => {
     // Get total saved count for percentage calculation
     const { data: totalSaved, error: totalSavedError } = await supabase
       .from('product_analytics')
-      .select('count(*)', { count: 'exact' })
+      .select('count(*)', { count: 'exact', head: false })
       .eq('interaction_type', ProductInteractionType.SAVE);
 
     if (totalSavedError) throw totalSavedError;
 
-    const totalSavedCount = totalSaved?.[0]?.count || 0;
+    const totalSavedCount = Array.isArray(totalSaved) && totalSaved.length > 0 
+      ? parseInt(totalSaved[0].count as string, 10)
+      : 0;
 
-    return (topSavedProducts || []).map(product => ({
-      id: product.product_id,
-      name: product.product_name,
-      category: product.category,
-      count: product.count,
-      percentage: totalSavedCount > 0 ? (product.count / totalSavedCount) * 100 : 0
-    }));
+    return Array.isArray(topSavedProducts) 
+      ? topSavedProducts.map(product => ({
+          id: product.product_id,
+          name: product.product_name,
+          category: product.category,
+          count: parseInt(product.count as string, 10),
+          percentage: totalSavedCount > 0 ? (parseInt(product.count as string, 10) / totalSavedCount) * 100 : 0
+        }))
+      : [];
   };
 
   // Use React Query for data fetching with caching

@@ -1,3 +1,4 @@
+
 export interface AnalyticsData {
   totalProducts: number;
   approvedProducts: number;
