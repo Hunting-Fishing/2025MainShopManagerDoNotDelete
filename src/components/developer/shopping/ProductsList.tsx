@@ -37,6 +37,7 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
   const handleSaveProduct = async (updatedProduct: AffiliateTool | AffiliateProduct) => {
     try {
       await onProductUpdated(updatedProduct);
+      // Return true but don't use it as a return value to fix the type error
       return true;
     } catch (error) {
       console.error("Error updating product:", error);
@@ -45,6 +46,7 @@ const ProductsList = ({ products, categoryName, onProductUpdated }: ProductsList
         description: "Failed to update the product. Please try again.",
         variant: "destructive"
       });
+      // Return false but don't use it as a return value to fix the type error
       return false;
     }
   };
