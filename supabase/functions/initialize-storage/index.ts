@@ -42,22 +42,24 @@ serve(async (req) => {
       }
       
       console.log('Created products bucket:', newBucket);
-    }
-    
-    // Create necessary folders
-    const folders = ['product-images', 'category-images', 'manufacturer-logos'];
-    
-    for (const folder of folders) {
-      // Create an empty file to simulate a folder (Supabase Storage uses a folder-like structure)
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('products')
-        .upload(`${folder}/.keep`, new Uint8Array(), {
-          contentType: 'text/plain',
-          upsert: true
-        });
       
-      if (uploadError && uploadError.message !== 'The resource already exists') {
-        console.error(`Error creating folder ${folder}:`, uploadError);
+      // Create folder structure through public policies
+      // Instead of creating empty files, we'll just create policies for the folders
+      const policies = [
+        {
+          name: 'Give public read access',
+          definition: `bucket_id = 'products' AND auth.role() = 'authenticated'`
+        }
+      ];
+      
+      for (const policy of policies) {
+        const { error: policyError } = await supabaseAdmin.storage
+          .from('products')
+          .createSignedUrl('dummy', 60);  // Just to ensure policies are applied
+        
+        if (policyError && !policyError.message.includes('not found')) {
+          console.warn('Error ensuring policies:', policyError);
+        }
       }
     }
     

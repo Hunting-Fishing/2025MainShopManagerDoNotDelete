@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Upload, X, Check, Loader2 } from "lucide-react";
+import { Upload, X, Check, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/lib/supabase';
 
@@ -56,7 +56,48 @@ const ImageUploader = ({ onImageUploaded, currentImageUrl, className = "" }: Ima
         .from('products')
         .upload(filePath, file);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Storage upload error:", error);
+        
+        // Check if bucket doesn't exist
+        if (error.message?.includes("bucket") || error.message?.includes("not found")) {
+          toast({
+            title: "Storage not initialized",
+            description: "Please try again in a moment as we set up storage",
+            variant: "destructive"
+          });
+          
+          // Try to initialize storage and retry upload
+          try {
+            const initResponse = await supabase.functions.invoke('initialize-storage');
+            if (initResponse.error) throw initResponse.error;
+            
+            // Retry upload after initialization
+            const { data: retryData, error: retryError } = await supabase.storage
+              .from('products')
+              .upload(filePath, file);
+              
+            if (retryError) throw retryError;
+            
+            const { data: publicUrlData } = supabase.storage
+              .from('products')
+              .getPublicUrl(filePath);
+              
+            onImageUploaded(publicUrlData.publicUrl);
+            toast({
+              title: "Image uploaded",
+              description: "Your image has been uploaded successfully after storage initialization",
+              variant: "success"
+            });
+            return;
+          } catch (initError) {
+            console.error("Error initializing storage:", initError);
+            throw initError;
+          }
+        } else {
+          throw error;
+        }
+      }
       
       // Get public URL
       const { data: publicUrlData } = supabase.storage
@@ -81,8 +122,8 @@ const ImageUploader = ({ onImageUploaded, currentImageUrl, className = "" }: Ima
       });
       
       // Clear preview on error
-      if (previewUrl && !currentImageUrl) {
-        setPreviewUrl(currentImageUrl || null);
+      if (!currentImageUrl) {
+        setPreviewUrl(null);
       }
     } finally {
       setIsUploading(false);
@@ -98,9 +139,12 @@ const ImageUploader = ({ onImageUploaded, currentImageUrl, className = "" }: Ima
     <div className={`border rounded-md overflow-hidden ${className}`}>
       {!previewUrl ? (
         <div className="p-4 flex flex-col items-center justify-center min-h-[140px] bg-slate-50 dark:bg-slate-900">
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
-            Upload a product image (max 5MB)
-          </p>
+          <div className="mb-4 text-slate-400">
+            <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Upload a product image (max 5MB)
+            </p>
+          </div>
           <Button variant="outline" asChild className="bg-white dark:bg-slate-800">
             <label className="cursor-pointer flex gap-2 items-center">
               <Upload className="h-4 w-4" />
