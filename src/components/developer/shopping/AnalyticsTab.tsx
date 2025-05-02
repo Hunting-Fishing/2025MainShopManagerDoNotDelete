@@ -1,42 +1,53 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
+import StatsCards from './analytics/StatsCards';
+import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
+import { SubmissionStatusChart } from './analytics/SubmissionStatusChart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ShoppingAnalyticsDashboard from './ShoppingAnalyticsDashboard';
+import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 
-const AnalyticsTab: React.FC = () => {
+export default function AnalyticsTab() {
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  const { analyticsData, isLoading } = useShoppingAnalytics();
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-4">
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="submissions">Submissions</TabsTrigger>
+          <TabsTrigger value="products">Product Analytics</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview">
-          <ShoppingAnalyticsDashboard />
-        </TabsContent>
-        
-        <TabsContent value="performance">
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-medium mb-4">Product Performance</h3>
-            <p className="text-gray-500">
-              Detailed analytics for product views, clicks, and conversion rates coming soon.
-            </p>
+        <TabsContent value="overview" className="space-y-6">
+          {/* Stats Cards */}
+          <StatsCards />
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Products by Category Chart */}
+            <ProductsByCategoryChart data={analyticsData.productsByCategory} />
+
+            {/* Submission Status Chart */}
+            <SubmissionStatusChart 
+              data={analyticsData.submissionStatusData} 
+              totalSubmissions={analyticsData.totalSubmissions} 
+            />
           </div>
         </TabsContent>
         
-        <TabsContent value="submissions">
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-medium mb-4">Submission Analytics</h3>
-            <p className="text-gray-500">
-              Review product submission trends and user engagement metrics (coming soon).
-            </p>
-          </div>
+        <TabsContent value="products">
+          <AnalyticsDashboard />
         </TabsContent>
       </Tabs>
     </div>
   );
-};
-
-export default AnalyticsTab;
+}

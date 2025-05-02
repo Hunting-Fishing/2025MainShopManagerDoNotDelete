@@ -10,14 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Eye, MousePointer, Heart, Share2 } from 'lucide-react';
-
-export interface TopProductAnalytics {
-  id: string;
-  name: string;
-  count: number;
-  category: string;
-  percentage: number;
-}
+import { TopProductAnalytics } from '@/types/analytics';
 
 interface TopProductsTableProps {
   title: string;

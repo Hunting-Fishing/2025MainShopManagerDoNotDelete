@@ -63,7 +63,7 @@ export function JobInfoFields({
               </FormControl>
               <SelectContent>
                 {availableRoles.map((role) => (
-                  <SelectItem key={role} value={role || "unspecified"}>
+                  <SelectItem key={role} value={role}>
                     {role}
                   </SelectItem>
                 ))}
@@ -95,8 +95,8 @@ export function JobInfoFields({
               </FormControl>
               <SelectContent>
                 {jobTitles.map((title) => (
-                  <SelectItem key={title} value={title || "unspecified"}>
-                    {title || "Unspecified Title"}
+                  <SelectItem key={title} value={title}>
+                    {title}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -124,8 +124,8 @@ export function JobInfoFields({
               </FormControl>
               <SelectContent>
                 {availableDepartments.map((department) => (
-                  <SelectItem key={department} value={department || "unspecified"}>
-                    {department || "Unspecified Department"}
+                  <SelectItem key={department} value={department}>
+                    {department}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -19,14 +19,6 @@ export const AnalyticsDashboard: React.FC = () => {
     refetch 
   } = useProductAnalyticsData();
 
-  // Format category data for ProductsByCategoryChart
-  const categoryChartData = React.useMemo(() => {
-    return analyticsData?.categoryData?.map(category => ({
-      name: category.name,
-      count: category.views
-    })) || [];
-  }, [analyticsData]);
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -114,8 +106,8 @@ export const AnalyticsDashboard: React.FC = () => {
         
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ProductsByCategoryChart data={categoryChartData} />
-            <ProductInteractionsChart data={analyticsData.interactionData} />
+            <ProductsByCategoryChart data={analyticsData?.categoryData || []} />
+            <ProductInteractionsChart data={analyticsData?.interactionData || []} />
           </div>
         </TabsContent>
         
@@ -129,7 +121,7 @@ export const AnalyticsDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-2">
               <div className="h-[400px]">
-                <ProductInteractionsChart data={analyticsData.interactionData} showLegend={true} />
+                <ProductInteractionsChart data={analyticsData?.interactionData || []} showLegend={true} />
               </div>
             </CardContent>
           </Card>
@@ -139,19 +131,19 @@ export const AnalyticsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TopProductsTable 
               title="Most Viewed Products" 
-              products={topProducts.views} 
+              products={topProducts.views || []} 
               metric="views"
             />
             <TopProductsTable 
               title="Most Clicked Products" 
-              products={topProducts.clicks} 
+              products={topProducts.clicks || []} 
               metric="clicks"
             />
           </div>
           <div className="mt-4">
             <TopProductsTable 
               title="Most Saved Products" 
-              products={mostSavedProducts} 
+              products={mostSavedProducts || []} 
               metric="saves"
             />
           </div>

@@ -2,26 +2,22 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CategoriesManagement from './CategoriesManagement';
 import { Button } from '@/components/ui/button';
-import { Plus, Store } from 'lucide-react';
-import ProductsList from './ProductsList';
-import FeaturedProductsManagement from './FeaturedProductsManagement';
+import { Plus } from 'lucide-react';
 
 /**
  * Products Management component provides a comprehensive interface to manage
  * all product-related entities including categories, manufacturers, and featured products.
  */
 const ProductsManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("products");
+  const [activeTab, setActiveTab] = useState<string>("categories");
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Products Management</h1>
-          <p className="text-slate-500">Manage your product catalog and featured items</p>
-        </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <h1 className="text-2xl font-bold">Products Management</h1>
+        <Button>
           <Plus className="h-4 w-4 mr-2" />
           Add New Product
         </Button>
@@ -29,24 +25,31 @@ const ProductsManagement: React.FC = () => {
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="products">All Products</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="featured">Featured Products</TabsTrigger>
           <TabsTrigger value="recent">Recently Added</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="products">
+        <TabsContent value="categories">
           <Card>
             <CardHeader>
-              <CardTitle>Product Catalog</CardTitle>
+              <CardTitle>Product Categories</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProductsList />
+              <CategoriesManagement />
             </CardContent>
           </Card>
         </TabsContent>
         
         <TabsContent value="featured">
-          <FeaturedProductsManagement />
+          <Card>
+            <CardHeader>
+              <CardTitle>Featured Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Feature coming soon - manage which products are featured on the homepage.</p>
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="recent">
@@ -55,7 +58,7 @@ const ProductsManagement: React.FC = () => {
               <CardTitle>Recently Added Products</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProductsList sortBy="created_at" />
+              <p>Feature coming soon - view and manage recently added products.</p>
             </CardContent>
           </Card>
         </TabsContent>

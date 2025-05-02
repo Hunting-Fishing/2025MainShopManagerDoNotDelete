@@ -162,7 +162,6 @@ export function useShoppingAnalytics() {
   return {
     analyticsData: data,
     isLoading,
-    error,
-    refetch: () => {}  // Placeholder refetch function, would be real in a full implementation
+    error
   };
 }

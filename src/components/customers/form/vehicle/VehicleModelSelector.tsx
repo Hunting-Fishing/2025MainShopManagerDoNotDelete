@@ -54,7 +54,7 @@ export function VehicleModelSelector<T>({
                 if (!model.model_name) return null;
                 
                 return (
-                  <SelectItem key={model.model_name} value={model.model_name || "not-specified"}>
+                  <SelectItem key={model.model_name} value={model.model_name}>
                     {model.model_name || "Unknown Model"}
                   </SelectItem>
                 );
