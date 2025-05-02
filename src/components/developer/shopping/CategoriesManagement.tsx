@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ProductsList from './ProductsList';
 import { manufacturers } from '@/data/manufacturers';
-import { categories as toolCategories } from '@/data/toolCategories';
+import { categories } from '@/data/toolCategories';
 import { Manufacturer, ToolCategory } from '@/types/affiliate';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { ArrowUpDown, Search } from 'lucide-react';
@@ -17,6 +17,14 @@ const CategoriesManagement: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Transform the categories object into an array of ToolCategory objects
+  const toolCategories: ToolCategory[] = Object.entries(categories).map(([name, tools]) => ({
+    id: name.toLowerCase().replace(/\s+/g, '-'),
+    name,
+    productCount: tools.length,
+    imageUrl: null // We don't have images in the data, so set to null
+  }));
   
   const { products, loading, error, updateProduct } = useProductsManager({
     categoryType: activeTab === 'tools' ? 'tool' : 'manufacturer',
