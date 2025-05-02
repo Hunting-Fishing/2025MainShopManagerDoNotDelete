@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ProductsList from './ProductsList';
 import { manufacturers } from '@/data/manufacturers';
-import { toolCategories } from '@/data/toolCategories';
+import { categories as toolCategories } from '@/data/toolCategories';
 import { Manufacturer, ToolCategory } from '@/types/affiliate';
 import { useProductsManager } from '@/hooks/affiliate/useProductsManager';
 import { ArrowUpDown, Search } from 'lucide-react';
