@@ -1,109 +1,89 @@
 
-import { useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useEffect, createContext, useContext } from 'react';
 import { AffiliateProduct } from '@/types/affiliate';
-import { useToast } from '@/components/ui/use-toast';
+import * as productService from '@/services/affiliate/productService';
 
+// Enum for different types of interactions
 export enum ProductInteractionType {
   VIEW = 'view',
   CLICK = 'click',
   SAVE = 'save',
-  UNSAVE = 'unsave',
   SHARE = 'share',
   ADD_TO_CART = 'add_to_cart'
 }
 
-interface TrackProductViewProps {
-  productId: string;
-  productName: string;
-  category: string;
-  source?: string;
-}
-
-interface TrackProductInteractionProps {
+// Interface for tracking product interactions
+interface ProductInteraction {
   productId: string;
   productName: string;
   interactionType: ProductInteractionType;
   category: string;
-  additionalData?: Record<string, any>;
+  additionalData?: any;
 }
 
-interface ProductAnalytics {
-  product_id: string;
-  product_name: string;
-  interaction_type: ProductInteractionType;
-  category: string;
-  additional_data?: Record<string, any>;
+// Create a context to hold analytics-related functions
+const ProductAnalyticsContext = createContext<{
+  trackInteraction: (interaction: ProductInteraction) => void;
+}>({
+  trackInteraction: () => {}
+});
+
+// Hook to use the analytics context
+export function useProductAnalytics() {
+  return useContext(ProductAnalyticsContext);
 }
 
-/**
- * Hook to track product interactions
- */
-export const useProductAnalytics = () => {
-  const { toast } = useToast();
-
-  const trackView = useCallback(async ({ productId, productName, category, source }: TrackProductViewProps) => {
+// Provider component for product analytics
+export const ProductAnalyticsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Function to track product interactions
+  const trackInteraction = async (interaction: ProductInteraction) => {
     try {
-      const analyticsData: ProductAnalytics = {
-        product_id: productId,
-        product_name: productName,
-        interaction_type: ProductInteractionType.VIEW,
-        category,
-        additional_data: source ? { source } : undefined,
-      };
-      
-      await supabase
-        .from('product_analytics')
-        .insert(analyticsData);
+      await productService.trackProductAnalytics({
+        productId: interaction.productId,
+        productName: interaction.productName,
+        category: interaction.category,
+        interactionType: interaction.interactionType,
+        additionalData: interaction.additionalData
+      });
     } catch (error) {
-      console.error('Failed to track product view:', error);
+      console.error("Failed to track product interaction:", error);
     }
-  }, []);
-
-  const trackInteraction = useCallback(async ({ 
-    productId, 
-    productName, 
-    interactionType, 
-    category, 
-    additionalData 
-  }: TrackProductInteractionProps) => {
-    try {
-      const analyticsData: ProductAnalytics = {
-        product_id: productId,
-        product_name: productName,
-        interaction_type: interactionType,
-        category,
-        additional_data: additionalData,
-      };
-      
-      await supabase
-        .from('product_analytics')
-        .insert(analyticsData);
-    } catch (error) {
-      console.error(`Failed to track product ${interactionType}:`, error);
-    }
-  }, []);
-
-  return {
-    trackView,
-    trackInteraction
   };
+
+  return (
+    <ProductAnalyticsContext.Provider value={{ trackInteraction }}>
+      {children}
+    </ProductAnalyticsContext.Provider>
+  );
 };
 
-/**
- * Component to automatically track product views
- */
+// Component to track a product view
 export const ProductViewTracker: React.FC<{ product: AffiliateProduct }> = ({ product }) => {
-  const { trackView } = useProductAnalytics();
-  
+  const { trackInteraction } = useProductAnalytics();
+
   useEffect(() => {
-    trackView({
+    // Track a view interaction when the component mounts
+    trackInteraction({
       productId: product.id,
       productName: product.name,
-      category: product.category,
-      source: window.location.pathname
+      interactionType: ProductInteractionType.VIEW,
+      category: product.category
     });
-  }, [product.id, trackView, product.name, product.category]);
-  
-  return null; // This is a tracking component, so it doesn't render anything
+  }, [product.id]);
+
+  // This component doesn't render anything
+  return null;
 };
+
+// Utility function to track click events
+export const trackProductClick = (product: AffiliateProduct) => {
+  const { trackInteraction } = useProductAnalytics();
+  trackInteraction({
+    productId: product.id,
+    productName: product.name,
+    interactionType: ProductInteractionType.CLICK,
+    category: product.category
+  });
+};
+
+export default ProductAnalyticsProvider;

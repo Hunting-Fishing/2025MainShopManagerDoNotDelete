@@ -74,10 +74,58 @@ export const useProductsManager = ({ categoryType, categoryId, categoryName }: U
     }
   };
 
+  const createProduct = async (product: Partial<AffiliateTool>): Promise<void> => {
+    try {
+      const newProduct = await productService.createProduct(product);
+      
+      // Update local state with the new product
+      setProducts(prevProducts => [...prevProducts, newProduct]);
+
+      toast({
+        title: 'Success',
+        description: `${newProduct.name} has been added successfully.`,
+        variant: 'success',
+      });
+    } catch (err) {
+      console.error('Error creating product:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to create product. Please try again.',
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
+  const deleteProduct = async (productId: string): Promise<void> => {
+    try {
+      await productService.deleteProduct(productId);
+      
+      // Remove the product from local state
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+
+      toast({
+        title: 'Success',
+        description: 'Product has been deleted successfully.',
+        variant: 'success',
+      });
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete product. Please try again.',
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
   return {
     products,
     loading,
     error,
     updateProduct,
+    createProduct,
+    deleteProduct
   };
 };

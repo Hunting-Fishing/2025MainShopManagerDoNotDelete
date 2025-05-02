@@ -40,7 +40,7 @@ export function useShoppingAnalytics() {
         const { count: featuredProducts, error: featuredError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true })
-          .eq('is_featured', true);
+          .eq('featured', true);
         
         if (featuredError) throw featuredError;
 
