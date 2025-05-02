@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -8,9 +8,15 @@ import ProductsManagement from '@/components/developer/shopping/ProductsManageme
 import CategoriesManagement from '@/components/developer/shopping/CategoriesManagement';
 import SubmissionsManagement from '@/components/developer/shopping/SubmissionsManagement';
 import AnalyticsTab from '@/components/developer/shopping/AnalyticsTab';
+import initializeStorage from '@/utils/initializeStorage';
 
 export default function ShoppingControls() {
   const [activeTab, setActiveTab] = useState("products");
+
+  useEffect(() => {
+    // Initialize storage on component mount
+    initializeStorage();
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
