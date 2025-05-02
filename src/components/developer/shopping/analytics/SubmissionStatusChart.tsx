@@ -52,7 +52,7 @@ export function SubmissionStatusChart({ data, totalSubmissions }: SubmissionStat
               ))}
             </Pie>
             <Tooltip 
-              formatter={(value, name) => [`${value} submissions`, name]}
+              formatter={(value) => [`${value} submissions`, 'Count']}
               contentStyle={{ borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
             />
             <Legend />

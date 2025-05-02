@@ -3,8 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductsByCategoryChart } from './ProductsByCategoryChart';
-import { ProductInteractionsChart } from './ProductInteractionsChart';
-import { TopProductsTable } from './TopProductsTable';
+import { ProductInteractionsChart, ProductInteraction } from './ProductInteractionsChart';
+import { TopProductsTable, TopProductAnalytics } from './TopProductsTable';
 import { useProductAnalyticsData } from '@/hooks/useProductAnalyticsData';
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw } from 'lucide-react';
@@ -18,6 +18,48 @@ export const AnalyticsDashboard: React.FC = () => {
     error, 
     refetch 
   } = useProductAnalyticsData();
+
+  // Transform category data to the expected format
+  const transformedCategoryData = React.useMemo(() => {
+    return analyticsData?.categoryData?.map(category => ({
+      name: category.name,
+      count: category.views
+    })) || [];
+  }, [analyticsData]);
+
+  // Transform interaction data to the expected format
+  const transformedInteractionData = React.useMemo(() => {
+    return analyticsData?.categoryData?.map(category => ({
+      name: category.name,
+      views: category.views,
+      clicks: category.clicks,
+      saves: category.saves,
+      shares: category.shares || 0
+    })) || [];
+  }, [analyticsData]);
+
+  // Calculate percentages for top products
+  const processTopProducts = (products: any[], total: number): TopProductAnalytics[] => {
+    return products.map(product => ({
+      ...product,
+      percentage: total > 0 ? (product.count / total) * 100 : 0
+    }));
+  };
+
+  const topViewsWithPercentage = React.useMemo(() => {
+    const total = topProducts.views?.reduce((sum, product) => sum + product.count, 0) || 0;
+    return processTopProducts(topProducts.views || [], total);
+  }, [topProducts.views]);
+
+  const topClicksWithPercentage = React.useMemo(() => {
+    const total = topProducts.clicks?.reduce((sum, product) => sum + product.count, 0) || 0;
+    return processTopProducts(topProducts.clicks || [], total);
+  }, [topProducts.clicks]);
+
+  const topSavesWithPercentage = React.useMemo(() => {
+    const total = mostSavedProducts?.reduce((sum, product) => sum + product.count, 0) || 0;
+    return processTopProducts(mostSavedProducts || [], total);
+  }, [mostSavedProducts]);
 
   if (isLoading) {
     return (
@@ -106,8 +148,8 @@ export const AnalyticsDashboard: React.FC = () => {
         
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ProductsByCategoryChart data={analyticsData?.categoryData || []} />
-            <ProductInteractionsChart data={analyticsData?.interactionData || []} />
+            <ProductsByCategoryChart data={transformedCategoryData} />
+            <ProductInteractionsChart data={transformedInteractionData} />
           </div>
         </TabsContent>
         
@@ -121,7 +163,7 @@ export const AnalyticsDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-2">
               <div className="h-[400px]">
-                <ProductInteractionsChart data={analyticsData?.interactionData || []} showLegend={true} />
+                <ProductInteractionsChart data={transformedInteractionData} showLegend={true} />
               </div>
             </CardContent>
           </Card>
@@ -131,19 +173,19 @@ export const AnalyticsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TopProductsTable 
               title="Most Viewed Products" 
-              products={topProducts.views || []} 
+              products={topViewsWithPercentage} 
               metric="views"
             />
             <TopProductsTable 
               title="Most Clicked Products" 
-              products={topProducts.clicks || []} 
+              products={topClicksWithPercentage} 
               metric="clicks"
             />
           </div>
           <div className="mt-4">
             <TopProductsTable 
               title="Most Saved Products" 
-              products={mostSavedProducts || []} 
+              products={topSavesWithPercentage} 
               metric="saves"
             />
           </div>

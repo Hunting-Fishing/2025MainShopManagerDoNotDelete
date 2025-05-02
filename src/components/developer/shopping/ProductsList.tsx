@@ -34,6 +34,7 @@ import {
   ShoppingCart 
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { AffiliateTool, AffiliateProduct } from '@/types/affiliate';
 
 // Mock data for products
 const mockProducts = [
@@ -84,53 +85,67 @@ const mockProducts = [
   },
 ];
 
-interface ProductsListProps {
+export interface ProductsListProps {
   sortBy?: string;
+  products?: AffiliateTool[];
+  categoryName?: string;
+  onProductUpdated?: (updatedProduct: AffiliateProduct | AffiliateTool) => Promise<void>;
 }
 
-const ProductsList: React.FC<ProductsListProps> = ({ sortBy = 'name' }) => {
-  const [products, setProducts] = useState(mockProducts);
+const ProductsList: React.FC<ProductsListProps> = ({ 
+  sortBy = 'name', 
+  products = mockProducts, 
+  categoryName, 
+  onProductUpdated 
+}) => {
+  const [productList, setProductList] = useState(products);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const { toast } = useToast();
 
   // Get unique categories for the filter
-  const categories = Array.from(new Set(products.map(product => product.category)));
+  const categories = Array.from(new Set(productList.map(product => product.category)));
 
   // Apply filters
-  const filteredProducts = products
+  const filteredProducts = productList
     .filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+      (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .filter(product => categoryFilter ? product.category === categoryFilter : true);
 
   // Apply sorting
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortBy === 'created_at') {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime();
     }
     if (sortBy === 'price') {
-      return a.price - b.price;
+      return (a as any).price - (b as any).price;
     }
     // Default sort by name
     return a.name.localeCompare(b.name);
   });
 
   const toggleFeatured = (id: string) => {
-    setProducts(products.map(product => {
+    const updatedProducts = productList.map(product => {
       if (product.id === id) {
-        const newState = !product.isFeatured;
+        const newIsFeatured = !(product as any).isFeatured;
+        const updatedProduct = { ...product, isFeatured: newIsFeatured };
         
         toast({
-          title: newState ? "Product Featured" : "Product Unfeatured",
-          description: `${product.name} has been ${newState ? "added to" : "removed from"} featured products.`,
+          title: newIsFeatured ? "Product Featured" : "Product Unfeatured",
+          description: `${product.name} has been ${newIsFeatured ? "added to" : "removed from"} featured products.`,
         });
         
-        return { ...product, isFeatured: newState };
+        if (onProductUpdated) {
+          onProductUpdated(updatedProduct);
+        }
+        
+        return updatedProduct;
       }
       return product;
-    }));
+    });
+    setProductList(updatedProducts);
   };
 
   const getStatusBadge = (status: string) => {
@@ -172,6 +187,12 @@ const ProductsList: React.FC<ProductsListProps> = ({ sortBy = 'name' }) => {
         </Select>
       </div>
 
+      {categoryName && (
+        <div className="mb-4">
+          <h3 className="text-lg font-medium">Products in {categoryName}</h3>
+        </div>
+      )}
+
       {/* Products Table */}
       <div className="rounded-md border">
         <Table>
@@ -189,13 +210,13 @@ const ProductsList: React.FC<ProductsListProps> = ({ sortBy = 'name' }) => {
               <TableRow key={product.id}>
                 <TableCell className="font-medium flex items-center gap-2">
                   {product.name}
-                  {product.isFeatured && (
+                  {(product as any).isFeatured && (
                     <Star className="inline-block h-4 w-4 text-amber-400 fill-amber-400" />
                   )}
                 </TableCell>
                 <TableCell>{product.category}</TableCell>
-                <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
-                <TableCell>{getStatusBadge(product.status)}</TableCell>
+                <TableCell className="text-right">${(product as any).price?.toFixed(2) || '-'}</TableCell>
+                <TableCell>{(product as any).status ? getStatusBadge((product as any).status) : '-'}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -212,7 +233,7 @@ const ProductsList: React.FC<ProductsListProps> = ({ sortBy = 'name' }) => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => toggleFeatured(product.id)}>
-                          {product.isFeatured ? (
+                          {(product as any).isFeatured ? (
                             <>
                               <StarOff className="mr-2 h-4 w-4" />
                               Remove from Featured
@@ -247,7 +268,7 @@ const ProductsList: React.FC<ProductsListProps> = ({ sortBy = 'name' }) => {
       
       <div className="flex justify-between items-center pt-2">
         <div className="text-sm text-slate-500">
-          Showing {sortedProducts.length} of {products.length} products
+          Showing {sortedProducts.length} of {productList.length} products
         </div>
         <div className="flex gap-2">
           <Button variant="outline">Previous</Button>

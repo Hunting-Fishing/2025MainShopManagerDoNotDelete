@@ -13,6 +13,7 @@ export interface ProductAnalytics {
     views: number;
     clicks: number;
     saves: number;
+    shares: number;
   }[];
   interactionData: {
     name: string;
@@ -48,10 +49,10 @@ export function useProductAnalyticsData() {
           totalSaved: 98,
           conversionRate: 27.34,
           categoryData: [
-            { name: 'Hand Tools', views: 520, clicks: 182, saves: 35 },
-            { name: 'Power Tools', views: 380, clicks: 95, saves: 22 },
-            { name: 'Diagnostic Tools', views: 230, clicks: 78, saves: 19 },
-            { name: 'Electronic Tools', views: 417, clicks: 68, saves: 22 }
+            { name: 'Hand Tools', views: 520, clicks: 182, saves: 35, shares: 12 },
+            { name: 'Power Tools', views: 380, clicks: 95, saves: 22, shares: 8 },
+            { name: 'Diagnostic Tools', views: 230, clicks: 78, saves: 19, shares: 15 },
+            { name: 'Electronic Tools', views: 417, clicks: 68, saves: 22, shares: 9 }
           ],
           interactionData: [
             { name: 'Views', value: 1547, color: '#4287f5' },

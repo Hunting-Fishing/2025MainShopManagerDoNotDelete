@@ -112,7 +112,10 @@ export const ShoppingAnalyticsDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <SubmissionStatusChart data={analyticsData.submissionStatusData} />
+              <SubmissionStatusChart 
+                data={analyticsData.submissionStatusData} 
+                totalSubmissions={analyticsData.totalSubmissions} 
+              />
             </div>
           </CardContent>
         </Card>
