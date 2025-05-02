@@ -1,51 +1,64 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
+import { ProductInteractionsChart, ProductInteraction } from './ProductInteractionsChart';
+import { TopProductsTable, TopProductAnalytics } from './TopProductsTable';
+import { useProductAnalyticsData } from '@/hooks/useProductAnalyticsData';
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw } from 'lucide-react';
-import StatsCards from './analytics/StatsCards';
-import { ProductsByCategoryChart } from './analytics/ProductsByCategoryChart';
-import { SubmissionStatusChart } from './analytics/SubmissionStatusChart';
-import { useToast } from '@/components/ui/use-toast';
 
-export const ShoppingAnalyticsDashboard: React.FC = () => {
-  const { analyticsData, isLoading, error, refetch } = useShoppingAnalytics();
-  const { toast } = useToast();
+export const AnalyticsDashboard: React.FC = () => {
+  const { 
+    analyticsData, 
+    topProducts, 
+    mostSavedProducts, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useProductAnalyticsData();
 
-  const handleExport = () => {
-    try {
-      // Create CSV content
-      const headers = ['Category', 'Product Count'];
-      const rows = analyticsData.productsByCategory.map(cat => [cat.name, cat.count]);
-      
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-      ].join('\n');
-      
-      // Create and trigger download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'shopping_analytics.csv');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: "Export successful",
-        description: "Analytics data has been exported to CSV",
-      });
-    } catch (error) {
-      toast({
-        title: "Export failed",
-        description: "There was an error exporting the analytics data",
-        variant: "destructive",
-      });
-    }
+  // Transform category data to the expected format
+  const transformedCategoryData = React.useMemo(() => {
+    return analyticsData?.categoryData?.map(category => ({
+      name: category.name,
+      count: category.views
+    })) || [];
+  }, [analyticsData]);
+
+  // Transform interaction data to the expected format
+  const transformedInteractionData = React.useMemo(() => {
+    return analyticsData?.categoryData?.map(category => ({
+      name: category.name,
+      views: category.views,
+      clicks: category.clicks,
+      saves: category.saves,
+      shares: category.shares || 0
+    })) || [];
+  }, [analyticsData]);
+
+  // Calculate percentages for top products
+  const processTopProducts = (products: any[], total: number): TopProductAnalytics[] => {
+    return products.map(product => ({
+      ...product,
+      percentage: total > 0 ? (product.count / total) * 100 : 0
+    }));
   };
+
+  const topViewsWithPercentage = React.useMemo(() => {
+    const total = topProducts.views?.reduce((sum, product) => sum + product.count, 0) || 0;
+    return processTopProducts(topProducts.views || [], total);
+  }, [topProducts.views]);
+
+  const topClicksWithPercentage = React.useMemo(() => {
+    const total = topProducts.clicks?.reduce((sum, product) => sum + product.count, 0) || 0;
+    return processTopProducts(topProducts.clicks || [], total);
+  }, [topProducts.clicks]);
+
+  const topSavesWithPercentage = React.useMemo(() => {
+    const total = mostSavedProducts?.reduce((sum, product) => sum + product.count, 0) || 0;
+    return processTopProducts(mostSavedProducts || [], total);
+  }, [mostSavedProducts]);
 
   if (isLoading) {
     return (
@@ -77,69 +90,108 @@ export const ShoppingAnalyticsDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Shopping Analytics</h2>
+        <h2 className="text-2xl font-bold">Product Analytics</h2>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" /> Refresh
           </Button>
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline">
             <Download className="mr-2 h-4 w-4" /> Export Data
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <StatsCards />
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Products by Category</CardTitle>
-            <CardDescription>Distribution of products across categories</CardDescription>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-t-4 border-blue-500 shadow-md bg-white rounded-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">Total Views</CardTitle>
+            <CardDescription className="text-2xl font-bold">
+              {analyticsData?.totalViews.toLocaleString()}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ProductsByCategoryChart data={analyticsData.productsByCategory} />
-            </div>
-          </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Submission Status</CardTitle>
-            <CardDescription>Product submission approval status</CardDescription>
+        <Card className="border-t-4 border-green-500 shadow-md bg-white rounded-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">Total Clicks</CardTitle>
+            <CardDescription className="text-2xl font-bold">
+              {analyticsData?.totalClicks.toLocaleString()}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <SubmissionStatusChart 
-                data={analyticsData.submissionStatusData} 
-                totalSubmissions={analyticsData.totalSubmissions} 
-              />
-            </div>
-          </CardContent>
+        </Card>
+        <Card className="border-t-4 border-purple-500 shadow-md bg-white rounded-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">Products Saved</CardTitle>
+            <CardDescription className="text-2xl font-bold">
+              {analyticsData?.totalSaved.toLocaleString()}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+        <Card className="border-t-4 border-amber-500 shadow-md bg-white rounded-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">Conversion Rate</CardTitle>
+            <CardDescription className="text-2xl font-bold">
+              {analyticsData?.conversionRate.toFixed(2)}%
+            </CardDescription>
+          </CardHeader>
         </Card>
       </div>
 
-      {/* Featured Products Management Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Featured Products Management</CardTitle>
-          <CardDescription>
-            Configure which products are showcased on the homepage
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-500 mb-4">
-            {analyticsData.featuredProducts} of {analyticsData.totalProducts} products are currently featured.
-          </p>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            Manage Featured Products
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Charts */}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="interactions">Interactions</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ProductsByCategoryChart data={transformedCategoryData} />
+            <ProductInteractionsChart data={transformedInteractionData} />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="interactions">
+          <Card className="shadow-md bg-white">
+            <CardHeader>
+              <CardTitle>Interaction Breakdown</CardTitle>
+              <CardDescription>
+                Detailed view of how users are interacting with products
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="h-[400px]">
+                <ProductInteractionsChart data={transformedInteractionData} showLegend={true} />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="products">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <TopProductsTable 
+              title="Most Viewed Products" 
+              products={topViewsWithPercentage} 
+              metric="views"
+            />
+            <TopProductsTable 
+              title="Most Clicked Products" 
+              products={topClicksWithPercentage} 
+              metric="clicks"
+            />
+          </div>
+          <div className="mt-4">
+            <TopProductsTable 
+              title="Most Saved Products" 
+              products={topSavesWithPercentage} 
+              metric="saves"
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
-export default ShoppingAnalyticsDashboard;
+export default AnalyticsDashboard;
