@@ -1,580 +1,345 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge"; // Changed from card to badge
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { extractAmazonASIN } from '@/utils/amazonUtils';
-import { supabase } from '@/integrations/supabase/client';
-import { Pencil, PlusCircle, Trash2, Check, X } from 'lucide-react';
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pencil,
+  Trash,
+  Upload,
+  Download,
+  Plus,
+  Search,
+  Filter,
+  Tag,
+} from "lucide-react";
+import { AffiliateProduct } from '@/types/affiliate';
 
-// Define types for our data structures
-interface Product {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  affiliate_link: string;
-  price: number;
-  category_id: string;
-  is_featured: boolean;
-  is_approved: boolean;
-  is_bestseller: boolean;
-  // Adding the category property to match with how we're using it
-  category?: string;
-}
+interface ProductsManagementProps {}
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-interface Manufacturer {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-  logo_url?: string;
-  slug: string;
-  description?: string;
-  category: string;
-  featured: boolean;
-}
-
-const ProductsManagement = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
-  const [isEditing, setIsEditing] = useState(false);
-  const [filter, setFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [approvedFilter, setApprovedFilter] = useState('all');
-
-  // Fetch data when component mounts
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch products
-        const { data: productsData, error: productsError } = await supabase
-          .from('products')
-          .select(`
-            *,
-            product_categories:category_id(name, slug)
-          `);
-        
-        if (productsError) throw productsError;
-        
-        // Fetch categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('product_categories')
-          .select('*');
-          
-        if (categoriesError) throw categoriesError;
-        
-        // Fetch manufacturers
-        const { data: manufacturersData, error: manufacturersError } = await supabase
-          .from('manufacturers')
-          .select('*');
-          
-        if (manufacturersError) throw manufacturersError;
-
-        // Combine product data with category names
-        const processedProducts = productsData.map(product => {
-          return {
-            ...product,
-            category: product.product_categories ? product.product_categories.name : 'Uncategorized'
-          };
-        });
-        
-        setProducts(processedProducts);
-        setCategories(categoriesData || []);
-        setManufacturers(manufacturersData || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
-
-  // Filter products based on search and filter settings
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = filter === '' || 
-      product.title?.toLowerCase().includes(filter.toLowerCase()) || 
-      product.description?.toLowerCase().includes(filter.toLowerCase());
-      
-    const matchesCategory = categoryFilter === '' || product.category_id === categoryFilter;
-    
-    const matchesApproval = approvedFilter === 'all' || 
-      (approvedFilter === 'approved' && product.is_approved) ||
-      (approvedFilter === 'pending' && !product.is_approved);
-      
-    return matchesSearch && matchesCategory && matchesApproval;
+const ProductsManagement: React.FC<ProductsManagementProps> = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterTier, setFilterTier] = useState<string>("all");
+  const [filterFeatured, setFilterFeatured] = useState<string>("all");
+  
+  // Use React Query to fetch products data
+  const { data: products = [], isLoading, error } = useQuery({
+    queryKey: ['adminProducts'],
+    queryFn: async () => {
+      // In a real implementation, this would fetch from your database
+      // For now, we're simulating a delay and returning an empty array
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return [];
+    },
   });
-
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setCurrentProduct(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Handle select changes
-  const handleSelectChange = (name: string, value: string) => {
-    setCurrentProduct(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Handle switch changes
-  const handleSwitchChange = (name: string, checked: boolean) => {
-    setCurrentProduct(prev => ({ ...prev, [name]: checked }));
-  };
-
-  // Handle form submission
-  const handleSubmit = async () => {
-    try {
-      if (isEditing && currentProduct.id) {
-        // Update existing product
-        const { error } = await supabase
-          .from('products')
-          .update({
-            title: currentProduct.title,
-            description: currentProduct.description,
-            image_url: currentProduct.image_url,
-            affiliate_link: currentProduct.affiliate_link,
-            price: currentProduct.price,
-            category_id: currentProduct.category_id,
-            is_featured: currentProduct.is_featured,
-            is_approved: currentProduct.is_approved
-          })
-          .eq('id', currentProduct.id);
-          
-        if (error) throw error;
-      } else {
-        // Create new product
-        const { error } = await supabase
-          .from('products')
-          .insert({
-            title: currentProduct.title,
-            description: currentProduct.description,
-            image_url: currentProduct.image_url,
-            affiliate_link: currentProduct.affiliate_link,
-            price: currentProduct.price,
-            category_id: currentProduct.category_id,
-            is_featured: currentProduct.is_featured || false,
-            is_approved: currentProduct.is_approved || false
-          });
-          
-        if (error) throw error;
-      }
-      
-      // Refresh product list
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          product_categories:category_id(name, slug)
-        `);
-      
-      if (error) throw error;
-      
-      // Process the returned data
-      const processedProducts = data.map(product => {
-        return {
-          ...product,
-          category: product.product_categories ? product.product_categories.name : 'Uncategorized'
-        };
-      });
-      
-      setProducts(processedProducts);
-      resetForm();
-    } catch (error) {
-      console.error('Error saving product:', error);
-    }
-  };
-
-  // Handle product deletion
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        const { error } = await supabase
-          .from('products')
-          .delete()
-          .eq('id', id);
-          
-        if (error) throw error;
+  
+  // Use React Query to fetch categories for filtering
+  const { data: categories = [] } = useQuery({
+    queryKey: ['productCategories'],
+    queryFn: async () => {
+      // In a real implementation, this would fetch from your database
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return [
+        { id: 'automotive', name: 'Automotive' },
+        { id: 'heavy-duty', name: 'Heavy Duty' },
+        { id: 'equipment', name: 'Equipment' },
+        { id: 'marine', name: 'Marine' },
+        { id: 'atv-utv', name: 'ATV/UTV' },
+        { id: 'motorcycle', name: 'Motorcycle' }
+      ];
+    },
+  });
+  
+  // Filter and search products
+  const filteredProducts = React.useMemo(() => {
+    return products.filter((product: AffiliateProduct) => {
+      const matchesSearch = searchTerm === "" || 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase());
         
-        setProducts(products.filter(product => product.id !== id));
-      } catch (error) {
-        console.error('Error deleting product:', error);
-      }
-    }
-  };
-
-  // Handle edit button click
-  const handleEdit = (product: Product) => {
-    setCurrentProduct(product);
-    setIsEditing(true);
-    setIsDialogOpen(true);
-  };
-
-  // Reset form and dialog state
-  const resetForm = () => {
-    setCurrentProduct({});
-    setIsEditing(false);
-    setIsDialogOpen(false);
-  };
-
-  // Parse Amazon URL to extract product ID
-  const handleAmazonUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    setCurrentProduct(prev => ({ ...prev, affiliate_link: url }));
-    
-    // Try to extract product ID from Amazon URL
-    const asin = extractAmazonASIN(url);
-    if (asin) {
-      // If successful, generate image URL and update form
-      const imageUrl = `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822`;
-      setCurrentProduct(prev => ({ ...prev, image_url: imageUrl }));
-    }
-  };
-
-  // Toggle product approval status
-  const toggleApproval = async (product: Product) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_approved: !product.is_approved })
-        .eq('id', product.id);
+      const matchesCategory = filterCategory === "all" || product.category === filterCategory;
+      const matchesTier = filterTier === "all" || product.tier === filterTier;
+      const matchesFeatured = filterFeatured === "all" || 
+        (filterFeatured === "featured" && product.isFeatured) ||
+        (filterFeatured === "not-featured" && !product.isFeatured);
         
-      if (error) throw error;
-      
-      // Update local state
-      setProducts(products.map(p => 
-        p.id === product.id ? { ...p, is_approved: !product.is_approved } : p
-      ));
-    } catch (error) {
-      console.error('Error updating approval status:', error);
-    }
+      return matchesSearch && matchesCategory && matchesTier && matchesFeatured;
+    });
+  }, [products, searchTerm, filterCategory, filterTier, filterFeatured]);
+  
+  if (error) {
+    return (
+      <Card className="bg-white shadow-md rounded-lg mb-6">
+        <CardHeader>
+          <CardTitle>Products Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-10">
+            <p className="text-red-500">Error loading products. Please try again later.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  const handleAddProduct = () => {
+    // Logic for adding a new product
+    console.log("Add product clicked");
   };
-
-  // Toggle featured product status
-  const toggleFeatured = async (product: Product) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_featured: !product.is_featured })
-        .eq('id', product.id);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setProducts(products.map(p => 
-        p.id === product.id ? { ...p, is_featured: !product.is_featured } : p
-      ));
-    } catch (error) {
-      console.error('Error updating featured status:', error);
-    }
+  
+  const handleEditProduct = (id: string) => {
+    console.log(`Edit product ${id}`);
   };
-
+  
+  const handleDeleteProduct = (id: string) => {
+    console.log(`Delete product ${id}`);
+  };
+  
+  const handleImportProducts = () => {
+    console.log("Import products clicked");
+  };
+  
+  const handleExportProducts = () => {
+    console.log("Export products clicked");
+  };
+  
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Products Management</h2>
-          <p className="text-muted-foreground">Manage affiliate products in the shop.</p>
-        </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setCurrentProduct({});
-              setIsEditing(false);
-            }}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Product
+      <Card className="bg-white shadow-md rounded-lg mb-6">
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2">
+          <CardTitle>Product Management</CardTitle>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleImportProducts}
+            >
+              <Upload size={16} />
+              <span className="hidden sm:inline">Import</span>
             </Button>
-          </DialogTrigger>
-          
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-              <DialogDescription>
-                {isEditing ? 'Update product details' : 'Enter product details to add it to the shop'}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Label htmlFor="title">Product Title</Label>
-                  <Input 
-                    id="title" 
-                    name="title"
-                    value={currentProduct.title || ''} 
-                    onChange={handleInputChange} 
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Input 
-                    id="description" 
-                    name="description"
-                    value={currentProduct.description || ''} 
-                    onChange={handleInputChange} 
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="affiliate_link">Amazon Affiliate Link</Label>
-                  <Input 
-                    id="affiliate_link" 
-                    name="affiliate_link"
-                    value={currentProduct.affiliate_link || ''} 
-                    onChange={handleAmazonUrlChange} 
-                    placeholder="https://www.amazon.com/dp/..." 
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="image_url">Image URL</Label>
-                  <Input 
-                    id="image_url" 
-                    name="image_url"
-                    value={currentProduct.image_url || ''} 
-                    onChange={handleInputChange} 
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="price">Price</Label>
-                  <Input 
-                    id="price" 
-                    name="price"
-                    type="number"
-                    value={currentProduct.price || ''} 
-                    onChange={handleInputChange} 
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select 
-                    value={currentProduct.category_id || ''} 
-                    onValueChange={(value) => handleSelectChange('category_id', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="is_featured" 
-                    checked={currentProduct.is_featured || false} 
-                    onCheckedChange={(checked) => handleSwitchChange('is_featured', checked)} 
-                  />
-                  <Label htmlFor="is_featured">Featured Product</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="is_approved" 
-                    checked={currentProduct.is_approved || false} 
-                    onCheckedChange={(checked) => handleSwitchChange('is_approved', checked)} 
-                  />
-                  <Label htmlFor="is_approved">Approve Product</Label>
-                </div>
-              </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleExportProducts}
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <Button 
+              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
+              onClick={handleAddProduct}
+            >
+              <Plus size={16} />
+              <span>Add Product</span>
+            </Button>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {/* Search and filters */}
+          <div className="flex flex-wrap gap-2 bg-white p-3 shadow-sm border border-gray-200 rounded-xl mb-4">
+            <div className="relative flex-grow min-w-[200px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
             
-            <DialogFooter>
-              <Button variant="outline" onClick={resetForm}>Cancel</Button>
-              <Button onClick={handleSubmit}>{isEditing ? 'Update' : 'Add'} Product</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <div className="bg-white shadow-md rounded-xl border border-gray-100 p-4">
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search products..." 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center min-w-[150px]">
+                <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category: any) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center min-w-[120px]">
+                <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Select value={filterTier} onValueChange={setFilterTier}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tiers</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="midgrade">Mid-grade</SelectItem>
+                    <SelectItem value="economy">Economy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center min-w-[150px]">
+                <Select value={filterFeatured} onValueChange={setFilterFeatured}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Featured Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    <SelectItem value="featured">Featured Only</SelectItem>
+                    <SelectItem value="not-featured">Not Featured</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
-          
-          <div className="w-[200px]">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="w-[200px]">
-            <Select value={approvedFilter} onValueChange={setApprovedFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by approval" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Products</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="pending">Pending Approval</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {loading ? (
-          <div className="text-center p-6">Loading products...</div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center p-6">No products found.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map(product => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="w-12 h-12 overflow-hidden rounded-md bg-gray-100">
-                        {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt={product.title} 
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            No image
+
+          {/* Products table */}
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Tier</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
+                        <p className="text-muted-foreground">Loading products...</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredProducts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <p className="text-muted-foreground">No products found.</p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={handleAddProduct}
+                      >
+                        Add your first product
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredProducts.map((product: AffiliateProduct) => (
+                    <TableRow key={product.id} className="hover:bg-slate-50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
+                            {product.imageUrl ? (
+                              <img 
+                                src={product.imageUrl} 
+                                alt={product.name} 
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-slate-400">
+                                No image
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm font-medium">{product.title}</div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <Badge variant="outline">{product.category}</Badge>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      ${product.price?.toFixed(2) || "N/A"}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex space-x-2">
-                        <Badge 
-                          variant={product.is_approved ? "success" : "outline"} 
-                          className={product.is_approved ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}
-                          onClick={() => toggleApproval(product)}
-                        >
-                          {product.is_approved ? 'Approved' : 'Pending'}
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            {product.manufacturer && (
+                              <div className="text-xs text-muted-foreground">{product.manufacturer}</div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {product.category}
                         </Badge>
-                        
-                        {product.is_featured && (
-                          <Badge 
-                            variant="outline" 
-                            className="bg-purple-100 text-purple-800 hover:bg-purple-200"
-                            onClick={() => toggleFeatured(product)}
+                      </TableCell>
+                      <TableCell>${product.retailPrice.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          className={
+                            product.tier === 'premium' ? 'bg-purple-100 text-purple-800 border-purple-300' :
+                            product.tier === 'midgrade' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                            'bg-green-100 text-green-800 border-green-300'
+                          }
+                        >
+                          {product.tier.charAt(0).toUpperCase() + product.tier.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          className={
+                            product.isFeatured 
+                              ? 'bg-amber-100 text-amber-800 border-amber-300' 
+                              : 'bg-slate-100 text-slate-800 border-slate-300'
+                          }
+                        >
+                          {product.isFeatured ? 'Featured' : 'Standard'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleEditProduct(product.id)}
                           >
-                            Featured
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleEdit(product)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-red-600 hover:text-red-700" 
-                          onClick={() => handleDelete(product.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                        
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className={product.is_featured ? "text-purple-600" : "text-gray-600"} 
-                          onClick={() => toggleFeatured(product)}
-                        >
-                          {product.is_featured ? (
-                            <X className="w-4 h-4" />
-                          ) : (
-                            <PlusCircle className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-red-500 hover:text-red-600" 
+                            onClick={() => handleDeleteProduct(product.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

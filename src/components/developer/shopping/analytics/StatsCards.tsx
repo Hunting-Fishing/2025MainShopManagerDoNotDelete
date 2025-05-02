@@ -1,57 +1,45 @@
 
 import React from 'react';
-import { StatCard } from './StatCard';
-import { BarChart3, ShoppingBag, Award, BookOpen, ListChecks, Package } from 'lucide-react';
-import { AnalyticsData } from '@/types/analytics';
+import { Package, ShoppingBag, Star, Truck } from 'lucide-react';
+import StatCard from './StatCard';
+import { useShoppingAnalytics } from '@/hooks/useShoppingAnalytics';
 
-interface StatsCardsProps {
-  data: AnalyticsData;
-}
-
-export function StatsCards({ data }: StatsCardsProps) {
+const StatsCards: React.FC = () => {
+  const { analyticsData, isLoading } = useShoppingAnalytics();
+  
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <StatCard 
-        title="Total Products" 
-        value={data.totalProducts} 
-        icon={<ShoppingBag className="h-5 w-5" />}
-        colorClass="bg-blue-100 text-blue-800 border border-blue-300"
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatCard
+        title="Total Products"
+        value={analyticsData.totalProducts}
+        icon={<Package className="h-5 w-5 text-blue-600" />}
+        className="border-t-blue-500"
+        loading={isLoading}
       />
-      
-      <StatCard 
-        title="Approved Products" 
-        value={data.approvedProducts} 
-        icon={<ListChecks className="h-5 w-5" />}
-        colorClass="bg-green-100 text-green-800 border border-green-300"
+      <StatCard
+        title="Featured Products"
+        value={analyticsData.featuredProducts}
+        description={`${Math.round((analyticsData.featuredProducts / analyticsData.totalProducts || 0) * 100)}% of catalog`}
+        icon={<Star className="h-5 w-5 text-amber-500" />}
+        className="border-t-amber-500"
+        loading={isLoading}
       />
-      
-      <StatCard 
-        title="Featured Products" 
-        value={data.featuredProducts} 
-        icon={<Award className="h-5 w-5" />}
-        colorClass="bg-purple-100 text-purple-800 border border-purple-300"
+      <StatCard
+        title="Product Categories"
+        value={analyticsData.totalCategories}
+        icon={<ShoppingBag className="h-5 w-5 text-green-600" />}
+        className="border-t-green-500"
+        loading={isLoading}
       />
-      
-      <StatCard 
-        title="Categories" 
-        value={data.totalCategories} 
-        icon={<BookOpen className="h-5 w-5" />}
-        colorClass="bg-amber-100 text-amber-800 border border-amber-300"
-      />
-      
-      <StatCard 
-        title="Manufacturers" 
-        value={data.totalManufacturers} 
-        icon={<Package className="h-5 w-5" />}
-        colorClass="bg-red-100 text-red-800 border border-red-300"
-      />
-      
-      <StatCard 
-        title="Total Submissions" 
-        value={data.totalSubmissions} 
-        icon={<BarChart3 className="h-5 w-5" />}
-        colorClass="bg-indigo-100 text-indigo-800 border border-indigo-300"
+      <StatCard
+        title="Manufacturers"
+        value={analyticsData.totalManufacturers}
+        icon={<Truck className="h-5 w-5 text-purple-600" />}
+        className="border-t-purple-500"
+        loading={isLoading}
       />
     </div>
   );
-}
+};
+
+export default StatsCards;

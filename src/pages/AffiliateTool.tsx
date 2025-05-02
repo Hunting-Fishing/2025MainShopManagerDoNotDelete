@@ -20,20 +20,6 @@ const categoryList = Object.keys(categories).map((name, id) => ({
   subcategories: categories[name].slice(0, 5), // Show only first 5 subcategories in preview
 }));
 
-// Interface definitions for our data
-interface Tool {
-  id: string;
-  title: string;
-  category: string;
-  price: number;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  isFeatured?: boolean;
-  bestSeller?: boolean;
-  discount?: number | null;
-}
-
 const AffiliateTool = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -41,10 +27,18 @@ const AffiliateTool = () => {
   const { data: featuredTools, isLoading: isFeaturedLoading } = useQuery({
     queryKey: ['featuredTools'],
     queryFn: async () => {
-      // In a real app, this would be an API call to fetch featured tools
-      // For now, we'll return an empty array as a placeholder
-      // The component will handle the loading state internally
-      return [] as Tool[];
+      try {
+        // In a real app, this would be an API call to fetch featured tools
+        // For now, we're simulating a delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Return an empty array for now
+        // In a real implementation, this would be data from the API
+        return [];
+      } catch (error) {
+        console.error("Error fetching featured tools:", error);
+        throw error;
+      }
     },
   });
 
@@ -52,10 +46,18 @@ const AffiliateTool = () => {
   const { data: bestSellingTools, isLoading: isBestSellingLoading } = useQuery({
     queryKey: ['bestSellingTools'],
     queryFn: async () => {
-      // In a real app, this would be an API call to fetch best selling tools
-      // For now, we'll return an empty array as a placeholder
-      // The component will handle the loading state internally
-      return [] as Tool[];
+      try {
+        // In a real app, this would be an API call to fetch best selling tools
+        // For now, we're simulating a delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Return an empty array for now
+        // In a real implementation, this would be data from the API
+        return [];
+      } catch (error) {
+        console.error("Error fetching best selling tools:", error);
+        throw error;
+      }
     },
   });
   
@@ -68,13 +70,13 @@ const AffiliateTool = () => {
       <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       {/* Featured Products Section */}
-      <FeaturedTools tools={featuredTools} />
+      <FeaturedTools tools={featuredTools} isLoading={isFeaturedLoading} />
       
       {/* Categories Grid */}
       <CategoryGrid categories={categoryList} />
       
       {/* Best Selling Tools */}
-      <BestSellingTools tools={bestSellingTools} />
+      <BestSellingTools tools={bestSellingTools} isLoading={isBestSellingLoading} />
       
       {/* Manufacturers Section */}
       <ManufacturersGrid manufacturers={manufacturers} />
