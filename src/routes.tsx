@@ -71,7 +71,7 @@ export const routes: RouteObject[] = [
         path: 'team',
         element: <Team />,
       },
-      // Tool shop routes - make sure these are correct and nothing is routing to /shopping
+      // Tool shop routes
       {
         path: 'tools',
         element: <AffiliateTool />,
@@ -104,10 +104,18 @@ export const routes: RouteObject[] = [
         path: 'developer/shopping-controls',
         element: <ShoppingControls />,
       },
-      // Redirect any /shopping routes to /tools
+      // Shopping routes - maintain the same component as tools for now
       {
         path: 'shopping',
         element: <AffiliateTool />,
+      },
+      {
+        path: 'shopping/:category',
+        element: <ToolCategoryPage />,
+      },
+      {
+        path: 'shopping/:category/:productId',
+        element: <ToolDetailPage />,
       },
       {
         path: '*',

@@ -21,7 +21,8 @@ import {
   Save,
   Link,
   Store,
-  Cog
+  Cog,
+  ShoppingCart
 } from "lucide-react";
 import { SidebarNavItem, NavItem } from "./SidebarNavItem";
 
@@ -67,7 +68,11 @@ const navigationItems: NavItem[] = [
     href: "/forms",
     icon: <FilePen className="h-5 w-5" />
   },
-  // Remove the "Shopping" navigation item since we're using Tools Shop instead
+  {
+    title: "Shopping",
+    href: "/shopping",
+    icon: <ShoppingCart className="h-5 w-5" />
+  },
   {
     title: "Maintenance",
     href: "/maintenance",
