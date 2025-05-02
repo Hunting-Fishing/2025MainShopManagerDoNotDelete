@@ -55,7 +55,7 @@ export function VehicleMakeSelector<T>({
                 if (!make.make_id) return null;
                 
                 return (
-                  <SelectItem key={make.make_id} value={make.make_id}>
+                  <SelectItem key={make.make_id} value={make.make_id || "not-specified"}>
                     {make.make_display || "Unknown Make"}
                   </SelectItem>
                 );

@@ -56,7 +56,7 @@ export const SequenceSelector: React.FC<SequenceSelectorProps> = ({
     <div className={className}>
       <Label htmlFor="sequence-select">Select Sequence</Label>
       <Select
-        value={value}
+        value={value || "none"}
         onValueChange={onChange}
         disabled={loading}
       >
@@ -74,8 +74,8 @@ export const SequenceSelector: React.FC<SequenceSelectorProps> = ({
             </SelectItem>
           ) : (
             sequences.map((sequence) => (
-              <SelectItem key={sequence.id} value={sequence.id}>
-                {sequence.name}
+              <SelectItem key={sequence.id} value={sequence.id || "unknown-id"}>
+                {sequence.name || "Unnamed Sequence"}
               </SelectItem>
             ))
           )}
