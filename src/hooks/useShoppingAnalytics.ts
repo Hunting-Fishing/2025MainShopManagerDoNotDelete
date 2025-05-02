@@ -30,38 +30,45 @@ export function useShoppingAnalytics() {
     queryFn: async (): Promise<ShoppingAnalyticsData> => {
       try {
         // Get total products
-        const productsResponse = await supabase
+        const { count: totalProducts, error: productsError } = await supabase
           .from('products')
-          .select('count');
-        const totalProducts = productsResponse.count || 0;
+          .select('*', { count: 'exact', head: true });
+        
+        if (productsError) throw productsError;
 
         // Get featured products
-        const featuredResponse = await supabase
+        const { count: featuredProducts, error: featuredError } = await supabase
           .from('products')
-          .select('count')
+          .select('*', { count: 'exact', head: true })
           .eq('is_featured', true);
-        const featuredProducts = featuredResponse.count || 0;
+        
+        if (featuredError) throw featuredError;
 
         // Get total categories
-        const categoriesResponse = await supabase
+        const { count: totalCategories, error: categoriesError } = await supabase
           .from('product_categories')
-          .select('count');
-        const totalCategories = categoriesResponse.count || 0;
+          .select('*', { count: 'exact', head: true });
+        
+        if (categoriesError) throw categoriesError;
 
         // Get total manufacturers
-        const manufacturersResponse = await supabase
+        const { count: totalManufacturers, error: manufacturersError } = await supabase
           .from('manufacturers')
-          .select('count');
-        const totalManufacturers = manufacturersResponse.count || 0;
+          .select('*', { count: 'exact', head: true });
+        
+        if (manufacturersError) throw manufacturersError;
 
         // Get products by category
-        const categoryProductsResponse = await supabase
+        const { data: categoryProductsData, error: categoryProductsError } = await supabase
           .from('products')
           .select('category_id, product_categories(name)');
         
+        if (categoryProductsError) throw categoryProductsError;
+        
         const categoryProductMap = new Map<string, {name: string, count: number}>();
-        if (categoryProductsResponse.data) {
-          categoryProductsResponse.data.forEach(product => {
+        if (categoryProductsData) {
+          categoryProductsData.forEach(product => {
+            // Fix the access to name property - product.product_categories is an object, not an array
             const categoryName = product.product_categories?.name || 'Uncategorized';
             const entry = categoryProductMap.get(categoryName) || { name: categoryName, count: 0 };
             categoryProductMap.set(categoryName, { ...entry, count: entry.count + 1 });
@@ -79,32 +86,35 @@ export function useShoppingAnalytics() {
           .sort((a, b) => b.count - a.count);
 
         // Get submission data
-        const submissionsResponse = await supabase
+        const { count: totalSubmissions, error: submissionsError } = await supabase
           .from('product_submissions')
-          .select('count');
-        const totalSubmissions = submissionsResponse.count || 0;
+          .select('*', { count: 'exact', head: true });
+        
+        if (submissionsError) throw submissionsError;
 
         // Get submission status distribution
-        const submissionStatusResponse = await supabase
+        const { data: submissionStatusData, error: submissionStatusError } = await supabase
           .from('product_submissions')
           .select('status');
+        
+        if (submissionStatusError) throw submissionStatusError;
 
         const statusMap = new Map<string, number>();
-        if (submissionStatusResponse.data) {
-          submissionStatusResponse.data.forEach(submission => {
+        if (submissionStatusData) {
+          submissionStatusData.forEach(submission => {
             const status = submission.status || 'pending';
             statusMap.set(status, (statusMap.get(status) || 0) + 1);
           });
         }
 
-        const statusColors = {
+        const statusColors: Record<string, string> = {
           'pending': '#f5a742',
           'approved': '#42f554',
           'rejected': '#f54242',
           'modifications_requested': '#4287f5'
         };
 
-        const submissionStatusData = Array.from(statusMap.entries())
+        const submissionStatusDataArray = Array.from(statusMap.entries())
           .map(([name, value]) => ({
             name,
             value,
@@ -112,13 +122,13 @@ export function useShoppingAnalytics() {
           }));
         
         return {
-          totalProducts,
-          featuredProducts,
-          totalCategories,
-          totalManufacturers,
+          totalProducts: totalProducts || 0,
+          featuredProducts: featuredProducts || 0,
+          totalCategories: totalCategories || 0,
+          totalManufacturers: totalManufacturers || 0,
           productsByCategory,
-          submissionStatusData,
-          totalSubmissions
+          submissionStatusData: submissionStatusDataArray,
+          totalSubmissions: totalSubmissions || 0
         };
       } catch (error) {
         console.error("Error fetching shopping analytics data:", error);
