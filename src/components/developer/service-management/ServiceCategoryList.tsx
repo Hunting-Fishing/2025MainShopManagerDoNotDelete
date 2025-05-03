@@ -8,7 +8,7 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger 
 } from "@/components/ui/accordion";
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { Edit, Trash2, Plus, ChevronRight } from 'lucide-react';
+import { Edit, Trash2, Plus, ChevronRight, Link } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from "@/hooks/use-toast";
 
 interface ServiceCategoryListProps {
   categories: ServiceMainCategory[];
@@ -59,6 +60,32 @@ export default function ServiceCategoryList({
     };
     
     onSelectCategory(newCategory);
+  };
+  
+  const handleUseInWorkOrder = (category: ServiceMainCategory, subcategory: string, job: string) => {
+    try {
+      // Save to local storage for demo purposes - in a real app this would use context or Redux
+      const workOrderService = {
+        mainCategory: category.name,
+        subcategory: subcategory,
+        job: job
+      };
+      
+      localStorage.setItem('selectedWorkOrderService', JSON.stringify(workOrderService));
+      
+      toast({
+        title: "Service selected for work orders",
+        description: `${job} from ${category.name} - ${subcategory} is now available in work orders.`,
+        variant: "success"
+      });
+    } catch (error) {
+      console.error("Error selecting service for work orders:", error);
+      toast({
+        title: "Error",
+        description: "Could not select this service for work orders.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -179,6 +206,11 @@ export default function ServiceCategoryList({
                                         </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => 
+                                          handleUseInWorkOrder(selectedCategory, subcategory.name, job.name)
+                                        }>
+                                          <Link className="h-4 w-4 mr-2" /> Use in Work Order
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem>
                                           <Edit className="h-4 w-4 mr-2" /> Edit
                                         </DropdownMenuItem>

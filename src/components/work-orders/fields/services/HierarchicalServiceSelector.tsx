@@ -1,16 +1,12 @@
 
-import React, { useState, useEffect } from "react";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from "@/components/ui/select";
-import { supabase } from '@/lib/supabase';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ServiceCategoryList } from "./ServiceCategoryList";
+import { PlusCircle, Check } from 'lucide-react';
+import { useServiceSelection } from '@/hooks/useServiceSelection';
+import { fetchServiceCategories } from '@/lib/serviceHierarchy';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
 
 interface HierarchicalServiceSelectorProps {
   onServiceSelected: (service: {
@@ -21,149 +17,146 @@ interface HierarchicalServiceSelectorProps {
   }) => void;
 }
 
-export default function HierarchicalServiceSelector({
-  onServiceSelected
-}: HierarchicalServiceSelectorProps) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
-  
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  
-  const selectedCategory = selectedCategoryId ? 
-    categories.find(c => c.id === selectedCategoryId) : null;
-    
-  const selectedSubcategory = selectedCategory && selectedSubcategoryId ? 
-    selectedCategory.subcategories.find(s => s.id === selectedSubcategoryId) : null;
-    
-  const selectedJob = selectedSubcategory && selectedJobId ? 
-    selectedSubcategory.jobs.find(j => j.id === selectedJobId) : null;
+const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = ({ onServiceSelected }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { selectedService, clearSelectedService } = useServiceSelection();
 
-  // Fetch categories on component mount
   useEffect(() => {
-    const fetchCategories = async () => {
+    // If there's a selected service from the management page, use it
+    if (selectedService) {
+      onServiceSelected(selectedService);
+    }
+  }, [selectedService, onServiceSelected]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      setIsLoading(true);
       try {
-        setLoading(true);
-        setError(null);
-        
-        const { data, error } = await supabase
-          .from('service_hierarchy')
-          .select('*')
-          .order('position');
-        
-        if (error) throw new Error(error.message);
-        
-        setCategories(data || []);
-      } catch (err) {
-        console.error('Error fetching service categories:', err);
-        setError('Failed to load service categories');
+        const categories = await fetchServiceCategories();
+        setServiceCategories(categories);
+      } catch (error) {
+        console.error('Error loading service categories:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-    
-    fetchCategories();
+
+    loadCategories();
   }, []);
 
-  // Reset dependent selectors when selections change
-  useEffect(() => {
-    if (!selectedCategoryId) {
-      setSelectedSubcategoryId(null);
-      setSelectedJobId(null);
+  // For demonstration purposes, we're returning simple mock data
+  // In a real app, this would use the actual data from the service hierarchy
+  const mockCategories = [
+    {
+      name: "Engine Service",
+      subcategories: [
+        { name: "Engine Repair", services: ["Oil Change", "Tune Up", "Engine Rebuild"] },
+        { name: "Engine Diagnosis", services: ["Check Engine Light", "Performance Issues"] }
+      ]
+    },
+    {
+      name: "Transmission Service",
+      subcategories: [
+        { name: "Automatic", services: ["Fluid Change", "Rebuild"] },
+        { name: "Manual", services: ["Clutch Replacement", "Gear Repair"] }
+      ]
     }
-  }, [selectedCategoryId]);
-  
-  useEffect(() => {
-    if (!selectedSubcategoryId) {
-      setSelectedJobId(null);
-    }
-  }, [selectedSubcategoryId]);
+  ];
 
-  // When all selections are made, notify parent
-  useEffect(() => {
-    if (selectedCategory && selectedSubcategory && selectedJob) {
-      onServiceSelected({
-        mainCategory: selectedCategory.name,
-        subcategory: selectedSubcategory.name,
-        job: selectedJob.name,
-        estimatedTime: selectedJob.estimatedTime
-      });
-    }
-  }, [selectedCategory, selectedSubcategory, selectedJob, onServiceSelected]);
+  const handleServiceSelect = (category: string, subcategory: string, service: string) => {
+    onServiceSelected({
+      mainCategory: category,
+      subcategory: subcategory,
+      job: service,
+      estimatedTime: 60 // Default to 1 hour
+    });
+    setIsOpen(false);
+  };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <Label>Service Category</Label>
-        <Select 
-          value={selectedCategoryId || ''} 
-          onValueChange={setSelectedCategoryId}
-          disabled={loading || categories.length === 0}
+    <div>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            variant="outline" 
+            className="w-full justify-start text-left font-normal"
+          >
+            {selectedService ? (
+              <div className="flex flex-col items-start text-left">
+                <span className="font-medium">{selectedService.job}</span>
+                <span className="text-xs text-muted-foreground">
+                  {selectedService.mainCategory} - {selectedService.subcategory}
+                </span>
+              </div>
+            ) : (
+              <>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                <span>Select Service</span>
+              </>
+            )}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select a Service</DialogTitle>
+          </DialogHeader>
+          
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <span className="text-muted-foreground">Loading services...</span>
+            </div>
+          ) : serviceCategories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* This would be replaced with actual service categories from the database */}
+              {mockCategories.map((category) => (
+                <div key={category.name} className="space-y-3">
+                  <h3 className="font-medium text-lg">{category.name}</h3>
+                  {category.subcategories.map((subcategory) => (
+                    <div key={subcategory.name} className="space-y-2">
+                      <h4 className="text-sm font-medium text-muted-foreground">{subcategory.name}</h4>
+                      <ul className="space-y-1">
+                        {subcategory.services.map((service) => (
+                          <li key={service}>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start text-sm h-8 px-2"
+                              onClick={() => handleServiceSelect(category.name, subcategory.name, service)}
+                            >
+                              <Check className="mr-2 h-3 w-3 opacity-0" />
+                              <span>{service}</span>
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No service categories found.</p>
+              <p className="text-sm mt-1">Visit the Service Management page to create service categories.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {selectedService && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mt-2 text-red-500 hover:text-red-700" 
+          onClick={clearSelectedService}
         >
-          <SelectTrigger className="bg-white">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {loading && <p className="text-sm text-muted-foreground mt-1">Loading categories...</p>}
-        {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
-      </div>
-      
-      {selectedCategory && (
-        <div>
-          <Label>Subcategory</Label>
-          <Select 
-            value={selectedSubcategoryId || ''} 
-            onValueChange={setSelectedSubcategoryId}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Select a subcategory" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedCategory.subcategories.map((subcategory) => (
-                <SelectItem key={subcategory.id} value={subcategory.id}>
-                  {subcategory.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      
-      {selectedSubcategory && (
-        <div>
-          <Label>Job/Service</Label>
-          <Select 
-            value={selectedJobId || ''} 
-            onValueChange={setSelectedJobId}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Select a job" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedSubcategory.jobs.map((job) => (
-                <SelectItem key={job.id} value={job.id}>
-                  {job.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      
-      {selectedJob && selectedJob.estimatedTime && (
-        <div className="p-3 bg-blue-50 text-blue-800 rounded-md border border-blue-200 text-sm">
-          Estimated time: {Math.floor(selectedJob.estimatedTime / 60)}h {selectedJob.estimatedTime % 60}m
-        </div>
+          Clear selection
+        </Button>
       )}
     </div>
   );
-}
+};
+
+export default HierarchicalServiceSelector;
