@@ -22,7 +22,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
     return 'id' in category;
   };
 
-  // Helper function to extract sub-job headers for specific categories
+  // Helper function to extract subcategory names for a specific category
   const getSubcategoryNames = (category: ServiceMainCategory | ServiceCategory): string[] => {
     if (isServiceMainCategory(category)) {
       // For new format, extract subcategory names directly
@@ -48,8 +48,8 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
             // Generate a unique key based on available properties
             const key = isServiceMainCategory(category) ? (category as ServiceMainCategory).id : categoryName;
 
-            // Get sub-job headers for this category
-            const subJobHeaders = getSubcategoryNames(category);
+            // Get subcategory names for this category
+            const subcategoryNames = getSubcategoryNames(category);
 
             return (
               <div key={key} className="mb-2">
@@ -80,15 +80,15 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                   </div>
                 </Button>
 
-                {/* Display sub-job headers if this is the selected category */}
-                {selectedCategory === categoryName && subJobHeaders.length > 0 && (
+                {/* Display subcategory names if this is the selected category */}
+                {selectedCategory === categoryName && subcategoryNames.length > 0 && (
                   <div className="pl-3 mt-1 space-y-1">
-                    {subJobHeaders.map((header) => (
+                    {subcategoryNames.map((subcategoryName) => (
                       <div 
-                        key={header} 
+                        key={subcategoryName} 
                         className="text-xs font-medium py-1 px-2 bg-esm-blue-50 text-esm-blue-700 rounded border-l-2 border-esm-blue-500"
                       >
-                        {header}
+                        {subcategoryName}
                       </div>
                     ))}
                   </div>
