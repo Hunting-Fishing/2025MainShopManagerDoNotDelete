@@ -25,8 +25,10 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
   // Helper function to extract sub-job headers for specific categories
   const getSubcategoryNames = (category: ServiceMainCategory | ServiceCategory): string[] => {
     if (isServiceMainCategory(category)) {
+      // For new format, extract subcategory names directly
       return category.subcategories.map(sub => sub.name);
     } else {
+      // For old format, fall back to subcategories if available
       return (category as ServiceCategory).subcategories?.map(sub => sub.name) || [];
     }
   };
