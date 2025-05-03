@@ -31,10 +31,10 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
   // Determine the subcategories based on the type
   const subcategories = category.subcategories || [];
   
-  const toggleSubcategory = (subcategoryName: string) => {
+  const toggleSubcategory = (subcategoryId: string) => {
     setExpandedSubcategories(prev => ({
       ...prev,
-      [subcategoryName]: !prev[subcategoryName]
+      [subcategoryId]: !prev[subcategoryId]
     }));
   };
 
@@ -84,14 +84,14 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                       jobs.map((job) => (
                         <div key={job.id} className="flex items-center space-x-2">
                           <Checkbox
-                            id={`service-${job.name}`}
+                            id={`service-${job.id}`}
                             checked={checkedServices[job.name] || false}
                             onCheckedChange={(checked) =>
                               onServiceCheck(job.name, checked === true)
                             }
                           />
                           <Label
-                            htmlFor={`service-${job.name}`}
+                            htmlFor={`service-${job.id}`}
                             className="text-sm cursor-pointer hover:text-foreground"
                           >
                             {job.name}
