@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -58,28 +57,26 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
             : (subcategory as any).services || [];
 
           return (
-            <Card key={subcategoryId} className="border border-muted bg-card/50 shadow-sm">
-              <CardHeader className="p-3 border-b bg-esm-blue-50/70">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm text-esm-blue-700">
-                    {subcategoryName}
-                  </h4>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 w-6 p-0" 
-                    onClick={() => toggleSubcategory(subcategoryId)}
-                  >
-                    {isExpanded ? 
-                      <ChevronUp className="h-4 w-4" /> : 
-                      <ChevronDown className="h-4 w-4" />
-                    }
-                  </Button>
-                </div>
+            <Card key={subcategoryId} className="border border-muted bg-card/50 shadow-sm overflow-hidden">
+              <CardHeader className="p-3 border-b bg-esm-blue-50/70 flex flex-row items-center justify-between">
+                <h4 className="font-medium text-sm text-esm-blue-700 truncate max-w-[90%]">
+                  {subcategoryName}
+                </h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0" 
+                  onClick={() => toggleSubcategory(subcategoryId)}
+                >
+                  {isExpanded ? 
+                    <ChevronUp className="h-4 w-4" /> : 
+                    <ChevronDown className="h-4 w-4" />
+                  }
+                </Button>
               </CardHeader>
               {isExpanded && (
                 <CardContent className="p-3 pt-2">
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
                     {isServiceMainCategory(category) ? (
                       jobs.map((job) => (
                         <div key={job.id} className="flex items-center space-x-2">
@@ -92,7 +89,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                           />
                           <Label
                             htmlFor={`service-${job.id}`}
-                            className="text-sm cursor-pointer hover:text-foreground truncate"
+                            className="text-sm cursor-pointer hover:text-foreground truncate max-w-[90%]"
                           >
                             {job.name}
                           </Label>
@@ -111,7 +108,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                           />
                           <Label
                             htmlFor={`service-${service}-${idx}`}
-                            className="text-sm cursor-pointer hover:text-foreground truncate"
+                            className="text-sm cursor-pointer hover:text-foreground truncate max-w-[90%]"
                           >
                             {service}
                           </Label>

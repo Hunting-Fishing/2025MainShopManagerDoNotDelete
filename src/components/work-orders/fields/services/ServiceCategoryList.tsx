@@ -64,17 +64,17 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                   onClick={() => onCategorySelect(categoryName)}
                 >
                   <div className="flex items-center justify-between w-full text-left">
-                    <span className="truncate">{categoryName}</span>
+                    <span className="truncate max-w-[180px]">{categoryName}</span>
                     <div className="flex items-center space-x-1">
                       {subcategoriesCount > 0 && (
-                        <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                        <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5 whitespace-nowrap">
                           {subcategoriesCount} {subcategoriesCount === 1 ? 'subcategory' : 'subcategories'}
                         </span>
                       )}
                       {selectedCategory === categoryName ? (
-                        <Check className="h-4 w-4 text-esm-blue-600" />
+                        <Check className="h-4 w-4 text-esm-blue-600 flex-shrink-0" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 opacity-50" />
+                        <ChevronRight className="h-4 w-4 opacity-50 flex-shrink-0" />
                       )}
                     </div>
                   </div>
@@ -83,14 +83,19 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                 {/* Display subcategory previews if this is the selected category */}
                 {selectedCategory === categoryName && subcategoryNames.length > 0 && (
                   <div className="pl-3 mt-1 space-y-1">
-                    {subcategoryNames.map((subcategoryName, index) => (
+                    {subcategoryNames.slice(0, 3).map((subcategoryName, index) => (
                       <div 
                         key={`${subcategoryName}-${index}`} 
-                        className="text-xs font-medium py-1 px-2 bg-esm-blue-50 text-esm-blue-700 rounded border-l-2 border-esm-blue-500 truncate"
+                        className="text-xs font-medium py-1 px-2 bg-esm-blue-50 text-esm-blue-700 rounded border-l-2 border-esm-blue-500 truncate max-w-[240px]"
                       >
                         {subcategoryName}
                       </div>
                     ))}
+                    {subcategoryNames.length > 3 && (
+                      <div className="text-xs text-muted-foreground pl-2">
+                        +{subcategoryNames.length - 3} more
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
