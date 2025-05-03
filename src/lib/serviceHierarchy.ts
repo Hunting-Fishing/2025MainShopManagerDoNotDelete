@@ -56,7 +56,12 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
     
     // Process each sheet as a main category
     Object.keys(excelData).forEach((sheetName, index) => {
-      if (sheetName && excelData[sheetName] && Array.isArray(excelData[sheetName])) {
+      // Skip sheets with names starting with "!" - these are special Excel sheets
+      if (sheetName.startsWith('!') || !sheetName || sheetName === 'Instructions') {
+        return;
+      }
+      
+      if (excelData[sheetName] && Array.isArray(excelData[sheetName])) {
         // Create the main category from the sheet name
         const mainCategory: ServiceMainCategory = {
           id: uuidv4(),
@@ -87,30 +92,32 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
         
         // Create subcategories from column headers
         columnHeaders.forEach(columnName => {
-          const subcategory: ServiceSubcategory = {
-            id: uuidv4(),
-            name: columnName,
-            description: `${sheetName} - ${columnName}`,
-            jobs: []
-          };
-          
-          // Extract jobs from the column values (skip empty cells)
-          sheetData.forEach((row: any) => {
-            const jobName = row[columnName];
-            if (jobName && typeof jobName === 'string' && jobName.trim()) {
-              subcategory.jobs.push({
-                id: uuidv4(),
-                name: jobName.trim(),
-                description: `${jobName} service for ${columnName}`,
-                estimatedTime: 60, // Default to 60 minutes
-                price: null // Price not specified in the Excel
-              });
+          if (columnName && columnName.trim() !== '') {
+            const subcategory: ServiceSubcategory = {
+              id: uuidv4(),
+              name: columnName,
+              description: `${sheetName} - ${columnName}`,
+              jobs: []
+            };
+            
+            // Extract jobs from the column values (skip empty cells)
+            sheetData.forEach((row: any) => {
+              const jobName = row[columnName];
+              if (jobName && typeof jobName === 'string' && jobName.trim()) {
+                subcategory.jobs.push({
+                  id: uuidv4(),
+                  name: jobName.trim(),
+                  description: `${jobName} service for ${columnName}`,
+                  estimatedTime: 60, // Default to 60 minutes
+                  price: null // Price not specified in the Excel
+                });
+              }
+            });
+            
+            // Only add subcategory if it has jobs
+            if (subcategory.jobs.length > 0) {
+              mainCategory.subcategories.push(subcategory);
             }
-          });
-          
-          // Only add subcategory if it has jobs
-          if (subcategory.jobs.length > 0) {
-            mainCategory.subcategories.push(subcategory);
           }
         });
         
@@ -128,14 +135,19 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
   }
 }
 
-// Function to bulk import service categories
-export async function bulkImportServiceCategories(categories: ServiceMainCategory[]): Promise<void> {
+// Function to bulk import service categories with progress tracking
+export async function bulkImportServiceCategories(
+  categories: ServiceMainCategory[], 
+  progressCallback?: (progress: number) => void
+): Promise<void> {
   if (!categories || categories.length === 0) {
     throw new Error("No categories to import");
   }
   
   // For large datasets, import in batches
-  const BATCH_SIZE = 10;
+  const BATCH_SIZE = 5; // Smaller batch size for better progress reporting
+  let completedBatches = 0;
+  const totalBatches = Math.ceil(categories.length / BATCH_SIZE);
   
   for (let i = 0; i < categories.length; i += BATCH_SIZE) {
     const batch = categories.slice(i, i + BATCH_SIZE);
@@ -144,12 +156,19 @@ export async function bulkImportServiceCategories(categories: ServiceMainCategor
       .upsert(batch);
     
     if (error) {
-      throw new Error(`Error importing service categories (batch ${i/BATCH_SIZE + 1}): ${error.message}`);
+      throw new Error(`Error importing service categories (batch ${completedBatches + 1}/${totalBatches}): ${error.message}`);
+    }
+    
+    completedBatches++;
+    
+    // Report progress
+    if (progressCallback) {
+      progressCallback(completedBatches / totalBatches);
     }
     
     // Small delay to prevent overwhelming the database
     if (i + BATCH_SIZE < categories.length) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
 }
