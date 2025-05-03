@@ -1,12 +1,14 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, LayersIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { serviceCategories } from "@/data/commonServices";
 import { ServiceCategoryList } from "./services/ServiceCategoryList";
 import { ServiceSubcategoryGrid } from "./services/ServiceSubcategoryGrid";
+import { ServiceMainCategory } from "@/types/serviceHierarchy";
+import { fetchServiceCategories } from "@/lib/serviceHierarchy";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CommonServicesChecklistProps {
   onServiceChecked: (checkedServices: string[]) => void;
@@ -18,9 +20,30 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
   const [expanded, setExpanded] = useState(false);
   const [checkedServices, setCheckedServices] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState("categories");
-  const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>(
-    serviceCategories[0]?.name || null
-  );
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>(null);
+  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch service categories from Developer Portal on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedCategories = await fetchServiceCategories();
+        setCategories(fetchedCategories);
+        // Set the first category as selected if available and none is selected
+        if (fetchedCategories.length > 0 && !selectedMainCategory) {
+          setSelectedMainCategory(fetchedCategories[0].name);
+        }
+      } catch (error) {
+        console.error("Error loading service categories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, [selectedMainCategory]);
 
   const handleCheckboxChange = (service: string, checked: boolean) => {
     const updatedServices = { ...checkedServices, [service]: checked };
@@ -34,7 +57,64 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
   };
 
   const checkedCount = Object.values(checkedServices).filter(Boolean).length;
-  const selectedCategory = serviceCategories.find(cat => cat.name === selectedMainCategory);
+  const selectedCategory = categories.find(cat => cat.name === selectedMainCategory);
+
+  const renderCategoriesContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
+          <div className="w-[280px] border-r pr-1">
+            <h4 className="font-medium text-sm mb-3 px-2">Categories</h4>
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          </div>
+          <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-40 w-full" />
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (categories.length === 0) {
+      return (
+        <div className="p-4 text-center text-muted-foreground min-h-[200px] flex flex-col items-center justify-center">
+          <p>No service categories found in Developer Portal.</p>
+          <p className="text-sm mt-1">Visit the Service Management page to create service categories.</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => window.location.href = '/developer/service-management'}
+          >
+            Go to Service Management
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
+        <ServiceCategoryList
+          categories={categories}
+          selectedCategory={selectedMainCategory}
+          onCategorySelect={setSelectedMainCategory}
+        />
+        {selectedCategory && (
+          <ServiceSubcategoryGrid
+            category={selectedCategory}
+            checkedServices={checkedServices}
+            onServiceCheck={handleCheckboxChange}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <Card className="mb-6 border-esm-blue-100 shadow-md">
@@ -54,7 +134,7 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
               )}
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Select common services for this work order
+              Select services from Developer Portal for this work order
             </p>
           </div>
         </div>
@@ -74,20 +154,7 @@ export const CommonServicesChecklist: React.FC<CommonServicesChecklistProps> = (
             </TabsList>
 
             <TabsContent value="categories" className="m-0">
-              <div className="flex gap-6 min-h-[500px] bg-muted/5 rounded-lg p-4">
-                <ServiceCategoryList
-                  categories={serviceCategories}
-                  selectedCategory={selectedMainCategory}
-                  onCategorySelect={setSelectedMainCategory}
-                />
-                {selectedCategory && (
-                  <ServiceSubcategoryGrid
-                    category={selectedCategory}
-                    checkedServices={checkedServices}
-                    onServiceCheck={handleCheckboxChange}
-                  />
-                )}
-              </div>
+              {renderCategoriesContent()}
             </TabsContent>
 
             <TabsContent value="transmission">
