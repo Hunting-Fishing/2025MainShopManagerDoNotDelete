@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ServiceCategoryList } from "./ServiceCategoryList";
+import { ServiceSubcategoryGrid } from "./ServiceSubcategoryGrid";
 import { PlusCircle, Check, Wrench } from 'lucide-react';
 import { useServiceSelection } from '@/hooks/useServiceSelection';
 import { fetchServiceCategories } from '@/lib/serviceHierarchy';
@@ -23,6 +24,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [serviceCategories, setServiceCategories] = useState<ServiceMainCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkedServices, setCheckedServices] = useState<Record<string, boolean>>({});
   const { selectedService, clearSelectedService } = useServiceSelection();
 
   useEffect(() => {
@@ -38,6 +40,11 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
       try {
         const categories = await fetchServiceCategories();
         setServiceCategories(categories);
+        
+        // Select the first category by default if available
+        if (categories.length > 0 && !selectedCategory) {
+          setSelectedCategory(categories[0].name);
+        }
       } catch (error) {
         console.error('Error loading service categories:', error);
       } finally {
@@ -48,14 +55,44 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
     loadCategories();
   }, []);
 
-  const handleServiceSelect = (category: string, subcategory: string, service: string, estimatedTime?: number) => {
-    onServiceSelected({
-      mainCategory: category,
-      subcategory: subcategory,
-      job: service,
-      estimatedTime: estimatedTime || 60 // Default to 1 hour if not provided
-    });
-    setIsOpen(false);
+  const handleCategorySelect = (categoryName: string) => {
+    setSelectedCategory(categoryName);
+  };
+
+  const handleServiceCheck = (serviceName: string, checked: boolean) => {
+    setCheckedServices(prev => ({
+      ...prev,
+      [serviceName]: checked
+    }));
+
+    if (checked && selectedCategory) {
+      // Find the selected category and subcategory
+      const category = serviceCategories.find(cat => cat.name === selectedCategory);
+      if (category) {
+        // Find which subcategory this service belongs to
+        let foundSubcategory = null;
+        
+        for (const subcategory of category.subcategories) {
+          const matchingJob = subcategory.jobs.find(job => job.name === serviceName);
+          if (matchingJob) {
+            foundSubcategory = subcategory;
+            onServiceSelected({
+              mainCategory: category.name,
+              subcategory: subcategory.name,
+              job: serviceName,
+              estimatedTime: matchingJob.estimatedTime
+            });
+            setIsOpen(false);
+            break;
+          }
+        }
+      }
+    }
+  };
+
+  const getSelectedCategoryObject = () => {
+    if (!selectedCategory) return null;
+    return serviceCategories.find(cat => cat.name === selectedCategory) || null;
   };
 
   return (
@@ -81,7 +118,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
             )}
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Select a Service</DialogTitle>
           </DialogHeader>
@@ -91,49 +128,20 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
               <span className="text-muted-foreground">Loading services...</span>
             </div>
           ) : serviceCategories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {serviceCategories.map((category) => (
-                <div key={category.id} className="space-y-3">
-                  <h3 className="font-medium text-lg">{category.name}</h3>
-                  {category.subcategories.map((subcategory) => (
-                    <div key={subcategory.id} className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">{subcategory.name}</h4>
-                      <ul className="space-y-1">
-                        {subcategory.jobs.map((job) => (
-                          <li key={job.id}>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start text-sm h-8 px-2 group"
-                              onClick={() => handleServiceSelect(category.name, subcategory.name, job.name, job.estimatedTime)}
-                            >
-                              <div className="flex items-center w-full justify-between">
-                                <div className="flex items-center">
-                                  <Check className="mr-2 h-3 w-3 opacity-0" />
-                                  <span>{job.name}</span>
-                                </div>
-                                {job.estimatedTime && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="text-xs text-muted-foreground ml-2">
-                                          ~{Math.round(job.estimatedTime / 60 * 10) / 10}h
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Estimated time: {job.estimatedTime} minutes</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </div>
-                            </Button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              ))}
+            <div className="flex h-[500px]">
+              <ServiceCategoryList 
+                categories={serviceCategories}
+                selectedCategory={selectedCategory}
+                onCategorySelect={handleCategorySelect}
+              />
+              
+              {selectedCategory && getSelectedCategoryObject() && (
+                <ServiceSubcategoryGrid 
+                  category={getSelectedCategoryObject()!}
+                  checkedServices={checkedServices}
+                  onServiceCheck={handleServiceCheck}
+                />
+              )}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
