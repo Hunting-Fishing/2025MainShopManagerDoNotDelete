@@ -80,12 +80,12 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                   </div>
                 </Button>
 
-                {/* Display subcategory names if this is the selected category */}
+                {/* Display subcategory previews if this is the selected category */}
                 {selectedCategory === categoryName && subcategoryNames.length > 0 && (
                   <div className="pl-3 mt-1 space-y-1">
-                    {subcategoryNames.map((subcategoryName) => (
+                    {subcategoryNames.map((subcategoryName, index) => (
                       <div 
-                        key={subcategoryName} 
+                        key={`${subcategoryName}-${index}`} 
                         className="text-xs font-medium py-1 px-2 bg-esm-blue-50 text-esm-blue-700 rounded border-l-2 border-esm-blue-500"
                       >
                         {subcategoryName}

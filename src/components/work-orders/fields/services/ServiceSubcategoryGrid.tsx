@@ -41,14 +41,14 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
   return (
     <ScrollArea className="h-[450px] flex-1">
       <div className="grid grid-cols-1 gap-4 pb-4 px-2">
-        {subcategories.map((subcategory) => {
+        {subcategories.map((subcategory, subIndex) => {
           const subcategoryName = isServiceMainCategory(category) 
             ? (subcategory as any).name 
             : (subcategory as any).name || "";
             
           const subcategoryId = isServiceMainCategory(category) 
             ? (subcategory as any).id 
-            : subcategoryName;
+            : `${subcategoryName}-${subIndex}`;
             
           const isExpanded = expandedSubcategories[subcategoryId] !== false; // Default to expanded
           
@@ -100,17 +100,17 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                       ))
                     ) : (
                       // Fallback for old format (if still needed)
-                      (subcategory as any).services?.map((service: string) => (
-                        <div key={service} className="flex items-center space-x-2">
+                      (subcategory as any).services?.map((service: string, idx: number) => (
+                        <div key={`${service}-${idx}`} className="flex items-center space-x-2">
                           <Checkbox
-                            id={`service-${service}`}
+                            id={`service-${service}-${idx}`}
                             checked={checkedServices[service] || false}
                             onCheckedChange={(checked) =>
                               onServiceCheck(service, checked === true)
                             }
                           />
                           <Label
-                            htmlFor={`service-${service}`}
+                            htmlFor={`service-${service}-${idx}`}
                             className="text-sm cursor-pointer hover:text-foreground"
                           >
                             {service}
