@@ -75,45 +75,57 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
           position: columnIndex,
           subcategories: []
         };
+
+        // Group service jobs by subcategory
+        // In this case, each cell value in the column will be treated as a service/job
+        const jobsBySubcategory: Record<string, ServiceJob[]> = {};
+        const defaultSubcategoryName = "General Services";
+        jobsBySubcategory[defaultSubcategoryName] = [];
         
-        // Check if there are subcategories or direct jobs
-        let jobs: ServiceJob[] = [];
-        
-        // Check rows 2+ for data
+        // Start from row 2 (index 1) to skip the header
         for (let i = 1; i < sheetData.length; i++) {
           const row = sheetData[i];
           const cellValue = row[columnKey];
           
           if (cellValue && typeof cellValue === 'string' && cellValue.trim() !== '') {
-            console.log(`Found job: ${cellValue.trim()} under ${categoryName}`);
+            const jobName = cellValue.trim();
             
-            // For now, we'll treat all as direct jobs
-            jobs.push({
+            console.log(`Found job: ${jobName} under ${categoryName}`);
+            
+            // Create a job
+            const job: ServiceJob = {
               id: uuidv4(),
-              name: cellValue.trim(),
-              description: `${cellValue.trim()} service under ${categoryName}`,
+              name: jobName,
+              description: `${jobName} service under ${categoryName}`,
               estimatedTime: 60, // Default to 60 minutes
               price: null // Price not specified in the Excel
-            });
+            };
+            
+            // Add to default subcategory
+            jobsBySubcategory[defaultSubcategoryName].push(job);
           }
         }
         
-        // Add a default subcategory to contain all jobs
-        if (jobs.length > 0) {
-          const defaultSubcategory: ServiceSubcategory = {
-            id: uuidv4(),
-            name: "Services",
-            description: `Services for ${categoryName}`,
-            jobs: jobs
-          };
+        // Create subcategories from the grouped jobs
+        Object.keys(jobsBySubcategory).forEach(subcategoryName => {
+          const jobs = jobsBySubcategory[subcategoryName];
           
-          mainCategory.subcategories.push(defaultSubcategory);
-        }
+          if (jobs.length > 0) {
+            const subcategory: ServiceSubcategory = {
+              id: uuidv4(),
+              name: subcategoryName,
+              description: `${subcategoryName} for ${categoryName}`,
+              jobs: jobs
+            };
+            
+            mainCategory.subcategories.push(subcategory);
+          }
+        });
         
         // Only add categories that have jobs
         if (mainCategory.subcategories.length > 0) {
           categories.push(mainCategory);
-          console.log(`Added category ${mainCategory.name} with ${mainCategory.subcategories.length} subcategories and ${jobs.length} total jobs`);
+          console.log(`Added category ${mainCategory.name} with ${mainCategory.subcategories.length} subcategories containing ${mainCategory.subcategories.reduce((acc, sub) => acc + sub.jobs.length, 0)} total jobs`);
         } else {
           console.log(`Category ${mainCategory.name} has no jobs, skipping`);
         }

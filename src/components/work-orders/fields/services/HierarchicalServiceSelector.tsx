@@ -39,6 +39,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
       setIsLoading(true);
       try {
         const categories = await fetchServiceCategories();
+        console.log("Loaded categories:", categories);
         setServiceCategories(categories);
         
         // Select the first category by default if available
@@ -56,10 +57,13 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
   }, []);
 
   const handleCategorySelect = (categoryName: string) => {
+    console.log("Selected category:", categoryName);
     setSelectedCategory(categoryName);
   };
 
   const handleServiceCheck = (serviceName: string, checked: boolean) => {
+    console.log(`Service ${serviceName} checked: ${checked}`);
+    
     setCheckedServices(prev => ({
       ...prev,
       [serviceName]: checked
