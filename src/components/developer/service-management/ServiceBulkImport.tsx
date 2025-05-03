@@ -3,14 +3,18 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileUploader } from '@/components/shared/FileUploader';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { parseExcelToServiceHierarchy, bulkImportServiceCategories } from '@/lib/serviceHierarchy';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { getFormattedDate } from '@/utils/export/utils';
 import { v4 as uuidv4 } from 'uuid';
 
-export function ServiceBulkImport({ onImportComplete }: { onImportComplete: () => void }) {
+interface ServiceBulkImportProps {
+  onImportComplete: () => void;
+}
+
+export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();

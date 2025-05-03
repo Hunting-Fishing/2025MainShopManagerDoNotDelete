@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ServiceCategoryList from './ServiceCategoryList';
 import ServiceCategoryEditor from './ServiceCategoryEditor';
-import ServiceBulkImport from './ServiceBulkImport';
+import { ServiceBulkImport } from './ServiceBulkImport';
 
 export default function ServiceHierarchyManager() {
   const [activeTab, setActiveTab] = useState('browse');
@@ -160,7 +160,7 @@ export default function ServiceHierarchyManager() {
         
         <TabsContent value="import">
           <ServiceBulkImport 
-            onImportSuccess={() => {
+            onImportComplete={() => {
               queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
               setActiveTab('browse');
             }}
