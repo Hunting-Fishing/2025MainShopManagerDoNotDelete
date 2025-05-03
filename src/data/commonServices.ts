@@ -262,7 +262,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Complete Tune-Up",
           "Spark Plug Service",
           "Ignition Service",
-          "Carburetor Service"
+          "CARBURETOR CONTROLS"
         ]
       }
     ]
@@ -360,4 +360,3 @@ export const serviceCategories: ServiceCategory[] = [
     ]
   }
 ];
-
