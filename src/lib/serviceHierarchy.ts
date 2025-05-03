@@ -47,11 +47,18 @@ export async function deleteServiceCategory(id: string): Promise<void> {
 /**
  * Converts Excel data to service categories based on the sheet structure where:
  * - Each sheet represents a main category 
- * - Each column in a sheet represents a subcategory
- * - Items in the columns represent service jobs
+ * - First row contains subcategory names
+ * - Rows below contain service jobs for each subcategory
  */
 export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategory[] {
   try {
+    console.log('Parsing Excel data:', excelData);
+    
+    if (!excelData || typeof excelData !== 'object' || Object.keys(excelData).length === 0) {
+      console.error('Empty or invalid Excel data:', excelData);
+      throw new Error('Excel file appears to be empty or in an invalid format.');
+    }
+    
     const categories: ServiceMainCategory[] = [];
     
     // Process each sheet as a main category
@@ -60,6 +67,8 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
       if (sheetName.startsWith('!') || !sheetName || sheetName === 'Instructions') {
         return;
       }
+      
+      console.log(`Processing sheet: ${sheetName}`);
       
       if (excelData[sheetName] && Array.isArray(excelData[sheetName])) {
         // Create the main category from the sheet name
@@ -73,46 +82,53 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
         
         // Skip empty sheets
         if (excelData[sheetName].length === 0) {
+          console.log(`Sheet ${sheetName} is empty, skipping`);
           return;
         }
 
-        // Extract column headers as subcategories
         const sheetData = excelData[sheetName];
+        console.log(`Sheet ${sheetName} data:`, sheetData);
         
-        // Get all unique column headers (except __rowNum__ or empty ones)
-        const columnHeaders = new Set<string>();
+        // Get first row as subcategory headers
+        const firstRow = sheetData[0];
+        if (!firstRow) {
+          console.log(`Sheet ${sheetName} has no header row, skipping`);
+          return;
+        }
         
-        sheetData.forEach((row: any) => {
-          Object.keys(row).forEach(key => {
-            if (key !== '__rowNum__' && key.trim() !== '') {
-              columnHeaders.add(key);
-            }
-          });
-        });
+        // Extract subcategory names from the first row (excluding __rowNum__ property)
+        const subcategoryNames = Object.keys(firstRow).filter(key => 
+          key !== '__rowNum__' && firstRow[key] && firstRow[key].toString().trim() !== ''
+        );
         
-        // Create subcategories from column headers
-        columnHeaders.forEach(columnName => {
-          if (columnName && columnName.trim() !== '') {
+        console.log(`Found subcategory names:`, subcategoryNames);
+        
+        // Create subcategories
+        subcategoryNames.forEach(columnIndex => {
+          const subcategoryName = firstRow[columnIndex];
+          if (subcategoryName && typeof subcategoryName === 'string' && subcategoryName.trim() !== '') {
             const subcategory: ServiceSubcategory = {
               id: uuidv4(),
-              name: columnName,
-              description: `${sheetName} - ${columnName}`,
+              name: subcategoryName.trim(),
+              description: `${sheetName} - ${subcategoryName.trim()}`,
               jobs: []
             };
             
-            // Extract jobs from the column values (skip empty cells)
-            sheetData.forEach((row: any) => {
-              const jobName = row[columnName];
-              if (jobName && typeof jobName === 'string' && jobName.trim()) {
+            // Extract jobs from rows below the header (starting from index 1)
+            for (let i = 1; i < sheetData.length; i++) {
+              const row = sheetData[i];
+              const jobName = row[columnIndex];
+              
+              if (jobName && typeof jobName === 'string' && jobName.trim() !== '') {
                 subcategory.jobs.push({
                   id: uuidv4(),
                   name: jobName.trim(),
-                  description: `${jobName} service for ${columnName}`,
+                  description: `${jobName.trim()} service for ${subcategoryName.trim()}`,
                   estimatedTime: 60, // Default to 60 minutes
                   price: null // Price not specified in the Excel
                 });
               }
-            });
+            }
             
             // Only add subcategory if it has jobs
             if (subcategory.jobs.length > 0) {
@@ -124,14 +140,22 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
         // Only add category if it has subcategories
         if (mainCategory.subcategories.length > 0) {
           categories.push(mainCategory);
+        } else {
+          console.log(`Category ${mainCategory.name} has no subcategories with jobs, skipping`);
         }
       }
     });
     
+    console.log('Parsed categories:', categories);
+    
+    if (categories.length === 0) {
+      throw new Error('No valid service categories found in the Excel file. Please ensure your Excel follows the template format with sheets as categories, first row as subcategory names, and subsequent rows as services.');
+    }
+    
     return categories;
   } catch (error) {
     console.error("Error parsing Excel data:", error);
-    throw new Error("Failed to parse Excel data. Please ensure it follows the expected format with sheets as categories and columns as subcategories.");
+    throw error;
   }
 }
 
