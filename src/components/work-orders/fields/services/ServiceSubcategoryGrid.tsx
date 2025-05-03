@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -37,9 +38,12 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
     }));
   };
 
+  // Log the structure to see what we're working with
+  console.log("Category structure:", category);
+
   return (
     <ScrollArea className="h-[450px] flex-1">
-      <div className="grid grid-cols-1 gap-4 pb-4 px-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4 px-2">
         {subcategories.map((subcategory, subIndex) => {
           const subcategoryName = isServiceMainCategory(category) 
             ? (subcategory as any).name 
@@ -55,6 +59,8 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
           const jobs = isServiceMainCategory(category)
             ? (subcategory as any).jobs || []
             : (subcategory as any).services || [];
+
+          console.log(`Subcategory: ${subcategoryName}, Jobs:`, jobs);
 
           return (
             <Card key={subcategoryId} className="border border-muted bg-card/50 shadow-sm overflow-hidden">
@@ -76,7 +82,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
               </CardHeader>
               {isExpanded && (
                 <CardContent className="p-3 pt-2">
-                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto">
                     {isServiceMainCategory(category) ? (
                       jobs.map((job) => (
                         <div key={job.id} className="flex items-center space-x-2">
@@ -115,6 +121,11 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                         </div>
                       ))
                     )}
+                    
+                    {/* Display message if no jobs/services are available */}
+                    {jobs.length === 0 && (
+                      <p className="text-sm text-muted-foreground italic">No services available</p>
+                    )}
                   </div>
                 </CardContent>
               )}
@@ -124,4 +135,4 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
       </div>
     </ScrollArea>
   );
-};
+}

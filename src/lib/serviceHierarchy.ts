@@ -85,6 +85,12 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
       };
       
       const sheetData = excelData[sheetName];
+      console.log(`Sheet data for ${sheetName}:`, sheetData);
+      
+      // Debug the first row to see its structure
+      if (sheetData.length > 0) {
+        console.log(`First row structure for ${sheetName}:`, sheetData[0]);
+      }
       
       // Get subcategory headers from the first row (row 1)
       const firstRow = sheetData[0];
@@ -98,7 +104,8 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
         key !== '__rowNum__' && firstRow[key] && firstRow[key].toString().trim() !== ''
       );
       
-      console.log(`Found ${columnKeys.length} columns with subcategory headers`);
+      console.log(`Found ${columnKeys.length} columns with subcategory headers:`, columnKeys);
+      console.log(`First row values:`, columnKeys.map(key => firstRow[key]));
       
       // Process each column
       columnKeys.forEach(columnKey => {
@@ -125,6 +132,8 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
           const jobName = row[columnKey];
           
           if (jobName && typeof jobName === 'string' && jobName.trim() !== '') {
+            console.log(`Adding job: ${jobName.trim()} under ${subcategoryName}`);
+            
             subcategory.jobs.push({
               id: uuidv4(),
               name: jobName.trim(),
@@ -138,12 +147,16 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
         // Only add subcategories with jobs
         if (subcategory.jobs.length > 0) {
           mainCategory.subcategories.push(subcategory);
+          console.log(`Added subcategory ${subcategoryName} with ${subcategory.jobs.length} jobs`);
+        } else {
+          console.log(`Subcategory ${subcategoryName} has no jobs, skipping`);
         }
       });
       
       // Only add category if it has subcategories
       if (mainCategory.subcategories.length > 0) {
         categories.push(mainCategory);
+        console.log(`Added category ${mainCategory.name} with ${mainCategory.subcategories.length} subcategories`);
       } else {
         console.log(`Category ${mainCategory.name} has no subcategories with jobs, skipping`);
       }
