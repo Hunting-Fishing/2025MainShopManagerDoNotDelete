@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -41,14 +42,20 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
     <ScrollArea className="h-[450px] flex-1">
       <div className="grid grid-cols-1 gap-4 pb-4 px-2">
         {subcategories.map((subcategory) => {
-          const subcategoryName = (subcategory as any).name || "";
-          const subcategoryId = isServiceMainCategory(category) ? (subcategory as any).id : subcategoryName;
+          const subcategoryName = isServiceMainCategory(category) 
+            ? (subcategory as any).name 
+            : (subcategory as any).name || "";
+            
+          const subcategoryId = isServiceMainCategory(category) 
+            ? (subcategory as any).id 
+            : subcategoryName;
+            
           const isExpanded = expandedSubcategories[subcategoryId] !== false; // Default to expanded
           
           // Get jobs based on the data structure
           const jobs = isServiceMainCategory(category)
             ? (subcategory as any).jobs || []
-            : [];
+            : (subcategory as any).services || [];
 
           return (
             <Card key={subcategoryId} className="border border-muted bg-card/50 shadow-sm">

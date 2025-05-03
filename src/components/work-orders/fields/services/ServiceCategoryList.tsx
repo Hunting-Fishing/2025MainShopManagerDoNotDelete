@@ -23,25 +23,12 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
   };
 
   // Helper function to extract sub-job headers for specific categories
-  // These would be displayed as headers above the job groupings
-  const getSubJobHeaders = (categoryName: string): string[] => {
-    // Define sub-job headers by category
-    if (categoryName === "Adjustments & Diagnosis") {
-      return [
-        "Adjustments", 
-        "CAR SYMPTOMS-ENGINE PERFORMANCE", 
-        "CHECK OUTS", 
-        "COMMENTS W/O PRICES", 
-        "DIAGNOSTIC CHARGES", 
-        "MILEAGE SERVICES", 
-        "NOISES - COMFORTS", 
-        "ROAD SERVICES & TOWING", 
-        "STARTING - LIGHTS", 
-        "VIBRATIONS - LEAKS"
-      ];
+  const getSubcategoryNames = (category: ServiceMainCategory | ServiceCategory): string[] => {
+    if (isServiceMainCategory(category)) {
+      return category.subcategories.map(sub => sub.name);
+    } else {
+      return (category as ServiceCategory).subcategories?.map(sub => sub.name) || [];
     }
-    // Add more categories as needed
-    return [];
   };
 
   return (
@@ -59,8 +46,8 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
             // Generate a unique key based on available properties
             const key = isServiceMainCategory(category) ? (category as ServiceMainCategory).id : categoryName;
 
-            // Get sub-job headers for this category if they exist
-            const subJobHeaders = getSubJobHeaders(categoryName);
+            // Get sub-job headers for this category
+            const subJobHeaders = getSubcategoryNames(category);
 
             return (
               <div key={key} className="mb-2">
@@ -91,7 +78,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                   </div>
                 </Button>
 
-                {/* Display sub-job headers if this is the selected category and it has sub-job headers */}
+                {/* Display sub-job headers if this is the selected category */}
                 {selectedCategory === categoryName && subJobHeaders.length > 0 && (
                   <div className="pl-3 mt-1 space-y-1">
                     {subJobHeaders.map((header) => (

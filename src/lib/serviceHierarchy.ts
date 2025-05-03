@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
 import { v4 as uuidv4 } from 'uuid';
@@ -100,24 +99,29 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
       
       console.log(`Found ${columnKeys.length} columns with subcategory headers`);
       
-      // Process each column as a subcategory
+      // Process each column as a set of SubJob Headers and jobs
       columnKeys.forEach(columnKey => {
-        const subcategoryName = firstRow[columnKey].toString().trim();
+        const subJobHeader = firstRow[columnKey].toString().trim();
         
-        if (!subcategoryName) {
-          console.log(`Empty subcategory name in column ${columnKey}, skipping`);
+        if (!subJobHeader) {
+          console.log(`Empty subJob header in column ${columnKey}, skipping`);
           return;
         }
         
-        console.log(`Processing subcategory: ${subcategoryName}`);
+        console.log(`Processing subJob header: ${subJobHeader}`);
         
-        // Create the subcategory
-        const subcategory: ServiceSubcategory = {
-          id: uuidv4(),
-          name: subcategoryName,
-          description: `${sheetName} - ${subcategoryName}`,
-          jobs: []
-        };
+        // First, find or create a subcategory with the subJobHeader name
+        let subcategory = mainCategory.subcategories.find(sub => sub.name === subJobHeader);
+        
+        if (!subcategory) {
+          subcategory = {
+            id: uuidv4(),
+            name: subJobHeader,
+            description: `${sheetName} - ${subJobHeader}`,
+            jobs: []
+          };
+          mainCategory.subcategories.push(subcategory);
+        }
         
         // Process rows 2+ as jobs
         for (let i = 1; i < sheetData.length; i++) {
@@ -128,18 +132,11 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
             subcategory.jobs.push({
               id: uuidv4(),
               name: jobName.trim(),
-              description: `${jobName.trim()} service for ${subcategoryName}`,
+              description: `${jobName.trim()} service under ${subJobHeader}`,
               estimatedTime: 60, // Default to 60 minutes
               price: null // Price not specified in the Excel
             });
           }
-        }
-        
-        // Only add subcategory if it has jobs
-        if (subcategory.jobs.length > 0) {
-          mainCategory.subcategories.push(subcategory);
-        } else {
-          console.log(`Subcategory ${subcategoryName} has no jobs, skipping`);
         }
       });
       
