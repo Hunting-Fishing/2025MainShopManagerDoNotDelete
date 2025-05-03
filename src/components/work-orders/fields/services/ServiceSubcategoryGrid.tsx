@@ -92,7 +92,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                           />
                           <Label
                             htmlFor={`service-${job.id}`}
-                            className="text-sm cursor-pointer hover:text-foreground"
+                            className="text-sm cursor-pointer hover:text-foreground truncate"
                           >
                             {job.name}
                           </Label>
@@ -111,7 +111,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
                           />
                           <Label
                             htmlFor={`service-${service}-${idx}`}
-                            className="text-sm cursor-pointer hover:text-foreground"
+                            className="text-sm cursor-pointer hover:text-foreground truncate"
                           >
                             {service}
                           </Label>

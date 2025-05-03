@@ -64,7 +64,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                   onClick={() => onCategorySelect(categoryName)}
                 >
                   <div className="flex items-center justify-between w-full text-left">
-                    <span>{categoryName}</span>
+                    <span className="truncate">{categoryName}</span>
                     <div className="flex items-center space-x-1">
                       {subcategoriesCount > 0 && (
                         <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
@@ -86,7 +86,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                     {subcategoryNames.map((subcategoryName, index) => (
                       <div 
                         key={`${subcategoryName}-${index}`} 
-                        className="text-xs font-medium py-1 px-2 bg-esm-blue-50 text-esm-blue-700 rounded border-l-2 border-esm-blue-500"
+                        className="text-xs font-medium py-1 px-2 bg-esm-blue-50 text-esm-blue-700 rounded border-l-2 border-esm-blue-500 truncate"
                       >
                         {subcategoryName}
                       </div>
