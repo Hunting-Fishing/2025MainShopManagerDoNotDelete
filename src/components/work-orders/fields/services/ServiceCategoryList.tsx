@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
-import { Check } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
 interface ServiceCategoryListProps {
   categories: ServiceMainCategory[] | ServiceCategory[];
@@ -32,30 +32,37 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
             const categoryName = category.name;
             const subcategoriesCount = isServiceMainCategory(category) 
               ? category.subcategories?.length 
-              : category.subcategories?.length;
+              : (category as ServiceCategory).subcategories?.length;
             
             // Generate a unique key based on available properties
-            const key = isServiceMainCategory(category) ? category.id : categoryName;
+            const key = isServiceMainCategory(category) ? (category as ServiceMainCategory).id : categoryName;
 
             return (
               <Button
                 key={key}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start font-normal text-sm h-10",
+                  "w-full justify-between font-normal text-sm h-10 px-3",
                   selectedCategory === categoryName
-                    ? "bg-esm-blue-50 text-esm-blue-700 hover:bg-esm-blue-100 hover:text-esm-blue-700"
+                    ? "bg-esm-blue-50 text-esm-blue-700 hover:bg-esm-blue-100 hover:text-esm-blue-700 font-medium"
                     : "hover:bg-muted/50"
                 )}
                 onClick={() => onCategorySelect(categoryName)}
               >
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center justify-between w-full text-left">
                   <span>{categoryName}</span>
-                  {subcategoriesCount && (
-                    <span className="text-xs text-muted-foreground">
-                      {subcategoriesCount} subcategories
-                    </span>
-                  )}
+                  <div className="flex items-center space-x-1">
+                    {subcategoriesCount > 0 && (
+                      <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                        {subcategoriesCount} {subcategoriesCount === 1 ? 'subcategory' : 'subcategories'}
+                      </span>
+                    )}
+                    {selectedCategory === categoryName ? (
+                      <Check className="h-4 w-4 text-esm-blue-600" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 opacity-50" />
+                    )}
+                  </div>
                 </div>
               </Button>
             );
