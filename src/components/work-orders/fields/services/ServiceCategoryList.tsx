@@ -35,7 +35,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
 
   return (
     <div className="w-[280px] border-r pr-1">
-      <h4 className="font-medium text-sm mb-3 px-2">Categories</h4>
+      <h4 className="font-medium text-sm mb-3 px-2">Service Categories</h4>
       <ScrollArea className="h-[450px]">
         <div className="space-y-1 pr-2">
           {categories.map((category) => {
@@ -64,11 +64,11 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
                   onClick={() => onCategorySelect(categoryName)}
                 >
                   <div className="flex items-center justify-between w-full text-left">
-                    <span className="truncate max-w-[180px]">{categoryName}</span>
+                    <span className="truncate max-w-[180px] font-semibold">{categoryName}</span>
                     <div className="flex items-center space-x-1">
                       {subcategoriesCount > 0 && (
                         <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5 whitespace-nowrap">
-                          {subcategoriesCount} {subcategoriesCount === 1 ? 'subcategory' : 'subcategories'}
+                          {subcategoriesCount} {subcategoriesCount === 1 ? 'service' : 'services'}
                         </span>
                       )}
                       {selectedCategory === categoryName ? (

@@ -71,13 +71,12 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
         const mainCategory: ServiceMainCategory = {
           id: uuidv4(),
           name: categoryName,
-          description: `Imported from ${sheetName} sheet, column ${columnKey}`,
+          description: `Services in ${categoryName} category`,
           position: columnIndex,
           subcategories: []
         };
         
         // Check if there are subcategories or direct jobs
-        let hasSubcategories = false;
         let jobs: ServiceJob[] = [];
         
         // Check rows 2+ for data
@@ -86,7 +85,7 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
           const cellValue = row[columnKey];
           
           if (cellValue && typeof cellValue === 'string' && cellValue.trim() !== '') {
-            console.log(`Found job or subcategory: ${cellValue.trim()} under ${categoryName}`);
+            console.log(`Found job: ${cellValue.trim()} under ${categoryName}`);
             
             // For now, we'll treat all as direct jobs
             jobs.push({
@@ -103,8 +102,8 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
         if (jobs.length > 0) {
           const defaultSubcategory: ServiceSubcategory = {
             id: uuidv4(),
-            name: "General",
-            description: `General services for ${categoryName}`,
+            name: "Services",
+            description: `Services for ${categoryName}`,
             jobs: jobs
           };
           
