@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
 import { AlertCircle, Plus, Save, Download } from 'lucide-react';
@@ -12,6 +11,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ServiceCategoryList from './ServiceCategoryList';
 import ServiceCategoryEditor from './ServiceCategoryEditor';
 import { ServiceBulkImport } from './ServiceBulkImport';
+import { fetchServiceCategories, saveServiceCategory, deleteServiceCategory } from '@/lib/services/serviceApi';
+import { createEmptyCategory } from '@/lib/services/serviceUtils';
 
 export default function ServiceHierarchyManager() {
   const [activeTab, setActiveTab] = useState('browse');
@@ -21,28 +22,12 @@ export default function ServiceHierarchyManager() {
   // Fetch all service categories
   const { data: categories, isLoading, error } = useQuery({
     queryKey: ['serviceHierarchy'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('service_hierarchy')
-        .select('*')
-        .order('position');
-      
-      if (error) throw new Error(error.message);
-      return data as ServiceMainCategory[];
-    },
+    queryFn: fetchServiceCategories,
   });
 
   // Save or update a category
   const saveCategory = useMutation({
-    mutationFn: async (category: ServiceMainCategory) => {
-      const { data, error } = await supabase
-        .from('service_hierarchy')
-        .upsert(category)
-        .select();
-      
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: saveServiceCategory,
     onSuccess: () => {
       toast({
         title: "Category saved",
@@ -62,15 +47,7 @@ export default function ServiceHierarchyManager() {
 
   // Delete a category
   const deleteCategory = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('service_hierarchy')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      return id;
-    },
+    mutationFn: deleteServiceCategory,
     onSuccess: (id) => {
       toast({
         title: "Category deleted",
@@ -121,13 +98,7 @@ export default function ServiceHierarchyManager() {
 
   // Function to add a new category
   const handleAddCategory = () => {
-    const newCategory: ServiceMainCategory = {
-      id: crypto.randomUUID(),
-      name: "New Category",
-      description: "",
-      position: categories ? categories.length : 0,
-      subcategories: []
-    };
+    const newCategory: ServiceMainCategory = createEmptyCategory(categories ? categories.length : 0);
     
     setSelectedCategory(newCategory);
     setActiveTab('edit');
