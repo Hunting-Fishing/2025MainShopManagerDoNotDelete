@@ -12,6 +12,6 @@ export const useSidebar = () => {
     onClose: () => {
       if (!collapsed) toggleCollapsed();
     },
-    toggle: toggleCollapsed // Adding this for backward compatibility
+    toggle: toggleCollapsed
   };
 };

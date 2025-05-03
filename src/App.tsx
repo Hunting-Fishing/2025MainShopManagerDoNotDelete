@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet-async';
 import { Toaster } from "@/components/ui/toaster";
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import routes from './routes';
-
 import './App.css';
 
 // Create a browser router with the routes

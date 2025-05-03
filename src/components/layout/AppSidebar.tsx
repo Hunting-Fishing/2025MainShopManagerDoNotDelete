@@ -9,20 +9,18 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useSidebar } from '@/components/ui/sidebar';
+import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarContent } from './sidebar/SidebarContent';
-import { MessageSquare } from 'lucide-react';
 
 export function AppSidebar() {
-  const { collapsed, toggleCollapsed } = useSidebar();
+  const { isOpen, onOpen, onClose } = useSidebar();
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
 
   return (
     <>
       {isMobile ? (
-        <Sheet open={collapsed} onOpenChange={toggleCollapsed}>
+        <Sheet open={isOpen} onOpenChange={onClose}>
           <SheetContent side="left" className="w-3/4 sm:w-2/3 md:w-1/2 overflow-y-auto">
             <SheetHeader>
               <SheetTitle>Menu</SheetTitle>
