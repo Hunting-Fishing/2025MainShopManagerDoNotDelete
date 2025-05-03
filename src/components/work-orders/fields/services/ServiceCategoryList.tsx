@@ -23,8 +23,9 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
   };
 
   // Helper function to extract sub-job headers for specific categories
+  // These would be displayed as headers above the job groupings
   const getSubJobHeaders = (categoryName: string): string[] => {
-    // For now, we're only defining sub-job headers for "Adjustments & Diagnosis"
+    // Define sub-job headers by category
     if (categoryName === "Adjustments & Diagnosis") {
       return [
         "Adjustments", 
@@ -39,6 +40,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
         "VIBRATIONS - LEAKS"
       ];
     }
+    // Add more categories as needed
     return [];
   };
 

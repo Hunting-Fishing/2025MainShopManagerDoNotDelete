@@ -52,7 +52,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
 
           return (
             <Card key={subcategoryId} className="border border-muted bg-card/50 shadow-sm">
-              <CardHeader className="p-3 border-b bg-muted/30">
+              <CardHeader className="p-3 border-b bg-esm-blue-50/70">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-sm text-esm-blue-700">
                     {subcategoryName}
