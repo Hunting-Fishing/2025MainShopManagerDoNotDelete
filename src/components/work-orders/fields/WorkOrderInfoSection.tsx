@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import HierarchicalServiceSelector from "./services/HierarchicalServiceSelector";
 import { useServiceSelection } from "@/hooks/useServiceSelection";
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
-import { fetchServiceCategories } from "@/lib/serviceHierarchy";
+import { fetchServiceCategories } from "@/lib/services/serviceApi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";

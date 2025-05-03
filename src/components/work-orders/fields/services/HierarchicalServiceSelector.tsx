@@ -6,7 +6,7 @@ import { ServiceCategoryList } from "./ServiceCategoryList";
 import { ServiceSubcategoryGrid } from "./ServiceSubcategoryGrid";
 import { PlusCircle, Check, Wrench } from 'lucide-react';
 import { useServiceSelection } from '@/hooks/useServiceSelection';
-import { fetchServiceCategories } from '@/lib/serviceHierarchy';
+import { fetchServiceCategories } from '@/lib/services/serviceApi';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import * as XLSX from 'xlsx';
 import { write, utils } from 'xlsx'; // Update import to correctly import write
@@ -9,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Upload, Download, FileSpreadsheet, AlertCircle, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { parseExcelToServiceHierarchy, bulkImportServiceCategories, fetchServiceCategories } from "@/lib/serviceHierarchy";
+import { parseExcelToServiceHierarchy, bulkImportServiceCategories } from '@/lib/services';
 import { ServiceMainCategory } from "@/types/serviceHierarchy";
 import { getFormattedDate } from "@/utils/export/utils";
 
@@ -27,7 +26,7 @@ export function ServiceBulkImport({ onImportComplete }: { onImportComplete: () =
   };
 
   // Handle file drop/selection
-  const onDrop = async (acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     clearErrors();
     
     if (acceptedFiles.length === 0) {
@@ -116,10 +115,10 @@ export function ServiceBulkImport({ onImportComplete }: { onImportComplete: () =
       setError(`Upload error: ${err.message}`);
       setIsUploading(false);
     }
-  };
+  }, []);
 
   // Handle import confirmation
-  const handleImport = async () => {
+  const handleImport = useCallback(async () => {
     if (!importedData) return;
     
     try {
@@ -148,7 +147,7 @@ export function ServiceBulkImport({ onImportComplete }: { onImportComplete: () =
     } finally {
       setIsImporting(false);
     }
-  };
+  }, [importedData, onImportComplete]);
 
   // Reset the import process
   const resetImport = () => {
