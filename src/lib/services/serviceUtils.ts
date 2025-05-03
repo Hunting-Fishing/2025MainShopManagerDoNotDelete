@@ -1,6 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
 
 // Create a new empty category with default values
 export function createEmptyCategory(position: number = 0): ServiceMainCategory {
@@ -10,6 +10,27 @@ export function createEmptyCategory(position: number = 0): ServiceMainCategory {
     description: "",
     position,
     subcategories: []
+  };
+}
+
+// Create a new empty subcategory with default values
+export function createEmptySubcategory(): ServiceSubcategory {
+  return {
+    id: uuidv4(),
+    name: "New Subcategory",
+    description: "",
+    jobs: []
+  };
+}
+
+// Create a new empty job/service with default values
+export function createEmptyJob(): ServiceJob {
+  return {
+    id: uuidv4(),
+    name: "New Service",
+    description: "",
+    estimatedTime: 60, // Default to 1 hour
+    price: 0
   };
 }
 
