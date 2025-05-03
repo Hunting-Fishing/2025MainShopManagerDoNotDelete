@@ -19,6 +19,7 @@ export interface ServiceMainCategory {
   name: string;
   description?: string;
   subcategories: ServiceSubcategory[];
+  position?: number; // Added position field
 }
 
 export interface ServiceHierarchyState {

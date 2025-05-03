@@ -61,7 +61,7 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
             id: row.id || uuidv4(),
             name: row.name,
             description: row.description || '',
-            position: row.position || 0,
+            position: row.position !== undefined ? Number(row.position) : 0,
             subcategories: []
           });
         }
