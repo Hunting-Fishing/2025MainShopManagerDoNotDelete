@@ -48,12 +48,12 @@ export default function ServiceHierarchyManager() {
   // Delete a category
   const deleteCategory = useMutation({
     mutationFn: deleteServiceCategory,
-    onSuccess: (id) => {
+    onSuccess: (deletedId: string) => { // Explicitly type the success response
       toast({
         title: "Category deleted",
         description: "The service category has been deleted.",
       });
-      if (selectedCategory && selectedCategory.id === id) {
+      if (selectedCategory && selectedCategory.id === deletedId) {
         setSelectedCategory(null);
       }
       queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });

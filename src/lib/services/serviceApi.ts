@@ -32,7 +32,7 @@ export async function saveServiceCategory(category: ServiceMainCategory): Promis
 }
 
 // Function to delete a service category
-export async function deleteServiceCategory(id: string): Promise<void> {
+export async function deleteServiceCategory(id: string): Promise<string> {
   const { error } = await supabase
     .from('service_hierarchy')
     .delete()
@@ -41,6 +41,8 @@ export async function deleteServiceCategory(id: string): Promise<void> {
   if (error) {
     throw new Error(`Error deleting service category: ${error.message}`);
   }
+  
+  return id; // Return the ID of the deleted category
 }
 
 // Function to bulk import service categories with progress tracking
