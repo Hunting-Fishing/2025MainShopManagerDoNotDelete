@@ -20,6 +20,7 @@ import ShoppingControls from '@/pages/developer/ShoppingControls';
 import ToolCategoryPage from '@/pages/ToolCategoryPage';
 import ToolDetailPage from '@/pages/ToolDetailPage';
 import ManufacturerPage from '@/pages/ManufacturerPage';
+import ServiceManagement from '@/pages/developer/ServiceManagement';
 
 // All routes must be declared here to be used by the RouterProvider
 export const routes: RouteObject[] = [
@@ -96,6 +97,7 @@ export const routes: RouteObject[] = [
         path: 'login',
         element: <Login />,
       },
+      // Developer portal routes
       {
         path: 'developer',
         element: <DeveloperPortal />,
@@ -103,6 +105,10 @@ export const routes: RouteObject[] = [
       {
         path: 'developer/shopping-controls',
         element: <ShoppingControls />,
+      },
+      {
+        path: 'developer/service-management',
+        element: <ServiceManagement />,
       },
       // Shopping routes - maintain the same component as tools for now
       {

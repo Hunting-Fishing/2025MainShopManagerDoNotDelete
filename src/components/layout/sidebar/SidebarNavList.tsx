@@ -133,7 +133,19 @@ const navigationItems: NavItem[] = [
   {
     title: "Developer Portal",
     href: "/developer",
-    icon: <Cog className="h-5 w-5" />
+    icon: <Cog className="h-5 w-5" />,
+    submenu: [
+      {
+        title: "Shopping Controls",
+        href: "/developer/shopping-controls",
+        icon: <Store className="h-4 w-4" />
+      },
+      {
+        title: "Service Management",
+        href: "/developer/service-management",
+        icon: <Wrench className="h-4 w-4" />
+      }
+    ]
   },
   {
     title: "Settings",

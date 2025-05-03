@@ -16,6 +16,13 @@ export default function DeveloperPortal() {
       href: "/developer/shopping-controls",
     },
     {
+      id: "service-management",
+      title: "Service Management",
+      description: "Configure available services, subcategories, and jobs with pricing",
+      icon: <Wrench className="h-6 w-6 text-purple-600" />,
+      href: "/developer/service-management",
+    },
+    {
       id: "user-management",
       title: "User Management",
       description: "Manage application users and their permissions",
@@ -35,13 +42,6 @@ export default function DeveloperPortal() {
       description: "Manage tools, equipment, and their categories",
       icon: <Hammer className="h-6 w-6 text-amber-600" />,
       href: "/developer/tools-management",
-    },
-    {
-      id: "service-management",
-      title: "Service Management",
-      description: "Configure available services and pricing",
-      icon: <Wrench className="h-6 w-6 text-purple-600" />,
-      href: "/developer/service-management",
     },
     {
       id: "analytics-dashboard",
