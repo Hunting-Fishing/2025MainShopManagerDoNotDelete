@@ -24,11 +24,13 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
   
   // Helper function to check if the category is a ServiceMainCategory
   const isServiceMainCategory = (category: any): category is ServiceMainCategory => {
-    return 'id' in category;
+    return 'id' in category && 'subcategories' in category;
   };
 
   // Determine the subcategories based on the type
-  const subcategories = category.subcategories || [];
+  const subcategories = isServiceMainCategory(category) ? 
+    category.subcategories : 
+    (category as ServiceCategory).subcategories || [];
   
   const toggleSubcategory = (subcategoryId: string) => {
     setExpandedSubcategories(prev => ({
@@ -44,6 +46,7 @@ export const ServiceSubcategoryGrid: React.FC<ServiceSubcategoryGridProps> = ({
     <ScrollArea className="h-[450px] flex-1">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4 px-2">
         {subcategories.map((subcategory, subIndex) => {
+          // Get subcategory name and ID based on category type
           const subcategoryName = isServiceMainCategory(category) 
             ? (subcategory as any).name 
             : (subcategory as any).name || "";

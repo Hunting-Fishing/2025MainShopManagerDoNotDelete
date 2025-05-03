@@ -156,9 +156,9 @@ export default function ServiceHierarchyManager() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-3 mb-6">
-          <TabsTrigger value="browse">Browse Categories</TabsTrigger>
-          <TabsTrigger value="edit">Edit Categories</TabsTrigger>
-          <TabsTrigger value="import">Bulk Import</TabsTrigger>
+          <TabsTrigger value="browse">Manage Categories</TabsTrigger>
+          <TabsTrigger value="edit">Edit Category</TabsTrigger>
+          <TabsTrigger value="import">Excel Import</TabsTrigger>
         </TabsList>
         
         <TabsContent value="browse" className="space-y-6">
@@ -187,20 +187,6 @@ export default function ServiceHierarchyManager() {
         
         <TabsContent value="import">
           <div className="space-y-6">
-            <Alert className="bg-blue-50 text-blue-900 border-blue-200">
-              <div className="flex flex-col space-y-2">
-                <h3 className="font-medium">Excel Import Format Guide</h3>
-                <p className="text-sm">
-                  For best results, your Excel file should follow this format:
-                </p>
-                <ul className="text-sm list-disc pl-5 space-y-1">
-                  <li>Column headers should be your main service categories (e.g. "ADJUSTMENTS", "DIAGNOSTIC CHARGES", etc.)</li>
-                  <li>Each column should list the services for that category</li>
-                  <li>The system will process each column as a separate category</li>
-                </ul>
-              </div>
-            </Alert>
-            
             <ServiceBulkImport 
               onImportComplete={() => {
                 queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, FileSpreadsheet, Upload } from "lucide-react";
+import { AlertCircle, FileSpreadsheet, Upload, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { parseExcelToServiceHierarchy } from '@/lib/services';
@@ -138,15 +138,35 @@ export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportCo
           </Alert>
         )}
         
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-700" />
+          <AlertDescription className="text-blue-800">
+            <h4 className="font-medium mb-2">Excel Format Guidelines:</h4>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Each <strong>sheet name</strong> becomes a main service category (e.g., "ADJUSTMENTS", "VIBRATIONS")</li>
+              <li>Column <strong>headers in each sheet</strong> become subcategories</li>
+              <li>Each cell contains a service job for that subcategory</li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+        
         <div className="p-4 border border-dashed rounded-lg bg-muted/40">
           <div className="flex flex-col items-center justify-center space-y-2 text-center">
             <FileSpreadsheet className="h-10 w-10 text-muted-foreground" />
             <div>
-              <h3 className="font-medium">Excel File Format</h3>
-              <p className="text-sm text-muted-foreground">
-                Your Excel file should have column headers representing service categories (like "ADJUSTMENTS", "DIAGNOSTIC CHARGES", etc.), 
-                with each column containing service items for that category.
-              </p>
+              <h3 className="font-medium">Sample Excel Structure</h3>
+              <div className="mt-2 p-2 bg-slate-100 rounded text-left text-xs overflow-x-auto">
+                <pre>{`
+Sheet Name: ADJUSTMENTS (Main Category)
+-------------------------------------
+Column A         | Column B
+-------------------------------------
+Minor Adjusts    | Major Adjusts  <-- Subcategories (headers)
+-------------------------------------
+Turn Mirrors     | Front End      <-- Jobs (cells)
+Adjust Seatbelt  | Rack & Pinion
+`}</pre>
+              </div>
             </div>
           </div>
         </div>
