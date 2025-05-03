@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileUploader } from '@/components/shared/FileUploader';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { parseExcelToServiceHierarchy, bulkImportServiceCategories } from '@/lib/serviceHierarchy';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
 import { getFormattedDate } from '@/utils/export/utils';
 import { v4 as uuidv4 } from 'uuid';
+import { useDropzone } from 'react-dropzone';
+import { Upload, FileText } from 'lucide-react';
 
 interface ServiceBulkImportProps {
   onImportComplete: () => void;
@@ -21,11 +22,19 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
   const [importMethod, setImportMethod] = useState<'excel' | 'json'>('excel');
   const [jsonText, setJsonText] = useState<string>('');
 
-  const handleFileChange = (files: File[]) => {
-    if (files.length > 0) {
-      setFile(files[0]);
+  // Use react-dropzone for file uploads
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls'],
+    },
+    maxFiles: 1,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        setFile(acceptedFiles[0]);
+      }
     }
-  };
+  });
 
   const parseExcelFile = async (file: File): Promise<any> => {
     return new Promise((resolve, reject) => {
@@ -40,8 +49,14 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
           // Process each sheet
           workbook.SheetNames.forEach(sheetName => {
             // Convert sheet to JSON
-            const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-            result[sheetName] = sheetData;
+            const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { 
+              defval: null, // Use null for empty cells
+              blankrows: false // Skip blank rows
+            });
+            
+            if (sheetData.length > 0) {
+              result[sheetName] = sheetData;
+            }
           });
           
           resolve(result);
@@ -81,6 +96,7 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
       if (importMethod === 'excel' && file) {
         // Parse Excel file
         const excelData = await parseExcelFile(file);
+        console.log('Parsed Excel data:', excelData);
         serviceCategories = parseExcelToServiceHierarchy(excelData);
       } else {
         // Parse JSON
@@ -92,6 +108,8 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
         }
       }
 
+      console.log('Service categories to import:', serviceCategories);
+      
       // Import data
       await bulkImportServiceCategories(serviceCategories);
       
@@ -117,43 +135,44 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
 
   const handleDownloadTemplate = () => {
     try {
-      // Create workbook with multiple sheets
+      // Create workbook with sheet tabs for categories
       const wb = XLSX.utils.book_new();
       
-      // Categories sheet
-      const categoriesSheet = XLSX.utils.json_to_sheet([
-        {
-          id: uuidv4(),
-          name: "Sample Category",
-          description: "A sample service category",
-          position: 0
-        }
-      ]);
-      XLSX.utils.book_append_sheet(wb, categoriesSheet, 'Categories');
+      // Create sample categories with columns as subcategories
+      const categories = [
+        "Adjustments & Diagnosis", 
+        "Engine Performance", 
+        "Brakes & Wheels", 
+        "Electrical & Lighting"
+      ];
       
-      // Subcategories sheet
-      const subcategoriesSheet = XLSX.utils.json_to_sheet([
-        {
-          id: uuidv4(),
-          categoryId: "PASTE_CATEGORY_ID_HERE", // Reference to category
-          name: "Sample Subcategory",
-          description: "A sample subcategory"
-        }
-      ]);
-      XLSX.utils.book_append_sheet(wb, subcategoriesSheet, 'Subcategories');
-      
-      // Jobs sheet
-      const jobsSheet = XLSX.utils.json_to_sheet([
-        {
-          id: uuidv4(),
-          subcategoryId: "PASTE_SUBCATEGORY_ID_HERE", // Reference to subcategory
-          name: "Sample Job",
-          description: "A sample job service",
-          estimatedTime: 60, // in minutes
-          price: 99.99
-        }
-      ]);
-      XLSX.utils.book_append_sheet(wb, jobsSheet, 'Jobs');
+      categories.forEach(category => {
+        // Create a worksheet for each category
+        const data: Record<string, any>[] = [];
+        
+        // Add column headers (subcategories)
+        const subcategories = {
+          "Subcategory A": "Sample item 1",
+          "Subcategory B": "Sample item 1",
+          "Subcategory C": "Sample item 1",
+        };
+        
+        // Add rows
+        data.push(subcategories);
+        data.push({
+          "Subcategory A": "Sample item 2",
+          "Subcategory B": "Sample item 2",
+          "Subcategory C": "Sample item 2",
+        });
+        data.push({
+          "Subcategory A": "Sample item 3",
+          "Subcategory B": "Sample item 3",
+          "Subcategory C": "Sample item 3",
+        });
+        
+        const sheet = XLSX.utils.json_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, sheet, category);
+      });
       
       // Export to Excel file
       const filename = `service-hierarchy-template-${getFormattedDate()}.xlsx`;
@@ -178,21 +197,42 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
       const sampleData: ServiceMainCategory[] = [
         {
           id: uuidv4(),
-          name: "Sample Category",
-          description: "A sample service category",
+          name: "Engine Performance",
+          description: "Engine-related services",
           position: 0,
           subcategories: [
             {
               id: uuidv4(),
-              name: "Sample Subcategory",
-              description: "A sample subcategory",
+              name: "Engine Diagnostics",
+              description: "Engine diagnostic services",
               jobs: [
                 {
                   id: uuidv4(),
-                  name: "Sample Job",
-                  description: "A sample job service",
+                  name: "Engine Check",
+                  description: "Complete engine diagnostic service",
                   estimatedTime: 60,
                   price: 99.99
+                },
+                {
+                  id: uuidv4(),
+                  name: "Engine Knocks",
+                  description: "Diagnose engine knocking sound",
+                  estimatedTime: 45,
+                  price: 79.99
+                }
+              ]
+            },
+            {
+              id: uuidv4(),
+              name: "Engine Performance Issues",
+              description: "Engine performance related services",
+              jobs: [
+                {
+                  id: uuidv4(),
+                  name: "Poor Fuel Mileage",
+                  description: "Diagnose poor fuel efficiency",
+                  estimatedTime: 30,
+                  price: 69.99
                 }
               ]
             }
@@ -257,12 +297,35 @@ export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) 
                   Download Template
                 </Button>
               </div>
-              <FileUploader 
-                onFilesSelected={handleFileChange}
-                acceptedFileTypes={['.xlsx', '.xls']}
-                maxFiles={1}
-                currentFiles={file ? [file] : []}
-              />
+              
+              <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'}`}>
+                <input {...getInputProps()} />
+                <div className="flex flex-col items-center justify-center gap-2 text-center">
+                  <Upload className="h-10 w-10 text-muted-foreground" />
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-base font-medium">
+                      {isDragActive 
+                        ? 'Drop the Excel file here' 
+                        : file 
+                          ? `Selected file: ${file.name}` 
+                          : 'Drop Excel file here or click to select'
+                      }
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Upload an Excel file (.xlsx, .xls)
+                    </p>
+                  </div>
+                </div>
+                {file && (
+                  <div className="mt-4 flex items-center gap-2 rounded-md border p-2">
+                    <FileText className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm">{file.name}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {(file.size / 1024).toFixed(2)} KB
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

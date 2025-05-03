@@ -44,78 +44,77 @@ export async function deleteServiceCategory(id: string): Promise<void> {
   }
 }
 
-// Function to convert Excel data to service categories
+/**
+ * Converts Excel data to service categories based on the sheet structure where:
+ * - Each sheet represents a main category 
+ * - Each column in a sheet represents a subcategory
+ * - Items in the columns represent service jobs
+ */
 export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategory[] {
-  // This is where we would process multi-sheet Excel data
-  
   try {
     const categories: ServiceMainCategory[] = [];
-    const subcategoriesMap: Record<string, ServiceSubcategory> = {};
-    const jobsMap: Record<string, ServiceJob> = {};
     
-    // Convert category sheet data
-    if (excelData.Categories && Array.isArray(excelData.Categories)) {
-      excelData.Categories.forEach((row: any) => {
-        if (row.name) {
-          categories.push({
-            id: row.id || uuidv4(),
-            name: row.name,
-            description: row.description || '',
-            position: row.position !== undefined ? Number(row.position) : 0,
-            subcategories: []
+    // Process each sheet as a main category
+    Object.keys(excelData).forEach((sheetName, index) => {
+      if (sheetName && excelData[sheetName] && Array.isArray(excelData[sheetName])) {
+        // Create the main category from the sheet name
+        const mainCategory: ServiceMainCategory = {
+          id: uuidv4(),
+          name: sheetName,
+          description: `Imported from ${sheetName} sheet`,
+          position: index,
+          subcategories: []
+        };
+
+        // Extract column headers as subcategories
+        const sheetData = excelData[sheetName];
+        if (sheetData.length > 0) {
+          // Get all unique keys from the first row (these will be our column headers)
+          const columns = Object.keys(sheetData[0]).filter(key => key !== '__rowNum__');
+          
+          // Create subcategories from column headers
+          columns.forEach(columnName => {
+            if (columnName && columnName.trim()) {
+              const subcategory: ServiceSubcategory = {
+                id: uuidv4(),
+                name: columnName,
+                description: `${sheetName} - ${columnName}`,
+                jobs: []
+              };
+              
+              // Extract jobs from the column values (skip empty cells)
+              sheetData.forEach((row, rowIndex) => {
+                const jobName = row[columnName];
+                if (jobName && typeof jobName === 'string' && jobName.trim()) {
+                  subcategory.jobs.push({
+                    id: uuidv4(),
+                    name: jobName.trim(),
+                    description: `${jobName} service for ${columnName}`,
+                    estimatedTime: 60, // Default to 60 minutes
+                    price: null // Price not specified in the Excel
+                  });
+                }
+              });
+              
+              // Only add subcategory if it has jobs
+              if (subcategory.jobs.length > 0) {
+                mainCategory.subcategories.push(subcategory);
+              }
+            }
           });
         }
-      });
-    }
-    
-    // Convert subcategories sheet data
-    if (excelData.Subcategories && Array.isArray(excelData.Subcategories)) {
-      excelData.Subcategories.forEach((row: any) => {
-        if (row.name && row.categoryId) {
-          const subcategory: ServiceSubcategory = {
-            id: row.id || uuidv4(),
-            name: row.name,
-            description: row.description || '',
-            jobs: []
-          };
-          
-          // Store in map for jobs to reference
-          subcategoriesMap[subcategory.id] = subcategory;
-          
-          // Find parent category and add subcategory
-          const parentCategory = categories.find(c => c.id === row.categoryId);
-          if (parentCategory) {
-            parentCategory.subcategories.push(subcategory);
-          }
+        
+        // Only add category if it has subcategories
+        if (mainCategory.subcategories.length > 0) {
+          categories.push(mainCategory);
         }
-      });
-    }
-    
-    // Convert jobs sheet data
-    if (excelData.Jobs && Array.isArray(excelData.Jobs)) {
-      excelData.Jobs.forEach((row: any) => {
-        if (row.name && row.subcategoryId) {
-          const job: ServiceJob = {
-            id: row.id || uuidv4(),
-            name: row.name,
-            description: row.description || '',
-            estimatedTime: row.estimatedTime !== undefined ? Number(row.estimatedTime) : undefined,
-            price: row.price !== undefined ? Number(row.price) : undefined
-          };
-          
-          // Find parent subcategory and add job
-          const parentSubcategory = subcategoriesMap[row.subcategoryId];
-          if (parentSubcategory) {
-            parentSubcategory.jobs.push(job);
-          }
-        }
-      });
-    }
+      }
+    });
     
     return categories;
   } catch (error) {
     console.error("Error parsing Excel data:", error);
-    throw new Error("Failed to parse Excel data. Please ensure it follows the template format.");
+    throw new Error("Failed to parse Excel data. Please ensure it follows the expected format with sheets as categories and columns as subcategories.");
   }
 }
 
