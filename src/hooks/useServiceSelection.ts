@@ -16,13 +16,20 @@ export function useServiceSelection() {
     const savedService = localStorage.getItem('selectedWorkOrderService');
     if (savedService) {
       try {
-        setSelectedService(JSON.parse(savedService));
+        const parsedService = JSON.parse(savedService);
+        setSelectedService(parsedService);
       } catch (error) {
         console.error('Error parsing saved service:', error);
         localStorage.removeItem('selectedWorkOrderService');
       }
     }
   }, []);
+
+  const selectService = (service: WorkOrderService) => {
+    // Save to localStorage for persistence
+    localStorage.setItem('selectedWorkOrderService', JSON.stringify(service));
+    setSelectedService(service);
+  };
 
   const clearSelectedService = () => {
     localStorage.removeItem('selectedWorkOrderService');
@@ -31,6 +38,7 @@ export function useServiceSelection() {
 
   return {
     selectedService,
+    selectService,
     clearSelectedService
   };
 }

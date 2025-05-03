@@ -3,9 +3,11 @@ import { ServiceCategory } from "@/types/services";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { ServiceMainCategory } from "@/types/serviceHierarchy";
+import { Check } from "lucide-react";
 
 interface ServiceCategoryListProps {
-  categories: ServiceCategory[];
+  categories: ServiceMainCategory[];
   selectedCategory: string | null;
   onCategorySelect: (category: string) => void;
 }
@@ -22,7 +24,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
         <div className="space-y-1 pr-2">
           {categories.map((category) => (
             <Button
-              key={category.name}
+              key={category.id || category.name}
               variant="ghost"
               className={cn(
                 "w-full justify-start font-normal text-sm h-10",
@@ -32,7 +34,14 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
               )}
               onClick={() => onCategorySelect(category.name)}
             >
-              {category.name}
+              <div className="flex items-center justify-between w-full">
+                <span>{category.name}</span>
+                {category.subcategories && (
+                  <span className="text-xs text-muted-foreground">
+                    {category.subcategories.length} subcategories
+                  </span>
+                )}
+              </div>
             </Button>
           ))}
         </div>

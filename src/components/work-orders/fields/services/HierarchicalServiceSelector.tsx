@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ServiceCategoryList } from "./ServiceCategoryList";
-import { PlusCircle, Check } from 'lucide-react';
+import { PlusCircle, Check, Wrench } from 'lucide-react';
 import { useServiceSelection } from '@/hooks/useServiceSelection';
 import { fetchServiceCategories } from '@/lib/serviceHierarchy';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HierarchicalServiceSelectorProps {
   onServiceSelected: (service: {
@@ -47,31 +48,12 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
     loadCategories();
   }, []);
 
-  // For demonstration purposes, we're returning simple mock data
-  // In a real app, this would use the actual data from the service hierarchy
-  const mockCategories = [
-    {
-      name: "Engine Service",
-      subcategories: [
-        { name: "Engine Repair", services: ["Oil Change", "Tune Up", "Engine Rebuild"] },
-        { name: "Engine Diagnosis", services: ["Check Engine Light", "Performance Issues"] }
-      ]
-    },
-    {
-      name: "Transmission Service",
-      subcategories: [
-        { name: "Automatic", services: ["Fluid Change", "Rebuild"] },
-        { name: "Manual", services: ["Clutch Replacement", "Gear Repair"] }
-      ]
-    }
-  ];
-
-  const handleServiceSelect = (category: string, subcategory: string, service: string) => {
+  const handleServiceSelect = (category: string, subcategory: string, service: string, estimatedTime?: number) => {
     onServiceSelected({
       mainCategory: category,
       subcategory: subcategory,
       job: service,
-      estimatedTime: 60 // Default to 1 hour
+      estimatedTime: estimatedTime || 60 // Default to 1 hour if not provided
     });
     setIsOpen(false);
   };
@@ -110,23 +92,40 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
             </div>
           ) : serviceCategories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* This would be replaced with actual service categories from the database */}
-              {mockCategories.map((category) => (
-                <div key={category.name} className="space-y-3">
+              {serviceCategories.map((category) => (
+                <div key={category.id} className="space-y-3">
                   <h3 className="font-medium text-lg">{category.name}</h3>
                   {category.subcategories.map((subcategory) => (
-                    <div key={subcategory.name} className="space-y-2">
+                    <div key={subcategory.id} className="space-y-2">
                       <h4 className="text-sm font-medium text-muted-foreground">{subcategory.name}</h4>
                       <ul className="space-y-1">
-                        {subcategory.services.map((service) => (
-                          <li key={service}>
+                        {subcategory.jobs.map((job) => (
+                          <li key={job.id}>
                             <Button
                               variant="ghost"
-                              className="w-full justify-start text-sm h-8 px-2"
-                              onClick={() => handleServiceSelect(category.name, subcategory.name, service)}
+                              className="w-full justify-start text-sm h-8 px-2 group"
+                              onClick={() => handleServiceSelect(category.name, subcategory.name, job.name, job.estimatedTime)}
                             >
-                              <Check className="mr-2 h-3 w-3 opacity-0" />
-                              <span>{service}</span>
+                              <div className="flex items-center w-full justify-between">
+                                <div className="flex items-center">
+                                  <Check className="mr-2 h-3 w-3 opacity-0" />
+                                  <span>{job.name}</span>
+                                </div>
+                                {job.estimatedTime && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-xs text-muted-foreground ml-2">
+                                          ~{Math.round(job.estimatedTime / 60 * 10) / 10}h
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Estimated time: {job.estimatedTime} minutes</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
                             </Button>
                           </li>
                         ))}
@@ -140,6 +139,14 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
             <div className="text-center py-8 text-muted-foreground">
               <p>No service categories found.</p>
               <p className="text-sm mt-1">Visit the Service Management page to create service categories.</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => window.location.href = '/developer/service-management'}
+              >
+                <Wrench className="mr-2 h-4 w-4" />
+                Go to Service Management
+              </Button>
             </div>
           )}
         </DialogContent>
@@ -149,7 +156,7 @@ const HierarchicalServiceSelector: React.FC<HierarchicalServiceSelectorProps> = 
         <Button 
           variant="ghost" 
           size="sm" 
-          className="mt-2 text-red-500 hover:text-red-700" 
+          className="mt-2 text-red-500 hover:text-red-700 w-full justify-start" 
           onClick={clearSelectedService}
         >
           Clear selection

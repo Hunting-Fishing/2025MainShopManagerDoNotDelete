@@ -1,8 +1,10 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import HierarchicalServiceSelector from "./services/HierarchicalServiceSelector";
+import { useServiceSelection } from "@/hooks/useServiceSelection";
 
 interface WorkOrderInfoSectionProps {
   form: any;
@@ -13,6 +15,21 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
   form,
   serviceCategories
 }) => {
+  const { selectedService, clearSelectedService } = useServiceSelection();
+
+  // When a service is selected from the Developer Portal, update the form values
+  useEffect(() => {
+    if (selectedService) {
+      // Set service category to a formatted string that includes the full hierarchy
+      form.setValue("serviceCategory", `${selectedService.mainCategory} - ${selectedService.subcategory} - ${selectedService.job}`);
+      
+      // If estimated time is provided, convert from minutes to hours
+      if (selectedService.estimatedTime) {
+        form.setValue("estimatedHours", selectedService.estimatedTime / 60);
+      }
+    }
+  }, [selectedService, form]);
+
   // Handle selection from the hierarchical selector
   const handleServiceSelected = (service: {
     mainCategory: string;
@@ -69,6 +86,7 @@ export const WorkOrderInfoSection: React.FC<WorkOrderInfoSectionProps> = ({
                   className="bg-white"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  step="0.1" // Allow decimal hours for more precise estimates
                 />
               </FormControl>
               <FormMessage />
