@@ -1,42 +1,37 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
 } from "@/components/ui/sheet";
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Sidebar } from "@/components/ui/sidebar";
 import { SidebarContent } from './sidebar/SidebarContent';
 
 export function AppSidebar() {
   const { isOpen, onOpen, onClose } = useSidebar();
   const isMobile = useIsMobile();
+  
+  // Close sidebar on route change for mobile
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      onClose();
+    }
+  }, [location.pathname, isMobile, isOpen, onClose]);
 
   return (
     <>
       {isMobile ? (
         <Sheet open={isOpen} onOpenChange={onClose}>
-          <SheetContent side="left" className="w-3/4 sm:w-2/3 md:w-1/2 overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Menu</SheetTitle>
-              <SheetDescription>
-                Navigate your dashboard
-              </SheetDescription>
-            </SheetHeader>
-            <div className="mt-4">
-              <SidebarContent />
-            </div>
+          <SheetContent side="left" className="w-[280px] p-0 bg-gradient-to-b from-indigo-700 to-purple-800 border-r-0">
+            <SidebarContent />
           </SheetContent>
         </Sheet>
       ) : (
-        <aside className="hidden md:flex md:w-64 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-y-auto">
+        <Sidebar>
           <SidebarContent />
-        </aside>
+        </Sidebar>
       )}
     </>
   );

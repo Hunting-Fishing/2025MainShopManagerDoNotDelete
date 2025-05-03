@@ -3,15 +3,23 @@ import React from "react";
 import { Separator } from "@/components/ui/separator";
 import { SidebarLogo } from "./SidebarLogo";
 import { SidebarNavList } from "./SidebarNavList";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export function SidebarContent() {
+  const { collapsed } = useSidebar();
+  
   return (
     <>
-      <div className="px-7 py-6">
+      <div className={cn("px-3 py-4 transition-all", collapsed ? "flex justify-center" : "px-5")}>
         <SidebarLogo />
-        <Separator className="my-6" />
+        {!collapsed && <Separator className="my-4 bg-white/20" />}
       </div>
-      <SidebarNavList />
+      <nav className="px-2">
+        <SidebarNavList />
+      </nav>
     </>
   );
 }
+
+// Import cn utility
+import { cn } from "@/lib/utils";

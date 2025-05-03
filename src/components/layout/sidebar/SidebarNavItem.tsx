@@ -1,9 +1,9 @@
 
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export interface NavItem {
   title: string;
@@ -36,6 +36,7 @@ interface DirectNavItemProps {
 export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) {
   const location = useLocation();
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
+  const { collapsed } = useSidebar();
   
   // Handle both formats (backward compatibility)
   const navItem: NavItem = props.item || {
@@ -55,71 +56,68 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
   );
   
   // Determine whether to show submenu - either explicitly opened OR if it contains the active page
-  const showSubmenu = hasSubmenu && (isSubmenuOpen || hasActiveSubmenu);
+  const showSubmenu = hasSubmenu && !collapsed && (isSubmenuOpen || hasActiveSubmenu);
 
   // Toggle submenu open/closed
   const toggleSubmenu = (e: React.MouseEvent) => {
-    if (hasSubmenu) {
+    if (hasSubmenu && !collapsed) {
       e.preventDefault();
       setIsSubmenuOpen(!isSubmenuOpen);
     }
   };
 
   return (
-    <div key={navItem.title}>
-      <Button
-        asChild={!hasSubmenu}
-        variant="ghost"
+    <div key={navItem.title} className="mb-1">
+      <div
         className={cn(
-          "w-full justify-start gap-2 rounded-md px-2.5 py-2 font-medium transition-all hover:bg-secondary/50",
-          (isActive || hasActiveSubmenu)
-            ? "bg-secondary/50 font-semibold"
-            : "font-medium"
+          "relative flex cursor-pointer items-center rounded-lg px-3 py-2.5 text-sm font-medium",
+          isActive || hasActiveSubmenu
+            ? "bg-white/15 text-white font-semibold shadow-sm"
+            : "text-white/80 hover:bg-white/10 transition-colors",
+          navItem.disabled && "cursor-not-allowed opacity-60"
         )}
-        disabled={navItem.disabled}
         onClick={hasSubmenu ? toggleSubmenu : undefined}
       >
         {hasSubmenu ? (
           <div className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-2">
-              {navItem.icon}
-              <span>{navItem.title}</span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">{navItem.icon}</span>
+              {!collapsed && <span>{navItem.title}</span>}
             </div>
-            {showSubmenu ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
+            {!collapsed && (
+              showSubmenu ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )
             )}
           </div>
         ) : (
-          <Link to={navItem.href}>
-            {navItem.icon}
-            <span>{navItem.title}</span>
+          <Link to={navItem.href} className="flex items-center gap-2.5 w-full">
+            <span className="text-xl">{navItem.icon}</span>
+            {!collapsed && <span>{navItem.title}</span>}
           </Link>
         )}
-      </Button>
+      </div>
+
       {hasSubmenu && showSubmenu && (
-        <div className="ml-4 mt-1 flex flex-col space-y-1">
+        <div className="mt-1 ml-3 pl-3 border-l border-white/20">
           {navItem.submenu.map((subItem) => (
-            <Button
+            <Link
               key={subItem.title}
-              asChild
-              variant="ghost"
+              to={subItem.href}
               className={cn(
-                "w-full justify-start gap-2 rounded-md px-2.5 py-2 text-sm transition-all hover:bg-secondary/50",
+                "flex items-center gap-2 py-2 px-3 my-1 text-sm rounded-md transition-colors",
                 location.pathname === subItem.href || location.pathname.startsWith(subItem.href)
-                  ? "bg-secondary/50 font-semibold"
-                  : "font-medium"
+                  ? "bg-white/15 text-white font-medium"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
               )}
-              disabled={subItem.disabled}
             >
-              <Link to={subItem.href}>
-                {subItem.icon && (
-                  <span className="mr-2">{subItem.icon}</span>
-                )}
-                {subItem.title}
-              </Link>
-            </Button>
+              {subItem.icon && (
+                <span className="text-sm">{subItem.icon}</span>
+              )}
+              <span>{subItem.title}</span>
+            </Link>
           ))}
         </div>
       )}
