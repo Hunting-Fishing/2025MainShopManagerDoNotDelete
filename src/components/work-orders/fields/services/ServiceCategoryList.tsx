@@ -22,6 +22,26 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
     return 'id' in category;
   };
 
+  // Helper function to extract sub-job headers for specific categories
+  const getSubJobHeaders = (categoryName: string): string[] => {
+    // For now, we're only defining sub-job headers for "Adjustments & Diagnosis"
+    if (categoryName === "Adjustments & Diagnosis") {
+      return [
+        "Adjustments", 
+        "CAR SYMPTOMS-ENGINE PERFORMANCE", 
+        "CHECK OUTS", 
+        "COMMENTS W/O PRICES", 
+        "DIAGNOSTIC CHARGES", 
+        "MILEAGE SERVICES", 
+        "NOISES - COMFORTS", 
+        "ROAD SERVICES & TOWING", 
+        "STARTING - LIGHTS", 
+        "VIBRATIONS - LEAKS"
+      ];
+    }
+    return [];
+  };
+
   return (
     <div className="w-[280px] border-r pr-1">
       <h4 className="font-medium text-sm mb-3 px-2">Categories</h4>
@@ -37,34 +57,52 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
             // Generate a unique key based on available properties
             const key = isServiceMainCategory(category) ? (category as ServiceMainCategory).id : categoryName;
 
+            // Get sub-job headers for this category if they exist
+            const subJobHeaders = getSubJobHeaders(categoryName);
+
             return (
-              <Button
-                key={key}
-                variant="ghost"
-                className={cn(
-                  "w-full justify-between font-normal text-sm h-10 px-3",
-                  selectedCategory === categoryName
-                    ? "bg-esm-blue-50 text-esm-blue-700 hover:bg-esm-blue-100 hover:text-esm-blue-700 font-medium"
-                    : "hover:bg-muted/50"
-                )}
-                onClick={() => onCategorySelect(categoryName)}
-              >
-                <div className="flex items-center justify-between w-full text-left">
-                  <span>{categoryName}</span>
-                  <div className="flex items-center space-x-1">
-                    {subcategoriesCount > 0 && (
-                      <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                        {subcategoriesCount} {subcategoriesCount === 1 ? 'subcategory' : 'subcategories'}
-                      </span>
-                    )}
-                    {selectedCategory === categoryName ? (
-                      <Check className="h-4 w-4 text-esm-blue-600" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 opacity-50" />
-                    )}
+              <div key={key} className="mb-2">
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-between font-normal text-sm h-10 px-3",
+                    selectedCategory === categoryName
+                      ? "bg-esm-blue-50 text-esm-blue-700 hover:bg-esm-blue-100 hover:text-esm-blue-700 font-medium"
+                      : "hover:bg-muted/50"
+                  )}
+                  onClick={() => onCategorySelect(categoryName)}
+                >
+                  <div className="flex items-center justify-between w-full text-left">
+                    <span>{categoryName}</span>
+                    <div className="flex items-center space-x-1">
+                      {subcategoriesCount > 0 && (
+                        <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                          {subcategoriesCount} {subcategoriesCount === 1 ? 'subcategory' : 'subcategories'}
+                        </span>
+                      )}
+                      {selectedCategory === categoryName ? (
+                        <Check className="h-4 w-4 text-esm-blue-600" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 opacity-50" />
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Button>
+                </Button>
+
+                {/* Display sub-job headers if this is the selected category and it has sub-job headers */}
+                {selectedCategory === categoryName && subJobHeaders.length > 0 && (
+                  <div className="pl-3 mt-1 space-y-1">
+                    {subJobHeaders.map((header) => (
+                      <div 
+                        key={header} 
+                        className="text-xs font-medium py-1 px-2 bg-esm-blue-50 text-esm-blue-700 rounded border-l-2 border-esm-blue-500"
+                      >
+                        {header}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
