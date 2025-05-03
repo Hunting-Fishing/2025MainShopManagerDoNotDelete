@@ -19,7 +19,7 @@ export const ServiceCategoryList: React.FC<ServiceCategoryListProps> = ({
 }) => {
   // Helper function to check if the category is a ServiceMainCategory
   const isServiceMainCategory = (category: any): category is ServiceMainCategory => {
-    return 'id' in category;
+    return 'id' in category && 'subcategories' in category;
   };
 
   // Helper function to extract subcategory names for a specific category

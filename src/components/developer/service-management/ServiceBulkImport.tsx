@@ -1,51 +1,48 @@
-import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import * as XLSX from 'xlsx';
-import { write, utils } from 'xlsx'; // Update import to correctly import write
-import { Button } from "@/components/ui/button";
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, FileSpreadsheet, Upload } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Upload, Download, FileSpreadsheet, AlertCircle, Check } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { parseExcelToServiceHierarchy, bulkImportServiceCategories } from '@/lib/services';
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
-import { getFormattedDate } from "@/utils/export/utils";
+import { Progress } from "@/components/ui/progress";
+import { parseExcelToServiceHierarchy } from '@/lib/services';
+import { ServiceMainCategory } from '@/types/serviceHierarchy';
+import { bulkImportServiceCategories } from '@/lib/services';
+import { useToast } from '@/hooks/use-toast';
+import * as XLSX from 'xlsx';
 
-export function ServiceBulkImport({ onImportComplete }: { onImportComplete: () => void }) {
-  const [isUploading, setIsUploading] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [importedData, setImportedData] = useState<ServiceMainCategory[] | null>(null);
+interface ServiceBulkImportProps {
+  onImportComplete?: () => void;
+}
+
+export const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onImportComplete }) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<'upload' | 'review' | 'importing' | 'complete'>('upload');
-
-  // Clear any previous errors when starting a new operation
-  const clearErrors = () => {
-    setError(null);
+  const [progress, setProgress] = useState(0);
+  const [parsedData, setParsedData] = useState<ServiceMainCategory[] | null>(null);
+  const { toast } = useToast();
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setError(null);
+    }
   };
 
-  // Handle file drop/selection
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    clearErrors();
-    
-    if (acceptedFiles.length === 0) {
-      setError("No file selected");
+  const parseFile = async () => {
+    if (!file) {
+      setError("Please select a file first");
       return;
     }
-    
-    const file = acceptedFiles[0];
-    
-    // Validate file type
-    if (!file.name.match(/\.(xlsx|xls)$/i)) {
-      setError("Please upload an Excel file (.xlsx or .xls)");
-      return;
-    }
-    
+
+    setIsLoading(true);
+    setProgress(10);
+    setError(null);
+
     try {
-      setIsUploading(true);
-      
-      // Read the file
+      // Read the Excel file
       const reader = new FileReader();
       
       reader.onload = async (e) => {
@@ -53,315 +50,176 @@ export function ServiceBulkImport({ onImportComplete }: { onImportComplete: () =
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
           
-          console.log("Sheets in workbook:", workbook.SheetNames);
+          setProgress(40);
           
-          // Extract the data from the workbook
-          const excelData: Record<string, any[]> = {};
-          
+          // Convert to an object with sheet names as keys
+          const sheets: { [key: string]: any[] } = {};
           workbook.SheetNames.forEach(sheetName => {
             const worksheet = workbook.Sheets[sheetName];
-            console.log(`Processing sheet: ${sheetName}`);
-            
-            try {
-              // Convert sheet to JSON with header:1 to get array format
-              const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-                header: 1,
-                defval: ""  // Default empty cells to empty string
-              });
-              
-              // Skip empty sheets or sheets with only headers
-              if (jsonData.length > 1) {
-                console.log(`Sheet ${sheetName} has ${jsonData.length} rows`);
-                // Convert to the format expected by parseExcelToServiceHierarchy
-                const sheetData = XLSX.utils.sheet_to_json(worksheet);
-                excelData[sheetName] = sheetData;
-              } else {
-                console.log(`Skipping sheet ${sheetName}: insufficient data`);
-              }
-            } catch (sheetError) {
-              console.error(`Error processing sheet ${sheetName}:`, sheetError);
-            }
+            sheets[sheetName] = XLSX.utils.sheet_to_json(worksheet);
           });
           
-          console.log("Parsed Excel data:", excelData);
+          setProgress(60);
           
-          if (Object.keys(excelData).length === 0) {
-            throw new Error("No valid data found in the Excel file. Please check the file format and try again.");
-          }
+          // Parse the Excel data to service categories
+          const serviceCategories = parseExcelToServiceHierarchy(sheets);
+          setParsedData(serviceCategories);
+          setProgress(90);
           
-          // Parse the Excel data into service categories
-          const parsedData = parseExcelToServiceHierarchy(excelData);
+          toast({
+            title: "File parsed successfully",
+            description: `Found ${serviceCategories.length} service categories with ${serviceCategories.reduce((acc, cat) => acc + cat.subcategories.length, 0)} subcategories.`,
+          });
           
-          console.log("Parsed service categories:", parsedData);
-          
-          setImportedData(parsedData);
-          setCurrentStep('review');
-        } catch (parseError: any) {
-          console.error("Error parsing Excel:", parseError);
-          setError(`Error parsing Excel file: ${parseError.message}`);
+          setProgress(100);
+        } catch (err: any) {
+          console.error("Error parsing Excel:", err);
+          setError(`Error parsing Excel file: ${err.message}`);
         } finally {
-          setIsUploading(false);
+          setIsLoading(false);
         }
       };
       
       reader.onerror = () => {
-        setError("Error reading the file");
-        setIsUploading(false);
+        setError("Error reading file");
+        setIsLoading(false);
       };
       
       reader.readAsArrayBuffer(file);
+      
     } catch (err: any) {
-      console.error("Upload error:", err);
-      setError(`Upload error: ${err.message}`);
-      setIsUploading(false);
+      console.error("Error during file upload:", err);
+      setError(`Error uploading file: ${err.message}`);
+      setIsLoading(false);
     }
-  }, []);
-
-  // Handle import confirmation
-  const handleImport = useCallback(async () => {
-    if (!importedData) return;
+  };
+  
+  const handleImport = async () => {
+    if (!parsedData) {
+      setError("No parsed data available. Please parse the file first.");
+      return;
+    }
+    
+    setIsLoading(true);
+    setProgress(0);
     
     try {
-      setIsImporting(true);
-      setCurrentStep('importing');
-      setProgress(0);
-      
-      await bulkImportServiceCategories(importedData, (progress) => {
+      await bulkImportServiceCategories(parsedData, (progress) => {
         setProgress(Math.round(progress * 100));
       });
       
-      setCurrentStep('complete');
       toast({
-        title: "Import successful",
-        description: `${importedData.length} service categories imported successfully.`,
-        variant: "success",
+        title: "Import completed",
+        description: `Successfully imported ${parsedData.length} service categories.`,
       });
       
       if (onImportComplete) {
         onImportComplete();
       }
+      
     } catch (err: any) {
-      console.error("Import error:", err);
-      setError(`Import error: ${err.message}`);
-      setCurrentStep('review');
+      console.error("Error during import:", err);
+      setError(`Error during import: ${err.message}`);
     } finally {
-      setIsImporting(false);
-    }
-  }, [importedData, onImportComplete]);
-
-  // Reset the import process
-  const resetImport = () => {
-    setImportedData(null);
-    setError(null);
-    setProgress(0);
-    setCurrentStep('upload');
-  };
-
-  // Create a sample template for download
-  const downloadTemplate = () => {
-    try {
-      const templateData = {
-        "HVAC Services": [
-          { "Cooling": "AC Tune-Up", "Heating": "Furnace Inspection", "Maintenance": "Duct Cleaning" },
-          { "Cooling": "AC Repair", "Heating": "Furnace Repair", "Maintenance": "Filter Replacement" },
-          { "Cooling": "AC Installation", "Heating": "Furnace Installation", "Maintenance": "Thermostat Programming" }
-        ],
-        "Plumbing Services": [
-          { "Repairs": "Leak Repair", "Installation": "Faucet Installation", "Maintenance": "Drain Cleaning" },
-          { "Repairs": "Pipe Repair", "Installation": "Toilet Installation", "Maintenance": "Water Heater Flush" },
-          { "Repairs": "Fixture Repair", "Installation": "Shower Installation", "Maintenance": "Pipe Inspection" }
-        ],
-        "Instructions": [
-          { "Column A": "Each sheet represents a main service category", "Column B": "", "Column C": "" },
-          { "Column A": "The first row contains subcategory names", "Column B": "", "Column C": "" },
-          { "Column A": "Each row below contains service jobs", "Column B": "", "Column C": "" }
-        ]
-      };
-      
-      // Create workbook
-      const wb = utils.book_new();
-      
-      // Add each sheet
-      Object.entries(templateData).forEach(([sheetName, sheetData]) => {
-        const ws = utils.json_to_sheet(sheetData);
-        utils.book_append_sheet(wb, ws, sheetName);
-      });
-      
-      // Generate Excel file and trigger download
-      const excelBuffer = write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `service_categories_template_${getFormattedDate()}.xlsx`;
-      link.click();
-      
-      toast({
-        title: "Template downloaded",
-        description: "Service categories template has been downloaded.",
-      });
-    } catch (err: any) {
-      console.error("Template download error:", err);
-      toast({
-        title: "Template download failed",
-        description: err.message,
-        variant: "destructive",
-      });
+      setIsLoading(false);
     }
   };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
-    onDrop,
-    accept: {
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls'],
-    }
-  });
-
+  
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold">Bulk Import Service Categories</h3>
-        <Button 
-          variant="outline" 
-          onClick={downloadTemplate} 
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Download Template
-        </Button>
-      </div>
-      
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      {currentStep === 'upload' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Excel File</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div 
-              {...getRootProps()} 
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary/50'
-              }`}
-            >
-              <input {...getInputProps()} />
-              <FileSpreadsheet className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-              
-              {isUploading ? (
-                <div className="space-y-2">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
-                  <p className="text-sm text-gray-500">Reading Excel file...</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-base font-medium">
-                    {isDragActive ? 'Drop the Excel file here' : 'Drag and drop an Excel file, or click to browse'}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Upload an Excel file with service categories, subcategories, and jobs
-                  </p>
-                  <p className="text-xs text-gray-400 mt-4">
-                    Each sheet represents a main category.<br />
-                    First row contains subcategory names.<br />
-                    Rows below contain service jobs for each subcategory.
-                  </p>
-                </>
-              )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Import Service Categories</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        <div className="p-4 border border-dashed rounded-lg bg-muted/40">
+          <div className="flex flex-col items-center justify-center space-y-2 text-center">
+            <FileSpreadsheet className="h-10 w-10 text-muted-foreground" />
+            <div>
+              <h3 className="font-medium">Excel File Format</h3>
+              <p className="text-sm text-muted-foreground">
+                Your Excel file should have column headers representing service categories (like "ADJUSTMENTS", "DIAGNOSTIC CHARGES", etc.), 
+                with each column containing service items for that category.
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {currentStep === 'review' && importedData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Import Data</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-md">
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium">Categories:</span>
-                  <span className="font-medium">{importedData.length}</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium">Subcategories:</span>
-                  <span className="font-medium">
-                    {importedData.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Total Services:</span>
-                  <span className="font-medium">
-                    {importedData.reduce((sum, cat) => 
-                      sum + cat.subcategories.reduce((subSum, sub) => subSum + sub.jobs.length, 0), 0)}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <Button 
-                  onClick={handleImport} 
-                  className="flex-1"
-                  disabled={isImporting}
-                >
-                  Import Data
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={resetImport}
-                  disabled={isImporting}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
+          </div>
+        </div>
+        
+        <div className="flex flex-col space-y-2">
+          <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700">
+            Select Excel File
+          </label>
+          <div className="flex items-center space-x-2">
+            <input
+              id="file-upload"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-medium
+                file:bg-primary file:text-white
+                hover:file:bg-primary/90"
+              disabled={isLoading}
+            />
+          </div>
+          {file && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Selected file: {file.name}
+            </p>
+          )}
+        </div>
+        
+        {isLoading && (
+          <div className="space-y-2">
+            <Progress value={progress} className="h-2" />
+            <p className="text-sm text-muted-foreground text-center">
+              {progress < 100 ? "Processing..." : "Completed"}
+            </p>
+          </div>
+        )}
+        
+        <div className="flex justify-end space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={parseFile} 
+            disabled={!file || isLoading}
+          >
+            Parse File
+          </Button>
+          <Button 
+            onClick={handleImport} 
+            disabled={!parsedData || isLoading}
+            className="flex items-center space-x-1"
+          >
+            <Upload className="h-4 w-4 mr-1" />
+            Import to Database
+          </Button>
+        </div>
+        
+        {parsedData && (
+          <div className="mt-4 border-t pt-4">
+            <h3 className="font-medium mb-2">Preview</h3>
+            <div className="max-h-60 overflow-y-auto">
+              <pre className="text-xs p-4 rounded bg-muted overflow-x-auto">
+                {parsedData.map((category, i) => (
+                  <div key={i} className="mb-2">
+                    <strong>{category.name}</strong>: {category.subcategories.length} subcategories, 
+                    {category.subcategories.reduce((acc, sub) => acc + sub.jobs.length, 0)} jobs
+                  </div>
+                ))}
+              </pre>
             </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {currentStep === 'importing' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Importing Data</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                <div className="font-medium">Importing services...</div>
-              </div>
-              <Progress value={progress} className="h-2" />
-              <div className="text-sm text-gray-500 text-right">{progress}% complete</div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {currentStep === 'complete' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Import Complete</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-green-600">
-                <Check className="h-6 w-6" />
-                <div className="font-medium">All services imported successfully!</div>
-              </div>
-              <Button onClick={resetImport}>Import Another File</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
+};

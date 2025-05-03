@@ -1,15 +1,12 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
-import { AlertCircle, Plus, Save, Upload, Download, Trash2, Edit } from 'lucide-react';
+import { ServiceMainCategory } from "@/types/serviceHierarchy";
+import { AlertCircle, Plus, Save, Download } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ServiceCategoryList from './ServiceCategoryList';
@@ -122,6 +119,20 @@ export default function ServiceHierarchyManager() {
     saveCategory.mutate(category);
   };
 
+  // Function to add a new category
+  const handleAddCategory = () => {
+    const newCategory: ServiceMainCategory = {
+      id: crypto.randomUUID(),
+      name: "New Category",
+      description: "",
+      position: categories ? categories.length : 0,
+      subcategories: []
+    };
+    
+    setSelectedCategory(newCategory);
+    setActiveTab('edit');
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -129,6 +140,9 @@ export default function ServiceHierarchyManager() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport} className="flex items-center gap-2">
             <Download className="h-4 w-4" /> Export
+          </Button>
+          <Button onClick={handleAddCategory} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" /> New Category
           </Button>
         </div>
       </div>
@@ -172,12 +186,28 @@ export default function ServiceHierarchyManager() {
         </TabsContent>
         
         <TabsContent value="import">
-          <ServiceBulkImport 
-            onImportComplete={() => {
-              queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
-              setActiveTab('browse');
-            }}
-          />
+          <div className="space-y-6">
+            <Alert className="bg-blue-50 text-blue-900 border-blue-200">
+              <div className="flex flex-col space-y-2">
+                <h3 className="font-medium">Excel Import Format Guide</h3>
+                <p className="text-sm">
+                  For best results, your Excel file should follow this format:
+                </p>
+                <ul className="text-sm list-disc pl-5 space-y-1">
+                  <li>Column headers should be your main service categories (e.g. "ADJUSTMENTS", "DIAGNOSTIC CHARGES", etc.)</li>
+                  <li>Each column should list the services for that category</li>
+                  <li>The system will process each column as a separate category</li>
+                </ul>
+              </div>
+            </Alert>
+            
+            <ServiceBulkImport 
+              onImportComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
+                setActiveTab('browse');
+              }}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
