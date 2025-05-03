@@ -5874,6 +5874,36 @@ export type Database = {
         }
         Relationships: []
       }
+      service_hierarchy: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          position: number | null
+          subcategories: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          position?: number | null
+          subcategories?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          position?: number | null
+          subcategories?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       service_reminder_tags: {
         Row: {
           created_at: string
