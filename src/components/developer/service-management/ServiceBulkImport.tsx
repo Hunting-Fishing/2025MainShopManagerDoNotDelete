@@ -1,355 +1,311 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Download, Upload } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
 import * as XLSX from 'xlsx';
 import { parseExcelToServiceHierarchy, bulkImportServiceCategories } from '@/lib/serviceHierarchy';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { getFormattedDate } from '@/utils/export/utils';
-import { v4 as uuidv4 } from 'uuid';
-import { useDropzone } from 'react-dropzone';
-import { Upload, FileText } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { Progress } from "@/components/ui/progress";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ServiceBulkImportProps {
   onImportComplete: () => void;
 }
 
 export function ServiceBulkImport({ onImportComplete }: ServiceBulkImportProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
-  const [importMethod, setImportMethod] = useState<'excel' | 'json'>('excel');
-  const [jsonText, setJsonText] = useState<string>('');
+  const [previewData, setPreviewData] = useState<ServiceMainCategory[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importStage, setImportStage] = useState<string>('');
 
-  // Use react-dropzone for file uploads
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.ms-excel': ['.xls']
     },
-    maxFiles: 1,
+    multiple: false,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
-        setFile(acceptedFiles[0]);
+        processExcelFile(acceptedFiles[0]);
       }
     }
   });
 
-  const parseExcelFile = async (file: File): Promise<any> => {
-    return new Promise((resolve, reject) => {
+  const processExcelFile = async (file: File) => {
+    setError(null);
+    setPreviewData(null);
+    setIsProcessing(true);
+    setImportStage('Reading Excel file...');
+    setImportProgress(10);
+
+    try {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      
+      reader.onload = async (e) => {
         try {
-          const data = e.target?.result;
-          const workbook = XLSX.read(data, { type: 'binary' });
+          setImportStage('Parsing data...');
+          setImportProgress(30);
           
-          const result: Record<string, any[]> = {};
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
           
-          // Process each sheet
+          setImportStage('Converting to service categories...');
+          setImportProgress(60);
+          
+          const jsonData: any = {};
           workbook.SheetNames.forEach(sheetName => {
-            // Convert sheet to JSON
-            const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { 
-              defval: null, // Use null for empty cells
-              blankrows: false // Skip blank rows
-            });
-            
-            if (sheetData.length > 0) {
-              result[sheetName] = sheetData;
-            }
+            jsonData[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
           });
+
+          setImportStage('Generating preview...');
+          setImportProgress(90);
           
-          resolve(result);
-        } catch (error) {
-          reject(error);
+          const serviceCategories = parseExcelToServiceHierarchy(jsonData);
+          
+          setPreviewData(serviceCategories);
+          setImportProgress(100);
+          setImportStage('Preview ready');
+          
+          setTimeout(() => {
+            setIsProcessing(false);
+            setImportProgress(0);
+          }, 500);
+        } catch (err: any) {
+          setError(`Error processing file: ${err.message || 'Unknown error'}`);
+          setIsProcessing(false);
+          setImportProgress(0);
         }
       };
-      reader.onerror = (error) => reject(error);
-      reader.readAsBinaryString(file);
+      
+      reader.readAsArrayBuffer(file);
+    } catch (err: any) {
+      setError(`Error reading file: ${err.message || 'Unknown error'}`);
+      setIsProcessing(false);
+      setImportProgress(0);
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!previewData) return;
+    
+    try {
+      setIsImporting(true);
+      setImportStage('Importing to database...');
+      setImportProgress(50);
+      
+      await bulkImportServiceCategories(previewData);
+      
+      toast({
+        title: "Import successful",
+        description: `${previewData.length} categories imported with their subcategories and jobs.`,
+        variant: "success",
+      });
+      
+      setImportProgress(100);
+      setImportStage('Import complete');
+      
+      setTimeout(() => {
+        setIsImporting(false);
+        setPreviewData(null);
+        onImportComplete();
+      }, 1000);
+    } catch (err: any) {
+      setError(`Error importing data: ${err.message || 'Unknown error'}`);
+      setIsImporting(false);
+      setImportProgress(0);
+    }
+  };
+
+  const downloadTemplateFile = () => {
+    // Create a simple Excel template
+    const template = {
+      "Maintenance": [
+        { "Oil Change": "Oil Change - Standard", "Brakes": "Brake Pad Replacement", "Filters": "Air Filter Replacement" },
+        { "Oil Change": "Oil Change - Synthetic", "Brakes": "Brake Rotor Replacement", "Filters": "Cabin Filter Replacement" }
+      ],
+      "Repair": [
+        { "Engine": "Engine Diagnostic", "Electrical": "Battery Replacement", "Transmission": "Transmission Fluid Change" }
+      ]
+    };
+    
+    const wb = XLSX.utils.book_new();
+    
+    // Create sheets for each category
+    Object.keys(template).forEach((categoryName) => {
+      const records = template[categoryName as keyof typeof template];
+      const ws = XLSX.utils.json_to_sheet(records);
+      XLSX.utils.book_append_sheet(wb, ws, categoryName);
+    });
+    
+    // Generate the Excel file
+    XLSX.writeFile(wb, 'service-categories-template.xlsx');
+    
+    toast({
+      title: "Template downloaded",
+      description: "You can now fill in your service categories and import them back.",
     });
   };
 
-  const handleUpload = async () => {
-    if (!file && importMethod === 'excel') {
-      toast({
-        title: 'File Required',
-        description: 'Please select a file to import.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!jsonText && importMethod === 'json') {
-      toast({
-        title: 'JSON Required',
-        description: 'Please enter JSON data to import.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      let serviceCategories: ServiceMainCategory[];
-
-      if (importMethod === 'excel' && file) {
-        // Parse Excel file
-        const excelData = await parseExcelFile(file);
-        console.log('Parsed Excel data:', excelData);
-        serviceCategories = parseExcelToServiceHierarchy(excelData);
-      } else {
-        // Parse JSON
-        try {
-          const jsonData = JSON.parse(jsonText);
-          serviceCategories = Array.isArray(jsonData) ? jsonData : [jsonData];
-        } catch (error) {
-          throw new Error('Invalid JSON format. Please check your input.');
-        }
+  const downloadSampleJSON = () => {
+    const sampleData = [
+      {
+        "id": "cat-001",
+        "name": "Maintenance",
+        "description": "Regular vehicle maintenance services",
+        "position": 0,
+        "subcategories": [
+          {
+            "id": "subcat-001",
+            "name": "Oil Change",
+            "description": "Maintenance - Oil Change",
+            "jobs": [
+              {
+                "id": "job-001",
+                "name": "Standard Oil Change",
+                "description": "Standard oil change service",
+                "estimatedTime": 30,
+                "price": 39.99
+              },
+              {
+                "id": "job-002",
+                "name": "Synthetic Oil Change",
+                "description": "Synthetic oil change service",
+                "estimatedTime": 30,
+                "price": 59.99
+              }
+            ]
+          },
+          {
+            "id": "subcat-002",
+            "name": "Brakes",
+            "description": "Maintenance - Brakes",
+            "jobs": [
+              {
+                "id": "job-003",
+                "name": "Brake Inspection",
+                "description": "Complete brake system inspection",
+                "estimatedTime": 45,
+                "price": 19.99
+              }
+            ]
+          }
+        ]
       }
-
-      console.log('Service categories to import:', serviceCategories);
-      
-      // Import data
-      await bulkImportServiceCategories(serviceCategories);
-      
-      toast({
-        title: 'Import Successful',
-        description: `Successfully imported ${serviceCategories.length} service categories.`,
-      });
-      
-      // Notify parent component that import is complete
-      onImportComplete();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        title: 'Import Failed',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      console.error('Import error:', error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleDownloadTemplate = () => {
-    try {
-      // Create workbook with sheet tabs for categories
-      const wb = XLSX.utils.book_new();
-      
-      // Create sample categories with columns as subcategories
-      const categories = [
-        "Adjustments & Diagnosis", 
-        "Engine Performance", 
-        "Brakes & Wheels", 
-        "Electrical & Lighting"
-      ];
-      
-      categories.forEach(category => {
-        // Create a worksheet for each category
-        const data: Record<string, any>[] = [];
-        
-        // Add column headers (subcategories)
-        const subcategories = {
-          "Subcategory A": "Sample item 1",
-          "Subcategory B": "Sample item 1",
-          "Subcategory C": "Sample item 1",
-        };
-        
-        // Add rows
-        data.push(subcategories);
-        data.push({
-          "Subcategory A": "Sample item 2",
-          "Subcategory B": "Sample item 2",
-          "Subcategory C": "Sample item 2",
-        });
-        data.push({
-          "Subcategory A": "Sample item 3",
-          "Subcategory B": "Sample item 3",
-          "Subcategory C": "Sample item 3",
-        });
-        
-        const sheet = XLSX.utils.json_to_sheet(data);
-        XLSX.utils.book_append_sheet(wb, sheet, category);
-      });
-      
-      // Export to Excel file
-      const filename = `service-hierarchy-template-${getFormattedDate()}.xlsx`;
-      XLSX.writeFile(wb, filename);
-      
-      toast({
-        title: 'Template Downloaded',
-        description: 'Template file has been downloaded successfully. Fill it out and import when ready.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Download Failed',
-        description: 'Failed to download template file.',
-        variant: 'destructive'
-      });
-      console.error('Template download error:', error);
-    }
-  };
-
-  const handleDownloadSampleJson = () => {
-    try {
-      const sampleData: ServiceMainCategory[] = [
-        {
-          id: uuidv4(),
-          name: "Engine Performance",
-          description: "Engine-related services",
-          position: 0,
-          subcategories: [
-            {
-              id: uuidv4(),
-              name: "Engine Diagnostics",
-              description: "Engine diagnostic services",
-              jobs: [
-                {
-                  id: uuidv4(),
-                  name: "Engine Check",
-                  description: "Complete engine diagnostic service",
-                  estimatedTime: 60,
-                  price: 99.99
-                },
-                {
-                  id: uuidv4(),
-                  name: "Engine Knocks",
-                  description: "Diagnose engine knocking sound",
-                  estimatedTime: 45,
-                  price: 79.99
-                }
-              ]
-            },
-            {
-              id: uuidv4(),
-              name: "Engine Performance Issues",
-              description: "Engine performance related services",
-              jobs: [
-                {
-                  id: uuidv4(),
-                  name: "Poor Fuel Mileage",
-                  description: "Diagnose poor fuel efficiency",
-                  estimatedTime: 30,
-                  price: 69.99
-                }
-              ]
-            }
-          ]
-        }
-      ];
-      
-      const jsonString = JSON.stringify(sampleData, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const href = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = href;
-      link.download = `service-hierarchy-sample-${getFormattedDate()}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: 'Sample JSON Downloaded',
-        description: 'Sample JSON file has been downloaded successfully.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Download Failed',
-        description: 'Failed to download sample JSON.',
-        variant: 'destructive'
-      });
-      console.error('JSON download error:', error);
-    }
+    ];
+    
+    const jsonString = JSON.stringify(sampleData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'sample-service-categories.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Sample JSON downloaded",
+      description: "You can use this as a reference for the data structure.",
+    });
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Bulk Import Services</CardTitle>
-        <CardDescription>
-          Import services in bulk using Excel or JSON format
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div className="flex flex-wrap gap-4 mb-6">
-            <Button 
-              variant={importMethod === 'excel' ? 'default' : 'outline'} 
-              onClick={() => setImportMethod('excel')}
-            >
-              Excel Import
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Category Bulk Import</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Button variant="outline" onClick={downloadTemplateFile} className="flex items-center gap-2">
+              <Download className="h-4 w-4" /> Download Template
             </Button>
-            <Button 
-              variant={importMethod === 'json' ? 'default' : 'outline'} 
-              onClick={() => setImportMethod('json')}
-            >
-              JSON Import
+            <Button variant="outline" onClick={downloadSampleJSON} className="flex items-center gap-2">
+              <Download className="h-4 w-4" /> Download Sample JSON
             </Button>
           </div>
 
-          {importMethod === 'excel' ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Button variant="outline" onClick={handleDownloadTemplate}>
-                  Download Template
-                </Button>
+          {(isProcessing || isImporting) && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{importStage}</span>
+                <span className="text-sm text-muted-foreground">{importProgress}%</span>
               </div>
-              
-              <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'}`}>
-                <input {...getInputProps()} />
-                <div className="flex flex-col items-center justify-center gap-2 text-center">
-                  <Upload className="h-10 w-10 text-muted-foreground" />
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-base font-medium">
-                      {isDragActive 
-                        ? 'Drop the Excel file here' 
-                        : file 
-                          ? `Selected file: ${file.name}` 
-                          : 'Drop Excel file here or click to select'
-                      }
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Upload an Excel file (.xlsx, .xls)
-                    </p>
-                  </div>
-                </div>
-                {file && (
-                  <div className="mt-4 flex items-center gap-2 rounded-md border p-2">
-                    <FileText className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm">{file.name}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {(file.size / 1024).toFixed(2)} KB
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Button variant="outline" onClick={handleDownloadSampleJson}>
-                Download Sample JSON
-              </Button>
-              <textarea
-                className="w-full h-64 p-4 border rounded-md font-mono text-sm"
-                placeholder='Paste your JSON here...'
-                value={jsonText}
-                onChange={(e) => setJsonText(e.target.value)}
-              />
+              <Progress value={importProgress} className="h-2 w-full" />
             </div>
           )}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => onImportComplete()}>
-          Cancel
-        </Button>
-        <Button onClick={handleUpload} disabled={isUploading}>
-          {isUploading ? 'Importing...' : 'Import'}
-        </Button>
-      </CardFooter>
-    </Card>
+          
+          {!previewData && !isProcessing && !isImporting && (
+            <div 
+              {...getRootProps()} 
+              className="border-2 border-dashed rounded-md p-10 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+            >
+              <input {...getInputProps()} />
+              <Upload className="h-12 w-12 mx-auto text-gray-400" />
+              <p className="mt-4 text-lg font-medium">Drop your Excel file here, or click to select</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Upload an Excel file with service categories. Each sheet should be a main category,
+                column headers are subcategories, and rows below are jobs.
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {previewData && !isImporting && (
+            <div className="space-y-4">
+              <div className="border rounded-md p-4">
+                <h3 className="text-lg font-semibold mb-3">Preview: {previewData.length} categories to import</h3>
+                <ul className="space-y-2">
+                  {previewData.map((category) => (
+                    <li key={category.id} className="ml-2">
+                      <span className="font-medium">{category.name}</span> - {category.subcategories.length} subcategories, {
+                        category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)
+                      } jobs
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex justify-end gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPreviewData(null)}
+                  disabled={isImporting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleBulkImport} 
+                  disabled={isImporting}
+                  className="flex items-center gap-2"
+                >
+                  {isImporting ? (
+                    <>
+                      <LoadingSpinner size="sm" /> Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" /> Import Categories
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

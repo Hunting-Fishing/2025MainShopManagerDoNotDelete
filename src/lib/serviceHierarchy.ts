@@ -65,44 +65,54 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
           position: index,
           subcategories: []
         };
+        
+        // Skip empty sheets
+        if (excelData[sheetName].length === 0) {
+          return;
+        }
 
         // Extract column headers as subcategories
         const sheetData = excelData[sheetName];
-        if (sheetData.length > 0) {
-          // Get all unique keys from the first row (these will be our column headers)
-          const columns = Object.keys(sheetData[0]).filter(key => key !== '__rowNum__');
-          
-          // Create subcategories from column headers
-          columns.forEach(columnName => {
-            if (columnName && columnName.trim()) {
-              const subcategory: ServiceSubcategory = {
-                id: uuidv4(),
-                name: columnName,
-                description: `${sheetName} - ${columnName}`,
-                jobs: []
-              };
-              
-              // Extract jobs from the column values (skip empty cells)
-              sheetData.forEach((row, rowIndex) => {
-                const jobName = row[columnName];
-                if (jobName && typeof jobName === 'string' && jobName.trim()) {
-                  subcategory.jobs.push({
-                    id: uuidv4(),
-                    name: jobName.trim(),
-                    description: `${jobName} service for ${columnName}`,
-                    estimatedTime: 60, // Default to 60 minutes
-                    price: null // Price not specified in the Excel
-                  });
-                }
-              });
-              
-              // Only add subcategory if it has jobs
-              if (subcategory.jobs.length > 0) {
-                mainCategory.subcategories.push(subcategory);
-              }
+        
+        // Get all unique column headers (except __rowNum__ or empty ones)
+        const columnHeaders = new Set<string>();
+        
+        sheetData.forEach((row: any) => {
+          Object.keys(row).forEach(key => {
+            if (key !== '__rowNum__' && key.trim() !== '') {
+              columnHeaders.add(key);
             }
           });
-        }
+        });
+        
+        // Create subcategories from column headers
+        columnHeaders.forEach(columnName => {
+          const subcategory: ServiceSubcategory = {
+            id: uuidv4(),
+            name: columnName,
+            description: `${sheetName} - ${columnName}`,
+            jobs: []
+          };
+          
+          // Extract jobs from the column values (skip empty cells)
+          sheetData.forEach((row: any) => {
+            const jobName = row[columnName];
+            if (jobName && typeof jobName === 'string' && jobName.trim()) {
+              subcategory.jobs.push({
+                id: uuidv4(),
+                name: jobName.trim(),
+                description: `${jobName} service for ${columnName}`,
+                estimatedTime: 60, // Default to 60 minutes
+                price: null // Price not specified in the Excel
+              });
+            }
+          });
+          
+          // Only add subcategory if it has jobs
+          if (subcategory.jobs.length > 0) {
+            mainCategory.subcategories.push(subcategory);
+          }
+        });
         
         // Only add category if it has subcategories
         if (mainCategory.subcategories.length > 0) {
@@ -120,11 +130,37 @@ export function parseExcelToServiceHierarchy(excelData: any): ServiceMainCategor
 
 // Function to bulk import service categories
 export async function bulkImportServiceCategories(categories: ServiceMainCategory[]): Promise<void> {
-  const { error } = await supabase
-    .from('service_hierarchy')
-    .upsert(categories);
-  
-  if (error) {
-    throw new Error(`Error importing service categories: ${error.message}`);
+  if (!categories || categories.length === 0) {
+    throw new Error("No categories to import");
   }
+  
+  // For large datasets, import in batches
+  const BATCH_SIZE = 10;
+  
+  for (let i = 0; i < categories.length; i += BATCH_SIZE) {
+    const batch = categories.slice(i, i + BATCH_SIZE);
+    const { error } = await supabase
+      .from('service_hierarchy')
+      .upsert(batch);
+    
+    if (error) {
+      throw new Error(`Error importing service categories (batch ${i/BATCH_SIZE + 1}): ${error.message}`);
+    }
+    
+    // Small delay to prevent overwhelming the database
+    if (i + BATCH_SIZE < categories.length) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+  }
+}
+
+// Create a new empty category with default values
+export function createEmptyCategory(position: number = 0): ServiceMainCategory {
+  return {
+    id: uuidv4(),
+    name: "New Category",
+    description: "",
+    position,
+    subcategories: []
+  };
 }
