@@ -52,6 +52,7 @@ export default function ServiceHierarchyManager() {
         description: "The service category has been saved successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
+      setActiveTab('browse');
     },
     onError: (error) => {
       toast({
@@ -112,6 +113,15 @@ export default function ServiceHierarchyManager() {
     });
   };
 
+  const handleSelectCategory = (category: ServiceMainCategory) => {
+    setSelectedCategory(category);
+    setActiveTab('edit');
+  };
+
+  const handleSaveCategory = (category: ServiceMainCategory) => {
+    saveCategory.mutate(category);
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -143,7 +153,7 @@ export default function ServiceHierarchyManager() {
           ) : (
             <ServiceCategoryList 
               categories={categories || []} 
-              onSelectCategory={setSelectedCategory}
+              onSelectCategory={handleSelectCategory}
               onDeleteCategory={(id) => deleteCategory.mutate(id)}
               selectedCategory={selectedCategory}
             />
@@ -153,8 +163,11 @@ export default function ServiceHierarchyManager() {
         <TabsContent value="edit">
           <ServiceCategoryEditor 
             category={selectedCategory}
-            onSave={(category) => saveCategory.mutate(category)}
-            onCancel={() => setActiveTab('browse')}
+            onSave={handleSaveCategory}
+            onCancel={() => {
+              setSelectedCategory(null);
+              setActiveTab('browse');
+            }}
           />
         </TabsContent>
         
