@@ -5,10 +5,12 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from "@/types/serviceHierarchy";
-import { Plus, Save, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Edit2, Save, X, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { Label } from '@/components/ui/label';
+import { createEmptySubcategory, createEmptyJob } from '@/lib/services/serviceUtils';
+import { formatTime } from '@/lib/services/serviceUtils';
+import { cn } from '@/lib/utils';
 
 interface ServiceCategoryEditorProps {
   category: ServiceMainCategory | null;
@@ -19,305 +21,330 @@ interface ServiceCategoryEditorProps {
 const ServiceCategoryEditor: React.FC<ServiceCategoryEditorProps> = ({
   category,
   onSave,
-  onCancel
+  onCancel,
 }) => {
-  const [editedCategory, setEditedCategory] = useState<ServiceMainCategory | null>(category);
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Record<string, boolean>>({});
+  const [editedCategory, setEditedCategory] = useState<ServiceMainCategory | null>(
+    category ? { ...JSON.parse(JSON.stringify(category)) } : null
+  );
+  
+  const [expandedSubcategoryId, setExpandedSubcategoryId] = useState<string | null>(null);
 
   if (!editedCategory) {
     return (
-      <div className="text-center p-10">
-        <p className="text-muted-foreground">Please select a category to edit or create a new one.</p>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            Please select a category to edit or create a new one.
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  const handleCategoryChange = (field: keyof ServiceMainCategory, value: string | number) => {
-    setEditedCategory(prev => {
-      if (!prev) return null;
-      return { ...prev, [field]: value };
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditedCategory({
+      ...editedCategory,
+      [name]: value,
     });
   };
 
-  const handleSubcategoryChange = (subcategoryId: string, field: keyof ServiceSubcategory, value: string) => {
-    setEditedCategory(prev => {
-      if (!prev) return null;
-      
-      return {
-        ...prev,
-        subcategories: prev.subcategories.map(sub => 
-          sub.id === subcategoryId ? { ...sub, [field]: value } : sub
-        )
-      };
+  const handleSubcategoryChange = (subcategoryId: string, field: string, value: string) => {
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: editedCategory.subcategories.map(subcategory =>
+        subcategory.id === subcategoryId
+          ? { ...subcategory, [field]: value }
+          : subcategory
+      ),
     });
   };
 
-  const handleJobChange = (subcategoryId: string, jobId: string, field: keyof ServiceJob, value: string | number) => {
-    setEditedCategory(prev => {
-      if (!prev) return null;
-      
-      return {
-        ...prev,
-        subcategories: prev.subcategories.map(sub => 
-          sub.id === subcategoryId 
-            ? {
-                ...sub,
-                jobs: sub.jobs.map(job => 
-                  job.id === jobId ? { ...job, [field]: value } : job
-                )
-              } 
-            : sub
-        )
-      };
+  const handleJobChange = (subcategoryId: string, jobId: string, field: string, value: string | number) => {
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: editedCategory.subcategories.map(subcategory =>
+        subcategory.id === subcategoryId
+          ? {
+              ...subcategory,
+              jobs: subcategory.jobs.map(job =>
+                job.id === jobId
+                  ? { ...job, [field]: field === 'estimatedTime' || field === 'price' ? Number(value) : value }
+                  : job
+              ),
+            }
+          : subcategory
+      ),
     });
   };
 
-  const addSubcategory = () => {
-    if (!editedCategory) return;
-    
-    const newSubcategory: ServiceSubcategory = {
-      id: uuidv4(),
-      name: "New Subcategory",
-      jobs: []
-    };
+  const handleAddSubcategory = () => {
+    const newSubcategory = createEmptySubcategory();
     
     setEditedCategory({
       ...editedCategory,
-      subcategories: [...editedCategory.subcategories, newSubcategory]
+      subcategories: [...editedCategory.subcategories, newSubcategory],
     });
     
-    // Automatically expand the new subcategory
-    setExpandedSubcategories(prev => ({
-      ...prev,
-      [newSubcategory.id]: true
-    }));
+    // Auto-expand the newly created subcategory
+    setExpandedSubcategoryId(newSubcategory.id);
   };
 
-  const addJobToSubcategory = (subcategoryId: string) => {
-    if (!editedCategory) return;
+  const handleRemoveSubcategory = (id: string) => {
+    setEditedCategory({
+      ...editedCategory,
+      subcategories: editedCategory.subcategories.filter(subcategory => subcategory.id !== id),
+    });
     
-    const newJob: ServiceJob = {
-      id: uuidv4(),
-      name: "New Service",
-      estimatedTime: 60 // Default to 60 minutes
-    };
+    // If removing the currently expanded subcategory, collapse it
+    if (expandedSubcategoryId === id) {
+      setExpandedSubcategoryId(null);
+    }
+  };
+
+  const handleAddJob = (subcategoryId: string) => {
+    const newJob = createEmptyJob();
     
     setEditedCategory({
       ...editedCategory,
-      subcategories: editedCategory.subcategories.map(sub => 
-        sub.id === subcategoryId 
-          ? { ...sub, jobs: [...sub.jobs, newJob] }
-          : sub
-      )
+      subcategories: editedCategory.subcategories.map(subcategory =>
+        subcategory.id === subcategoryId
+          ? {
+              ...subcategory,
+              jobs: [...subcategory.jobs, newJob],
+            }
+          : subcategory
+      ),
     });
   };
 
-  const removeSubcategory = (id: string) => {
-    if (!editedCategory) return;
-    
+  const handleRemoveJob = (subcategoryId: string, jobId: string) => {
     setEditedCategory({
       ...editedCategory,
-      subcategories: editedCategory.subcategories.filter(sub => sub.id !== id)
+      subcategories: editedCategory.subcategories.map(subcategory =>
+        subcategory.id === subcategoryId
+          ? {
+              ...subcategory,
+              jobs: subcategory.jobs.filter(job => job.id !== jobId),
+            }
+          : subcategory
+      ),
     });
   };
 
-  const removeJob = (subcategoryId: string, jobId: string) => {
-    if (!editedCategory) return;
-    
-    setEditedCategory({
-      ...editedCategory,
-      subcategories: editedCategory.subcategories.map(sub => 
-        sub.id === subcategoryId 
-          ? { ...sub, jobs: sub.jobs.filter(job => job.id !== jobId) }
-          : sub
-      )
-    });
+  const toggleSubcategory = (subcategoryId: string) => {
+    setExpandedSubcategoryId(expandedSubcategoryId === subcategoryId ? null : subcategoryId);
   };
 
-  const toggleSubcategoryExpanded = (subcategoryId: string) => {
-    setExpandedSubcategories(prev => ({
-      ...prev,
-      [subcategoryId]: !prev[subcategoryId]
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = () => {
     if (editedCategory) {
       onSave(editedCategory);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Main Category Information</h3>
-            <Badge variant="outline" className="px-2 py-1">
-              {editedCategory.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} Services
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-              <Input 
-                value={editedCategory.name} 
-                onChange={(e) => handleCategoryChange('name', e.target.value)}
-                placeholder="Category name"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-              <Input 
-                type="number" 
-                value={editedCategory.position !== undefined ? editedCategory.position : 0} 
-                onChange={(e) => handleCategoryChange('position', parseInt(e.target.value))}
-                placeholder="Display order position"
-              />
-            </div>
-          </div>
+    <Card>
+      <CardHeader className="border-b">
+        <h2 className="text-xl font-bold">
+          {editedCategory.id ? `Edit Category: ${category?.name}` : 'Create New Category'}
+        </h2>
+      </CardHeader>
+      
+      <CardContent className="space-y-6 pt-6">
+        {/* Category Info */}
+        <div className="grid gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <Textarea 
-              value={editedCategory.description || ''} 
-              onChange={(e) => handleCategoryChange('description', e.target.value)}
-              placeholder="Category description"
-              rows={2}
+            <Label htmlFor="category-name">Category Name</Label>
+            <Input
+              id="category-name"
+              name="name"
+              value={editedCategory.name}
+              onChange={handleCategoryChange}
+              placeholder="Main Category Name"
+              className="mt-1"
             />
           </div>
-        </CardContent>
-      </Card>
+          
+          <div>
+            <Label htmlFor="category-description">Description (Optional)</Label>
+            <Textarea
+              id="category-description"
+              name="description"
+              value={editedCategory.description || ''}
+              onChange={handleCategoryChange}
+              placeholder="Description of this service category"
+              className="mt-1"
+            />
+          </div>
+        </div>
 
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Subcategories & Services</h3>
-        <Button type="button" onClick={addSubcategory} variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Add Subcategory
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        {editedCategory.subcategories.length === 0 ? (
-          <Alert>
-            <AlertDescription>
-              No subcategories yet. Add one to start organizing services.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          editedCategory.subcategories.map((subcategory) => (
-            <Card key={subcategory.id} className="border-l-4 border-l-blue-500">
-              <CardHeader className="py-3 flex flex-row items-center justify-between">
-                <div className="flex items-center">
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    size="sm"
-                    className="p-0 h-8 w-8 mr-2"
-                    onClick={() => toggleSubcategoryExpanded(subcategory.id)}
+        {/* Subcategories */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Subcategories</h3>
+            <Button 
+              onClick={handleAddSubcategory} 
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> Add Subcategory
+            </Button>
+          </div>
+          
+          <div className="space-y-3">
+            {editedCategory.subcategories.length === 0 ? (
+              <div className="text-center py-4 border border-dashed rounded-md bg-muted/50">
+                No subcategories yet. Add one to get started.
+              </div>
+            ) : (
+              editedCategory.subcategories.map(subcategory => (
+                <div key={subcategory.id} className="border rounded-md">
+                  {/* Subcategory Header */}
+                  <div 
+                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50"
+                    onClick={() => toggleSubcategory(subcategory.id)}
                   >
-                    {expandedSubcategories[subcategory.id] ? 
-                      <ChevronDown className="h-4 w-4" /> : 
-                      <ChevronRight className="h-4 w-4" />
-                    }
-                  </Button>
-                  
-                  <div className="w-full">
-                    <Input 
-                      value={subcategory.name} 
-                      onChange={(e) => handleSubcategoryChange(subcategory.id, 'name', e.target.value)}
-                      placeholder="Subcategory name"
-                      className="text-sm font-medium"
-                    />
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <Badge variant="outline" className="mr-2">
-                    {subcategory.jobs.length} services
-                  </Badge>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => removeSubcategory(subcategory.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              
-              {expandedSubcategories[subcategory.id] && (
-                <CardContent>
-                  <div className="space-y-3 pt-2">
-                    <div className="flex justify-between">
-                      <h4 className="text-sm font-medium mb-2">Services</h4>
+                    <div className="font-medium">{subcategory.name || 'Unnamed Subcategory'}</div>
+                    <div className="flex items-center gap-2">
                       <Button 
-                        type="button" 
-                        onClick={() => addJobToSubcategory(subcategory.id)} 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs"
+                        variant="ghost" 
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveSubcategory(subcategory.id);
+                        }}
                       >
-                        <Plus className="h-3 w-3 mr-1" /> Add Service
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {subcategory.jobs.map((job) => (
-                        <div key={job.id} className="flex items-center space-x-2 bg-slate-50 p-2 rounded-md">
-                          <div className="flex-grow">
-                            <Input 
-                              value={job.name} 
-                              onChange={(e) => handleJobChange(subcategory.id, job.id, 'name', e.target.value)}
-                              placeholder="Service name"
-                              className="text-sm"
-                            />
-                          </div>
-                          <div className="w-32">
-                            <Input 
-                              type="number" 
-                              value={job.estimatedTime || 0} 
-                              onChange={(e) => handleJobChange(subcategory.id, job.id, 'estimatedTime', parseInt(e.target.value))}
-                              placeholder="Time (min)"
-                              className="text-sm"
-                            />
-                          </div>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-0 h-8 w-8"
-                            onClick={() => removeJob(subcategory.id, job.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      
-                      {subcategory.jobs.length === 0 && (
-                        <div className="text-sm text-muted-foreground italic text-center py-2">
-                          No services in this subcategory yet
-                        </div>
-                      )}
+                      <ChevronDown 
+                        className={cn(
+                          "h-4 w-4 transition-transform", 
+                          expandedSubcategoryId === subcategory.id ? "transform rotate-180" : ""
+                        )} 
+                      />
                     </div>
                   </div>
-                </CardContent>
-              )}
-            </Card>
-          ))
-        )}
-      </div>
-
-      <CardFooter className="flex justify-between pt-6 px-0">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">
-          <Save className="h-4 w-4 mr-2" /> Save Changes
+                  
+                  {/* Subcategory Content (expandable) */}
+                  {expandedSubcategoryId === subcategory.id && (
+                    <div className="p-4 border-t bg-muted/20">
+                      <div className="space-y-4">
+                        {/* Subcategory Details */}
+                        <div className="grid gap-3">
+                          <div>
+                            <Label>Subcategory Name</Label>
+                            <Input
+                              value={subcategory.name}
+                              onChange={(e) => handleSubcategoryChange(subcategory.id, 'name', e.target.value)}
+                              placeholder="Subcategory Name"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label>Description (Optional)</Label>
+                            <Textarea
+                              value={subcategory.description || ''}
+                              onChange={(e) => handleSubcategoryChange(subcategory.id, 'description', e.target.value)}
+                              placeholder="Subcategory description"
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Jobs */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-medium">Services</h4>
+                            <Button 
+                              onClick={() => handleAddJob(subcategory.id)} 
+                              size="sm" 
+                              variant="outline"
+                              className="flex items-center gap-1"
+                            >
+                              <Plus className="h-3 w-3" /> Add Service
+                            </Button>
+                          </div>
+                          
+                          {subcategory.jobs.length === 0 ? (
+                            <div className="text-center py-3 border border-dashed rounded-md bg-muted/30">
+                              No services yet. Add one to get started.
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {subcategory.jobs.map(job => (
+                                <div key={job.id} className="grid gap-2 p-3 border rounded-md bg-white">
+                                  <div className="flex justify-between">
+                                    <Label>Service Name</Label>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleRemoveJob(subcategory.id, job.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                  <Input
+                                    value={job.name}
+                                    onChange={(e) => handleJobChange(subcategory.id, job.id, 'name', e.target.value)}
+                                    placeholder="Service Name"
+                                  />
+                                  
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                    <div>
+                                      <Label>Est. Time (minutes)</Label>
+                                      <Input
+                                        type="number"
+                                        value={job.estimatedTime || ''}
+                                        onChange={(e) => handleJobChange(subcategory.id, job.id, 'estimatedTime', e.target.value)}
+                                        placeholder="60"
+                                      />
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {job.estimatedTime ? `Displayed as: ${formatTime(job.estimatedTime)}` : ''}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Label>Price ($)</Label>
+                                      <Input
+                                        type="number"
+                                        value={job.price || ''}
+                                        onChange={(e) => handleJobChange(subcategory.id, job.id, 'price', e.target.value)}
+                                        placeholder="0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Description (Optional)</Label>
+                                    <Textarea
+                                      value={job.description || ''}
+                                      onChange={(e) => handleJobChange(subcategory.id, job.id, 'description', e.target.value)}
+                                      placeholder="Service description"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="border-t bg-muted/20 flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave}>
+          <Save className="mr-2 h-4 w-4" /> Save Category
         </Button>
       </CardFooter>
-    </form>
+    </Card>
   );
 };
 

@@ -53,7 +53,7 @@ export default function ServiceHierarchyManager() {
         title: "Category deleted",
         description: "The service category has been deleted.",
       });
-      if (selectedCategory?.id === id) {
+      if (selectedCategory && selectedCategory.id === id) {
         setSelectedCategory(null);
       }
       queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
