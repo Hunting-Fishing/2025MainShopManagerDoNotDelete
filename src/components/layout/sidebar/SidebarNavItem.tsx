@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -55,6 +55,13 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
     location.pathname === subItem.href || location.pathname.startsWith(subItem.href)
   );
   
+  // Auto-open submenu when it contains the active page
+  useEffect(() => {
+    if (hasActiveSubmenu && !isSubmenuOpen) {
+      setIsSubmenuOpen(true);
+    }
+  }, [location.pathname, hasActiveSubmenu]);
+  
   // Determine whether to show submenu - either explicitly opened OR if it contains the active page
   const showSubmenu = hasSubmenu && !collapsed && (isSubmenuOpen || hasActiveSubmenu);
 
@@ -70,10 +77,10 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
     <div key={navItem.title} className="mb-1">
       <div
         className={cn(
-          "relative flex cursor-pointer items-center rounded-lg px-3 py-2.5 text-sm font-medium",
+          "relative flex cursor-pointer items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
           isActive || hasActiveSubmenu
             ? "bg-white/15 text-white font-semibold shadow-sm"
-            : "text-white/80 hover:bg-white/10 transition-colors",
+            : "text-white/80 hover:bg-white/10",
           navItem.disabled && "cursor-not-allowed opacity-60"
         )}
         onClick={hasSubmenu ? toggleSubmenu : undefined}

@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -12,6 +13,7 @@ import { SidebarContent } from './sidebar/SidebarContent';
 export function AppSidebar() {
   const { isOpen, onOpen, onClose } = useSidebar();
   const isMobile = useIsMobile();
+  const location = useLocation();
   
   // Close sidebar on route change for mobile
   useEffect(() => {

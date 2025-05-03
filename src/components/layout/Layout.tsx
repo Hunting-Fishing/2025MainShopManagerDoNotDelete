@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Header } from './Header';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useTheme } from '@/context/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -14,6 +14,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
+  const location = useLocation();
   
   const isDark = resolvedTheme === 'dark';
 
