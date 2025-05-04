@@ -1,123 +1,149 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { Upload } from 'lucide-react';
-import { parseExcelData } from '@/lib/services/excelParser';
 import { ServiceMainCategory } from '@/types/serviceHierarchy';
-import { toast } from 'sonner';
+import { Upload, Check, X } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 import { bulkImportServiceCategories } from '@/lib/services/serviceApi';
 
 interface ServiceBulkImportProps {
-  onCancel: () => void;
-  onComplete: (categories: ServiceMainCategory[]) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onImportComplete: () => void;
 }
 
-const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onComplete }) => {
+const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({
+  open,
+  onOpenChange,
+  onImportComplete
+}) => {
   const [file, setFile] = useState<File | null>(null);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      setError(null);
     }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
   };
 
   const handleImport = async () => {
     if (!file) {
-      toast.error('Please select a file to import');
+      setError('Please select a file to import');
       return;
     }
 
+    setImporting(true);
+    setProgress(0);
+    setError(null);
+
     try {
-      setIsProcessing(true);
-      setProgress(10);
+      // Read the file as text
+      const text = await file.text();
       
-      // Parse the Excel file
-      const categories = await parseExcelData(file);
-      setProgress(50);
-      
-      // Perform the bulk import
-      await bulkImportServiceCategories(categories, (importProgress) => {
-        setProgress(50 + importProgress * 50);
+      // Parse the JSON
+      let parsedData: ServiceMainCategory[];
+      try {
+        parsedData = JSON.parse(text);
+        
+        // Validate the structure (basic validation)
+        if (!Array.isArray(parsedData)) {
+          throw new Error('Invalid format: Expected an array of categories');
+        }
+        
+      } catch (err) {
+        throw new Error('Invalid JSON format');
+      }
+
+      // Import the data
+      await bulkImportServiceCategories(parsedData, (progress) => {
+        setProgress(Math.round(progress * 100));
+      });
+
+      // Success
+      toast({
+        title: "Import successful",
+        description: `Imported ${parsedData.length} service categories`,
       });
       
-      setProgress(100);
+      // Close dialog and refresh data
+      onOpenChange(false);
+      onImportComplete();
       
-      // Notify completion
-      onComplete(categories);
-    } catch (error) {
-      console.error('Import error:', error);
-      toast.error('Failed to import services: ' + (error instanceof Error ? error.message : 'Unknown error'));
-      setIsProcessing(false);
+    } catch (err) {
+      console.error('Import error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+    } finally {
+      setImporting(false);
     }
   };
 
   return (
-    <div className="py-2">
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <Input
-              type="text"
-              value={file?.name || ''}
-              placeholder="No file selected"
-              readOnly
-              className="bg-gray-50"
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
-          <Button type="button" onClick={handleUploadClick} disabled={isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
-            <Upload className="h-4 w-4 mr-2" />
-            Browse
-          </Button>
-        </div>
-
-        {isProcessing && (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Bulk Import Service Categories</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <div className="text-sm text-gray-500">
-              Importing services... {Math.round(progress)}%
-            </div>
-            <Progress value={progress} className="h-2 bg-indigo-100">
-              <div className="h-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
-            </Progress>
+            <Label htmlFor="file">JSON File</Label>
+            <Input
+              id="file"
+              type="file"
+              accept=".json"
+              onChange={handleFileChange}
+              disabled={importing}
+            />
+            <p className="text-xs text-muted-foreground">
+              Upload a JSON file with service categories structure
+            </p>
           </div>
-        )}
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800">
-          <p className="font-medium">Important:</p>
-          <ul className="list-disc list-inside space-y-1 mt-1">
-            <li>File should be in Excel format (.xlsx or .xls)</li>
-            <li>Required columns: category, subcategory, service</li>
-            <li>Optional columns: price, time, description</li>
-            <li>Existing services with the same names may be updated</li>
-          </ul>
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md text-sm flex items-start">
+              <X className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          
+          {importing && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Importing...</span>
+                <span>{progress}%</span>
+              </div>
+              <Progress value={progress} />
+            </div>
+          )}
         </div>
-      </div>
-
-      <AlertDialogFooter className="mt-6">
-        <AlertDialogCancel onClick={onCancel} disabled={isProcessing}>
-          Cancel
-        </AlertDialogCancel>
-        <Button onClick={handleImport} disabled={!file || isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
-          Import Services
-        </Button>
-      </AlertDialogFooter>
-    </div>
+        
+        <DialogFooter className="flex space-x-2 justify-end">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing}>
+            Cancel
+          </Button>
+          <Button onClick={handleImport} disabled={importing || !file}>
+            {importing ? (
+              <>
+                <Upload className="mr-2 h-4 w-4 animate-spin" />
+                Importing...
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Import
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
