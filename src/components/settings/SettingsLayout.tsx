@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResponsiveContainer } from "@/components/ui/responsive-container";
 import { 
   User, Building, Shield, Bell, Palette, 
   Database, Globe2, Gift, Package, Users, Mail,
-  Brush, MailPlus, ShieldCheck
+  Brush, MailPlus, ShieldCheck, Link as LinkIcon
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useShopId } from "@/hooks/useShopId";
@@ -23,6 +25,7 @@ import { TeamHistoryTab } from "./TeamHistoryTab";
 import { EmailSchedulingTab } from "./EmailSchedulingTab";
 import { DataExportTab } from "./DataExportTab";
 import { LanguageTab } from "./LanguageTab";
+// Remove IntegrationsTab since it's moved to Developer Portal
 
 interface SettingsLayoutProps {
   defaultTab?: string;
@@ -62,7 +65,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ defaultTab }) =>
     { id: "branding", label: t('settings.tabs.branding', 'Branding'), icon: Palette },
     { id: "appearance", label: t('settings.tabs.appearance', 'Appearance'), icon: Brush },
     { id: "email", label: t('settings.tabs.email', 'Email Settings'), icon: MailPlus },
-    { id: "integrations", label: t('settings.tabs.integrations', 'Integrations'), icon: Link },
+    // Remove integrations from settings tabs since it's moved to Developer Portal
     { id: "loyalty", label: t('settings.tabs.loyalty', 'Loyalty'), icon: Gift },
     { id: "inventory", label: t('settings.tabs.inventory', 'Inventory'), icon: Package },
     { id: "team", label: t('settings.tabs.team', 'Team History'), icon: Users },
@@ -114,9 +117,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ defaultTab }) =>
           <TabsContent value="email" className="mt-0">
             <EmailSettingsTab shopId={shopId || undefined} />
           </TabsContent>
-          <TabsContent value="integrations" className="mt-0">
-            <IntegrationsTab shopId={shopId || undefined} />
-          </TabsContent>
+          {/* Remove IntegrationsTab since it's moved to Developer Portal */}
           <TabsContent value="loyalty" className="mt-0">
             <LoyaltyTab />
           </TabsContent>
