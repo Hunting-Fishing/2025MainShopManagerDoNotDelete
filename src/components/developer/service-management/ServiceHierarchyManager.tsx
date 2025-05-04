@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from "@/components/ui/use-toast";
 import { Loader2, Upload, Download, PlusCircle } from 'lucide-react';
 import { ServiceEditor } from './ServiceEditor';
-import { ServiceAnalytics } from './ServiceAnalytics';
-import { ServicesPriceReport } from './ServicesPriceReport';
+import ServiceAnalytics from './ServiceAnalytics';
+import ServicesPriceReport from './ServicesPriceReport';
 import { ServiceCategoriesList } from './hierarchy/ServiceCategoriesList';
 import ServiceBulkImport from './ServiceBulkImport';
 import { fetchServiceCategories, saveServiceCategory, deleteServiceCategory } from '@/lib/services/serviceApi';
@@ -25,6 +25,7 @@ export default function ServiceHierarchyManager() {
   const [activeTab, setActiveTab] = useState("line-codes");
   const [selectedCategoryColorIndex, setSelectedCategoryColorIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -173,6 +174,11 @@ export default function ServiceHierarchyManager() {
     loadCategories();
   };
 
+  const handleImportComplete = () => {
+    loadCategories();
+    setShowBulkImport(false);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
       <div className="lg:col-span-8 space-y-6">
@@ -202,6 +208,15 @@ export default function ServiceHierarchyManager() {
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
                   Refresh
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBulkImport(true)}
+                >
+                  <Upload className="h-4 w-4 mr-1" />
+                  Import
                 </Button>
                 
                 <Button
@@ -251,8 +266,12 @@ export default function ServiceHierarchyManager() {
           </CardContent>
         </Card>
       </div>
-      
-      {/* Bulk import dialog would go here */}
+
+      <ServiceBulkImport 
+        open={showBulkImport}
+        onOpenChange={setShowBulkImport}
+        onImportComplete={handleImportComplete}
+      />
     </div>
   );
 }
