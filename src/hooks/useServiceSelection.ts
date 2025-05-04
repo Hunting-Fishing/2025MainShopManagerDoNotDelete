@@ -1,44 +1,53 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
-interface WorkOrderService {
+type SelectedService = {
   mainCategory: string;
   subcategory: string;
   job: string;
   estimatedTime?: number;
-}
+};
 
-export function useServiceSelection() {
-  const [selectedService, setSelectedService] = useState<WorkOrderService | null>(null);
+// Global state for selected service
+let selectedService: SelectedService | null = null;
+let listeners: Array<(service: SelectedService | null) => void> = [];
 
-  useEffect(() => {
-    // When the component mounts, check if there's a selected service
-    const savedService = localStorage.getItem('selectedWorkOrderService');
-    if (savedService) {
-      try {
-        const parsedService = JSON.parse(savedService);
-        setSelectedService(parsedService);
-      } catch (error) {
-        console.error('Error parsing saved service:', error);
-        localStorage.removeItem('selectedWorkOrderService');
-      }
-    }
+// Notify all listeners of the change
+const notifyListeners = () => {
+  listeners.forEach(listener => listener(selectedService));
+};
+
+export const useServiceSelection = () => {
+  const [currentSelection, setCurrentSelection] = useState<SelectedService | null>(selectedService);
+
+  // Register and clean up listeners
+  useState(() => {
+    const listener = (service: SelectedService | null) => {
+      setCurrentSelection(service);
+    };
+    
+    listeners.push(listener);
+    
+    return () => {
+      listeners = listeners.filter(l => l !== listener);
+    };
+  });
+
+  // Select a service
+  const selectService = useCallback((service: SelectedService) => {
+    selectedService = service;
+    notifyListeners();
   }, []);
 
-  const selectService = (service: WorkOrderService) => {
-    // Save to localStorage for persistence
-    localStorage.setItem('selectedWorkOrderService', JSON.stringify(service));
-    setSelectedService(service);
-  };
-
-  const clearSelectedService = () => {
-    localStorage.removeItem('selectedWorkOrderService');
-    setSelectedService(null);
-  };
+  // Clear the selected service
+  const clearSelectedService = useCallback(() => {
+    selectedService = null;
+    notifyListeners();
+  }, []);
 
   return {
-    selectedService,
+    selectedService: currentSelection,
     selectService,
     clearSelectedService
   };
-}
+};

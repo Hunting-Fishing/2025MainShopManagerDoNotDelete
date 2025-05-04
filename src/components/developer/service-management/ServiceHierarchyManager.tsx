@@ -1,304 +1,406 @@
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from '@/hooks/use-toast';
-import { ServiceMainCategory } from "@/types/serviceHierarchy";
-import { AlertCircle, Plus, Save, Download, FileDown, FileUp, Database, Clipboard } from 'lucide-react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import ServiceCategoryList from './ServiceCategoryList';
-import ServiceCategoryEditor from './ServiceCategoryEditor';
-import { ServiceBulkImport } from './ServiceBulkImport';
+import React, { useState, useEffect } from 'react';
+import { 
+  ServiceMainCategory, 
+  ServiceSubcategory, 
+  ServiceJob 
+} from "@/types/serviceHierarchy";
 import { fetchServiceCategories, saveServiceCategory, deleteServiceCategory } from '@/lib/services/serviceApi';
-import { createEmptyCategory } from '@/lib/services/serviceUtils';
-import ServiceAnalytics from './ServiceAnalytics';
-import ServicesPriceReport from './ServicesPriceReport';
-import { Input } from '@/components/ui/input';
+import { toast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
+import { ServiceEditor } from './ServiceEditor';
+import { ServiceAnalytics } from './ServiceAnalytics';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, Download } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+import { cloneCategory } from '@/lib/services/serviceUtils';
+import { ServicesPriceReport } from './ServicesPriceReport';
+import { ServiceBulkImport } from './ServiceBulkImport';
 
-export default function ServiceHierarchyManager() {
+const ServiceHierarchyManager: React.FC = () => {
+  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('browse');
-  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
-  const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch all service categories
-  const { data: categories, isLoading, error } = useQuery({
-    queryKey: ['serviceHierarchy'],
-    queryFn: fetchServiceCategories,
-  });
+  // Editor state
+  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | undefined>(undefined);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | undefined>(undefined);
+  const [selectedJob, setSelectedJob] = useState<ServiceJob | undefined>(undefined);
+  const [editorMode, setEditorMode] = useState<'category' | 'subcategory' | 'job' | 'none'>('none');
 
-  // Save or update a category
-  const saveCategory = useMutation({
-    mutationFn: saveServiceCategory,
-    onSuccess: () => {
+  const loadCategories = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await fetchServiceCategories();
+      setCategories(data);
+      console.log('Loaded categories:', data);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
       toast({
-        title: "Category saved",
-        description: "The service category has been saved successfully.",
+        title: "Error",
+        description: "Failed to load service categories",
+        variant: "destructive"
       });
-      queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
-      setActiveTab('browse');
-    },
-    onError: (error) => {
-      toast({
-        title: "Error saving category",
-        description: error.message,
-        variant: "destructive",
-      });
+    } finally {
+      setIsLoading(false);
     }
-  });
-
-  // Delete a category
-  const deleteCategory = useMutation({
-    mutationFn: deleteServiceCategory,
-    onSuccess: (deletedId: string) => {
-      toast({
-        title: "Category deleted",
-        description: "The service category has been deleted.",
-      });
-      if (selectedCategory && selectedCategory.id === deletedId) {
-        setSelectedCategory(null);
-      }
-      queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error deleting category",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Export categories to JSON
-  const handleExport = () => {
-    if (!categories) return;
-    
-    const dataStr = JSON.stringify(categories, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileName = `service_categories_${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileName);
-    linkElement.click();
-    
-    toast({
-      title: "Export successful",
-      description: `Categories exported to ${exportFileName}`,
-    });
   };
 
-  // Copy categories JSON to clipboard
-  const handleCopyToClipboard = () => {
-    if (!categories) return;
-    
-    const dataStr = JSON.stringify(categories, null, 2);
-    navigator.clipboard.writeText(dataStr).then(() => {
-      toast({
-        title: "Copied to clipboard",
-        description: "Service categories JSON copied to clipboard.",
-      });
-    });
-  };
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
+  // Handler for selecting a category
   const handleSelectCategory = (category: ServiceMainCategory) => {
     setSelectedCategory(category);
-    setActiveTab('edit');
+    setSelectedSubcategory(undefined);
+    setSelectedJob(undefined);
+    setEditorMode('category');
   };
 
-  const handleSaveCategory = (category: ServiceMainCategory) => {
-    saveCategory.mutate(category);
+  // Handler for selecting a subcategory
+  const handleSelectSubcategory = (category: ServiceMainCategory, subcategory: ServiceSubcategory) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(subcategory);
+    setSelectedJob(undefined);
+    setEditorMode('subcategory');
   };
 
-  // Function to add a new category
+  // Handler for selecting a job
+  const handleSelectJob = (category: ServiceMainCategory, subcategory: ServiceSubcategory, job: ServiceJob) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(subcategory);
+    setSelectedJob(job);
+    setEditorMode('job');
+  };
+
+  // Handler for adding a new category
   const handleAddCategory = () => {
-    const newCategory: ServiceMainCategory = createEmptyCategory(categories ? categories.length : 0);
-    
-    setSelectedCategory(newCategory);
-    setActiveTab('edit');
+    setSelectedCategory(undefined);
+    setSelectedSubcategory(undefined);
+    setSelectedJob(undefined);
+    setEditorMode('category');
   };
 
-  // Handle category analytics
-  const handleAnalytics = () => {
-    setActiveTab('analytics');
+  // Handler for adding a new subcategory
+  const handleAddSubcategory = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (category) {
+      setSelectedCategory(category);
+      setSelectedSubcategory(undefined);
+      setSelectedJob(undefined);
+      setEditorMode('subcategory');
+    }
   };
 
-  // Get services stats
-  const getCategoryStats = () => {
-    if (!categories || categories.length === 0) return { categories: 0, subcategories: 0, services: 0 };
-    
-    const totalSubcategories = categories.reduce((total, cat) => total + cat.subcategories.length, 0);
-    const totalServices = categories.reduce((total, cat) => 
-      total + cat.subcategories.reduce(
-        (subTotal, sub) => subTotal + sub.jobs.length, 0
-      ), 0
-    );
-    
-    return {
-      categories: categories.length,
-      subcategories: totalSubcategories,
-      services: totalServices
-    };
+  // Handler for adding a new job
+  const handleAddJob = (categoryId: string, subcategoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (category) {
+      const subcategory = category.subcategories.find(s => s.id === subcategoryId);
+      if (subcategory) {
+        setSelectedCategory(category);
+        setSelectedSubcategory(subcategory);
+        setSelectedJob(undefined);
+        setEditorMode('job');
+      }
+    }
   };
-  
-  const stats = getCategoryStats();
+
+  // Handler for canceling editing
+  const handleCancelEdit = () => {
+    setEditorMode('none');
+  };
+
+  // Handler for saving items
+  const handleSave = async (
+    data: ServiceMainCategory | ServiceSubcategory | ServiceJob,
+    mode: 'category' | 'subcategory' | 'job',
+    parentIds?: { categoryId?: string; subcategoryId?: string }
+  ) => {
+    try {
+      if (mode === 'category') {
+        // Save the category directly
+        const categoryData = data as ServiceMainCategory;
+        await saveServiceCategory(categoryData);
+        await loadCategories(); // Reload all categories
+      } else {
+        // For subcategory and job, we need to update the parent category
+        if (!parentIds?.categoryId) {
+          throw new Error("Missing parent category ID");
+        }
+
+        // Find the parent category
+        const categoryIndex = categories.findIndex(c => c.id === parentIds.categoryId);
+        if (categoryIndex === -1) {
+          throw new Error("Parent category not found");
+        }
+
+        // Clone the category to avoid direct state mutation
+        const updatedCategory = cloneCategory(categories[categoryIndex]);
+
+        if (mode === 'subcategory') {
+          const subcategoryData = data as ServiceSubcategory;
+          
+          // Check if it's an update or a new subcategory
+          const subcategoryIndex = updatedCategory.subcategories.findIndex(
+            s => s.id === subcategoryData.id
+          );
+
+          if (subcategoryIndex !== -1) {
+            // Update existing subcategory
+            updatedCategory.subcategories[subcategoryIndex] = subcategoryData;
+          } else {
+            // Add new subcategory
+            updatedCategory.subcategories.push({
+              ...subcategoryData,
+              id: subcategoryData.id || uuidv4()
+            });
+          }
+        } else if (mode === 'job') {
+          if (!parentIds.subcategoryId) {
+            throw new Error("Missing parent subcategory ID");
+          }
+
+          const jobData = data as ServiceJob;
+          
+          // Find the parent subcategory
+          const subcategoryIndex = updatedCategory.subcategories.findIndex(
+            s => s.id === parentIds.subcategoryId
+          );
+
+          if (subcategoryIndex === -1) {
+            throw new Error("Parent subcategory not found");
+          }
+
+          // Check if it's an update or a new job
+          const jobIndex = updatedCategory.subcategories[subcategoryIndex].jobs.findIndex(
+            j => j.id === jobData.id
+          );
+
+          if (jobIndex !== -1) {
+            // Update existing job
+            updatedCategory.subcategories[subcategoryIndex].jobs[jobIndex] = jobData;
+          } else {
+            // Add new job
+            updatedCategory.subcategories[subcategoryIndex].jobs.push({
+              ...jobData,
+              id: jobData.id || uuidv4()
+            });
+          }
+        }
+
+        // Save the updated category
+        await saveServiceCategory(updatedCategory);
+        await loadCategories(); // Reload all categories
+      }
+
+      // Reset selection after save
+      if (mode === 'category') {
+        const savedCategory = data as ServiceMainCategory;
+        const refreshedCategory = (await fetchServiceCategories()).find(c => c.id === savedCategory.id);
+        if (refreshedCategory) {
+          setSelectedCategory(refreshedCategory);
+        }
+      } else if (mode === 'subcategory' && parentIds?.categoryId) {
+        const savedSubcategory = data as ServiceSubcategory;
+        const refreshedCategories = await fetchServiceCategories();
+        const refreshedCategory = refreshedCategories.find(c => c.id === parentIds.categoryId);
+        
+        if (refreshedCategory) {
+          setSelectedCategory(refreshedCategory);
+          const refreshedSubcategory = refreshedCategory.subcategories.find(s => s.id === savedSubcategory.id);
+          if (refreshedSubcategory) {
+            setSelectedSubcategory(refreshedSubcategory);
+          }
+        }
+      }
+
+    } catch (err) {
+      console.error('Failed to save:', err);
+      toast({
+        title: "Error",
+        description: `Failed to save: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handler for deleting items
+  const handleDelete = async (
+    id: string,
+    mode: 'category' | 'subcategory' | 'job',
+    parentIds?: { categoryId?: string; subcategoryId?: string }
+  ) => {
+    try {
+      if (mode === 'category') {
+        // Delete the category directly
+        await deleteServiceCategory(id);
+        setEditorMode('none');
+        toast({
+          title: "Category deleted",
+          description: "Category has been deleted successfully."
+        });
+      } else {
+        // For subcategory and job, we need to update the parent category
+        if (!parentIds?.categoryId) {
+          throw new Error("Missing parent category ID");
+        }
+
+        // Find the parent category
+        const categoryIndex = categories.findIndex(c => c.id === parentIds.categoryId);
+        if (categoryIndex === -1) {
+          throw new Error("Parent category not found");
+        }
+
+        // Clone the category to avoid direct state mutation
+        const updatedCategory = cloneCategory(categories[categoryIndex]);
+
+        if (mode === 'subcategory') {
+          // Remove the subcategory
+          updatedCategory.subcategories = updatedCategory.subcategories.filter(s => s.id !== id);
+          setEditorMode('none');
+        } else if (mode === 'job') {
+          if (!parentIds.subcategoryId) {
+            throw new Error("Missing parent subcategory ID");
+          }
+
+          // Find the parent subcategory
+          const subcategoryIndex = updatedCategory.subcategories.findIndex(
+            s => s.id === parentIds.subcategoryId
+          );
+
+          if (subcategoryIndex === -1) {
+            throw new Error("Parent subcategory not found");
+          }
+
+          // Remove the job
+          updatedCategory.subcategories[subcategoryIndex].jobs = 
+            updatedCategory.subcategories[subcategoryIndex].jobs.filter(j => j.id !== id);
+        }
+
+        // Save the updated category
+        await saveServiceCategory(updatedCategory);
+        setEditorMode('none');
+        toast({
+          title: `${mode === 'subcategory' ? 'Subcategory' : 'Job'} deleted`,
+          description: `${mode === 'subcategory' ? 'Subcategory' : 'Job'} has been deleted successfully.`
+        });
+      }
+
+      // Reload categories
+      await loadCategories();
+    } catch (err) {
+      console.error('Failed to delete:', err);
+      toast({
+        title: "Error",
+        description: `Failed to delete: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const exportToJson = () => {
+    // Create a JSON file with categories data
+    const dataStr = JSON.stringify(categories, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = 'service-categories.json';
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Service Hierarchy Management</h2>
-          <p className="text-muted-foreground mt-1">
-            Manage service categories, subcategories, and individual service jobs
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleExport} className="flex items-center gap-2">
-            <FileDown className="h-4 w-4" /> Export
-          </Button>
-          <Button onClick={handleAddCategory} className="flex items-center gap-2 bg-esm-blue-600 hover:bg-esm-blue-700">
-            <Plus className="h-4 w-4" /> New Category
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Service Management</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportToJson}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Services
           </Button>
         </div>
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Error loading service categories: {error.toString()}</AlertDescription>
-        </Alert>
-      )}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6 w-full">
+          <TabsTrigger value="browse">Browse & Edit</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="pricing">Price Report</TabsTrigger>
+          <TabsTrigger value="import">Bulk Import</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Services Overview</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <span className="text-2xl font-bold text-blue-700">{stats.categories}</span>
-                <span className="text-xs text-blue-600">Categories</span>
-              </div>
-              <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                <span className="text-2xl font-bold text-purple-700">{stats.subcategories}</span>
-                <span className="text-xs text-purple-600">Subcategories</span>
-              </div>
-              <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
-                <span className="text-2xl font-bold text-emerald-700">{stats.services}</span>
-                <span className="text-xs text-emerald-600">Services</span>
-              </div>
+        <TabsContent value="browse" className="space-y-4">
+          {error && (
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="pt-6">
+                Error loading service categories: {error}
+              </CardContent>
+            </Card>
+          )}
+
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-
-            <div className="space-y-2">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start text-muted-foreground" 
-                onClick={() => setActiveTab('browse')}
-              >
-                <Database className="h-4 w-4 mr-2" /> Manage Categories
-              </Button>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ServiceHierarchyBrowser
+                categories={categories}
+                onSelectCategory={handleSelectCategory}
+                onSelectSubcategory={handleSelectSubcategory}
+                onSelectJob={handleSelectJob}
+                onAddCategory={handleAddCategory}
+                onAddSubcategory={handleAddSubcategory}
+                onAddJob={handleAddJob}
+              />
               
-              <Button 
-                variant="outline" 
-                className="w-full justify-start text-muted-foreground" 
-                onClick={() => setActiveTab('import')}
-              >
-                <FileUp className="h-4 w-4 mr-2" /> Import Data
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full justify-start text-muted-foreground" 
-                onClick={handleAnalytics}
-              >
-                <Clipboard className="h-4 w-4 mr-2" /> Services Report
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full justify-start text-muted-foreground" 
-                onClick={handleCopyToClipboard}
-              >
-                <Clipboard className="h-4 w-4 mr-2" /> Copy JSON
-              </Button>
+              <ServiceEditor
+                category={selectedCategory}
+                subcategory={selectedSubcategory}
+                job={selectedJob}
+                mode={editorMode}
+                onSave={handleSave}
+                onCancel={handleCancelEdit}
+                onDelete={handleDelete}
+              />
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </TabsContent>
 
-        <Card className="md:col-span-2">
-          <CardContent className="p-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-3 rounded-none border-b bg-card">
-                <TabsTrigger value="browse" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-esm-blue-500">
-                  Categories
-                </TabsTrigger>
-                <TabsTrigger value="edit" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-esm-blue-500">
-                  {selectedCategory?.id ? 'Edit' : 'New'} Category
-                </TabsTrigger>
-                <TabsTrigger value="analytics" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-esm-blue-500">
-                  Reports
-                </TabsTrigger>
-              </TabsList>
-              
-              <div className="p-6">
-                <TabsContent value="browse" className="m-0">
-                  {isLoading ? (
-                    <div className="text-center py-10">Loading service categories...</div>
-                  ) : (
-                    <ServiceCategoryList 
-                      categories={categories || []} 
-                      onSelectCategory={handleSelectCategory}
-                      onDeleteCategory={(id) => deleteCategory.mutate(id)}
-                      selectedCategory={selectedCategory}
-                    />
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="edit" className="m-0">
-                  <ServiceCategoryEditor 
-                    category={selectedCategory}
-                    onSave={handleSaveCategory}
-                    onCancel={() => {
-                      setSelectedCategory(null);
-                      setActiveTab('browse');
-                    }}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="import" className="m-0">
-                  <div className="space-y-6">
-                    <ServiceBulkImport 
-                      onImportComplete={() => {
-                        queryClient.invalidateQueries({ queryKey: ['serviceHierarchy'] });
-                        setActiveTab('browse');
-                      }}
-                    />
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="analytics" className="m-0">
-                  <Tabs defaultValue="overview">
-                    <TabsList className="mb-4">
-                      <TabsTrigger value="overview">Overview</TabsTrigger>
-                      <TabsTrigger value="pricing">Pricing</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="overview">
-                      <ServiceAnalytics categories={categories || []} />
-                    </TabsContent>
-                    <TabsContent value="pricing">
-                      <ServicesPriceReport categories={categories || []} />
-                    </TabsContent>
-                  </Tabs>
-                </TabsContent>
-              </div>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="analytics">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <ServiceAnalytics categories={categories} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="pricing">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <ServicesPriceReport categories={categories} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="import">
+          <ServiceBulkImport onImportComplete={loadCategories} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
-}
+};
+
+export default ServiceHierarchyManager;
