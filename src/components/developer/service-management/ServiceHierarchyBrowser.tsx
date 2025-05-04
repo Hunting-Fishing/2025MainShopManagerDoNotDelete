@@ -1,303 +1,143 @@
 
-import React, { useState } from 'react';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent,
-  CardDescription 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Check, ChevronRight, Edit, Plus, Search, Trash, ChevronDown } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import React from 'react';
 import { 
   ServiceMainCategory, 
   ServiceSubcategory, 
   ServiceJob 
-} from "@/types/serviceHierarchy";
-import { formatCurrency } from "@/lib/utils";
-import { formatTime } from "@/lib/services/serviceUtils";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@/types/serviceHierarchy';
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from '@/components/ui/accordion';
+import { formatCurrency } from '@/lib/utils';
+import { formatTime } from '@/lib/services/serviceUtils';
+import { Trash2, Edit, Clock, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ServiceHierarchyBrowserProps {
   categories: ServiceMainCategory[];
-  onSelectCategory: (category: ServiceMainCategory) => void;
-  onSelectSubcategory: (category: ServiceMainCategory, subcategory: ServiceSubcategory) => void;
-  onSelectJob: (category: ServiceMainCategory, subcategory: ServiceSubcategory, job: ServiceJob) => void;
-  onAddCategory: () => void;
-  onAddSubcategory: (categoryId: string) => void;
-  onAddJob: (categoryId: string, subcategoryId: string) => void;
+  selectedCategory: ServiceMainCategory | null;
+  selectedSubcategory: ServiceSubcategory | null;
+  selectedJob: ServiceJob | null;
+  onCategorySelect: (category: ServiceMainCategory) => void;
+  onSubcategorySelect: (subcategory: ServiceSubcategory, category: ServiceMainCategory) => void;
+  onJobSelect: (job: ServiceJob, subcategory: ServiceSubcategory, category: ServiceMainCategory) => void;
+  onCategoryDelete: (categoryId: string) => void;
 }
 
 export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
   categories,
-  onSelectCategory,
-  onSelectSubcategory,
-  onSelectJob,
-  onAddCategory,
-  onAddSubcategory,
-  onAddJob
+  selectedCategory,
+  selectedSubcategory,
+  selectedJob,
+  onCategorySelect,
+  onSubcategorySelect,
+  onJobSelect,
+  onCategoryDelete
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Record<string, boolean>>({});
-
-  // Toggle category expansion
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
-  };
-
-  // Toggle subcategory expansion
-  const toggleSubcategory = (subcategoryId: string) => {
-    setExpandedSubcategories(prev => ({
-      ...prev,
-      [subcategoryId]: !prev[subcategoryId]
-    }));
-  };
-
-  // Filter categories based on search query
-  const filteredCategories = categories.filter(category => {
-    // Check if the category name matches
-    if (category.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return true;
-    }
-    
-    // Check if any subcategory name matches
-    const hasMatchingSubcategory = category.subcategories.some(sub => 
-      sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      // Check if any job name matches
-      sub.jobs.some(job => 
-        job.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+  // If no categories are available, show empty state
+  if (categories.length === 0) {
+    return (
+      <div className="p-4 text-center border border-dashed border-gray-300 rounded-md bg-gray-50">
+        <p className="text-gray-500 mb-2">No service categories available</p>
+        <p className="text-sm text-gray-400">Create a new category to get started</p>
+      </div>
     );
-    
-    return hasMatchingSubcategory;
-  });
-
-  // Calculate totals for a category
-  const getCategoryStats = (category: ServiceMainCategory) => {
-    let totalJobs = 0;
-    let totalPrice = 0;
-    let totalTime = 0;
-
-    category.subcategories.forEach(sub => {
-      totalJobs += sub.jobs.length;
-      sub.jobs.forEach(job => {
-        totalPrice += job.price || 0;
-        totalTime += job.estimatedTime || 0;
-      });
-    });
-
-    return { totalJobs, totalPrice, totalTime };
-  };
+  }
 
   return (
-    <Card className="border shadow-sm">
-      <CardHeader className="bg-gradient-to-b from-blue-50 to-white pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-bold text-blue-700">Service Hierarchy</CardTitle>
-          <Button 
-            onClick={onAddCategory}
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 text-white"
+    <ScrollArea className="h-[600px] pr-4">
+      <Accordion type="multiple" className="w-full">
+        {categories.map(category => (
+          <AccordionItem 
+            value={category.id} 
+            key={category.id}
+            className={`border mb-2 rounded-md ${selectedCategory?.id === category.id ? 'bg-blue-50 border-blue-200' : ''}`}
           >
-            <Plus className="h-4 w-4 mr-1" /> Add Category
-          </Button>
-        </div>
-        <CardDescription>
-          Browse and manage all service categories, subcategories, and jobs
-        </CardDescription>
-        <div className="relative mt-2">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search services, subcategories, or categories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[600px]">
-          <Table>
-            <TableHeader className="bg-muted/50 sticky top-0">
-              <TableRow>
-                <TableHead className="w-[40%]">Name</TableHead>
-                <TableHead className="w-[15%]">Items</TableHead>
-                <TableHead className="w-[15%]">Est. Time</TableHead>
-                <TableHead className="w-[15%]">Price</TableHead>
-                <TableHead className="w-[15%] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCategories.map((category) => {
-                const isExpanded = expandedCategories[category.id] ?? false;
-                const { totalJobs, totalPrice, totalTime } = getCategoryStats(category);
-                
-                return (
-                  <React.Fragment key={category.id}>
-                    <TableRow className="bg-blue-50/50 hover:bg-blue-50">
-                      <TableCell className="font-medium">
-                        <div className="flex items-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1 h-6 w-6"
-                            onClick={() => toggleCategory(category.id)}
-                          >
-                            {isExpanded ? 
-                              <ChevronDown className="h-4 w-4" /> : 
-                              <ChevronRight className="h-4 w-4" />
-                            }
-                          </Button>
-                          <span 
-                            className="ml-1 font-bold text-blue-800 hover:text-blue-600 cursor-pointer"
-                            onClick={() => onSelectCategory(category)}
-                          >
-                            {category.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                          {category.subcategories.length} subcats
-                        </Badge>
-                        {totalJobs > 0 && (
-                          <Badge variant="outline" className="ml-1 bg-amber-100 text-amber-800">
-                            {totalJobs} jobs
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{formatTime(totalTime)}</TableCell>
-                      <TableCell>{formatCurrency(totalPrice)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onSelectCategory(category)}
-                          className="h-8 w-8 text-blue-700"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onAddSubcategory(category.id)}
-                          className="h-8 w-8 text-green-700"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Render subcategories if category is expanded */}
-                    {isExpanded && category.subcategories.map((subcategory) => {
-                      const isSubExpanded = expandedSubcategories[subcategory.id] ?? false;
-                      const totalSubTime = subcategory.jobs.reduce((total, job) => total + (job.estimatedTime || 0), 0);
-                      const totalSubPrice = subcategory.jobs.reduce((total, job) => total + (job.price || 0), 0);
-
-                      return (
-                        <React.Fragment key={subcategory.id}>
-                          <TableRow className="bg-gray-50 hover:bg-gray-100">
-                            <TableCell className="font-medium">
-                              <div className="flex items-center pl-6">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="p-1 h-6 w-6"
-                                  onClick={() => toggleSubcategory(subcategory.id)}
-                                >
-                                  {isSubExpanded ? 
-                                    <ChevronDown className="h-4 w-4" /> : 
-                                    <ChevronRight className="h-4 w-4" />
-                                  }
-                                </Button>
-                                <span 
-                                  className="ml-1 font-medium text-gray-800 hover:text-blue-600 cursor-pointer"
-                                  onClick={() => onSelectSubcategory(category, subcategory)}
-                                >
-                                  {subcategory.name}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-gray-100">
-                                {subcategory.jobs.length} jobs
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{formatTime(totalSubTime)}</TableCell>
-                            <TableCell>{formatCurrency(totalSubPrice)}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onSelectSubcategory(category, subcategory)}
-                                className="h-8 w-8 text-blue-700"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onAddJob(category.id, subcategory.id)}
-                                className="h-8 w-8 text-green-700"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-
-                          {/* Render jobs if subcategory is expanded */}
-                          {isSubExpanded && subcategory.jobs.map((job) => (
-                            <TableRow key={job.id} className="hover:bg-gray-50">
-                              <TableCell className="font-medium">
-                                <div className="flex items-center pl-14">
-                                  <span 
-                                    className="text-sm font-normal text-gray-600 hover:text-blue-600 cursor-pointer"
-                                    onClick={() => onSelectJob(category, subcategory, job)}
-                                  >
-                                    {job.name}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>-</TableCell>
-                              <TableCell>{formatTime(job.estimatedTime || 0)}</TableCell>
-                              <TableCell>{formatCurrency(job.price || 0)}</TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => onSelectJob(category, subcategory, job)}
-                                  className="h-8 w-8 text-blue-700"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </React.Fragment>
-                      );
-                    })}
-                  </React.Fragment>
-                );
-              })}
+            <div className="flex items-center justify-between pr-4">
+              <AccordionTrigger 
+                className={`hover:bg-gray-50 px-3 py-2 rounded-t-md flex-grow ${selectedCategory?.id === category.id ? 'text-blue-700 hover:bg-blue-100' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCategorySelect(category);
+                }}
+              >
+                <span className="font-medium">{category.name}</span>
+                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {category.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)} services
+                </span>
+              </AccordionTrigger>
               
-              {filteredCategories.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No services found matching your search criteria.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => onCategoryDelete(category.id)}
+              >
+                <Trash2 className="h-4 w-4 text-gray-500 hover:text-red-500" />
+              </Button>
+            </div>
+            
+            <AccordionContent>
+              <div className="pl-4 pr-2 pb-2">
+                {category.subcategories.length > 0 ? (
+                  category.subcategories.map(subcategory => (
+                    <div 
+                      key={subcategory.id}
+                      className={`border rounded-md mb-2 ${selectedSubcategory?.id === subcategory.id ? 'bg-indigo-50 border-indigo-200' : ''}`}
+                    >
+                      <div 
+                        className={`px-3 py-2 cursor-pointer hover:bg-gray-50 flex items-center justify-between ${selectedSubcategory?.id === subcategory.id ? 'text-indigo-700 hover:bg-indigo-100' : ''}`}
+                        onClick={() => onSubcategorySelect(subcategory, category)}
+                      >
+                        <div className="font-medium">{subcategory.name}</div>
+                        <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                          {subcategory.jobs.length} items
+                        </span>
+                      </div>
+                      
+                      {subcategory.jobs.length > 0 && (
+                        <div className="px-3 py-2 border-t">
+                          {subcategory.jobs.map(job => (
+                            <div 
+                              key={job.id}
+                              className={`px-2 py-1.5 my-1 rounded cursor-pointer hover:bg-gray-50 flex items-center justify-between ${selectedJob?.id === job.id ? 'bg-purple-50 text-purple-700' : ''}`}
+                              onClick={() => onJobSelect(job, subcategory, category)}
+                            >
+                              <span className="text-sm">{job.name}</span>
+                              <div className="flex items-center space-x-2">
+                                {job.estimatedTime && (
+                                  <span className="text-xs flex items-center text-gray-500" title="Estimated time">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {formatTime(job.estimatedTime)}
+                                  </span>
+                                )}
+                                {job.price && (
+                                  <span className="text-xs flex items-center text-gray-500" title="Price">
+                                    <DollarSign className="h-3 w-3 mr-1" />
+                                    {formatCurrency(job.price)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-2 text-sm text-gray-500">
+                    No subcategories available
+                  </div>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </ScrollArea>
   );
 };
