@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CustomerProvidedForm, CustomerFormComment } from '@/types/customerForms';
 
@@ -235,14 +234,14 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
       // Create a non-null reference we can use
       const profiles = comment.profiles;
       
-      // Use a type guard to ensure profiles is an object with the required properties
+      // Use a type guard to ensure profiles is an object
       // This helps TypeScript understand that profiles is not null when we access its properties
-      if (profiles && 
-          typeof profiles === 'object') {
+      if (typeof profiles === 'object' && profiles !== null) {
+        // Now TypeScript knows profiles is a non-null object
         
-        // Check if properties exist in the object using optional chaining
-        const firstName = profiles?.first_name;
-        const lastName = profiles?.last_name;
+        // Safely extract firstName and lastName using optional chaining
+        const firstName = profiles && 'first_name' in profiles ? profiles.first_name : undefined;
+        const lastName = profiles && 'last_name' in profiles ? profiles.last_name : undefined;
         
         // Only set the userName if both first_name and last_name exist and are non-empty
         if (firstName && lastName) {
@@ -262,4 +261,3 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
     };
   });
 }
-
