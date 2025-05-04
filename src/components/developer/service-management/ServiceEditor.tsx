@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tag } from 'lucide-react';
 
-interface CategoryColorStyle {
+export interface CategoryColorStyle {
   bg: string;
   text: string;
   border: string;
@@ -237,3 +236,5 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({
     </div>
   );
 };
+
+export default ServiceEditor;

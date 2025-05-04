@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ServiceHierarchyManager } from '@/components/developer/service-management/ServiceHierarchyManager';
+import ServiceHierarchyManager from '@/components/developer/service-management/ServiceHierarchyManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
