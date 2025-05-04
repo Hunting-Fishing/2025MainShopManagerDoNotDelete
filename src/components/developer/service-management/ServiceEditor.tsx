@@ -1,284 +1,184 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
-import { Label } from '@/components/ui/label';
-import { formatTime } from '@/lib/services/serviceUtils';
-import { Save, X, Clock, DollarSign } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface ServiceEditorProps {
   selectedCategory: ServiceMainCategory | null;
   selectedSubcategory: ServiceSubcategory | null;
   selectedJob: ServiceJob | null;
-  onSave: (
-    category: ServiceMainCategory | null,
-    subcategory: ServiceSubcategory | null,
-    job: ServiceJob | null
-  ) => void;
+  onSave: (data: any) => void;
   onCancel: () => void;
 }
 
-export const ServiceEditor: React.FC<ServiceEditorProps> = ({
+const categorySchema = z.object({
+  name: z.string().min(1, 'Category name is required'),
+  description: z.string().optional(),
+});
+
+const subcategorySchema = z.object({
+  name: z.string().min(1, 'Subcategory name is required'),
+  description: z.string().optional(),
+});
+
+const jobSchema = z.object({
+  name: z.string().min(1, 'Service name is required'),
+  description: z.string().optional(),
+  price: z.preprocess(
+    (val) => (val === '' ? undefined : Number(val)),
+    z.number().min(0, 'Price must be a positive number').optional()
+  ),
+  estimatedTime: z.preprocess(
+    (val) => (val === '' ? undefined : Number(val)),
+    z.number().min(0, 'Time must be a positive number').optional()
+  ),
+});
+
+const ServiceEditor: React.FC<ServiceEditorProps> = ({
   selectedCategory,
   selectedSubcategory,
   selectedJob,
   onSave,
-  onCancel
+  onCancel,
 }) => {
-  const { toast } = useToast();
-  const [editedCategory, setEditedCategory] = useState<ServiceMainCategory | null>(null);
-  const [editedSubcategory, setEditedSubcategory] = useState<ServiceSubcategory | null>(null);
-  const [editedJob, setEditedJob] = useState<ServiceJob | null>(null);
-  const [isEditing, setIsEditing] = useState<'category' | 'subcategory' | 'job' | null>(null);
-  
-  useEffect(() => {
-    // Deep clone the selected items to avoid direct mutation
-    setEditedCategory(selectedCategory ? JSON.parse(JSON.stringify(selectedCategory)) : null);
-    setEditedSubcategory(selectedSubcategory ? JSON.parse(JSON.stringify(selectedSubcategory)) : null);
-    setEditedJob(selectedJob ? JSON.parse(JSON.stringify(selectedJob)) : null);
-    
-    // Set what we're currently editing based on selection
-    if (selectedJob) {
-      setIsEditing('job');
-    } else if (selectedSubcategory) {
-      setIsEditing('subcategory');
-    } else if (selectedCategory) {
-      setIsEditing('category');
-    } else {
-      setIsEditing(null);
-    }
-  }, [selectedCategory, selectedSubcategory, selectedJob]);
+  let schema;
+  let defaultValues = {};
+  let title = '';
 
-  const handleSave = () => {
-    if (!isEditing) return;
-    
-    // Basic validation
-    if (isEditing === 'category' && editedCategory && !editedCategory.name.trim()) {
-      toast({ 
-        title: "Validation Error", 
-        description: "Category name cannot be empty", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    
-    if (isEditing === 'subcategory' && editedSubcategory && !editedSubcategory.name.trim()) {
-      toast({ 
-        title: "Validation Error", 
-        description: "Subcategory name cannot be empty", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    
-    if (isEditing === 'job' && editedJob && !editedJob.name.trim()) {
-      toast({ 
-        title: "Validation Error", 
-        description: "Service name cannot be empty", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    
-    onSave(editedCategory, editedSubcategory, editedJob);
-    toast({ 
-      title: "Success", 
-      description: `${isEditing.charAt(0).toUpperCase() + isEditing.slice(1)} saved successfully!`,
-    });
-  };
-
-  if (!isEditing) {
-    return (
-      <Card className="h-full flex items-center justify-center text-center p-6">
-        <CardContent>
-          <p className="text-gray-500">Select a category, subcategory, or service to edit.</p>
-        </CardContent>
-      </Card>
-    );
+  if (selectedJob) {
+    schema = jobSchema;
+    defaultValues = {
+      name: selectedJob.name,
+      description: selectedJob.description || '',
+      price: selectedJob.price || '',
+      estimatedTime: selectedJob.estimatedTime || '',
+    };
+    title = 'Edit Service';
+  } else if (selectedSubcategory) {
+    schema = subcategorySchema;
+    defaultValues = {
+      name: selectedSubcategory.name,
+      description: selectedSubcategory.description || '',
+    };
+    title = 'Edit Subcategory';
+  } else {
+    schema = categorySchema;
+    defaultValues = {
+      name: selectedCategory?.name || '',
+      description: selectedCategory?.description || '',
+    };
+    title = selectedCategory ? 'Edit Category' : 'Add Category';
   }
 
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues,
+  });
+
+  const handleSubmit = (data: any) => {
+    onSave(data);
+    form.reset();
+  };
+
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-medium">
-          {isEditing === 'category' && 'Edit Category'}
-          {isEditing === 'subcategory' && 'Edit Subcategory'}
-          {isEditing === 'job' && 'Edit Service'}
-        </CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {isEditing === 'category' && editedCategory && (
-          <>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
-              name="categoryName"
-              render={() => (
+              control={form.control}
+              name="name"
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category Name</FormLabel>
-                  <Input
-                    value={editedCategory.name}
-                    onChange={(e) => setEditedCategory({...editedCategory, name: e.target.value})}
-                    className="w-full"
-                    placeholder="Category name"
-                  />
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter name" {...field} />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              name="categoryDescription"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea
-                    value={editedCategory.description || ''}
-                    onChange={(e) => setEditedCategory({...editedCategory, description: e.target.value})}
-                    placeholder="Category description"
-                    rows={4}
-                  />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="position"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Position</FormLabel>
-                  <Input
-                    type="number"
-                    value={editedCategory.position || 0}
-                    onChange={(e) => setEditedCategory({...editedCategory, position: parseInt(e.target.value) || 0})}
-                    className="w-full"
-                  />
-                </FormItem>
-              )}
-            />
-          </>
-        )}
 
-        {isEditing === 'subcategory' && editedSubcategory && (
-          <>
             <FormField
-              name="subcategoryName"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Subcategory Name</FormLabel>
-                  <Input
-                    value={editedSubcategory.name}
-                    onChange={(e) => setEditedSubcategory({...editedSubcategory, name: e.target.value})}
-                    className="w-full"
-                    placeholder="Subcategory name"
-                  />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="subcategoryDescription"
-              render={() => (
+              control={form.control}
+              name="description"
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Description</FormLabel>
-                  <Textarea
-                    value={editedSubcategory.description || ''}
-                    onChange={(e) => setEditedSubcategory({...editedSubcategory, description: e.target.value})}
-                    placeholder="Subcategory description"
-                    rows={4}
-                  />
+                  <FormControl>
+                    <Textarea placeholder="Enter description (optional)" {...field} />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-          </>
-        )}
 
-        {isEditing === 'job' && editedJob && (
-          <>
-            <FormField
-              name="serviceName"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Service Name</FormLabel>
-                  <Input
-                    value={editedJob.name}
-                    onChange={(e) => setEditedJob({...editedJob, name: e.target.value})}
-                    className="w-full"
-                    placeholder="Service name"
-                  />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="serviceDescription"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea
-                    value={editedJob.description || ''}
-                    onChange={(e) => setEditedJob({...editedJob, description: e.target.value})}
-                    placeholder="Service description"
-                    rows={3}
-                  />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                name="estimatedTime"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Estimated Time (minutes)</FormLabel>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        value={editedJob.estimatedTime || 0}
-                        onChange={(e) => setEditedJob({...editedJob, estimatedTime: parseInt(e.target.value) || 0})}
-                        className="w-full pl-9"
-                      />
-                      <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {formatTime(editedJob.estimatedTime || 0)}
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                name="price"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={editedJob.price || 0}
-                        onChange={(e) => setEditedJob({...editedJob, price: parseFloat(e.target.value) || 0})}
-                        className="w-full pl-9"
-                      />
-                      <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                    </div>
-                  </FormItem>
-                )}
-              />
+            {selectedJob && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          step="0.01" 
+                          placeholder="Enter price" 
+                          {...field} 
+                          onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="estimatedTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estimated Time (minutes)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          placeholder="Enter time in minutes" 
+                          {...field} 
+                          onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
             </div>
-          </>
-        )}
+          </form>
+        </Form>
       </CardContent>
-      
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onCancel} className="flex items-center">
-          <X className="mr-1.5 h-4 w-4" />
-          Cancel
-        </Button>
-        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 flex items-center">
-          <Save className="mr-1.5 h-4 w-4" />
-          Save {isEditing}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
+
+export default ServiceEditor;

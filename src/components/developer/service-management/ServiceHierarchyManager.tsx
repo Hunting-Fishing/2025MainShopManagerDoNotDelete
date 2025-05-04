@@ -1,110 +1,93 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { v4 as uuidv4 } from 'uuid';
-import { toast } from "@/hooks/use-toast";
-import { 
-  ServiceMainCategory, 
-  ServiceSubcategory, 
-  ServiceJob 
-} from '@/types/serviceHierarchy';
-import { 
-  fetchServiceCategories, 
-  saveServiceCategory, 
-  deleteServiceCategory, 
-  bulkImportServiceCategories 
-} from '@/lib/services/serviceApi';
-import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
-import { ServiceEditor } from './ServiceEditor';
-import ServiceAnalytics from './ServiceAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { AlertCircle, Download, LayoutGrid, LineChart, Plus, Upload } from 'lucide-react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { createEmptyCategory, createEmptySubcategory, createEmptyJob, sortCategoriesByPosition } from '@/lib/services/serviceUtils';
-import ServiceBulkImport from './ServiceBulkImport';
-import { parseExcelData, exportToExcel } from '@/lib/services/excelParser';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Upload, Download } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchServiceCategories, saveServiceCategory, deleteServiceCategory, bulkImportServiceCategories } from '@/lib/services/serviceApi';
+import { createEmptyCategory, deepClone, sortCategoriesByPosition } from '@/lib/services/serviceUtils';
+import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
+import ServiceEditor from './ServiceEditor';
+import ServiceAnalytics from './ServiceAnalytics';
 import ServicesPriceReport from './ServicesPriceReport';
+import ServiceBulkImport from './ServiceBulkImport';
+import { writeExcelFile } from '@/lib/services/excelParser';
+import { v4 as uuidv4 } from 'uuid';
+import { handleApiError } from '@/utils/errorHandling';
 
-export const ServiceHierarchyManager = () => {
+export default function ServiceHierarchyManager() {
   const queryClient = useQueryClient();
   
-  // Selected items state
+  // States for selection and editing
   const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
   const [selectedJob, setSelectedJob] = useState<ServiceJob | null>(null);
-  const [activeTab, setActiveTab] = useState("services");
-  const [importError, setImportError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   
-  // Queries and Mutations
-  const { 
-    data: categories = [],
-    isLoading,
-    error
-  } = useQuery({
+  // Query and mutations
+  const { data: categories = [], isLoading, error } = useQuery({
     queryKey: ['serviceCategories'],
-    queryFn: fetchServiceCategories
+    queryFn: fetchServiceCategories,
   });
 
-  // Sort categories by position
   const sortedCategories = sortCategoriesByPosition([...categories]);
   
-  // Save mutations
-  const saveServiceMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: saveServiceCategory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['serviceCategories'] });
-    },
-    onError: (error) => {
-      toast({ 
-        title: "Error", 
-        description: `Failed to save: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive" 
+      toast({
+        title: "Success",
+        description: "Service hierarchy updated successfully",
       });
-    }
+      clearSelection();
+    },
+    onError: (error: any) => {
+      handleApiError(error, "Failed to save service data");
+    },
   });
 
-  // Delete mutations
-  const deleteServiceMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: deleteServiceCategory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['serviceCategories'] });
-      // Clear selections if the deleted item was selected
-      setSelectedCategory(null);
-      setSelectedSubcategory(null);
-      setSelectedJob(null);
-    },
-    onError: (error) => {
-      toast({ 
-        title: "Error", 
-        description: `Failed to delete: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive" 
+      toast({
+        title: "Success",
+        description: "Item deleted successfully",
       });
+      clearSelection();
+    },
+    onError: (error: any) => {
+      handleApiError(error, "Failed to delete item");
+    },
+  });
+
+  const bulkImportMutation = useMutation({
+    mutationFn: (data: ServiceMainCategory[]) => bulkImportServiceCategories(
+      data,
+      (progress: number) => {
+        console.log(`Import progress: ${Math.round(progress * 100)}%`);
+      }
+    ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] });
+      toast({
+        title: "Success",
+        description: "Services imported successfully",
+      });
+      setIsImporting(false);
+    },
+    onError: (error: any) => {
+      handleApiError(error, "Failed to import services");
+      setIsImporting(false);
     }
   });
 
-  // Import mutation
-  const importServicesMutation = useMutation({
-    mutationFn: (categories: ServiceMainCategory[]) => bulkImportServiceCategories(categories),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] });
-      toast({ 
-        title: "Import Complete", 
-        description: "Services have been successfully imported.",
-      });
-      setImportError(null);
-    },
-    onError: (error) => {
-      toast({ 
-        title: "Import Failed", 
-        description: `Error importing services: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive" 
-      });
-    }
-  });
-  
-  // Selection Handlers
+  // Selection handlers
   const handleCategorySelect = (category: ServiceMainCategory) => {
     setSelectedCategory(category);
     setSelectedSubcategory(null);
@@ -123,325 +106,394 @@ export const ServiceHierarchyManager = () => {
     setSelectedJob(job);
   };
 
-  // Create new handlers
-  const handleAddCategory = () => {
-    // Create a new category with position at the end
-    const newPosition = sortedCategories.length > 0 
-      ? Math.max(...sortedCategories.map(c => c.position || 0)) + 1 
-      : 0;
-    
-    const newCategory = createEmptyCategory(newPosition);
-    setSelectedCategory(newCategory);
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedCategory(null);
     setSelectedSubcategory(null);
     setSelectedJob(null);
-    
-    // No server saving is done here - will be saved when the user edits and saves
+    setIsEditing(false);
+  };
+
+  // Delete handlers
+  const handleCategoryDelete = (categoryId: string) => {
+    // First check if this was the selected category
+    if (selectedCategory?.id === categoryId) {
+      clearSelection();
+    }
+    deleteMutation.mutate(categoryId);
+  };
+
+  // Handlers for adding new items
+  const handleAddCategory = () => {
+    clearSelection();
+    // Create a new category with the next position
+    const nextPosition = categories.length > 0 
+      ? Math.max(...categories.map(c => c.position || 0)) + 1 
+      : 0;
+    setIsEditing(true);
   };
 
   const handleAddSubcategory = () => {
     if (!selectedCategory) return;
-    
-    const newSubcategory = createEmptySubcategory();
-    
-    // Update the local state first
-    const updatedCategory = {
-      ...selectedCategory,
-      subcategories: [...selectedCategory.subcategories, newSubcategory]
-    };
-    
-    // Save to server
-    saveServiceMutation.mutate(updatedCategory);
-    
-    // Update UI state
-    setSelectedCategory(updatedCategory);
-    setSelectedSubcategory(newSubcategory);
+    setSelectedSubcategory(null);
     setSelectedJob(null);
+    setIsEditing(true);
   };
 
   const handleAddJob = () => {
-    if (!selectedCategory || !selectedSubcategory) return;
-    
-    const newJob = createEmptyJob();
-    
-    // Find the subcategory and update it with the new job
-    const updatedSubcategories = selectedCategory.subcategories.map(sub => {
-      if (sub.id === selectedSubcategory.id) {
-        return {
-          ...sub,
-          jobs: [...sub.jobs, newJob]
-        };
-      }
-      return sub;
-    });
-    
-    // Update the category with the modified subcategories
-    const updatedCategory = {
-      ...selectedCategory,
-      subcategories: updatedSubcategories
-    };
-    
-    // Save to server
-    saveServiceMutation.mutate(updatedCategory);
-    
-    // Update the local state
-    const updatedSubcategory = updatedSubcategories.find(sub => sub.id === selectedSubcategory.id);
-    
-    setSelectedCategory(updatedCategory);
-    
-    if (updatedSubcategory) {
-      setSelectedSubcategory(updatedSubcategory);
-      setSelectedJob(newJob);
-    }
+    if (!selectedSubcategory) return;
+    setSelectedJob(null);
+    setIsEditing(true);
   };
 
-  // Delete handlers
-  const handleDeleteCategory = (categoryId: string) => {
-    if (confirm("Are you sure you want to delete this category and all its subcategories and services?")) {
-      deleteServiceMutation.mutate(categoryId);
-    }
+  // Edit handlers
+  const handleEditItem = () => {
+    setIsEditing(true);
   };
 
-  // Save handler for edits
-  const handleSave = (
-    editedCategory: ServiceMainCategory | null,
-    editedSubcategory: ServiceSubcategory | null,
-    editedJob: ServiceJob | null
-  ) => {
-    if (!editedCategory) return;
-    
-    // Create a copy of the edited category
-    let updatedCategory = { ...editedCategory };
-    
-    // If we're editing a subcategory or job, we need to find and update them
-    if (editedSubcategory) {
-      updatedCategory.subcategories = updatedCategory.subcategories.map(sub => 
-        sub.id === editedSubcategory.id ? editedSubcategory : sub
-      );
+  // Save handler
+  const handleSave = (formData: any) => {
+    if (selectedJob) {
+      // Update job
+      const updatedCategory = deepClone(selectedCategory);
+      if (!updatedCategory) return;
       
-      if (editedJob) {
-        const updatedSubcategory = updatedCategory.subcategories.find(
-          sub => sub.id === editedSubcategory.id
-        );
-        
-        if (updatedSubcategory) {
-          updatedSubcategory.jobs = updatedSubcategory.jobs.map(job => 
-            job.id === editedJob.id ? editedJob : job
+      const subcategoryIndex = updatedCategory.subcategories.findIndex(
+        sub => sub.id === selectedSubcategory?.id
+      );
+      if (subcategoryIndex === -1) return;
+      
+      const jobIndex = updatedCategory.subcategories[subcategoryIndex].jobs.findIndex(
+        job => job.id === selectedJob.id
+      );
+      if (jobIndex === -1) return;
+
+      updatedCategory.subcategories[subcategoryIndex].jobs[jobIndex] = {
+        ...selectedJob,
+        ...formData,
+      };
+      
+      createMutation.mutate(updatedCategory);
+    } else if (selectedSubcategory) {
+      // Update subcategory
+      const updatedCategory = deepClone(selectedCategory);
+      if (!updatedCategory) return;
+      
+      const subcategoryIndex = updatedCategory.subcategories.findIndex(
+        sub => sub.id === selectedSubcategory.id
+      );
+      if (subcategoryIndex === -1) return;
+      
+      updatedCategory.subcategories[subcategoryIndex] = {
+        ...selectedSubcategory,
+        ...formData,
+      };
+      
+      createMutation.mutate(updatedCategory);
+    } else if (selectedCategory) {
+      // Update category
+      const updatedCategory = {
+        ...selectedCategory,
+        ...formData,
+      };
+      
+      createMutation.mutate(updatedCategory);
+    } else {
+      // Add new category
+      const nextPosition = categories.length > 0 
+        ? Math.max(...categories.map(c => c.position || 0)) + 1 
+        : 0;
+      
+      const newCategory: ServiceMainCategory = {
+        id: uuidv4(),
+        name: formData.name,
+        description: formData.description,
+        position: nextPosition,
+        subcategories: [],
+      };
+      
+      createMutation.mutate(newCategory);
+    }
+    
+    setIsEditing(false);
+  };
+
+  // File upload handler
+  const handleFileUpload = async (file: File) => {
+    try {
+      setIsImporting(true);
+      const data = await readFileAsJson(file);
+      if (Array.isArray(data) && data.length > 0) {
+        bulkImportMutation.mutate(data);
+      } else {
+        toast({
+          title: "Error",
+          description: "Invalid file format or empty data",
+          variant: "destructive",
+        });
+        setIsImporting(false);
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process the uploaded file",
+        variant: "destructive",
+      });
+      setIsImporting(false);
+    }
+  };
+
+  const readFileAsJson = async (file: File): Promise<ServiceMainCategory[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          // Parse Excel file using the imported function
+          const result = await import('@/lib/services/excelParser').then(
+            module => module.parseExcelFile(file)
           );
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = (e) => {
+        reject(new Error("Failed to read file"));
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  // Handle export
+  const handleExportData = async () => {
+    try {
+      await writeExcelFile(categories);
+      toast({
+        title: "Success",
+        description: "Services exported successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export services",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Reset state when loading changes
+  useEffect(() => {
+    if (!isLoading) {
+      // Reset selection if the selected items no longer exist
+      if (selectedCategory) {
+        const categoryExists = categories.some(c => c.id === selectedCategory.id);
+        if (!categoryExists) {
+          clearSelection();
         }
       }
     }
-    
-    // Save to server
-    saveServiceMutation.mutate(updatedCategory);
-    
-    // Update local state
-    setSelectedCategory(updatedCategory);
-    setSelectedSubcategory(editedSubcategory);
-    setSelectedJob(editedJob);
-  };
+  }, [isLoading, categories]);
 
-  // Cancel edit handler
-  const handleCancelEdit = () => {
-    // If there's a new category that hasn't been saved, remove it
-    if (selectedCategory && !sortedCategories.find(c => c.id === selectedCategory.id)) {
-      setSelectedCategory(null);
-    }
-    
-    // Reset selection to refresh from server data
-    const categoryFromServer = selectedCategory 
-      ? sortedCategories.find(c => c.id === selectedCategory.id) 
-      : null;
-    
-    let subcategoryFromServer = null;
-    let jobFromServer = null;
-    
-    if (categoryFromServer && selectedSubcategory) {
-      subcategoryFromServer = categoryFromServer.subcategories.find(
-        s => s.id === selectedSubcategory.id
-      );
-      
-      if (subcategoryFromServer && selectedJob) {
-        jobFromServer = subcategoryFromServer.jobs.find(j => j.id === selectedJob.id);
-      }
-    }
-    
-    setSelectedCategory(categoryFromServer);
-    setSelectedSubcategory(subcategoryFromServer);
-    setSelectedJob(jobFromServer);
-  };
-
-  // Import/Export handlers
-  const handleFileUpload = async (file: File) => {
-    try {
-      setImportError(null);
-      const parsedCategories = await parseExcelData(file);
-      
-      if (parsedCategories.length === 0) {
-        setImportError("No valid service data found in file.");
-        return;
-      }
-      
-      importServicesMutation.mutate(parsedCategories);
-    } catch (error) {
-      console.error("Error parsing Excel file:", error);
-      setImportError(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  const handleExportData = () => {
-    exportToExcel(sortedCategories, 'services-export');
-    toast({
-      title: "Export Complete",
-      description: "Services have been exported to Excel."
-    });
-  };
-
-  // Check if there are no categories to show the empty state
-  const isEmptyState = sortedCategories.length === 0 && !isLoading;
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-red-500">Error Loading Service Data</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>There was an error loading the service hierarchy. Please try again later.</p>
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['serviceCategories'] })}
+            className="mt-4"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="flex flex-col space-y-4 px-4 py-2">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Service Management</h1>
-        
+        <h1 className="text-3xl font-bold">Service Management</h1>
         <div className="flex space-x-2">
-          <Button 
-            variant="outline"
-            className="flex items-center"
-            onClick={handleExportData}
-          >
-            <Download className="mr-1.5 h-4 w-4" />
-            Export Services
+          <Button onClick={handleExportData} variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" /> Export
           </Button>
-          
-          <Button 
-            onClick={handleAddCategory}
-            className="bg-green-600 hover:bg-green-700 flex items-center"
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            Add Category
-          </Button>
+          <ServiceBulkImport onFileUpload={handleFileUpload} isLoading={isImporting} />
         </div>
       </div>
-      
-      <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="services" className="flex items-center">
-            <LayoutGrid className="mr-1.5 h-4 w-4" />
-            Services
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center">
-            <LineChart className="mr-1.5 h-4 w-4" />
-            Analytics
-          </TabsTrigger>
+
+      <Tabs defaultValue="hierarchy" className="w-full">
+        <TabsList>
+          <TabsTrigger value="hierarchy">Service Hierarchy</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing Report</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="services" className="space-y-4">
-          {importError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{importError}</AlertDescription>
-            </Alert>
-          )}
-          
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <p>Loading services...</p>
+
+        <TabsContent value="hierarchy" className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Left Panel - Service Hierarchy Browser */}
+            <div className="md:col-span-1">
+              <Card className="h-full">
+                <CardHeader className="flex flex-row items-center justify-between py-4">
+                  <CardTitle>Services</CardTitle>
+                  <Button onClick={handleAddCategory} size="sm">
+                    <Plus className="h-4 w-4 mr-1" /> Add Category
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <ServiceHierarchyBrowser 
+                    categories={sortedCategories}
+                    selectedCategory={selectedCategory}
+                    selectedSubcategory={selectedSubcategory}
+                    selectedJob={selectedJob}
+                    onCategorySelect={handleCategorySelect}
+                    onSubcategorySelect={handleSubcategorySelect}
+                    onJobSelect={handleJobSelect}
+                    onCategoryDelete={handleCategoryDelete}
+                  />
+                </CardContent>
+              </Card>
             </div>
-          ) : error ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Error loading services: {error instanceof Error ? error.message : 'Unknown error'}
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1">
-                <Card className="h-full">
-                  <CardHeader className="flex flex-row items-center justify-between px-4 py-3 border-b">
-                    <CardTitle className="text-lg">Service Hierarchy</CardTitle>
-                    <div className="flex space-x-2">
-                      {selectedCategory && (
-                        <Button 
-                          size="sm"
-                          onClick={handleAddSubcategory}
-                          className="text-xs h-8 px-2 bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Plus className="mr-1 h-3.5 w-3.5" />
-                          Add Subcategory
-                        </Button>
-                      )}
-                      
-                      {selectedSubcategory && (
-                        <Button 
-                          size="sm"
-                          onClick={handleAddJob}
-                          className="text-xs h-8 px-2 bg-purple-600 hover:bg-purple-700"
-                        >
-                          <Plus className="mr-1 h-3.5 w-3.5" />
-                          Add Service
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="p-0">
-                    {isEmptyState ? (
-                      <div className="p-4 text-center">
-                        <p className="text-gray-500 mb-4">No services found. Get started by adding categories or importing services.</p>
-                        <ServiceBulkImport 
-                          onFileUpload={handleFileUpload}
-                          isLoading={importServicesMutation.isPending}
-                        />
-                      </div>
-                    ) : (
-                      <div className="p-4">
-                        <ServiceBulkImport 
-                          onFileUpload={handleFileUpload}
-                          isLoading={importServicesMutation.isPending}
-                        />
-                        
-                        <div className="mt-4">
-                          <ServiceHierarchyBrowser
-                            categories={sortedCategories}
-                            selectedCategory={selectedCategory}
-                            selectedSubcategory={selectedSubcategory}
-                            selectedJob={selectedJob}
-                            onCategorySelect={handleCategorySelect}
-                            onSubcategorySelect={handleSubcategorySelect}
-                            onJobSelect={handleJobSelect}
-                            onCategoryDelete={handleDeleteCategory}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="md:col-span-2">
+
+            {/* Right Panel - Editor or Details */}
+            <div className="md:col-span-2">
+              {isEditing ? (
                 <ServiceEditor
                   selectedCategory={selectedCategory}
                   selectedSubcategory={selectedSubcategory}
                   selectedJob={selectedJob}
                   onSave={handleSave}
-                  onCancel={handleCancelEdit}
+                  onCancel={() => setIsEditing(false)}
                 />
-              </div>
+              ) : (
+                <Card className="h-full">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle>
+                        {selectedJob 
+                          ? 'Service Details' 
+                          : selectedSubcategory 
+                            ? 'Subcategory Details' 
+                            : selectedCategory 
+                              ? 'Category Details' 
+                              : 'Service Details'
+                        }
+                      </CardTitle>
+                      <div className="flex space-x-2">
+                        {selectedCategory && !selectedSubcategory && (
+                          <Button size="sm" onClick={handleAddSubcategory}>
+                            <Plus className="h-4 w-4 mr-1" /> Add Subcategory
+                          </Button>
+                        )}
+                        {selectedSubcategory && !selectedJob && (
+                          <Button size="sm" onClick={handleAddJob}>
+                            <Plus className="h-4 w-4 mr-1" /> Add Service
+                          </Button>
+                        )}
+                        {(selectedCategory || selectedSubcategory || selectedJob) && (
+                          <Button size="sm" onClick={handleEditItem}>
+                            <Edit className="h-4 w-4 mr-1" /> Edit
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedJob ? (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold">{selectedJob.name}</h3>
+                          <p className="text-gray-500 text-sm">
+                            {selectedCategory?.name} &gt; {selectedSubcategory?.name}
+                          </p>
+                        </div>
+                        {selectedJob.description && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Description</h4>
+                            <p>{selectedJob.description}</p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Price</h4>
+                            <p className="text-lg font-medium">
+                              {selectedJob.price ? `$${selectedJob.price.toFixed(2)}` : 'Not set'}
+                            </p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Estimated Time</h4>
+                            <p className="text-lg font-medium">
+                              {selectedJob.estimatedTime ? `${selectedJob.estimatedTime} minutes` : 'Not set'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : selectedSubcategory ? (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold">{selectedSubcategory.name}</h3>
+                          <p className="text-gray-500 text-sm">{selectedCategory?.name}</p>
+                        </div>
+                        {selectedSubcategory.description && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Description</h4>
+                            <p>{selectedSubcategory.description}</p>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-500">Services</h4>
+                          <p className="text-lg font-medium">{selectedSubcategory.jobs.length}</p>
+                        </div>
+                      </div>
+                    ) : selectedCategory ? (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold">{selectedCategory.name}</h3>
+                        </div>
+                        {selectedCategory.description && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Description</h4>
+                            <p>{selectedCategory.description}</p>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-500">Subcategories</h4>
+                          <p className="text-lg font-medium">{selectedCategory.subcategories.length}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-500">Total Services</h4>
+                          <p className="text-lg font-medium">
+                            {selectedCategory.subcategories.reduce((total, sub) => total + sub.jobs.length, 0)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex h-64 items-center justify-center text-gray-500">
+                        <p>Select a category, subcategory, or service to view details</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="analytics">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ServiceAnalytics categories={sortedCategories} />
-            <ServicesPriceReport categories={sortedCategories} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="pt-4">
+          <ServiceAnalytics categories={sortedCategories} />
+        </TabsContent>
+
+        <TabsContent value="pricing" className="pt-4">
+          <ServicesPriceReport categories={sortedCategories} />
         </TabsContent>
       </Tabs>
     </div>
   );
-};
+}
 
-export default ServiceHierarchyManager;
+// Missing component import
+import { Edit } from 'lucide-react';
