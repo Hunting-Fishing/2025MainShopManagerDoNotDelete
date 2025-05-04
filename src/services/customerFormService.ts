@@ -232,10 +232,13 @@ export async function getFormComments(formId: string): Promise<CustomerFormComme
     
     if (comment.profiles) {
       const profiles = comment.profiles;
-      if (typeof profiles === 'object' && 
-          profiles !== null &&
+      // Additional null check after assignment to satisfy TypeScript
+      if (profiles && 
+          typeof profiles === 'object' && 
           'first_name' in profiles && 
-          'last_name' in profiles) {
+          'last_name' in profiles &&
+          profiles.first_name && 
+          profiles.last_name) {
         userName = `${profiles.first_name} ${profiles.last_name}`;
       }
     }
