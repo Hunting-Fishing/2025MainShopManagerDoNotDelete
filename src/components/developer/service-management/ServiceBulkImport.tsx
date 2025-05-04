@@ -81,7 +81,7 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
               className="hidden"
             />
           </div>
-          <Button type="button" onClick={handleUploadClick} disabled={isProcessing}>
+          <Button type="button" onClick={handleUploadClick} disabled={isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
             <Upload className="h-4 w-4 mr-2" />
             Browse
           </Button>
@@ -92,11 +92,13 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
             <div className="text-sm text-gray-500">
               Importing services... {Math.round(progress)}%
             </div>
-            <Progress value={progress} />
+            <Progress value={progress} className="h-2 bg-indigo-100">
+              <div className="h-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
+            </Progress>
           </div>
         )}
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800">
           <p className="font-medium">Important:</p>
           <ul className="list-disc list-inside space-y-1 mt-1">
             <li>File should be in Excel format (.xlsx or .xls)</li>
@@ -111,7 +113,7 @@ const ServiceBulkImport: React.FC<ServiceBulkImportProps> = ({ onCancel, onCompl
         <AlertDialogCancel onClick={onCancel} disabled={isProcessing}>
           Cancel
         </AlertDialogCancel>
-        <Button onClick={handleImport} disabled={!file || isProcessing}>
+        <Button onClick={handleImport} disabled={!file || isProcessing} className="bg-indigo-600 hover:bg-indigo-700">
           Import Services
         </Button>
       </AlertDialogFooter>

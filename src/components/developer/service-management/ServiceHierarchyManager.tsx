@@ -1,17 +1,13 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Grid, Container } from "semantic-ui-react";
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { 
-  AlertDialog, 
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  AlertDialog,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
   AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Download, Upload, Plus, PencilIcon, Trash2Icon } from 'lucide-react';
 import { ServiceHierarchyBrowser } from './ServiceHierarchyBrowser';
@@ -21,482 +17,430 @@ import ServicesPriceReport from './ServicesPriceReport';
 import ServiceBulkImport from './ServiceBulkImport';
 import { exportToExcel } from '@/lib/services/excelParser';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  ServiceMainCategory, 
-  ServiceSubcategory, 
-  ServiceJob 
-} from '@/types/serviceHierarchy';
+import { toast } from 'sonner';
 import { fetchServiceCategories, saveServiceCategory, deleteServiceCategory } from '@/lib/services/serviceApi';
+import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 
-// Main component for managing the service hierarchy
-const ServiceHierarchyManager: React.FC = () => {
-  // State for service categories and selected items
-  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Selected items state
-  const [selectedCategory, setSelectedCategory] = useState<ServiceMainCategory | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<ServiceSubcategory | null>(null);
-  const [selectedJob, setSelectedJob] = useState<ServiceJob | null>(null);
-  
-  // UI state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
-  const [showBulkImport, setShowBulkImport] = useState<boolean>(false);
-  const [importProgress, setImportProgress] = useState<number>(0);
+export const ServiceHierarchyManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('browse');
+  const [categories, setCategories] = useState<ServiceMainCategory[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState<boolean>(false);
 
-  // Load categories on component mount
+  // Get selected category
+  const selectedCategory = selectedCategoryId 
+    ? categories.find(cat => cat.id === selectedCategoryId) || null
+    : null;
+    
+  // Get selected subcategory
+  const selectedSubcategory = selectedCategory && selectedSubcategoryId
+    ? selectedCategory.subcategories.find(sub => sub.id === selectedSubcategoryId) || null
+    : null;
+    
+  // Get selected job
+  const selectedJob = selectedSubcategory && selectedJobId
+    ? selectedSubcategory.jobs.find(job => job.id === selectedJobId) || null
+    : null;
+
+  // Load service categories from API
   useEffect(() => {
+    const loadCategories = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchServiceCategories();
+        setCategories(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading service categories:', err);
+        setError('Failed to load services. Please try again later.');
+        toast.error('Failed to load services');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadCategories();
   }, []);
 
-  // Function to load categories from API
-  const loadCategories = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await fetchServiceCategories();
-      setCategories(data);
-    } catch (err) {
-      console.error("Failed to load service categories:", err);
-      setError("Failed to load service categories. Please try again later.");
-      toast.error("Failed to load service categories");
-    } finally {
-      setIsLoading(false);
+  // Handle item selection
+  const handleSelectItem = (type: 'category' | 'subcategory' | 'job', id: string | null) => {
+    if (type === 'category') {
+      setSelectedCategoryId(id);
+      setSelectedSubcategoryId(null);
+      setSelectedJobId(null);
+    } else if (type === 'subcategory') {
+      setSelectedSubcategoryId(id);
+      setSelectedJobId(null);
+    } else if (type === 'job') {
+      setSelectedJobId(id);
     }
   };
-  
-  // Handler for category selection
-  const handleCategorySelect = useCallback((category: ServiceMainCategory) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(null);
-    setSelectedJob(null);
-  }, []);
-  
-  // Handler for subcategory selection
-  const handleSubcategorySelect = useCallback((subcategory: ServiceSubcategory, category: ServiceMainCategory) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(subcategory);
-    setSelectedJob(null);
-  }, []);
-  
-  // Handler for job selection
-  const handleJobSelect = useCallback((job: ServiceJob, subcategory: ServiceSubcategory, category: ServiceMainCategory) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(subcategory);
-    setSelectedJob(job);
-  }, []);
-  
-  // Handler for adding a new category
-  const handleAddCategory = useCallback(() => {
-    // Create a new category with a unique ID
+
+  // Create a new category
+  const handleCreateCategory = async () => {
     const newCategory: ServiceMainCategory = {
       id: uuidv4(),
       name: 'New Category',
       description: '',
       position: categories.length,
-      subcategories: [{
-        id: uuidv4(),
-        name: 'New Subcategory',
-        description: '',
-        jobs: [{
-          id: uuidv4(),
-          name: 'New Service',
-          description: '',
-          estimatedTime: 30,
-          price: 0
-        }]
-      }]
+      subcategories: []
     };
-    
-    // Add the new category to the state
-    setCategories([...categories, newCategory]);
-    
-    // Select the new category
-    setSelectedCategory(newCategory);
-    setSelectedSubcategory(null);
-    setSelectedJob(null);
 
-    // Save to database
-    saveCategory(newCategory);
-    
-    // Show toast notification
-    toast.success('New category added');
-  }, [categories]);
-  
-  // Handler for adding a new subcategory
-  const handleAddSubcategory = useCallback(() => {
+    try {
+      const savedCategory = await saveServiceCategory(newCategory);
+      setCategories([...categories, savedCategory]);
+      setSelectedCategoryId(savedCategory.id);
+      setSelectedSubcategoryId(null);
+      setSelectedJobId(null);
+      setActiveTab('edit');
+      toast.success('Category created');
+    } catch (err) {
+      console.error('Error creating category:', err);
+      toast.error('Failed to create category');
+    }
+  };
+
+  // Create a new subcategory
+  const handleCreateSubcategory = async () => {
     if (!selectedCategory) return;
-    
-    // Create a new subcategory with a unique ID
+
     const newSubcategory: ServiceSubcategory = {
       id: uuidv4(),
       name: 'New Subcategory',
       description: '',
-      jobs: [{
-        id: uuidv4(),
-        name: 'New Service',
-        description: '',
-        estimatedTime: 30,
-        price: 0
-      }]
+      jobs: []
     };
-    
-    // Create a new version of the selected category with the new subcategory
+
     const updatedCategory = {
       ...selectedCategory,
       subcategories: [...selectedCategory.subcategories, newSubcategory]
     };
-    
-    // Update the categories state
-    const updatedCategories = categories.map(cat => 
-      cat.id === selectedCategory.id ? updatedCategory : cat
-    );
-    
-    setCategories(updatedCategories);
-    
-    // Select the new subcategory
-    setSelectedCategory(updatedCategory);
-    setSelectedSubcategory(newSubcategory);
-    setSelectedJob(null);
 
-    // Save to database
-    saveCategory(updatedCategory);
-    
-    // Show toast notification
-    toast.success('New subcategory added');
-  }, [categories, selectedCategory]);
-  
-  // Handler for adding a new job
-  const handleAddJob = useCallback(() => {
+    try {
+      const savedCategory = await saveServiceCategory(updatedCategory);
+      setCategories(categories.map(cat => 
+        cat.id === savedCategory.id ? savedCategory : cat
+      ));
+      setSelectedSubcategoryId(newSubcategory.id);
+      setSelectedJobId(null);
+      setActiveTab('edit');
+      toast.success('Subcategory created');
+    } catch (err) {
+      console.error('Error creating subcategory:', err);
+      toast.error('Failed to create subcategory');
+    }
+  };
+
+  // Create a new job
+  const handleCreateJob = async () => {
     if (!selectedCategory || !selectedSubcategory) return;
-    
-    // Create a new job with a unique ID
+
     const newJob: ServiceJob = {
       id: uuidv4(),
       name: 'New Service',
       description: '',
-      estimatedTime: 30,
+      estimatedTime: 0,
       price: 0
     };
-    
-    // Find the selected subcategory and add the new job
-    const updatedSubcategory = {
-      ...selectedSubcategory,
-      jobs: [...selectedSubcategory.jobs, newJob]
-    };
-    
-    // Update the selected category with the updated subcategory
+
+    const updatedSubcategories = selectedCategory.subcategories.map(sub =>
+      sub.id === selectedSubcategory.id
+        ? { ...sub, jobs: [...sub.jobs, newJob] }
+        : sub
+    );
+
     const updatedCategory = {
       ...selectedCategory,
-      subcategories: selectedCategory.subcategories.map(sub => 
-        sub.id === selectedSubcategory.id ? updatedSubcategory : sub
-      )
+      subcategories: updatedSubcategories
     };
-    
-    // Update the categories state
-    const updatedCategories = categories.map(cat => 
-      cat.id === selectedCategory.id ? updatedCategory : cat
-    );
-    
-    setCategories(updatedCategories);
-    
-    // Select the new job
-    setSelectedCategory(updatedCategory);
-    setSelectedSubcategory(updatedSubcategory);
-    setSelectedJob(newJob);
 
-    // Save to database
-    saveCategory(updatedCategory);
-    
-    // Show toast notification
-    toast.success('New service added');
-  }, [categories, selectedCategory, selectedSubcategory]);
-  
-  // Handler for saving edited items
-  const handleSave = useCallback(async (data: any) => {
-    if (!selectedCategory) return;
-    
-    let updatedCategory = { ...selectedCategory };
-    
-    // Update the appropriate item based on what was selected
-    if (selectedJob && selectedSubcategory) {
-      // Update job
-      const updatedJob = { ...selectedJob, ...data };
-      
-      // Update subcategory with updated job
-      const updatedSubcategory = {
-        ...selectedSubcategory,
-        jobs: selectedSubcategory.jobs.map(job => 
-          job.id === selectedJob.id ? updatedJob : job
-        )
-      };
-      
-      // Update category with updated subcategory
-      updatedCategory = {
-        ...selectedCategory,
-        subcategories: selectedCategory.subcategories.map(sub => 
-          sub.id === selectedSubcategory.id ? updatedSubcategory : sub
-        )
-      };
-      
-      // Update selected items
-      setSelectedJob(updatedJob);
-      setSelectedSubcategory(updatedSubcategory);
-    } else if (selectedSubcategory) {
-      // Update subcategory
-      const updatedSubcategory = { ...selectedSubcategory, ...data };
-      
-      // Update category with updated subcategory
-      updatedCategory = {
-        ...selectedCategory,
-        subcategories: selectedCategory.subcategories.map(sub => 
-          sub.id === selectedSubcategory.id ? updatedSubcategory : sub
-        )
-      };
-      
-      // Update selected items
-      setSelectedSubcategory(updatedSubcategory);
-    } else {
-      // Update category
-      updatedCategory = { ...selectedCategory, ...data };
-    }
-    
-    // Update categories state
-    const updatedCategories = categories.map(cat => 
-      cat.id === selectedCategory.id ? updatedCategory : cat
-    );
-    
-    setCategories(updatedCategories);
-    setSelectedCategory(updatedCategory);
-
-    // Save to database
     try {
-      await saveCategory(updatedCategory);
-      toast.success('Changes saved successfully');
-    } catch (error) {
-      console.error('Failed to save changes:', error);
-      toast.error('Failed to save changes');
-    }
-  }, [categories, selectedCategory, selectedSubcategory, selectedJob]);
-
-  // Handler for deleting the currently selected category
-  const handleDeleteCategory = useCallback(async () => {
-    if (!selectedCategory) return;
-    
-    try {
-      // Delete from database first
-      await deleteServiceCategory(selectedCategory.id);
-      
-      // Update state if successful
-      const updatedCategories = categories.filter(cat => cat.id !== selectedCategory.id);
-      setCategories(updatedCategories);
-      setSelectedCategory(null);
-      setSelectedSubcategory(null);
-      setSelectedJob(null);
-      
-      // Close the confirm dialog and show a success toast
-      setShowDeleteConfirm(false);
-      toast.success('Category deleted successfully');
-    } catch (error) {
-      console.error('Failed to delete category:', error);
-      toast.error('Failed to delete category');
-    }
-  }, [categories, selectedCategory]);
-
-  // Function to save a category to the database
-  const saveCategory = async (category: ServiceMainCategory) => {
-    try {
-      await saveServiceCategory(category);
-    } catch (error) {
-      console.error('Error saving category:', error);
-      throw error;
+      const savedCategory = await saveServiceCategory(updatedCategory);
+      setCategories(categories.map(cat => 
+        cat.id === savedCategory.id ? savedCategory : cat
+      ));
+      setSelectedJobId(newJob.id);
+      setActiveTab('edit');
+      toast.success('Service created');
+    } catch (err) {
+      console.error('Error creating service:', err);
+      toast.error('Failed to create service');
     }
   };
 
-  // Handler for exporting services to Excel
-  const handleExport = useCallback(() => {
+  // Save updated service item
+  const handleSave = async (
+    updatedCategory: ServiceMainCategory | null,
+    updatedSubcategory: ServiceSubcategory | null,
+    updatedJob: ServiceJob | null
+  ) => {
+    if (!selectedCategory) return;
+
+    let categoryToSave = { ...selectedCategory };
+
+    if (updatedCategory) {
+      // Updating a category
+      categoryToSave = {
+        ...categoryToSave,
+        name: updatedCategory.name,
+        description: updatedCategory.description || ''
+      };
+    } 
+    
+    if (updatedSubcategory && selectedSubcategory) {
+      // Updating a subcategory
+      categoryToSave = {
+        ...categoryToSave,
+        subcategories: categoryToSave.subcategories.map(sub =>
+          sub.id === selectedSubcategory.id
+            ? {
+                ...sub,
+                name: updatedSubcategory.name,
+                description: updatedSubcategory.description || ''
+              }
+            : sub
+        )
+      };
+    }
+
+    if (updatedJob && selectedSubcategoryId && selectedJob) {
+      // Updating a job
+      categoryToSave = {
+        ...categoryToSave,
+        subcategories: categoryToSave.subcategories.map(sub =>
+          sub.id === selectedSubcategoryId
+            ? {
+                ...sub,
+                jobs: sub.jobs.map(job =>
+                  job.id === selectedJob.id
+                    ? updatedJob
+                    : job
+                )
+              }
+            : sub
+        )
+      };
+    }
+
     try {
-      exportToExcel(categories, 'services-export');
-      toast.success('Services exported successfully');
-    } catch (error) {
-      console.error('Failed to export services:', error);
+      const savedCategory = await saveServiceCategory(categoryToSave);
+      
+      setCategories(categories.map(cat => 
+        cat.id === savedCategory.id ? savedCategory : cat
+      ));
+      
+      setActiveTab('browse');
+      toast.success('Changes saved');
+    } catch (err) {
+      console.error('Error saving changes:', err);
+      toast.error('Failed to save changes');
+    }
+  };
+
+  // Delete service item
+  const handleDelete = async () => {
+    if (!selectedCategory) return;
+
+    try {
+      if (selectedJobId && selectedSubcategoryId) {
+        // Delete a job
+        const updatedSubcategories = selectedCategory.subcategories.map(sub =>
+          sub.id === selectedSubcategoryId
+            ? { ...sub, jobs: sub.jobs.filter(job => job.id !== selectedJobId) }
+            : sub
+        );
+
+        const updatedCategory = {
+          ...selectedCategory,
+          subcategories: updatedSubcategories
+        };
+
+        await saveServiceCategory(updatedCategory);
+        setCategories(categories.map(cat => 
+          cat.id === selectedCategory.id ? updatedCategory : cat
+        ));
+        setSelectedJobId(null);
+        toast.success('Service deleted');
+      } else if (selectedSubcategoryId) {
+        // Delete a subcategory
+        const updatedCategory = {
+          ...selectedCategory,
+          subcategories: selectedCategory.subcategories.filter(sub => 
+            sub.id !== selectedSubcategoryId
+          )
+        };
+
+        await saveServiceCategory(updatedCategory);
+        setCategories(categories.map(cat => 
+          cat.id === selectedCategory.id ? updatedCategory : cat
+        ));
+        setSelectedSubcategoryId(null);
+        toast.success('Subcategory deleted');
+      } else if (selectedCategoryId) {
+        // Delete a category
+        await deleteServiceCategory(selectedCategoryId);
+        setCategories(categories.filter(cat => cat.id !== selectedCategoryId));
+        setSelectedCategoryId(null);
+        toast.success('Category deleted');
+      }
+    } catch (err) {
+      console.error('Error deleting item:', err);
+      toast.error('Failed to delete');
+    }
+  };
+
+  // Export services to Excel
+  const handleExport = () => {
+    try {
+      exportToExcel(categories, 'service-catalog');
+      toast.success('Service catalog exported');
+    } catch (err) {
+      console.error('Export error:', err);
       toast.error('Failed to export services');
     }
-  }, [categories]);
+  };
 
-  // Handler for cancelling bulk import
-  const handleCancelImport = useCallback(() => {
-    setShowBulkImport(false);
-    setImportProgress(0);
-  }, []);
+  // Handle bulk import completion
+  const handleImportComplete = (importedCategories: ServiceMainCategory[]) => {
+    setCategories([...categories, ...importedCategories]);
+    setIsImportDialogOpen(false);
+    toast.success(`Imported ${importedCategories.length} categories`);
+  };
 
-  // Handler for completing bulk import
-  const handleImportComplete = useCallback((importedCategories: ServiceMainCategory[]) => {
-    setCategories(importedCategories);
-    setShowBulkImport(false);
-    setImportProgress(0);
-    toast.success('Services imported successfully');
-  }, []);
-
-  // Disable editing if there's nothing selected
-  const isEditorDisabled = !selectedCategory;
+  // Determine if an item is selected
+  const hasSelection = !!selectedCategoryId;
 
   return (
-    <Container fluid className="p-4">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Service Management</h1>
-          <p className="text-gray-500">Manage service categories, subcategories, and service items</p>
-        </div>
+    <div className="h-full">
+      <div className="mb-4 flex flex-wrap gap-2 bg-white p-3 shadow-sm border border-gray-200 rounded-xl">
+        <Button variant="outline" onClick={handleCreateCategory} className="rounded-full text-sm border-blue-500 text-blue-600">
+          <Plus className="h-4 w-4 mr-1" /> Category
+        </Button>
         
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export Services
+        {selectedCategoryId && (
+          <Button 
+            variant="outline" 
+            onClick={handleCreateSubcategory}
+            className="rounded-full text-sm border-blue-500 text-blue-600"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Subcategory
           </Button>
-          
-          <AlertDialog open={showBulkImport} onOpenChange={setShowBulkImport}>
+        )}
+        
+        {selectedSubcategoryId && (
+          <Button 
+            variant="outline" 
+            onClick={handleCreateJob}
+            className="rounded-full text-sm border-blue-500 text-blue-600"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Service
+          </Button>
+        )}
+        
+        <div className="ml-auto flex gap-2">
+          <AlertDialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
             <AlertDialogTrigger asChild>
-              <Button variant="outline">
-                <Upload className="w-4 h-4 mr-2" />
-                Import Services
+              <Button variant="outline" className="rounded-full text-sm border-blue-500 text-blue-600">
+                <Upload className="h-4 w-4 mr-1" /> Import
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="max-w-3xl">
+            <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Import Services from Excel</AlertDialogTitle>
+                <AlertDialogTitle>Import Services</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Upload an Excel file containing service data. The file should have columns for category, subcategory, service, price, time, and description.
+                  Upload an Excel file with your service catalog.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <ServiceBulkImport 
-                onCancel={handleCancelImport} 
-                onComplete={handleImportComplete} 
+                onCancel={() => setIsImportDialogOpen(false)} 
+                onComplete={handleImportComplete}
               />
             </AlertDialogContent>
           </AlertDialog>
           
-          <Button onClick={handleAddCategory}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Category
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            className="rounded-full text-sm border-blue-500 text-blue-600"
+          >
+            <Download className="h-4 w-4 mr-1" /> Export
           </Button>
         </div>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="browse">Browse Services</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="bg-white border border-gray-200 rounded-xl">
+          <TabsTrigger value="browse">
+            Browse
+          </TabsTrigger>
+          {hasSelection && (
+            <TabsTrigger value="edit">
+              Edit
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="analytics">
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="reports">
+            Reports
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="browse">
-          <Grid>
-            <Grid.Row>
-              <Grid.Column width={8}>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Service Hierarchy</h2>
-                    <div className="space-x-2">
-                      {selectedCategory && (
-                        <>
-                          <Button variant="ghost" size="sm" onClick={handleAddSubcategory}>
-                            Add Subcategory
-                          </Button>
-                          {selectedSubcategory && (
-                            <Button variant="ghost" size="sm" onClick={handleAddJob}>
-                              Add Service
-                            </Button>
-                          )}
-                          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
-                                <Trash2Icon className="h-4 w-4 mr-1" />
-                                Delete Category
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete the category "{selectedCategory.name}"?
-                                  This action cannot be undone and will remove all subcategories and services within this category.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <Button variant="destructive" onClick={handleDeleteCategory}>
-                                  Delete
-                                </Button>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {isLoading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <p className="text-gray-500">Loading services...</p>
-                    </div>
-                  ) : error ? (
-                    <div className="bg-red-50 text-red-800 p-4 rounded-md">
-                      <p>{error}</p>
-                      <Button variant="outline" className="mt-2" onClick={loadCategories}>
-                        Retry
-                      </Button>
-                    </div>
-                  ) : (
-                    <ServiceHierarchyBrowser
-                      categories={categories}
-                      selectedCategory={selectedCategory}
-                      selectedSubcategory={selectedSubcategory}
-                      selectedJob={selectedJob}
-                      onCategorySelect={handleCategorySelect}
-                      onSubcategorySelect={handleSubcategorySelect}
-                      onJobSelect={handleJobSelect}
-                      onCategoryDelete={handleDeleteCategory}
-                    />
-                  )}
-                </div>
-              </Grid.Column>
+        <TabsContent value="browse" className="space-y-4">
+          <ServiceHierarchyBrowser
+            categories={categories}
+            loading={loading}
+            error={error}
+            selectedCategoryId={selectedCategoryId}
+            selectedSubcategoryId={selectedSubcategoryId}
+            selectedJobId={selectedJobId}
+            onSelectItem={handleSelectItem}
+          />
+          
+          {hasSelection && (
+            <div className="flex justify-end gap-2 mt-4">
+              <Button 
+                variant="outline" 
+                className="text-red-500 border-red-500 hover:bg-red-50"
+                onClick={handleDelete}
+              >
+                <Trash2Icon className="h-4 w-4 mr-1" /> Delete
+              </Button>
               
-              <Grid.Column width={8}>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {isEditorDisabled ? 'Service Editor' : 'Edit Service'}
-                  </h2>
-                  
-                  <ServiceEditor
-                    selectedCategory={selectedCategory}
-                    selectedSubcategory={selectedSubcategory}
-                    selectedJob={selectedJob}
-                    onSave={handleSave}
-                    onCancel={() => {}}
-                  />
-                </div>
-              </Grid.Column>
-            </Grid.Row>
-          </Grid>
+              <Button 
+                onClick={() => setActiveTab('edit')}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <PencilIcon className="h-4 w-4 mr-1" /> Edit
+              </Button>
+            </div>
+          )}
         </TabsContent>
         
+        {hasSelection && (
+          <TabsContent value="edit">
+            <ServiceEditor
+              category={selectedCategory}
+              subcategory={selectedSubcategory}
+              job={selectedJob}
+              onSave={handleSave}
+              onCancel={() => setActiveTab('browse')}
+            />
+          </TabsContent>
+        )}
+        
         <TabsContent value="analytics">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <ServiceAnalytics categories={categories} />
-          </div>
+          <ServiceAnalytics categories={categories} />
         </TabsContent>
         
         <TabsContent value="reports">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <ServicesPriceReport categories={categories} />
-          </div>
+          <ServicesPriceReport categories={categories} />
         </TabsContent>
       </Tabs>
-    </Container>
+    </div>
   );
 };
-
-export default ServiceHierarchyManager;
