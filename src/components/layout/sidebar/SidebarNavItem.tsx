@@ -65,11 +65,16 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
   // Determine whether to show submenu - either explicitly opened OR if it contains the active page
   const showSubmenu = hasSubmenu && !collapsed && (isSubmenuOpen || hasActiveSubmenu);
 
-  // Toggle submenu open/closed
-  const toggleSubmenu = (e: React.MouseEvent) => {
+  // Handle click on parent item with submenu
+  const handleParentClick = (e: React.MouseEvent) => {
     if (hasSubmenu && !collapsed) {
-      e.preventDefault();
       setIsSubmenuOpen(!isSubmenuOpen);
+      
+      // If the item is disabled, prevent navigation
+      if (navItem.disabled) {
+        e.preventDefault();
+        return;
+      }
     }
   };
 
@@ -83,28 +88,44 @@ export function SidebarNavItem(props: SidebarNavItemProps | DirectNavItemProps) 
             : "text-white/80 hover:bg-white/10",
           navItem.disabled && "cursor-not-allowed opacity-60"
         )}
-        onClick={hasSubmenu ? toggleSubmenu : undefined}
       >
         {hasSubmenu ? (
           <div className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-2.5">
+            {/* Link wrapper for parent items with submenu */}
+            <Link 
+              to={navItem.href} 
+              className="flex items-center gap-2.5 flex-1" 
+              onClick={(e) => {
+                if (navItem.disabled) {
+                  e.preventDefault();
+                }
+              }}
+            >
               <span className="text-xl">{navItem.icon}</span>
               {!collapsed && <span>{navItem.title}</span>}
-            </div>
+            </Link>
+            
+            {/* Chevron icon that toggles submenu */}
             {!collapsed && (
-              showSubmenu ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )
+              <div onClick={handleParentClick} className="cursor-pointer p-1">
+                {showSubmenu ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </div>
             )}
           </div>
         ) : (
-          <Link to={navItem.href} className="flex items-center gap-2.5 w-full" onClick={(e) => {
-            if (navItem.disabled) {
-              e.preventDefault();
-            }
-          }}>
+          <Link 
+            to={navItem.href} 
+            className="flex items-center gap-2.5 w-full" 
+            onClick={(e) => {
+              if (navItem.disabled) {
+                e.preventDefault();
+              }
+            }}
+          >
             <span className="text-xl">{navItem.icon}</span>
             {!collapsed && <span>{navItem.title}</span>}
           </Link>
