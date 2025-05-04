@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface ServiceHierarchyBrowserProps {
   categories: ServiceMainCategory[];
@@ -12,6 +13,8 @@ interface ServiceHierarchyBrowserProps {
   selectedSubcategoryId: string | null;
   selectedJobId: string | null;
   onSelectItem: (type: 'category' | 'subcategory' | 'job', id: string | null) => void;
+  categoryColorMap?: Record<string, string>;
+  categoryColors?: Array<{ bg: string; text: string; border: string }>;
 }
 
 export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = ({
@@ -21,7 +24,9 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
   selectedCategoryId,
   selectedSubcategoryId,
   selectedJobId,
-  onSelectItem
+  onSelectItem,
+  categoryColorMap = {},
+  categoryColors = []
 }) => {
   if (loading) {
     return (
@@ -48,6 +53,14 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
     );
   }
 
+  // Helper function to get color styles for a category
+  const getCategoryColorStyle = (categoryId: string) => {
+    if (!categoryColorMap || !categoryColors) return {};
+    
+    const colorIndex = parseInt(categoryColorMap[categoryId] || '0');
+    return categoryColors[colorIndex % categoryColors.length] || categoryColors[0];
+  };
+
   return (
     <div className="grid md:grid-cols-3 gap-4 h-[500px]">
       {/* Categories Column */}
@@ -58,19 +71,30 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
           </div>
           <ScrollArea className="h-[450px] rounded-b-xl">
             <div className="p-2">
-              {categories.map(category => (
-                <div
-                  key={category.id}
-                  className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
-                    selectedCategoryId === category.id
-                      ? 'bg-blue-100 text-blue-800 font-medium'
-                      : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => onSelectItem('category', category.id)}
-                >
-                  {category.name}
-                </div>
-              ))}
+              {categories.map(category => {
+                const colorStyle = getCategoryColorStyle(category.id);
+                
+                return (
+                  <div
+                    key={category.id}
+                    className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
+                      selectedCategoryId === category.id
+                        ? `${colorStyle.bg} ${colorStyle.text} font-medium border ${colorStyle.border}`
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => onSelectItem('category', category.id)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span>{category.name}</span>
+                      <Badge 
+                        className={`${colorStyle.bg} ${colorStyle.text} ${colorStyle.border} text-xs`}
+                      >
+                        {category.subcategories.length} subcategories
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
         </CardContent>
@@ -88,19 +112,30 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                 categories.find(cat => cat.id === selectedCategoryId)?.subcategories.length ? (
                   categories
                     .find(cat => cat.id === selectedCategoryId)
-                    ?.subcategories.map(subcategory => (
-                      <div
-                        key={subcategory.id}
-                        className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
-                          selectedSubcategoryId === subcategory.id
-                            ? 'bg-blue-100 text-blue-800 font-medium'
-                            : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => onSelectItem('subcategory', subcategory.id)}
-                      >
-                        {subcategory.name}
-                      </div>
-                    ))
+                    ?.subcategories.map(subcategory => {
+                      const colorStyle = getCategoryColorStyle(selectedCategoryId);
+                      
+                      return (
+                        <div
+                          key={subcategory.id}
+                          className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
+                            selectedSubcategoryId === subcategory.id
+                              ? `${colorStyle.bg} ${colorStyle.text} font-medium border ${colorStyle.border}`
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => onSelectItem('subcategory', subcategory.id)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span>{subcategory.name}</span>
+                            <Badge 
+                              className={`${colorStyle.bg} ${colorStyle.text} ${colorStyle.border} text-xs`}
+                            >
+                              {subcategory.jobs.length} services
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })
                 ) : (
                   <div className="p-4 text-center text-gray-500 text-sm">
                     No subcategories yet
@@ -132,22 +167,27 @@ export const ServiceHierarchyBrowser: React.FC<ServiceHierarchyBrowserProps> = (
                   categories
                     .find(cat => cat.id === selectedCategoryId)
                     ?.subcategories.find(sub => sub.id === selectedSubcategoryId)
-                    ?.jobs.map(job => (
-                      <div
-                        key={job.id}
-                        className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
-                          selectedJobId === job.id
-                            ? 'bg-blue-100 text-blue-800 font-medium'
-                            : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => onSelectItem('job', job.id)}
-                      >
-                        <div className="font-medium">{job.name}</div>
-                        <div className="text-xs text-gray-500">
-                          ${job.price} • {job.estimatedTime} min
+                    ?.jobs.map(job => {
+                      const colorStyle = getCategoryColorStyle(selectedCategoryId || '');
+                      
+                      return (
+                        <div
+                          key={job.id}
+                          className={`px-3 py-2 rounded-lg cursor-pointer mb-1 ${
+                            selectedJobId === job.id
+                              ? `${colorStyle.bg} ${colorStyle.text} font-medium border ${colorStyle.border}`
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => onSelectItem('job', job.id)}
+                        >
+                          <div className="font-medium">{job.name}</div>
+                          <div className="text-xs text-gray-500 flex justify-between mt-1">
+                            <span>${job.price?.toFixed(2) || '0.00'}</span>
+                            <span>{job.estimatedTime || 0} min</span>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                 ) : (
                   <div className="p-4 text-center text-gray-500 text-sm">
                     No services yet

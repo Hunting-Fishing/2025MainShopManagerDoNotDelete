@@ -1,256 +1,202 @@
 
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { ServiceMainCategory, ServiceSubcategory, ServiceJob } from '@/types/serviceHierarchy';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 interface ServiceEditorProps {
-  category: ServiceMainCategory | null;
-  subcategory: ServiceSubcategory | null;
-  job: ServiceJob | null;
+  category: ServiceMainCategory | undefined;
+  subcategory: ServiceSubcategory | undefined;
+  job: ServiceJob | undefined;
   onSave: (
     category: ServiceMainCategory | null,
     subcategory: ServiceSubcategory | null,
     job: ServiceJob | null
   ) => void;
-  onCancel: () => void;
+  categoryColors?: Array<{ bg: string; text: string; border: string }>;
+  colorIndex?: number;
+  onColorChange?: (index: number) => void;
 }
 
-const ServiceEditor: React.FC<ServiceEditorProps> = ({
+export const ServiceEditor: React.FC<ServiceEditorProps> = ({
   category,
   subcategory,
   job,
   onSave,
-  onCancel
+  categoryColors = [],
+  colorIndex = 0,
+  onColorChange
 }) => {
-  const [editedCategory, setEditedCategory] = useState<ServiceMainCategory | null>(null);
-  const [editedSubcategory, setEditedSubcategory] = useState<ServiceSubcategory | null>(null);
-  const [editedJob, setEditedJob] = useState<ServiceJob | null>(null);
+  // State for edited values
+  const [editedName, setEditedName] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedPrice, setEditedPrice] = useState<number>(0);
+  const [editedTime, setEditedTime] = useState<number>(0);
+  const [selectedColorIndex, setSelectedColorIndex] = useState(colorIndex);
 
-  // Set initial state when props change
+  // Update form state when selection changes
   useEffect(() => {
-    setEditedCategory(category ? { ...category } : null);
-    setEditedSubcategory(subcategory ? { ...subcategory } : null);
-    setEditedJob(job ? { ...job } : null);
-  }, [category, subcategory, job]);
+    if (job) {
+      setEditedName(job.name || '');
+      setEditedDescription(job.description || '');
+      setEditedPrice(job.price || 0);
+      setEditedTime(job.estimatedTime || 0);
+    } else if (subcategory) {
+      setEditedName(subcategory.name || '');
+      setEditedDescription(subcategory.description || '');
+    } else if (category) {
+      setEditedName(category.name || '');
+      setEditedDescription(category.description || '');
+    }
+    
+    setSelectedColorIndex(colorIndex);
+  }, [category, subcategory, job, colorIndex]);
 
-  // Handle name change for category
-  const handleCategoryNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editedCategory) return;
-    setEditedCategory({
-      ...editedCategory,
-      name: e.target.value
-    });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (job) {
+      const updatedJob: ServiceJob = {
+        ...job,
+        name: editedName,
+        description: editedDescription,
+        price: editedPrice,
+        estimatedTime: editedTime
+      };
+      onSave(null, null, updatedJob);
+    } else if (subcategory) {
+      const updatedSubcategory: ServiceSubcategory = {
+        ...subcategory,
+        name: editedName,
+        description: editedDescription
+      };
+      onSave(null, updatedSubcategory, null);
+    } else if (category) {
+      const updatedCategory: ServiceMainCategory = {
+        ...category,
+        name: editedName,
+        description: editedDescription
+      };
+      
+      // Apply color change if provided
+      if (onColorChange && selectedColorIndex !== colorIndex) {
+        onColorChange(selectedColorIndex);
+      }
+      
+      onSave(updatedCategory, null, null);
+    }
   };
 
-  // Handle description change for category
-  const handleCategoryDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!editedCategory) return;
-    setEditedCategory({
-      ...editedCategory,
-      description: e.target.value
-    });
+  // Determine what we're editing
+  const getEditorTitle = () => {
+    if (job) return `Edit Service: ${job.name}`;
+    if (subcategory) return `Edit Subcategory: ${subcategory.name}`;
+    if (category) return `Edit Category: ${category.name}`;
+    return 'Service Editor';
   };
 
-  // Handle name change for subcategory
-  const handleSubcategoryNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editedSubcategory) return;
-    setEditedSubcategory({
-      ...editedSubcategory,
-      name: e.target.value
-    });
-  };
-
-  // Handle description change for subcategory
-  const handleSubcategoryDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!editedSubcategory) return;
-    setEditedSubcategory({
-      ...editedSubcategory,
-      description: e.target.value
-    });
-  };
-
-  // Handle name change for job
-  const handleJobNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editedJob) return;
-    setEditedJob({
-      ...editedJob,
-      name: e.target.value
-    });
-  };
-
-  // Handle description change for job
-  const handleJobDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!editedJob) return;
-    setEditedJob({
-      ...editedJob,
-      description: e.target.value
-    });
-  };
-
-  // Handle price change for job
-  const handleJobPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editedJob) return;
-    const price = parseFloat(e.target.value) || 0;
-    setEditedJob({
-      ...editedJob,
-      price
-    });
-  };
-
-  // Handle time change for job
-  const handleJobTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editedJob) return;
-    const time = parseInt(e.target.value) || 0;
-    setEditedJob({
-      ...editedJob,
-      estimatedTime: time
-    });
-  };
-
-  // Handle save button click
-  const handleSave = () => {
-    onSave(editedCategory, editedSubcategory, editedJob);
-  };
-
-  // Determine what is being edited
-  const isEditingCategory = !!editedCategory && !editedSubcategory && !editedJob;
-  const isEditingSubcategory = !!editedCategory && !!editedSubcategory && !editedJob;
-  const isEditingJob = !!editedCategory && !!editedSubcategory && !!editedJob;
+  if (!category) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-gray-500">Please select a service to edit</p>
+      </div>
+    );
+  }
 
   return (
-    <Card className="border border-gray-200 rounded-xl shadow-sm">
-      <CardHeader className="pb-3 border-b">
-        <CardTitle>
-          {isEditingJob 
-            ? 'Edit Service' 
-            : isEditingSubcategory 
-            ? 'Edit Subcategory' 
-            : 'Edit Category'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4">
-        <div className="space-y-4">
-          {isEditingCategory && editedCategory && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="category-name">Category Name</Label>
-                <Input
-                  id="category-name"
-                  value={editedCategory.name}
-                  onChange={handleCategoryNameChange}
-                  className="border-gray-300"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category-desc">Description</Label>
-                <Textarea
-                  id="category-desc"
-                  value={editedCategory.description || ''}
-                  onChange={handleCategoryDescChange}
-                  placeholder="Enter category description"
-                  className="border-gray-300"
-                />
-              </div>
-            </>
-          )}
-
-          {isEditingSubcategory && editedSubcategory && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="subcategory-name">Subcategory Name</Label>
-                <Input
-                  id="subcategory-name"
-                  value={editedSubcategory.name}
-                  onChange={handleSubcategoryNameChange}
-                  className="border-gray-300"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subcategory-desc">Description</Label>
-                <Textarea
-                  id="subcategory-desc"
-                  value={editedSubcategory.description || ''}
-                  onChange={handleSubcategoryDescChange}
-                  placeholder="Enter subcategory description"
-                  className="border-gray-300"
-                />
-              </div>
-            </>
-          )}
-
-          {isEditingJob && editedJob && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="job-name">Service Name</Label>
-                <Input
-                  id="job-name"
-                  value={editedJob.name}
-                  onChange={handleJobNameChange}
-                  className="border-gray-300"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="job-desc">Description</Label>
-                <Textarea
-                  id="job-desc"
-                  value={editedJob.description || ''}
-                  onChange={handleJobDescChange}
-                  placeholder="Enter service description"
-                  className="border-gray-300"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="job-price">Price ($)</Label>
-                  <Input
-                    id="job-price"
-                    type="number"
-                    value={editedJob.price || 0}
-                    onChange={handleJobPriceChange}
-                    min={0}
-                    step={0.01}
-                    className="border-gray-300"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="job-time">Estimated Time (minutes)</Label>
-                  <Input
-                    id="job-time"
-                    type="number"
-                    value={editedJob.estimatedTime || 0}
-                    onChange={handleJobTimeChange}
-                    min={0}
-                    className="border-gray-300"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="border-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              Save Changes
-            </Button>
-          </div>
+    <div>
+      <h2 className="text-xl font-semibold mb-4">{getEditorTitle()}</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            value={editedName}
+            onChange={(e) => setEditedName(e.target.value)}
+            placeholder="Enter name"
+            required
+          />
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={editedDescription}
+            onChange={(e) => setEditedDescription(e.target.value)}
+            placeholder="Enter description"
+            rows={3}
+          />
+        </div>
+
+        {job && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Price ($)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editedPrice}
+                  onChange={(e) => setEditedPrice(parseFloat(e.target.value))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time">Estimated Time (minutes)</Label>
+                <Input
+                  id="time"
+                  type="number"
+                  min="0"
+                  value={editedTime}
+                  onChange={(e) => setEditedTime(parseInt(e.target.value))}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {category && !subcategory && !job && categoryColors.length > 0 && (
+          <div className="space-y-2">
+            <Label>Color Scheme</Label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {categoryColors.map((color, index) => (
+                <div 
+                  key={index} 
+                  className={`
+                    w-8 h-8 rounded-full cursor-pointer 
+                    ${color.bg} ${color.border}
+                    ${selectedColorIndex === index ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
+                  `}
+                  onClick={() => setSelectedColorIndex(index)}
+                ></div>
+              ))}
+            </div>
+            <div className="mt-2">
+              <Badge className={`
+                ${categoryColors[selectedColorIndex].bg} 
+                ${categoryColors[selectedColorIndex].text} 
+                ${categoryColors[selectedColorIndex].border}
+              `}>
+                {editedName || 'Category Name'}
+              </Badge>
+              <span className="text-gray-500 text-xs ml-2">This is how the category will appear</span>
+            </div>
+          </div>
+        )}
+
+        <div className="pt-4 flex justify-end">
+          <Button type="submit">Save Changes</Button>
+        </div>
+      </form>
+    </div>
   );
 };
-
-export default ServiceEditor;
